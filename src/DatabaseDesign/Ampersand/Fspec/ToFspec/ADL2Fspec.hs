@@ -6,13 +6,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Core.Basics    (eqCl, eqClass)
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import Options        (Options(language,genPrototype,theme),DocTheme(..))
-   import NormalForms    (conjNF,disjNF,normPA,simplify)
+   import DatabaseDesign.Ampersand.Misc        (Options(language,genPrototype,theme),DocTheme(..))
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify)
    import Data.Plug
    import Data.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
-   import FPA
-   import Languages(plural)
+   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPcompl(..))
+   import DatabaseDesign.Ampersand.Misc (plural)
 
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec

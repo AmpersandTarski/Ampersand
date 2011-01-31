@@ -11,24 +11,23 @@ where
    import DatabaseDesign.Ampersand.ADL1
    import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
   --          (Pos(..) 
-   import Options hiding (services)
-   import Version               (versionbanner)
-   import FPA                   (FPA(..),FPcompl,fpa)
+   import DatabaseDesign.Ampersand.Misc
+   import DatabaseDesign.Ampersand.Fspec.FPA        (FPA(..),FPcompl,fpa)
 --   import TypeInference.InfLibAGFuncs
       
    fSpec2Haskell :: Fspc -> Options -> String
    fSpec2Haskell fSpec flags
            = "{-# OPTIONS_GHC -Wall #-}"
-             ++"\n{-Generated code by "++versionbanner++" at "++show (genTime flags)++"-}"
+             ++"\n{-Generated code by "++ampersandCoreVersionBanner++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
              ++"\n  import ADL"
              ++"\n  import ShowHS (showHS)"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
              ++"\n  import Data.Plug"
-             ++"\n  import FPA"
-             ++"\n  import Options (getOptions)"
-             ++"\n  import TypeInference.InfLibAGFuncs"
+             ++"\n  import DatabaseDesign.Ampersand.Fspec.FPA"
+             ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
+             ++"\n  import DatabaseDesign.Ampersand.TypeInference.InfLibAGFuncs"
              ++"\n  import DatabaseDesign.Ampersand.Core.Basics"  
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"

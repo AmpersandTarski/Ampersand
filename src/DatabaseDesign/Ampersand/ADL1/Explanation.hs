@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.Explanation (Explanation(..),PExplanation(..),PExplObj(..),Explanations,PExplanations,ExplObj(..))
 where
-   import Languages                    (Lang)
+   import DatabaseDesign.Ampersand.Misc                    (Lang)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Relation,Declaration,Association(..),Identified(..))
    import DatabaseDesign.Ampersand.ADL1.Concept                  (Concept(..))
    import DatabaseDesign.Ampersand.ADL1.ConceptDef               (ConceptDef)

@@ -19,8 +19,8 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Core.Basics                    ((>-))
    import DatabaseDesign.Ampersand.Core.Basics                      (Inheritance(..))
    import Data.Plug                     
-   import Picture                       (Pictures)
-   import FPA
+   import DatabaseDesign.Ampersand.Fspec.Graphic.Picture  (Pictures)
+   import DatabaseDesign.Ampersand.Fspec.FPA              (FPA)
 
    data Fspc = Fspc { fsName       :: String                 -- ^ The name of the specification, taken from the Ampersand script
                     , vplugInfos   :: PlugInfos              -- ^ All plugs defined in the Ampersand script

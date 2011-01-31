@@ -17,10 +17,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
-   import Options            (Options(..),defaultFlags)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import DatabaseDesign.Ampersand.Misc            (Options(..),defaultFlags)
    import Data.Explain
-   import Languages          (Lang(..))
+   import DatabaseDesign.Ampersand.Misc          (Lang(..))
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
     = "\nRule: "++showADLcode fSpec (cl_rule cl) ++concat

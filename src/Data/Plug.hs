@@ -21,7 +21,7 @@ import DatabaseDesign.Ampersand.ADL1 ( Concept(..), Signaling(..), cptnew
            , isSur,isTot,isInj,isUni)
 import DatabaseDesign.Ampersand.Core.Basics((>-))
 import DatabaseDesign.Ampersand.Classes (Object(..),contents',ConceptStructure(..))
-import FPA (FPA(..),FPAble(..))
+import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPAble(..))
 import DatabaseDesign.Ampersand.Core.Basics (sort',eqClass)
 import List(elemIndex,nub)
  

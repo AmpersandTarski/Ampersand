@@ -3,15 +3,15 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser (parseADL1)where
 
 
 import DatabaseDesign.Ampersand.Input.ADL1.CC (pArchitecture,keywordstxt, keywordsops, specialchars, opchars)
-import Options
+import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner(scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing(parseIO)
 import DatabaseDesign.Ampersand.Input.ADL1.TypeChecker (typecheckAdl1)
 import DatabaseDesign.Ampersand.ADL1
-import Rendering.PandocAux (writepandoc)
+import DatabaseDesign.Ampersand.Output (writepandoc)
 import Text.Pandoc 
  
-parseADL1 :: String      -- ^ The string to be parsed
+parseADL1 :: String     -- ^ The string to be parsed
          -> Options     -- ^ flags to be taken into account
          -> String      -- ^ The name of the .adl file (used for error messages)
          -> IO(Context) -- ^ The IO monad with the context. 

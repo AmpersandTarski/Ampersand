@@ -6,12 +6,12 @@ module DatabaseDesign.Ampersand.Output.Atlas
 where
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
-import Options
-import Rendering.AdlExplanation
+import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Output.AdlExplanation (explain,format,ExplainOutputFormat(..))
 import DatabaseDesign.Ampersand.Core.Basics 
 import Database.HDBC.ODBC 
 import Database.HDBC
-import Picture 
+import DatabaseDesign.Ampersand.Fspec.Graphic.Picture (PictType(..))
 ------
 
 data ATable = ATable {tableid::ATableId, tablename::String, columns::[String]} deriving (Show)

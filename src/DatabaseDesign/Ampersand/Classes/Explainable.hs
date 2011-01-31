@@ -5,7 +5,7 @@ where
   import DatabaseDesign.Ampersand.ADL1.Pattern                 (Pattern(..))
   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (makeDeclaration,Identified(..))
   import Data.Explain
-  import Options 
+  import DatabaseDesign.Ampersand.Misc 
   import DatabaseDesign.Ampersand.ADL1.Explanation
   import DatabaseDesign.Ampersand.Classes.ViewPoint
 

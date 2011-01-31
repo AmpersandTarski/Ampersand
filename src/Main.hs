@@ -1,18 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 module Main where
 
-import Options                (getOptions,Options(..),verboseLn,verbose,DocTheme(..),FspecFormat(..) )
-import DatabaseDesign.Ampersand.Input                 (parseADL1)
 import Control.Monad
-import DatabaseDesign.Ampersand.Fspec
-import Prototype.ObjBinGen    (phpObjServices)
+import System.FilePath        (combine,replaceExtension)
+import DatabaseDesign.Ampersand.Misc    (getOptions,Options(..),verboseLn,verbose,DocTheme(..),FspecFormat(..) )
+import DatabaseDesign.Ampersand.Input     (parseADL1)
+import DatabaseDesign.Ampersand.Fspec     
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Output
-import Picture
-import Rendering.PandocAux (writepandoc)
-import System.FilePath        (combine,replaceExtension)
-import DatabaseDesign.Ampersand.Core.Basics  
-import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+
+import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
 
 --import Data.Ampersand.Main
 

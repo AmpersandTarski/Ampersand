@@ -8,8 +8,7 @@ module Data.Explain ( ExplainContent,         AutoExplain(..)
 where
 
 import Text.Pandoc
-import Languages
-import Options 
+import DatabaseDesign.Ampersand.Misc
 import Data.List (isPrefixOf)
 data AutoExplain = Because Lang ExplainContent deriving (Eq,Show)
  

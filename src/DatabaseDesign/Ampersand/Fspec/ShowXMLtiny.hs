@@ -26,7 +26,7 @@ where
 --   import Data.Explain
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Time(ClockTime)
-   import Version(versionbanner)
+   import DatabaseDesign.Ampersand.Misc
    import Data.Plug
    import Data.TinyXML
    showXML :: Fspc -> ClockTime -> String
@@ -36,7 +36,7 @@ where
               "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
               "xsi:schemaLocation=\"http://ampersand.sourceforge.net/AdlDocs "++
               "ADL.xsd \">"++
-              "<!-- Generated with "++ versionbanner ++", at "++ show now ++" -->" ++
+              "<!-- Generated with "++ ampersandCoreVersionBanner ++", at "++ show now ++" -->" ++
               showXTree ( mkXmlTree fSpec) ++
               "</tns:ADL>"   
 

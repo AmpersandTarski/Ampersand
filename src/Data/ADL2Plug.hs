@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Core.Basics    (eqCl, sort')
 import Data.Plug
 import Char
-import FPA
+import DatabaseDesign.Ampersand.Fspec.FPA
 import Data.List (nub)
 
 -----------------------------------------
