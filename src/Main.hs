@@ -3,12 +3,8 @@ module Main where
 
 import Control.Monad
 import System.FilePath        (combine,replaceExtension)
-import DatabaseDesign.Ampersand.Misc    (getOptions,Options(..),verboseLn,verbose,DocTheme(..),FspecFormat(..) )
-import DatabaseDesign.Ampersand.Input     (parseADL1)
-import DatabaseDesign.Ampersand.Fspec     
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Output
-
+import DatabaseDesign.Ampersand
+import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
 
 --import Data.Ampersand.Main

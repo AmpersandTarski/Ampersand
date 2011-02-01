@@ -1,17 +1,17 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances -XMultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..),Relational(..), mapMorphism
-                                  ,Declaration(..),Identified(..),uniqueNames
+                                  ,Declaration(..)
                                   ,makeDeclaration,makeRelation
                                   ,inline
                                   ,isSgn,mIs
                                   ,showSign,applyM)
 where
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos      (FilePos(..),Numbered(..))
-   import DatabaseDesign.Ampersand.ADL1.Concept      (Concept(..),Conceptual(..),Signaling(..))
+   import DatabaseDesign.Ampersand.ADL1.Concept      (Conceptual(..),Signaling(..))
    import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),Props,flipProps)
    import DatabaseDesign.Ampersand.ADL1.Pair         (Pairs,flipPair) 
    import Data.List
-   import DatabaseDesign.Ampersand.Basics       (Collection ((>-)),Identified(..),uniqueNames)
+   import DatabaseDesign.Ampersand.Basics       (Collection (..),Identified(..))
    
   -- in the following class, variable rel is a relation type and concept is a concept type.
   -- For example: instance Association (Declaration Concept) Concept
@@ -108,15 +108,6 @@ where
                             , rel1typ = f (rel1typ m)
                             }
 
-
-   instance Identified Concept where
-    name (C {cptnm = nm}) = nm
-    name S = "ONE"
-    name Anything   = "Anything"
-    name NOthing    = "NOthing"
-
-   instance Show Concept where
-    showsPrec _ c = showString (name c)
 
 
 -- \***********************************************************************

@@ -4,11 +4,11 @@ module DatabaseDesign.Ampersand.ADL1.Expression (Expression(..),PExpression(..),
                       ,isF,isFd,isFi,isFu,isI,v
                       ,isPos,isNeg,idsOnly,notCp,insParentheses)
 where
-import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation(..),Declaration(..),Association(..),Relational(..),Identified(..))
+import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation(..),Declaration(..),Association(..),Relational(..))
 import DatabaseDesign.Ampersand.Input.ADL1.FilePos           (Numbered(..))
 import DatabaseDesign.Ampersand.ADL1.Concept                 (Concept(..), Conceptual(..), SpecHierarchy(..) ,Sign)
 import DatabaseDesign.Ampersand.ADL1.Prop                    (Prop(..))
-import DatabaseDesign.Ampersand.Basics                  (Collection (..))
+import DatabaseDesign.Ampersand.Basics                  (Collection (..),Identified(..))
 import Data.List hiding (union)
 import DatabaseDesign.Ampersand.Basics                 (eqClass, sord')
 

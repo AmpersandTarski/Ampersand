@@ -5,9 +5,9 @@ where
    import DatabaseDesign.Ampersand.ADL1.Concept                 (Concept)
    import DatabaseDesign.Ampersand.ADL1.Expression              (Expression)
    import DatabaseDesign.Ampersand.ADL1.Rule                    (Rule)
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation,Identified(..)) 
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation) 
    import DatabaseDesign.Ampersand.TypeInference.InfLibAG       (InfTree)
-   
+   import DatabaseDesign.Ampersand.Basics                       (Identified(..))
      
    data Service = Serv { svName   :: String
                        , svParams :: [Relation Concept]

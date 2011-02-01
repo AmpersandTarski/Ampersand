@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.ADL1.Concept ( Concept(..),Conceptual(..)
                    , cptnew,cptAnything,cptS,cptos'
                    ) 
 where
-  import DatabaseDesign.Ampersand.Basics       (Typologic)
+  import DatabaseDesign.Ampersand.Basics       (Typologic,Identified(..))
 
 -- The following definition of concept is used in the type checker only.
 -- It is called Concept, meaning "type checking concept"
@@ -36,6 +36,16 @@ where
    _ <= Anything = False
    a@(C _ gE _) <= b = a `gE` b
    a <= b = a==b
+
+  instance Identified Concept where
+   name (C {cptnm = nm}) = nm
+   name S = "ONE"
+   name Anything   = "Anything"
+   name NOthing    = "NOthing"
+
+  instance Show Concept where
+   showsPrec _ c = showString (name c)
+
 
 {- class SpecHierarchy was previously called ABoolAlg -}
 -- | class SpecHierarchy supports generalisation and specialisation.

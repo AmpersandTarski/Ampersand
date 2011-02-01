@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE Rank2Types, KindSignatures, GeneralizedNewtypeDeriving #-}
-
-module DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh,noCollide) where
+module DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries
+       (Named(..),atleastOne,reName,nameFresh,noCollide) 
+where
  import Data.Char
  data (Eq a) => Named a = Named { nName :: String, nObject :: a} deriving (Eq)
  instance (Show a,Eq a)=> Show (Named a) where

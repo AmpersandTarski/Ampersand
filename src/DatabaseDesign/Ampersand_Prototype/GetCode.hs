@@ -3,10 +3,10 @@ module DatabaseDesign.Ampersand_Prototype.GetCode (getCodeFor) where
  import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..))
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
- import DatabaseDesign.Ampersand.ADL1 (Expression(..),mapExpression,Relation(..),mapMorphism,SpecHierarchy(..),mIs,flp,source,sign,target,Identified(..),Concept(..))
+ import DatabaseDesign.Ampersand
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(zipnum)
- import DatabaseDesign.Ampersand.Fspec (Fspc(plugInfos))
+-- import DatabaseDesign.Ampersand.Fspec (Fspc(plugInfos))
  import DatabaseDesign.Ampersand.Misc.Plug (makePlug,PlugInfo(..))
  import DatabaseDesign.Ampersand_Prototype.PlugPHP(phpfile,phpSafe,phpinArgs)
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries(Named(..))

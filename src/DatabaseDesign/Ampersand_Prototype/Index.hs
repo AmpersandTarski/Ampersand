@@ -5,9 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock)
    import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
 --   import System.FilePath (addExtension)
-   import DatabaseDesign.Ampersand.ADL1 (name,Service(..))
-   import DatabaseDesign.Ampersand.Fspec
-   import DatabaseDesign.Ampersand.Misc
+   import DatabaseDesign.Ampersand
    
    
    htmlindex :: Fspc -> [Service] -> Options -> [Char]

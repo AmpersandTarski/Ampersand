@@ -3,12 +3,12 @@ module DatabaseDesign.Ampersand.Classes.Explainable (explanationDeclarations)
 where
   import DatabaseDesign.Ampersand.ADL1.Context                 (Context(..))
   import DatabaseDesign.Ampersand.ADL1.Pattern                 (Pattern(..))
-  import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (makeDeclaration,Identified(..))
+  import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (makeDeclaration)
   import DatabaseDesign.Ampersand.Misc.Explain
   import DatabaseDesign.Ampersand.Misc 
   import DatabaseDesign.Ampersand.ADL1.Explanation
   import DatabaseDesign.Ampersand.Classes.ViewPoint
-
+  import DatabaseDesign.Ampersand.Basics                       (Identified(..))
 -- For parser data structures (which are: ConceptDef, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
 -- the function <explanations :: a -> [Explanation]> gives all explanations that are declared directly in <a>, but not in possible components of <a>.
 -- So if <a> is a context, it gives the explanations declared in <a>, but not those declared in patterns in <a>

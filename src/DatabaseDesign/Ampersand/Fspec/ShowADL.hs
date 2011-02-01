@@ -14,7 +14,7 @@ module DatabaseDesign.Ampersand.Fspec.ShowADL
     ( ShowADL(..), disambiguate, relatsoff)
   where
    import Char                            (isAlphaNum)
-   import DatabaseDesign.Ampersand.Basics       (Collection(..))
+   import DatabaseDesign.Ampersand.Basics       (Collection(..),Identified(..))
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..))
    import Data.List

@@ -3,14 +3,15 @@ module DatabaseDesign.Ampersand.ADL1.Rule    ( Rule(..),mapRule,Rules
                    , RuleType(..)
                    , consequent, antecedent, ruleType, normExpr, rulefromProp, isaRule, ruleviolations)     
 where
-   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                   ( FilePos(..), Numbered(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos             ( FilePos(..), Numbered(..))
+   import DatabaseDesign.Ampersand.Basics                         ( Identified(..))
    import DatabaseDesign.Ampersand.ADL1.Concept                   ( Concept(..), Conceptual(..), SpecHierarchy, Signaling(..))
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), Identified(..), mIs)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), mIs)
    import DatabaseDesign.Ampersand.ADL1.Expression                ( Expression(..), mapExpression, notCp)
    import DatabaseDesign.Ampersand.ADL1.Pair                      ( Pairs)
-   import DatabaseDesign.Ampersand.ADL1.Prop
-   import DatabaseDesign.Ampersand.Classes.Populated (contents)
-   import DatabaseDesign.Ampersand.TypeInference.InfLibAG        ( InfTree(..) )
+   import DatabaseDesign.Ampersand.ADL1.Prop                      ( Prop(..))
+   import DatabaseDesign.Ampersand.Classes.Populated              (contents)
+   import DatabaseDesign.Ampersand.TypeInference.InfLibAG         ( InfTree(..) )
    import DatabaseDesign.Ampersand.Misc.Explain
    import DatabaseDesign.Ampersand.Misc  
                                          

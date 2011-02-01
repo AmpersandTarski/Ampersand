@@ -5,10 +5,11 @@ where
    import DatabaseDesign.Ampersand.ADL1.Rule                     (Rules)
    import DatabaseDesign.Ampersand.ADL1.Gen                      (Gens)
    import DatabaseDesign.Ampersand.ADL1.Concept                  (Concept,Sign)
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Declaration,Relation,Identified(..))
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Declaration,Relation)
    import DatabaseDesign.Ampersand.ADL1.ConceptDef               (ConceptDefs)
    import DatabaseDesign.Ampersand.ADL1.Explanation              (PExplanations)
    import DatabaseDesign.Ampersand.ADL1.Expression               (PExpression)
+   import DatabaseDesign.Ampersand.Basics                        (Identified(..))
    
    type Patterns  = [Pattern]
    data Pattern

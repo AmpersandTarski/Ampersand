@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
 import DatabaseDesign.Ampersand.Basics          (unCap,upCap,preciesEen)
-import DatabaseDesign.Ampersand.Basics       (Collection ((>-)))
+import DatabaseDesign.Ampersand.Basics       (Collection ((>-)),Identified(..))
 import Text.Pandoc
 import Char             (toLower)
 

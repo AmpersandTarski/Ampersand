@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ShowCode (showCode,showCodeHeaders) where
+module DatabaseDesign.Ampersand_Prototype.ShowCode
+        (showCode,showCodeHeaders) where
  import DatabaseDesign.Ampersand_Prototype.CodeStatement(Statement(..),CodeQuery(..),UseVar(..))
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries(Named(..))
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlockBetween)

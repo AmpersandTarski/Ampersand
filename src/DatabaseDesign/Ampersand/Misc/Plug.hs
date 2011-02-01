@@ -14,13 +14,13 @@ module DatabaseDesign.Ampersand.Misc.Plug
      ,DataObject(..))
 where
 import DatabaseDesign.Ampersand.ADL1 ( Concept(..), Signaling(..), cptnew
-           , Relation(..), Association(..), Relational(..), mIs, Identified(..)
+           , Relation(..), Association(..), Relational(..), mIs
            , Expression(..)
            , FilePos(..)
            , Paire
            , ObjectDef(..)
            , isSur,isTot,isInj,isUni)
-import DatabaseDesign.Ampersand.Basics((>-))
+import DatabaseDesign.Ampersand.Basics(Identified(..),(>-))
 import DatabaseDesign.Ampersand.Classes (Object(..),contents',ConceptStructure(..))
 import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPAble(..))
 import DatabaseDesign.Ampersand.Basics (sort',eqClass)

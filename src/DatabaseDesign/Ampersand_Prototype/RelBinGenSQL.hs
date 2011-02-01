@@ -2,15 +2,16 @@
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne'
  ) where 
-   import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Fspec
+--   import DatabaseDesign.Ampersand.ADL1      
+--   import DatabaseDesign.Ampersand.Fspec
    import DatabaseDesign.Ampersand.Misc.Plug
+   import DatabaseDesign.Ampersand
+   
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                     ,cChain,filterEmpty,phpIndent)
    import Data.Maybe
    import Char(isDigit,digitToInt,intToDigit)
    import Data.List
--- import DatabaseDesign.Ampersand.Basics (Collection(rd))
    
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden

@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.InterfaceDef where
-  import DatabaseDesign.Ampersand.ADL1
+--  import DatabaseDesign.Ampersand.ADL1
   import Data.List
-  import DatabaseDesign.Ampersand.Fspec
+--  import DatabaseDesign.Ampersand.Fspec
   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(commentBlock, indentBlock)
   import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
-  import DatabaseDesign.Ampersand.Misc
+  import DatabaseDesign.Ampersand -- .Misc
    
   interfaceDef :: Fspc -> [Service] -> Options -> String
   interfaceDef fspc svcs flags = intercalate "\n"

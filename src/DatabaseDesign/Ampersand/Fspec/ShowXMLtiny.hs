@@ -23,7 +23,7 @@ where
    import DatabaseDesign.Ampersand.ADL1
 --   import Languages
    import DatabaseDesign.Ampersand.Fspec.ShowADL 
---   import DatabaseDesign.Ampersand.Misc.Explain
+   import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Time(ClockTime)
    import DatabaseDesign.Ampersand.Misc

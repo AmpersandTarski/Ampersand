@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
     (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
-   import DatabaseDesign.Ampersand.Basics     (Collection(rd,rd',uni,isc,(>-)))
+   import DatabaseDesign.Ampersand.Basics     (Collection(..),Identified(..),uniqueNames)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Basics    (eqCl, eqClass)
    import DatabaseDesign.Ampersand.Fspec.Fspec

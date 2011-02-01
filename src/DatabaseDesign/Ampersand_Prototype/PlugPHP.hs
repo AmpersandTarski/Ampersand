@@ -11,10 +11,7 @@ module DatabaseDesign.Ampersand_Prototype.PlugPHP
                  ,makePhpPlug --make a phpplug from an ObjectDef (user-defined php plug)
                  )
 where
-import DatabaseDesign.Ampersand.ADL1 ( Concept(..)
-           , Relation(..), Identified(..)
-           , ObjectDef(..),mapExpression,mapMorphism
-           )
+import DatabaseDesign.Ampersand -- .ADL1 ( Concept(..), Relation(..), Identified(..), ObjectDef(..),mapExpression,mapMorphism           )
 import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPAble(..))
 import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))

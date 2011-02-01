@@ -2,9 +2,6 @@
 module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
   where
  
-   import DatabaseDesign.Ampersand.Fspec
-   --import DatabaseDesign.Ampersand.Misc.Plug {- (Plug(..),DataObject(..)) -}
-   import DatabaseDesign.Ampersand.ADL1 (Service(..))
    import DatabaseDesign.Ampersand_Prototype.ConnectToDataBase   (connectToDataBase)
    import DatabaseDesign.Ampersand_Prototype.Object              (objectServices)
    import DatabaseDesign.Ampersand_Prototype.Wrapper             (objectWrapper)
@@ -16,7 +13,6 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
    --import DatabaseDesign.Ampersand_Prototype.DataObject          (dataServices)
    import System.FilePath               
    import System.Directory
-   import DatabaseDesign.Ampersand.Misc
    import qualified Data.ByteString as Bin
    import DatabaseDesign.Ampersand  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)

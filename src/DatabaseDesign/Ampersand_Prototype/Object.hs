@@ -1,22 +1,22 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
 module DatabaseDesign.Ampersand_Prototype.Object(objectServices) where
-import DatabaseDesign.Ampersand.Basics (eqCl)
-import DatabaseDesign.Ampersand.ADL1 (target, sign, source
+--import DatabaseDesign.Ampersand.Basics (eqCl)
+--import DatabaseDesign.Ampersand.ADL1 (target, sign, source
            --,Concept(..),Declaration(..),isTrue
-           ,ObjectDef(..),Numbered(..),Relational(..),ConceptStructure(..)
-           ,Identified(..),mors,Relation(..),ViewPoint(..)
-           ,Object(..),isIdent,Expression(..),mIs,cptS
-           )
-import DatabaseDesign.Ampersand.Basics (Collection (rd,rd',(>-),uni))
+        --   ,ObjectDef(..),Numbered(..),Relational(..),ConceptStructure(..)
+        --   ,mors,Relation(..),ViewPoint(..)
+        --   ,Object(..),isIdent,Expression(..),mIs,cptS
+        --   )
+--import DatabaseDesign.Ampersand.Basics (Collection (rd,rd',(>-),uni))
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
-import DatabaseDesign.Ampersand.Fspec
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
+--import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc.Plug
 import Data.Maybe
 import Data.List  hiding (group)
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output
+--import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand -- .Output
    
 
 objectServices :: Options 

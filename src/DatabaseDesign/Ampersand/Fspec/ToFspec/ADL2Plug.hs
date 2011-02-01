@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
-import DatabaseDesign.Ampersand.Basics     (Collection((>-)))
+import DatabaseDesign.Ampersand.Basics     (Collection((>-)),Identified(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics    (eqCl, sort')
 import DatabaseDesign.Ampersand.Misc.Plug

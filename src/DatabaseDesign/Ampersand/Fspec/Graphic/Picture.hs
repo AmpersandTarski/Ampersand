@@ -42,8 +42,8 @@ makePictureObj :: Options
             -> String   -- The dot source. Should be canonnical.
 
             -> Picture  -- The ADT of a picture
-makePictureObj flags name pTyp dotsource
-    = Pict { origName   = name
+makePictureObj flags nm pTyp dotsource
+    = Pict { origName   = nm
            , uniqueName = cdName
            , dotSource  = dotsource
            , fullDot    = dirOutput flags  </> relImgPath </> replaceExtension cdName "dot"
@@ -60,23 +60,23 @@ makePictureObj flags name pTyp dotsource
                      PTSwitchBoard  -> "dot"
                      PTFservice     -> "dot"
            , caption      = case (pTyp,language flags) of
-                            (PTClassDiagram,English) -> "Class Diagram of " ++ name
-                            (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ name
-                            (PTPattern     ,English) -> "Concept analysis of " ++ name
-                            (PTPattern     ,Dutch  ) -> "Conceptuele analyse van " ++ name
-                            (PTConcept     ,English) -> "Neighbourhood of Concept " ++ name
-                            (PTConcept     ,Dutch  ) -> "Omgeving van Concept " ++ name
-                            (PTSwitchBoard ,English) -> "Switchboard diagram of " ++ name
-                            (PTSwitchBoard ,Dutch  ) -> "Schakelpaneel van " ++ name
-                            (PTRule        ,English) -> "Knowledge graph about " ++ name
-                            (PTRule        ,Dutch  ) -> "Kennisgraaf rond " ++ name
-                            (PTFservice    ,English) -> "Service graph "++ name  -- TODO betere tekts
-                            (PTFservice    ,Dutch  ) -> "Service graaf "++ name  --TODO betere tekst
+                            (PTClassDiagram,English) -> "Class Diagram of " ++ nm
+                            (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
+                            (PTPattern     ,English) -> "Concept analysis of " ++ nm
+                            (PTPattern     ,Dutch  ) -> "Conceptuele analyse van " ++ nm
+                            (PTConcept     ,English) -> "Neighbourhood of Concept " ++ nm
+                            (PTConcept     ,Dutch  ) -> "Omgeving van Concept " ++ nm
+                            (PTSwitchBoard ,English) -> "Switchboard diagram of " ++ nm
+                            (PTSwitchBoard ,Dutch  ) -> "Schakelpaneel van " ++ nm
+                            (PTRule        ,English) -> "Knowledge graph about " ++ nm
+                            (PTRule        ,Dutch  ) -> "Kennisgraaf rond " ++ nm
+                            (PTFservice    ,English) -> "Service graph "++ nm  -- TODO betere tekts
+                            (PTFservice    ,Dutch  ) -> "Service graaf "++ nm  --TODO betere tekst
            }
        where
          relImgPath | genAtlas flags = "img" </> (takeWhile (/='.') (userAtlas flags)) </> (baseName flags)    
                     | otherwise = []
-         cdName = uniquePicName pTyp name
+         cdName = uniquePicName pTyp nm
 --GMI voor Han -> (isAlpha c) verwijdert uit lijst comprehensie, dit gooit nummers (bv. rule nummers) uit de naam weg
 --       zodat alle ongelabelde rules de naam RUL_Rule hebben, dat is niet uniek.
 --       Deze functie garandeert sowieso geen uniekheid, is die garantie nodig?

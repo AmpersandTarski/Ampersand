@@ -7,9 +7,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs
             , positiveIn) 
   where
 
-   import DatabaseDesign.Ampersand.Basics         (Collection (isc,rd,rd'))
-   import DatabaseDesign.Ampersand.Basics        (sort',eqCl)
-   import DatabaseDesign.Ampersand.Basics            (commaEng)
+   import DatabaseDesign.Ampersand.Basics         (Collection (isc,rd,rd'),Identified(..),sort',eqCl,commaEng)
    import Data.List
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec(Fspc(..),Clauses(..),Quad(..))

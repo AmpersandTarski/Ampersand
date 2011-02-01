@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
+module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
+    (phpIdentifier,commentBlock,strReplace
  ,addSlashes,zipnum,Concatable(..),(+++)
  ,indentBlock,phpShow,addToLast
  ,pDebug,indentBlockBetween,quote
  ,cChain,filterEmpty,phpIndent
  ) where
    import Char(isAlphaNum,isDigit)
-   import DatabaseDesign.Ampersand.Basics (naming)
    import Data.Maybe
    import Data.List
    

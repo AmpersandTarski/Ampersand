@@ -2,11 +2,11 @@
 module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase (connectToDataBase) 
   where
    import Data.List
-   import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Output
+ --  import DatabaseDesign.Ampersand.ADL1 (Rule(..),Association(..),Expression(..),Relation(..),Concept(..))
+   import DatabaseDesign.Ampersand -- .Misc
+ --  import DatabaseDesign.Ampersand.Output
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
-   import DatabaseDesign.Ampersand.Fspec
+ --  import DatabaseDesign.Ampersand.Fspec
    import DatabaseDesign.Ampersand_Prototype.Code
 
    connectToDataBase :: Fspc -> Options -> String

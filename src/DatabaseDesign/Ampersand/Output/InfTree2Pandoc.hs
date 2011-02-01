@@ -19,12 +19,11 @@ import DatabaseDesign.Ampersand.ADL1
                         ,ObjectDef(..)
                         ,Service(..)
                         ,KeyDef(..)
-                        ,Identified(..)
                         ,Association(..)
                         ,makeDeclaration,inline
                         )
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Basics (sort')
+import DatabaseDesign.Ampersand.Basics (sort',Identified(..))
 
 texOnly_proofdoc :: Fspc -> Pandoc
 texOnly_proofdoc    = proofdoc

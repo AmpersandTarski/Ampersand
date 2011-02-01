@@ -1,7 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),CodeVar(..),CodeVarIndexed(..),useAttribute,PHPconcept(..)) where
- import DatabaseDesign.Ampersand.ADL1 (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
+module DatabaseDesign.Ampersand_Prototype.CodeStatement
+      (Statement(..)
+      ,CodeQuery(..)
+      ,UseVar(..)
+      ,CodeVar(..)
+      ,CodeVarIndexed(..)
+      ,useAttribute
+      ,PHPconcept(..)
+      ) where
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
+ import DatabaseDesign.Ampersand -- .ADL1 (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
 
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
  data Statement

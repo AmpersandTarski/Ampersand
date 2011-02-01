@@ -29,7 +29,6 @@ module DatabaseDesign.Ampersand.ADL1
            , normExpr
            , Populated(..)
            , Substitutive(..)
-           , Identified(..), uniqueNames
            , Label(..)
            , Paire,Pairs,srcPaire,trgPaire,mkPair
            , isAll, isChc, isBlk, isNop, isDo, InsDel(..), ECArule(..), Event(..), PAclause(..)
@@ -56,7 +55,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..),mapMorphism
                                          ,Association(..),Relational(..)
                                          ,Declaration(..)
-                                         ,Identified(..),uniqueNames
+                                         
                                          ,isSgn
                                          ,makeRelation,makeDeclaration
                                          ,inline

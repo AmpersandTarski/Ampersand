@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
   (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute)
 where
-   import DatabaseDesign.Ampersand.Basics    (Collection (..),commaEng,eqCl,eqClass)
+   import DatabaseDesign.Ampersand.Basics    (Collection (..),Identified(..),commaEng,eqCl,eqClass)
    import DatabaseDesign.Ampersand.ADL1
 {- Normalization of process algebra clauses -}
 

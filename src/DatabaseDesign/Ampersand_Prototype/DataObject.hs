@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
 module DatabaseDesign.Ampersand_Prototype.DataObject(dataServices) where
-import Adl (
-           --,Concept(..),Declaration(..),isTrue,makeInline
-           ObjectDef(..),Morphic(..)
-           ,Identified(..)
-           ,Object(..),Expression(..), Concept, FilePos(..)
-           )
+--import Adl (
+--           --,Concept(..),Declaration(..),isTrue,makeInline
+--           ObjectDef(..),Morphic(..)
+--       --    ,Identified(..)
+--           ,Object(..),Expression(..), Concept, FilePos(..)
+--           )
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprTrg,selectExpr)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentifier)
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List  hiding (group)
-import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand-- .Misc
 
 --For each data object (i.e. generated kernel-based SQL plugs) there is one dataServices file (data_*.inc.php).
 --It contains:

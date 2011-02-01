@@ -29,6 +29,7 @@ module DatabaseDesign.Ampersand.TypeInference.ADL1.InfAdlExpr
      (infertype_and_populate) 
 where
 import DatabaseDesign.Ampersand.TypeInference.InfLibAG
+import DatabaseDesign.Ampersand.Basics   (Identified(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import Text.Pandoc

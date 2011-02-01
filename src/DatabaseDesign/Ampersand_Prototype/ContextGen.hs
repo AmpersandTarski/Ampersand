@@ -1,9 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.ContextGen where
-  import DatabaseDesign.Ampersand.ADL1
   import Data.List
-  import DatabaseDesign.Ampersand.Fspec
-  import DatabaseDesign.Ampersand.Misc (ampersandCoreVersionBanner)
+  import DatabaseDesign.Ampersand
    
   contextGen :: Fspc -> String
   contextGen fspc = "<?php\n  " ++ intercalate "\n  "

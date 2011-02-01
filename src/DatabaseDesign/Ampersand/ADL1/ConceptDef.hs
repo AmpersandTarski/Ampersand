@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand.ADL1.ConceptDef    (ConceptDef(..),ConceptDefs)
 where
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos    (FilePos)
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Identified(..)) 
+   import DatabaseDesign.Ampersand.Basics  (Identified(..)) 
 
    type ConceptDefs = [ConceptDef]
    data ConceptDef 

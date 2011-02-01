@@ -6,6 +6,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentif
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand
 
 --svcs is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
 objectWrapper :: Fspc -> [Service] ->  Service -> Options -> String

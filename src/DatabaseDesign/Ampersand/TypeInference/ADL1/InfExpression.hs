@@ -7,6 +7,7 @@ module DatabaseDesign.Ampersand.TypeInference.ADL1.InfExpression (
 --you can define the polymorph DATA PExpression a b, but it does not match our expectations
 
 import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.Basics 
 import Data.List (union,nubBy,nub) 
 --TODO -> make an isa aware nub?
 

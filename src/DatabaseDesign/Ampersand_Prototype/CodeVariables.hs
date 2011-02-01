@@ -10,9 +10,9 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
   ,CodeVarIndexed(..)
   ) where
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..),nameFresh,noCollide)
- import DatabaseDesign.Ampersand.ADL1 (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeRelation,Identified(..),source,target,Concept(..))
+ import DatabaseDesign.Ampersand -- .ADL1 (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeRelation,source,target,Concept(..))
  import DatabaseDesign.Ampersand_Prototype.CodeStatement (UseVar(..),CodeVar(..),CodeVarIndexed(..),PHPconcept(..))
-
+ 
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary
  singletonCV :: CodeVar

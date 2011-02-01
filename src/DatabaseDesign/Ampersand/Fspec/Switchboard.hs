@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
     (switchboard1,SwitchBoard(..)) where
  
    import Data.GraphViz
-   import DatabaseDesign.Ampersand.Basics (Collection(rd))
+   import DatabaseDesign.Ampersand.Basics (Collection(rd),Identified(..))
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL (showADLcode)
