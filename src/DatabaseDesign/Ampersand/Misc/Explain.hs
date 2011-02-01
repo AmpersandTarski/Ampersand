@@ -1,10 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module Data.Explain ( ExplainContent,         AutoExplain(..)
-                    , string2ExplainContent,  string2AutoExplain
-                    , explainContent2String   -- Currently used for error messages in Prototype and Atlas.
-                    , explainContent2Blocks
-                    , explainParagraph
-                    )
+module DatabaseDesign.Ampersand.Misc.Explain
+    ( ExplainContent, AutoExplain(..)
+    , string2ExplainContent,  string2AutoExplain
+    , explainContent2String   -- Currently used for error messages in Prototype and Atlas.
+    , explainContent2Blocks
+    , explainParagraph
+    )
 where
 
 import Text.Pandoc

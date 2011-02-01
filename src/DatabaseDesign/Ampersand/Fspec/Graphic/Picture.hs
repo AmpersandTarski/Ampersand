@@ -11,7 +11,7 @@ import System.Directory
 import DatabaseDesign.Ampersand.Misc
 import Control.Monad
 import Data.GraphViz
-import DatabaseDesign.Ampersand.Core.Basics  
+import DatabaseDesign.Ampersand.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
 type Pictures = [Picture]

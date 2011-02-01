@@ -16,9 +16,9 @@ where
    import DatabaseDesign.Ampersand.ADL1.KeyDef                     (KeyDef(..))
    import DatabaseDesign.Ampersand.ADL1.Pattern                    (Pattern(..))
    import DatabaseDesign.Ampersand.ADL1.Rule                       (Rule(..),RuleType(..))
-   import DatabaseDesign.Ampersand.Core.Basics                    (Classification,preCl)
-   import DatabaseDesign.Ampersand.Core.Basics                    (Collection(..))
-   import DatabaseDesign.Ampersand.Core.Basics                    (genEq,typology)
+   import DatabaseDesign.Ampersand.Basics                    (Classification,preCl)
+   import DatabaseDesign.Ampersand.Basics                    (Collection(..))
+   import DatabaseDesign.Ampersand.Basics                    (genEq,typology)
 
    class (Conceptual c, SpecHierarchy c) => ConceptStructure a c |a->c where
     concs   :: a -> [c]                 -- ^ the set of all concepts used in data structure a

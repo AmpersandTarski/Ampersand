@@ -24,7 +24,7 @@ import DatabaseDesign.Ampersand.ADL1
                         ,makeDeclaration,inline
                         )
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Core.Basics (sort')
+import DatabaseDesign.Ampersand.Basics (sort')
 
 texOnly_proofdoc :: Fspc -> Pandoc
 texOnly_proofdoc    = proofdoc

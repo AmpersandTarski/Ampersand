@@ -14,12 +14,12 @@ module DatabaseDesign.Ampersand.Fspec.ShowADL
     ( ShowADL(..), disambiguate, relatsoff)
   where
    import Char                            (isAlphaNum)
-   import DatabaseDesign.Ampersand.Core.Basics       (Collection(..))
+   import DatabaseDesign.Ampersand.Basics       (Collection(..))
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..))
    import Data.List
-   import DatabaseDesign.Ampersand.Core.Basics                     (eqCl)
-   import Data.Explain
+   import DatabaseDesign.Ampersand.Basics                     (eqCl)
+   import DatabaseDesign.Ampersand.Misc.Explain
  
    class ShowADL a where
     showADL :: a -> String

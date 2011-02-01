@@ -36,7 +36,7 @@ import DatabaseDesign.Ampersand.TypeInference.ADL1.InfAdlExpr (infertype_and_pop
 import DatabaseDesign.Ampersand.TypeInference.ADL1.InfExpression (typedexprs,typeerrors)
 import DatabaseDesign.Ampersand.TypeInference.InfLibAG (InfTree)
 import DatabaseDesign.Ampersand.Fspec.ShowADL
-import DatabaseDesign.Ampersand.Core.Basics
+import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc (Block)
 
 ---------------

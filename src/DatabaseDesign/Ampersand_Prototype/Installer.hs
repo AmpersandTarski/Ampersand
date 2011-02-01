@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand_Prototype.Installer where
   import DatabaseDesign.Ampersand.ADL1
   import Data.List
-  import Data.Plug
+  import DatabaseDesign.Ampersand.Misc.Plug
   import DatabaseDesign.Ampersand.Fspec
   import DatabaseDesign.Ampersand.Misc
   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)

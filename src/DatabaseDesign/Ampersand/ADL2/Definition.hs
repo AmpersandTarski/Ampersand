@@ -48,11 +48,11 @@ module Data.Ampersand.Definition (
    
    )where
 import Data.List  (intercalate)
-import DatabaseDesign.Ampersand.Core.Basics (rd) -- TODO: must be removed from here. 
+import DatabaseDesign.Ampersand.Basics (rd) -- TODO: must be removed from here. 
 import Adl.Pair (Pairs,flipPair)-- TODO: Must be fully moved to here
 import Adl.Prop        -- TODO: Must be fully moved to here
 import Adl.FilePos     -- TODO: Must be fully moved to here
-import DatabaseDesign.Ampersand.Core.Basics  (Classification)
+import DatabaseDesign.Ampersand.Basics  (Classification)
 import Text.Pandoc
 ------------------------- *Classes* ------------------------
 -- | Naming things makes referencing to it easy (in an informal way, of course)

@@ -7,7 +7,7 @@ EXTEND -> Other functions intended for tests on or with ADL data types can be ad
 module Test.AdlTestFunctions
 where
    import ADL
-   import DatabaseDesign.Ampersand.Core.Basics
+   import DatabaseDesign.Ampersand.Basics
    import Data.Maybe
 
    compareTCOutput :: (Contexts,[String]) -> (Contexts,[String]) -> String

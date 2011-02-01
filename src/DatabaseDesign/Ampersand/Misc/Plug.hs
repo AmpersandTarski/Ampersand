@@ -1,16 +1,17 @@
 {-# OPTIONS_GHC -Wall -XMultiParamTypeClasses #-}  
-module Data.Plug (Plugable(..), PlugInfo(..), PlugInfos
-                 ,SqlField(..)
-                 ,SqlType(..)
-                 ,showSQL
-                 ,requiredFields,requires,plugpath,eLkpTbl
-                 ,tblfields
-                 ,tblcontents
-                 ,entityfield
-                 ,fldauto
-                 ,iskey,kernelrels,attrels,bijectivefields
-                 ,PlugSQL(..)
-                 ,DataObject(..))
+module DatabaseDesign.Ampersand.Misc.Plug
+     (Plugable(..), PlugInfo(..), PlugInfos
+     ,SqlField(..)
+     ,SqlType(..)
+     ,showSQL
+     ,requiredFields,requires,plugpath,eLkpTbl
+     ,tblfields
+     ,tblcontents
+     ,entityfield
+     ,fldauto
+     ,iskey,kernelrels,attrels,bijectivefields
+     ,PlugSQL(..)
+     ,DataObject(..))
 where
 import DatabaseDesign.Ampersand.ADL1 ( Concept(..), Signaling(..), cptnew
            , Relation(..), Association(..), Relational(..), mIs, Identified(..)
@@ -19,10 +20,10 @@ import DatabaseDesign.Ampersand.ADL1 ( Concept(..), Signaling(..), cptnew
            , Paire
            , ObjectDef(..)
            , isSur,isTot,isInj,isUni)
-import DatabaseDesign.Ampersand.Core.Basics((>-))
+import DatabaseDesign.Ampersand.Basics((>-))
 import DatabaseDesign.Ampersand.Classes (Object(..),contents',ConceptStructure(..))
 import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPAble(..))
-import DatabaseDesign.Ampersand.Core.Basics (sort',eqClass)
+import DatabaseDesign.Ampersand.Basics (sort',eqClass)
 import List(elemIndex,nub)
  
 --a data object is always generated.

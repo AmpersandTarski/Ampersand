@@ -7,8 +7,8 @@ module DatabaseDesign.Ampersand.ADL1.Pair    (Paire,Pairs
                    ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
-   import DatabaseDesign.Ampersand.Core.Basics(sort',eqCl)
-   import DatabaseDesign.Ampersand.Core.Basics (Collection(isc,uni,rd))
+   import DatabaseDesign.Ampersand.Basics(sort',eqCl)
+   import DatabaseDesign.Ampersand.Basics (Collection(isc,uni,rd))
  
    type Pairs = [Paire]
    srcPaire :: Paire -> String

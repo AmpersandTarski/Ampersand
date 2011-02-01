@@ -5,10 +5,10 @@ module DatabaseDesign.Ampersand.Output.AdlExplanation(explain,ExplainOutputForma
 import DatabaseDesign.Ampersand.ADL1 hiding (applyM)
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import Data.Explain
+import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
-import DatabaseDesign.Ampersand.Core.Basics          (unCap,upCap,preciesEen)
-import DatabaseDesign.Ampersand.Core.Basics       (Collection ((>-)))
+import DatabaseDesign.Ampersand.Basics          (unCap,upCap,preciesEen)
+import DatabaseDesign.Ampersand.Basics       (Collection ((>-)))
 import Text.Pandoc
 import Char             (toLower)
 

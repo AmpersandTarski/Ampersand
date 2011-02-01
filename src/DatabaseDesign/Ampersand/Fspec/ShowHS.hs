@@ -3,8 +3,8 @@ module DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),fSpec2Haskell,haskellId
 where
 
    import Char                  (isAlphaNum)
-   import DatabaseDesign.Ampersand.Core.Basics
-   import Data.Plug
+   import DatabaseDesign.Ampersand.Basics
+   import DatabaseDesign.Ampersand.Misc.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL       (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import Data.List
@@ -24,11 +24,11 @@ where
              ++"\n  import ADL"
              ++"\n  import ShowHS (showHS)"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
-             ++"\n  import Data.Plug"
+             ++"\n  import DatabaseDesign.Ampersand.Misc.Plug"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.FPA"
              ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
              ++"\n  import DatabaseDesign.Ampersand.TypeInference.InfLibAGFuncs"
-             ++"\n  import DatabaseDesign.Ampersand.Core.Basics"  
+             ++"\n  import DatabaseDesign.Ampersand.Basics"  
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
              ++"\n  main :: IO ()"

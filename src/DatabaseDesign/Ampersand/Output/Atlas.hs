@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation (explain,format,ExplainOutputFormat(..))
-import DatabaseDesign.Ampersand.Core.Basics 
+import DatabaseDesign.Ampersand.Basics 
 import Database.HDBC.ODBC 
 import Database.HDBC
 import DatabaseDesign.Ampersand.Fspec.Graphic.Picture (PictType(..))

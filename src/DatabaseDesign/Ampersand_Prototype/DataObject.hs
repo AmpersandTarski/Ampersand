@@ -10,7 +10,7 @@ import Adl (
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprTrg,selectExpr)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentifier)
 import DatabaseDesign.Ampersand.Fspec
-import Data.Plug
+import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List  hiding (group)
 import DatabaseDesign.Ampersand.Misc
 

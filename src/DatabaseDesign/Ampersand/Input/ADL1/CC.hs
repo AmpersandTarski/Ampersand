@@ -13,8 +13,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
             ,pSucceed
             ,opt, Sequence,Alternative, IsParser
             )
-   import DatabaseDesign.Ampersand.Core.Basics  (Collection(..))
-   import DatabaseDesign.Ampersand.Core.Basics (sort)
+   import DatabaseDesign.Ampersand.Basics  (Collection(..))
+   import DatabaseDesign.Ampersand.Basics (sort)
    import DatabaseDesign.Ampersand.ADL1   (Architecture(..)
                       ,Concept(..)
                       ,ConceptDef(..)
@@ -44,9 +44,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                       ,cptS
                       )
    import DatabaseDesign.Ampersand.Fspec     (showADL)
-   import DatabaseDesign.Ampersand.Core.Basics     (trim)
+   import DatabaseDesign.Ampersand.Basics     (trim)
    import DatabaseDesign.Ampersand.Misc     (Lang(..),defaultFlags, Options(..))
-   import Data.Explain(AutoExplain,string2AutoExplain)
+   import DatabaseDesign.Ampersand.Misc.Explain(AutoExplain,string2AutoExplain)
    keywordstxt :: [String]
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"

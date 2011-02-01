@@ -16,7 +16,7 @@ import Time
 import Control.Monad
 import DatabaseDesign.Ampersand.Misc.Version(versionNumber)
 import Maybe
-import DatabaseDesign.Ampersand.Core.Basics  
+import DatabaseDesign.Ampersand.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 -- | This data constructor is able to hold all kind of information that is useful to 

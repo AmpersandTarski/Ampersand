@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
   where
  
    import DatabaseDesign.Ampersand.Fspec
-   --import Data.Plug {- (Plug(..),DataObject(..)) -}
+   --import DatabaseDesign.Ampersand.Misc.Plug {- (Plug(..),DataObject(..)) -}
    import DatabaseDesign.Ampersand.ADL1 (Service(..))
    import DatabaseDesign.Ampersand_Prototype.ConnectToDataBase   (connectToDataBase)
    import DatabaseDesign.Ampersand_Prototype.Object              (objectServices)

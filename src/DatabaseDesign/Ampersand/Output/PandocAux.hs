@@ -23,7 +23,7 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL(disambiguate,relatsoff)  --TODO: Should be removed over here.
 import Data.Char
 import Text.Pandoc
-import DatabaseDesign.Ampersand.Core.Basics  
+import DatabaseDesign.Ampersand.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
 import System                 (system, ExitCode(ExitSuccess,ExitFailure))

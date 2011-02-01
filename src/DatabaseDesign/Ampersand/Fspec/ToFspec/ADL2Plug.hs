@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts #-}  
-module Data.ADL2Plug 
+module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug 
   (rel2plug --make a binary sqlplug for a morphism that is neither inj nor uni
   ,makeEntities --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
   ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
-import DatabaseDesign.Ampersand.Core.Basics     (Collection((>-)))
+import DatabaseDesign.Ampersand.Basics     (Collection((>-)))
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Core.Basics    (eqCl, sort')
-import Data.Plug
+import DatabaseDesign.Ampersand.Basics    (eqCl, sort')
+import DatabaseDesign.Ampersand.Misc.Plug
 import Char
 import DatabaseDesign.Ampersand.Fspec.FPA
 import Data.List (nub)

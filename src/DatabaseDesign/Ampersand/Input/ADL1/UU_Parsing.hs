@@ -119,7 +119,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
    --import PrelGHC
    --import IOExts
    import System.IO.Unsafe
-   import DatabaseDesign.Ampersand.Core.Basics  
+   import DatabaseDesign.Ampersand.Basics  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
    btLookup :: BinSearchTree (a -> Ordering) (Maybe b) -> a -> Maybe b

@@ -23,12 +23,12 @@ where
    import DatabaseDesign.Ampersand.ADL1
 --   import Languages
    import DatabaseDesign.Ampersand.Fspec.ShowADL 
---   import Data.Explain
+--   import DatabaseDesign.Ampersand.Misc.Explain
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Time(ClockTime)
    import DatabaseDesign.Ampersand.Misc
-   import Data.Plug
-   import Data.TinyXML
+   import DatabaseDesign.Ampersand.Misc.Plug 
+   import DatabaseDesign.Ampersand.Misc.TinyXML 
    showXML :: Fspc -> ClockTime -> String
    showXML fSpec now 
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++

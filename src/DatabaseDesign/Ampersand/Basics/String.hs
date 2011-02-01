@@ -1,6 +1,6 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | Deze module bevat operaties op strings.
-  module DatabaseDesign.Ampersand.Core.Basics.String
+  module DatabaseDesign.Ampersand.Basics.String
    (unCap,upCap,trim,spacesToUnderscores,spaces,commaEng,commaNL,preciesEen)
   where
    import Char (isUpper, toUpper, toLower)

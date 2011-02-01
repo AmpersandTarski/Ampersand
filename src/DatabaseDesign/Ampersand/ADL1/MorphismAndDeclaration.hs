@@ -11,7 +11,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),Props,flipProps)
    import DatabaseDesign.Ampersand.ADL1.Pair         (Pairs,flipPair) 
    import Data.List
-   import DatabaseDesign.Ampersand.Core.Basics       (Collection ((>-)),Identified(..),uniqueNames)
+   import DatabaseDesign.Ampersand.Basics       (Collection ((>-)),Identified(..),uniqueNames)
    
   -- in the following class, variable rel is a relation type and concept is a concept type.
   -- For example: instance Association (Declaration Concept) Concept

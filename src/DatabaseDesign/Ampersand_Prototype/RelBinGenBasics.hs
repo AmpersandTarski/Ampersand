@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpIdentifier,naming,c
  ,cChain,filterEmpty,phpIndent
  ) where
    import Char(isAlphaNum,isDigit)
-   import DatabaseDesign.Ampersand.Core.Basics (naming)
+   import DatabaseDesign.Ampersand.Basics (naming)
    import Data.Maybe
    import Data.List
    

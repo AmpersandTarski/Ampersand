@@ -11,7 +11,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Prop
    import DatabaseDesign.Ampersand.Classes.Populated (contents)
    import DatabaseDesign.Ampersand.TypeInference.InfLibAG        ( InfTree(..) )
-   import Data.Explain
+   import DatabaseDesign.Ampersand.Misc.Explain
    import DatabaseDesign.Ampersand.Misc  
                                          
    type Rules rel = [Rule rel]

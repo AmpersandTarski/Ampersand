@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Core.Basics.Classification (
+module DatabaseDesign.Ampersand.Basics.Classification (
                Classification(Cl)
              , root
              , preCl
              , Identified(..),uniqueNames
    ) 
 where
-   import DatabaseDesign.Ampersand.Core.Basics.Collection    (Collection(..))
+   import DatabaseDesign.Ampersand.Basics.Collection    (Collection(..))
    import Data.List hiding (insert)
    import Char             (toLower)
-   import DatabaseDesign.Ampersand.Core.Basics.Auxiliaries   (eqCl)
+   import DatabaseDesign.Ampersand.Basics.Auxiliaries   (eqCl)
    
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a

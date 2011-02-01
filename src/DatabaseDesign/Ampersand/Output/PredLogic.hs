@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
    where
 
    import Data.List
-   import DatabaseDesign.Ampersand.Core.Basics (Collection((>-)),eqCl)
+   import DatabaseDesign.Ampersand.Basics (Collection((>-)),eqCl)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec (showADL)
    import DatabaseDesign.Ampersand.Misc

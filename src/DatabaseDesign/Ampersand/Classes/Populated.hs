@@ -6,7 +6,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression                 (Expression(..))
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..),Declaration(..),Association(..)
                                          ,makeDeclaration,inline)
-   import DatabaseDesign.Ampersand.Core.Basics                     (Collection (uni,isc))   
+   import DatabaseDesign.Ampersand.Basics                     (Collection (uni,isc))   
    import Data.Maybe                     (fromJust)
    
    class Populated a where

@@ -2,14 +2,14 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
     (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
-   import DatabaseDesign.Ampersand.Core.Basics     (Collection(rd,rd',uni,isc,(>-)))
+   import DatabaseDesign.Ampersand.Basics     (Collection(rd,rd',uni,isc,(>-)))
    import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Core.Basics    (eqCl, eqClass)
+   import DatabaseDesign.Ampersand.Basics    (eqCl, eqClass)
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc        (Options(language,genPrototype,theme),DocTheme(..))
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify)
-   import Data.Plug
-   import Data.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
+   import DatabaseDesign.Ampersand.Misc.Plug
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPcompl(..))
    import DatabaseDesign.Ampersand.Misc (plural)

@@ -16,9 +16,9 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
                   )
  where
    import DatabaseDesign.Ampersand.ADL1            hiding (Association)
-   import DatabaseDesign.Ampersand.Core.Basics                    ((>-))
-   import DatabaseDesign.Ampersand.Core.Basics                      (Inheritance(..))
-   import Data.Plug                     
+   import DatabaseDesign.Ampersand.Basics                    ((>-))
+   import DatabaseDesign.Ampersand.Basics                      (Inheritance(..))
+   import DatabaseDesign.Ampersand.Misc.Plug                     
    import DatabaseDesign.Ampersand.Fspec.Graphic.Picture  (Pictures)
    import DatabaseDesign.Ampersand.Fspec.FPA              (FPA)
 

@@ -2,9 +2,9 @@
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
-import DatabaseDesign.Ampersand.Core.Basics  (eqCl,Collection (..),upCap, commaNL, commaEng, preciesEen)
+import DatabaseDesign.Ampersand.Basics  (eqCl,Collection (..),upCap, commaNL, commaEng, preciesEen)
 import DatabaseDesign.Ampersand.ADL1
-import Data.Plug
+import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List
 import DatabaseDesign.Ampersand.Fspec.Fspec (Quad(..),Fservice(..),Clauses(..),Field(..),datasets)
 import DatabaseDesign.Ampersand.Fspec

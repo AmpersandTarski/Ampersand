@@ -15,8 +15,8 @@ where
    import DatabaseDesign.Ampersand.ADL1.Pair                    (Paire)
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos                 (Numbered(..),FilePos(..))
    import DatabaseDesign.Ampersand.Classes.ConceptStructure                 (ConceptStructure(..))
-   import DatabaseDesign.Ampersand.Core.Basics                 (Collection(..), Identified(..))
-   import DatabaseDesign.Ampersand.Core.Basics                 (Inheritance(..))
+   import DatabaseDesign.Ampersand.Basics                 (Collection(..), Identified(..))
+   import DatabaseDesign.Ampersand.Basics                 (Inheritance(..))
 
 -- ViewPoint exists because there are many data structures that behave like an ontology, such as Pattern, Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, signals, declarations, etc.)

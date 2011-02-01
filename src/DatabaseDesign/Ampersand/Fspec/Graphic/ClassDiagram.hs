@@ -7,9 +7,9 @@ module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
 where
    import Char (isAlphaNum,ord,isUpper,toUpper)
    import Data.List
-   import DatabaseDesign.Ampersand.Core.Basics
+   import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1  hiding (Association)
-   import Data.Plug
+   import DatabaseDesign.Ampersand.Misc.Plug
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.Fspec      (Fspc,plugInfos)
 --   import Data.ClassDiag  

@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc,Fservice)
 import DatabaseDesign.Ampersand.Fspec.Switchboard
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Core.Basics (Inheritance(..),Collection(uni,isc,rd))
+import DatabaseDesign.Ampersand.Basics (Inheritance(..),Collection(uni,isc,rd))
 import DatabaseDesign.Ampersand.Fspec.Graphic.Picture
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (ClassDiag,classdiagram2dot)
 
