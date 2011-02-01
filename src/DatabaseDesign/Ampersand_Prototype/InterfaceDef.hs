@@ -35,7 +35,6 @@ module DatabaseDesign.Ampersand_Prototype.InterfaceDef where
         , "<link href=\"css/reset.css\"  rel=\"stylesheet\" type=\"text/css\" media=\"screen\" />"
         , "<link href=\"css/screen.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\" />"
         , "</head>"
-        , "<div id=\"error\"></div>"
         , "<div id=\"container\">"
         , "  <div id=\"header\">"
     --REMARK GMI -> index.htm is eerder een beheerpagina dan een startpagina.
@@ -72,6 +71,7 @@ module DatabaseDesign.Ampersand_Prototype.InterfaceDef where
         , "    <ul><?php echo $buttons; ?></ul>"
         , "  </div>"
         , "  <!-- End #buttons -->"
+        , "  <div id=\"errors\" class=\"content\"/>"
         , "  <div id=\"notice\">"
         , "    <span title=\"generated with "++ampersandCoreVersionBanner++"\">Layout V3.0 (Milan Interface)</span>"
         , "  </div>"
