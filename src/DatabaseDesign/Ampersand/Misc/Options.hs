@@ -33,8 +33,10 @@ data Options = Options { contextName   :: Maybe String
                        , allServices   :: Bool
                        , dbName        :: String
                        , genAtlas      :: Bool
-                       , dirAtlas      :: String  -- the directory to generate the atlas in.
-                       , userAtlas     :: String
+                       , namespace     :: String
+                       , importfile    :: FilePath --a file with content to populate some (Populated a)
+                                                   --class Populated a where populate::a->b->a
+                       , importformat  :: ImportFormat --file format that can be parsed to some b to populate some Populated a 
                        , theme         :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML        :: Bool
                        , genFspec      :: Bool
@@ -52,9 +54,9 @@ data Options = Options { contextName   :: Maybe String
                        , showPredExpr  :: Bool   -- for generated output, show predicate logic?
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
-                       , texHdrFile    :: Maybe String --the string represents a FilePath to some .tex containing just tex header instructions
+                       , texHdrFile    :: Maybe FilePath --the string represents a FilePath to some .tex containing just tex header instructions
                        , progrName     :: String --The name of the adl executable
-                       , fileName      :: String
+                       , fileName      :: FilePath --the file with the Ampersand context
                        , baseName      :: String
                        , logName       :: String
                        , genTime       :: ClockTime
@@ -74,7 +76,6 @@ allPandocFormats :: [PandocFormat]
 allPandocFormats = [HTML,ReST,LaTeX,Markdown]
 defaultFlags :: Options 
 defaultFlags = Options {genTime       = error ("!Fatal (module Options 73): No monadic options available.")
-                      , dirAtlas      = error ("!Fatal (module Options 74): No monadic options available.")
                       , dirOutput     = error ("!Fatal (module Options 74): No monadic options available.")
                       , autoid        = False
                       , dirPrototype  = error ("!Fatal (module Options 77): No monadic options available.")
@@ -92,7 +93,9 @@ defaultFlags = Options {genTime       = error ("!Fatal (module Options 73): No m
                       , genPrototype  = False
                       , allServices   = False
                       , genAtlas      = False   
-                      , userAtlas     = []
+                      , namespace     = []
+                      , importfile    = []
+                      , importformat  = error ("!Fatal (module Options 99): --importformat is required for --import.")
                       , genXML        = False
                       , genFspec      = False 
                       , diag          = False 
@@ -142,7 +145,6 @@ getOptions =
               return
                defaultFlags
                       { genTime       = clocktime
-                      , dirAtlas      = fromMaybe "."       (lookup envdirAtlas     env)
                       , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
                       , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env)
                       , dbName        = fromMaybe ""        (lookup envdbName       env)
@@ -170,7 +172,6 @@ getOptions =
                         >> checkDirOutput flags
                         >> checkExecOpts flags
                         >> checkProtoOpts flags
-                        >> checkAtlasOpts flags
                         >> return flags { fileName    = if hasExtension fName
                                                          then fName
                                                          else addExtension fName "adl" 
@@ -178,6 +179,12 @@ getOptions =
                                         , dbName      = case dbName flags of
                                                             ""  -> basename fName
                                                             str -> str
+                                        , genAtlas = not (null(importfile flags)) && importformat flags==Adl1Format
+                                        , importfile  = if hasExtension(importfile flags)
+                                                        then importfile flags
+                                                        else case importformat flags of 
+                                                                Adl1Format -> addExtension (importfile flags) "adl"
+                                                                --REMARK -> there is no other format yet  _ -> importfile flags
                                         }
                 x:xs    -> error ("!Fatal (module Options 179): too many files: "++ (intercalate ", " (x:xs)) ++useHelp)
        
@@ -197,12 +204,10 @@ getOptions =
                                     (error ("!Fatal (module Options 194): Specify the path location of "++(progrName f)++" in your system PATH variable."))
           checkProtoOpts :: Options -> IO ()
           checkProtoOpts f = when (genPrototype f) (createDirectoryIfMissing True (dirPrototype f))
-          checkAtlasOpts :: Options -> IO ()
-          checkAtlasOpts f = when (genAtlas f)     (createDirectoryIfMissing True (dirAtlas     f))
-
             
 data DisplayMode = Public | Hidden 
 data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
+data ImportFormat = Adl1Format  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
               | StudentTheme   -- An adjusted func spec for students of the business rules course
@@ -228,42 +233,45 @@ options = map pp
           [ ((Option ['v']     ["version"]     (NoArg versionOpt)          "show version and exit."), Public)
           , ((Option ['h','?'] ["help"]        (NoArg helpOpt)             "get (this) usage information."), Public)
           , ((Option []        ["verbose"]     (NoArg verboseOpt)          "verbose error message format."), Public)
-          , ((Option ['C']     ["context"]     (OptArg contextOpt "name")  "use context with name."), Public)
-
-          , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the file containing your Ampersand script or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
-          , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("the prototype will use database with name (name overrides environment variable "++ envdbName ++ "). when both are't set, defaults to filename (without '.adl')")), Public)
-          , ((Option ['t']     ["theme"]       (ReqArg themeOpt "theme")   ("p.e. student")), Public)
-          , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively."), Public)
-          , ((Option []     ["autoid"] (NoArg autoIdOpt)      "implies forall Concept A => value::A->Datatype [INJ]. where instances of A are autogenerated and hidden behind their value in the GUI of SERVICES."), Public)
-          , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in Ampersand syntax. Specify -x to generate services."), Public)
-
-          , ((Option ['o']     ["outputDir"]   (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides environment variable "++ envdirOutput ++ ").")), Public)
-          , ((Option []        ["log"]         (ReqArg logOpt "name")      ("log to file with name (name overrides environment variable "++ envlogName  ++ ").")), Hidden)
-
-          , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
-          , ((Option []        ["user"]        (ReqArg userOpt "user")     ("generate atlas content for this user.")), Public)
+          , ((Option ['C']     ["context"]     (OptArg contextOpt "name")  "use context with name."), Hidden)
+          , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype (overwrites environment variable "
+                                                                           ++ envdirPrototype ++ ").")), Public)
+          , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("database name (overwrites environment variable "
+                                                                           ++ envdbName ++ ", defaults to filename)")), Public)
+          , ((Option []        ["theme"]       (ReqArg themeOpt "theme")   "differentiate between certain outputs e.g. student"), Public)
+          , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "generate services."), Public)
+          , ((Option ['e']     ["export"]      (NoArg servicesOpt)         "export as ASCII Ampersand syntax."), Public)
+          , ((Option ['o']     ["outputDir"]   (ReqArg outputDirOpt "dir") ("output directory (dir overwrites environment variable "
+                                                                           ++ envdirOutput ++ ").")), Public)
+          , ((Option []        ["log"]         (ReqArg logOpt "name")      ("log file name (name overwrites environment variable "
+                                                                           ++ envlogName  ++ ").")), Hidden)
+          , ((Option []        ["import"]      (ReqArg importOpt "file")   "import this file as the population of the context."), Public)
+          , ((Option []        ["importformat"](ReqArg iformatOpt "format")("format of import file (format="
+                                                                           ++allImportFormats++").")), Public)
+          , ((Option []        ["namespace"]   (ReqArg namespaceOpt "ns")  "places the population in this namespace within the context."), Public)
           , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
-                                                                          ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
+                                                                           ("generate a functional specification document in specified format (format="
+                                                                           ++allFspecFormats++").")), Public)
           , ((Option []        ["freeTextFormat"]
-                                               (ReqArg ftfOpt "textFormat")("default format of free texts (like the ones in EXPLANATIONs) in the .adl script. Possible values are: "++show allPandocFormats++".")), Public) 
-          , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
+                                               (ReqArg ftfOpt "format")    ("default format of free texts like in EXPLANATIONs (format="
+                                                                           ++show allPandocFormats++").")), Public) 
+          , ((Option []        ["headerfile"]  (ReqArg languageOpt "file") "custom header file to prefix to the text before rendering."), Hidden)
           , ((Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics."), Public)
-          , ((Option []        ["Switchboard"] (NoArg switchboardOpt)      "generate switchboard graphics in services documentation for diagnostic purposes."), Hidden)
+          , ((Option []        ["Switchboard"] (NoArg switchboardOpt)      "generate switchboard graphics for diagnostic purposes."), Hidden)
           , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
           , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
-          , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
-
-          , ((Option []        ["beeper"]      (NoArg beeperOpt)           "generate beeper instead of checker."), Public)
+          , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell (for debugging)."), Public)
+          , ((Option []        ["beeper"]      (NoArg beeperOpt)           "generate beeper instead of checker."), Hidden)
           , ((Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics."), Public)
           , ((Option []        ["blackWhite"]  (NoArg blackWhiteOpt)       "do not use colours in generated graphics"), Public)
-          , ((Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the for of predicat logic." ), Public)
+          , ((Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicat logic." ), Public)
           , ((Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')."), Public)
           , ((Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only."), Hidden)
 
-          , ((Option []        ["sqlHost"]     (OptArg sqlHostOpt "hostname") "specify database host name."), Hidden)
-          , ((Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "login")   "specify database login name."), Hidden)
-          , ((Option []        ["sqlPwd"]      (OptArg sqlPwdOpt "password")  "specify database password."), Hidden)
-          , ((Option []        ["verbosePhp"]  (NoArg verbosephpOpt)       "generates loads of comments in PHP-code. Useful for debugging."), Public)
+          , ((Option []        ["sqlHost"]     (OptArg sqlHostOpt "name")  "specify database host name."), Hidden)
+          , ((Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "name") "specify database login name."), Hidden)
+          , ((Option []        ["sqlPwd"]      (OptArg sqlPwdOpt "str")    "specify database password."), Hidden)
+          , ((Option []        ["verbosePhp"]  (NoArg verbosephpOpt)       "generates loads of comments in PHP-code (for debugging)."), Public)
           ]
      where pp :: (OptDescr (Options -> Options), DisplayMode) -> (OptDescr (Options -> Options), DisplayMode)
            pp (Option a b' c d,e) = (Option a b' c d',e)
@@ -278,8 +286,6 @@ options = map pp
                     
 envdirPrototype :: String
 envdirPrototype = "CCdirPrototype"
-envdirAtlas :: String
-envdirAtlas="CCdirAtlas"
 envdirOutput :: String
 envdirOutput="CCdirOutput"
 envdbName :: String
@@ -301,13 +307,14 @@ prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts 
   = opts { dirPrototype = fromMaybe (dirPrototype opts) nm
          , genPrototype = True}
-atlasOpt     :: Maybe String -> Options -> Options
-atlasOpt nm opts 
-  = opts { dirAtlas     = fromMaybe (dirAtlas opts) nm
-         , dirOutput    = fromMaybe (dirAtlas opts) nm
-         , genAtlas     = True}
-autoIdOpt :: Options -> Options
-autoIdOpt  opts = opts{autoid  = True} 
+importOpt     :: String -> Options -> Options
+importOpt nm opts 
+  = opts { importfile = nm }
+iformatOpt :: String -> Options -> Options
+iformatOpt f opts = case (map toUpper f) of
+     "ADL" -> opts{importformat = Adl1Format}
+     "ADL1"-> opts{importformat = Adl1Format}
+     _     -> opts
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 themeOpt :: String -> Options -> Options
@@ -320,8 +327,8 @@ dbNameOpt nm opts = opts{dbName = if nm == ""
                                     then baseName opts
                                     else nm
                         }                          
-userOpt :: String -> Options -> Options
-userOpt x opts = opts{userAtlas = x}
+namespaceOpt :: String -> Options -> Options
+namespaceOpt x opts = opts{namespace = x}
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
@@ -344,6 +351,8 @@ ftfOpt w opts = opts {defaultPandocReader = case (map toUpper w) of
                      }
 allFspecFormats :: String
 allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
+allImportFormats :: String
+allImportFormats = "ADL"
 switchboardOpt :: Options -> Options
 switchboardOpt opts = opts{flgSwitchboard = True}
 noGraphicsOpt :: Options -> Options

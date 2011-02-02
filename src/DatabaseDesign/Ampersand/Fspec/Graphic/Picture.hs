@@ -48,8 +48,8 @@ makePictureObj flags nm pTyp dotsource
            , dotSource  = dotsource
            , fullDot    = dirOutput flags  </> relImgPath </> replaceExtension cdName "dot"
            , fspecPath  = dirOutput flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
-           , atlasPath  = dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
-           , imgURL     = dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
+           , atlasPath  = relImgPath </> System.FilePath.addExtension cdName "png"
+           , imgURL     = relImgPath </> System.FilePath.addExtension cdName "png"
            , pType      = pTyp
            , figlabel   = "fig:" ++ cdName
            , dotProgName = case pTyp of
@@ -74,7 +74,7 @@ makePictureObj flags nm pTyp dotsource
                             (PTFservice    ,Dutch  ) -> "Service graaf "++ nm  --TODO betere tekst
            }
        where
-         relImgPath | genAtlas flags = "img" </> (takeWhile (/='.') (userAtlas flags)) </> (baseName flags)    
+         relImgPath | genAtlas flags = dirPrototype flags </> "images" 
                     | otherwise = []
          cdName = uniquePicName pTyp nm
 --GMI voor Han -> (isAlpha c) verwijdert uit lijst comprehensie, dit gooit nummers (bv. rule nummers) uit de naam weg

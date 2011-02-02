@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Basics    (eqCl, eqClass)
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Misc        (Options(language,genPrototype,theme),DocTheme(..))
+   import DatabaseDesign.Ampersand.Misc        (Options(namespace,language,genPrototype,theme),DocTheme(..))
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify)
    import DatabaseDesign.Ampersand.Misc.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
@@ -102,7 +102,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         vphpplugs = [ExternalPlug p| p<-ctxphp context]
         definedplugs = vsqlplugs ++ vphpplugs
         allplugs = definedplugs ++      -- all plugs defined by the user
-                   [InternalPlug p | p <- uniqueNames
+                   [InternalPlug (rename p (qlfname (name p))) | p <- uniqueNames
                           (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
                           (gPlugs ++ relPlugs)
                     ]
@@ -118,6 +118,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
         savedRels= [makeRelation  d| d<-filter (not.decplug) allDecs]
+
+        qlfname x = if (null (namespace flags)) then x else "ns"++(namespace flags)++x
 
         --TODO151210 -> Plug A is overbodig, want A zit al in plug r
 --CONTEXT Temp

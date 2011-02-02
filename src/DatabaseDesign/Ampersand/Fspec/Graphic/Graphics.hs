@@ -27,7 +27,7 @@ class Identified a => Navigatable a where
             ++  "&"++servicename x ++"="++qualify++itemstring x
       where --copied from atlas.hs
       script = fileName flags
-      user = takeWhile (/='.') (userAtlas flags)
+      user = namespace flags
       qualify = "("++user ++ "." ++ script ++ ")"  
 
 
