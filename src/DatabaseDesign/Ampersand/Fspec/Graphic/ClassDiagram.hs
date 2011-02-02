@@ -3,7 +3,7 @@
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
 module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
-        (ClassDiag(..), cdAnalysis,classdiagram2dot)
+        (ClassDiag(..), clAnalysis, cdAnalysis, classdiagram2dot)
 where
    import Char (isAlphaNum,ord,isUpper,toUpper)
    import Data.List
@@ -49,6 +49,14 @@ where
    instance CdNode Generalization where
     nodes (OOGener g ss) = g:ss
 
+   clAnalysis :: Fspc -> Options -> ClassDiag
+   clAnalysis fSpec _ = OOclassdiagram classes' [] [] geners' ("classification"++name fSpec, concs fSpec)
+    where
+       geners'    = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs _ = isa fSpec, gs<-eqCl fst pcs]
+       classes'   = [ OOClass (name c) [] []
+                    | c<-concs (gens fSpec)
+                    ]
+
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
     where
@@ -59,18 +67,18 @@ where
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs'    = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
+       assocs'    = [ OOAssoc (nm source s) (multiplicity m) "" (nm target t) (multiplicity (flp m)) (name m)
                     | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec, not (isSignal plug)
                     , let m=mLkp plug
                     , let (s,t)=columns plug
                     ]
                     where
-                     multiplicity f | fldnull f = ""
-                                    | otherwise = "1..n"
+                     multiplicity r | isTot r   = "1..n"
+                                    | otherwise = ""
                      nm f = name.concept.lookup'.f.fldexpr
                      
        aggrs'     = []
-       geners'    = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs _ = isa fSpec, gs<-eqCl fst pcs]
+       geners'    = []
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-tblfields plug, not (null([Inj,Uni]>-multiplicities (fldexpr fld)))]
        lookup' c = if null ps
@@ -199,10 +207,10 @@ where
               "              arrowtail = \"none\" \n" ++
               "              arrowhead = onormal \n" ++
               "              arrowsize = 2.0 \n" ++
-              "              "++( if blackWhite flags
-                                  then "              style = dashed"
-                                  else "              color = red"
-                                ) ++
+              "              " ++( if blackWhite flags
+                                   then "              style = dashed"
+                                   else "              color = red"
+                                 ) ++
               "              label =\"\"" ++
               "      ]\n" ++
               "       " ++ alias b ++ " -> " ++ alias a' ++ "\n"
@@ -356,4 +364,4 @@ where
 --      []
 --      ("NoPat",[])
 --      where ooAttr nm t = OOAttr nm t True
-      
+

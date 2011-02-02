@@ -27,9 +27,9 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
                     , plugInfos    :: PlugInfos              -- ^ All plugs (defined and derived)
                     , serviceS     :: [Service]              -- ^ All services defined in the Ampersand script
                     , serviceG     :: [Service]              -- ^ All services derived from the basic ontology
-                    , fServices    :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , services     :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , roleServices :: [(String,Fservice)]    -- ^ the relation saying which roles may use which service
-                    , mayEdit      :: [(String,Declaration Concept)] -- ^ the relation saying which roles may change the population of which relation.
+                    , mayEdit      :: [(String,Relation Concept)] -- ^ the relation saying which roles may change the population of which relation.
                     , vrules       :: Rules (Relation Concept) -- ^ All rules that apply in the entire Fspc, including all signals
                     , grules       :: Rules (Relation Concept) -- ^ All rules that are generated: multiplicity rules and key rules
                     , vkeys        :: KeyDefs                -- ^ All keys that apply in the entire Fspc
@@ -47,7 +47,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
                     , vctxenv :: ( Expression (Relation Concept)
                                  , [(Declaration Concept,String)]) --an expression on the context with unbound relations, to be bound in this environment
                     }
-   
+
    instance ConceptStructure Fspc Concept where
     concs     fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
     morlist   fSpec = morlist (serviceS fSpec) ++ morlist (vrules fSpec)
@@ -96,6 +96,10 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
    toService :: Fservice -> Service
    toService  = fsv_svcdef 
    
+
+   instance Eq Fservice where -- service names must be unique throughout the entire scope. The compiler must check this.
+    f == f'  =  name f == name f'
+
    instance Show Fservice where
     showsPrec _ svc@(Fservice{})
      = showString (show (fsv_svcdef    svc)++"\n"++
@@ -139,7 +143,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
    data Field  = Att { fld_name      :: String                 -- The name of this field
                      , fld_sub       :: Fields                 -- all sub-fields
                      , fld_expr      :: Expression (Relation Concept)  -- The expression by which this field is attached to the service
-                     , fld_rel       :: Relation Concept               -- The morphism to which the database table is attached.
+                     , fld_rel       :: Relation Concept               -- The relation to which the database table is attached.
                      , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
                      , fld_list      :: Bool                   -- can there be multiple values in this field?
                      , fld_must      :: Bool                   -- is this field obligatory?
@@ -166,7 +170,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
    -- The rule is taken along for traceability.
    type Quads = [Quad]
    data Quad     = Quad
-                     { qMorph        :: Relation Concept        -- The morphism that, when affected, triggers a restore action.
+                     { qMorph        :: Relation Concept        -- The relation that, when affected, triggers a restore action.
                      , qClauses      :: Clauses         -- The clauses
                      }
 

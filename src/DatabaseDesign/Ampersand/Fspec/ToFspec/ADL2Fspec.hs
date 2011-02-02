@@ -6,13 +6,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Basics    (eqCl, eqClass)
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Misc        (Options(namespace,language,genPrototype,theme),DocTheme(..))
+   import DatabaseDesign.Ampersand.Misc        (Options(namespace,language,genPrototype,theme),DocTheme(..),plural)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify)
    import DatabaseDesign.Ampersand.Misc.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPcompl(..))
-   import DatabaseDesign.Ampersand.Misc (plural)
 
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec
@@ -32,19 +31,19 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                       , isI ctxrel && source ctxrel==cptS
                                         || not (ctxrel `elem` map (objctx.svObj) (serviceS fSpec))
                                       ]  -- generated services
-                 , fServices  = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
+                 , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
                  , roleServices = let lookp (RS _ svcs p) sv
                                        = if length servFs == 1 then head servFs else
                                          if length servFs == 0
-                                         then error("Mistake in your script "++show p++": "++show (svcs>-map name (fServices fSpec))++"\ndo not refer to services.")
+                                         then error("Mistake in your script "++show p++": "++show (svcs>-map name (services fSpec))++"\ndo not refer to services.")
                                          else error("!Fatal (module ADL2Fspec 38): All services should have unique names.\nThese dont: "
-                                                    ++show [name (head cl)| cl<-eqCl name (fServices fSpec),length cl>1]++"\n")
-                                         where servFs = [s|s<-fServices fSpec, name s==sv]
+                                                    ++show [name (head cl)| cl<-eqCl name (services fSpec),length cl>1]++"\n")
+                                         where servFs = [s|s<-services fSpec, name s==sv]
                                   in [(role,svc)| rs@(RS roles svcs _) <-ctxros context                 -- ^ roleServices says which roles may use which service
                                                 , sv<-svcs, let svc=lookp rs sv
                                                 , role<-roles]
-                 , mayEdit      = [(role,makeDeclaration m)| RR rs ms _ <-ctxmed context     -- ^ mayEdit says which roles may change the population of which relation.
-                                                           , m<-ms, role<-rs]
+                 , mayEdit      = [(role, m)| RR rs ms _ <-ctxmed context     -- ^ mayEdit says which roles may change the population of which relation.
+                                            , m<-ms, role<-rs]
                  , vrules       = rules context++signals context
                  , grules       = number (length (rules context++signals context)) (multrules context++keyrules context)
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
@@ -465,7 +464,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --   snd3 (_,b,_) = b
 
    -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
-   -- whenever morphism m is affected (i.e. tuples in m are inserted or deleted),
+   -- whenever relation m is affected (i.e. tuples in m are inserted or deleted),
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is carried along for traceability.
    quads :: (Relation Concept->Bool) -> Rules (Relation Concept) -> [Quad]

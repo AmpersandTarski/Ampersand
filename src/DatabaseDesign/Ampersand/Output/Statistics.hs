@@ -22,9 +22,9 @@ module DatabaseDesign.Ampersand.Output.Statistics (Statistics(..)) where
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance Statistics Fspc where
-    nServices fSpec = length (fServices fSpec) --TODO -> check correctness
+    nServices fSpec = length (services fSpec) --TODO -> check correctness
     nPatterns fSpec = nPatterns (patterns fSpec)
-    nFpoints  fSpec = sum [fPoints (fsv_fpa svc)| svc<-fServices fSpec] +
+    nFpoints  fSpec = sum [fPoints (fsv_fpa svc)| svc<-services fSpec] +
                       sum [fPoints (fpa pl)   | pl <-datasets fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...
    

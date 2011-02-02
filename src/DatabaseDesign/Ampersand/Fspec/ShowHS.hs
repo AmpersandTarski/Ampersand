@@ -83,30 +83,30 @@ where
           TblSQL{} -> (intercalate indent 
                       ["let " ++ intercalate (indent++"    ")
                                              [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields plug] ++indent++"in"
-                      ,"TblSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
-                      ,"      , fields  = ["++intercalate ", " (map showHSname (fields plug))++"]"
-                      ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
-                      ,"      , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl plug] ++ "]"
-                      ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
-                      ,"      }"
+                      ,"TblSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"       , fields  = ["++intercalate ", " (map showHSname (fields plug))++"]"
+                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl plug] ++ "]"
+                      ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ,"       }"
                       ])
           BinSQL{} -> (intercalate indent 
                       ["let " ++ showHSname (fst (columns plug))++indent++"     = "++showHS flags (indent++"       ") (fst (columns plug))
                               ++ (indent++"    ") ++ showHSname (snd (columns plug))++indent++"     = "++showHS flags (indent++"       ") (snd (columns plug))
                               ++indent++"in"
-                      ,"BinSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
-                      ,"      , columns = ("++(showHSname (fst (columns plug)))++ ", " ++ (showHSname (snd (columns plug)))++")"
-                      ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
-                      ,"      , mLkp = "++showHS flags "" (mLkp plug)
-                      ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
-                      ,"      }"
+                      ,"BinSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"       , columns = ("++(showHSname (fst (columns plug)))++ ", " ++ (showHSname (snd (columns plug)))++")"
+                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"       , mLkp = "++showHS flags "" (mLkp plug)
+                      ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ,"       }"
                       ])
           ScalarSQL{} -> (intercalate indent 
-                      ["ScalarSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
-                      ,"         , column = "++showHS flags "" (column plug)
-                      ,"         , cLkpTbl = "++showHS flags "" (cLkp plug)
-                      ,"         , sqlfpa  = " ++ showHS flags "" (fpa plug)
-                      ,"         }"
+                      ["ScalarSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"          , column = "++showHS flags "" (column plug)
+                      ,"          , cLkpTbl = "++showHS flags "" (cLkp plug)
+                      ,"          , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ,"          }"
                       ])
    
 
@@ -195,7 +195,7 @@ where
     showHS flags indent c
       = (intercalate indent
           [ "Clauses{ cl_conjNF = " ++ showHS flags newindent (cl_conjNF c)
-          , "       , cl_rule   = " ++ showHS flags newindent (cl_rule c)
+          , "       , cl_rule   = " ++ showHSname (cl_rule c)
           , "       }"
           ])
        where 
@@ -222,23 +222,21 @@ where
     showHS flags indent fspec
      = intercalate (indent ++"    ") 
             ["Fspc{ fsName = " ++ show (name fspec)
---                  ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
---                  ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
+                  ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
+                  ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
                   ,     ", serviceS      = serviceS'"
                   ,     ", serviceG      = serviceG'"
-                  ,wrap ", fServices   = " indentA (\_->showHSname) (fServices fspec)
-             --   ,wrap ", roleServices  = " indentA (showHS flags)   (roleServices fspec)
-             --   ,wrap ", mayEdit       = " indentA (showHS flags)   (mayEdit fspec)
+                  ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
                   ,     ", roleServices  = " ++
                         case roleServices fspec of
                           []      -> "[]"
-                          [(r,s)] -> "[ ("++show r++", "++show s++") ]"
-                          _       -> "[ "++intercalate (indentA++", ") ["("++show r++","++show s++")"| (r,s)<-roleServices fspec]++indentA++"]"
+                          [(r,s)] -> "[ ("++show r++", "++showHSname s++") ]"
+                          _       -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSname s++")"| (r,s)<-roleServices fspec]++indentA++"]"
                   ,     ", mayEdit       = " ++
                         case mayEdit fspec of
                           []      -> "[]"
-                          [(r,m)] -> "[ ("++show r++", "++showHS flags (indentA++"  ") m++") ]"
-                          _       -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags (indentA++"  ") m++")"| (r,m)<-mayEdit fspec]++indentA++"]"
+                          [(r,m)] -> "[ ("++show r++", "++showHS flags "" m++") ]"
+                          _       -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags "" m++")"| (r,m)<-mayEdit fspec]++indentA++"]"
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
                   ,wrap ", grules        = " indentA (\_->showHSname) (grules fspec)
                   ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
@@ -259,17 +257,13 @@ where
        indent++" vctxenv' = ("++showHS flags (indent ++ "        ") envExpr ++ ", bindings)"++
        indent++" bindings = "++(if null bindings then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showbinding bindings)++indentB++"]")++
-       
-       
        indent++" gE = genEq (typology isa')"++
---       (if null (plugs fspec) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
-        
         "\n -- ***Services Specified in Ampersand script***: "++
        indent++" serviceS' = "++(if null (serviceS fspec) then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceS fspec))++indentB++"]")++
+                                 "[ "++intercalate (indentB++", ") (map showHSname (serviceS fspec))++indentB++"]")++
         "\n -- ***Services Generated by the Ampersand compiler ***: "++
        indent++" serviceG' = "++(if null (serviceG fspec) then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceG fspec))++indentB++"]")++
+                                 "[ "++intercalate (indentB++", ") (map showHSname (serviceG fspec))++indentB++"]")++
 --       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-patterns fspec ]++"\n")++
 
 -- WHY?  staan hier verschillende lijstjes met services?
@@ -287,9 +281,12 @@ where
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
         
-       (if null (fServices fspec ) then "" else
+       (if null (plugInfos fspec ) then "" else
+        "\n -- ***Declarations of PlugInfos ***: "++
+        concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|InternalPlug p<-plugInfos fspec ]++"\n")++
+       (if null (services fspec ) then "" else
         "\n -- ***Declarations of Services ***: "++
-        concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-fServices fspec ]++"\n")++
+        concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-services fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- ***User defined of RULES ***: "++
         concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r|r<-vrules   fspec ]++"\n")++        
@@ -309,6 +306,18 @@ where
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
 
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: PlugInfo   ***
+-- \***********************************************************************
+
+   instance ShowHS PlugInfo where
+    showHSname (InternalPlug p) = haskellIdentifier ("ipl_"++name p)
+    showHSname (ExternalPlug _) = error ("!Fatal (module ShowHS 346): a PlugInfo is anonymous with respect to showHS flags")
+    showHS _ _ (InternalPlug p)
+     = " InternalPlug "++showHSname p
+    showHS flags ind (ExternalPlug o)
+     = " ExternalPlug "++showHS flags (ind++"    ") o
+   
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RoleService en RoleRelation   ***
 -- \***********************************************************************
@@ -490,9 +499,10 @@ where
 --       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
 
    instance ShowHS PExplanation where
-    showHSname _ = error ("!Fatal (module ShowHS 542): a PExplanation is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 531): a PExplanation is anonymous with respect to showHS flags")
     showHS flags _ expla = 
-       "PExpl "++showHS flags "" (pexObj expla)++" "
+       "PExpl "++showHS flags "" (pexPos expla)++" "
+               ++showHS flags "" (pexObj expla)++" "
                ++show (pexLang  expla)++" "
                ++show (pexRefID expla)++" "
                ++show (pexExpl  expla)
@@ -552,7 +562,7 @@ where
                       ,", r_pat = " ++ show (r_pat r)
                       ,", r_usr = " ++ show (r_usr r)
                       ,", r_sgl = " ++ show (r_sgl r)
-                      ,", srrel = " ++ "("++showHS flags "" (srrel r)++")"
+                      ,", srrel = " ++ "("++showHSname (srrel r)++")"
                     ])++"}"
          where newIndent = indent ++ "  " 
 -- \***********************************************************************
@@ -660,7 +670,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS (Relation Concept) where
-    showHSname rel = error ("!Fatal (module ShowHS 695): Illegal call to showHSname ("++showADL rel++"). A morphism gets no definition in Haskell code.")
+    showHSname rel = error ("!Fatal (module ShowHS 703): Illegal call to showHSname ("++showADL rel++"). A relation gets no definition in Haskell code.")
     showHS flags _ rel 
        = case rel of
             Rel{} -> "Rel "++show (relnm rel)++" "++showPos++" "++showAtts

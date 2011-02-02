@@ -60,7 +60,7 @@ data Options = Options { contextName   :: Maybe String
                        , baseName      :: String
                        , logName       :: String
                        , genTime       :: ClockTime
-                       , services      :: Bool
+                       , servicesG     :: Bool
                        , test          :: Bool
                        , sqlLogPwdDefd :: Bool
                        , sqlHost       :: String
@@ -116,7 +116,7 @@ defaultFlags = Options {genTime       = error ("!Fatal (module Options 73): No m
                       , progrName     = error ("!Fatal (module Options 110): No monadic options available.")
                       , fileName      = error ("!Fatal (module Options 111): no default value for fileName.")
                       , baseName      = error ("!Fatal (module Options 112): no default value for baseName.")
-                      , services      = False
+                      , servicesG     = False
                       , test          = False
                       , sqlLogPwdDefd = False
                       , sqlHost       = "localhost"
@@ -360,7 +360,7 @@ noGraphicsOpt  opts = opts{genGraphics    = False}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options
-servicesOpt     opts = opts{services     = True}
+servicesOpt     opts = opts{servicesG    = True}
 haskellOpt :: Options -> Options
 haskellOpt      opts = opts{haskell      = True}
 outputDirOpt :: String -> Options -> Options

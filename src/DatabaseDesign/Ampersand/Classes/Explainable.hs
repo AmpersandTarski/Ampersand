@@ -5,7 +5,7 @@ where
   import DatabaseDesign.Ampersand.ADL1.Pattern                 (Pattern(..))
   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (makeDeclaration)
   import DatabaseDesign.Ampersand.Misc.Explain
-  import DatabaseDesign.Ampersand.Misc 
+  import DatabaseDesign.Ampersand.Misc
   import DatabaseDesign.Ampersand.ADL1.Explanation
   import DatabaseDesign.Ampersand.Classes.ViewPoint
   import DatabaseDesign.Ampersand.Basics                       (Identified(..))
@@ -17,7 +17,8 @@ where
     pExplains :: a -> PExplanations
     explanationDeclarations :: Options -> a -> Explanations -- all explanations declared in <a>. An explanation should answer the question "Why does <a> exist?"
     explanationDeclarations flags ue
-     = [Expl (toExplObj pExplObj) l ref (string2ExplainContent flags expla) | PExpl pExplObj l ref expla        <- pExplains ue]
+     = [Expl (toExplObj pExplObj) l ref (string2ExplainContent flags expla)
+       | PExpl _ pExplObj l ref expla <- pExplains ue]
          where
            toExplObj :: PExplObj -> ExplObj
            toExplObj pe = case pe of 

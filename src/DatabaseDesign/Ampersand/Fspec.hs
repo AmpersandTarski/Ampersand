@@ -19,7 +19,7 @@ import DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),fSpec2Haskell,haskellId
 import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
 import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
 import DatabaseDesign.Ampersand.Fspec.ShowXMLtiny (showXML)
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (cdAnalysis,ClassDiag(..))
+import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (clAnalysis,cdAnalysis,ClassDiag(..))
 import DatabaseDesign.Ampersand.Fspec.Graphic.Graphics (makePicture)
 import DatabaseDesign.Ampersand.Fspec.Graphic.Picture (Picture(..),writePicture)
 import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs )

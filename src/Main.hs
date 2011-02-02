@@ -44,7 +44,7 @@ generate flags fSpec =
         [ doGenXML      fSpec flags | genXML       flags] ++
         [ doGenHaskell  fSpec flags | haskell      flags] ++ 
         [ doGenProto    fSpec flags | genPrototype flags] ++
-        [ serviceGen    fSpec flags | services     flags] ++
+        [ serviceGen    fSpec flags | servicesG    flags] ++
         [ doGenDocument fSpec flags | genFspec     flags] ++ 
         [ prove         fSpec flags | proofs       flags] ++
         [ diagnose      fSpec flags | diag         flags] ++

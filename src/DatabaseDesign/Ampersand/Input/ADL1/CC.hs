@@ -53,10 +53,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                        , "SERVICE", "INITIAL", "SQLPLUG", "PHPPLUG"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP", "ALWAYS"
-                       , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON","TEST"
+                       , "RULE", "TEST"
                        , "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V"
-                       , "PRAGMA", "EXPLANATION", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
+                       , "PRAGMA", "PHRASE", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
                        , "BYPLUG"
                        , "ROLE", "EDITS", "USES"
@@ -76,7 +76,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                        where rebuild d s = (d,s)
 
    pContext         :: Parser Token Context
-   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*>
+   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*> pLanguageID <*>
                                   ((rebexpr <$ pKey ":" <*> pExpr <*> 
                                   --     (pSpec '{' *> pList1Sep (pSpec ';') pBind <* pSpec '}')
                                        ((pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` [])
@@ -86,7 +86,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                        where  
                        rebexpr x y = (x,y)
                        universe = (Tm(V [] (cptAnything,cptAnything)) (-1),[]) --default: the universe
-                       rebuild nm env on ces = 
+                       rebuild nm _ env on ces =   -- ^ TODO: use the second argument as the default language for this context.
                           Ctx { ctxnm   = nm
                               , ctxon   = on
                               , ctxisa  = empty
@@ -119,8 +119,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                        | CRos RoleService
                        | CMed RoleRelation
 
+   defaultLang :: Lang
+   defaultLang = Dutch
+
    pLanguageID        :: Parser Token Lang
-   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Dutch
+   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` defaultLang
                          where
                           lang str = case str of
                                       "DUTCH"      -> Dutch
@@ -131,12 +134,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    pRefID              = (pKey "REF" *> pString) `opt` []
 
    pExplain           :: Parser Token PExplanation
-   pExplain            = PExpl <$ pKey "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
-                         PExpl <$ pKey "PURPOSE" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl
+   pExplain            = PExpl <$> pKey_pos "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
+                         PExpl <$> pKey_pos "PURPOSE" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl
 
    pExplObj           :: Parser Token PExplObj
    pExplObj            = PExplConceptDef  <$ pKey "CONCEPT"    <*> (pConid <|> pString) <|>
-                         PExplDeclaration <$ pKey "RELATION"   <*> pMorphism            <|>
+                         PExplDeclaration <$ pKey "RELATION"   <*> pRelation            <|>
                          PExplRule        <$ pKey "RULE"       <*> pADLid               <|>
                          PExplKeyDef      <$ pKey "KEY"        <*> pADLid               <|>  
                          PExplPattern     <$ pKey "PATTERN"    <*> pADLid               <|>
@@ -155,7 +158,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                          CXpl     <$> pExplain      <|>
                          CRos     <$> pRoleService  <|>
                          CMed     <$> pRoleRelation <|>
-                         CPop     <$  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
+                         CPop     <$  pKey "POPULATION" <*> pRelation <* pKey "CONTAINS" <*> pContent
 
    pPattern         :: Parser Token Pattern
    pPattern  = rebuild <$  pKey "PATTERN" <*> (pConid <|> pString)
@@ -191,77 +194,72 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                        Pe <$> pExplain      <|>
                        Ptest <$ pKey "TEST" <*> pPExpression
 
-
-   pSignal          :: Parser Token (String, FilePos)
-   pSignal           = --pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|> obsolete syntax
-                         pKey "RULE" *> pADLid_val_pos <* pKey "SIGNALS"
-   pAlways          :: Parser Token (String, FilePos)
-   pAlways           = ( pKey "RULE" *> pADLid_val_pos <* pKey "MAINTAINS" ) `opt` ("",Nowhere)
+   pPhrase          :: Parser Token (Lang,String)
+   pPhrase           = f <$ pKey "PHRASE" <*> pLanguageID <*> pString
+                       where f lang str = (lang,str)
 
    pRuleDef         :: Parser Token (Rule (Relation Concept))
-   pRuleDef          = hc True            <$>   -- This boolean tells whether this rule will be a signal rule or a maintaining rule.
-                          pSignal         <*>   -- "RULE m SIGNALS" (or "RULE m MAINTAINS in other cases)
-                          pExpr           <*>   -- the antecedent
-                          pKey_pos "|-"   <*>   -- parse the implication (or "=" in other cases)
-                          pExpr           <*>   -- the consequent
-                          ((pKey "EXPLANATION" *> pString) `opt` [])
-                       <|>
-                       kc True  <$> pSignal <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       dc True  <$> pSignal <*> pExpr <*> pKey_pos "="  <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       ac True  <$> pSignal <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       hc False <$> pAlways <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       kc False <$> pAlways <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       dc False <$> pAlways <*> pExpr <*> pKey_pos "="  <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
+   pRuleDef          = hc  <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       hc' <$> pKey_pos "RULE" <*>                        pExpr <*> pKey_pos "|-" <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       kc  <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       kc' <$> pKey_pos "RULE" <*>                        pExpr <*> pKey_pos "-|" <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       dc  <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pKey_pos "="  <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       dc' <$> pKey_pos "RULE" <*>                        pExpr <*> pKey_pos "="  <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       ac  <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*>                             pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
+                       ac' <$> pKey_pos "RULE" <*>                                                    pExpr <*> (pPhrase `opt` (defaultLang,""))
                        where
-                        hc isSg (lbl,po) antc po' cons expl
+                        hc' po antc po' cons (lang,expl) = hc po "" antc po' cons (lang,expl)
+                        hc po lbl antc po' cons (lang,expl)
                           = Ru { rrsrt = Implication
                                , rrant = antc
                                , rrfps = rulepos (lbl,po) po'
                                , rrcon = cons
-                               , rrxpl = string2ExplainAllLang expl  
+                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl]
                                , rrtyp = (cptAnything,cptAnything)
                                , rrtyp_proof = Nothing
                                , rrdcl = Nothing
                                , runum = 0
                                , r_pat = ""
                                , r_usr = True
-                               , r_sgl = isSg
-                               , srrel = emptySignalDeclaration lbl po isSg
+                               , r_sgl = True
+                               , srrel = emptySignalDeclaration lbl po
                                }
-                        kc isSg (lbl,po) cons po' antc expl = hc isSg (lbl,po) antc po' cons expl
-                        dc isSg (lbl,po) defd po' expr expl
+                        kc' po     cons po' antc (lang,expl) = kc po "" cons po' antc (lang,expl)
+                        kc  po lbl cons po' antc (lang,expl) = hc po lbl antc po' cons (lang,expl)
+                        dc' po     defd po' expr (lang,expl) = dc po "" defd po' expr (lang,expl)
+                        dc  po lbl defd po' expr (lang,expl)
                           = Ru { rrsrt = Equivalence
                                , rrant = defd
                                , rrfps = rulepos (lbl,po) po'
                                , rrcon = expr
-                               , rrxpl = string2ExplainAllLang expl
+                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl]
                                , rrtyp = (cptAnything,cptAnything)
                                , rrtyp_proof = Nothing
                                , rrdcl = Nothing
                                , runum = 0
                                , r_pat = ""
                                , r_usr = True
-                               , r_sgl = isSg
-                               , srrel = emptySignalDeclaration lbl po isSg
+                               , r_sgl = True
+                               , srrel = emptySignalDeclaration lbl po
                                }
-                        ac isSg (lbl,po) expr expl
+                        ac' po     expr (lang,expl) = ac po "" expr (lang,expl)
+                        ac  po lbl expr (lang,expl)
                           = Ru { rrsrt = Truth
                                , rrant = defd
                                , rrfps = po
                                , rrcon = expr
-                               , rrxpl = string2ExplainAllLang expl
+                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl]
                                , rrtyp = (cptAnything,cptAnything)
                                , rrtyp_proof = Nothing
                                , rrdcl = Nothing
                                , runum = 0
                                , r_pat = ""
                                , r_usr = True
-                               , r_sgl = isSg
-                               , srrel = emptySignalDeclaration lbl po isSg
+                               , r_sgl = True
+                               , srrel = emptySignalDeclaration lbl po
                                }
                          where defd=error ("!Fatal (module CC 261): defd undefined in pRuleDef "++showADL expr)
-                        emptySignalDeclaration lbl po isSg
+                        emptySignalDeclaration lbl po
                          = Sgn lbl         -- decnm
                                cptAnything -- desrc
                                cptAnything -- detrg
@@ -273,14 +271,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                                []          -- decpopu
                                po          -- decfpos
                                0           -- decid
-                               isSg        -- deciss
+                               True        -- deciss    -- initially, all rules are signals
                                False       -- decusr
                                ""          -- decpat
                                True        -- decplug
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
-                        string2ExplainAllLang :: String -> [AutoExplain]      -- TODO: This is a workaround to cope with the fact that in the current Ampersand syntax, it cannot be determined in what language the EXPLANATION part of the rule is written in. 
-                        string2ExplainAllLang str = [string2AutoExplain (defaultFlags {language=Dutch}) str]
-                                                 ++ [string2AutoExplain (defaultFlags {language=English}) str]
                         
    pGen             :: Parser Token (Gen Concept)
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
@@ -308,7 +303,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                               
    --Relations, or expressions in parentheses are terms with optional pre and post unary operators and optional type directive.
    --pExpression parses expressions composed of these terms and (>1)-ary operators.
-   --pMorphism has already parsed the first type directive after a morphism without post-operator i.e. r[A*B][C*D] is possible.
+   --pRelation has already parsed the first type directive after a relation without post-operator i.e. r[A*B][C*D] is possible.
      --type correct examples given r::A*B i.e. [Y*Y] is irrelevant.
         -- r[A*B]
         -- r[Y*Y][A*B]
@@ -321,7 +316,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    pPTerm :: Parser Token (PExpression (Relation Concept) (Maybe Sign))
    pPTerm  = pe <$> preOp <*> (pSpec '(' *> pPExpression <* pSpec ')') <*> postOp
                     <*> pType
-         <|> pm <$> preOp <*> pMorphism <*> postOp
+         <|> pm <$> preOp <*> pRelation <*> postOp
                     <*> pType
      where 
      pType = hm <$ pSpec '[' <*> pConcept <* pSpec ']'  
@@ -386,7 +381,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                              f ts      = F ts
 
    pTerm            :: Parser Token (Expression (Relation Concept))
-   pTerm             = tm <$> (preStr `opt` []) <*> pMorphism <*> (postStr `opt` [])                            <|>
+   pTerm             = tm <$> (preStr `opt` []) <*> pRelation <*> (postStr `opt` [])                            <|>
                        tc <$> (preStr `opt` []) <*> (pSpec '(' *> pExpr <* pSpec ')') <*> (postStr `opt` [])
                        where
                         tm xs pm ys  = f (Tm pm (-1)) (xs++ys)
@@ -398,23 +393,23 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                         f _ (_:_)    = error ("!Fatal (module CC 396). Consult your dealer!")
                         f t []       = t
 
-   pMorphism        :: Parser Token (Relation Concept)
-   pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)             <|>
+   pRelation        :: Parser Token (Relation Concept)
+   pRelation         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)             <|>
                        v'   <$ pKey "V" <*> pTwo                                                                 <|>
                        rebuild <$> pVarid_val_pos <*> pTwo                                                       <|>
                        single  <$> pAtom 
                                <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)
                        where rebuild (nm,pos') atts
-                              = Rel  { relnm = nm                     -- ^ the name of the morphism. This is the same name as
-                                                                      --   the declaration that is bound to the morphism.
-                                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration reldcl ....
-                                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn reldcl.
-                                     , relpos = pos'                  -- ^ the position of the rule in which the morphism occurs
+                              = Rel  { relnm = nm                     -- ^ the name of the relation. This is the same name as
+                                                                      --   the declaration that is bound to the relation.
+                                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van de relatie is immers altijd gelijk aan de naam van de Declaration reldcl ....
+                                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan de relatie is gekoppeld, moet de naam van de relatie bekend zijn. Nadat de relatie gebonden is aan een declaration moet de naam van de relatie gelijk zijn aan de naam van zijn reldcl.
+                                     , relpos = pos'                  -- ^ the position of the rule in which the relation occurs
                                      , relats = (take 2 (atts++atts))              -- ^ the attributes specified inline
                                      , relsrc = cptAnything           -- ^ the source. Together with the target, this forms the type.
                                      , reltrg = cptAnything           -- ^ the target. Together with the source, this forms the type.
-                                     , relyin = True                  -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
-                                     , reldcl = Sgn { decnm   = nm           -- ^ the declaration bound to this morphism.
+                                     , relyin = True                  -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the relation. If false, binding occurs in the opposite direction.
+                                     , reldcl = Sgn { decnm   = nm           -- ^ the declaration bound to this relation.
                                                     , desrc   = cptAnything  --   If not relyin, then target m<=source (reldcl m) and source m<=target (reldcl m).
                                                     , detrg   = cptAnything  --   In this case, we write m~ (pronounce: m-flip or m-wok)
                                                     , decprps = []           --   If relyin, then source m<=source (reldcl m) and target m<=target (reldcl m).
@@ -508,7 +503,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
                               pList1Sep (pSpec ',') pADLid  <*
                               pKey "EDITS"                  <*>
-                              pList1Sep (pSpec ',') pMorphism
+                              pList1Sep (pSpec ',') pRelation
                        where rr p r m = RR r m p
 
    pSqlplug         :: Parser Token ObjectDef
@@ -539,7 +534,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                                      , svPos    = p
                                      , svExpl   = ""
                                      }
-                             pParams = pSpec '(' *> pList1Sep (pSpec ',') pMorphism <* pSpec ')' 
+                             pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelation <* pSpec ')' 
                              pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
                              pAttrs  = pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']'
 
@@ -565,7 +560,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                                <*> (pProps `opt` [])
                                <*> ((True <$ pKey "BYPLUG") `opt` False)
                                <*> (pPragma `opt` [])
-                               <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
+                               <*> ((pKey "=" *> pContent) `opt` [])
+                               <* (pSpec '.' `opt` "")         -- ^ in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                        where rebuild :: String
                                      -> FilePos
                                      -> Concept
@@ -637,4 +633,4 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
    pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
    pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"
-                                
+

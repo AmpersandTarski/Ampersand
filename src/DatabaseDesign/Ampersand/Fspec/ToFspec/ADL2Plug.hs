@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
-import DatabaseDesign.Ampersand.Basics     (Collection((>-)),Identified(..))
+import DatabaseDesign.Ampersand.Basics     (Collection(..),Identified(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics    (eqCl, sort')
 import DatabaseDesign.Ampersand.Misc.Plug
@@ -52,34 +52,36 @@ rel2plug  m totals
   | not is_Tot && is_Sur 
     = rel2plug (flp m) totals
   | otherwise
-    = BinSQL (name m)                                                    -- plname
-              (srcFld,trgFld)                                             -- columns
-              ([(source m,srcFld)| is_Tot]++[(target m,trgFld)| is_Sur])  -- cLkpTbl
-              m                                                           -- mLkp
-              NO                                                          -- plfpa 
+    = BinSQL { sqlname = name m
+             , columns = (srcFld,trgFld)
+             , cLkpTbl = [(source m,srcFld)| is_Tot]++[(target m,trgFld)| is_Sur]
+             , mLkp    = m
+             , sqlfpa  = NO
+             }
    where
    srcNm = (if name (source m)==name (target m) then "s_" else "")++name (source m)
    trgNm = (if name (source m)==name (target m) then "t_" else "")++name (target m)
-   srcFld = Fld srcNm                         --fldname
-                (if   is_Tot
-                 then Tm (mIs (source m)) (-1)
-                 else Fix [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]
-                )                             --fldexpr
-                (SQLVarchar 255)              --fldtype
-                False                         --fldnull
-                (isUni m {- will be False -}) --flduniq
-   trgFld = Fld trgNm                         --fldname
-                (Tm m (-1))                   --fldexpr
-                (SQLVarchar 255)              --fldtype
-                False                         --fldnull
-                (isInj m {- will be False -}) --flduniq
+   srcFld = Fld { fldname = srcNm                       
+                , fldexpr = if   is_Tot
+                            then Tm (mIs (source m)) (-1)
+                            else Fix [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]
+                , fldtype = SQLVarchar 255
+                , fldnull = False
+                , flduniq = isUni m {- will be False -}
+                } 
+   trgFld = Fld { fldname = trgNm                       
+                , fldexpr = Tm m (-1)
+                , fldtype = SQLVarchar 255
+                , fldnull = False
+                , flduniq = isInj m {- will be False -}
+                } 
    is_Tot = Tot `elem` (multiplicities m) || m `elem` totals
    is_Sur = Sur `elem` (multiplicities m) || flp m `elem` totals
 
 -----------------------------------------
 --rel2fld
 -----------------------------------------
--- Each morphism yields one field f1 in the plug...
+-- Each relation yields one field f1 in the plug...
 -- m is the relation from some kernel field k1 to f1
 -- (fldexpr k1) is the relation from the plug's imaginary ID to k1
 -- (fldexpr k1);m is the relation from ID to f1
@@ -120,17 +122,34 @@ rel2fld keyds kernel plugAtts m
              | cl<-eqCl (map toLower.name.source) rs
              , entry<-if length cl==1 then [(r,niceidname r++name (source r))|r<-cl] else [(r,niceidname r++show i)|(r,i)<-zip cl [(0::Int)..]]]
    niceidname r = if name r == "I" then name(target r) else name r
-   --in a wide table, m can be total, but the field for its target may contain NULL values if the (kernel) field for its source may
-   --a kernel field may contain NULL values if
+   --in a wide table, m can be total, but the field for its target may contain NULL values,
+   --because (why? ...)
+   --A kernel field may contain NULL values if
    --  + its field expr is not total OR
    --  + its field expr is not the identity relation AND the (kernel) field for its source may contain NULL values
    --(if the fldexpr of a kernel field is the identity, 
    -- then the fldexpr defines the relation between this kernel field and this kernel field (fldnull=not(isTot I) and flduniq=isInj I)
    -- otherwise it is the relation between this kernel field and some other kernel field)
-   maybenull x 
+   maybenull rel
     | length(map target kernel) > length(nub(map target kernel))
        = error "more than one kernel field for the same concept"
-    | otherwise = null [()|k<-kernel,target k==source x, isTot x, isIdent k || not(maybenull k)]
+    | otherwise = if (isTot rel || isProp rel) && (not.null) [()|k<-kernelpaths, target k==source rel, isTot k]
+                  then False -- NOT NULL in the database column
+                  else True  -- NULL in the database column
+   kernelpaths = clos kernel
+   --    Warshall's transitive closure algorithm, adapted for this purpose:
+   clos :: (SpecHierarchy c, Show c, Identified c) => [Relation c] -> [Expression (Relation c)]
+   clos xs
+    = f [F [Tm x (-1)]| x<-xs] (rd (map source xs) `isc` rd (map target xs))
+      where
+       f q (x:xs') = f (q ++ [F (ls++rs)| l@(F ls)<-q, x<=target l
+                                        , r@(F rs)<-q, x<=source r
+                                        , null (ls `isc` rs)
+                                        ]) xs'
+       f q []      = q
+-- ^ Explanation:  rel is a relation from some kernel field k to f
+-- ^ (fldexpr k) is the relation from the plug's ID to k
+-- ^ (fldexpr k);rel is the relation from ID to f
 
 -----------------------------------------
 --makeEntities  (formerly called: makeTblPlugs)
@@ -166,8 +185,8 @@ makeEntities context allRels exclusions
              attributeLookuptable   -- mLkpTbl
              (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
-    , let mainkernel = [m|cl<-eqCl target kernel, let m=head cl] -- ^ the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
-                                                                 -- ^ note that eqCl guarantees that cl is not empty.
+    , let mainkernel = [head cl|cl<-eqCl target kernel] -- ^ the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
+                                                        -- ^ note that eqCl guarantees that cl is not empty.
           restkernel = kernel >- mainkernel --the complement of mainkernel
           c = if null mainkernel
               then error "!Fatal (module ADL2Plug 172): null mainkernel."
@@ -189,17 +208,14 @@ makeEntities context allRels exclusions
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
     rels = [rel| rel <- allRels>-mors exclusions, not (isIdent rel)]
--- For making kernels as large as possible, the univalent and injective declarations are flipped if that makes them surjective.
--- kernelMors contains all relations that occur in kernels.
-    kernelMors   = [m|m<-ms, isSur m]++[flp m|m<-ms, not (isSur m), isTot m]
-                      where ms = [d| d<-rels, isUni d, isInj d]
--- iniKernels contains the set of kernels that would arise if kernelMors were empty.
--- From that starting point, the kernels are computed recursively in code that follows (kernels).
-    iniKernels   = [(c,[])| c<-concs rels]
+-- In order to make kernels as large as possible,
+-- all relations that are univalent and injective are flipped if that makes them surjective.
+-- kernelRels contains all relations that occur in kernels.
+    kernelRels   = [r|r<-rs, isSur r]++[flp r|r<-rs, not (isSur r), isTot r]
+                      where rs = [r| r<-rels, isUni r, isInj r]
 -- attRels contains all relations that will be attribute of a kernel.
-    attRels      = [m| m<-rs, isUni m] ++ [flp m | m<-rs, not (isUni m), isInj m] ++
-                   [m| m<-rs, isSym m && isAsy m] -- ^ the boolean properties
-                   where rs = rels>-(kernelMors++map flp kernelMors)
+    attRels      = ([r| r<-rs, isUni r] ++ [flp r | r<-rs, not (isUni r), isInj r])
+                   where rs = rels>-(kernelRels++map flp kernelRels)
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
 So the first step is create the kernels ...   -}
@@ -208,15 +224,16 @@ So the first step is create the kernels ...   -}
 --snd kernels = complement of (fst kernels) (thus, we will not link attRels to these kernel fields directly)
     kernels :: [[Relation Concept]]
     kernels
-     = --error ("Diag ADL2Plug "++show (kernelMors)++"\n"++show (map fst iniKernels)++"\n"++show (expand iniKernels))++
-       [ mIs c: ms  -- at least one morphism for each concept in the kernel
-       | (c,ms)<-f iniKernels    -- the initial kernels
+     = --error ("Diag ADL2Plug "++show (kernelRels)++"\n"++show (concs rels)++"\n"++show (expand [(c,[])| c<-concs rels]))++
+       -- The recursion (function f) starts with the set of kernels that would arise if kernelRels were empty.
+       [ mIs c: ms  -- at least one relation for each concept in the kernel
+       | (c,ms)<-f [(c,[])| c<-concs rels]    -- the initial kernels
        ]
        where
          f :: [(Concept,[Relation Concept])] -> [(Concept,[Relation Concept])]
-         f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelMors are surjective, univalent and injective
+         f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelRels are surjective, univalent and injective
           where nks = expand ks
-         expand ks = [(c, ms++[r|r<-kernelMors, r `notElem` ms, source r `elem` c:concs ms])| (c,ms)<-ks] -- expand a kernel (c,ms) by one step
+         expand ks = [(c, ms++[r|r<-kernelRels, r `notElem` ms, source r `elem` c:concs ms])| (c,ms)<-ks] -- expand a kernel (c,ms) by one step
          merge ks = if nks==ks then ks else merge nks
           where nks = oneRun ks
                 oneRun [] = []
@@ -251,13 +268,13 @@ makeSqlPlug context obj
    = TblSQL (name obj)     -- plname (table name)
      plugFields             -- fields
      conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     attributeLookuptable   -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+     attributeLookuptable   -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      (ILGV Eenvoudig)       -- functie punten analyse
  | otherwise = error "!Fatal (module ADL2Plug 237): Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
      = source(objctx obj) 
-   rels --fields are user-defined as one deep objats with objctx=m. note: type incorrect or non-morphism objats are ignored
+   rels --fields are user-defined as one deep objats with objctx=m. note: type incorrect or non-relation objats are ignored
      = [(m,sqltp att)|att<-objats obj, (Tm m@(Rel{}) _)<-[objctx att],source m==c]   
    kernel --I[c] and every non-homogeneous m or m~ which is at least uni,inj,sur are kernel fields 
           --REMARK -> homogeneous m or m~ which are at least uni,inj,sur are inefficient in a way

@@ -63,7 +63,7 @@ where
           ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (patterns f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
-          ++ [ Elem (simpleTag "Services") (map mkXmlTree (fServices f))] 
+          ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 
           ++ [ Elem (simpleTag "Rules")    (map mkXmlTree (vrules f))] 
           ++ [ Elem (simpleTag "GRules")   (map mkXmlTree (grules f))] 
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
@@ -264,9 +264,9 @@ where
           Rel{} ->  [Elem (simpleTag "Attributes")(map mkXmlTree (relats rel))]
                     ++[Elem (simpleTag "Source") [mkXmlTree (source rel)]]
                     ++[Elem (simpleTag "Target") [mkXmlTree (target rel)]]                  
-          I{}   ->  [still2bdone "Morphism_I"]
-          V{}   ->  [still2bdone "Morphism_V"]
-          Mp1{} ->  [still2bdone "Morphism_ONE"]
+          I{}   ->  [still2bdone "Relation_I"]
+          V{}   ->  [still2bdone "Relation_V"]
+          Mp1{} ->  [still2bdone "Relation_ONE"]
            ) 
 
 
@@ -369,5 +369,4 @@ where
    explainTree :: String -> [XTree]
    explainTree str = [Elem (simpleTag "Explanation")
                            [PlainText str] | not (null str)]
-                          
-                               
+

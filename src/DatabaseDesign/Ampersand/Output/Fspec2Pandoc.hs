@@ -2,7 +2,7 @@
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
-import DatabaseDesign.Ampersand.Basics  (eqCl,Collection (..),Identified(..),upCap, commaNL, commaEng, preciesEen)
+import DatabaseDesign.Ampersand.Basics  (eqCl,Collection (..),Identified(..),unCap, upCap, commaNL, commaEng, preciesEen)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List
@@ -81,12 +81,12 @@ chpFPAlabel="chpFPAnalysis"
 fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
     where meta = Meta titl authors date
-          titl = [Str (case (language flags) of
+          titl = [Str (case language flags of
                         Dutch   -> "Functionele Specificatie van "
                         English -> "Functional Specification of "
                       )]
                ++[Quoted SingleQuote [Str (name fSpec)] ] 
-          authors = case (language flags) of
+          authors = case language flags of
                          Dutch   -> [[Str "Auteur(s) hier plaatsen"]
                                     ,[Str ("(Dit document is gegenereerd door "++ampersandCoreVersionBanner++")")]]
                          English -> [[Str "Put author(s) here"]
@@ -104,15 +104,15 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                if studentversion then fpAnalysis level fSpec flags else [] ++
                glossary level fSpec flags 
                )
-             where svcs = [serviceChap level fSpec flags svc | svc  <-fServices fSpec,not studentversion]
-                   (caTxt,_) = conceptualAnalysis level fSpec flags
-                   paTxt     = processAnalysis    level fSpec flags
-                   (daTxt,_) = dataAnalysis       level fSpec flags
+             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
+                   (caTxt,_)   = conceptualAnalysis level fSpec flags
+                   paTxt       = processAnalysis    level fSpec flags
+                   (daTxt,_,_) = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
-          pictures = [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] 
-             where svcs = [serviceChap level fSpec flags svc | svc  <-fServices fSpec,not studentversion]
-                   (_,caPics) = conceptualAnalysis level fSpec flags
-                   (_,daPic)  = dataAnalysis       level fSpec flags
+          pictures = [clPic,daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] 
+             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
+                   (_,caPics)      = conceptualAnalysis level fSpec flags
+                   (_,daPic,clPic) = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 ------------------------------------------------------------                
@@ -204,38 +204,32 @@ natLangReqs :: Int -> Fspc -> Options ->  [Block]
 natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
   where
   header :: [Block]
-  header = labeledHeader lev chpFRlabel (case (language flags) of
-                                             Dutch   ->  "Functionele Eisen"   
-                                             English ->  "Functional Requirements"
+  header = labeledHeader lev chpFRlabel (case language flags of
+                                             Dutch   ->  "Gemeenschappelijke taal"   
+                                             English ->  "Shared Language"
                                          )
   dpIntro :: [Block]
   dpIntro = 
     case language flags of
         Dutch   -> [ Para
-                     [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str " in natuurlijke taal. "
-                     , Str "Elke functionele eis moet worden (of is al) goedgekeurd door een daartoe aangewezen belanghebbende. "
-                     , Str "Daarom is elke eis met grote zorgvuldigheid geformuleerd. "
-                     , Str "Alle begrippen en basiszinnen, die worden gebruikt in een functionele eis worden in dit hoofdstuk geïntroduceerd. "
-                     , Str "Samen vormen zij een taal, "
-                     , Str "die door de betreffende belanghebbenden is (of wordt) afgesproken ten behoeve van ", Str (name fSpec), Str ". "
-                     , Str "Elke functionele eis kan worden begrepen in termen van deze basiszinnen. "
+                     [ Str "Dit hoofdstuk beschrijft de natuurlijke taal, waarin functionele eisen ten behoeve van ", Str (name fSpec), Str " zijn uitgedrukt. "
+                     , Str "Hiermee wordt beoogd dat verschillende belanghebbenden elkaar beter kunnen begrijpen. "
+                     , Str "De taal van ", Str (name fSpec), Str " bestaat uit begrippen en basiszinnen, "
+                     , Str "waarin functionele eisen worden uitgedrukt. "
                      , Str "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
-                     , Str "delen zij precies voldoende taal om deze functionele eisen op dezelfde manier te begrijpen. "
-                     , Str "Daarom wordt elke basiszin behandeld als volwaardige functionele eis. "
-                     , Str "Alle functionele eisen zijn genummerd omwille van de traceerbaarheid. "
+                     , Str "althans binnen het bereik van ", Str (name fSpec), Str ", "
+                     , Str "delen zij precies voldoende taal om functionele eisen op dezelfde manier te begrijpen. "
+                     , Str "Alle definities zijn genummerd omwille van de traceerbaarheid. "
                      ]]
         English -> [ Para
-                     [ Str "This chapter defines the functional requirements of ", Str (name fSpec), Str " in natural language. "
-                     , Str "Every functional requirement must be (or has been) signed off by an appropriate stakeholder. "
-                     , Str "Therefore, much care has been given to the appropriate formulation of each requirement. "
-                     , Str "All concepts and basic sentences that are used in functional requirements will be introduced in this chapter. "
-                     , Str "Together, they form a language, "
-                     , Str "which must be (or has been) agreed upon by the stakeholders for the sake of ", Str (name fSpec), Str ". "
-                     , Str "Every functional requirement can be understood in terms of these basic sentences. "
-                     , Str "If all stakeholders agree to use these basic sentences, "
-                     , Str "they share precisely enough language to share their understanding of the functional requirements. "
-                     , Str "That is why basic sentences are treated as any other functional requirement. "
-                     , Str "All functional requirements have been numbered for the sake of traceability. "
+                     [ Str "This chapter defines the natural language, in which functional requirements of ", Str (name fSpec), Str " are expressed. "
+                     , Str "The purpose of this chapter is to create shared understanding among stakeholders. "
+                     , Str "The language of ", Str (name fSpec), Str " consists of concepts and basic sentences. "
+                     , Str "All functional requirements are expressed in these terms. "
+                     , Str "When stakeholders can agree upon this language, "
+                     , Str "at least within the scope of ", Str (name fSpec), Str ", "
+                     , Str "they share precisely enough language to have meaningful discussions about functional requirements. "
+                     , Str "All definitions have been numbered for the sake of traceability. "
                      ]]
   dpRequirements :: [Block]
   dpRequirements = theBlocks
@@ -248,11 +242,12 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
          where
            allConceptsThatMustBeShown     -- All concepts that have at least one explanation. Explanations are 
                                           -- currently bound to the conceptDefinitions of a concept.   
-              = [(c, cd)| c <-concs fSpec
-                        , cd <- vConceptDefs fSpec
-                        , name c == name cd
-                        , not (null (explain fSpec flags cd))
-                ]           
+              = [(c, cds)
+                | c <-concs fSpec
+                , let cds = [cd| cd <- vConceptDefs fSpec
+                               , name c == name cd
+                               , not (null (explain fSpec flags cd))]
+                , not (null cds)]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
                                           -- and only those declarations that have at least one explanation.
               = [m| m@Rel{}<-mors fSpec
@@ -262,17 +257,18 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                = [r| r<-vrules fSpec      -- All *user declared* rules that apply in the entire Fspc, including all signals
                    , r_usr r
                  ]
-      aThemeAtATime :: ([(Concept,ConceptDef)],[Relation Concept],[Rule (Relation Concept)]) -- all stuff that still must be processed into the comming sections
+      aThemeAtATime :: ([ (Concept,[ConceptDef])]    -- all concepts that still must be processed into the sections to come
+                        , [Relation Concept]         -- all relations that still must be processed into the sections to come
+                        , [Rule (Relation Concept)]) -- all rules that still must be processed into the sections to come
                     -> [String]          -- the names of the patterns that must be processed into this specification
                     -> Counter           -- unique definition counters
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
-      aThemeAtATime  still2doPre themes' iPre
+      aThemeAtATime  (still2doCCDsPre, still2doRelsPre, still2doRulesPre) themes' iPre
            = case themes' of
-              []  -> printOneTheme Nothing still2doPre iPre
+              []  -> printOneTheme Nothing (still2doCCDsPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (x:xs) = themes'
-           (still2doCCDsPre, still2doRelsPre, still2doRulesPre) = still2doPre
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) processNow iPre
            (blocksOfThemes,iPost)     = aThemeAtATime stuff2PrintLater xs iPostFirst
            processNow = (ccds2PrintNow, rels2PrintNow, [r| r<-rules2PrintNow, r_usr r])
@@ -288,7 +284,9 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
 -- | For this purpose, Ampersand authors should take care in composing explanations.
 -- | Each explanation should state the purpose (and nothing else).
       printOneTheme :: Maybe String -- name of the theme to process (if any)
-                    -> ([(Concept,ConceptDef)],[Relation Concept],[Rule (Relation Concept)])  -- Stuff to print in this section
+                    -> ([ (Concept,[ConceptDef])]     -- Concepts to print in this section
+                        , [Relation Concept]          -- Relations to print in this section
+                        , [Rule (Relation Concept)])  -- Rules to print in this section
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
       printOneTheme nm (ccds2print, rels2print, rules2print) counters1
@@ -297,7 +295,7 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                 )
            where 
               (concBlocks,counters2) = sctcs ccds2print  counters1
-              (relBlocks,counters3) = sctds rels2print counters2
+              (relBlocks, counters3) = sctds rels2print  counters2
               (ruleBlocks,counters4) = sctrs rules2print counters3
               
               header' :: [Block]
@@ -324,39 +322,56 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
               themeName = case nm of
                              Just s -> s
                              Nothing  -> "" 
-              sctcs :: [(Concept, ConceptDef)] -> Counter -> ([Block],Counter)
+              sctcs :: [(Concept, [ConceptDef])] -> Counter -> ([Block],Counter)
               sctcs xs c0
                 = case xs of
-                    []  -> ([],c0)
-                    _   -> ( case language flags of
-				               Dutch   ->  [ Para (case conceptNamesIntro of
-				                                    []  -> []
-				                                    [c] -> [ Str $ "Deze sectie introduceert het concept "
-				                                           , Emph [Str $ c]]
-				                                    cs  -> [ Str $ "Deze sectie introduceert de concepten "
-				                                           , Str $ commaNL "en" cs]
-				                                  )
-				                           ]
-				               English ->  [ Para (case conceptNamesIntro of
-				                                    []  -> []
-				                                    [c] -> [ Str $ "This section introduces concept "
-				                                           , Emph [Str $ c]
-				                                           , Str $ ". "]
-				                                    cs  -> [ Str $ "This section introduces concepts "
-				                                           , Str $ commaEng "and" cs
-				                                           , Str $ ". "]
-				                                    )
-				                           ]
+                    []   -> ([],c0)
+                    ccds -> ( case language flags of
+				Dutch   ->  [Para$ (case [name c|(c,_)<-xs] of
+				                     []  -> []
+				                     [c] -> [ Str $ "Deze sectie introduceert het concept "
+				                            , Emph [Str $ c]]
+				                     cs  -> [ Str $ "Deze sectie introduceert de concepten "
+				                            , Str $ commaNL "en" cs, Str ". "]
+				                   )++
+				                   (let cs = [(c,cds)| (c,cds)<-ccds, length cds>0] in
+				                    case (cs, length cs==length ccds) of
+				                     ([] ,   _  ) -> []
+				                     ([(c,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
+				                     (_        , False) -> [ Str $ "Daarvan hebben ", Str $ commaNL "en" (map (name.fst) cs), Str $ " meerdere definities. "]
+				                     ([(_,cds)], True ) -> [ Str $ "Deze heeft "++count flags (length cds) "definitie"++". " ]
+				                     (_        , True ) -> [ Str $ "Elk daarvan heeft meerdere definities. "]
+				                   )
+				            ]
+				English ->  [Para$ (case [name c|(c,_)<-xs] of
+				                     []  -> []
+				                     [c] -> [ Str $ "This section introduces concept "
+				                            , Emph [Str $ c]
+				                            , Str $ ". "]
+				                     cs  -> [ Str $ "This section introduces concepts "
+				                            , Str $ commaEng "and" cs
+				                            , Str $ ". "]
+				                   )++
+				                   (let cs = [(c,cds)| (c,cds)<-ccds, length cds>0] in
+				                    case (cs, length cs==length ccds) of
+				                     ([] ,   _  ) -> []
+				                     ([(c,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
+				                     (_        , False) -> [ Str $ "Of those concepts ", Str $ commaEng "and" (map (name.fst) cs), Str $ " have multipl definitions. "]
+				                     ([(_,cds)], True ) -> [ Str $ "It has "++count flags (length cds) "definition"++". " ]
+				                     (_        , True ) -> [ Str $ "Each one has several definitions. "]
+				                   )
+				            ]
                              ++
-                             concat (map singleConceptStuff xs)
+                             concat (map conceptdefinitions xs)
                            , c0
                            )
                     
                   where
-                      conceptNamesIntro = [name cpt|(cpt,_)<-xs]
-                      singleConceptStuff :: (Concept,ConceptDef) -> [Block] -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
-                      singleConceptStuff (c,cd) = explains cd  ++
-                                                  [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))]
+                      conceptdefinitions :: (Concept,[ConceptDef]) -> [Block] -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
+                      conceptdefinitions (c,cds) = explains c  ++
+                                                   [Para $ concat [(symDefLabel c: makeDefinition flags (name c) (cddef cd))
+                                                                  | cd<-cds]
+                                                   ]
                       explains cd = explains2Blocks (explain fSpec flags cd) 
 
 -- sctds prints the requirements related to relations that are introduced in this theme.
@@ -370,13 +385,13 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = relBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       relBlock :: Relation Concept -> Counter -> ([Block],Counter)
-                      relBlock m cnt = ([DefinitionList [( [Str (case language flags of
+                      relBlock rel cnt = ([DefinitionList [( [Str (case language flags of
 				                                                     Dutch   -> "Eis "
 				                                                     English -> "Requirement ")
                                                              ,Str (show(getEisnr cnt))
                                                              ,Str ":"]
-                                                            ,   [[Para ([symReqLabel (makeDeclaration m)])]
-                                                             ++ explains2Blocks (explain fSpec flags m)]
+                                                            ,   [[Para ([symReqLabel (makeDeclaration rel)])]
+                                                             ++ explains2Blocks (explain fSpec flags rel)]
                                                            )
                                                           ]
                                           ]
@@ -410,13 +425,13 @@ diagnosis :: Int -> Fspc -> Options ->  [Block]
 diagnosis lev fSpec flags = header ++ diagIntro ++ missingConceptDefs ++ missingRels
   where
   header :: [Block]
-  header = labeledHeader lev chpDiaglabel (case (language flags) of
+  header = labeledHeader lev chpDiaglabel (case language flags of
                                              Dutch   ->  "Diagnose"   
                                              English ->  "Diagnosis"
                                          )
   diagIntro :: [Block]
   diagIntro = 
-   (case (language flags) of
+   (case language flags of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van het Ampersand-script van ", Str (name fSpec), Str ". "
                   , Str "Deze analyse is bedoeld voor de auteurs van dit script. "
@@ -506,7 +521,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
   caIntro :: [Block]
   caIntro = 
 --   explains2Blocks (explain fSpec flags fSpec) ++ -- hier moet de explanation van de context komen.
-   (case (language flags) of
+   (case language flags of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van de regels uit hoofdstuk "
                   , xrefReference chpFRlabel
@@ -543,7 +558,10 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
        ++ (if null blocks then [] else [DefinitionList blocks])
        , pict):  iterat ps i'' seenCss seenDss
        where
-         pict = makePicture flags fSpec pat   -- the Picture that represents this service's knowledge graph
+         pict = (makePicture flags fSpec pat)   -- the Picture that represents this service's knowledge graph
+                {caption = case language flags of
+                            Dutch   ->"Conceptueel model van "++name pat
+                            English ->"Conceptual model of "++name pat}
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
@@ -683,16 +701,16 @@ processAnalysis lev fSpec flags
                ]
      ]
      where
-      rolelessSvs  = [ svc | svc<-fServices fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
-      rolelessRels = [ d | d<-declarations fSpec, not (d `elem` (rd.map snd) (mayEdit fSpec)) ]
+      rolelessSvs  = [ svc | svc<-services fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
+      rolelessRels = [ d | d<-declarations fSpec, not (d `elem` (rd.map (makeDeclaration.snd)) (mayEdit fSpec)) ]
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
-dataAnalysis :: Int -> Fspc -> Options -> ([Block],Picture)
+dataAnalysis :: Int -> Fspc -> Options -> ([Block],Picture,Picture)
 dataAnalysis lev fSpec flags
  = ( header ++ daContents ++ daAssociations remainingDecls ++
-   [b | p<-datasets fSpec, b<-daPlug p] , classDiagramPicture )
+   [b | p<-datasets fSpec, b<-daPlug p], classificationPicture, classDiagramPicture )
  where 
   remainingDecls = mors fSpec >- [m | p<-datasets fSpec, m<-mors p]
 
@@ -706,47 +724,77 @@ dataAnalysis lev fSpec flags
    (case language flags of
      Dutch   -> [Para $
                   ( if (useGraphics flags) 
-                     then 
+                    then 
+                     ( if null (gens fSpec) then [] else
+                       [ Str $ "Een aantal concepten uit hoofdstuk "
+                       , xrefReference chpFRlabel
+                       , Str $ " zitten in een classificatiestructuur. Deze is in figuur "
+                       , xrefReference (figlabel classificationPicture)
+                       , Str $ " weergegeven. " ] ) ++
                        [ Str $ "De eisen, die in hoofdstuk "
                        , xrefReference chpFRlabel
-                       , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
-                       , xrefReference (figlabel classDiagramPicture) ]
-                     else []
+                       , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
+                       , xrefReference (figlabel classDiagramPicture)
+                       , Str $ ". " ]
+                    else []
                   )++
                   [ Str $ (case length (classes classDiagram) of
-                            0 -> ". Er zijn"
-                            1 -> ". Er is precies een gegevensverzameling,"
-                            _ -> ". Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
+                            0 -> "Er zijn"
+                            1 -> "Er is één gegevensverzameling,"
+                            _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
                           )
                   , Str $ " "++count flags (length (assocs classDiagram)) "associatie"++","
-                  , Str $ " "++count flags (length (geners classDiagram)) "generalisatie"++" en"
+                  , Str $ " "++count flags (length (geners classification)) "generalisatie"++" en"
                   , Str $ " "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
                   , Str $ " "++name fSpec++" kent in totaal "++count flags (length (concs fSpec)) "concept"++"."
                   ]]
      English -> [Para $
-                  [ Str $ "The requirements, which are listed in chapter "
-                  , xrefReference chpFRlabel
-                  , Str $ ", have been translated into the class diagram in figure "
-                  , xrefReference (figlabel classDiagramPicture)
-                  , Str $ (case length (classes classDiagram) of
-                            0 -> ". There are"
-                            1 -> ". There is one data set,"
-                            _ -> ". There are "++count flags (length (classes classDiagram)) "data set"++","
+                  ( if (useGraphics flags) 
+                    then 
+                     ( if null (gens fSpec) then [] else
+                       [ Str $ "A number of concepts from chapter "
+                       , xrefReference chpFRlabel
+                       , Str $ " are organized in a classification structure. This is represented in figure "
+                       , xrefReference (figlabel classificationPicture)
+                       , Str $ ". " ] ) ++
+                       [ Str $ "The requirements, which are listed in chapter "
+                       , xrefReference chpFRlabel
+                       , Str $ ", have been translated into the data model in figure "
+                       , xrefReference (figlabel classDiagramPicture)
+                       , Str $ ". " ]
+                    else []
+                  )++
+                  [ Str $ (case length (classes classDiagram) of
+                            0 -> "There are"
+                            1 -> "There is one data set,"
+                            _ -> "There are "++count flags (length (classes classDiagram)) "data set"++","
                           )
                   , Str $ " "++count flags (length (assocs classDiagram)) "association"++","
-                  , Str $ " "++count flags (length (geners classDiagram)) "generalisation"++", and"
+                  , Str $ " "++count flags (length (geners classification)) "generalisation"++", and"
                   , Str $ " "++count flags (length (aggrs classDiagram)) "aggregation"++"."
                   , Str $ " "++name fSpec++" has a total of "++count flags (length (concs fSpec)) "concept"++"."
                   ]] --TODO
-   ) ++ [ Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
+   ) ++ [ Plain $ xrefFigure1 classificationPicture, Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
 
   classDiagram :: ClassDiag
   classDiagram = cdAnalysis fSpec flags
 
+  classification :: ClassDiag
+  classification = clAnalysis fSpec flags
+
+  classificationPicture :: Picture
+  classificationPicture
+    = (makePicture flags fSpec classification)
+        {caption = case language flags of
+                    Dutch   ->"Classificatie van "++name fSpec
+                    English ->"Classification of "++name fSpec}
+
   classDiagramPicture :: Picture
-  classDiagramPicture = makePicture flags fSpec classDiagram
---      where
---       cdDot = classdiagram2dot flags classDiagram
+  classDiagramPicture
+   = (makePicture flags fSpec classDiagram)
+        {caption = case language flags of
+                    Dutch   ->"Conceptueel datamodel van "++name fSpec
+                    English ->"Conceptual data model of "++name fSpec}
 
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
@@ -1020,25 +1068,41 @@ serviceChap lev fSpec flags svc
    , [picKnowledgeGraph]++[picSwitchboard| flgSwitchboard flags]
    )
  where
-  svcname    = name svc
   header :: [Block]
-  header = labeledHeader lev ("chpSvc"++svcname) ("Service: " ++ svcname)
+  header = labeledHeader lev ("chpSvc"++name svc) (name svc)
   svcIntro :: [Block]
   svcIntro
-   = explains2Blocks (explain fSpec flags (fsv_svcdef svc)) ++
-     case (language flags) of
-      Dutch ->   [ Para
-                    ([ Str $ "Service "++svcname++" werkt vanuit een instantie van "++(name.target.objctx.svObj.fsv_svcdef) svc++"." ]++
+   = ( let expl = explain fSpec flags (fsv_svcdef svc) in  -- ^ tells us why this service exists
+       if not (null expl) then explains2Blocks expl else
+       [ Plain $ case language flags of                             -- ^ tells us for who this service exists
+        Dutch   -> [Str $ "Service "++name svc++" geeft aan gebruikers de mogelijkheid om een "++(unCap.name.target.objctx.svObj.fsv_svcdef) svc++" te bewerken." ]
+        English -> [Str $ "Service "++name svc++" gives users the functionality to work wit "++(plural English .unCap.name.target.objctx.svObj.fsv_svcdef) svc++"." ]
+       ]
+     )++
+     [ Plain $
+       ( case language flags of                            -- ^ tells us for who this service exists
+          Dutch ->   [ Str $ "Service "++name svc ]++
+                     (case rd [r| (r,s)<-roleServices fSpec, s==svc] of
+                       []  -> [ Str $ " wordt niet gebruikt door enige rol." ]
+                       [r] -> [ Str $ " is bedoeld voor gebruikers in de rol "++r++"." ]
+                       rs  -> [ Str $ " is bedoeld voor gebruikers in de rollen"++commaNL "en" rs++"." ]
+                     )
+          English -> [ Str $ "Service "++name svc ]++
+                     (case rd [r| (r,s)<-roleServices fSpec, s==svc] of
+                       []  -> [ Str $ " is not used by any role." ]
+                       rs  -> [ Str $ " is meant to be used by "++commaEng "and" rs++"." ]
+                     )
+       )++
+       ( case language flags of
+          Dutch ->   [ Str $ "Service "++name svc++" werkt vanuit een instantie van "++(name.target.objctx.svObj.fsv_svcdef) svc++"." ]++
                      (f.objctx.svObj.fsv_svcdef) svc++
                      [ Str $ svcInsDelConcepts ]++
-                     [ Str $ svcAutoRules ] )
-                 ]
-      English -> [ Para
-                    ([ Str $ "Service "++svcname++" operates from one instance of "++(name.target.objctx.svObj.fsv_svcdef) svc++"." ]++
+                     [ Str $ svcAutoRules ]
+          English -> [ Str $ "Service "++name svc++" operates from one instance of "++(name.target.objctx.svObj.fsv_svcdef) svc++"." ]++
                      (f.objctx.svObj.fsv_svcdef) svc++
                      [ Str $ svcInsDelConcepts ]++
-                     [ Str $ svcAutoRules ] )
-                 ]
+                     [ Str $ svcAutoRules ]
+       ) ]
      where
       f (Tm _ _) = []
       f expr   = [Str $ showPredLogic flags (conjNF(F[v (S,source expr),expr]))]
@@ -1046,7 +1110,7 @@ serviceChap lev fSpec flags svc
    = let ics = fsv_creating svc>-fsv_deleting svc
          dcs = fsv_deleting svc>-fsv_creating svc
          ucs = fsv_deleting svc `isc` fsv_creating svc
-     in case (language flags) of
+     in case language flags of
       Dutch -> " "++
           if null ics && null dcs && null ucs then "Deze service maakt of verwijdert geen objecten langs geautomatiseerde weg." else
           if null ics && null dcs             then "Om regels te handhaven, mogen instanties van "++commaNL "en" (map name ucs)++" door deze service geautomatiseerd worden aangemaakt en verwijderd." else
@@ -1073,7 +1137,7 @@ serviceChap lev fSpec flags svc
    = let ars = rd [r|q<-fsv_quads svc, r<-[cl_rule (qClauses q)], r_usr r] -- rules that are maintained by automated functionality
          mrs = [r|r<-fsv_rules svc, r_usr r, r `notElem` ars]-- rules that may be affected, but are maintained manually
       --   mss = ""-- signals that can be emptied by this service
-     in case (language flags) of
+     in case language flags of
       Dutch ->   intercalate " "
                  [ case length ars of
                     0 -> ""
@@ -1146,7 +1210,11 @@ serviceChap lev fSpec flags svc
      ++ [Plain (xrefFigure1 picKnowledgeGraph)]                  -- draw the knowledge graph
 
   picKnowledgeGraph :: Picture
-  picKnowledgeGraph = makePicture flags fSpec svc  -- the Picture that represents this service's knowledge graph
+  picKnowledgeGraph
+   = (makePicture flags fSpec svc)  -- the Picture that represents this service's knowledge graph
+        {caption = case language flags of
+                    Dutch   ->"Taaldiagram van "++name svc
+                    English ->"Language diagram of "++name svc}
 --     where
 --      knGph = toDot fSpec flags svc                              -- the DotGraph String that represents this service's knowledge graph
 --      kn    = printDotGraph knGph                                -- the String that represents this service's knowledge graph
@@ -1162,14 +1230,18 @@ serviceChap lev fSpec flags svc
      ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
 
   picSwitchboard :: Picture
-  picSwitchboard = makePicture flags fSpec (switchboard1 fSpec svc) -- the Picture that represents this service's knowledge graph
+  picSwitchboard
+   = (makePicture flags fSpec (switchboard1 fSpec svc)) -- the Picture that represents this service's knowledge graph
+        {caption = case language flags of
+                    Dutch   ->"Switchboard van "++name svc
+                    English ->"Switchboard of "++name svc}
 --     where
 --      sbGph = switchboard fSpec svc                              -- the DotGraph String that represents this service's knowledge graph
 --      sb    = printDotGraph sbGph                                -- the String that represents this service's knowledge graph
 
 {-  svcECA :: [Block]
   svcECA
-   = case (language flags) of
+   = case language flags of
       Dutch   -> [ Para [ Str "ECA rules:\n   ",Str "tijdelijk ongedocumenteerd" ] ]
                  [ Para
                     [ Str $ showECA fSpec "\n>     "  (normECA (eca arg) arg)
@@ -1197,7 +1269,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                          )
   caIntro :: [Block]
   caIntro = 
-   (case (language flags) of
+   (case language flags of
       Dutch   -> [Para
                   [ Str "De specificatie van "
                   , Str (name fSpec)
@@ -1229,7 +1301,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           intercalate "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
-                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-fServices fSpec] ++
+                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 
