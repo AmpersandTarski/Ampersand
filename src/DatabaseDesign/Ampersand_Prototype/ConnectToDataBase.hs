@@ -6,6 +6,7 @@ where
  import DatabaseDesign.Ampersand
  import DatabaseDesign.Ampersand_Prototype.Code
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
+ import DatabaseDesign.Ampersand_Prototype.Version 
 
  connectToDataBase :: Fspc -> Options -> String
  connectToDataBase fSpec flags 

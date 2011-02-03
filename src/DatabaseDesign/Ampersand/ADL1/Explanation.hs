@@ -9,7 +9,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Rule                     (Rule)
    import DatabaseDesign.Ampersand.ADL1.KeyDef                   (KeyDef)
    import DatabaseDesign.Ampersand.Misc.Explain
-   import DatabaseDesign.Ampersand.Input.ADL1.FilePos            (FilePos)
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos            (Numbered(..), FilePos)
 
 -- PExplanation is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
@@ -40,8 +40,8 @@ where
                              , pexExpl  :: String    -- the text of this purpose definition
                              }
 
---   instance Numbered PExplanation where
---    pos = pexPos
+   instance Numbered PExplanation where
+    pos = pexPos
 
    instance Identified PExplanation where
     name pe = name (pexObj pe)

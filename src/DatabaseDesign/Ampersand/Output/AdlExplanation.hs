@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module DatabaseDesign.Ampersand.Output.AdlExplanation(explain,ExplainOutputFormat(..),explain2Blocks,format) where
+module DatabaseDesign.Ampersand.Output.AdlExplanation(Explainable(explain,autoExplainsOf),ExplainOutputFormat(..),explain2Blocks,format) where
 import DatabaseDesign.Ampersand.ADL1 hiding (applyM)
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
@@ -33,7 +33,7 @@ class Explainable a where
   autoExplainsOf :: Options -> a -> [Explanation]
   autoExplainsOf _ _ = []
   explain :: Fspc -> Options -> a -> [Explanation]
-  explain fSpec flags x = [e | e<-fSexpls fSpec++autoExplainsOf flags x
+  explain fSpec flags x = [e | e<-fSexpls fSpec
                              , explForObj x (explObj e)                  -- ^ informally: "if x and e are the same"
                              , language flags == explLang e
                           ]

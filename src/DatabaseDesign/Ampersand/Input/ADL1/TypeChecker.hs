@@ -75,7 +75,7 @@ typecheckAdl1 arch@(Arch ctxs) = (enriched, checkresult)
                  | (err,block,fp,OrigKeyDef expr)<-check3] ++
                  [ (err ++ "\n",block)
                  | (err,block,_,OrigExpl)<-check3]
-   check4 = checkObjDefNameUniqueness ctxs
+   check4 = concat (map checkObjDefNameUniqueness ctxs)
    check5 = checkPopulations ctxs
   -- check6 = checkSvcLabels ctxs
    checkresult = if null check1 then 
@@ -132,18 +132,32 @@ data OrigExpr r = OrigRule (Rule r) | OrigObjDef (Expression r) | OrigKeyDef (Ex
 enrichCtx :: Context -> Contexts -> (Context,[(String,[Block],FilePos,OrigExpr (Relation Concept))])
 enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++show xxx) else
   (postenrich $ 
-      cx {ctxisa  = hierarchy, -- 
-          ctxwrld = world, --
-          ctxpats = [p | (p,_,_)<-ctxpatterns],                    -- contains all user defined rules inside the scope of patterns
-          ctxrs   = [rule | r<-ctxrs cx, Left rule<-[bindRule r]], -- all user defined rules outside the scope of patterns
-          ctxds   = ctxdecls, -- 
-          ctxsvcs = [od | (od,_)<-ctxservices], 
-          ctxks   = [kd | (kd,_)<-ctxCtxKeys],
-          ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
-          ctxphp  = [plug | (plug,_)<-ctxphpplugs],
-          ctxps   = [x |Left x<-map enrichexpl (ctxps cx)],
-          ctxmed  = [x |Left x<-map enrichrole (ctxmed cx)]
-         } 
+     Ctx { ctxnm    = ctxnm cx                  -- ^ The name of this context
+         , ctxon    = ctxon cx                  -- ^ The list of extends (= context names of contexts) whose rules are imported
+         , ctxisa   = hierarchy                 -- ^ A data structure containing the generalization structure of concepts
+         , ctxwrld  = world                     -- ^ A tree, being the transitive closure of the 'extends' (see formal definition) relation.
+         , ctxpats  = [p |(p,_,_)<-ctxpatterns] -- ^ The patterns defined in this context
+                                                -- ^ Each pattern contains all user defined rules inside its scope
+         , ctxrs    = [rule| r<-ctxrs cx        -- ^ All user defined rules in this context, but outside patterns
+                           , Left rule<-[bindRule r]]
+         , ctxds    = ctxdecls                  -- ^ The declarations defined in this context, outside the scope of patterns
+         , ctxcs    = ctxcs cx                  -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctxks    = [kd |(kd,_)<-ctxCtxKeys]  -- ^ The key definitions defined in this context, outside the scope of patterns
+         , ctxsvcs  = [od |(od,_)<-ctxservices] -- ^ The services defined in this context, outside the scope of patterns
+         , ctxps    = [x |Left x<-map enrichexpl (ctxps cx)] -- ^ The pre-explanations defined in this context, outside the scope of patterns
+         , ctxros   = ctxros cx                 -- ^ The assignment of roles to Services (also called role service assignments).
+                                                -- ^ If r is an element of rsRoles (ctxros ctx)
+                                                -- ^ and s is an element of rsServices (ctxros ctx),
+                                                -- ^ then role r may use the service with name s.
+         , ctxmed   = [x |Left x<-map enrichrole (ctxmed cx)]    -- ^ The assignment of roles to Relations.
+                                                -- ^ If r is an element of rrRoles (ctxmed ctx) and p is an element of rrRels (ctxmed ctx), then role r may edit relation p.
+         , ctxpops  = ctxpops cx                -- ^ The populations defined in this context
+         , ctxsql   = [p|(p,_)<-ctxsqlplugs]    -- ^ user defined sqlplugs, taken from the Ampersand script
+         , ctxphp   = [p|(p,_)<-ctxphpplugs]    -- ^ user defined phpplugs, taken from the Ampersand script
+         , ctxenv   = ctxenv cx                 -- ^ an expression on the context with unbound relations, to be bound in this environment
+         }               --deriving (Show) -- voor debugging
+-- The above code for Ctx builds up a fresh context, instead of updating cx, for maintenance purposes.
+-- If someone extends Context without proper attention to the type checker, this yields a compiler warning.
   ,  [err|r<-ctxrs cx, Right err<-[bindRule r]]
    ++[err|(_,rs,_)<-ctxpatterns, Right err<-rs] --rule errors
    ++[(err,[],Nowhere,OrigExpl)|(_,_,errs)<-ctxpatterns, err<-errs] --explanation errors
@@ -154,18 +168,6 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
    ++[err|(_,checkedexprs)<-ctxCtxKeys, Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxPatKeys, Right err<-checkedexprs]
   ) 
-                           {-
-                           (ctxnm cx)   --copy name
-                           (ctxon cx)   --copy extended ctxs
-                           (hierarchy)  --construct Isa with all Concepts in scope
-                           (world)      --construct the world with this cx on top of the world
-                           (ctxpats cx) --bind rules and keydefs in patterns
-                           (ctxdecls)   --relations declared in this context only, outside the scope of patterns
-                           (ctxcptdefs) --concept defs of this context only
-                           (ctxks cx)   --bind keydefs
-                           (ctxsvcs cx) --change reldcl and reltyp on relations in expressions
-                           (ctxpops cx) --copy populations
-                              -}
   where
   --DESCR -> use this function on all expressions
   enrich_expr :: Expression (Relation Concept) -> Either ((Concept,Concept), Expression (Relation Concept),InfTree) (String,[Block])
@@ -205,12 +207,23 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
   ctxpatterns
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the Ampersand script within
                                                     --     the patterns of this context
-  bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]
-                         ,inftestexpr=typedexprs [d| d<-declarations ctxs, decusr d] isas (testexpr p) 
-                                   ++ [error ("!Fatal (module TypeChecker 212): "++concat (concat xs)) | let xs=typeerrors [d| d<-declarations ctxs, decusr d] isas (testexpr p),not(null xs)]
-                         }
-                      ,bindrules
-                      ,[err|Right err<-pexpls])
+  bindPat p
+   = (Pat{ ptnm  = ptnm p              -- ^ Name of this pattern
+         , ptrls = boundrules          -- ^ The rules declared in this pattern
+         , ptgns = ptgns p             -- ^ The generalizations defined in this pattern
+         , ptdcs = addpopu             -- ^ The declarations declared in this pattern
+         , ptcds = ptcds p             -- ^ The concept definitions defined in this pattern
+         , ptkds = boundkds            -- ^ The key definitions defined in this pattern
+         , ptxps = [x |Left x<-pexpls] -- ^ The explanations of elements defined in this pattern
+         , testexpr = testexpr p
+         , inftestexpr = typedexprs [d| d<-declarations ctxs, decusr d] isas (testexpr p)  ++
+                         [ error ("!Fatal (module TypeChecker 212): "++concat (concat xs))
+                         | let xs=typeerrors [d| d<-declarations ctxs, decusr d] isas (testexpr p)
+                         , not(null xs)]
+         }   --deriving (Show) -- voor debugging
+     ,bindrules
+     ,[err|Right err<-pexpls]
+     )
     where    
     bindrules = map bindRule $ ptrls p
     boundrules = [br | Left br<-bindrules
@@ -222,8 +235,8 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
     --TODO -> Make this consistent! (i.e. consistent semantics of context before and after enrich)
     bindkds = map bindKeyDef (ptkds p)
     boundkds = [bk | (bk,_)<-bindkds]
-    addpopu = let matches = [d' |d@Sgn{}<-ptdcs p, d'@Sgn{}<-ctxdecls, decfpos d==decfpos d']
-              in matches ++ [d|d@Sgn{}<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
+    addpopu = let matches = [d' |d@Sgn{}<-ptdcs p, d'@Sgn{}<-ctxdecls, pos d==pos d']
+              in matches ++ [d|d@Sgn{}<-ptdcs p, not$elem (pos d) (map pos matches)]
     pexpls = map enrichexpl (ptxps p)
 
   --Every RoleRelation must relate to something
@@ -245,34 +258,35 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
 
   --Every Explanation must relate to something
   enrichexpl :: PExplanation -> Either PExplanation String
-  enrichexpl pExpl = case enrichexplobj (pexObj pExpl) of
+  enrichexpl pExpl = case enrichexplobj (pos pExpl) (pexObj pExpl) of
                        Left expl -> Left (pExpl{pexObj=expl})
                        Right str -> Right str
-
-  enrichexplobj :: PExplObj -> Either PExplObj String
-  enrichexplobj x@(PExplConceptDef{}) = checkPExplobj (concs ctxs) x 
-  enrichexplobj (PExplDeclaration rel ) = case enrich_expr (Tm rel (-1)) of
-     Left (_,Tm erel _,_) -> Left (PExplDeclaration erel )
-     Right (err,_) -> Right ("Explanation for relation "++name rel++" could not be matched to a declaration because "++err)
-     _ -> error$ "!Fatal (module Typechecker 242): function enrichexplobj: impossible case."
-  enrichexplobj x@(PExplRule{}) = checkPExplobj ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
-  enrichexplobj x@(PExplKeyDef{}) = checkPExplobj (ctxks cx) x
-  enrichexplobj x@(PExplPattern{}) = checkPExplobj (ctxpats cx) x 
-  enrichexplobj x@(PExplService{}) = checkPExplobj (ctxsvcs cx) x
-  enrichexplobj x@(PExplContext{}) = checkPExplobj [cx] x
-
-  checkPExplobj :: (Identified a) => [a] -> PExplObj -> Either PExplObj String
-  checkPExplobj xs x
-     | elem (name x) (map name xs) = Left x
-     | otherwise = Right ("There is an explanation for the non-existing "++explobj x++" " ++ name x)
    where
-    explobj (PExplConceptDef _) = "concept"
-    explobj (PExplDeclaration _) = "declaration"
-    explobj (PExplRule _) = "rule"
-    explobj (PExplKeyDef _) = "key definition"
-    explobj (PExplPattern _) = "pattern"
-    explobj (PExplService _) = "service definition"
-    explobj (PExplContext _) = "context"
+    enrichexplobj :: FilePos -> PExplObj -> Either PExplObj String
+    enrichexplobj p x@(PExplConceptDef{}) = checkPExplobj (concs ctxs) p x 
+    enrichexplobj p (PExplDeclaration rel ) = case enrich_expr (Tm rel (-1)) of
+       Left (_,Tm erel _,_) -> Left (PExplDeclaration erel )
+       Right (err,_) -> Right (show p++"Explanation for relation "++name rel++" could not be matched to a declaration because "++err)
+       _ -> error$ "!Fatal (module Typechecker 242): function enrichexplobj: impossible case."
+    enrichexplobj p x@(PExplRule{}) = checkPExplobj ([r|r<-ctxrs cx]++[r|pat<-ctxpats cx,r<-ptrls pat]) p x
+    enrichexplobj p x@(PExplKeyDef{}) = checkPExplobj (ctxks cx) p x
+    enrichexplobj p x@(PExplPattern{}) = checkPExplobj (ctxpats cx) p x 
+    enrichexplobj p x@(PExplService{}) = checkPExplobj (ctxsvcs cx) p x
+    enrichexplobj p x@(PExplContext{}) = checkPExplobj [cx] p x
+
+    checkPExplobj :: (Identified a) => [a] -> FilePos -> PExplObj -> Either PExplObj String
+    checkPExplobj xs p x
+       | elem (name x) (map name xs) = Left x
+       | otherwise = Right (show p++" contains an explanation for a non-existing "++explobj x++" " ++ name x)
+     where
+      explobj (PExplConceptDef _)  = "concept"
+      explobj (PExplDeclaration _) = "declaration"
+      explobj (PExplRule _)        = "rule"
+      explobj (PExplKeyDef _)      = "key definition"
+      explobj (PExplPattern _)     = "pattern"
+      explobj (PExplService _)     = "service definition"
+      explobj (PExplContext _)     = "context"
+--      explobj _ = error $ "!Fatal (module Typechecker 275): function checkPExplobj: cannot explobj "++show x++"."
    
   --DESCR -> enriching ctxds
   --         take all declarations from patterns included (not extended) in this context
@@ -296,15 +310,15 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
         
         inres = length [()|d'<-res, signpos d d']==1
         addxtores = 
-          if inres --ONLY d' is used for merge, while decfpos d==decfpos d'
+          if inres --ONLY d' is used for merge, while pos d==pos d'
           then [mrg d' p|d'<-res, signpos d d']++[d'|d'<-res, not(signpos d d')] 
           else (mrg d p):res        
       mrg d p = d{decpopu=decpopu d++popps p}
-      signpos d d' = d==d' && decfpos d==decfpos d'
+      signpos d d' = d==d' && pos d==pos d'
  
   --DESCR -> Determines source and target population based on domains and ranges of all relations
   --         Source and target need to be provided, because it can differ from the sign of the relation
-  --         The morphism (in an expression) refering to this relation determines the type.
+  --         The relation (in an expression) refering to this relation determines the type.
   popuMphDecl :: Relation Concept -> Relation Concept
   popuMphDecl mp = case mp of
       Rel{} -> mp { relsrc = populate (relsrc mp)
@@ -323,8 +337,8 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
               if null allpopd then d 
               else if length allpopd==1 then head allpopd
                    else error$ "!Fatal (module Typechecker 311): function popuMphDecl: " ++
-                               "More than one declaration matching morphism "++show (relnm mp)
-                             ++" at "++show (relpos mp)
+                               "More than one declaration matching relation "++show (relnm mp)
+                             ++" at "++show (pos mp)
                              ++".(remark for developer) Remove duplicate signatures from popuRels if you want to allow this."
                where allpopd = [popd|popd<-rd popuRels, d==popd] 
   --DESCR -> Add population to concept
@@ -427,7 +441,7 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
       Just topexpr -> F [topexpr, objctx od]
     checkedexpr = if null err 
                   then Left bindexpr
-                  else Right (err,block,objpos od,OrigObjDef expr)      
+                  else Right (err,block,pos od,OrigObjDef expr)      
     inf_e = enrich_expr expr
     (err,block) = case inf_e of
       Right x -> x
@@ -462,7 +476,7 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
     (Obj {objats=bindats},checkedexprs) = bindObjDef 
                    (Obj {objats=kdats kd,
                          objnm=kdlbl kd,
-                         objpos=kdpos kd,
+                         objpos=pos kd,
                          objctx=Tm (I [kdcpt kd] (kdcpt kd) (kdcpt kd) True) (-1), --REMARK -> mIs is not used because it does not set relats
                          objctx_proof=Nothing,
                          objstrs=[[]]}) Nothing
@@ -496,54 +510,28 @@ checkCtxExtLoops ctxs = composeError (concat [findLoops cx | cx<- ctxs])
                                   , foundCtx (srchContext ctxs (ctxName cxf))]
 
 --DESCR -> check rule: Every SERVICE, PHPPLUG, and SQLPLUG must have a unique name
-checkObjDefNameUniqueness :: Contexts -> Errors
-checkObjDefNameUniqueness ctxs = printerrs (checkLabels ods)
+checkObjDefNameUniqueness :: Context -> Errors
+checkObjDefNameUniqueness cx = printerrs (concat [checkLabels obj | obj<-ods])
   where -- ods collects all ObjectDefs from the contexts
-        ods = [od|cx<-ctxs, od<-map svObj (ctxsvcs cx)++ctxsql cx ++ ctxphp cx]
+        ods = map svObj (ctxsvcs cx)++ctxsql cx ++ ctxphp cx
 
         -- checkLabels groups the services and sibling labels with the same name
-        -- checkLabels :: [ObjectDef] -> [[ObjectDef]]
-        checkLabels objs = [ cl | cl<-eqCl name objs, length cl>1]          -- ^ the top level of duplicate names
-                           : concat [checkLabels (objats obj) | obj<-objs]  -- ^ detect duplicates within objects by recursion
+        -- checkLabels :: [ObjectDef] -> [(String,[[ObjectDef]])]
+        checkLabels obj = (name obj,[ cl | cl<-eqCl name (objats obj), length cl>1] )   -- ^ the top level of duplicate names
+                           : concat [checkLabels o | o<-objats obj]       -- ^ detect duplicates within objects by recursion
 
         -- printerrs prints fancy messages. The first one is the top level. All others are about labels inside objectDefs.
         printerrs [] = []
-        printerrs (sObs:attObss)
-         = [ ( "\nService or plug name " ++ name (head sObs) ++ " is not unique:"++
+        printerrs ((scopeName,sObs):attObss)
+         = [ ( "\nService or plug name " ++ name (head sObs) ++ " is not unique within " ++ scopeName ++ "."++
                concat ["\n  "++show (pos obj) |obj<-sOb]++"\n"
              , [])
            | sOb<-sObs, not (null sOb)] 
            ++
-           [("\nLabel " ++ name (head attObs) ++ " in service or plug is not unique on sibling level:"
+           [("\nLabel " ++ name (head attObs) ++ " is not unique within " ++ sn ++ "."
                      ++ (concat ["\n  "++show (pos obj) |obj<-attOb]),[])
-           |attObs<-attObss, attOb<-attObs, not (null attOb)]
+           |(sn,attObs)<-attObss, attOb<-attObs, not (null attOb)]
 
-{- The following code was substituted by checkObjDefNameUniqueness (above) on 24 dec 2010 by SJ.
-It is now obsolete
---DESCR -> check rule: Every SERVICE, PHPPLUG, and SQLPLUG must have a unique name
-checkSvcNameUniqueness :: Contexts -> Errors
-checkSvcNameUniqueness ctxs = 
-    let svcs = [svc|cx<-ctxs, svc<-ctxsvcs cx ++ ctxsql cx ++ ctxphp cx]
-        printerrs [] = []
-        printerrs (svcnms:lblnms)
-         = [("\nService or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs]),[])
-           |(svcnm,svcposs)<-svcnms] 
-           ++
-           [("\nLabel " ++ lbnm ++ " in service or plug must be unique on sibling level:"
-                     ++ (concat ["\n"++show lbpos |lbpos<-lblposs]),[])
-           |lbl<-lblnms, (lbnm,lblposs)<-lbl]
-           ++"\n"
-    in  printerrs$checkLabels svcs
-
---DESCR -> group the services and sibling labels with the same name but different file positions
-checkLabels :: [ObjectDef] -> [[(String,[FilePos])]]
-checkLabels svcs =
-    let orderby :: (Eq a, Eq b) => [(a,b)] ->  [(a,[b])]
-        orderby xs =  [(x,rd [y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
-    in  (orderby [(objnm svc,objpos svc)|svc<-svcs, svc'<-svcs, objnm svc==objnm svc', objpos svc/=objpos svc'])
-        :[check | checks<-map checkLabels (map objats svcs), check<-checks]
--}
-   
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
 checkPopulations :: Contexts -> Errors
@@ -559,9 +547,9 @@ popdeclaration :: [Declaration Concept] -> Population Concept ->  Either (Declar
 popdeclaration ds p = 
    if length allmatches==1 then Left(head allmatches)
    else if null allmatches
-        then Right$"A relation is missing for population of " ++ show (popm p) ++ " at " ++ show (relpos$popm p) 
+        then Right$"A relation is missing for population of " ++ show (popm p) ++ " at " ++ show (pos (popm p)) 
                 ++ "."
-        else Right$"Population of " ++ show (popm p) ++ " at " ++ show (relpos$popm p) 
+        else Right$"Population of " ++ show (popm p) ++ " at " ++ show (pos (popm p)) 
                 ++ "can be related to multiple relation declarations:\n" 
                 ++ concat [show x ++ "\n"|x<-allmatches]
                 ++ "Define the type of the population."
@@ -570,7 +558,7 @@ popdeclaration ds p =
     matches d (Rel{relnm=popnm, relats=[c1,c2]}) = popnm==name d && c1==source d && c2==target d
     matches d (Rel{relnm=popnm, relats=[]})      = popnm==name d
     matches _ m = error $ "!Fatal (module TypeChecker 542): function popdeclaration: " ++
-                   "Unrecognized population morphism "++show (relnm m)++" at "++show (relpos m)++"."
+                   "Unrecognized population relation "++show (relnm m)++" at "++show (pos m)++"."
 
 
 --DESCR -> function elem provided with own equality function

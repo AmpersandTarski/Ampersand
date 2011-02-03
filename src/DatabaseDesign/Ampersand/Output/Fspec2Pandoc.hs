@@ -11,7 +11,7 @@ import Text.Pandoc
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Switchboard      (switchboard1)
-import DatabaseDesign.Ampersand.Output.AdlExplanation (explain,explain2Blocks)
+import DatabaseDesign.Ampersand.Output.AdlExplanation (explain,explain2Blocks,autoExplainsOf)
 import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
 import DatabaseDesign.Ampersand.Output.PandocAux
 
@@ -384,17 +384,18 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = relBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       relBlock :: Relation Concept -> Counter -> ([Block],Counter)
-                      relBlock rel cnt = ([DefinitionList [( [Str (case language flags of
-				                                                     Dutch   -> "Eis "
-				                                                     English -> "Requirement ")
-                                                             ,Str (show(getEisnr cnt))
-                                                             ,Str ":"]
-                                                            ,   [[Para ([symReqLabel (makeDeclaration rel)])]
-                                                             ++ explains2Blocks (explain fSpec flags rel)]
-                                                           )
-                                                          ]
-                                          ]
-                                         ,incEis cnt)
+                      relBlock rel cnt = ( explains2Blocks (explain fSpec flags rel) ++
+                                           [DefinitionList [ ( [ Str (case language flags of
+				                                        Dutch   -> "Eis "
+				                                        English -> "Requirement ")
+                                                               , Str (show(getEisnr cnt))
+                                                               , Str ":"]
+                                                             , [ [Para ([symReqLabel (makeDeclaration rel)])]++
+                                                                 explains2Blocks (autoExplainsOf flags rel)]
+                                                             )
+                                                           ]
+                                           ]
+                                         , incEis cnt)
                                                        
               sctrs :: [Rule (Relation Concept)] -> Counter -> ([Block],Counter)
               sctrs xs c0 
@@ -406,17 +407,18 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule (Relation Concept) -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ([DefinitionList [( [Str (case language flags of
-				                                                     Dutch   -> "Eis "
-				                                                     English -> "Requirement ")
-                                                             ,Str (show(getEisnr cnt))
-                                                             ,Str ":"]
-                                                            ,  [ [Para ([symReqLabel r2])] ++
-                                                                 explains2Blocks (explain fSpec flags r2)]
-                                                           )
-                                                          ]
-                                          ]
-                                         ,incEis cnt)
+                      ruleBlock r2 cnt = ( explains2Blocks (explain fSpec flags r2) ++
+                                           [DefinitionList [ ( [Str (case language flags of
+				                                       Dutch   -> "Eis "
+				                                       English -> "Requirement ")
+                                                               ,Str (show(getEisnr cnt))
+                                                               ,Str ":"]
+                                                             , [ [Para ([symReqLabel r2])] ++
+                                                                 explains2Blocks (autoExplainsOf flags r2)]
+                                                             )
+                                                           ]
+                                           ]
+                                         , incEis cnt)
                       
 
 ------------------------------------------------------------
@@ -501,8 +503,8 @@ diagnosis lev fSpec flags = header ++ diagIntro ++ missingConceptDefs ++ missing
                        ] ]
       (English,ms)  -> [Para 
                          [ Str "Relations ", TeX (commaEng "and" (map (showMathcode fSpec) ms))
-                         , Str " remain unexplained. "
-                         , Str "You might consider to add PURPOSE RELATION statements."
+                         , Str " are explained by an automated explanation generator. "
+                         , Str "If these explanations are not appropriate, add PURPOSE RELATION statements to your relations."
                        ] ]
    where missing = [m| m <-mors fSpec
                      , null (explain fSpec flags m)

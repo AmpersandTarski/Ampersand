@@ -338,6 +338,7 @@ module DatabaseDesign.Ampersand.Fspec.ShowADL
      = "'"++rel1val m++"'"++showSign [rel1typ m]
     showADLcode _ rel@Rel{}
      = name rel++
+-- was:     = decnm (reldcl rel)++
        (if null (relats rel) then "" else showSign (relats rel))++
        if inline rel then "" else "~"
        -- where dss = [(name.head) cl| cl<-eqCl name (declarations fSpec), length cl>1]
