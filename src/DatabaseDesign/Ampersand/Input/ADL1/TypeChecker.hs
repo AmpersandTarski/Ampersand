@@ -141,7 +141,8 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
           ctxks   = [kd | (kd,_)<-ctxCtxKeys],
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
           ctxphp  = [plug | (plug,_)<-ctxphpplugs],
-          ctxps   = [x |Left x<-map enrichexpl (ctxps cx)]
+          ctxps   = [x |Left x<-map enrichexpl (ctxps cx)],
+          ctxmed  = [x |Left x<-map enrichrole (ctxmed cx)]
          } 
   ,  [err|r<-ctxrs cx, Right err<-[bindRule r]]
    ++[err|(_,rs,_)<-ctxpatterns, Right err<-rs] --rule errors
@@ -225,10 +226,27 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
               in matches ++ [d|d@Sgn{}<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
     pexpls = map enrichexpl (ptxps p)
 
+  --Every RoleRelation must relate to something
+  enrichrole :: RoleRelation -> Either RoleRelation String
+  enrichrole rr 
+    |null errs = Left (rr{rrRels=rels})
+    |otherwise = Right errs
+    where 
+    bindrels = map bindRelation (rrRels rr)
+    errs = concat 
+           [case check of 
+               Left _ -> []
+               Right (err,_,_) -> err
+           |check<-bindrels]
+    rels = [case check of 
+                 Left r -> r
+                 Right(_,_,orig) -> orig
+           |check<-bindrels]
+
   --Every Explanation must relate to something
   enrichexpl :: PExplanation -> Either PExplanation String
   enrichexpl pExpl = case enrichexplobj (pexObj pExpl) of
-                       Left _ -> Left pExpl
+                       Left expl -> Left (pExpl{pexObj=expl})
                        Right str -> Right str
 
   enrichexplobj :: PExplObj -> Either PExplObj String
@@ -365,11 +383,27 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
 
 -- ctxservices enriches the user defined services with type information...
   ctxservices :: [(Service,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
-  ctxservices = [bindService sv Nothing | sv<-ctxsvcs cx]
-   where
-     bindService svc mbtopexpr = (svc {svObj=od},checkedexprs)
+  ctxservices = [bindService sv | sv<-ctxsvcs cx]
+    where
+    bindService svc = (svc {svParams=params, svObj=od},checkedparams++checkedexprs2)
       where 
-       (od,checkedexprs) = bindObjDef (svObj svc) mbtopexpr
+      bindparams = map bindRelation (svParams svc)
+      checkedparams = [case check of 
+                         Left param -> Left (Tm param (-1))
+                         Right (err,block,orig) -> Right (err,block,svPos svc,OrigObjDef (Tm orig (-1)))
+                      |check<-bindparams]
+      params = [case check of 
+                   Left param -> param
+                   Right(_,_,orig) -> orig
+               |check<-bindparams]
+      (od,checkedexprs2) = bindObjDef (svObj svc) Nothing
+
+  bindRelation ::  Relation Concept -> Either (Relation Concept) (String,[Block],Relation Concept)
+  bindRelation r = case enrich_expr expr_r of
+    Left (_,Tm inf_r _,_) -> Left inf_r
+    Left _ -> error $ "!Fatal (module TypeChecker 386): expecting Tm inf_r _"
+    Right (err,block) -> Right (err,block,r)
+    where expr_r = Tm r (-1)
   
   --DESCR -> enriching ctxobjdefs
   --         bind the expression and nested object defs of all object defs in the context
