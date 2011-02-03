@@ -74,7 +74,7 @@ doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++"of the Atlas ...")
   >> verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
-  >> fillAtlas fSpec flags
+--  >> fillAtlas fSpec flags
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
