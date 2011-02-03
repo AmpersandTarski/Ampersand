@@ -10,7 +10,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
    import DatabaseDesign.Ampersand_Prototype.Index               (htmlindex)
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
    import DatabaseDesign.Ampersand_Prototype.ContextGen          (contextGen)
-   --import DatabaseDesign.Ampersand_Prototype.DataObject          (dataServices)
+   import DatabaseDesign.Ampersand_Prototype.Apps
    import System.FilePath               
    import System.Directory
    import qualified Data.ByteString as Bin
@@ -40,6 +40,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
          [ write (addExtension (name svc) ".php") (objectWrapper fSpec svcs svc flags)
          | svc <- svcs
          ]
+      >> sequence_  [ doGenAtlas    fSpec flags | genAtlas     flags] 
       >> verboseLn flags ("\n")
       where
        write fname content
@@ -52,6 +53,13 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
                     ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
        svcs = serviceS fSpec++ serviceG fSpec--Was (voor ontvlechting): map fsv_svcdef (fServices fSpec)
+
+   doGenAtlas :: Fspc -> Options -> IO()
+   doGenAtlas fSpec flags =
+        verboseLn flags ("Installing the Atlas application:")
+     >> verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
+     >> verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
+     >> fillAtlas fSpec flags
 
    data StaticFile = SF { relFP         :: [FilePath] -- relative path including basename and extension
                         , isBinary      :: Bool

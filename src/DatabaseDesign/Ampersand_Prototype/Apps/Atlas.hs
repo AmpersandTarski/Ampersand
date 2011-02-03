@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}  
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
 --in IIS you can enable windows authentication
-module DatabaseDesign.Ampersand.Output.Atlas 
+module DatabaseDesign.Ampersand_Prototype.Apps.Atlas 
    (fillAtlas)
 where
 import DatabaseDesign.Ampersand.ADL1

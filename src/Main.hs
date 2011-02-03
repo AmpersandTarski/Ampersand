@@ -40,7 +40,6 @@ generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
-        [ doGenAtlas    fSpec flags | genAtlas     flags] ++
         [ doGenXML      fSpec flags | genXML       flags] ++
         [ doGenHaskell  fSpec flags | haskell      flags] ++ 
         [ doGenProto    fSpec flags | genPrototype flags] ++
@@ -68,13 +67,6 @@ doGenHaskell fSpec flags
    >> verboseLn flags ("Haskell written into " ++ outputFile ++ ".")
    where outputFile
            = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
-
-
-doGenAtlas :: Fspc -> Options -> IO()
-doGenAtlas fSpec flags =
-     verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++"of the Atlas ...")
-  >> verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
---  >> fillAtlas fSpec flags
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
