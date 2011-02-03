@@ -24,22 +24,12 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
       >> verboseLn flags "Generating php Object files with Ampersand"
       >> verboseLn flags "---------------------------"
       >> write "index.htm"                 (htmlindex fSpec svcs flags)
-    --  >> verboseLn flags (show [(name p,[(show e,fldname s,fldname t)|(e,s,t)<-eLkpTbl p])|PlugSql p@(TblSQL{})<-plugs fSpec]) >> error ""
       >> write "Installer.php"             (installer fSpec flags)
       >> write (name fSpec++".php")        (contextGen fSpec)
       >> write "interfaceDef.inc.php"      (interfaceDef fSpec svcs flags)
       >> write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
-      >> (if sqlLogPwdDefd flags then -- if either login or password for SQL has been specified then make a dbsettings file
-             verboseLn flags ("  Writing username and password: dbsettings.php")
-          >> writeFile (combine targetDir "dbsettings.php") dbsettings
-          else
-             verboseLn flags ("  Skipping dbsettings.php (Installer.php will create this file)")
-         )
-  --    >> verboseLn flags ("data service files for all data objects:")
-  --    >> sequence_
-  --       [ write (addExtension ("data_"++name p) ".inc.php") (dataServices flags fSpec (DataObject p))
-  --       | PlugSql p <- plugs fSpec
-  --       ]
+      >> verboseLn flags ("  Writing username and password: dbsettings.php")
+      >> writeFile (combine targetDir "dbsettings.php") dbsettings
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
          [ write (addExtension (name svc) ".inc.php") (objectServices flags fSpec (svObj svc))
@@ -59,7 +49,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
                     ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
                     ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
-                    ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
+                    ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
        svcs = serviceS fSpec++ serviceG fSpec--Was (voor ontvlechting): map fsv_svcdef (fServices fSpec)
 
