@@ -7,7 +7,6 @@ module DatabaseDesign.Ampersand_Prototype.GetCode (getCodeFor) where
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(zipnum)
 -- import DatabaseDesign.Ampersand.Fspec (Fspc(plugInfos))
- import DatabaseDesign.Ampersand.Misc.Plug (makePlug,PlugInfo(..))
  import DatabaseDesign.Ampersand_Prototype.PlugPHP(phpfile,phpSafe,phpinArgs)
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries(Named(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables

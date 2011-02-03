@@ -9,7 +9,7 @@ where
 import DatabaseDesign.Ampersand.Basics     (Collection(..),Identified(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics    (eqCl, sort')
-import DatabaseDesign.Ampersand.Misc.Plug
+import DatabaseDesign.Ampersand.Fspec.Plug
 import Char
 import DatabaseDesign.Ampersand.Fspec.FPA
 import Data.List (nub)

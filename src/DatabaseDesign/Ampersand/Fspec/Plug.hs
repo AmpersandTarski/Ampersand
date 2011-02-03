@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XMultiParamTypeClasses #-}  
-module DatabaseDesign.Ampersand.Misc.Plug
+module DatabaseDesign.Ampersand.Fspec.Plug
      (Plugable(..), PlugInfo(..), PlugInfos
      ,SqlField(..)
      ,SqlType(..)

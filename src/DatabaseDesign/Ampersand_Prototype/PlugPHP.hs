@@ -17,7 +17,6 @@ import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
 import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..))
 import Data.Maybe (listToMaybe)
-import DatabaseDesign.Ampersand.Misc.Plug
 import DatabaseDesign.Ampersand.Fspec
 import Data.List
 ----------------------------------------------

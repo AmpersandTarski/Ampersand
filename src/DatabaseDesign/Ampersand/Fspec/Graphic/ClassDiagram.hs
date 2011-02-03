@@ -9,7 +9,7 @@ where
    import Data.List
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1  hiding (Association)
-   import DatabaseDesign.Ampersand.Misc.Plug
+   import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.Fspec      (Fspc,plugInfos)
 --   import Data.ClassDiag  

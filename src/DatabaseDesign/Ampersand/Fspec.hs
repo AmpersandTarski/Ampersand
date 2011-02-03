@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec (
      module DatabaseDesign.Ampersand.Fspec.Fspec
+   , module DatabaseDesign.Ampersand.Fspec.Plug
    , module DatabaseDesign.Ampersand.Fspec.ShowHS
    , module DatabaseDesign.Ampersand.Fspec.ShowADL
    , module DatabaseDesign.Ampersand.Fspec.ShowECA
@@ -15,6 +16,8 @@ module DatabaseDesign.Ampersand.Fspec (
    )
 where
 import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..))
+import DatabaseDesign.Ampersand.Fspec.Plug (PlugInfo(..),PlugSQL(..),SqlField(..)
+                         ,tblcontents,tblfields,requiredFields,requires,plugpath,Plugable(..),showSQL,fldauto,iskey)
 import DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),fSpec2Haskell,haskellIdentifier)
 import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
 import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)

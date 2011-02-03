@@ -4,7 +4,6 @@ module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtempla
 where
 import DatabaseDesign.Ampersand.Basics  (eqCl,Collection (..),Identified(..),unCap, upCap, commaNL, commaEng, preciesEen)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List
 import DatabaseDesign.Ampersand.Fspec.Fspec (Quad(..),Fservice(..),Clauses(..),Field(..),datasets)
 import DatabaseDesign.Ampersand.Fspec

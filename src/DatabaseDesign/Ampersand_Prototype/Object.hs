@@ -12,7 +12,6 @@ module DatabaseDesign.Ampersand_Prototype.Object(objectServices) where
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
 --import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc.Plug
 import Data.Maybe
 import Data.List  hiding (group)
 --import DatabaseDesign.Ampersand.Misc

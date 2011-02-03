@@ -27,7 +27,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Time(ClockTime)
    import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Misc.Plug 
+   import DatabaseDesign.Ampersand.Fspec.Plug 
    import DatabaseDesign.Ampersand.Misc.TinyXML 
    showXML :: Fspc -> ClockTime -> String
    showXML fSpec now 

@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc        (Options(namespace,language,genPrototype,theme),DocTheme(..),plural)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify)
-   import DatabaseDesign.Ampersand.Misc.Plug
+   import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPcompl(..))

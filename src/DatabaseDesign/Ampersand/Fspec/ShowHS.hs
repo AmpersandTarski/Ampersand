@@ -4,7 +4,7 @@ where
 
    import Char                  (isAlphaNum)
    import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Misc.Plug
+   import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL       (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import Data.List
