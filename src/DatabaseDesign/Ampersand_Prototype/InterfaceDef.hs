@@ -1,18 +1,19 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.InterfaceDef where
---  import DatabaseDesign.Ampersand.ADL1
+module DatabaseDesign.Ampersand_Prototype.InterfaceDef 
+  (interfaceDef)
+where
   import Data.List
---  import DatabaseDesign.Ampersand.Fspec
+  import DatabaseDesign.Ampersand 
   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(commentBlock, indentBlock)
   import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
-  import DatabaseDesign.Ampersand -- .Misc
+  import DatabaseDesign.Ampersand_Prototype.Version 
    
   interfaceDef :: Fspc -> [Service] -> Options -> String
   interfaceDef fspc svcs flags = intercalate "\n"
      (
         [ "<?php"
         , "// interfaceDef.inc.php"
-        , "// Generated with "++ ampersandCoreVersionBanner
+        , "// Generated with "++ ampersandPrototypeVersionBanner
         , ""
         , "// this file contains large chunks of HTML code to improve code readability and reuse"
         , ""
@@ -73,7 +74,7 @@ module DatabaseDesign.Ampersand_Prototype.InterfaceDef where
         , "  <!-- End #buttons -->"
         , "  <div id=\"errors\" class=\"content\"/>"
         , "  <div id=\"notice\">"
-        , "    <span title=\"generated with "++ampersandCoreVersionBanner++"\">Layout V3.0 (Milan Interface)</span>"
+        , "    <span title=\"generated with "++ampersandPrototypeVersionBanner++"\">Layout V3.0 (Milan Interface)</span>"
         , "  </div>"
         , "  <!-- End #notice -->"
         , "<!-- ********** Javascript ********** -->"

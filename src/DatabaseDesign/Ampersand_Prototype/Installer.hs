@@ -1,12 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.Installer where
-  import DatabaseDesign.Ampersand.ADL1
+module DatabaseDesign.Ampersand_Prototype.Installer
+  (installer)
+where
   import Data.List
-  import DatabaseDesign.Ampersand.Fspec
-  import DatabaseDesign.Ampersand.Misc
-  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
   import DatabaseDesign.Ampersand
-
+  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
+  
 --  import Debug.Trace
 
   installer :: Fspc -> Options -> String

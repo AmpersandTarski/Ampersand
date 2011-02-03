@@ -1,18 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Wrapper (objectWrapper) where
 import Data.List
-import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand_Prototype.Version 
 
 --svcs is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
 objectWrapper :: Fspc -> [Service] ->  Service -> Options -> String
 objectWrapper fSpec svcs svc flags
  = intercalate "\n" $
-   [ "<?php // generated with "++ampersandCoreVersionBanner ]
+   [ "<?php // generated with "++ampersandPrototypeVersionBanner ]
   ++
    commentBlock ["","  Interface V1.3.1","","","  Using interfaceDef",""]
   ++

@@ -28,5 +28,5 @@ import DatabaseDesign.Ampersand.Fspec.Graphic.Picture (Picture(..),writePicture)
 import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs )
 import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec (makeFspec)
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  (conjNF,proofPA,disjNF,simplify)
-import DatabaseDesign.Ampersand.Fspec.FPA (FPA,fPoints,fpa,FPcompl(..))
+import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..),FPAble(..),fPoints,fpa,FPcompl(..))
 

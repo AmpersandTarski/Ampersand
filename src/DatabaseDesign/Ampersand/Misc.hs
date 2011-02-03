@@ -7,7 +7,7 @@ module DatabaseDesign.Ampersand.Misc (
 )where
    import DatabaseDesign.Ampersand.Misc.Languages (Lang(..),plural)
    import DatabaseDesign.Ampersand.Misc.Options   (getOptions,Options(..),defaultFlags,verboseLn,verbose,DocTheme(..),FspecFormat(..),PandocFormat(..) )
-   import DatabaseDesign.Ampersand.Misc.Version   (ampersandCoreVersionBanner)
+   import DatabaseDesign.Ampersand.Misc.Version   (ampersandCoreVersionBanner,versionNumber)
 
 
 

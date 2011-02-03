@@ -6,6 +6,7 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
    import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
 --   import System.FilePath (addExtension)
    import DatabaseDesign.Ampersand
+   import DatabaseDesign.Ampersand_Prototype.Version 
    
    
    htmlindex :: Fspc -> [Service] -> Options -> [Char]
@@ -39,7 +40,7 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
         , "  <!--"
         , "  <h2>Some data:</h2>"
         , "  <ul>"
-        , "    <li>Compiled with: "++ampersandCoreVersionBanner++"</li>"
+        , "    <li>Compiled with: "++ampersandPrototypeVersionBanner++"</li>"
         , "    <li>Application name: "++appname++"</li>"
         , "    <li>Database host: "++sqlHost flags++"</li>"
         , "    <li>Database Usename / password set: "++(if sqlLogPwdDefd flags then "YES" else "NO")++"</li>"

@@ -1,16 +1,17 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts #-}
-module DatabaseDesign.Ampersand_Prototype.GetCode (getCodeFor) where
+module DatabaseDesign.Ampersand_Prototype.GetCode
+   (getCodeFor) 
+where
+ import Data.Maybe (listToMaybe)
+ import DatabaseDesign.Ampersand
  import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..))
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
- import DatabaseDesign.Ampersand
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(zipnum)
--- import DatabaseDesign.Ampersand.Fspec (Fspc(plugInfos))
  import DatabaseDesign.Ampersand_Prototype.PlugPHP(phpfile,phpSafe,phpinArgs)
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries(Named(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
- import Data.Maybe (listToMaybe)
  
  getCodeFor :: Fspc->[Named CodeVar]->[Named CodeVar]->(Maybe [Statement])
  getCodeFor fSpec pre post

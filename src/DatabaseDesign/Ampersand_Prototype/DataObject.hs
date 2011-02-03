@@ -13,6 +13,7 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List  hiding (group)
 import DatabaseDesign.Ampersand-- .Misc
+import DatabaseDesign.Ampersand_Prototype.Version 
 
 --For each data object (i.e. generated kernel-based SQL plugs) there is one dataServices file (data_*.inc.php).
 --It contains:
@@ -47,7 +48,7 @@ dataServices _ _ (DataObject (ScalarSQL{})) = "//TODO -> Scalar" --error "TODO D
 dataServices _ _ (DataObject (BinSQL{})) = "//TODO -> Binary" --error "TODO DataObject.hs 97"
 dataServices flags fSpec (DataObject dobj)
  = intercalate "\n  "
-   ([ "<?php // generated with "++ampersandCoreVersionBanner
+   ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
     , "/*********"
     , showADLcode fSpec dobjdef

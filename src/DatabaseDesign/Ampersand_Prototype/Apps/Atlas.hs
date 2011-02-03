@@ -11,14 +11,9 @@
 module DatabaseDesign.Ampersand_Prototype.Apps.Atlas 
    (fillAtlas)
 where
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (explain,format,ExplainOutputFormat(..))
-import DatabaseDesign.Ampersand.Basics 
+import DatabaseDesign.Ampersand
 import Database.HDBC.ODBC 
 import Database.HDBC
-import DatabaseDesign.Ampersand.Fspec.Graphic.Picture (PictType(..))
 import Data.List  (intercalate)
 ------
 runMany :: (IConnection conn) => conn -> [String] -> IO Integer

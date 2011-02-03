@@ -46,7 +46,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    import DatabaseDesign.Ampersand.Fspec     (showADL)
    import DatabaseDesign.Ampersand.Basics     (trim)
    import DatabaseDesign.Ampersand.Misc     (Lang(..),defaultFlags, Options(..))
-   import DatabaseDesign.Ampersand.Misc.Explain(AutoExplain,string2AutoExplain)
+   import DatabaseDesign.Ampersand.Misc.Explain(string2AutoExplain)
    keywordstxt :: [String]
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"

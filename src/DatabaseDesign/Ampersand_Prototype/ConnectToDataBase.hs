@@ -1,18 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase (connectToDataBase) 
-  where
-   import Data.List
- --  import DatabaseDesign.Ampersand.ADL1 (Rule(..),Association(..),Expression(..),Relation(..),Concept(..))
-   import DatabaseDesign.Ampersand -- .Misc
- --  import DatabaseDesign.Ampersand.Output
-   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
- --  import DatabaseDesign.Ampersand.Fspec
-   import DatabaseDesign.Ampersand_Prototype.Code
+module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase
+ (connectToDataBase) 
+where
+ import Data.List
+ import DatabaseDesign.Ampersand
+ import DatabaseDesign.Ampersand_Prototype.Code
+ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
 
-   connectToDataBase :: Fspc -> Options -> String
-   connectToDataBase fSpec flags 
+ connectToDataBase :: Fspc -> Options -> String
+ connectToDataBase fSpec flags 
     = (intercalate "\n  " 
-      ([ "<?php // generated with "++ampersandCoreVersionBanner
+      ([ "<?php // generated with "++ampersandPrototypeVersionBanner
        , "require \"dbsettings.php\";"
        , ""
        , "function display($tbl,$col,$id){"
@@ -115,8 +113,8 @@ module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase (connectToDataBase)
    
    
    
-   ruleFunctions :: Options -> Fspc -> [String]
-   ruleFunctions flags fSpec
+ ruleFunctions :: Options -> Fspc -> [String]
+ ruleFunctions flags fSpec
     = showCodeHeaders 
        ([ (code rule')
         | rule<-rules fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]

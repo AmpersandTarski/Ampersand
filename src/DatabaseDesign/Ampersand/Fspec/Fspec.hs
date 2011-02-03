@@ -210,5 +210,5 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
 	namelijk een entiteit met twee attributen.
    -}
    -- WHY151210 -> can't a php plug be a dataset?
-   datasets fSpec = [] --[p| PlugSql p@(TblSQL{})<-plugs fSpec]
+   datasets fSpec = error "  --TODO Herstellen: [p| PlugSql p@(TblSQL{})<-plugs fSpec]"
 

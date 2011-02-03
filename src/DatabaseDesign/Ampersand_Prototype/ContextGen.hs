@@ -1,13 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ContextGen where
+module DatabaseDesign.Ampersand_Prototype.ContextGen 
+  (contextGen)
+where
   import Data.List
   import DatabaseDesign.Ampersand
-   
+  import DatabaseDesign.Ampersand_Prototype.Version 
   contextGen :: Fspc -> String
   contextGen fspc = "<?php\n  " ++ intercalate "\n  "
      (
         [ "// "++name fspc++".php"
-        , "// Generated with "++ ampersandCoreVersionBanner
+        , "// Generated with "++ ampersandPrototypeVersionBanner
         , "// Prototype interface design by Milan van Bruggen and Sebastiaan J.C. Joosten"
         , ""
         , ""
