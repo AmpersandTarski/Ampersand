@@ -2,7 +2,7 @@
 {-# OPTIONS -XFlexibleContexts #-}
 {-# LANGUAGE FlexibleContexts #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CC 
-   (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
+   (pArchitecture, pPopulations, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
@@ -30,7 +30,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                       ,Pairs,Paire,mkPair
                       ,Pattern(..)
                       ,PExplanation(..)
-                      ,Population(..)
+                      ,Population(..), Populations
                       ,Prop(..)
                       ,Rule(..),RuleType(..)
                       ,PExplObj(..)
@@ -71,6 +71,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    pArchitecture        :: Parser Token Architecture
    pArchitecture = Arch <$> pList1 pContext
 
+   --to parse files containing only populations
+   pPopulations :: Parser Token (Populations Concept)
+   pPopulations = pList1 pPopulation
+
    pBind             :: Parser Token (Declaration Concept,String)
    pBind              = rebuild <$ pKey "BIND" <*> pDeclaration <* pKey "TOPHP" <*> (pConid <|> pString)
                        where rebuild d s = (d,s)
@@ -100,7 +104,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                               , ctxps   = [e| CXpl e<-ces]
                               , ctxros  = [r| CRos r<-ces]
                               , ctxmed  = [r| CMed r<-ces]
-                              , ctxpops = [Popu rel prs| CPop rel prs<-ces]
+                              , ctxpops = [p| CPop p<-ces]
                               , ctxsql  = [plug| CSqlPlug plug<-ces]  -- user defined SQL plugs
                               , ctxphp  = [plug| CPhpPlug plug<-ces]  -- user defined PHP plugs
                               , ctxenv  = env
@@ -112,7 +116,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                        | CCon ConceptDef
                        | CKey KeyDef
                        | Csvc Service
-                       | CPop (Relation Concept) Pairs
+                       | CPop (Population Concept)
                        | CSqlPlug ObjectDef
                        | CPhpPlug ObjectDef
                        | CXpl PExplanation
@@ -158,7 +162,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                          CXpl     <$> pExplain      <|>
                          CRos     <$> pRoleService  <|>
                          CMed     <$> pRoleRelation <|>
-                         CPop     <$  pKey "POPULATION" <*> pRelation <* pKey "CONTAINS" <*> pContent
+                         CPop     <$> pPopulation  
+
+   pPopulation         :: Parser Token (Population Concept)
+   pPopulation = ppop <$ pKey "POPULATION" <*> pRelation <* pKey "CONTAINS" <*> pContent
+                 where ppop r c = Popu r c
 
    pPattern         :: Parser Token Pattern
    pPattern  = rebuild <$  pKey "PATTERN" <*> (pConid <|> pString)

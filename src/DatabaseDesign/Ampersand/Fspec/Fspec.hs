@@ -195,3 +195,11 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
 
    instance Identified FSid where
     name (FS_id nm) = nm
+
+
+
+   --implement makeADL1Populations to transform a certain --importformat of some --importfile to Populations Concept for a ADL1.Context
+   --ADL1 files (=Context) are imported into the Atlas application as defined in DatabaseDesign\Ampersand_Prototype\Apps\atlas.adl
+   --USE -> cmd: adl --importfile=some.adl --importformat=adl atlas.adl
+   instance ADL1Importable Fspc where
+     makeADL1Populations fSpec = []

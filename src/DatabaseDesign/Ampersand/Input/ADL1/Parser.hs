@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Input.ADL1.Parser (parseADL1)where
+module DatabaseDesign.Ampersand.Input.ADL1.Parser (parseADL1,parseADL1Pop)where
 
 
-import DatabaseDesign.Ampersand.Input.ADL1.CC (pArchitecture,keywordstxt, keywordsops, specialchars, opchars)
+import DatabaseDesign.Ampersand.Input.ADL1.CC (pArchitecture,pPopulations,keywordstxt, keywordsops, specialchars, opchars)
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner(scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing(parseIO)
@@ -12,12 +12,13 @@ import DatabaseDesign.Ampersand.Output (writepandoc)
 import Text.Pandoc 
  
 parseADL1 :: String     -- ^ The string to be parsed
+         -> Populations Concept -- ^ The population derived from the import file (--import=file)
          -> Options     -- ^ flags to be taken into account
          -> String      -- ^ The name of the .adl file (used for error messages)
          -> IO(Context) -- ^ The IO monad with the context. 
-parseADL1 adlstring flags fnFull =
+parseADL1 adlstring importpop flags fnFull =
     do { slRes <- parseIO pArchitecture (scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
-       ; case typecheckAdl1 slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
+       ; case typecheckAdl1 slRes importpop of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
                 ( []      ,[]) -> ioError(userError ("no context encountered in input file.\n"))
                 ( contexts,[]) -> case filteredContexts  of
                                     []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))
@@ -41,5 +42,10 @@ parseADL1 adlstring flags fnFull =
                                   thepandoc = Pandoc (Meta [] [] []) (concat (map snd errs))
                                   (_,maketex,makepdf) = writepandoc flags thepandoc
        }
+
+parseADL1Pop :: String     -- ^ The string to be parsed
+         -> String      -- ^ The name of the .pop file (used for error messages)
+         -> IO(Populations Concept) -- ^ The IO monad with the populations. 
+parseADL1Pop popsstring fnFull = parseIO pPopulations (scan keywordstxt keywordsops specialchars opchars fnFull initPos popsstring)
 
 

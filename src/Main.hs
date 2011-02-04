@@ -28,7 +28,25 @@ parseFile flags
       = let fnFull = fileName flags in
         do verbose flags "Parsing... "
            adlText <- readFile fnFull
-           parseADL1 adlText flags fnFull 
+           importpops <- parseImportFile flags 
+           parseADL1 adlText importpops flags fnFull 
+
+parseImportFile :: Options -> IO(Populations Concept)  
+parseImportFile flags  
+      = let fn = importfile flags in
+        if not(null(importfile flags))
+        then do verbose flags "Parsing import file... "
+                popText <- readFile fn
+                case importformat flags of
+                  Adl1PopFormat -> do verbose flags "Importing ADL1 populations file... "
+                                      ps<-parseADL1Pop popText fn --redundant but consistent
+                                      return (makeADL1Populations ps)
+                  Adl1Format -> do verbose flags "Importing ADL1 file... "
+                                   cx <- parseADL1 popText [] flags fn
+                                   fspec <- calculate flags cx
+                                   return (makeADL1Populations fspec)
+        else return []
+
 
 calculate :: Options -> Context -> IO(Fspc)
 calculate flags context = do verboseLn flags "Calculating..."

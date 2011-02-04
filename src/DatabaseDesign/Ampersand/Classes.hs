@@ -6,6 +6,7 @@ module DatabaseDesign.Ampersand.Classes (
     , module DatabaseDesign.Ampersand.Classes.Object
     , module DatabaseDesign.Ampersand.Classes.ViewPoint
     , module DatabaseDesign.Ampersand.Classes.Explainable
+    , module DatabaseDesign.Ampersand.Classes.ADL1Importable
 )where
    import DatabaseDesign.Ampersand.Classes.Populated              (Populated(..))
    import DatabaseDesign.Ampersand.Classes.ConceptStructure       (ConceptStructure(..))
@@ -13,3 +14,4 @@ module DatabaseDesign.Ampersand.Classes (
    import DatabaseDesign.Ampersand.Classes.Object                 (Object(..))
    import DatabaseDesign.Ampersand.Classes.ViewPoint              (ViewPoint(..))
    import DatabaseDesign.Ampersand.Classes.Explainable            (explanationDeclarations)
+   import DatabaseDesign.Ampersand.Classes.ADL1Importable (ADL1Importable(makeADL1Populations))

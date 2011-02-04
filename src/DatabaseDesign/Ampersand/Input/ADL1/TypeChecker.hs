@@ -52,9 +52,14 @@ type Error = (String,[Block])
 --REMARK -> After type checking not only the types are bound to expressions, but also other
 --          enrichment functionality is implemented
 --USE   -> This is the only function needed outside of the TypeChecker
-typecheckAdl1 :: Architecture -> (Contexts, Errors)
-typecheckAdl1 arch@(Arch ctxs) = (enriched, checkresult)  
+typecheckAdl1 :: Architecture -> Populations Concept -> (Contexts, Errors)
+typecheckAdl1 arch' importpop = (enriched, checkresult)  
    where
+   --REMARK -> if populations are imported, then the POPULATIONs in the first CONTEXT are overwritten
+   --          (population specified within the Declaration are NOT overwritten)
+   arch | null importpop || null(archContexts arch') = arch'
+        | otherwise = arch'{archContexts=((head(archContexts arch')){ctxpops=importpop}):(tail(archContexts arch'))}
+   ctxs = archContexts arch 
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
    check1 = checkCtxNameUniqueness ctxs -- checks whether all contexts have unique names.

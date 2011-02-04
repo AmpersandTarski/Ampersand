@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Misc.Options 
         (Options(..),getOptions,usageInfo'
-        ,verboseLn,verbose,FspecFormat(..)
+        ,verboseLn,verbose,FspecFormat(..),ImportFormat(..)
         ,DocTheme(..),allFspecFormats,defaultFlags,PandocFormat(..))
 where
 --import List                  (isSuffixOf)
@@ -180,11 +180,11 @@ getOptions =
                                                             ""  -> basename fName
                                                             str -> str
                                         , genAtlas = not (null(importfile flags)) && importformat flags==Adl1Format
-                                        , importfile  = if hasExtension(importfile flags)
+                                        , importfile  = if null(importfile flags) || hasExtension(importfile flags)
                                                         then importfile flags
                                                         else case importformat flags of 
                                                                 Adl1Format -> addExtension (importfile flags) "adl"
-                                                                --REMARK -> there is no other format yet  _ -> importfile flags
+                                                                Adl1PopFormat -> addExtension (importfile flags) "pop"
                                         }
                 x:xs    -> error ("!Fatal (module Options 179): too many files: "++ (intercalate ", " (x:xs)) ++useHelp)
        
@@ -207,7 +207,7 @@ getOptions =
             
 data DisplayMode = Public | Hidden 
 data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
-data ImportFormat = Adl1Format  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
+data ImportFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
               | StudentTheme   -- An adjusted func spec for students of the business rules course
@@ -314,6 +314,8 @@ iformatOpt :: String -> Options -> Options
 iformatOpt f opts = case (map toUpper f) of
      "ADL" -> opts{importformat = Adl1Format}
      "ADL1"-> opts{importformat = Adl1Format}
+     "POP" -> opts{importformat = Adl1PopFormat}
+     "POP1"-> opts{importformat = Adl1PopFormat}
      _     -> opts
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
@@ -352,7 +354,7 @@ ftfOpt w opts = opts {defaultPandocReader = case (map toUpper w) of
 allFspecFormats :: String
 allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 allImportFormats :: String
-allImportFormats = "ADL"
+allImportFormats = "ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)"
 switchboardOpt :: Options -> Options
 switchboardOpt opts = opts{flgSwitchboard = True}
 noGraphicsOpt :: Options -> Options

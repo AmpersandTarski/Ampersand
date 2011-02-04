@@ -26,6 +26,7 @@ module DatabaseDesign.Ampersand.ADL1
            , explanationDeclarations
            , ConceptStructure(..),Signaling(..)
            , Association(..), Relational(..)
+           , ADL1Importable(..)
            , normExpr
            , Populated(..)
            , Substitutive(..)
