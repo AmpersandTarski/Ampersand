@@ -12,7 +12,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
                   , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
-                  , datasets, toService
+                  , toService
                   )
  where
    import DatabaseDesign.Ampersand.ADL1            hiding (Association)
@@ -195,20 +195,3 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
 
    instance Identified FSid where
     name (FS_id nm) = nm
-
-   
-   datasets :: Fspc -> [PlugSQL]
-   --   --WHY? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
-   {- BECAUSE!
-	Dat heeft te maken met de vertaling van binaire relaties naar datasets (entiteiten) en relaties.
-	Datasets worden gevormd door alle relaties vanuit een concept univalent af te sluiten.
-	Dat wil zeggen: vanuit dat concept komt elk attribuut overeen met een univalente expressie.
-	In de praktijk doen de meeste relaties mee in een of andere entiteit.
-	Alleen de relaties die in geen enkele dataset meedoen, worden als binaire relatie behandeld.
-	De twee soorten plug komen overeen met datasets resp. relaties (Of, voor ER-adepten, in entiteiten resp. relaties)
-	Het antwoord op je vraag: Er bestaan wel degelijk plugs met slechts twee kolommen getoond worden als dataset,
-	namelijk een entiteit met twee attributen.
-   -}
-   -- WHY151210 -> can't a php plug be a dataset?
-   datasets fSpec = error "  --TODO Herstellen: [p| PlugSql p@(TblSQL{})<-plugs fSpec]"
-

@@ -8,7 +8,8 @@ where
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation) 
    import DatabaseDesign.Ampersand.TypeInference.InfLibAG       (InfTree)
    import DatabaseDesign.Ampersand.Basics                       (Identified(..))
-     
+   import DatabaseDesign.Ampersand.Fspec.FPA (FPcompl(..),FPA(..),FPAble(..))
+
    data Service = Serv { svName   :: String
                        , svParams :: [Relation Concept]
                        , svViols  :: [Rule (Relation Concept)]
@@ -42,6 +43,8 @@ where
    instance Numbered ObjectDef where
     pos obj = objpos obj
 
+   instance FPAble ObjectDef where
+    fpa (Obj{}) = IF Eenvoudig -- ! TODO: dit is niet verantwoord vanuit de IFPUG standaard. Uitzoeken!
 
    --Actions can be defined in objstrs by "Action=<action>" p.e. Action=Select
    --If no actions are specified then actions defaults to ["Select","Edit","Delete","New"]

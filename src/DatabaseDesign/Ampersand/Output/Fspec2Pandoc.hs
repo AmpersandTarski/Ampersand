@@ -5,7 +5,7 @@ where
 import DatabaseDesign.Ampersand.Basics  (eqCl,Collection (..),Identified(..),unCap, upCap, commaNL, commaEng, preciesEen)
 import DatabaseDesign.Ampersand.ADL1
 import Data.List
-import DatabaseDesign.Ampersand.Fspec.Fspec (Quad(..),Fservice(..),Clauses(..),Field(..),datasets)
+import DatabaseDesign.Ampersand.Fspec.Fspec (Quad(..),Fservice(..),Clauses(..),Field(..))
 import DatabaseDesign.Ampersand.Fspec
 import Text.Pandoc  
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
@@ -502,12 +502,12 @@ diagnosis lev fSpec flags = header ++ diagIntro ++ missingConceptDefs ++ missing
                          , TeX (showMathcode fSpec m), Str "."
                        ] ]
       (English,ms)  -> [Para 
-                         [ Str "Relations ", TeX (commaEng "and" (map (showMathcode fSpec) ms))
+                         [ Str "Relations ", TeX (commaEng "and" (rd (map name ms)))
                          , Str " are explained by an automated explanation generator. "
                          , Str "If these explanations are not appropriate, add PURPOSE RELATION statements to your relations."
                        ] ]
-   where missing = [m| m <-mors fSpec
-                     , null (explain fSpec flags m)
+   where missing = [makeInline m| m <-mors fSpec, not (isIdent m)
+                                 , null (explain fSpec flags m)
                    ]
 
 ------------------------------------------------------------
@@ -711,9 +711,9 @@ processAnalysis lev fSpec flags
 dataAnalysis :: Int -> Fspc -> Options -> ([Block],Picture,Picture)
 dataAnalysis lev fSpec flags
  = ( header ++ daContents ++ daAssociations remainingDecls ++
-   [b | p<-datasets fSpec, b<-daPlug p], classificationPicture, classDiagramPicture )
+   [b | InternalPlug p<-plugInfos fSpec, b<-daPlug p], classificationPicture, classDiagramPicture )
  where 
-  remainingDecls = mors fSpec >- [m | p<-datasets fSpec, m<-mors p]
+  remainingDecls = mors fSpec >- [m | p<-plugInfos fSpec, m<-mors p]
 
   header :: [Block]
   header = labeledHeader lev chpDAlabel (case language flags of
@@ -1296,7 +1296,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           intercalate "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
                           intercalate "\\\\\n" [ intercalate "&" [name plug, latexEscShw (fpa plug), (latexEscShw.fPoints.fpa) plug]
-                                         | plug<-datasets fSpec
+                                         | plug<-plugInfos fSpec
                                          , fPoints (fpa plug)>0] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ,Para $ 

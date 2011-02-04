@@ -7,9 +7,9 @@ ampersandPrototypeVersionBanner :: String
 ampersandPrototypeVersionBanner = "Prototype vs. "++versionNumberPrototype++ "(core vs. "++versionNumber++")"
 
 versionNumberPrototype :: String
-versionNumberPrototype = "1.1.0.857" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumberPrototype = "1.1.0.861" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-Scheidingvoorbereiding afgemaakt. Ook versie nummers gescheiden: Ampersand Core apart van Ampersand_Prototype
+small things...
 
 -}

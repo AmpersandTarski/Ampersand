@@ -11,7 +11,6 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
    import DatabaseDesign.Ampersand_Prototype.ContextGen          (contextGen)
    import DatabaseDesign.Ampersand_Prototype.Apps
-   import DatabaseDesign.Ampersand_Prototype.Version 
    import System.FilePath               
    import System.Directory
    import qualified Data.ByteString as Bin

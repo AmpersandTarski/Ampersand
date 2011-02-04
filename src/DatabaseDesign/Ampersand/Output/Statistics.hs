@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Output.Statistics (Statistics(..)) where
 
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec
-   import DatabaseDesign.Ampersand.Fspec.Fspec(Fservice(..),datasets) --TODO import structure niet doordacht genoeg.
+   import DatabaseDesign.Ampersand.Fspec.Fspec(Fservice(..)) --TODO import structure niet doordacht genoeg.
  -- TODO Deze module moet nog verder worden ingekleurd...
  
    class Statistics a where
@@ -25,7 +25,7 @@ module DatabaseDesign.Ampersand.Output.Statistics (Statistics(..)) where
     nServices fSpec = length (services fSpec) --TODO -> check correctness
     nPatterns fSpec = nPatterns (patterns fSpec)
     nFpoints  fSpec = sum [fPoints (fsv_fpa svc)| svc<-services fSpec] +
-                      sum [fPoints (fpa pl)   | pl <-datasets fSpec]
+                      sum [fPoints (fpa plug)   | InternalPlug plug <- plugInfos fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...
    
 -- \***********************************************************************

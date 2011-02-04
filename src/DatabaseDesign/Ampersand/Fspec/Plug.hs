@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XMultiParamTypeClasses #-}  
+{-# OPTIONS_GHC -Wall -XMultiParamTypeClasses -XUndecidableInstances -XFlexibleInstances #-}  
 module DatabaseDesign.Ampersand.Fspec.Plug
      (Plugable(..), PlugInfo(..), PlugInfos
      ,SqlField(..)
@@ -104,7 +104,21 @@ class (FPAble p, Identified p, Eq p, Show p) => Plugable p where
   makePlug :: PlugInfo -> p
   
 instance Plugable PlugSQL where
-  
+  makePlug (InternalPlug p) = p
+  makePlug (ExternalPlug _) = error ("!Fatal (module Plug 108): external plug is not Plugable")
+ 
+instance FPAble PlugInfo where
+  fpa (InternalPlug psql) = fpa psql
+  fpa (ExternalPlug obj)  = fpa obj
+
+instance ConceptStructure PlugInfo Concept where
+  concs   (InternalPlug psql) = concs   psql
+  concs   (ExternalPlug obj)  = concs   obj
+  mors    (InternalPlug psql) = mors    psql
+  mors    (ExternalPlug obj)  = mors    obj
+  morlist (InternalPlug psql) = morlist psql
+  morlist (ExternalPlug obj)  = morlist obj
+
 instance FPAble PlugSQL where
   fpa p = sqlfpa p
 
