@@ -202,4 +202,5 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
    --ADL1 files (=Context) are imported into the Atlas application as defined in DatabaseDesign\Ampersand_Prototype\Apps\atlas.adl
    --USE -> cmd: adl --importfile=some.adl --importformat=adl atlas.adl
    instance ADL1Importable Fspc where
-     makeADL1Populations fSpec = []
+     makeADL1Populations atlasds fSpec 
+       = makeADL1Populations atlasds (vrels fSpec)
