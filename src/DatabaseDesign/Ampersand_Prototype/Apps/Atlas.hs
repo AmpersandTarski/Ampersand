@@ -4,6 +4,9 @@
 --
 --like Installer.php, only assuming that the DATABASE already exists behind the ODBC connection and the namespace doesn't
 --TODO -> check namespaces a.k.a. contexts in the Atlas context (Meterkast)
+--        - if namespace exist, drop it first (local use)
+--        - in production each import will always get a new namespace
+--          however each user may have only one namespace => drop old namespace of user
 --this connection should be the same as the one in dbsettings.php
 --thus:
 -- 1) CREATE TABLES (sqlplugs fspec)
@@ -16,11 +19,12 @@ import Database.HDBC.ODBC
 import Database.HDBC
 import Data.List  (intercalate)
 ------
-runMany :: (IConnection conn) => conn -> [String] -> IO Integer
-runMany _ [] = return 1
-runMany conn (x:xs)  = 
-   do _ <- run conn x []
-      runMany conn xs
+--NOT USED (yet?) -> see DROP REMARK
+--runMany :: (IConnection conn) => conn -> [String] -> IO Integer
+--runMany _ [] = return 1
+--runMany conn (x:xs)  = 
+--   do _ <- run conn x []
+--      runMany conn xs
 
 placeholders :: [a] -> String
 placeholders [] = []
@@ -61,21 +65,10 @@ creates conn (tbl:tbls) =
 --hdbc and hdbc-odbc must be installed (from hackage)
 fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
- if genGraphics flags 
- then do verboseLn flags "Generating pictures for atlas..."
-         sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fSpec]
- else do initDatabase flags fSpec
--- Van Han aan Gerard: 
--- Hieronder vind je de code om het plaatje als imagemap te genereren. Dat is nu dus geregeld.
--- Vervolgens moet je er nog voor zorgen dat de imagemap op de juiste manier wordt gebruikt. Daarvoor
--- moet je de gegenereerde php oppoetsen. Ik heb daar geen verstand van. Bas overigens wel, maar jij wellicht ook. 
--- enige informatie hierover staat op http://www.wellho.net/resources/ex.php4?item=h112/imap.php
--- Het enige dat vervolgens geregeld moet worden is dat in DOT de nodes /edges moeten worden voorzien van de juiste URL attribuut. 
--- Dat kan voor jou niet moeilijk zijn. Als je dat regelt, dan vallen alle stukjes op z'n plaats. Succ6! 
---GMI:
---Dank Han!
---TODO -> "include (str_replace('png','map', $v0));" op een nette manier laten genereren op juiste plekken in .php zonder gebruik van str_replace natuurlijk.
---TODO -> .map files zijn nog vrij leeg (geen areas, slechts header/footer)
+   do verboseLn flags "Generating pictures for atlas..."
+      sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fSpec]
+      initDatabase flags fSpec
+
 initDatabase :: Options -> Fspc -> IO() 
 initDatabase flags fSpec = 
                  do verboseLn flags "Populating atlas for ..."
@@ -89,8 +82,6 @@ initDatabase flags fSpec =
                     --end connection
                     commit conn
                     disconnect conn
-   where
-    pictures = picturesForAtlas flags fSpec
 
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec

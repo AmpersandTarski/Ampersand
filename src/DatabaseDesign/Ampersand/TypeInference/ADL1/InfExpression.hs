@@ -37,8 +37,9 @@ trytype :: SynAtts -> [Sign]
 trytype (_,ttype,_,_,_) = ttype
 reltype :: SynAtts -> Either Sign [TErr]
 reltype (_,_,rtype,_,_) = rtype
-prooftree :: SynAtts -> [ITree]
-prooftree (_,_,_,proof,_) = proof
+--NOT USED (yet)
+--prooftree :: SynAtts -> [ITree]
+--prooftree (_,_,_,proof,_) = proof
 ishomo :: SynAtts -> Bool
 ishomo (_,_,_,_,hm) = hm
 
@@ -249,9 +250,10 @@ type OnIsa a = [(Concept,Concept)] -> a
 lmap :: (a -> a) -> Either a b -> Either a b
 lmap f (Left x) = Left (f x)
 lmap _ y = y
-rmap :: (b -> b) -> Either a b -> Either a b
-rmap f (Right x) = Right (f x)
-rmap _ y = y
+--NOT USED
+--rmap :: (b -> b) -> Either a b -> Either a b
+--rmap f (Right x) = Right (f x)
+--rmap _ y = y
 
 castcondition :: Maybe Sign -> Maybe Sign -> OnIsa Bool
 castcondition (Just x) (Just y) = x **!!** y

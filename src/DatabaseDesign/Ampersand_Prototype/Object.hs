@@ -7,8 +7,8 @@ import Data.Maybe
 import Data.List  hiding (group)
 
 import DatabaseDesign.Ampersand
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 objectServices :: Options 
@@ -170,6 +170,7 @@ showClasses flags fSpec o
          ctx' = simplify $ flp (ctx o)
          fs   = [es' | F es' <- [ctx']]
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
+{- still working on new save() and del()
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
 saveTransactions flags fSpec object
   -- | True = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 181): "++show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec])
@@ -493,7 +494,7 @@ plugAts plug object = plugAts' object object --you do not want to forget to ment
       | (sf,tf)<-sqlPlugFields plug (objctx o)
       ])
      ++ concat (map (plugAts' o) [att | att <- objats o])
-
+-}
 
 isObjUni :: ObjectDef -> Bool
 isObjUni obj = isUni (objctx obj)
@@ -574,25 +575,6 @@ doPhpGet fSpec objVar depth objIn objOut
 -}
 doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
---isArr=True
---objIn=SERVICE 1 : I[C]
---objOut=SERVICE Datatypes : I[ONE]=[C : V[ONE*C]]
---aOuts=[C : V[ONE*C]]
---combos=[]
---comboGroups'=[]
---comboGroups=[]
---rest=[([C : V[ONE*C]],1)]
---      sql outAtt = selectExprBrac 
-  --          fSpec (-4)
-    --        (if isOne' objOut then "" else sqlExprSrc fSpec (objctx outAtt))
-      --      (sqlExprTrg fSpec (objctx outAtt))
-        --    (objctx outAtt)
--- | not(null comboGroups') =  error(show(objIn,objOut,errorprint comboGroups'))
--- | name objOut=="Relatielijst"
-  --  = error(show(objIn,objOut,errorprint comboGroups', errorprint comboGroups,[(name x,y)|(x,y)<-rest]))
-  --  = error(show([((p,(s)),[(t)]) | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]))
-  -- = error (show(selectExprBrac fSpec (-4) [] (sqlExprTrg fSpec (objctx (head aOuts))) (objctx (head aOuts))     ))
- | otherwise
   = ["SELECT DISTINCT " ++ head fieldNames      ]
     ++ map ((++) "     , ")
            (tail fieldNames) 
@@ -604,8 +586,6 @@ doSqlGet fSpec isArr objIn objOut
                      (if isOne' objOut then [] else [" WHERE " ++ snd (head tbls)])
                )
    where 
-   errorprint cmbsgrps = [(name plug,xx y,map xx ys)|((plug,y),ys)<-cmbsgrps
-                         , let xx (x,f)=(name x,show(objctx x)++"["++show(sign (objctx x))++"]",fldname f)]
    aOuts = [a|a<-objats objOut]
    rest :: [(ObjectDef,Integer)]
    rest = zip [ a | a<-aOuts, a `notElem` [a' | g <- comboGroups, (a',_) <- snd g]]
@@ -755,7 +735,7 @@ splitLineBreak (l:s)
 --TODO -> block inserts with plugid=NULL or "" (or suggest a new page if transactions can be larger than one page)
 --the php name of the save function (uniqfnm) is fnm+depth except when depth=0 then it is "save"
 savefunction :: Options -> Fspc -> String -> Int -> ObjectDef -> [String]
-savefunction flags fSpec fnm depth this
+savefunction _ fSpec fnm depth this
   | isOne this = ["function "++uniqfnm fnm depth++"{}"] --TODO
   | otherwise 
   = let thiscpt = target(objctx this)
@@ -1019,4 +999,4 @@ savefunction flags fSpec fnm depth this
     ]) --end indentBlock save() for this
     ++
     ["}"] --end of save() for this
-    where uniqfnm fnm depth = if depth==0 then "save()" else phpIdentifier(fnm++show depth)++"()"
+    where uniqfnm nm dpth = if dpth==0 then "save()" else phpIdentifier(nm++show dpth)++"()"
