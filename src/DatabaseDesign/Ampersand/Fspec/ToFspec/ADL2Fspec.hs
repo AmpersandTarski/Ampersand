@@ -31,14 +31,14 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                       , isI ctxrel && source ctxrel==cptS
                                         || not (ctxrel `elem` map (objctx.svObj) (serviceS fSpec))
                                       ]  -- generated services
-                 , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
+                 , fServices    = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
                  , roleServices = let lookp (RS _ svcs p) sv
                                        = if length servFs == 1 then head servFs else
                                          if length servFs == 0
-                                         then error("Mistake in your script "++show p++": "++show (svcs>-map name (services fSpec))++"\ndo not refer to services.")
+                                         then error("Mistake in your script "++show p++": "++show (svcs>-map name (fServices fSpec))++"\ndo not refer to services.")
                                          else error("!Fatal (module ADL2Fspec 38): All services should have unique names.\nThese dont: "
-                                                    ++show [name (head cl)| cl<-eqCl name (services fSpec),length cl>1]++"\n")
-                                         where servFs = [s|s<-services fSpec, name s==sv]
+                                                    ++show [name (head cl)| cl<-eqCl name (fServices fSpec),length cl>1]++"\n")
+                                         where servFs = [s|s<-fServices fSpec, name s==sv]
                                   in [(role,svc)| rs@(RS roles svcs _) <-ctxros context                 -- ^ roleServices says which roles may use which service
                                                 , sv<-svcs, let svc=lookp rs sv
                                                 , role<-roles]

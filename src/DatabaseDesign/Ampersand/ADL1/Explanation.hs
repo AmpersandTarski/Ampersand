@@ -55,7 +55,7 @@ where
                 | ExplContext String   -- SJ: To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PExplContext is identical to the ExplContext
                   deriving Show        --handy for XML creation
                   
-   instance Identified ExplObj where    -- Not really the identifier, but the name of the object it references...
+{-   instance Identified ExplObj where    -- Not really the identifier, but the name of the object it references...
     name e = case e of
        ExplConceptDef cd -> name cd
        ExplDeclaration d -> name d ++name (source d)++name (target d)
@@ -64,7 +64,7 @@ where
        ExplPattern str   -> str
        ExplService str   -> str
        ExplContext str   -> str
-
+-}
 
 -- Explanation is the intended constructor. It contains the object it explains.
 -- The enrichment process of the parser must map the names (from PExplanation) to the actual objects
@@ -74,8 +74,9 @@ where
                             ,explCont  :: ExplainContent -- The actual explanation.
                             }deriving Show  --handy for XML creation
 
-   instance Identified Explanation where    -- Not really the identifier, but the name of the object it references...
+{- instance Identified Explanation where    -- Not really the identifier, but the name of the object it references...
     name e = name (explObj e)
+ -}
  
    type Explanations  = [Explanation]
    type PExplanations = [PExplanation]

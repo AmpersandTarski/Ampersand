@@ -25,10 +25,10 @@ where
              PExplConceptDef str  -> ExplConceptDef (getByName str (conceptDefs ue))
              PExplDeclaration rel -> ExplDeclaration (makeDeclaration rel)
              PExplRule str        -> ExplRule (getByName str (rules ue++signals ue))
-             PExplKeyDef str      -> ExplKeyDef (getByName str (keyDefs ue))
-             PExplPattern str     -> ExplPattern str
-             PExplService str     -> ExplService str
-             PExplContext str     -> ExplContext str
+             PExplKeyDef str      -> (ExplKeyDef  .        getByName str . keyDefs) ue
+             PExplPattern str     -> (ExplPattern . name . getByName str . patterns) ue
+             PExplService str     -> (ExplService . name . getByName str . services) ue
+             PExplContext str     -> ExplContext str   -- ^ TODO: this should check, through getByName, if the context exists...
            getByName :: Identified a => String -> [a] -> a 
            getByName str cds = 
               case (filter hasRightName cds) of

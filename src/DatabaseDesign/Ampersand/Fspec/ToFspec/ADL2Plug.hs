@@ -59,8 +59,8 @@ rel2plug  m totals
              , sqlfpa  = NO
              }
    where
-   srcNm = (if name (source m)==name (target m) then "s_" else "")++name (source m)
-   trgNm = (if name (source m)==name (target m) then "t_" else "")++name (target m)
+   srcNm = (if name (source m)==name (target m) then "s" else "")++name (source m)
+   trgNm = (if name (source m)==name (target m) then "t" else "")++name (target m)
    srcFld = Fld { fldname = srcNm                       
                 , fldexpr = if   is_Tot
                             then Tm (mIs (source m)) (-1)

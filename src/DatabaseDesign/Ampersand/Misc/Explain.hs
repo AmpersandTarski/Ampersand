@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Misc.Explain
     ( ExplainContent, AutoExplain(..)
-    , string2ExplainContent,  string2AutoExplain
+    , string2ExplainContent,  string2AutoExplain, string2Blocks
     , explainContent2String   -- Currently used for error messages in Prototype and Atlas.
     , explainContent2Blocks
     , explainParagraph

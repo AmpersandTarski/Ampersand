@@ -229,7 +229,7 @@ where
          = Elem (mkTag expl) [PlainText (show (pexExpl expl))]
 
    instance XML Explanation where
-     mkTag expl = Tag "Expl" [mkAttr "Explains" (name expl)
+     mkTag expl = Tag "Expl" [mkAttr "Explains" (show expl)
                              ,mkAttr "Lang" (show (explLang expl))
                              ,mkAttr "Ref" (explRefId expl)]
 

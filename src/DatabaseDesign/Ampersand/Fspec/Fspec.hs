@@ -19,31 +19,31 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Basics                    ((>-),Identified(..))
    import DatabaseDesign.Ampersand.Basics                      (Inheritance(..))
    import DatabaseDesign.Ampersand.Fspec.Plug                     
-   import DatabaseDesign.Ampersand.Fspec.Graphic.Picture  (Pictures)
+   import DatabaseDesign.Ampersand.Fspec.Graphic.Picture  (Picture)
    import DatabaseDesign.Ampersand.Fspec.FPA              (FPA)
 
-   data Fspc = Fspc { fsName       :: String                 -- ^ The name of the specification, taken from the Ampersand script
-                    , vplugInfos   :: PlugInfos              -- ^ All plugs defined in the Ampersand script
-                    , plugInfos    :: PlugInfos              -- ^ All plugs (defined and derived)
-                    , serviceS     :: [Service]              -- ^ All services defined in the Ampersand script
-                    , serviceG     :: [Service]              -- ^ All services derived from the basic ontology
-                    , services     :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
-                    , roleServices :: [(String,Fservice)]    -- ^ the relation saying which roles may use which service
+   data Fspc = Fspc { fsName       :: String                  -- ^ The name of the specification, taken from the Ampersand script
+                    , vplugInfos   :: [PlugInfo]              -- ^ All plugs defined in the Ampersand script
+                    , plugInfos    :: [PlugInfo]              -- ^ All plugs (defined and derived)
+                    , serviceS     :: [Service]               -- ^ All services defined in the Ampersand script
+                    , serviceG     :: [Service]               -- ^ All services derived from the basic ontology
+                    , fServices    :: [Fservice]              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , roleServices :: [(String,Fservice)]     -- ^ the relation saying which roles may use which service
                     , mayEdit      :: [(String,Relation Concept)] -- ^ the relation saying which roles may change the population of which relation.
-                    , vrules       :: Rules (Relation Concept) -- ^ All rules that apply in the entire Fspc, including all signals
-                    , grules       :: Rules (Relation Concept) -- ^ All rules that are generated: multiplicity rules and key rules
-                    , vkeys        :: KeyDefs                -- ^ All keys that apply in the entire Fspc
-                    , vgens        :: Gens Concept           -- ^ All gens that apply in the entire Fspc
-                    , vconjs       :: Expressions (Relation Concept) -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
-                    , vquads       :: Quads                  -- ^ All quads generated (by ADL2Fspec) from non-signal rules
+                    , vrules       :: [Rule (Relation Concept)] -- ^ All rules that apply in the entire Fspc, including all signals
+                    , grules       :: [Rule (Relation Concept)] -- ^ All rules that are generated: multiplicity rules and key rules
+                    , vkeys        :: [KeyDef]                -- ^ All keys that apply in the entire Fspc
+                    , vgens        :: [Gen Concept]           -- ^ All gens that apply in the entire Fspc
+                    , vconjs       :: [Expression (Relation Concept)] -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
+                    , vquads       :: [Quad]                  -- ^ All quads generated (by ADL2Fspec) from non-signal rules
                     , vrels        :: [Declaration Concept]   -- ^ All user defined and generated declarations.
-                                                             -- ^ The generated declarations are all generalizations and
-                                                             -- ^ one declaration for each signal.
-                    , fsisa        :: Inheritance Concept    -- ^ generated: The data structure containing the generalization structure of concepts
-                    , vpatterns    :: Patterns               -- ^ All patterns taken from the Ampersand script
-                    , pictPatts    :: Pictures               -- ^ List of pictures containing pattern pictures (in same order as patterns)
-                    , vConceptDefs :: ConceptDefs            -- ^ All conceptDefs defined in the Ampersand script
-                    , fSexpls      :: Explanations           -- ^ All explanations that have been declared within the current specification.
+                                                              -- ^ The generated declarations are all generalizations and
+                                                              -- ^ one declaration for each signal.
+                    , fsisa        :: Inheritance Concept     -- ^ generated: The data structure containing the generalization structure of concepts
+                    , vpatterns    :: [Pattern]               -- ^ All patterns taken from the Ampersand script
+                    , pictPatts    :: [Picture]               -- ^ List of pictures containing pattern pictures (in same order as patterns)
+                    , vConceptDefs :: [ConceptDef]            -- ^ All conceptDefs defined in the Ampersand script
+                    , fSexpls      :: [Explanation]           -- ^ All explanations that have been declared within the current specification.
                     , vctxenv :: ( Expression (Relation Concept)
                                  , [(Declaration Concept,String)]) --an expression on the context with unbound relations, to be bound in this environment
                     }
@@ -67,17 +67,17 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
     declarations fSpec = vrels fSpec
     rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
     signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
-    objDefs      fSpec = map svObj (serviceS fSpec ++ serviceG fSpec)
+    objDefs      fSpec = map svObj (services fSpec)
     keyDefs      fSpec = vkeys fSpec
     gens         fSpec = vgens fSpec
     patterns     fSpec = vpatterns fSpec
+    services     fSpec = map fsv_svcdef (fServices fSpec)
     isa          fSpec = fsisa  fSpec
    
  
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.
    --         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
-   type Fservices = [Fservice]
    data Fservice = Fservice 
                      { fsv_svcdef    :: Service                -- The service declaration that was specified by the programmer,
                                                                -- and which has been type checked by the compiler.
@@ -132,6 +132,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
     keyDefs       _  = []
     gens          _  = []
     patterns      _  = []
+    services     svc = [fsv_svcdef svc]
     isa          svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
                        where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
 --   instance Explainable Fservice where

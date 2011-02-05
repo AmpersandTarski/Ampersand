@@ -222,7 +222,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                                , rrant = antc
                                , rrfps = rulepos (lbl,po) po'
                                , rrcon = cons
-                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl]
+                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl| not (null expl)]
                                , rrtyp = (cptAnything,cptAnything)
                                , rrtyp_proof = Nothing
                                , rrdcl = Nothing
@@ -240,7 +240,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                                , rrant = defd
                                , rrfps = rulepos (lbl,po) po'
                                , rrcon = expr
-                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl]
+                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl| not (null expl)]
                                , rrtyp = (cptAnything,cptAnything)
                                , rrtyp_proof = Nothing
                                , rrdcl = Nothing
@@ -256,7 +256,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                                , rrant = defd
                                , rrfps = po
                                , rrcon = expr
-                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl]
+                               , rrxpl = [string2AutoExplain (defaultFlags {language=lang}) expl| not (null expl)]
                                , rrtyp = (cptAnything,cptAnything)
                                , rrtyp_proof = Nothing
                                , rrdcl = Nothing

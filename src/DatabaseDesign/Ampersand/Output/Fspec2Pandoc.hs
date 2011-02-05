@@ -103,13 +103,13 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                if studentversion then fpAnalysis level fSpec flags else [] ++
                glossary level fSpec flags 
                )
-             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
+             where svcs = [serviceChap level fSpec flags svc | svc <-fServices fSpec,not studentversion]
                    (caTxt,_)   = conceptualAnalysis level fSpec flags
                    paTxt       = processAnalysis    level fSpec flags
                    (daTxt,_,_) = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
           pictures = [clPic,daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] 
-             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
+             where svcs = [serviceChap level fSpec flags svc | svc <-fServices fSpec,not studentversion]
                    (_,caPics)      = conceptualAnalysis level fSpec flags
                    (_,daPic,clPic) = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
@@ -488,7 +488,7 @@ diagnosis lev fSpec flags = header ++ diagIntro ++ missingConceptDefs ++ missing
                        , Str " toe te voegen."
                      ] ]
       (Dutch,ms)  -> [Para 
-                       [ Str "Relaties ", TeX (commaNL "en" (map (showMathcode fSpec) ms))
+                       [ Str "Relaties ", TeX (commaNL "en" (rd (map name ms)))
                        , Str " worden niet uitgelegd. "
                        , Str "U kunt overwegen om PURPOSE RELATION statements toe te voegen."
                      ] ]
@@ -702,7 +702,7 @@ processAnalysis lev fSpec flags
                ]
      ]
      where
-      rolelessSvs  = [ svc | svc<-services fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
+      rolelessSvs  = [ svc | svc<-fServices fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
       rolelessRels = [ d | d<-declarations fSpec, not (d `elem` (rd.map (makeDeclaration.snd)) (mayEdit fSpec)) ]
 
 ------------------------------------------------------------
@@ -1302,7 +1302,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           intercalate "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
-                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
+                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-fServices fSpec] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 

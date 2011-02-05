@@ -107,18 +107,18 @@ module DatabaseDesign.Ampersand.Fspec.ShowADL
 
    instance ShowADL ExplObj where
       showADL e = case e of
-         ExplConceptDef cd -> "CONCEPT "++name cd
+         ExplConceptDef cd -> "CONCEPT "++showADL cd
          ExplDeclaration d -> "RELATION "++showADL d
          ExplRule r        -> "RULE "++name r
-         ExplKeyDef kd     -> "KEY "++name kd
+         ExplKeyDef kd     -> "KEY "++showADL kd
          ExplPattern str   -> "PATTERN "++str
          ExplService str   -> "SERVICE "++str
          ExplContext str   -> "CONTEXT "++str
       showADLcode fSpec e = case e of
-         ExplConceptDef cd -> "CONCEPT "++name cd
-         ExplDeclaration d -> "RELATION "++showADLcode fSpec d
+         ExplConceptDef cd -> "CONCEPT "++showADLcode fSpec cd
+         ExplDeclaration r -> "RELATION "++showADLcode fSpec r
          ExplRule r        -> "RULE "++name r
-         ExplKeyDef kd     -> "KEY "++name kd
+         ExplKeyDef kd     -> "KEY "++showADLcode fSpec kd
          ExplPattern str   -> "PATTERN "++str
          ExplService str   -> "SERVICE "++str
          ExplContext str   -> "CONTEXT "++str 

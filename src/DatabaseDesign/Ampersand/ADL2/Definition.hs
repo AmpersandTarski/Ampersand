@@ -429,7 +429,7 @@ data PExplObj
    | PExplPattern String
    | PExplContext String
 
-instance Identified PExplObj where
+{- instance Identified PExplObj where
   name pe = case pe of 
      PExplConceptDef str -> str
      PExplDeclaration rel -> name rel
@@ -438,7 +438,7 @@ instance Identified PExplObj where
      PExplObjectDef str -> str
      PExplPattern str -> str
      PExplContext str -> str
-        
+-}
 ---------------------------------------------------------------- 
 -- | The languages that currently are available in Ampersand
 data Lang = Dutch | English deriving (Show, Eq)

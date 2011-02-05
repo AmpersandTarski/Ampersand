@@ -226,7 +226,7 @@ where
                   ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
                   ,     ", serviceS      = serviceS'"
                   ,     ", serviceG      = serviceG'"
-                  ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
+                  ,wrap ", fServices     = " indentA (\_->showHSname) (fServices fspec)
                   ,     ", roleServices  = " ++
                         case roleServices fspec of
                           []      -> "[]"
@@ -284,9 +284,9 @@ where
        (if null (plugInfos fspec ) then "" else
         "\n -- ***Declarations of PlugInfos ***: "++
         concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|InternalPlug p<-plugInfos fspec ]++"\n")++
-       (if null (services fspec ) then "" else
+       (if null (fServices fspec ) then "" else
         "\n -- ***Declarations of Services ***: "++
-        concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-services fspec ]++"\n")++
+        concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-fServices fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- ***User defined of RULES ***: "++
         concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r|r<-vrules   fspec ]++"\n")++        

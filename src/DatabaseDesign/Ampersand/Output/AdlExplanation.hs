@@ -9,6 +9,7 @@ import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
 import DatabaseDesign.Ampersand.Basics          (unCap,upCap,preciesEen)
 import DatabaseDesign.Ampersand.Basics       (Collection ((>-)),Identified(..))
+import DatabaseDesign.Ampersand.Output.PredLogic             (showPredLogic)
 import Text.Pandoc
 import Char             (toLower)
 
@@ -33,10 +34,11 @@ class Explainable a where
   autoExplainsOf :: Options -> a -> [Explanation]
   autoExplainsOf _ _ = []
   explain :: Fspc -> Options -> a -> [Explanation]
-  explain fSpec flags x = [e | e<-fSexpls fSpec
-                             , explForObj x (explObj e)                  -- ^ informally: "if x and e are the same"
-                             , language flags == explLang e
-                          ]
+  explain fSpec flags x = expls
+   where expls = [e | e<-fSexpls fSpec
+                    , explForObj x (explObj e)                  -- ^ informally: "if x and e are the same"
+                    , language flags == explLang e
+                 ]
   explForObj :: a -> ExplObj -> Bool    -- Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
   
 instance Explainable ConceptDef where
@@ -63,10 +65,29 @@ instance Explainable (Relation Concept) where
        toExpl d (Because l econt) = Expl (ExplDeclaration d) l ampersandCoreVersionBanner econt
   explForObj x (ExplDeclaration x') = makeDeclaration x == x'
   explForObj _ _ = False
-  
+
+{- TODO: autoExplains is way too complicated. This is what happens for a rule:
+  autoExplainsOf flags rule
+=     {by definition of autoExplainsOf for rules]
+  map (toExpl rule) (autoExplains flags rule)
+=     {by definition of toExpl}
+  map (\Because l econt -> Expl ( ExplRule rule) l ampersandCoreVersionBanner econt) (autoExplains flags rule)
+=     {by definition of autoExplains (from class SelfExplained)}
+  map (\Because l econt -> Expl ( ExplRule rule) l ampersandCoreVersionBanner econt) (rrxpl rule)
+=     {by definition of rrxpl (in pRuleDef in module CC), let expl be the user's explanation}
+  map (\Because l econt -> Expl ( ExplRule rule) l ampersandCoreVersionBanner econt) [string2AutoExplain (defaultFlags {language=lang}) expl| not (null expl)]
+=     {string2AutoExplain flags x = Because (language flags) (string2Blocks flags x)   in module Misc.Explain; assume: not (null expl)}
+  map (\Because l econt -> Expl ( ExplRule rule) l ampersandCoreVersionBanner econt) [Because (language (defaultFlags {language=lang})) (string2Blocks (defaultFlags {language=lang}) expl)| not (null expl)]
+=     {calculate... }
+  [Expl (ExplRule rule) lang ampersandCoreVersionBanner (string2Blocks flags expl)| not (null expl)]
+-}
+
 instance Explainable (Rule (Relation Concept)) where
-  autoExplainsOf flags rule = map (toExpl rule) (autoExplains flags rule)
+  autoExplainsOf flags rule
+   = if not (null expls) then expls else
+     [Expl (ExplRule rule) (language flags) ampersandCoreVersionBanner (string2Blocks flags (showPredLogic flags rule))]
      where
+        expls = map (toExpl rule) (autoExplains flags rule)
         toExpl :: Rule (Relation Concept) -> AutoExplain -> Explanation
         toExpl r (Because l econt) = Expl ( ExplRule r) l ampersandCoreVersionBanner econt
   explForObj x (ExplRule x') = x == x'
@@ -104,8 +125,10 @@ class SelfExplained a where
     autoExplains :: Options -> a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Relation Concept, ..)
 
 instance (Identified c, Conceptual c) => SelfExplained (Declaration c) where
-     autoExplains flags d = [explainParagraph flags{language=Dutch}   dutchInlines] 
-                        ++  [explainParagraph flags{language=English} englishInlines]
+     autoExplains flags d
+      = case language flags of
+         Dutch   -> [explainParagraph flags dutchInlines] 
+         English -> [explainParagraph flags englishInlines]
       where dutchInlines 
                | null ([Sym,Asy]         >- multiplicities d) = [Emph [Str (name d)]]
                                                                 ++[Str " is een eigenschap van "]
