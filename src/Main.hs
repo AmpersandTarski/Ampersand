@@ -3,9 +3,9 @@ module Main where
 
 import Control.Monad
 import System.FilePath        (combine,replaceExtension)
-import DatabaseDesign.Ampersand
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
+import DatabaseDesign.Ampersand
 
 --import Data.Ampersand.Main
 
