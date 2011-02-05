@@ -11,7 +11,7 @@ default: adl
 
 WINDOWS = $(shell ghc-pkg list | grep -q Win32 && echo yes || echo no)
 
-SOURCES = $(wildcard src/*.lhs) $(wildcard src/*.hs) $(wildcard src/*/*.hs) $(wildcard src/*/*/*.hs) $(wildcard src/*/*/*/*.hs) $(wildcard src/*/*/*/*/*.hs)
+SOURCES = $(wildcard src/*.lhs) $(wildcard src/*.hs) $(wildcard src/*/*.hs) $(wildcard src/*/*/*.hs) $(wildcard src/*/*/*/*.hs)
 
 ifeq ($(WINDOWS), yes)
 EXE  = .exe
