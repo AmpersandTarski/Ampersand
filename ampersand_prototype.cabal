@@ -1,5 +1,5 @@
 name:          Ampersand-Prototype
-version:       1.1.4
+version:       2.0.0
 author:        Stef Joosten
 maintainer:    stef.joosten@ou.nl
 synopsis:      Toolsuite for automated design of business processes.
@@ -19,16 +19,12 @@ Executable prototype
   Main-Is:         Main.hs
   Hs-Source-Dirs:  src
   build-depends:
-      Ampersand  >= 1.1.4 ,  
-      graphviz   >= 2999.11.0.0 && < 3000 ,
-      HDBC-odbc  == 2.2.3.0,  
-      pandoc     >= 1.6 && < 1.7,
+      Ampersand  >= 2.0.0 ,  
       bytestring >= 0.9.1.5 && < 0.10,
       utf8-string>= 0.3.6,
       filepath   >= 1.1.0.3 && < 1.2,
       haskell98  >= 1.0.1.0 && < 1.1,
       base       >= 4 && < 5,
       directory  >= 1.0.1.0 && < 1.1,
-      HDBC       >= 2.2.6   && < 2.3,
       containers >= 0.3     && < 0.4
     

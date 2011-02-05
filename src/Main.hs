@@ -11,9 +11,6 @@ import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
 
 main :: IO ()
 main
---
--- = newmain
---oldmain
  = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts flags)
@@ -58,13 +55,7 @@ generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
-        [ doGenXML      fSpec flags | genXML       flags] ++
-        [ doGenHaskell  fSpec flags | haskell      flags] ++ 
         [ doGenProto    fSpec flags | genPrototype flags] ++
-        [ serviceGen    fSpec flags | servicesG    flags] ++
-        [ doGenDocument fSpec flags | genFspec     flags] ++ 
-        [ prove         fSpec flags | proofs       flags] ++
-        [ diagnose      fSpec flags | diag         flags] ++
         [ verbose flags "Done."]
        ) 
 
