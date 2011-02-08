@@ -1,13 +1,13 @@
 Architecture   = Context { Context } .
-Context        = CONTEXT Conid LanguageID \n 
+Context        = CONTEXT Conid [LanguageID] \n 
                   [ ":" Expr [ BINDING Bind { "," Bind }]] \n
                   [ EXTENDS Conid { "," Conid} ] \n
 		          { ContextElement }  \n
 				  ENDCONTEXT .
 Bind           = BIND Declaration TOPHP (Conid | String).
-LanguageID     = [IN ( DUTCH | ENGLISH )].
+LanguageID     = IN ( DUTCH | ENGLISH ).
 RefID          = REF String .
-Explain        = ( EXPLAIN | PURPOSE ) LanguageID RefID Expl .
+Explain        = ( EXPLAIN | PURPOSE ) [LanguageID] RefID Expl .
 ExplObj        = ( CONCEPT (Conid | String)
                  | RELATION Relation 
 			     | RULE ADLid
@@ -44,7 +44,7 @@ RuleDef        = ( RULE [ADLid ":" ] ( Expr "|-" Expr
                                      | Expr "="  Expr
                                      | Expr ) [ Phrase ]
 				 ) .
-Phrase         = PHRASE LanguageID String .
+Phrase         = PHRASE [LanguageID] String .
 Gen            = GEN (Conid | String) ISA (Conid | String) .
 PostStr        = ( "~" | "+" | "-" | "*" ) { ( "~" | "+" | "-" | "*" )} .
 PreStr         = "-" {  "-" } .
