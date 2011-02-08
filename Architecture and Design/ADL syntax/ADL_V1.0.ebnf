@@ -1,15 +1,15 @@
 Architecture   = Context { Context } .
-Context        = CONTEXT Conid \n 
+Context        = CONTEXT Conid LanguageID \n 
                   [ ":" Expr [ BINDING Bind { "," Bind }]] \n
                   [ EXTENDS Conid { "," Conid} ] \n
 		          { ContextElement }  \n
 				  ENDCONTEXT .
 Bind           = BIND Declaration TOPHP (Conid | String).
-LanguageID     = IN ( DUTCH | ENGLISH ).
+LanguageID     = [IN ( DUTCH | ENGLISH )].
 RefID          = REF String .
 Explain        = ( EXPLAIN | PURPOSE ) LanguageID RefID Expl .
 ExplObj        = ( CONCEPT (Conid | String)
-                 | RELATION Morphism 
+                 | RELATION Relation 
 			     | RULE ADLid
 			     | KEY ADLid
 			     | SERVICE ADLid
@@ -21,12 +21,12 @@ ContextElement = ( Pattern
 				 | ConceptDef
 				 | KeyDef
 				 | Service
-				 | SQLplug
-				 | Phpplug
+				 | InternalPlug
+				 | ExternalPlug
 				 | Explain
 				 | RoleService
 				 | RoleRelation
-				 | POPULATION Morphism CONTAINS Content
+				 | POPULATION Relation CONTAINS Content
 				 ).
 
 Pattern        = PATTERN (Conid | String)
@@ -35,27 +35,21 @@ PatElem        = ( RuleDef
                  | Gen
 				 | Declaration
 				 | ConceptDef
-				 | Keydef
+				 | KeyDef
 				 | Explain
 				 | TEST PExpression
 				 ).
-Signal         = RULE ADLid SIGNALS.
-Always         = RULE ADLid MAINTAINS.
-RuleDef        = ( Signal Expr "|-" Expr [ EXPLANATION String ]
-                 | Signal Expr "-|" Expr [ EXPLANATION String ]
-                 | Signal Expr "="  Expr [ EXPLANATION String ]
-                 | Signal Expr           [ EXPLANATION String ]
-				 | Always Expr "|-" Expr [ EXPLANATION String ]
-                 | Always Expr "-|" Expr [ EXPLANATION String ]
-                 | Always Expr "="  Expr [ EXPLANATION String ]
-                 | Always Expr           [ EXPLANATION String ]
+RuleDef        = ( RULE [ADLid ":" ] ( Expr "|-" Expr
+                                     | Expr "-|" Expr
+                                     | Expr "="  Expr
+                                     | Expr ) [ Phrase ]
 				 ) .
-
+Phrase         = PHRASE LanguageID String .
 Gen            = GEN (Conid | String) ISA (Conid | String) .
 PostStr        = ( "~" | "+" | "-" | "*" ) { ( "~" | "+" | "-" | "*" )} .
 PreStr         = "-" {  "-" } .
 PTerm          = ( preOp "(" PExpression ")" postOp Type
-                 | preOp Morphism postOp Type
+                 | preOp Relation postOp Type
                  ) .
 Type           = "[" Concept [ "*" Concept ] "]" .
 preOp          = { "-" } .				 
@@ -65,11 +59,11 @@ Expr           = FactorI { "\/" FactorI } .
 FactorI        = Factor  { "/\" Factor  } .
 Factor         = TermD   { "!"  TermD } .
 TermD          = Term    { ";"  Term  } .
-Term           = ( [ preStr ] Morphism [ postStr ] 
+Term           = ( [ preStr ] Relation [ postStr ] 
                  | [ preStr ] "(" Expr ")" [ postStr ] 
 				 ) .
-Term2          = [ preStr ] ( Morphism | "(" Expr ")" ) [ postStr ] . 
-Morphism       = ( ( I | Atom ) 
+Term2          = [ preStr ] ( Relation | "(" Expr ")" ) [ postStr ] . 
+Relation       = ( ( I | Atom ) 
                       [ "[" Concept "]" ] 
                  | ( V | Varid ) 
 				      [ "[" ( Concept 
@@ -82,11 +76,11 @@ ConceptDef     = CONCEPT (Conid | String) [BYPLUG] String [String] .
 KeyDef         = KEY LabelProps Concept "("	KeyAtt {"," KeyAtt} ")".
 KeyAtt         = [ LabelProps ] Expr.
 RoleService    = ROLE ADLid { "," ADLid } USES ADLid { "," ADLid } .
-RoleRelation   = ROLE ADLid { "," ADLid } EDITS Morphism { "," Morphism } .
-Sqlplug        = SQLPLUG Obj . 
-Phpplug        = PHPPLUG Obj . 
+RoleRelation   = ROLE ADLid { "," ADLid } EDITS Relation { "," Relation } .
+InternalPlug   = SQLPLUG Obj . 
+ExternalPlug   = PHPPLUG Obj . 
 Service        = SERVICE ADLid \n
-                  [ "(" Morphism { "," Morphism } ")" ] \n
+                  [ "(" Relation { "," Relation } ")" ] \n
                   [ "{" ADLid { ADLid } [ "," ADLid { ADLid } ] "}" ] \n
 				  ":" Expr \n
 				  [ "=" "[" [ Obj { "," Obj } ] "]" ].
@@ -96,7 +90,7 @@ Obj            = LabelProps Expr \n
 Declaration    = Varid "::" Concept ( "*" | "->" ) Concept \n
                  [ BYPLUG ] [ Props ] \n 
 				 [ BYPLUG ] [ Pragma ] \n
-				 [ "=" Content ] "." .	
+				 [ "=" Content ] ["."] .	
 Content        = "[" [ Record { ";" Record } ] "]" .
 Props          = "[" [ Prop { "," Prop } ] "]" .
 Prop           = ( UNI | INJ |  SUR| TOT | SYM | ASY | TRN | RFX ). 
