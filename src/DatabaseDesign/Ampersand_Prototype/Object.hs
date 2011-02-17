@@ -201,7 +201,7 @@ saveTransactions flags fSpec object
   close result
    = (concat
        [ ["if (!checkRule"++show (nr rul)++"()){"
-         ,"  $DB_err='"++(addSlashes (show(format PlainText (explain fSpec flags rul))))++"';"
+         ,"  $DB_err='"++(addSlashes (show(format PlainText (purpose fSpec flags rul))))++"';"
          ,"} else"
          ]
        | rul <- rules fSpec
