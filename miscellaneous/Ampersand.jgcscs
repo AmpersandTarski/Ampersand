@@ -11,7 +11,7 @@ TRUE
 
 1
 ADL (ampersand) files
-29
+35
 CONTEXT Piet
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
@@ -33,6 +33,12 @@ EXPLANATION "Voor elk (sub)proces die onderdeel is van een (super)proces geldt d
 deelProcVan; kader |- kader \/ V-
 EXPLANATION "Het kader van een proces dat een deelproces is van een (super)proces, bevat alle kader(conditie)s van dat superproces."
 
+RULE "superholons": isAncestorOf /\ isAncestorOf~ = -V
+RULE superholons: isAncestorOf /\ isAncestorOf~ = -V
+RULE isAncestorOf /\ isAncestorOf~ = -V
+
+RULE I[LMH] = 'L' \/ 'M' \/ 'H' PHRASE "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
+
 --Sommige [*maar niet alle*] syntaxfouten worden met rood aangegeven. Voorbeelden:
 kader :: aap * noot.
 kader :: Aap * noot.
@@ -43,10 +49,10 @@ ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-24
-Err-EXPLAIN+keyword
+26
+Err-PURPOSE+keyword
 Error if EXPLAIN is NOT followed by a suitable keyword
-(?<=EXPLAIN\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
+(?<=(PURPOSE)\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
 FALSE
 FALSE
 15
@@ -55,9 +61,9 @@ FALSE
 
 0
 FALSE
-Err-ExplainRELATION(IN lang)
-Errof if EXPLAIN RELATION misses the 'IN DUTCH' or 'IN ENLGISH' syntax
-\bEXPLAIN\b\s*+RELATION\s*+\b([a-z]\w*+)\b\s*+(?#Optional:Concepts)(\[[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+\s*+\])?+(?#Optional:REF)(\s*+REF\s+"[^"]*+")?+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(\s*+IN\s++(DUTCH|ENGLISH)))
+Err-keyword+UPPERCASE
+Error if appropriate <keyword> (CONTEXT, PATTERN, CONCEPT etc) is not followed by UPPER CASE char
+\b(CONTEXT|PATTERN|CONCEPT)\s+(?(?=")"[^A-Z]|[^A-Z])
 FALSE
 FALSE
 15
@@ -66,9 +72,42 @@ FALSE
 
 0
 FALSE
-Syntax - EXPLAIN 2
-Error if EXPLAIN (followed by a suitable keyword) misses the 'IN DUTCH' or 'IN ENLGISH' syntax
-\bEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXPLAIN\b\s*+(CONTEXT|PATTERN|RULE|CONCEPT)\s*+(?(?=")"[\s\w]*+"|\w*+)\s*+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(IN DUTCH|IN ENGLISH))
+Err-RULE+string_colon
+Error if RULE "text" is not followed by a colon.
+(?<!PURPOSE\s*)RULE\s*+"[^"]*"\s*+[^:]
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-keyword+lowercase
+Error if appropriate <keyword> (RELATION, RULE) is not followed by lowercase char
+\b(RELATION|RULE)\s+(?(?=")"[^a-z_]|[^a-z_])
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err- IN <language>
+Errof if PURPOSE <something> misses the 'IN DUTCH' or 'IN ENLGISH' syntax
+\b(PURPOSE)\b\s*+RELATION\s*+\b([a-z]\w*+)\b\s*+(?#Optional:Concepts)(\[[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+\s*+\])?+(?#Optional:REF)(\s*+REF\s+"[^"]*+")?+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(\s*+IN\s++(DUTCH|ENGLISH)))
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-PURPOSE
+Error if PURPOSE <something> misses the 'IN DUTCH' or 'IN ENLGISH' syntax
+\b(PURPOSE)\b\s*+(CONTEXT|PATTERN|RULE|CONCEPT)\s*+(?(?=")"[\s\w]*+"|\w*+)\s*+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(IN DUTCH|IN ENGLISH))
 FALSE
 FALSE
 15
@@ -80,17 +119,6 @@ FALSE
 Err-IN(lang)comment
 Error if 'IN DUTCH' or 'IN ENGLISH' is not followed by {+ <text> -}
 \bIN\s++(DUTCH|ENGLISH)\s*+(REF\s*+"[^"]*")?+\s*+([^\{]|\{[^\+])
-FALSE
-FALSE
-15
-0
-
-
-0
-FALSE
-Err-nRULE MAINTAINS or SIGNALS
-ERROR if RULE is not followed by a relation symbol and/or keyword MAINTAINS or SIGNALS is missing
-(?<=(?<!EXPLAIN\s*)\bRULE[\s]+)("[^"]*(?=\s*(MAINTAINS|SIGNALS))|((?!(MAINTAINS|SIGNALS)).)*$)
 FALSE
 FALSE
 15
@@ -154,17 +182,6 @@ FALSE
 
 0
 FALSE
-Relations
-Execute the 'Relations' subscheme when a relation is found.
-(?<=[^:]:::::::::::::::::::::::::::::::::::::::::::::(?=[^:])\s*\b)(?=[^\.]*+\.)[^\.]*+(?=\.)
-FALSE
-FALSE
-0
-0
-
-
-0
-FALSE
 Err-Relations(period)
 Error if a relation declaration does not terminate with a period
 (?<=[^:])::\s*+[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+(?#Optional:multiplicities)\s*+(?(?!\[)|\[[^\]]*\])(?#Optional:Pragma)\s*+(PRAGMA(\s*\"[^"]*\"){1,3})?+(?#optional populationlist and required period)\s*+(?(?!=\s*+\[)|=\s*+\[[^\]]*\]\s*)[\s\n\r]*+[^\.$]
@@ -222,7 +239,7 @@ FALSE
 FALSE
 Multiplicities
 
-\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|TRN)(\s*+,(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|TRN))*+)?+)?+\s*+\]
+\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN)(\s*+,(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN))*+)?+)?+\s*+\]
 FALSE
 FALSE
 7
@@ -254,8 +271,8 @@ FALSE
 0
 FALSE
 Reserved words
-
-\b(CONTEXT|ENDCONTEXT|EXTENDS|PATTERN|ENDPATTERN|SERVICE|INITIAL|SQLPLUG|PHPPLUG|POPULATION|CONTAINS|CONCEPT|RELATION|PRAGMA|RULE|MAINTAINS|SIGNALS|EXPLAIN|IN|ENGLISH|DUTCH|REF|EXPLANATION|KEY|IMPORT|GEN|ISA)\b
+Lijstje staat in 'CC.hs'
+\b(CONTEXT|ENDCONTEXT|EXTENDS|PATTERN|ENDPATTERN|SERVICE|INITIAL|SQLPLUG|PHPPLUG|POPULATION|CONTAINS|RULE|TEST|RELATION|CONCEPT|KEY|IMPORT|GEN|ISA|PRAGMA|PHRASE|PURPOSE|IN|REF|ENGLISH|DUTCH|ONE|BIND|TOPHP|BINDING|BYPLUG|ROLE|EDITS|USES)\b
 FALSE
 FALSE
 7
@@ -266,7 +283,7 @@ FALSE
 FALSE
 Relations (function name)
 
-\b("[a-z_]\w*"|[a-z_]\w*)\b(?=[\s]*::)
+("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*::)
 FALSE
 FALSE
 8
@@ -277,10 +294,21 @@ FALSE
 FALSE
 Rules (function name)
 
-(?<=\bRULE[\s]+)\b("[a-z_]\w*"|[a-z_]\w*)\b(?=[\s]*(MAINTAINS|SIGNALS))
+(?<=\bRULE[\s]+)("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*:)
 FALSE
 FALSE
 8
+0
+
+
+0
+FALSE
+EXPLAIN Concepts, Patterns, Contexts  (plain text)
+
+(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|CONCEPT)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+FALSE
+FALSE
+0
 0
 
 

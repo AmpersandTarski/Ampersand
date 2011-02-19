@@ -9,37 +9,14 @@ rieks.joosten@tno.nl
 
 1
 Thanks to JGSoft for providing the example.
-3
+2
 Outside any block
-3
+2
 Start of block
 -16777208
 12632319
 To properly nest the braces, we need to use a separate layout "block", and set the foldable range to end where the layout "block" finds the closing bracket
-{-|EXPLAIN PATTERN|EXPLAIN|--\[
-0
-0
-2
-0
-2
-0
-
-0
-
-
-0
-0
-1
-0
-
-3
-
-0
-Start of Pattern
--16777208
-12648384
-To properly nest the braces, we need to use a separate layout "block", and set the foldable range to end where the layout "block" finds the closing bracket
-(?<!END)PATTERN
+PURPOSE|{-
 0
 0
 2
@@ -81,130 +58,13 @@ This element does nothing except to make sure that the start/end of block elemen
 1
 
 0
-Pattern
-4
-Start of block
--16777208
-16711935
-With this element we make the layout "block" toggle to itself.  This will add "block" to the stack of layouts to toggle back to.  The stack is popped by "end of block".  This way, the layout "block" can be nested into itself.
-{-|EXPLAIN PATTERN|EXPLAIN|--\[
-0
-0
-2
-0
-2
-0
-
-0
-
-
-0
-0
-1
-0
-
-3
-
-0
-Start of Pattern
--16777208
-8421376
-With this element we make the layout "block" toggle to itself.  This will add "block" to the stack of layouts to toggle back to.  The stack is popped by "end of block".  This way, the layout "block" can be nested into itself.
-(?<!END)PATTERN
-0
-0
-2
-0
-1
-0
-
-0
-
-
-0
-0
-1
-0
-
-3
-
-0
-End of Pattern
--16777208
-65408
-Toggle back to the previous layout, either "block" or "outside any block", and end the foldable range of whichever "start of block" element that toggled to the "block" layout
-ENDPATTERN
-0
-0
-5
-0
-0
-0
-
-0
-
-
-0
-0
-0
-0
-
-1
-
-0
-Comment and string
--16777208
-12632256
-This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
-'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
-0
-1
-0
-0
-0
-0
-
-0
-
-
-0
-0
-0
-0
-
-1
-
-0
 Block
-4
+3
 Start of block
 -16777208
 16711935
 With this element we make the layout "block" toggle to itself.  This will add "block" to the stack of layouts to toggle back to.  The stack is popped by "end of block".  This way, the layout "block" can be nested into itself.
-{-|EXPLAIN PATTERN|EXPLAIN|--\[
-0
-0
-2
-0
-2
-0
-
-0
-
-
-0
-0
-1
-0
-
-3
-
-0
-Start of Pattern
--16777208
-16711680
-With this element we make the layout "block" toggle to itself.  This will add "block" to the stack of layouts to toggle back to.  The stack is popped by "end of block".  This way, the layout "block" can be nested into itself.
-(?<!END)PATTERN
+PURPOSE|{-
 0
 0
 2
@@ -227,7 +87,7 @@ End of block
 -16777208
 16711808
 Toggle back to the previous layout, either "block" or "outside any block", and end the foldable range of whichever "start of block" element that toggled to the "block" layout
--}|--\]|ENDPATTERN
+-}
 0
 0
 5
