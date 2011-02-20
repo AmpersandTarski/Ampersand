@@ -12,7 +12,6 @@ stability:     alpha
 Cabal-Version: >= 1.6
 build-type:    Simple
 license:       OtherLicense
-license-file:  LICENSE
 copyright:     Stef Joosten
 
 Executable prototype
