@@ -49,7 +49,7 @@ ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-26
+25
 Err-PURPOSE+keyword
 Error if EXPLAIN is NOT followed by a suitable keyword
 (?<=(PURPOSE)\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
@@ -174,17 +174,6 @@ FALSE
 Err-Relations(right concept)
 ERROR if relation declaration uses (right) concept name starting with lower case char
 (?<=[^:])::\s*+[A-Z]\w*+\s*+(\-\>|\*)\s*+[^A-Z]
-FALSE
-FALSE
-15
-0
-
-
-0
-FALSE
-Err-Relations(period)
-Error if a relation declaration does not terminate with a period
-(?<=[^:])::\s*+[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+(?#Optional:multiplicities)\s*+(?(?!\[)|\[[^\]]*\])(?#Optional:Pragma)\s*+(PRAGMA(\s*\"[^"]*\"){1,3})?+(?#optional populationlist and required period)\s*+(?(?!=\s*+\[)|=\s*+\[[^\]]*\]\s*)[\s\n\r]*+[^\.$]
 FALSE
 FALSE
 15
