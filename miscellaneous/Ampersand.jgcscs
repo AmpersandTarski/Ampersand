@@ -49,7 +49,7 @@ ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-25
+26
 Err-PURPOSE+keyword
 Error if EXPLAIN is NOT followed by a suitable keyword
 (?<=(PURPOSE)\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
@@ -182,6 +182,17 @@ FALSE
 
 0
 FALSE
+Err-Relations PRAGMA
+Error if relation declaration uses strings, but does not contain the keyword PRAGMA
+(?<=[^:])::\s*+\w*+\s*+(\-\>|\*)\s*+\w*+\s*+(\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN))*+)?+)?+\s*+\])\s*+"
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
 Line Comment (emphasized)
 Text after --! on the same line
 [^-]--![^\n\r]*+
@@ -228,7 +239,7 @@ FALSE
 FALSE
 Multiplicities
 
-\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN)(\s*+,(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN))*+)?+)?+\s*+\]
+\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN))*+)?+)?+\s*+\]
 FALSE
 FALSE
 7
