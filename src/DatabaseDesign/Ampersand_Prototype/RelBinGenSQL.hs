@@ -100,8 +100,8 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++
-                        [Just$ "isect0."++src'++" = "++rel1val m -- sorce and target are equal because this is the case with Mp1
-                        | (Tm m@(Mp1{}) _) <- mp1Tm
+                        [Just$ "isect0."++src'++" = "++rel1val r -- sorce and target are equal because this is the case with Mp1
+                        | (Tm r@(Mp1{}) _) <- mp1Tm
                         ]++
                         [Just$ "isect0."++src'++" = "++rel1val m1 -- sorce and target are unequal
                           ++ " AND isect0."++trg'++" = "++rel1val m2 -- sorce and target are unequal
@@ -228,9 +228,9 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
                   , (t',trg') <- concNames "cfst" t
                   , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                   ]
-    where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c True)(-1))]
+    where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c)(-1))]
 
-   selectExpr fSpec i src trg (Tm (I _ s _ _) _  ) | s == cptS = selectExpr fSpec i src trg (Tm (V [] (s,s))(-1))
+   selectExpr fSpec i src trg (Tm (I _ s _) _  ) | s == cptS = selectExpr fSpec i src trg (Tm (V [] (s,s))(-1))
 
    selectExpr fSpec i src trg (Tm mrph   _   ) = selectExprMorph fSpec i src trg mrph
    selectExpr fSpec i src trg (Tc expr      ) = selectExpr fSpec i src trg expr
@@ -529,7 +529,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
      -}
      -- simplF: replace a;a~ by I if INJ&TOT
      simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
-       where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
+       where fs = [ts | F ts <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
               -- null occurs especialy in cases of [I;e] and [e;I]
      replF (k:k2:ks) | k == flp k2 && isInj k && isTot k
             = if null ks then Tm(mIs$source k)(-1) else replF ks
@@ -537,7 +537,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
      replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF
        = if null fs then F [k,res] else replF (k:head fs) -- we might replace something again!
        where res = replF (k2:ks)
-             fs  = [m' | F m' <- [res]]
+             fs  = [ts | F ts <- [res]]
      replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
       = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 512): Could not define a properly typed I for F[] in replF in sqlPlugFields in Prototype/RelBinGenSQL.hs")
               -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
@@ -563,10 +563,10 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
       ses (K0x e)   = ses e
       ses (K1x e)   = ses e
       ses (Tc e)    = ses e
-      ses (Tm m n)  = case m of
-                       Mp1{} -> "Mp"++(name (rel1typ m))
-                       V{} -> ses (Tm I{relats=[],relgen=source m,relspc=source m,relyin=True} n)
-                       _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm m n)]++[show m])
+      ses (Tm r n)  = case r of
+                       Mp1{} -> "Mp"++(name (rel1typ r))
+                       V{} -> ses (Tm I{relats=[],relgen=source r,relspc=source r} n)
+                       _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm r n)]++[show r])
    sqlExprTrg :: Fspc->Expression (Relation Concept) -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 

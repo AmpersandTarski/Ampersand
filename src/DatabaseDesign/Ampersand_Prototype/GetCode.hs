@@ -169,7 +169,7 @@ where
      [ code
      | code <- case composed of
                 -- NOTE ON Cpx !!! When Cpx becomes typed, the pattern below should be changed, and changeSource as well!
-                (F [Tm (I _ (PHPI1 s) _ _) _, Cpx f, Tm (I _ (PHPI1 t) _ _) _])
+                (F [Tm (I _ (PHPI1 s) _) _, Cpx f, Tm (I _ (PHPI1 t) _) _])
                        -> atleastOne ("!Fatal (module GetCode 161): getCodeForSingle should return something in Cpx for "++show f)$ -- SJC put this here
                           [ assignment++
                             [Assignment (var1:pre)
@@ -303,9 +303,9 @@ where
  changeSource c (Fix ts) = Fix [changeSource c t | t<-ts]
  changeSource c (Fux ts) = Fux [changeSource c t | t<-ts]
  changeSource c (Cpx x ) = F [Tm (mIs c)(-1),Cpx x]    -- TODO: is dit correct?
- changeSource c (Tm m i) = Tm m' i
-  where m' = case m of
-               Rel{} -> m{relsrc=c}
-               I{} -> I [] c c True
+ changeSource c (Tm r i) = Tm r' i
+  where r' = case r of
+               Rel{} -> r{relsrc=c}
+               I{} -> I [] c c
                V{reltyp=(_,t)} -> V [] (c,t)
                Mp1{} -> error "!Fatal (module GetCode 310): changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

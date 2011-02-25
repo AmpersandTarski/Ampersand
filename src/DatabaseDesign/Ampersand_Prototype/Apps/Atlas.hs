@@ -86,7 +86,7 @@ initDatabase flags fSpec =
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
    = [makePicture flags fSpec p | p <- patterns fSpec] ++
-     [makePicture flags fSpec userRule | userRule <- rules fSpec++signals fSpec, r_usr userRule]++
+     [makePicture flags fSpec userRule | userRule <- rules fSpec]++
      [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
 
 ----------------------------------------------------

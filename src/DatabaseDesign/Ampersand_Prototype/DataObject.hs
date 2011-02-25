@@ -19,7 +19,7 @@ import DatabaseDesign.Ampersand_Prototype.Version
 --It contains:
 -- + classes for all concepts in the data object incl. save and del functions
 -- + getEach functions for the concepts in the plug
---The attributes of the class of some concept are those relations that require this concept (all UNI relations with source m==concept)
+--The attributes of the class of some concept are those relations that require this concept (all UNI relations with source r==concept)
 --Thus a class may contain other classes.
 --The main purpose of a data class is to save any delta on a class instance initiated from some svc_*.inc.php.
 --The data in a SERVICE is composed of parts from DATAOBJECTS (possibly entire objects).

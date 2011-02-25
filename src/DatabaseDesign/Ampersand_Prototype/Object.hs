@@ -418,7 +418,7 @@ saveTransactions flags fSpec object
                   ++ ")\", 5)"
               --var and everything that requires var is set to NULL in the current record of var (WHERE varfld=var)
               --all these vars must be covered in this service to be able to insert them in 
-              --TODO151210 -> service generation does not put fldexpr=(flp m) [UNI] in the service of its kernel field 
+              --TODO151210 -> service generation does not put fldexpr=(flp r) [UNI] in the service of its kernel field 
               --              but in the service of its target field
               --              Put it in both!! 
 --      //(tblfields behalve wat ik al heb) && required
