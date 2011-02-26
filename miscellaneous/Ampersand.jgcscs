@@ -49,7 +49,7 @@ ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-26
+27
 Err-PURPOSE+keyword
 Error if EXPLAIN is NOT followed by a suitable keyword
 (?<=(PURPOSE)\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
@@ -182,9 +182,20 @@ FALSE
 
 0
 FALSE
+Err-Relations Multiplicities
+ERROR if properties declared with a relation are not the usual keywords
+(?<=[^:]::\s*+\w*+\s*+(\-\>|\*)\s*+\w*+\s*+)\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP|,))*+(?!(\s*+\]))
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
 Err-Relations PRAGMA
 Error if relation declaration uses strings, but does not contain the keyword PRAGMA
-(?<=[^:])::\s*+\w*+\s*+(\-\>|\*)\s*+\w*+\s*+(\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN))*+)?+)?+\s*+\])\s*+"
+(?<=[^:])::\s*+\w*+\s*+(\-\>|\*)\s*+\w*+\s*+(\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\])\s*+"
 FALSE
 FALSE
 15
@@ -239,7 +250,7 @@ FALSE
 FALSE
 Multiplicities
 
-\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN))*+)?+)?+\s*+\]
+\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\]
 FALSE
 FALSE
 7
