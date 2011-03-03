@@ -10,8 +10,8 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
   ,CodeVarIndexed(..)
   ) where
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..),nameFresh,noCollide)
- import DatabaseDesign.Ampersand -- .ADL1 (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeRelation,source,target,Concept(..))
- import DatabaseDesign.Ampersand_Prototype.CodeStatement (UseVar(..),CodeVar(..),CodeVarIndexed(..),PHPconcept(..))
+ import DatabaseDesign.Ampersand -- .ADL1 (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeRelation,Concept(..))
+ import DatabaseDesign.Ampersand_Prototype.CodeStatement (UseVar(..),CodeVar(..),CodeVarIndexed(..),PHPconcept(..),phpsource,phptarget)
  
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary
@@ -45,7 +45,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                         , cvExpression = expr
                                         , cvIndexed    = NotIndexed}
                  ,cvIndexed=IndexByName
-                 ,cvExpression=(Tm (V [] (PHPC S, source expr)) (error "!Fatal (module CodeVariables 60): did not assign number to Tm"))
+                 ,cvExpression=(Tm (V [] (PHPC S, phpsource expr)) (error "!Fatal (module CodeVariables 60): did not assign number to Tm"))
                  }
     where
      -- | Create a new name with the value of some expression, ensure that its name does not exist yet
@@ -78,7 +78,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                                         ,cvContent=Right []
                                                         }
                                       ]
-                     ,cvExpression=Tm (V [] (PHPC S, source srcRel)) (-1) -- source srcRel == source trgRel
+                     ,cvExpression=Tm (V [] (PHPC S, phpsource srcRel)) (-1) -- source srcRel == source trgRel
                      ,cvIndexed=Indexed
                      }
     where 

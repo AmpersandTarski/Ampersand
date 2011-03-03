@@ -41,7 +41,7 @@ parseImportFile adlText adlfn flags
                                    cx <- parseADL1 popText [] flags fn
                                    fspec <- calculate flags cx
                                    atlas <- parseADL1 adlText [] flags adlfn
-                                   return (makeADL1Populations (declarations atlas) fspec)
+                                   return (makeADL1Populations (declarations atlas) [fspec])
         else return []
 
 

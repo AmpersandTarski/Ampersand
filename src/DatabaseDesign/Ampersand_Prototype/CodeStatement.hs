@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
       ,CodeVar(..)
       ,CodeVarIndexed(..)
       ,useAttribute
-      ,PHPconcept(..)
+      ,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpflp,phpsign
       ) where
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
  import DatabaseDesign.Ampersand -- .ADL1 (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
@@ -62,19 +62,50 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
     | PHPI1  { cpvar :: Named UseVar }
     deriving (Eq,Show)
 
- instance Ord PHPconcept where
-  _ <= _ = False
-
  instance Identified PHPconcept where
   name (PHPC c)     = name c
   name (PHPexp _)   = "SomeExpression"
   name (PHPI1 x)    = nName x
-  
- instance SpecHierarchy PHPconcept where
-  comparable _ _ = False
-  glb   _ _ = error "!Fatal (module CodeStatement 54): glb undefined"
-  lub   _ _ = error "!Fatal (module CodeStatement 55): lub undefined"
-  
+ 
+ phpsource :: Expression (Relation PHPconcept) -> PHPconcept
+ phpsource expr = case expr of
+     (Tm rel i)-> source rel
+     (Tc f)    -> phpsource f
+     (F [])    -> error "!Fatal (module CodeStatement 74): F []"
+     (F fs)    -> phpsource (head fs)
+     (Fdx [])  -> error "!Fatal (module CodeStatement 76): Fdx []"
+     (Fdx fs)  -> phpsource (head fs)
+     (Fux [])  -> error "!Fatal (module CodeStatement 78): Fux []"
+     (Fux fs)  -> phpsource (head fs)
+     (Fix [])  -> error "!Fatal (module CodeStatement 80): Fix []"
+     (Fix fs)  -> phpsource (head fs)
+     (K0x e')  -> phpsource e'
+     (K1x e')  -> phpsource e'
+     (Cpx e')  -> phpsource e'
+ phptarget  :: Expression (Relation PHPconcept) -> PHPconcept
+ phptarget x = phpsource(phpflp x)
+ phpsign :: Expression (Relation PHPconcept) -> (PHPconcept,PHPconcept)
+ phpsign x = (phpsource x, phptarget x)
+ phpflp  :: Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
+ phpflp expr = case expr of
+     (Tm rel i)-> Tm (flp rel) i
+     (Tc f)    -> Tc (phpflp f)
+     (F ts)    -> F (map phpflp (reverse ts))
+     (Fdx ts)  -> Fdx (map phpflp (reverse ts))
+     (Fux fs)  -> Fux (map phpflp fs)
+     (Fix fs)  -> Fix (map phpflp fs)
+     (K0x e')  -> K0x (phpflp e')
+     (K1x e')  -> K1x (phpflp e')
+     (Cpx e')  -> Cpx (phpflp e')
+
+ conc2php :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
+ conc2php e = mapExpression (mapMorphism PHPC) e
+
+ php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
+ php2conc e = mapExpression (mapMorphism f) e
+              where f (PHPC c) = c
+                    f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
+
  data CodeQuery
   =  SQLBinary   { cqexpression ::Expression (Relation PHPconcept)
                  , sqlquery     ::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually) Will fill target only

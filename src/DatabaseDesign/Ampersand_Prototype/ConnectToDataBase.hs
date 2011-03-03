@@ -101,7 +101,7 @@ where
        , "  }"
        , "}"
        , ""
-       ] ++ (ruleFunctions flags fSpec)
+       ] --TODO (see ticket #29) ++ (ruleFunctions flags fSpec)
        ++
        [ ""
        , "if($DB_debug>=3){"

@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.GetCode
 where
  import Data.Maybe (listToMaybe)
  import DatabaseDesign.Ampersand
- import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..))
+ import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpsign,phpflp)
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..))
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
@@ -93,15 +93,7 @@ where
         getAllTarget _
          = error ("!Fatal (module GetCode 93): missing code for getAllTarget")
 
- conc2php :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- conc2php e = mapExpression (mapMorphism PHPC) e
 
- php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
- php2conc e = mapExpression (mapMorphism f) e
-              where f (PHPC c) = c
-                    f _ = error("!Fatal (module GetCode 101): Non-exhaustive pattern for PHPconcept in php2conc")
-
- 
  -- | Create code to fill a single variable with some expression.
  -- | The resulting variable is of the most basic kind: $var[$everysource]=array($target1,$target2,...);
  -- | (see the definition of newVarFor for the exact type)
@@ -201,13 +193,13 @@ where
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right t]))
                                                                    (CQPlain s)]
-                                           ,x)) (splitAssoc F (map flp (reverse fs)))
+                                           ,x)) (splitAssoc F (map phpflp (reverse fs)))
                           , let var1 = getAVar (obj:pre) f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
-                          , let loopby = getScalar (obj:var1:pre) "i" (source f1)
+                          , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
                           , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
                           , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
-                          , let loopvalue = getScalar (obj:loopby:tmp:var1:tmp2:pre) "i" (target f1)
+                          , let loopvalue = getScalar (obj:loopby:tmp:var1:tmp2:pre) "i" (phptarget f1)
                           , stcode'<- [ get
                                         ++ assign pre' var2 (use loopby)
                                                             (Named (nName var2) (UseVar [Right (use loopvalue)]))
@@ -228,10 +220,10 @@ where
                           , f2<-applyOprOnLists Fix$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
-                          , let loopby = getScalar (obj:var1:pre) "i" (source f1)
+                          , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
                           , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
                           , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
-                          , let loopvalue = getScalar (obj:loopby:tmp:var1:tmp2:pre) "i" (target f1)
+                          , let loopvalue = getScalar (obj:loopby:tmp:var1:tmp2:pre) "i" (phptarget f1)
                           , stcode' <- [ get ++ 
                                         [Assignment pre' 
                                                     (var2:pre')
@@ -277,7 +269,7 @@ where
                      }
       | plug <- [makePlug p | p@ExternalPlug{} <- plugInfos fSpec]
       , phpSafe plug
-      , (PHPI1 s,PHPI1 t) <- [sign expr]
+      , (PHPI1 s,PHPI1 t) <- [phpsign expr]
       , length (phpinArgs plug)==2
       , let pExpr = cvExpression (last (phpinArgs plug))
 --      , isIdent (cvExpression (head (phpinArgs plug))) -- let's assume this property (WHY?)
@@ -291,10 +283,10 @@ where
   = selectExpr fSpec 0 src (noCollide [src] (sqlExprTrg fSpec expr)) expr
   where src = sqlExprSrc fSpec expr
  
- changeTarget :: (Show c, Identified c, SpecHierarchy c) => c -> Expression (Relation c) -> Expression (Relation c)
- changeTarget c = flp . changeSource c . flp
+ changeTarget :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
+ changeTarget c = phpflp . changeSource c . phpflp
  -- | change the source of some expression into c. We assume that c ISA source expression.
- changeSource :: (Show c, Identified c, SpecHierarchy c) => c -> Expression (Relation c) -> Expression (Relation c)
+ changeSource :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
  changeSource c (Tc  x)  = Tc  (changeSource c x)
  changeSource c (K0x x)  = K0x (changeSource c x)
  changeSource c (K1x x)  = K1x (changeSource c x)
