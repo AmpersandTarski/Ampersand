@@ -106,7 +106,7 @@ where
        [ ""
        , "if($DB_debug>=3){"
        ] ++
-          [ "  checkRule"++show (runum r)++"();"
+          [ "  //checkRule"++show (runum r)++"();" --TODO -> uncomment (see ticket #29)
           | r<-rules fSpec ] ++
        [ "}"
        ]
@@ -131,7 +131,8 @@ where
                  "if(count($v)) {\n    "++
                  "  DB_debug("++dbError rule++",3);\n    "++
                  "  return false;\n    }"
-           ) ++ "return true;\n  }"
+           )
+           ++ "return true;\n  }"
          | rule<-rules fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]]
       where
        code :: Expression (Relation Concept) -> [Statement]
