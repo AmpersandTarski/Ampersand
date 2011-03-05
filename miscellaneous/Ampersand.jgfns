@@ -9,14 +9,60 @@ rieks.joosten@tno.nl
 
 1
 Thanks to JGSoft for providing the example.
-2
+3
 Outside any block
-2
+3
+Comment and string and box[]
+-16777208
+16761024
+This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
+'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}|\[[^]\r\n]*\]
+0
+1
+0
+0
+0
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
 Start of block
 -16777208
 12632319
 To properly nest the braces, we need to use a separate layout "block", and set the foldable range to end where the layout "block" finds the closing bracket
 PURPOSE|{-
+0
+0
+2
+0
+2
+0
+
+0
+
+
+0
+0
+1
+0
+
+3
+
+0
+Population or Service (Box[])
+-16777208
+255
+
+\s*=\s*\[
 0
 0
 2
@@ -35,9 +81,11 @@ PURPOSE|{-
 3
 
 0
+Box
+3
 Comment and string
 -16777208
-16761024
+6340863
 This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
 '[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
 0
@@ -58,8 +106,77 @@ This element does nothing except to make sure that the start/end of block elemen
 1
 
 0
+Start of box[]
+-16777208
+16760928
+With this element we make the layout "Box" toggle to itself.  This will add "Population or Service" to the stack of layouts to toggle back to.  The stack is popped by "end of box[]".  This way, the layout "box" can be nested into itself.
+\[
+0
+0
+2
+0
+1
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
+End of box[]
+-16777208
+16744448
+
+\]
+0
+0
+5
+0
+0
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
 Block
 3
+Comment and string
+-16777208
+10526880
+This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
+'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
+0
+1
+0
+0
+0
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
 Start of block
 -16777208
 16711935
@@ -69,7 +186,7 @@ PURPOSE|{-
 0
 2
 0
-1
+2
 0
 
 0
@@ -91,29 +208,6 @@ Toggle back to the previous layout, either "block" or "outside any block", and e
 0
 0
 5
-0
-0
-0
-
-0
-
-
-0
-0
-0
-0
-
-1
-
-0
-Comment and string
--16777208
-10526880
-This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
-'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
-0
-1
-0
 0
 0
 0

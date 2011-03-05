@@ -49,10 +49,10 @@ ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-27
-Err-PURPOSE+keyword
-Error if EXPLAIN is NOT followed by a suitable keyword
-(?<=(PURPOSE)\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
+28
+Err-ROLE+keyword
+Error if ROLE is NOT followed by a word/string and a proper keyword
+(?<=(ROLE)\s)\s*+("[^"]*"|[^\s]*\s)\s*+(?!(MAINTAINS|EDITS|USES))
 FALSE
 FALSE
 15
@@ -61,9 +61,9 @@ FALSE
 
 0
 FALSE
-Err-keyword+UPPERCASE
-Error if appropriate <keyword> (CONTEXT, PATTERN, CONCEPT etc) is not followed by UPPER CASE char
-\b(CONTEXT|PATTERN|CONCEPT)\s+(?(?=")"[^A-Z]|[^A-Z])
+Err-PURPOSE+keyword
+Error if EXPLAIN is NOT followed by a suitable keyword
+(?<=(PURPOSE)\s)(?!\s*+(CONTEXT|PATTERN|PROCESS|CONCEPT|RELATION|RULE))\s*+\w*\s*
 FALSE
 FALSE
 15
@@ -83,6 +83,17 @@ FALSE
 
 0
 FALSE
+Err-keyword+UPPERCASE
+Error if appropriate <keyword> (CONTEXT, PATTERN, CONCEPT etc) is not followed by UPPER CASE char
+\b(CONTEXT|PATTERN|PROCESS|CONCEPT)\s+(?(?=")"[^A-Z]|[^A-Z])
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
 Err-keyword+lowercase
 Error if appropriate <keyword> (RELATION, RULE) is not followed by lowercase char
 \b(RELATION|RULE)\s+(?(?=")"[^a-z_]|[^a-z_])
@@ -94,9 +105,9 @@ FALSE
 
 0
 FALSE
-Err- IN <language>
-Errof if PURPOSE <something> misses the 'IN DUTCH' or 'IN ENLGISH' syntax
-\b(PURPOSE)\b\s*+RELATION\s*+\b([a-z]\w*+)\b\s*+(?#Optional:Concepts)(\[[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+\s*+\])?+(?#Optional:REF)(\s*+REF\s+"[^"]*+")?+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(\s*+IN\s++(DUTCH|ENGLISH)))
+Err-PHRASE
+Error if PHRASE is not followed by an optional 'IN DUTCH' or 'IN ENGLISH' followed by a string.
+(?<=PHRASE)\s*+(IN\s*+ENGLISH\s*+|IN\s*+DUTCH\s*+|)[^"I]
 FALSE
 FALSE
 15
@@ -107,18 +118,7 @@ FALSE
 FALSE
 Err-PURPOSE
 Error if PURPOSE <something> misses the 'IN DUTCH' or 'IN ENLGISH' syntax
-\b(PURPOSE)\b\s*+(CONTEXT|PATTERN|RULE|CONCEPT)\s*+(?(?=")"[\s\w]*+"|\w*+)\s*+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(IN DUTCH|IN ENGLISH))
-FALSE
-FALSE
-15
-0
-
-
-0
-FALSE
-Err-IN(lang)comment
-Error if 'IN DUTCH' or 'IN ENGLISH' is not followed by {+ <text> -}
-\bIN\s++(DUTCH|ENGLISH)\s*+(REF\s*+"[^"]*")?+\s*+([^\{]|\{[^\+])
+\b(PURPOSE)\b\s*+(CONTEXT|PATTERN|PROCESS|RULE|CONCEPT)\s*+(?(?=")"[\s\w]*+"|\w*+)\s*+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(IN DUTCH|IN ENGLISH))
 FALSE
 FALSE
 15
@@ -215,9 +215,9 @@ FALSE
 
 3
 FALSE
-Line Comment (folding point)
-Text after --[ on the same line
-[^-]--\[[^\n\r]*+
+Line Comment (alternate highlight)
+Text after --? on the same line
+[^-]--\?[^\n\r]*+
 FALSE
 FALSE
 21
@@ -225,6 +225,17 @@ FALSE
 
 
 3
+FALSE
+Line Comment (Section header)
+Text after --[ on the same line
+[^-]--\s*\[[^\n\r]*+
+FALSE
+FALSE
+12
+0
+
+
+0
 FALSE
 Line Comment
 Text after -- on the same line
@@ -283,7 +294,7 @@ FALSE
 FALSE
 Reserved words
 Lijstje staat in 'CC.hs'
-\b(CONTEXT|ENDCONTEXT|EXTENDS|PATTERN|ENDPATTERN|SERVICE|INITIAL|SQLPLUG|PHPPLUG|POPULATION|CONTAINS|RULE|TEST|RELATION|CONCEPT|KEY|IMPORT|GEN|ISA|PRAGMA|PHRASE|PURPOSE|IN|REF|ENGLISH|DUTCH|ONE|BIND|TOPHP|BINDING|BYPLUG|ROLE|EDITS|USES)\b
+\b(CONTEXT|ENDCONTEXT|EXTENDS|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|SERVICE|INITIAL|SQLPLUG|PHPPLUG|POPULATION|CONTAINS|RULE|TEST|RELATION|CONCEPT|KEY|IMPORT|GEN|ISA|PRAGMA|PHRASE|PURPOSE|IN|REF|ENGLISH|DUTCH|ONE|BIND|TOPHP|BINDING|BYPLUG|ROLE|MAINTAINS|EDITS|USES)\b
 FALSE
 FALSE
 7
@@ -316,7 +327,7 @@ FALSE
 FALSE
 EXPLAIN Concepts, Patterns, Contexts  (plain text)
 
-(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|CONCEPT)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|PROCESS|CONCEPT)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
 FALSE
 FALSE
 0
@@ -327,7 +338,7 @@ FALSE
 FALSE
 Concepts, Patterns, Contexts  (function name)
 
-(?<=\b(CONTEXT|PATTERN|CONCEPT)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+(?<=\b(CONTEXT|PATTERN|PROCESS|CONCEPT)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
 FALSE
 FALSE
 8
