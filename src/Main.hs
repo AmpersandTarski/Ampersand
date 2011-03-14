@@ -88,7 +88,7 @@ doGenXML fSpec flags
 doGenProto :: Fspc -> Options -> IO()
 doGenProto fSpec flags
    =  verboseLn flags "Checking on rule violations..."
-     >> if (not.null) (violations fSpec) 
+     >> if not (theme flags==StudentTheme) && (not.null) (violations fSpec) 
         then verboseLn flags explainviols else verboseLn flags "No violations found." 
      >> verboseLn flags "Generating prototype..."
      >> phpObjServices fSpec flags  
