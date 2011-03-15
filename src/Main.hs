@@ -30,20 +30,25 @@ parseFile flags
 
 parseImportFile :: String -> String -> Options -> IO(Populations Concept)  
 parseImportFile adlText adlfn flags  
-      = let fn = importfile flags in
-        if not(null(importfile flags))
-        then do verbose flags "Parsing import file... "
-                popText <- readFile fn
-                case importformat flags of
-                  Adl1PopFormat -> do verbose flags "Importing ADL1 populations file... "
-                                      parseADL1Pop popText fn 
-                  Adl1Format -> do verbose flags "Importing ADL1 file... "
-                                   cx <- parseADL1 popText [] flags fn
-                                   fspec <- calculate flags cx
-                                   atlas <- parseADL1 adlText [] flags adlfn
-                                   return (makeADL1Populations (declarations atlas) [fspec])
-        else return []
-
+ = let fn = importfile flags in
+   if not(null(importfile flags))
+   then do verbose flags "Parsing import file... "
+           popText <- readFile fn
+           case importformat flags of
+             Adl1PopFormat -> do verbose flags "Importing ADL1 populations file... "
+                                 parseADL1Pop popText fn 
+             Adl1Format -> do verbose flags "Importing ADL1 file... "
+                              cx <- parseADL1 popText [] flags fn
+                              fspec <- calculate flags cx
+                              atlas <- parseADL1 adlText [] flags adlfn
+                              return (makeADL1Populations (declarations atlas) [fspec]
+                                    ++makeADL1Populations (declarations atlas) (picturesForAtlas fspec))
+   else return []
+   where
+   picturesForAtlas fSpec
+    = [makePicture flags fSpec p | p <- patterns fSpec] ++
+      [makePicture flags fSpec userRule | userRule <- rules fSpec]++
+      [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
 
 calculate :: Options -> Context -> IO(Fspc)
 calculate flags context = do verboseLn flags "Calculating..."
