@@ -41,14 +41,15 @@ parseImportFile adlText adlfn flags
                               cx <- parseADL1 popText [] flags fn
                               fspec <- calculate flags cx
                               atlas <- parseADL1 adlText [] flags adlfn
-                              return (makeADL1Populations (declarations atlas) [fspec]
-                                    ++makeADL1Populations (declarations atlas) (picturesForAtlas fspec))
+                              return (makeADL1Populations (declarations atlas) [fspec])
+ -- TODO: @Gerard: Deze incheck actie kost je taart! Het compileerde niet meer....
+ --                                   ++(makeADL1Populations (declarations atlas) (picturesForAtlas fspec)))
    else return []
-   where
-   picturesForAtlas fSpec
-    = [makePicture flags fSpec p | p <- patterns fSpec] ++
-      [makePicture flags fSpec userRule | userRule <- rules fSpec]++
-      [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
+ --  where
+ --  picturesForAtlas fSpec
+ --   = [makePicture flags fSpec p | p <- patterns fSpec] ++
+ --     [makePicture flags fSpec userRule | userRule <- rules fSpec]++
+ --     [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
 
 calculate :: Options -> Context -> IO(Fspc)
 calculate flags context = do verboseLn flags "Calculating..."
