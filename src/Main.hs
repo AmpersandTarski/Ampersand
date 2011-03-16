@@ -5,6 +5,7 @@ import Control.Monad
 import System.FilePath        (combine,replaceExtension)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
+import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
 import DatabaseDesign.Ampersand
 
 --import Data.Ampersand.Main
@@ -41,9 +42,8 @@ parseImportFile adlText adlfn flags
                               cx <- parseADL1 popText [] flags fn
                               fspec <- calculate flags cx
                               atlas <- parseADL1 adlText [] flags adlfn
-                              return (makeADL1Populations (declarations atlas) [fspec])
- -- TODO: @Gerard: Deze incheck actie kost je taart! Het compileerde niet meer....
- --                                   ++(makeADL1Populations (declarations atlas) (picturesForAtlas fspec)))
+                              return (makeADL1Populations (declarations atlas) [fspec]
+                                    ++makeADL1Populations (declarations atlas) (picturesForAtlas flags fspec))
    else return []
  --  where
  --  picturesForAtlas fSpec

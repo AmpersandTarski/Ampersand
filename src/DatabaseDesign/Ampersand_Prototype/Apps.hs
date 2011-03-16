@@ -4,4 +4,4 @@ module DatabaseDesign.Ampersand_Prototype.Apps
       )
 where
 
-import DatabaseDesign.Ampersand_Prototype.Apps.Atlas (fillAtlas)
+import DatabaseDesign.Ampersand_Prototype.Apps.Atlas (fillAtlas,picturesForAtlas)

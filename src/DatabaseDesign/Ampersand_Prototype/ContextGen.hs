@@ -35,7 +35,7 @@ where
         , "   global $myerrors;"
         , "   if(isset($_REQUEST['save'])){ //if there is a transaction to be closed"
         , "     $rls=array(); //TODO get rules from transaction and check them somehow"
-        , "     $check = true;"
+        , "     $check = checkRules();"
         , "     foreach ($rls as $rl){"
         , "       if ($check) {$check=$rl;}"
         , "     }"

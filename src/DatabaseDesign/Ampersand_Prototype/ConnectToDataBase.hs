@@ -101,14 +101,17 @@ where
        , "  }"
        , "}"
        , ""
-       ] --TODO (see ticket #29) ++ (ruleFunctions flags fSpec)
+       ] 
+       ++ (ruleFunctions flags fSpec)
        ++
        [ ""
-       , "if($DB_debug>=3){"
-       ] ++
-          [ "  //checkRule"++show (runum r)++"();" --TODO -> uncomment (see ticket #29)
-          | r<-rules fSpec ] ++
-       [ "}"
+       , "//if($DB_debug>=3){"
+       , "function checkRules(){"
+       , "  return" 
+             ++(intercalate " &&" 
+                [ " checkRule"++show (runum r)++"()" | r<-rules fSpec ])
+             ++ ";"
+       , "}"
        ]
       )) ++ "\n?>"
    

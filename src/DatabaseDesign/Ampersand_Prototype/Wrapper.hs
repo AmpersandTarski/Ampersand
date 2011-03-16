@@ -57,7 +57,7 @@ objectWrapper fSpec svcs svc flags
          ++ indentBlock 2 showObjectCode --(see showObjectCode below)
          ++ 
           [ "if(!$edit) "++
-                if elem "Edit" (actions o) 
+                if visibleedit 
                 then "$buttons.=ifaceButton("++selfref++".\"&edit=1\",\"Edit\");"
                 else "$buttons=$buttons;"
           , "else"
@@ -87,10 +87,10 @@ objectWrapper fSpec svcs svc flags
           , "     $buttons.=ifaceButton(" ++ selfref1 objectId ++ ",\"Cancel\");"
           , "   } "
           , "} else {"
-          , if elem "Edit" (actions o)
+          , if visibleedit
             then "        $buttons.=ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\");"
             else "        $buttons=$buttons;"
-          , if elem "Delete" (actions o)
+          , if visibledel
             then "        $buttons.=ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
             else "        $buttons=$buttons;"
           , "       }"
@@ -114,6 +114,12 @@ objectWrapper fSpec svcs svc flags
    objectName      = name o
    objectId        = phpIdentifier objectName
    appname         = name fSpec
+   editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
+            | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
+   visibleedit = foldr (||) False [mayedit x editable || mayadd (target x) editable|x<-allobjctx o]
+   visibledel = visiblenew --if you may add you may delete 
+   visiblenew = mayadd (target(objctx o)) editable
+   allobjctx obj = (objctx obj):(concat (map allobjctx (objats obj)))
    showObjectCode --display some concept instance in read or edit mode by definition of SERVICE
     = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - Ampersand Prototype</TITLE>\""
       , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
@@ -136,7 +142,7 @@ objectWrapper fSpec svcs svc flags
              ]
         else ["?><H1>"++objectName++"</H1>"] --the context element is a constant, it is nicer to display the svclabel (objectName)
       ) --END: display/edit the identifier of some concept instance
-     ++ concat [attributeWrapper svcs objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
+     ++ concat [attributeWrapper svcs editable objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
      ++  --(see attributeWrapper below)
       ["<?php"
       ,"if($edit) echo '</FORM>';"
@@ -161,6 +167,19 @@ displaycol obj = snd(head$displaydirective obj)
 --use novalue to display an item which does not exist
 novalue::String
 novalue = "<I>Nothing</I>"
+--class "item UI*" and "new UI*" are editable (see edit.js)
+itemUI :: [Relation Concept] -> Expression(Relation Concept) -> String
+itemUI editable item
+  | mayedit item editable = "item UI"
+  | otherwise = "itemshow UI"
+newUI :: [Relation Concept] -> Expression(Relation Concept) -> String
+newUI editable item
+  | mayedit item editable = "new UI"
+  | otherwise = "itemshow UI"
+mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
+mayedit item editable = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
+mayadd :: Concept -> [Relation Concept] -> Bool
+mayadd cpt editable = (not.null) [()|r<-editable,isIdent r||isTrue r,target r==cpt] 
 
 -----------------------------------------
 --display/edit the instances related to the identifier of some concept instance (objectId) by definition of SERVICE (att0)
@@ -169,8 +188,8 @@ novalue = "<I>Nothing</I>"
 --path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0|(att0,n)<-atts o]
 --siblingatt0s bepaalt of er meer dan 1 (wrapper att0) is. Deze info is nodig om te bepalen of CLASS = '.. UI of UI_*'.
 --att0 is de huidige subservice
-attributeWrapper::[Service]->String->String->Bool->ObjectDef->[String]
-attributeWrapper svcs objectId path0 siblingatt0s att0
+attributeWrapper::[Service]->[Relation Concept]->String->String->Bool->ObjectDef->[String]
+attributeWrapper svcs editable objectId path0 siblingatt0s att0
  = let 
    cls0 | siblingatt0s = "_"++phpIdentifier (name att0) 
         | otherwise    = ""
@@ -216,7 +235,7 @@ attributeWrapper svcs objectId path0 siblingatt0s att0
    , "<SCRIPT type=\"text/javascript\">"
    , "  // code for editing blocks in "++(name att0)
    ]
-   ++ indentBlock 2 (concat [showBlockJS c a | (c,a)<-newBlocks])
+   ++ indentBlock 2 (concat [showBlockJS c editable a | (c,a)<-newBlocks])
    ++
    [ "</SCRIPT>"
    , "<?php } ?>"
@@ -280,7 +299,7 @@ attributeWrapper svcs objectId path0 siblingatt0s att0
                              then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
                              else idvar)) ++ ";" 
         , "  echo '"
-        , "  <LI CLASS=\"item UI"++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"
+        , "  <LI CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"
         , if null(objats att) || null(displaydirective att) 
           then [] 
           else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);"
@@ -289,13 +308,16 @@ attributeWrapper svcs objectId path0 siblingatt0s att0
         [ "  echo '</LI>';"
         , "}"
         ]
-        ++ --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
-        [ "if($edit) { //" ++ show (actions att)]
+        ++ 
+        --BEGIN:add item to editable item list
+        --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
+        if not(mayedit (objctx att) editable) then [] else
+        [ "if($edit) {"
+        , "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
+        ]
         ++
-        [ "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
-        | elem "Edit" (actions att)]
-        ++
-        (if not(null gotoP) && elem "New" (actions att) 
+        (if not(null gotoP) && mayadd (target(objctx att)) editable 
+         --if there is a SERVICE for the target concept, and you may create new elements of that concept
          then 
          [ "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"]
          ++ (if length gotoP==1 
@@ -308,6 +330,7 @@ attributeWrapper svcs objectId path0 siblingatt0s att0
          else []
         )
         ++ [ "}" ]
+        --END:add item to editable item list
         ++
         [ "echo '"
         , "</UL>';"
@@ -352,10 +375,10 @@ attributeWrapper svcs objectId path0 siblingatt0s att0
         , "if(isset("++var++")){" --in case of TOT (+UNI), $var must be set.
                                   --TODO: in new mode it is implemented as $var='', which is wrong, because at save '' will become an instance of the target concept
            --the relation instance exists => item UI
-        , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"
+        , "  echo '<DIV CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++path++"\">';"
         , "}else{"
           --no relation instance exists => new UI
-        , "  echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\">';"
+        , "  echo '<DIV CLASS=\""++newUI editable (objctx att)++cls++"\" ID=\""++path++"\">';"
         , "}"]
         ++ indentBlock 4 content --uniAtt returns novalue if $var is not set or $var==''
         ++ [ "echo '</DIV>';"]
@@ -397,13 +420,13 @@ attributeWrapper svcs objectId path0 siblingatt0s att0
          else if length gotoP == 1
               then ["if(!$edit) echo '"
                    ,"<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
-                   ,"else echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';"]
+                   ,"else echo '<DIV CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';"]
               else ["if(!$edit){"
                    ,"  echo '"
                    ,"<A class=\"GotoLink\" id=\"To"++path++"\">';"
                    ,"  echo "++echobit++".'</A>';"]
                    ++ indentBlock 2 (gotoDiv gotoP path) ++
-                   [ "} else echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';" ]
+                   [ "} else echo '<DIV CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';" ]
               --if length gotoP == 1
           --    then [ "if(!$edit){"
             --       , "  echo '"
@@ -455,8 +478,8 @@ embedimage att depth
 -----------------------------------------
 --EDIT BLOCK functions
 -----------------------------------------
-showBlockJS::String->ObjectDef->[String]
-showBlockJS cls att
+showBlockJS::String->[Relation Concept]->ObjectDef->[String]
+showBlockJS cls editable att
  = [ "function UI"++cls++"(id){"
    , "  return " ++ head attCode'] ++ (map ((++) "       + ") (tail attCode')) ++
    [ "        ;", "}"]
@@ -466,11 +489,11 @@ showBlockJS cls att
                          | (n,a)<-zip [(0::Integer)..] (objats at)]
      specifics c n a = if isUni (objctx a)
                          then if isTot (objctx a)
-                              then "<SPAN CLASS=\"item UI"++acls c a++"\" ID=\""++n
+                              then "<SPAN CLASS=\""++itemUI editable (objctx att)++acls c a++"\" ID=\""++n
                                    ++"\">" ++ concat (attCode n (acls c a) a) ++"</SPAN>"
-                              else "<DIV CLASS=\"new UI"++acls c a++"\" ID=\""
+                              else "<DIV CLASS=\""++newUI editable (objctx att)++acls c a++"\" ID=\""
                                    ++n++"\">"++novalue++"</DIV>"
-                         else "<UL><LI CLASS=\"new UI"++acls c a
+                         else "<UL><LI CLASS=\""++newUI editable (objctx att)++acls c a
                               ++"\" ID=\""++n++"\">new "++(name a)++"</LI></UL>"
      acls c a = c++"_"++(phpIdentifier (name a))
 -------------
