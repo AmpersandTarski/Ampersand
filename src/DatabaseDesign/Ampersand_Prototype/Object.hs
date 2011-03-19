@@ -377,7 +377,7 @@ saveTransactions flags fSpec object
               insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
               insQuery var
                 = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug
-                  ++ "` ("++intercalate "," ["`"++fldname f++"`" | (_,f)<-rd' (fldname.snd) attrs]
+                  ++ "` ("++intercalate "," ["`"++fldname f++"`" | (_,f)<-nubBy (fldname.snd) attrs]
                   ++ ") VALUES (" ++
                   intercalate ", "
                         [ if fldnull f || fldauto f
@@ -387,7 +387,7 @@ saveTransactions flags fSpec object
                                          ) ++ "?\"'\".addslashes("
                               ++ varname var o ++ ").\"'\":\"NULL\").\""
                           else "'\".addslashes("++varname var o++").\"'"
-                        | (o,f)<-rd' (fldname.snd) attrs
+                        | (o,f)<-nubBy (fldname.snd) attrs
                         ] ++ ")\", 5)"
               --like insQuery, only also taking values not in $me from $old (i.e. copyflds)
               --the names of array old are fldnames
@@ -395,7 +395,7 @@ saveTransactions flags fSpec object
               copyinsQuery var
                 = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug
                   ++ "` ("
-                  ++  intercalate "," (["`"++fldname f++"`" | (_,f)<-rd' (fldname.snd) attrs]
+                  ++  intercalate "," (["`"++fldname f++"`" | (_,f)<-nubBy (fldname.snd) attrs]
                                      ++["`"++fldname f++"`" |f<-copyflds])
                   ++ ") VALUES ("
                   ++ intercalate ", "
@@ -406,7 +406,7 @@ saveTransactions flags fSpec object
                                           ) ++ "?\"'\".addslashes("
                                ++ varname var o ++ ").\"'\":\"NULL\").\""
                            else "'\".addslashes("++varname var o++").\"'"
-                         | (o,f)<-rd' (fldname.snd) attrs
+                         | (o,f)<-nubBy (fldname.snd) attrs
                          ]
                          ++
                          [if fldnull f || fldauto f
