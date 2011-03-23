@@ -37,7 +37,7 @@ RULE "superholons": isAncestorOf /\ isAncestorOf~ = -V
 RULE superholons: isAncestorOf /\ isAncestorOf~ = -V
 RULE isAncestorOf /\ isAncestorOf~ = -V
 
-RULE I[LMH] = 'L' \/ 'M' \/ 'H' PHRASE "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
+RULE piet: I[LMH] = 'L' \/ 'M' \/ 'H' PHRASE "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
 
 --Sommige [*maar niet alle*] syntaxfouten worden met rood aangegeven. Voorbeelden:
 kader :: aap * noot.
@@ -206,7 +206,7 @@ FALSE
 FALSE
 Line Comment (emphasized)
 Text after --! on the same line
-[^-]--![^\n\r]*+
+(^|[^-])--![^\n\r]*+
 FALSE
 FALSE
 20
@@ -217,7 +217,7 @@ FALSE
 FALSE
 Line Comment (alternate highlight)
 Text after --? on the same line
-[^-]--\?[^\n\r]*+
+(^|[^-])--\?[^\n\r]*+
 FALSE
 FALSE
 21
@@ -228,7 +228,7 @@ FALSE
 FALSE
 Line Comment (Section header)
 Text after --[ on the same line
-[^-]--\s*\[[^\n\r]*+
+(^|[^-])--\s*\[[^\n\r]*+
 FALSE
 FALSE
 12
@@ -239,7 +239,7 @@ FALSE
 FALSE
 Line Comment
 Text after -- on the same line
-[^-]--
+(^|[^-])--
 TRUE
 FALSE
 5
