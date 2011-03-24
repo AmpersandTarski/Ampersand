@@ -116,7 +116,7 @@ objectWrapper fSpec svcs svc flags
    appname         = name fSpec
    editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
             | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
-   visibleedit = foldr (||) False [mayedit x editable || mayadd (target x) editable|x<-allobjctx o]
+   visibleedit = foldr (||) visiblenew [mayedit x editable|x<-allobjctx o]
    visibledel = visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable
    allobjctx obj = (objctx obj):(concat (map allobjctx (objats obj)))
@@ -389,7 +389,9 @@ attributeWrapper svcs editable objectId path0 siblingatt0s att0
         content=if null gotoP || isIdent (ctx att) then ["echo "++echobit++";"]
                 else if length gotoP == 1
                      then ["if(!$edit) echo '"
-                          ,"<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
+                          ,if null (urlstrs att)
+                           then "<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
+                           else "<A HREF=\""++head(urlstrs att)++"\">'."++echobit++".'</A>';"
                           ,"else echo "++echobit++";"]
                      else ["if(!$edit){"
                           ,"  echo '"
@@ -419,7 +421,9 @@ attributeWrapper svcs editable objectId path0 siblingatt0s att0
         (if null gotoP then []
          else if length gotoP == 1
               then ["if(!$edit) echo '"
-                   ,"<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
+                   ,if null (urlstrs att)
+                    then"<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
+                    else"<A HREF=\""++head (urlstrs att)++"\">'."++echobit++".'</A>';"
                    ,"else echo '<DIV CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';"]
               else ["if(!$edit){"
                    ,"  echo '"
@@ -465,6 +469,9 @@ attributeWrapper svcs editable objectId path0 siblingatt0s att0
         , "<?php"
         ]
       where content = attContent var depth path cls att
+----------
+urlstrs :: ObjectDef -> [String]
+urlstrs att = [urlstr|xs<-objstrs att,'U':'R':'L':'=':urlstr<-xs]
 ----------------------
 --display one or more pictures, assumed to be behind their url values (GEN Picture ISA Datatype)
 embedimage::ObjectDef->Integer->[String]

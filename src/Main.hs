@@ -2,10 +2,11 @@
 module Main where
 
 import Control.Monad
-import System.FilePath        (combine,replaceExtension)
+import System.FilePath        (combine,replaceExtension,dropFileName)
+import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
-import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
+import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
 import DatabaseDesign.Ampersand
 
 --import Data.Ampersand.Main
@@ -27,12 +28,34 @@ parseFile flags
         do verbose flags "Parsing... "
            adlText <- readFile fnFull
            importpops <- parseImportFile adlText fnFull flags 
-           parseADL1 adlText importpops flags fnFull 
+           parsedfile <- parseADL1 adlText importpops flags fnFull 
+           atlasfspec <- calculate flags parsedfile
+           parsedatlas <- atlas2context atlasfspec flags
+           if servicesG flags then return parsedatlas else return parsedfile
 
 parseImportFile :: String -> String -> Options -> IO(Populations Concept)  
 parseImportFile adlText adlfn flags  
- = let fn = importfile flags in
-   if not(null(importfile flags))
+ = let fn = importfile flags 
+       fdir = let d=dropFileName fn in if null d then "." else d
+       usr= namespace flags
+       getr r = if length r==1 then head r else error "import error: no or multiple declarations for relvar"
+       impctx atlas = [makeRelation d|d<-declarations atlas,name d=="loadcontext"]
+       impfil atlas = [makeRelation d|d<-declarations atlas,name d=="loadedfile"]
+       impupl atlas = [makeRelation d|d<-declarations atlas,name d=="upload"]
+       usrfil atlas = [makeRelation d|d<-declarations atlas,name d=="fileof"]
+       funrld atlas = [makeRelation d|d<-declarations atlas,name d=="reload"]
+       funfsp atlas = [makeRelation d|d<-declarations atlas,name d=="funcspec"]
+       funrep atlas = [makeRelation d|d<-declarations atlas,name d=="report"]
+       funadl atlas = [makeRelation d|d<-declarations atlas,name d=="showADL"]
+       loadcontext r fspec = [Popu{ popm=getr r, popps=[mkPair fn (name fspec)]}]
+       loadedfile r        = [Popu{ popm=getr r, popps=[mkPair usr fn]         }| not (null usr)]
+       uploadfile r        = [Popu{ popm=getr r, popps=[mkPair usr "browse"]   }| not (null usr)]
+       --TODO -> the user has more files, how do I get them in this population
+       fileof r myfiles    = [Popu{ popm=getr r, popps=[mkPair (combine fdir f) usr]  }| f<-myfiles, not (null usr)]
+       contextfunction fspec r x
+                           = [Popu{ popm=getr r, popps=[mkPair (name fspec) x] }]
+   in
+   if not(null fn)
    then do verbose flags "Parsing import file... "
            popText <- readFile fn
            case importformat flags of
@@ -42,14 +65,21 @@ parseImportFile adlText adlfn flags
                               cx <- parseADL1 popText [] flags fn
                               fspec <- calculate flags cx
                               atlas <- parseADL1 adlText [] flags adlfn
+                              myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
+                              verboseLn flags "Generating pictures for atlas..."
+                              sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
                               return (makeADL1Populations (declarations atlas) [fspec]
-                                    ++makeADL1Populations (declarations atlas) (picturesForAtlas flags fspec))
+                                    ++makeADL1Populations (declarations atlas) (picturesForAtlas flags fspec)
+                                    ++loadcontext (impctx atlas) fspec
+                                    ++loadedfile (impfil atlas)
+                                    ++uploadfile (impupl atlas)
+                                    ++fileof (usrfil atlas) myfiles
+                                    ++ contextfunction fspec (funrld atlas) (name fspec)
+                                    ++ contextfunction fspec (funfsp atlas) "genereer"
+                                    ++ contextfunction fspec (funrep atlas) "genereer"
+                                    ++ contextfunction fspec (funadl atlas) usr
+                                     )
    else return []
- --  where
- --  picturesForAtlas fSpec
- --   = [makePicture flags fSpec p | p <- patterns fSpec] ++
- --     [makePicture flags fSpec userRule | userRule <- rules fSpec]++
- --     [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
 
 calculate :: Options -> Context -> IO(Fspc)
 calculate flags context = do verboseLn flags "Calculating..."
@@ -62,6 +92,7 @@ generate flags fSpec =
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
         [ doGenProto    fSpec flags | genPrototype flags] ++
+        [ serviceGen    fSpec flags | servicesG    flags] ++
         [ verbose flags "Done."]
        ) 
 
