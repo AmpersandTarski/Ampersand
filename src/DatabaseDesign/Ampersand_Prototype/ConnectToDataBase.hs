@@ -8,6 +8,9 @@ where
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
  import DatabaseDesign.Ampersand_Prototype.Version 
 
+ fatal :: Int -> String -> a
+ fatal i msg = error (fatalMsg "ConnectToDataBase" i msg)
+
  connectToDataBase :: Fspc -> Options -> String
  connectToDataBase fSpec flags 
     = (intercalate "\n  " 
@@ -140,7 +143,7 @@ where
       where
        code :: Expression (Relation Concept) -> [Statement]
        code r = case (getCodeFor fSpec [] [codeVariableForBinary "v" r]) of
-                 Nothing -> error "!Fatal (module ConnectToDataBase 144): No codes returned"
+                 Nothing -> fatal 139 "No codes returned"
                  Just x  -> x
        dbError rule
         = phpShow((langwords!!0)++" ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++

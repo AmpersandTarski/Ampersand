@@ -11,6 +11,9 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sql
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
+fatal :: Int -> String -> a
+fatal i msg = error (fatalMsg "Object" i msg)
+
 objectServices :: Options 
                -> Fspc
                -> ObjectDef
@@ -39,7 +42,7 @@ objectServices flags fSpec o
 
 generateService_getEach :: Fspc -> String -> ObjectDef -> [String]
 generateService_getEach fSpec nm o
- = if sql==Nothing then error "!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 48): Cannot generate getEach code in Object.hs (line 49)"
+ = if sql==Nothing then fatal 42 "Cannot generate getEach code"
    else
    ["function getEach"++phpIdentifier nm++"(){"
    ,"  return firstCol(DB_doquer('" ++
@@ -164,7 +167,7 @@ showClasses flags fSpec o
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
-   = if sql==Nothing then error "!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 173): Cannot check if exists in Object.hs" else fromJust sql
+   = if sql==Nothing then fatal 167 "Cannot check if exists in Object.hs" else fromJust sql
    where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
          tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))(-1)
          ctx' = simplify $ flp (ctx o)
@@ -173,7 +176,7 @@ showClasses flags fSpec o
 {- still working on new save() and del()
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
 saveTransactions flags fSpec object
-  -- | True = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 181): "++show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec])
+  -- | True = fatal 176 (show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec])
  | otherwise
  = [ "function save(){"
    , "  DB_doquer('START TRANSACTION');"
@@ -226,7 +229,7 @@ saveTransactions flags fSpec object
   allAtts :: ObjectDef->[ObjectDef]
   allAtts o = objats o ++ concat (map allAtts (objats o))
   nestTo :: ObjectDef -> (String->[String]) -> [String]
-  nestTo attr fnc = if null nt then error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 234): saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)")
+  nestTo attr fnc = if null nt then fatal 229 $ "saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)"
                     else head nt
     where nt = nestToRecur attr fnc object "$me" 0
   nestToRecur :: ObjectDef -> (String->[String]) -> ObjectDef -> String -> Integer -> [[String]]
@@ -269,7 +272,7 @@ saveTransactions flags fSpec object
     = nestTo a
              (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                      ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
-  delcode _ [] = error "!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 277): should not occur" -- , but generating no code for no request seems OK
+  delcode _ [] = fatal 272 "should not occur" -- , but generating no code for no request seems OK
   delCodeElem :: PlugSQL->([String],[ObjectDef])
   delCodeElem plug
     = (   concat (map (delcode plug) (fullOccurences plug))
@@ -368,7 +371,7 @@ saveTransactions flags fSpec object
                                 -- niet meer voorkomen, netjes weggefilterd worden
                         else filter ((iskey plug).snd) $ reverse attrs -- eerst de voor de hand liggende
               objkfld --this is the kernel field with instances of $id of this object
-                | null (findkfld++keys) = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 376): There is no key for this object in plug "++name plug)
+                | null (findkfld++keys) = fatal 371 $ "There is no key for this object in plug "++name plug
                 | otherwise = head (findkfld++keys)
               findkfld = [(svc,fld)|(svc,fld)<-keys,concept attobj==target(fldexpr fld)]
                 -- nunios: Not UNI ObjectS: objects that are not Uni
@@ -437,7 +440,7 @@ saveTransactions flags fSpec object
                    intercalate ", "
                          [ "`"++fldname f++"`="++
                            if fldnull f then "NULL"
-                           else error "!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 445): you cannot use copycutupdinsQuery for objkfld=UNIQUE KEY"
+                           else fatal 440 "you cannot use copycutupdinsQuery for objkfld=UNIQUE KEY"
                          | (_,f)<-attrs, elem f requiresFld
                          ] ++ " WHERE `"++fldname (snd objkfld)++"`='\".addslashes("++varname var (fst objkfld)++").\"'" ++"\", 5)"
                   , if null copyflds then insQuery var 
@@ -537,7 +540,7 @@ doPhpGet fSpec objVar depth objIn objOut
                           :[or [msubset i' o'|i'<-objats i] -- and at least every attribute of o must be in i
                            |o'<-objats o]) %-}
     --template to do a query => firstline (DB_doquer( quer ));
-    doQuer fl [] = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 545): doPhpGet: doQuer has no query for "++fl);
+    doQuer fl [] = fatal 540 $ "doPhpGet: doQuer has no query for "++fl
     doQuer firstLine quer 
      = addToLast "\"));" ([ firstLine++"(DB_doquer(\""++head quer] ++ map ((++) (take (12+length firstLine) (repeat ' '))) (tail quer))
     trunc att = att{objats=[]}
@@ -650,7 +653,7 @@ doSqlGet fSpec isArr objIn objOut
          -- en Debug.trace aan de imports toevoegen
          -- ++ trace ("Geen keyGroup voor "++name objOut) []
          ++ if isOne' objOut then [] 
-            else error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 669): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
+            else fatal 653 $ "doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut
          )
    --the list of fields that are selected (SELECT DISTINCT fieldNames FROM (see tbls))
    --based on comboGroups' ++ rest
@@ -674,7 +677,7 @@ doSqlGet fSpec isArr objIn objOut
    tbls =
       let       
       restLines (outAtt,n)
-          = if sql outAtt==Nothing then error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 693): Cannot get a query for "++(show( objctx outAtt))++" in Object.hs (line 578)")
+          = if sql outAtt==Nothing then fatal 677 $ "Cannot get a query for "++(show( objctx outAtt))
             else splitLineBreak ((fromJust (sql outAtt)) ++ " AS f"++show n) -- better names?
       sql outAtt = selectExprBrac 
             fSpec (-4)
@@ -743,8 +746,8 @@ savefunction _ fSpec fnm depth this
         inplugs cpt = [(plug,fld)|InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]
                       ++ [(plug,column plug)|InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
         (myplug,idfld) = if not(null (inplugs thiscpt)) then head (inplugs thiscpt)
-                           else error "!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 767):this concept is not stored in any SQL plug."
-        plugkey | null (tblfields myplug) = error "!Fatal (module DatabaseDesign.Ampersand_Prototype.Object 769):no tblfields in plug."
+                           else fatal 746 "this concept is not stored in any SQL plug."
+        plugkey | null (tblfields myplug) = fatal 747 "no tblfields in plug."
                 | otherwise = head (tblfields myplug) --TODO -> implement KEYs in plug
         insme :: String -> PlugSQL -> String
         insme mevar plug --e.g. $oldme, $newme, ..

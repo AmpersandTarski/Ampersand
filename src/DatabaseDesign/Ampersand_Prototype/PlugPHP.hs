@@ -18,6 +18,11 @@ import DatabaseDesign.Ampersand
 import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
 import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..))
+import DatabaseDesign.Ampersand_Prototype.Version 
+
+fatal :: Int -> String -> a
+fatal i msg = error (fatalMsg "PlugPHP" i msg)
+
 ----------------------------------------------
 --PlugPHP
 ----------------------------------------------
@@ -43,7 +48,7 @@ instance Eq PlugPHP where
 
 instance Plugable PlugPHP where
   makePlug p = case p of
-                 InternalPlug _ -> error ("!Fatal (module PlugPHP 50): A plugPHP cannot be an Internal plug")
+                 InternalPlug _ -> fatal 46 "A plugPHP cannot be an Internal plug"
                  ExternalPlug obj -> makePhpPlug obj
 
 data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
@@ -72,25 +77,25 @@ instance ShowHS PlugPHP where
          ,"       }"
          ])
 instance ShowHS PhpValue where
- showHSname _ = error ("!Fatal (module PlugPHP 80): PhpValue is anonymous with respect to showHS flags.")
+ showHSname _ = fatal 75 "PhpValue is anonymous with respect to showHS flags."
  showHS flags _ phpVal
    = case phpVal of
         PhpNull{}   -> "PhpNull"
         PhpObject{} -> "PhpObject{ objectdf = " ++ showHSname (objectdf phpVal) ++ ", phptype  = " ++ showHS flags "" (phptype phpVal) ++ "}"
 
 instance ShowHS PhpType where
- showHSname _ = error ("!Fatal (module PlugPHP 87): PhpType is anonymous with respect to showHS flags.")
+ showHSname _ = fatal 82 "PhpType is anonymous with respect to showHS flags."
  showHS _ indent PhpString = indent++"PhpString"
  showHS _ indent PhpInt    = indent++"PhpInt"
  showHS _ indent PhpFloat  = indent++"PhpFloat"
  showHS _ indent PhpArray  = indent++"PhpArray"
 
 instance ShowHS PhpReturn where
- showHSname _ = error ("!Fatal (module PlugPHP 94): PhpReturn is anonymous with respect to showHS flags.")
+ showHSname _ = fatal 89 "PhpReturn is anonymous with respect to showHS flags."
  showHS flags indent ret = indent++"PhpReturn {retval = "++showHS flags indent (retval ret)++"}"
 
 instance ShowHS PhpAction where
- showHSname _ = error ("!Fatal (module PlugPHP 98): PhpAction is anonymous with respect to showHS flags.")
+ showHSname _ = fatal 93 "PhpAction is anonymous with respect to showHS flags."
  showHS flags indent act
    = (intercalate (indent ++"    ") 
        [ "PhpAction { action = " ++ showHS flags "" (action act)
@@ -98,7 +103,7 @@ instance ShowHS PhpAction where
        , "          }"
        ])
 instance ShowHS ActionType where
- showHSname _ = error ("!Fatal (module ShowHS 198): \"ActionType\" is anonymous with respect to showHS flags.")
+ showHSname _ = fatal 101 "\"ActionType\" is anonymous with respect to showHS flags."
  showHS _ indent Create = indent++"Create"
  showHS _ indent Read   = indent++"Read"
  showHS _ indent Update = indent++"Update"

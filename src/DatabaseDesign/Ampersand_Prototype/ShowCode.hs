@@ -5,7 +5,11 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries(Named(..))
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlockBetween)
  import qualified Data.Set as Set
- 
+ import DatabaseDesign.Ampersand_Prototype.Version 
+
+ fatal :: Int -> String -> a
+ fatal i msg = error (fatalMsg "ShowCode" i msg)
+
  showCode :: Int -> [Statement] -> String
  showCode i s = fst (showCodeAndGetHeaders i s)
  showCodeHeaders :: [[Statement]] -> [String]
@@ -98,7 +102,7 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
                      ++"=>array("++(showUseVar.snd$ cqtuple rest)++")))",Set.empty)
      PHPAdd1{}
       -> line "addOneTo" addOneTo
-     _ -> error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.ShowCode 100): cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in ShowCode.hs on line 100)")
+     _ -> fatal 101 $ "cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in ShowCode.hs on line 100)"
     where
      line str set = ( str++"("++fst (assignment (cqfrom1 rest))++","++fst (assignment (cqfrom2 rest))++")"
                     , snd(assignment (cqfrom1 rest)) `Set.union` snd(assignment (cqfrom2 rest)) `Set.union` set)

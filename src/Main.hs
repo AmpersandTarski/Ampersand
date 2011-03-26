@@ -8,6 +8,10 @@ import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
 import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand_Prototype.Version 
+
+fatal :: Int -> String -> a
+fatal i msg = error (fatalMsg "Main" i msg)
 
 --import Data.Ampersand.Main
 
@@ -64,6 +68,9 @@ parseImportFile adlText adlfn flags
              Adl1Format -> do verbose flags "Importing ADL1 file... "
                               cx <- parseADL1 popText [] flags fn
                               fspec <- calculate flags cx
+                              verbose flags "writing pictures for atlas... "
+                              sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
+                              verbose flags "pictures for atlas written... "
                               atlas <- parseADL1 adlText [] flags adlfn
                               myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
                               verboseLn flags "Generating pictures for atlas..."
@@ -152,7 +159,7 @@ doGenDocument fSpec flags
             = case theme flags of
                  ProofTheme   -> case fspecFormat flags of
                                    FLatex -> (texOnly_proofdoc fSpec,[])     --generate a proof document
-                                   _      -> error "!Fatal (module Generators 101): Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
+                                   _      -> fatal 118 $ "Ampersand only supports proof documents output in LaTeX format. try `-fLatex`"
                  DefaultTheme -> funcSpec
                  StudentTheme -> funcSpec
                where funcSpec = fSpec2Pandoc fSpec flags --generate a func spec
@@ -173,7 +180,7 @@ diagnose fSpec flags
             = case theme flags of
                  ProofTheme   -> case fspecFormat flags of
                                    FLatex -> (texOnly_proofdoc fSpec,[])     --generate a proof document
-                                   _      -> error "!Fatal (module Generators 122): Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
+                                   _      -> fatal 139 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex`"
                  DefaultTheme -> funcSpec
                  StudentTheme -> funcSpec
                where funcSpec = fSpec2Pandoc fSpec flags --generate a func spec

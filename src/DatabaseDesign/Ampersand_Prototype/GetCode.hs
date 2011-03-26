@@ -12,7 +12,11 @@ where
  import DatabaseDesign.Ampersand_Prototype.PlugPHP(phpfile,phpSafe,phpinArgs)
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries(Named(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
- 
+ import DatabaseDesign.Ampersand_Prototype.Version 
+
+ fatal :: Int -> String -> a
+ fatal i msg = error (fatalMsg "GetCode" i msg)
+
  getCodeFor :: Fspc->[Named CodeVar]->[Named CodeVar]->(Maybe [Statement])
  getCodeFor fSpec pre post
     = if null new then Just [] else
@@ -41,15 +45,15 @@ where
        code<-case e of
         (Tm (V{reltyp=(_,t)}) _) -- source is al automatisch een singleton
          -> getAllTarget t
-        _ -> error ("!Fatal (module GetCode 43): please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e)
+        _ -> fatal 44 $ "please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e
      ]
   where e = cvExpression obj
         obj = nObject o
         getAllTarget (PHPexp e') -- this makes the object very predictable: it will have a source (0) and a target (1) relation
-         = atleastOne ("!Fatal (module GetCode 49): getAllTarget did not return something for (PHPexp e') with e'="++show e')
+         = atleastOne ("!Fatal (module GetCode 53): getAllTarget did not return something for (PHPexp e') with e'="++show e')
            [galines ++ renaming
            | tmpvar<-[newVarFor (map nName (o:pre)) (conc2php e')]
-           , galines <- atleastOne ("!Fatal (module GetCode 52): getCodeForSingle should return something for e'="++show e'++"\n"
+           , galines <- atleastOne ("!Fatal (module GetCode 56): getCodeForSingle should return something for e'="++show e'++"\n"
                                    ) $
                         getCodeForSingle fSpec pre tmpvar -- WHY? How do we know that tmpvar is a singleton?
            , renaming<-[[Iteration (tmpvar:pre) (o:tmpvar:pre) (use tmpvar) s t'
@@ -73,7 +77,7 @@ where
                                       , to <-    [use s|cvExpression (nObject f)==pairSourceExpr e']
                                               ++ [use t|cvExpression (nObject f)==pairTargetExpr e']
                                       ]
-                       , (length fromTo == length c) || error ("!Fatal (module GetCode 75): Length does not match: "++show (fromTo,c)++", to fix this, start checking and verifying all attributes of obj and get a perfect match. Do NOT fix by just removing this error: this might cause an assignment to not-match")
+                       , (length fromTo == length c) || fatal 76 ("Length does not match: "++show (fromTo,c)++", to fix this, start checking and verifying all attributes of obj and get a perfect match. Do NOT fix by just removing this error: this might cause an assignment to not-match")
                        ]
            ]
         getAllTarget tp@(PHPC c)
@@ -87,11 +91,11 @@ where
            | CodeVar{cvContent=Left cv}<-[obj]
            , l<-getAllInExpr fSpec pre (use o) (cvExpression cv)
            ]++
-           [ error ("!Fatal (module GetCode 89): TODO: create complex objects for getAllTarget "++show cv)
+           [ fatal 90 $ "TODO: create complex objects for getAllTarget "++show cv
            | CodeVar{cvContent=Right cv}<-[obj]
            ]
         getAllTarget _
-         = error ("!Fatal (module GetCode 93): missing code for getAllTarget")
+         = fatal 94 "missing code for getAllTarget"
 
 
  -- | Create code to fill a single variable with some expression.
@@ -134,7 +138,7 @@ where
                                    (F   (f:fs))      -> [(f,(F   fs),PHPJoin)]
                                    (Fix (f:fs))      -> [(f,(Fix fs),PHPIntersect)]
                                    (Fux (f:fs))      -> [(f,(Fix fs),PHPUnion)]
-                                   _ -> [] -- error ("!Fatal (module GetCode 144): Failed composed namely "++show composed)
+                                   _ -> [] -- fatal 145 $ "Failed composed namely "++show composed
      , let var1=getAVar pre (conc2php e1)
      , let var2=getAVar (var1:pre) (conc2php e2)
      -- code below is correct, and should work when getCodeForSingle is OK
@@ -162,7 +166,7 @@ where
      | code <- case composed of
                 -- NOTE ON Cpx !!! When Cpx becomes typed, the pattern below should be changed, and changeSource as well!
                 (F [Tm (I _ (PHPI1 s) _) _, Cpx f, Tm (I _ (PHPI1 t) _) _])
-                       -> atleastOne ("!Fatal (module GetCode 161): getCodeForSingle should return something in Cpx for "++show f)$ -- SJC put this here
+                       -> atleastOne ("!Fatal (module GetCode 177): getCodeForSingle should return something in Cpx for "++show f)$ -- SJC put this here
                           [ assignment++
                             [Assignment (var1:pre)
                                         (obj:var1:pre)
@@ -233,7 +237,7 @@ where
                                       | let pre'=(obj:loopby:tmp:var1:tmp2:loopvalue:pre)
                                       , let var2=getAVar pre' (changeSource (PHPI1 (use loopby)) (changeTarget (PHPI1 (use loopvalue)) f2))
                                       , let addTo=(Named (nName var ) (UseVar [Right (use loopby)]))
-                                      , get<-atleastOne ("!Fatal (module GetCode 231): getCodeForSingle should return something in Fi for "++show var2++" (just removing this error on line 231 might fix the problem)")$
+                                      , get<-atleastOne ("!Fatal (module GetCode 248): getCodeForSingle should return something in Fi for "++show var2++" (just removing this error on line 231 might fix the problem)")$
                                              getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
@@ -300,4 +304,4 @@ where
                Rel{} -> r{relsrc=c}
                I{} -> I [] c c
                V{reltyp=(_,t)} -> V [] (c,t)
-               Mp1{} -> error "!Fatal (module GetCode 310): changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."
+               Mp1{} -> fatal 311 "changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

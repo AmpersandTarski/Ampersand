@@ -9,7 +9,11 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    import Char(isAlphaNum,isDigit)
    import Data.Maybe
    import Data.List
-   
+   import DatabaseDesign.Ampersand_Prototype.Version 
+
+   fatal :: Int -> String -> a
+   fatal i msg = error (fatalMsg "RelBinGenBasics" i msg)
+
    zipnum :: [b] -> [(Int, b)]
    zipnum = zip [(0::Int)..]
    
@@ -106,5 +110,5 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    
 
    addToLast :: [a] -> [[a]] -> [[a]]
-   addToLast _ [] = error "!Fatal (module RelBinGenBasics 109): addToLast: empty list"
+   addToLast _ [] = fatal 109 "addToLast: empty list"
    addToLast s as = (init as)++[last as++s]

@@ -9,7 +9,11 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
    import Data.Maybe
    import Char(isDigit,digitToInt,intToDigit)
    import Data.List
-   
+   import DatabaseDesign.Ampersand_Prototype.Version 
+
+   fatal :: Int -> String -> a
+   fatal i msg = error (fatalMsg "RelBinGenSQL" i msg)
+
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
@@ -120,7 +124,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
    selectExpr fSpec i src trg (Fix [e']) = selectExpr fSpec i src trg e'
    -- Why not return Nothing?
    -- Reason: Fix [] should not occur in the query at all! This is not a question of whether the data is in the database.. it might be (it depends on the type of Fi []), but we just don't know
-   selectExpr _     _ _   _   (Fix [] ) = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 127): Cannot create query for Fi [] because type is unknown")
+   selectExpr _     _ _   _   (Fix [] ) = fatal 123 "Cannot create query for Fi [] because type is unknown"
 
    selectExpr fSpec i src trg (F (Tm (V _ (s,_))_:fs@(_:_))) | s==cptS
      = selectGeneric i ("1",src) ("fst."++trg',trg)
@@ -143,7 +147,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 
    selectExpr fSpec i src trg (F (e':((Tm (V _ _)_):(f:fx)))) = -- prevent calculating V in this case
        if src==trg && not (isProp e')
-       then error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 150): selectExpr 2 src and trg are equal ("++src++") in "++showADL e')
+       then fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e'
        else
        selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         ((selectExprBrac fSpec i src' mid' e')+++" AS fst, "+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
@@ -179,8 +183,8 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
             concExprs = [e| (_,e,_)<-concExpr]
             concExpr  = [ (n,selectExprBrac fSpec i sm sm tm +++ " AS "++concNm n, sm)
                         | (n,c)<-ncs, tm<-[Tm (mIs c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
-            concTp n = head ([t| (i',_,t)<-concExpr, n==i']++error("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 186) concTp"))
-            concNm n = head (["c"++show n| (i',_,_)<-concExpr, n==i']++error("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 187) concNm"))
+            concTp n = head ([t| (i',_,t)<-concExpr, n==i']++fatal 182 "concTp")
+            concNm n = head (["c"++show n| (i',_,_)<-concExpr, n==i']++fatal 183 "concNm")
             -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
             exprbracs = [e| (_,e,_,_)<-exprbrac]
             exprbrac  = [ (n,selectExprBrac fSpec i src'' trg'' l +++ " AS "++exprNm n , src'' , trg'' )
@@ -189,9 +193,9 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                         ]
-            exprS n  = head ([s| (i',_,s,_)<-exprbrac, n==i']++error("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 196) exprS"))  -- source type
-            exprT n  = head ([t| (i',_,_,t)<-exprbrac, n==i']++error("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 197) exprT"))  -- target type
-            exprNm n = head (["F"++show n| (i',_,_,_)<-exprbrac, n==i']++error("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 198) exprNm"))
+            exprS n  = head ([s| (i',_,s,_)<-exprbrac, n==i']++fatal 192 "exprS")  -- source type
+            exprT n  = head ([t| (i',_,_,t)<-exprbrac, n==i']++fatal 193 "exprT")  -- target type
+            exprNm n = head (["F"++show n| (i',_,_,_)<-exprbrac, n==i']++fatal 194 "exprNm")
             -- de where expressies bevatten alle "magie".
             wherecl   = filterEmpty
                         [ if isNeg l
@@ -220,7 +224,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
                         | (n,c)<-ncs
                         ]
                         where inCs n = n `elem` map fst ncs
-   selectExpr _     _ _   _   (F  [] ) = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 227): Cannot create query for F [] because type is unknown")
+   selectExpr _     _ _   _   (F  [] ) = fatal 223 "Cannot create query for F [] because type is unknown"
 
    selectExpr fSpec i src trg (Tm (V _ (s,t))_   ) 
     = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
@@ -253,9 +257,9 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
                               src2 = quote$sqlExprSrc fSpec e'
                               trg2 = noCollideUnlessTm' e' [src2] (quote$sqlExprTrg fSpec e')
    selectExpr _ _ _ _ (K0x _)
-      = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 260): SQL cannot create closures K0")
+      = fatal 256 "SQL cannot create closures K0"
    selectExpr _ _ _ _ (K1x _)
-      = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 262): SQL cannot create closures K1")
+      = fatal 258 "SQL cannot create closures K1"
    selectExpr fSpec i src trg (Fdx  [e']       ) = selectExpr fSpec i src trg e'
    selectExpr fSpec i src trg (Fdx lst'@(fstm:_:_))
     = selectGeneric i (mainSrc,src) (mainTrg,trg)
@@ -307,7 +311,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
                            | (n,c)<-ncs''
                            ]
                         
-   selectExpr _     _ _   _   (Fdx  [] ) = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 314): Cannot create query for Fd [] because type is unknown")
+   selectExpr _     _ _   _   (Fdx  [] ) = fatal 310 "Cannot create query for Fd [] because type is unknown"
 
    -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
    selectExprInUnion :: Fspc
@@ -391,7 +395,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
     where src'="vfst."++sqlAttConcept fSpec (source rel)
           trg'="vsnd."++sqlAttConcept fSpec (target rel)
    selectExprMorph _ _ src trg rel@Mp1{}
-    | src == ""&&trg=="" = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 398): Source and target are \"\", use selectExists' for this purpose")
+    | src == ""&&trg=="" = fatal 394 "Source and target are \"\", use selectExists' for this purpose"
     | src == ""  = Just$ "SELECT "++rel1val rel++" AS "++trg
     | trg == ""  = Just$ "SELECT "++rel1val rel++" AS "++src
     | src == trg = Just$ "SELECT "++rel1val rel++" AS "++src
@@ -418,7 +422,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
     = selectcl ++
       phpIndent i ++ "  FROM " +>+ 
       (if toM whr==Just "1" then tbl else tbl+|+(phpIndent i ++ " WHERE "+>+whr))
-      where selectcl | snd src=="" && snd trg=="" = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 425): Source and target are \"\", use selectExists' for this purpose")
+      where selectcl | snd src=="" && snd trg=="" = fatal 421 "Source and target are \"\", use selectExists' for this purpose"
                      | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
                      | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
                      | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
@@ -539,7 +543,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
        where res = replF (k2:ks)
              fs  = [ts | F ts <- [res]]
      replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
-      = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 512): Could not define a properly typed I for F[] in replF in sqlPlugFields in Prototype/RelBinGenSQL.hs")
+      = fatal 542 "Could not define a properly typed I for F[] in replF in sqlPlugFields in Prototype/RelBinGenSQL.hs"
               -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
      replF ks = F (ks)
      -----------------
@@ -547,16 +551,16 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
    sqlExprSrc :: Fspc->Expression (Relation Concept) -> String
    sqlExprSrc fSpec expr = ses expr
     where
-      ses (F [])    = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 520): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (F [])    = fatal 554 (if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (F [f])   = ses f
       ses (F fs)    = ses (head fs)
-      ses (Fux [])  = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 523): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fux [])  = fatal 557 (if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fux [f]) = ses f
       ses (Fux fs)  = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fix [])  = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 526): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fix [])  = fatal 560 (if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fix [f]) = ses f
       ses (Fix fs)  = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fdx [])  = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 529): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fdx [])  = fatal 563 (if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fdx [f]) = ses f
       ses (Fdx fs)  = ses (head fs)
       ses (Cpx e)   = ses e
@@ -576,9 +580,9 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
    
 -- sqlConcept yields the plug that contains all atoms of concept c. Since there may be more of them, the first one is returned.
    sqlConceptPlug :: Fspc -> Concept -> PlugSQL
-   sqlConceptPlug fSpec c | c==cptS = error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 549): Concept ONE may not be represented in SQL.")
+   sqlConceptPlug fSpec c | c==cptS = fatal 583 "Concept ONE may not be represented in SQL."
                           | otherwise
-                = if null ps then error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 551): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)") else
+                = if null ps then fatal 585 $ "Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                   head ps
                   where ps = [plug|InternalPlug plug<-plugInfos fSpec
                                   , not (null (case plug of ScalarSQL{} -> [c|c==cLkp plug]; _ -> [c'|(c',_)<-cLkpTbl plug, c'==c]))]
@@ -587,8 +591,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
    sqlAttConcept :: Fspc -> Concept -> String
    sqlAttConcept fSpec c | c==cptS = "ONE"
                          | otherwise
-                = if null cs then error ("!Fatal (module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 560): Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)") else
+                = if null cs then fatal 594 $ "Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                   head cs
                   where cs = [fldname f|f<-tblfields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         appname =  name fSpec
-

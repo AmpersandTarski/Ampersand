@@ -69,7 +69,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
  
  phpsource :: Expression (Relation PHPconcept) -> PHPconcept
  phpsource expr = case expr of
-     (Tm rel i)-> source rel
+     (Tm rel _)-> source rel
      (Tc f)    -> phpsource f
      (F [])    -> error "!Fatal (module CodeStatement 74): F []"
      (F fs)    -> phpsource (head fs)
