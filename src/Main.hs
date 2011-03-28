@@ -33,29 +33,31 @@ parseFile flags
            adlText <- readFile fnFull
            importpops <- parseImportFile adlText fnFull flags 
            parsedfile <- parseADL1 adlText importpops flags fnFull 
-           atlasfspec <- calculate flags parsedfile
-           parsedatlas <- atlas2context atlasfspec flags
-           if servicesG flags then return parsedatlas else return parsedfile
+           atlasfspec <- calculate flags parsedfile           
+           if servicesG flags then do parsedatlas <- atlas2context atlasfspec flags
+                                      return parsedatlas
+                              else return parsedfile
 
 parseImportFile :: String -> String -> Options -> IO(Populations Concept)  
 parseImportFile adlText adlfn flags  
  = let fn = importfile flags 
+       fnnxt fspec = name fspec ++ "'"
        fdir = let d=dropFileName fn in if null d then "." else d
        usr= namespace flags
        getr r = if length r==1 then head r else error "import error: no or multiple declarations for relvar"
        impctx atlas = [makeRelation d|d<-declarations atlas,name d=="loadcontext"]
        impfil atlas = [makeRelation d|d<-declarations atlas,name d=="loadedfile"]
-       impupl atlas = [makeRelation d|d<-declarations atlas,name d=="upload"]
+       impupl atlas = [makeRelation d|d<-declarations atlas,name d=="newcontext"]
        usrfil atlas = [makeRelation d|d<-declarations atlas,name d=="fileof"]
-       funrld atlas = [makeRelation d|d<-declarations atlas,name d=="reload"]
+       --funrld atlas = [makeRelation d|d<-declarations atlas,name d=="reload"]
        funfsp atlas = [makeRelation d|d<-declarations atlas,name d=="funcspec"]
        funrep atlas = [makeRelation d|d<-declarations atlas,name d=="report"]
-       funadl atlas = [makeRelation d|d<-declarations atlas,name d=="showADL"]
-       loadcontext r fspec = [Popu{ popm=getr r, popps=[mkPair fn (name fspec)]}]
+       funadl atlas = [makeRelation d|d<-declarations atlas,name d=="showadl"]
+       loadcontext r fspec = [Popu{ popm=getr r, popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
        loadedfile r        = [Popu{ popm=getr r, popps=[mkPair usr fn]         }| not (null usr)]
-       uploadfile r        = [Popu{ popm=getr r, popps=[mkPair usr "browse"]   }| not (null usr)]
+      -- uploadfile r        = [Popu{ popm=getr r, popps=[mkPair usr "browse"]   }| not (null usr)]
        --TODO -> the user has more files, how do I get them in this population
-       fileof r myfiles    = [Popu{ popm=getr r, popps=[mkPair (combine fdir f) usr]  }| f<-myfiles, not (null usr)]
+       fileof r myfiles    = [Popu{ popm=getr r, popps=[mkPair (combine fdir f) usr| f<-myfiles, not (null usr)] }]
        contextfunction fspec r x
                            = [Popu{ popm=getr r, popps=[mkPair (name fspec) x] }]
    in
@@ -79,35 +81,41 @@ parseImportFile adlText adlfn flags
                                     ++makeADL1Populations (declarations atlas) (picturesForAtlas flags fspec)
                                     ++loadcontext (impctx atlas) fspec
                                     ++loadedfile (impfil atlas)
-                                    ++uploadfile (impupl atlas)
+                                    ++contextfunction fspec (impupl atlas) "new context"
                                     ++fileof (usrfil atlas) myfiles
-                                    ++ contextfunction fspec (funrld atlas) (name fspec)
-                                    ++ contextfunction fspec (funfsp atlas) "genereer"
-                                    ++ contextfunction fspec (funrep atlas) "genereer"
-                                    ++ contextfunction fspec (funadl atlas) usr
+                                   -- ++ contextfunction fspec (funrld atlas) (name fspec)
+                                    ++ contextfunction fspec (funfsp atlas) (baseName flags ++ ".pdf")
+                                    ++ contextfunction fspec (funrep atlas) (name fspec)
+                                    ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
                                      )
    else return []
 
 calculate :: Options -> Context -> IO(Fspc)
-calculate flags context = do verboseLn flags "Calculating..."
-                             return (makeFspec flags context)
-                          
-                               
+calculate flags context 
+ = do verboseLn flags "Calculating..." 
+      return (makeFspec flags context) 
 
 generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
-        [ doGenProto    fSpec flags | genPrototype flags] ++
+        [ doGenProto    (protonm fSpec) flags | genPrototype flags] ++
         [ serviceGen    fSpec flags | servicesG    flags] ++
         [ verbose flags "Done."]
        ) 
+   where 
+   protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
-  = (writeFile outputFile $ showADLcode fSpec fSpec)
+  = (writeFile outputFile $ showADLcode strippedfspec strippedfspec)
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
-    where  outputFile = combine (dirOutput flags) "Generated.adl"
+    where  
+    --do not print services (yet) with prototype.exe --export.
+    --prototype --export is an export of the Atlas DB.
+    --use ampersand --export to get generated services etc in an adl file
+    strippedfspec = fSpec{fServices=[]} 
+    outputFile = combine (dirOutput flags) (outputfile flags)
 
 prove :: Fspc -> Options -> IO()
 prove fSpec flags

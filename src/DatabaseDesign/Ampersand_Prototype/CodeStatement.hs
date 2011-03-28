@@ -62,6 +62,10 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
     | PHPI1  { cpvar :: Named UseVar }
     deriving (Eq,Show)
 
+ instance SpecHierarchy PHPconcept
+ instance Ord PHPconcept where
+   x <= y = x == y
+
  instance Identified PHPconcept where
   name (PHPC c)     = name c
   name (PHPexp _)   = "SomeExpression"
