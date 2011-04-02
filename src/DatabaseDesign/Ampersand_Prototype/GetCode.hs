@@ -15,7 +15,7 @@ where
  import DatabaseDesign.Ampersand_Prototype.Version 
 
  fatal :: Int -> String -> a
- fatal i msg = error (fatalMsg "GetCode" i msg)
+ fatal = fatalMsg "GetCode"
 
  getCodeFor :: Fspc->[Named CodeVar]->[Named CodeVar]->(Maybe [Statement])
  getCodeFor fSpec pre post
@@ -34,7 +34,7 @@ where
  getCodeForSingle :: Fspc->[Named CodeVar]->Named CodeVar->[[Statement]]
  getCodeForSingle _ pre post | elem post pre = [[]] -- allready known info
  getCodeForSingle fSpec pre o
- -- | precondition: isSingleton (source (cvExpression (nObject o)))
+ -- precondition: isSingleton (source (cvExpression (nObject o)))
  -- TODO: make sure that newVarFor variables are read OK. More specifically: o may have attributes, these should be given a value!!
   =  -- to get code, we can try different strategies. Just concattenate all attempts
      -- Put the things you want most first (efficient stuff first)

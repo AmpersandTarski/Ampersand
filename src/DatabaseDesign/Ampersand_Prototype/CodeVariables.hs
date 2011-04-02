@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  import DatabaseDesign.Ampersand_Prototype.Version 
 
  fatal :: Int -> String -> a
- fatal i msg = error (fatalMsg "CodeVariables" i msg)
+ fatal = fatalMsg "CodeVariables"
 
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary

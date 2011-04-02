@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
-fatal i msg = error (fatalMsg "Object" i msg)
+fatal = fatalMsg "Object"
 
 objectServices :: Options 
                -> Fspc
@@ -762,7 +762,7 @@ savefunction _ fSpec fnm depth this
         inime :: String -> PlugSQL -> String
         inime mevar plug --e.g. $oldme, $newme, ..
           = mevar ++ " = array("++ intercalate "," ["'"++fldname f++"'=>null" | f<-tblfields plug, not(fldauto f)] ++ ");"
-        thisme  -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]
+        thisme  -- -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]
           = "$me = array("++ intercalate "," 
                              ["'"++fldname fld++"'=>"++arrayattpath att e| (fld,(att,e))<-thismematch]
                    ++ ");" 

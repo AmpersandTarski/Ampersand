@@ -12,7 +12,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    import DatabaseDesign.Ampersand_Prototype.Version 
 
    fatal :: Int -> String -> a
-   fatal i msg = error (fatalMsg "RelBinGenBasics" i msg)
+   fatal = fatalMsg "RelBinGenBasics"
 
    zipnum :: [b] -> [(Int, b)]
    zipnum = zip [(0::Int)..]

@@ -55,7 +55,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
  useAttribute s var = var{nObject=UseVar {uvList=varlist++[s]}}
    where varlist=uvList(nObject var)
 
--- | The following wrapper adds PHP-information to a concept.
+ -- | The following wrapper adds PHP-information to a concept.
  data PHPconcept
     = PHPC Concept -- ^Usual concept
     | PHPexp (Expression (Relation Concept)) -- ^A concept containing pairs representing the population in the expression.

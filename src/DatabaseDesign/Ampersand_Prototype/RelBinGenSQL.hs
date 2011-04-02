@@ -12,7 +12,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
    import DatabaseDesign.Ampersand_Prototype.Version 
 
    fatal :: Int -> String -> a
-   fatal i msg = error (fatalMsg "RelBinGenSQL" i msg)
+   fatal = fatalMsg "RelBinGenSQL"
 
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
@@ -469,7 +469,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
            , --reasons why e is equivalent to plugexpr:
               --because e and plugexpr are equal
               show e==show plugexpr
-        -- || because1 e fld0 fld1              
+     --   -- || because1 e fld0 fld1              
            || --OR e is equivalent to plugexpr for some other reason (requires reasoning)
               bs && bt                                               --       e = se~;te
            {- the above should be enough.. but the relation algebra calculations

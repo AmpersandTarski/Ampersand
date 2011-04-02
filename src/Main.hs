@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
-fatal i msg = error (fatalMsg "Main" i msg)
+fatal = fatalMsg "Main"
 
 --import Data.Ampersand.Main
 

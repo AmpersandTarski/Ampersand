@@ -9,7 +9,7 @@ where
  import DatabaseDesign.Ampersand_Prototype.Version 
 
  fatal :: Int -> String -> a
- fatal i msg = error (fatalMsg "ConnectToDataBase" i msg)
+ fatal = fatalMsg "ConnectToDataBase"
 
  connectToDataBase :: Fspc -> Options -> String
  connectToDataBase fSpec flags 

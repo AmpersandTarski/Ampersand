@@ -21,7 +21,7 @@ import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..))
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
-fatal i msg = error (fatalMsg "PlugPHP" i msg)
+fatal = fatalMsg "PlugPHP"
 
 ----------------------------------------------
 --PlugPHP

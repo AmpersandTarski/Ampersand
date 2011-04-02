@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
  import DatabaseDesign.Ampersand_Prototype.Version 
 
  fatal :: Int -> String -> a
- fatal i msg = error (fatalMsg "ShowCode" i msg)
+ fatal = fatalMsg "ShowCode"
 
  showCode :: Int -> [Statement] -> String
  showCode i s = fst (showCodeAndGetHeaders i s)
