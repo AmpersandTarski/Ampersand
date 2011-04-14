@@ -7,7 +7,7 @@ import Data.Maybe
 import Data.List  hiding (group)
 
 import DatabaseDesign.Ampersand
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -578,6 +578,10 @@ doPhpGet fSpec objVar depth objIn objOut
 -}
 doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
+ | length(objats objOut)==1 && isIdent(objctx objOut)  
+   --different query composer is used to prevent NULL in lists of SERVICE Concepts:I[ONE] = [listOfConcepts:V[ONE*Concept]]
+   && source(objctx objOut)==S && isTrue((objctx.head.objats)objOut) = [showsql(SqlSel1(selectdomain fSpec ((target.objctx.head.objats)objOut)))]
+ | otherwise
   = ["SELECT DISTINCT " ++ head fieldNames      ]
     ++ map ((++) "     , ")
            (tail fieldNames) 
@@ -781,7 +785,7 @@ savefunction _ fSpec fnm depth this
            | null(attributes att) = "$this->_"++phpIdentifier (name att)
            --if att has attributes then $this->_att is an array with at least 'id' for the target of objctx att
            | objctx att==e  = "$this->_"++phpIdentifier (name att)++"['id']"
-           | otherwise  = "$this->_"++phpIdentifier (name att)++"['"++phpIdentifier (name (head (attributes att)))++"']"
+           | otherwise  = "$this->_"++phpIdentifier (name att)++"['"++(name (head (attributes att)))++"']"
         notreqid_and_notinthis_flds = [fld|fld<-tblfields myplug, not(requires myplug (fld,idfld)), not(elem fld (map fst thismematch))]
         reqbyid_and_notinthis_flds = [fld|fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
         reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
@@ -998,7 +1002,7 @@ savefunction _ fSpec fnm depth this
     |((plug,fld0,fld1),att)<-myassocinthis]
     ++	    
     [""
-    ,if depth==0 then "if (closetransaction()) {return $this->getId();} else {$myerrors[] = print_r(array('close'=>'close')); return false;}" else ""
+    ,if depth==0 then "if (closetransaction()) {return $this->getId();} else { return false;}" else ""
     ]) --end indentBlock save() for this
     ++
     ["}"] --end of save() for this

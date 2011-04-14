@@ -6,6 +6,7 @@ where
  import DatabaseDesign.Ampersand
  import DatabaseDesign.Ampersand_Prototype.Code
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
+ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
  import DatabaseDesign.Ampersand_Prototype.Version 
 
  fatal :: Int -> String -> a
@@ -111,8 +112,8 @@ where
        , "//if($DB_debug>=3){"
        , "function checkRules(){"
        , "  return" 
-             ++(intercalate " &&" 
-                [ " checkRule"++show (runum r)++"()" | r<-rules fSpec ])
+             ++(intercalate " &" --REMARK -> bitwise AND to get all violations on all rules 
+                [ " checkRule"++show (runum r)++"()" | r<-invariants fSpec ])
              ++ ";"
        , "}"
        ]
@@ -124,30 +125,35 @@ where
  ruleFunctions flags fSpec
     = showCodeHeaders 
        ([ (code rule')
-        | rule<-rules fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]
+        | rule<-invariants fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]
         ])
       ++
       [ "\n  function checkRule"++show (runum rule)++"(){\n    "++
            (if isFalse rule'
-            then "// "++(langwords!!2)++": "++showADLcode fSpec rule++"\n     "
-            else "// "++(langwords!!3)++" ("++showADLcode fSpec rule++")\n    "++
+            then "// "++(langwords!!2)++": "++showexpression rule++"\n     "
+            else "// "++(langwords!!3)++" ("++showexpression rule++")\n    "++
                  concat [ "//            rule':: "++(showADLcode fSpec rule') ++"\n    " | pDebug] ++
-                   showCode 4 (code rule')
+                   "\n    $v = DB_doquer_lookups('"++ showsql(SqlSel2(selectbinary fSpec rule'))++"');\n"
+                   -- ++ showCode 4 (code rule')
                  ++
                  "if(count($v)) {\n    "++
-                 "  DB_debug("++dbError rule++",3);\n    "++
+                 "  foreach($v as $viol){\n" ++
+                 "     if (count($viol)==1){$vs=$viol[0];$vt=$viol[0];}\n" ++ --an homogeneous violation
+                 "     else                {$vs=$viol[0];$vt=$viol[1];}\n" ++
+                 "  DB_debug("++dbError rule++",3);\n"++
+                 "  }\n" ++
                  "  return false;\n    }"
            )
            ++ "return true;\n  }"
-         | rule<-rules fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]]
+         | rule<-invariants fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]]
       where
        code :: Expression (Relation Concept) -> [Statement]
        code r = case (getCodeFor fSpec [] [codeVariableForBinary "v" r]) of
                  Nothing -> fatal 139 "No codes returned"
                  Just x  -> x
        dbError rule
-        = phpShow((langwords!!0)++" ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-          phpShow(")\n"++(langwords!!1)++": \""++format PlainText (purpose fSpec flags rule)++"\"<BR>")++"" 
+        = phpShow((langwords!!0)++" ("++show (source rule)++" ")++".$vs."++phpShow(","++show (target rule)++" ")++".$vt."++
+          phpShow(")\n"++(langwords!!1)++": \""++head ([explainContent2String xs|Means _ xs<-rrxpl rule]++[""])++"\"<BR>")++"" 
        langwords :: [String]
        langwords
         = case language flags of

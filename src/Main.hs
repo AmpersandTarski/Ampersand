@@ -2,13 +2,16 @@
 module Main where
 
 import Control.Monad
-import System.FilePath        (combine,replaceExtension,dropFileName)
+import System.FilePath        (combine,replaceExtension,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
 import DatabaseDesign.Ampersand
-import DatabaseDesign.Ampersand_Prototype.Version 
+import DatabaseDesign.Ampersand_Prototype.Version
+
+import DatabaseDesign.Ampersand_Prototype.Code 
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
@@ -34,6 +37,16 @@ parseFile flags
            importpops <- parseImportFile adlText fnFull flags 
            parsedfile <- parseADL1 adlText importpops flags fnFull 
            atlasfspec <- calculate flags parsedfile           
+--           verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec c))|c<-concs atlasfspec])
+  --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c))|c<-concs atlasfspec])
+    --       verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d)))|d<-declarations atlasfspec])
+--           verbose flags (show[showsql(SqlSel1(selectdomain atlasfspec (makeRelation d)))|d<-declarations atlasfspec])
+  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((Tm (makeRelation d)(-1)))))|d<-declarations atlasfspec])
+       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (Fux[Tm(makeRelation d)(-1),Tm(flp$makeRelation d)(-1)])))|d<-declarations atlasfspec,source d==target d])
+--           verbose flags (show[(showsql(SqlSel2(selectbinary atlasfspec r'))
+  --                             ,showCode 0 x
+    --                           ,show r')|r<-rules atlasfspec,let r'=(conjNF . Cpx . normExpr) r,head(showexpression r)=='I'
+      --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
            if servicesG flags then do parsedatlas <- atlas2context atlasfspec flags
                                       return parsedatlas
                               else return parsedfile
@@ -84,7 +97,7 @@ parseImportFile adlText adlfn flags
                                     ++contextfunction fspec (impupl atlas) "new context"
                                     ++fileof (usrfil atlas) myfiles
                                    -- ++ contextfunction fspec (funrld atlas) (name fspec)
-                                    ++ contextfunction fspec (funfsp atlas) (baseName flags ++ ".pdf")
+                                    ++ contextfunction fspec (funfsp atlas) (takeBaseName fn ++ ".pdf")
                                     ++ contextfunction fspec (funrep atlas) (name fspec)
                                     ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
                                      )
@@ -114,12 +127,12 @@ serviceGen    fSpec flags
     --do not print services (yet) with prototype.exe --export.
     --prototype --export is an export of the Atlas DB.
     --use ampersand --export to get generated services etc in an adl file
-    strippedfspec = fSpec{fServices=[]} 
+    strippedfspec = fSpec -- {fServices=[]} 
     outputFile = combine (dirOutput flags) (outputfile flags)
 
-prove :: Fspc -> Options -> IO()
-prove fSpec flags
-    = putStr (deriveProofs flags fSpec)
+--prove :: Fspc -> Options -> IO()
+--prove fSpec flags
+  --  = putStr (deriveProofs flags fSpec)
 
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags
