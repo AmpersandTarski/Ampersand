@@ -1,4 +1,0 @@
-While we do not have an issue tracker, we could use this directory by this convention:
-+ Each issue in a separate file.
-+ An issue file in this directory in a particular revision is an open/unsolved issue for that version i.e. delete solved issues.
-+ file name format yyyymmdd_[keywords].issue
