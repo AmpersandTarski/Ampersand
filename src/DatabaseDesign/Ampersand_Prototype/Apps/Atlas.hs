@@ -24,6 +24,10 @@ import Data.List  (intercalate)
 import qualified Data.ByteString.Char8 as Bytes
 import qualified Data.ByteString.UTF8 as BUTF8
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
+import DatabaseDesign.Ampersand.Version (fatalMsg)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Basics"
 ------
 --runMany IGNORES all SQL errors!!!
 --used to DROP tables if exist
@@ -193,7 +197,7 @@ makectx cxs pats rls rulpattern relpattern
        [] []
        [] --in pattern:(atlas2rules fSpec tbls)
        [] --in pattern:(atlas2decls fSpec tbls)
-       [Cd Nowhere x False y []|(x,y)<-cptdescribes,not(null y)] --cptdefs
+       [Cd (fatal 200 "This context has no position") x False y []|(x,y)<-cptdescribes,not(null y)] --cptdefs
        [] [] --explainContent2String
        (atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg)
        (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)
@@ -211,6 +215,7 @@ atlas2pattern :: AtomVal -> [Rule(Relation Concept)] -> RelTbl -> RelTbl -> RelT
                          -> RelTbl -> RelTbl -> Pattern
 atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
  = Pat { ptnm  = p
+       , ptpos = fatal 218 "No position in this pattern"
        , ptrls = [r|(rulstr,p')<-rulpattern,p==p',r<-rs,name r==rulstr]
        , ptgns = []
        , ptdcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|(i,(relstr,p'))<-zip [1..] relpattern,p==p']
@@ -232,7 +237,7 @@ emptySignalDeclaration nm
           ""          -- decprM
           ""          -- decprR
           []          -- decpopu
-          Nowhere     -- decfpos
+          (fatal 240 "this declaration has no position") -- decfpos
           0           -- decid
           True        -- deciss    -- initially, all rules are signals
           False       -- decusr
@@ -297,10 +302,10 @@ atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [
                                   -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PExplanation]
 atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
  = --error(show (patpurpose, rulpurpose, relpurpose, cptpurpose)) ++
-     [PExpl Nowhere (PExplPattern x) Dutch [] y|(x,y)<-patpurpose]
-  ++ [PExpl Nowhere (PExplRule x) Dutch [] y|(x,y)<-rulpurpose]
-  ++ [PExpl Nowhere (PExplDeclaration r) Dutch [] y|(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
-  ++ [PExpl Nowhere (PExplConceptDef x) Dutch [] y|(x,y)<-cptpurpose]
+     [PExpl (fatal 305 "this PExplanation has no position") (PExplPattern x) Dutch [] y|(x,y)<-patpurpose]
+  ++ [PExpl (fatal 306 "this PExplanation has no position") (PExplRule x) Dutch [] y|(x,y)<-rulpurpose]
+  ++ [PExpl (fatal 307 "this PExplanation has no position") (PExplDeclaration r) Dutch [] y|(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
+  ++ [PExpl (fatal 308 "this PExplanation has no position") (PExplConceptDef x) Dutch [] y|(x,y)<-cptpurpose]
 
 makerel relstr relname relsc reltg = 
       let
@@ -309,7 +314,7 @@ makerel relstr relname relsc reltg =
       t = cptnew(geta reltg relstr)
       in
       Rel  { relnm = nm
-           , relpos = Nowhere
+           , relpos = fatal 317 "this Relanation has no position"
            , relats = [s,t]
            , relsrc = s
            , reltrg = t

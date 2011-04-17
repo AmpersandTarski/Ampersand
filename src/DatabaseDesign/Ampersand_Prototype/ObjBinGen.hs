@@ -52,7 +52,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
-       svcs = serviceS fSpec++ serviceG fSpec--Was (voor ontvlechting): map fsv_svcdef (fServices fSpec)
+       svcs = serviceS fSpec++ serviceG fSpec
 
    doGenAtlas :: Fspc -> Options -> IO()
    doGenAtlas fSpec flags =

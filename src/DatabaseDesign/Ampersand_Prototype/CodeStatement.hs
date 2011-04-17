@@ -35,11 +35,15 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
     --                    OR  [Named CodeVar], intended for objects/associative arrays: $var["nName"] is a codeVar 
   , cvContent :: Either CodeVar [Named CodeVar] 
   , cvExpression :: Expression (Relation PHPconcept)
-  } deriving (Eq)
+  }
+ 
+ instance Eq CodeVar where
+  cv==cv' = cvIndexed cv == cvIndexed cv' && cvContent cv == cvContent cv'
+  
  data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
  
  instance Show CodeVar where
-   show (CodeVar i c e) = show i++" "++show c++" '"++show e++"'"
+   show (CodeVar i c e) = show i++" "++show c -- ++" '"++show e++"'"
  
  -- | The actual use of a variable. In practice, use Named UseVar.
  -- | Example: the PHP usage $people[$i]["Name"] becomes Named "people" [Right (Named "i" []),Left "Name"]
@@ -140,7 +144,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
                  , cqfrom2::CodeQuery}
    | PHPCompl1   { cqtuple::(Named UseVar,Named UseVar)
                  , cqfrom ::CodeQuery}
-   | CQCompose   { cqFrom ::[Named CodeQuery]}-- ^ as SQLComposed: combine different codeQueries by name
-   | CQPlain     (Named UseVar)             -- ^ simply get some variable and return it
-   | CQConstant  {cqQuotedValue::String}    -- ^ a constant such as "Hello world", true, or date()
-   deriving (Show,Eq)
+   | CQCompose   { cqFrom ::[Named CodeQuery]} -- ^ as SQLComposed: combine different codeQueries by name
+   | CQPlain     (Named UseVar)                -- ^ simply get some variable and return it
+   | CQConstant  {cqQuotedValue::String}       -- ^ a constant such as "Hello world", true, or date()
+   deriving (Eq, Show)

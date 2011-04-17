@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.DataObject(dataServices) where
 --           --,Concept(..),Declaration(..),isTrue,makeInline
 --           ObjectDef(..),Morphic(..)
 --       --    ,Identified(..)
---           ,Object(..),Expression(..), Concept, FilePos(..)
+--           ,Object(..),Expression(..), Concept, FilePos(..), F_TracePos(..)
 --           )
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprTrg,selectExpr)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentifier)

@@ -133,7 +133,7 @@ where
                 ]
                 | svc<-svcs, let o=svObj svc
                 , isOne o
-                , theme flags/=StudentTheme || elem svc [x|("Student",x)<-roleSvcs fspc]
+                , theme flags/=StudentTheme 
                 , let svctitle = case language flags of Dutch -> "Toon alle "++name svc; English -> "Show all " ++name svc
                 , let svcref="<?php echo serviceref('"++name svc++"');?>\" TITLE=\""++svctitle++"\" class=\"menuItem\">"
                 ]
