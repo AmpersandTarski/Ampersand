@@ -15,7 +15,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
 
 -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
--- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
+-- De interface op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
 -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
 -- als dit zo is, hoeven we alleen dat ene concept te tonen
 --

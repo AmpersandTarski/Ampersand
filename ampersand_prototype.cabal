@@ -19,7 +19,7 @@ Executable prototype
   Hs-Source-Dirs:  src
   build-depends:
       ghc        >= 7.0 && < 8.0 ,
-      Ampersand  >= 2.1.0  , 
+      Ampersand  >= 2.1.0, 
       graphviz   >= 2999.11.0.0 && < 3000 ,
       HDBC-odbc  >= 2.2.3.2,  
       HDBC       >= 2.2.6   && < 2.3,

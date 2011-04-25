@@ -6,9 +6,9 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentif
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
---svcs is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
-objectWrapper :: Fspc -> [Service] ->  Service -> Options -> String
-objectWrapper fSpec svcs svc flags
+--ifcs is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
+objectWrapper :: Fspc -> [Interface] ->  Interface -> Options -> String
+objectWrapper fSpec ifcs ifc flags
  = intercalate "\n" $
    [ "<?php // generated with "++ampersandPrototypeVersionBanner ]
   ++
@@ -110,7 +110,7 @@ objectWrapper fSpec svcs svc flags
    , "?>"
    ]
    where
-   o               = svObj svc
+   o               = ifcObj ifc
    objectName      = name o
    objectId        = phpIdentifier objectName
    appname         = name fSpec
@@ -120,7 +120,7 @@ objectWrapper fSpec svcs svc flags
    visibledel = visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable
    allobjctx obj = (objctx obj):(concat (map allobjctx (objats obj)))
-   showObjectCode --display some concept instance in read or edit mode by definition of SERVICE
+   showObjectCode --display some concept instance in read or edit mode by definition of INTERFACE
     = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - Ampersand Prototype</TITLE>\""
       , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
                 ++ " src=\"js/navigate.js\"></SCRIPT>'.\"\\n\" );"
@@ -140,9 +140,9 @@ objectWrapper fSpec svcs svc flags
                   ++".'</H1>';"
              ,"?>"
              ]
-        else ["?><H1>"++objectName++"</H1>"] --the context element is a constant, it is nicer to display the svclabel (objectName)
+        else ["?><H1>"++objectName++"</H1>"] --the context element is a constant, it is nicer to display the ifclabel (objectName)
       ) --END: display/edit the identifier of some concept instance
-     ++ concat [attributeWrapper svcs editable objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
+     ++ concat [attributeWrapper ifcs editable objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
      ++  --(see attributeWrapper below)
       ["<?php"
       ,"if($edit) echo '</FORM>';"
@@ -152,11 +152,11 @@ objectWrapper fSpec svcs svc flags
 --some small functions
 -----------------------------------------
 selfref2::String->String->String
-selfref2 objid act = "serviceref($_REQUEST['content'],false,false, array('"++objid++"'=>urlencode($"++objid++"->getId()),'"++act++"'=>1))"
+selfref2 objid act = "interfaceref($_REQUEST['content'],false,false, array('"++objid++"'=>urlencode($"++objid++"->getId()),'"++act++"'=>1))"
 selfref1::String->String
-selfref1 objid = "serviceref($_REQUEST['content'],false,false, array('"++objid++"'=>urlencode($"++objid++"->getId()) ))"
+selfref1 objid = "interfaceref($_REQUEST['content'],false,false, array('"++objid++"'=>urlencode($"++objid++"->getId()) ))"
 selfref::String
-selfref = "serviceref($_REQUEST['content'])"
+selfref = "interfaceref($_REQUEST['content'])"
 displaydirective::ObjectDef->[(String,String)]
 displaydirective obj = [(takeWhile (/='.') x,tail$dropWhile (/='.') x) 
                        | strs<-objstrs obj,('D':'I':'S':'P':'L':'A':'Y':'=':x)<-strs, elem '.' x]
@@ -182,14 +182,14 @@ mayadd :: Concept -> [Relation Concept] -> Bool
 mayadd cpt editable = (not.null) [()|r<-editable,isIdent r||isTrue r,target r==cpt] 
 
 -----------------------------------------
---display/edit the instances related to the identifier of some concept instance (objectId) by definition of SERVICE (att0)
---svcs is nodig voor GoToPages
+--display/edit the instances related to the identifier of some concept instance (objectId) by definition of INTERFACE (att0)
+--ifcs is nodig voor GoToPages
 -- "$" ++ objectId is de instantie van de class die je op het scherm ziet
 --path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0|(att0,n)<-atts o]
 --siblingatt0s bepaalt of er meer dan 1 (wrapper att0) is. Deze info is nodig om te bepalen of CLASS = '.. UI of UI_*'.
---att0 is de huidige subservice
-attributeWrapper::[Service]->[Relation Concept]->String->String->Bool->ObjectDef->[String]
-attributeWrapper svcs editable objectId path0 siblingatt0s att0
+--att0 is de huidige subinterface
+attributeWrapper::[Interface]->[Relation Concept]->String->String->Bool->ObjectDef->[String]
+attributeWrapper ifcs editable objectId path0 siblingatt0s att0
  = let 
    cls0 | siblingatt0s = "_"++phpIdentifier (name att0) 
         | otherwise    = ""
@@ -244,7 +244,7 @@ attributeWrapper svcs editable objectId path0 siblingatt0s att0
    -----------------------------------------
    --CONTENT functions
    -----------------------------------------
-   --the content for an att0 has already been read in a php class instance for this service
+   --the content for an att0 has already been read in a php class instance for this interface
    -- recall: $"++ phpIdentifier (name att0) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att0)++"();"
    --content enters at attContent with 
    --   att=att0
@@ -259,20 +259,20 @@ attributeWrapper svcs editable objectId path0 siblingatt0s att0
    --   var'=(var++"['"++name a++"']")
    --   path'=(path++"."++show n)
    -----------
-   --gotoPages returns the list of suitable service links for an (objctxatt) in edit or read mode and a name for it
+   --gotoPages returns the list of suitable interface links for an (objctxatt) in edit or read mode and a name for it
    gotoPages :: ObjectDef->String->[(String,String)]
    gotoPages att idvar 
-     = [ ("'.serviceref('"++name svc++"',false,$edit, array('"++(phpIdentifier$name svc)++"'=>urlencode("++idvar++"))).'"
-         ,name svc)
-       | svc<-svcs
-       , target (objctx (svObj svc)) == target (objctx att)
+     = [ ("'.interfaceref('"++name ifc++"',false,$edit, array('"++(phpIdentifier$name ifc)++"'=>urlencode("++idvar++"))).'"
+         ,name ifc)
+       | ifc<-ifcs
+       , target (objctx (ifcObj ifc)) == target (objctx att)
        ]
    --gotoPagesNew like gotoPages only in new mode
    gotoPagesNew att
-     = [ ("'.serviceref('"++name svc++"',$edit).'"
-         ,"new "++ name svc)
-       | svc<-svcs
-       , target (objctx (svObj svc)) == target (objctx att)
+     = [ ("'.interfaceref('"++name ifc++"',$edit).'"
+         ,"new "++ name ifc)
+       | ifc<-ifcs
+       , target (objctx (ifcObj ifc)) == target (objctx att)
        ]
    --In case there is more than one gotoPage, gotoDiv generates suitable code for a gotoPage
    gotoDiv gotoP path
@@ -317,7 +317,7 @@ attributeWrapper svcs editable objectId path0 siblingatt0s att0
         ]
         ++
         (if not(null gotoP) && mayadd (target(objctx att)) editable 
-         --if there is a SERVICE for the target concept, and you may create new elements of that concept
+         --if there is a INTERFACE for the target concept, and you may create new elements of that concept
          then 
          [ "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"]
          ++ (if length gotoP==1 

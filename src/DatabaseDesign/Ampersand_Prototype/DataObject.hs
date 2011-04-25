@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
-module DatabaseDesign.Ampersand_Prototype.DataObject(dataServices) where
+module DatabaseDesign.Ampersand_Prototype.DataObject(dataInterfaces) where
 --import Adl (
 --           --,Concept(..),Declaration(..),isTrue,makeInline
 --           ObjectDef(..),Morphic(..)
@@ -15,16 +15,16 @@ import Data.List  hiding (group)
 import DatabaseDesign.Ampersand-- .Misc
 import DatabaseDesign.Ampersand_Prototype.Version 
 
---For each data object (i.e. generated kernel-based SQL plugs) there is one dataServices file (data_*.inc.php).
+--For each data object (i.e. generated kernel-based SQL plugs) there is one dataInterfaces file (data_*.inc.php).
 --It contains:
 -- + classes for all concepts in the data object incl. save and del functions
 -- + getEach functions for the concepts in the plug
 --The attributes of the class of some concept are those relations that require this concept (all UNI relations with source r==concept)
 --Thus a class may contain other classes.
---The main purpose of a data class is to save any delta on a class instance initiated from some svc_*.inc.php.
---The data in a SERVICE is composed of parts from DATAOBJECTS (possibly entire objects).
---A SERVICE puts all its (possibly changed) data in partially filled class instances of data objects and calls save() or del() on them as appropriate.
---Everything not filled cannot have changed by the SERVICE.
+--The main purpose of a data class is to save any delta on a class instance initiated from some *.inc.php.
+--The data in a INTERFACE is composed of parts from DATAOBJECTS (possibly entire objects).
+--A INTERFACE puts all its (possibly changed) data in partially filled class instances of data objects and calls save() or del() on them as appropriate.
+--Everything not filled cannot have changed by the INTERFACE.
 --The delta may be small (e.g. only change in one of the attributes in a tiny class contained in this class)
 --Each class has its own save (and del) function, which
 -- -> is used by classes in which it is contained (one implementation).
@@ -36,17 +36,17 @@ import DatabaseDesign.Ampersand_Prototype.Version
 --      A composition of binaries or just one binary is an association (not uni nor inj) between two kernel fields (maybe scalar)
 --       -> the nature of a change on a binary plug is hard to discover.
 --          any change breaks the key, is it a new key (keep old,INSERT new) or an updated key (DELETE old, INSERT new)
---          binary relations must be maintained in a special SERVICE
+--          binary relations must be maintained in a special INTERFACE
 --          for convenience, a garbage collector can automatically clean up binary tables (delete non-existing source or target instances)
 --
 
-dataServices :: Options 
-               -> Fspc
-               -> DataObject --(DataObject PlugSQL)
-               -> String
-dataServices _ _ (DataObject (ScalarSQL{})) = "//TODO -> Scalar" --error "TODO DataObject.hs 97"
-dataServices _ _ (DataObject (BinSQL{})) = "//TODO -> Binary" --error "TODO DataObject.hs 97"
-dataServices flags fSpec (DataObject dobj)
+dataInterfaces :: Options 
+                   -> Fspc
+                   -> DataObject --(DataObject PlugSQL)
+                   -> String
+dataInterfaces _ _ (DataObject (ScalarSQL{})) = "//TODO -> Scalar" --error "TODO DataObject.hs 97"
+dataInterfaces _ _ (DataObject (BinSQL{})) = "//TODO -> Binary" --error "TODO DataObject.hs 97"
+dataInterfaces flags fSpec (DataObject dobj)
  = intercalate "\n  "
    ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
@@ -63,7 +63,7 @@ dataServices flags fSpec (DataObject dobj)
     [ case phpfile p of Just f -> "  require \""++f++"\";\n"; _ -> ""
     | (PlugPhp p)<-plugs fSpec ]
     ++
-    generateService_getEach fSpec (DataObject dobj) 
+    generateInterface_getEach fSpec (DataObject dobj) 
     ++
     concat[conceptclass flags fSpec (DataObject dobj) x|x<-cLkpTbl dobj]
    )
@@ -71,8 +71,8 @@ dataServices flags fSpec (DataObject dobj)
    where
    dobjdef = Obj (name dobj) Nowhere (ctx dobj) Nothing (attributes (DataObject dobj)) []
 
-generateService_getEach :: Fspc -> DataObject -> [String]
-generateService_getEach fSpec (DataObject dobj)
+generateInterface_getEach :: Fspc -> DataObject -> [String]
+generateInterface_getEach fSpec (DataObject dobj)
  = concat
    [ funcs c (sql expr)
    | (c,expr)<-objcLkp dobj]
@@ -99,15 +99,15 @@ phpVar x = "$_"++phpIdentifier x
 --    function Datatype($id=null, $_value1=null, $_value2=null, $_attr1=null, $_attr2=null){
 --attr1 en attr2 kan ik vrij wijzigen in class Obj
 --    function Obj($id=null, $_attr1=null, $_attr2=null){
---In svc_*.inc.php kan ik gebruik maken van classes in data_*.inc.php
+--In *.inc.php kan ik gebruik maken van classes in data_*.inc.php
 --Als ik een datatype update, dan kan het zo zijn dat ik alleen een attr1 heb gewijzigd.
 --  $x = new Datatype(<waardes>); $x.save();
 --  function save(){ $old=new readDatatype($id); vgl($old,$this) and UPDATE(new Obj with old datatype where Obj=NULL)
 --                                                                   UPDATE(changed Obj with unchanged datatype)
 --                                                                   INSERT()
 --                                                                   CUTUPDATE(changed datatype)}
---In de save van svc*.inc.php moet ik een array() van data*.inc.php class instances vullen voor zover bekend en ieder instance saven.
---Dus de READ van svc objecten gaat niet via data*.inc.php!
+--In de save van *.inc.php moet ik een array() van data*.inc.php class instances vullen voor zover bekend en ieder instance saven.
+--Dus de READ van interface objecten gaat niet via data*.inc.php!
 --Wel zullen getEach functies in (een aparte?) data*.inc.php komen
 --
 conceptclass :: Options -> Fspc -> DataObject -> (Concept,SqlField) -> [String]
@@ -215,7 +215,7 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
 --thus, $this contains values from the screen, which may be equal to $this->id in the current database a.k.a. $old.
 --to be sure that $this contains values from the screen and $old is read from the database, you can check protected $_old
 -- $this has to be compared with $old=new ClassOfThis($this->getId())
---note: SERVICE initiates and closes TRANSACTION
+--note: INTERFACE initiates and closes TRANSACTION
 --
 --saving/deleting this where !isset($id):
 -- find the largest class instance id that isset (the class that requires the least number of fields) and call save/delete on that class
@@ -241,7 +241,7 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
 --           then nochange
 --           else if !isset($old->getattfld())
 --                then nochange
---                else TODO15122010 -> ??? is the univalent attribute set to null or does the SERVICE not include this attribute ??? 
+--                else TODO15122010 -> ??? is the univalent attribute set to null or does the INTERFACE not include this attribute ??? 
 --                                     assume nochange if only $id isset, UPDATE otherwise
 -- -> check changes in kernel fields in kernelcluster of kfld of $id (fldexpr kfld=m::A*B uni,tot,sur)
 --    if all kfld' unchanged then save(kfld) 
@@ -263,7 +263,7 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
 --  If $x does not exist in class B then 
 --     if B is scalar then OK => recalculate scalar
 --     else (class B exists) (new B($x)).save() => save will complain if there are required fields i.e. $x has to be created first
---          note: if SERVICE contains requiredfields for $x then the SERVICE should save $x before $this
+--          note: if INTERFACE contains requiredfields for $x then the INTERFACE should save $x before $this
 saveTransactions :: Options -> Fspc -> DataObject -> (Concept,SqlField) -> [String]
 saveTransactions _ _ _ _ = []
 --saveTransactions flags fSpec (DataObject dobj) (c,cfld) = []

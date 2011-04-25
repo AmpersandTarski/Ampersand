@@ -9,8 +9,8 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
    import DatabaseDesign.Ampersand_Prototype.Version 
    
    
-   htmlindex :: Fspc -> [Service] -> Options -> [Char]
-   htmlindex fSpec svcs flags
+   htmlindex :: Fspc -> [Interface] -> Options -> [Char]
+   htmlindex fSpec ifcs flags
     = intercalate "\n  "
       ( [ "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         , "<html><head>"
@@ -21,17 +21,17 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
         , "  <h1>"++appname++"</h1>"
         , "  <ol>"
         , "    <li><a href=\"Installer.php\">Click here to reset the database</a></li>"
-        , "    <li class=\"buttons\">Use services:"
+        , "    <li class=\"buttons\">Use interfaces:"
         , "      <ul>"
         ] ++ indentBlock 8 (concat
-                           [ if isOne (svObj svc)
-                             then ["<li><a href=\""++name fSpec++".php?content="++name svc++"\">"
-                                  ,"  "++name svc
+                           [ if isOne (ifcObj ifc)
+                             then ["<li><a href=\""++name fSpec++".php?content="++name ifc++"\">"
+                                  ,"  "++name ifc
                                   ,"</a></li>"]
-                             else ["<li><a href=\""++name fSpec++".php?content="++name svc++"&new=1\">"
-                                  ,"  New "++name svc
+                             else ["<li><a href=\""++name fSpec++".php?content="++name ifc++"&new=1\">"
+                                  ,"  New "++name ifc
                                   ,"</a></li>"]
-                           | svc <- svcs
+                           | ifc <- ifcs
                            ]
                            ) ++
         [ "      </ul>"

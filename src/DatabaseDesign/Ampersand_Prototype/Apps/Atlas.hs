@@ -131,7 +131,7 @@ therel fSpec relname relsource reltarget
                           ,null reltarget || reltarget==name(target d)]
            ("when searching for the relation x with searchpattern (name,source,target)" ++ show (relname,relsource,reltarget))
 
-atlas2context :: Fspc -> Options -> IO Context
+atlas2context :: Fspc -> Options -> IO A_Context
 atlas2context fSpec flags =
    do --tbls <- readAtlas fSpec flags
       verboseLn flags "Connecting to atlas..."
@@ -181,7 +181,7 @@ atlas2context fSpec flags =
 
 makectx :: CptTbl -> CptTbl -> [Rule(Relation Concept)] -> RelTbl -> RelTbl ->
            RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl ->
-           RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO (Context,[String])
+           RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO (A_Context,[String])
 makectx cxs pats rls rulpattern relpattern 
         relname relsc reltg relcontent pairleft pairright atomsyntax relprp propsyntax pragma1 pragma2 pragma3
         patpurpose rulpurpose relpurpose cptpurpose cptdescribes
@@ -190,24 +190,24 @@ makectx cxs pats rls rulpattern relpattern
    (xs,errs') = typecheckAdl1 (Arch [rawctx]) []
    errs = map fst errs'
    rawctx 
-    = Ctx {
-         ctxnm    = thehead cxs "no context found in Atlas DB"
-       , ctxon    = []
-       , ctxisa   = empty
-       , ctxwrld  = []
-       , ctxpats  = [atlas2pattern p rls rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|p<-pats]
-       , ctxPPrcs = []
-       , ctxprocs = []
-       , ctxrs    = [] --in pattern:(atlas2rules fSpec tbls)
-       , ctxds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctxcs    = [Cd (fatal 200 "This context has no position") x False y []|(x,y)<-cptdescribes,not(null y)]
-       , ctxks    = []
-       , ctxsvcs  = []
-       , ctxps    = atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
-       , ctxpops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
-       , ctxsql   = []
-       , ctxphp   = []
-       , ctxenv   = (Tm(V [] (cptAnything,cptAnything)) (-1),[])
+    = PCtx {
+         ctx_nm    = thehead cxs "no context found in Atlas DB"
+       , ctx_on    = []
+       , ctx_isa   = empty
+       , ctx_wrld  = []
+       , ctx_pats  = [atlas2pattern p rls rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|p<-pats]
+       , ctx_PPrcs = []
+       , ctx_procs = []
+       , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
+       , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
+       , ctx_cs    = [Cd (fatal 200 "This context has no position") x False y []|(x,y)<-cptdescribes,not(null y)]
+       , ctx_ks    = []
+       , ctx_ifcs  = []
+       , ctx_ps    = atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
+       , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
+       , ctx_sql   = []
+       , ctx_php   = []
+       , ctx_env   = (Tm(V [] (cptAnything,cptAnything)) (-1),[])
       }
 
 parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation Concept)]

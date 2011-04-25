@@ -5,7 +5,7 @@ import Control.Monad
 import System.FilePath        (combine,replaceExtension,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
-import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjServices)
+import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
 import DatabaseDesign.Ampersand
@@ -29,7 +29,7 @@ main
            >>= generate flags
           ) 
                 
-parseFile :: Options -> IO(Context)
+parseFile :: Options -> IO(A_Context)
 parseFile flags  
       = let fnFull = fileName flags in
         do verbose flags "Parsing... "
@@ -47,9 +47,8 @@ parseFile flags
   --                             ,showCode 0 x
     --                           ,show r')|r<-rules atlasfspec,let r'=(conjNF . Cpx . normExpr) r,head(showexpression r)=='I'
       --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
-           if servicesG flags then do parsedatlas <- atlas2context atlasfspec flags
-                                      return parsedatlas
-                              else return parsedfile
+           parsedatlas <- atlas2context atlasfspec flags
+           if interfacesG flags then return parsedatlas else return parsedfile
 
 parseImportFile :: String -> String -> Options -> IO(Populations Concept)  
 parseImportFile adlText adlfn flags  
@@ -103,7 +102,7 @@ parseImportFile adlText adlfn flags
                                      )
    else return []
 
-calculate :: Options -> Context -> IO(Fspc)
+calculate :: Options -> A_Context -> IO(Fspc)
 calculate flags context 
  = do verboseLn flags "Calculating..." 
       return (makeFspec flags context) 
@@ -113,21 +112,21 @@ generate flags fSpec =
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
         [ doGenProto    (protonm fSpec) flags | genPrototype flags] ++
-        [ serviceGen    fSpec flags | servicesG    flags] ++
+        [ interfaceGen  fSpec flags | interfacesG    flags] ++
         [ verbose flags "Done."]
        ) 
    where 
    protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
 
-serviceGen :: Fspc -> Options -> IO()
-serviceGen    fSpec flags
+interfaceGen :: Fspc -> Options -> IO()
+interfaceGen    fSpec flags
   = (writeFile outputFile $ showADLcode strippedfspec strippedfspec)
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
     where  
-    --do not print services (yet) with prototype.exe --export.
+    --do not print interfaces (yet) with prototype.exe --export.
     --prototype --export is an export of the Atlas DB.
-    --use ampersand --export to get generated services etc in an adl file
-    strippedfspec = fSpec -- {fServices=[]} 
+    --use ampersand --export to get generated interfaces etc in an adl file
+    strippedfspec = fSpec -- {fInterfaces=[]} 
     outputFile = combine (dirOutput flags) (outputfile flags)
 
 --prove :: Fspc -> Options -> IO()
@@ -156,7 +155,7 @@ doGenProto fSpec flags
      >> if not (theme flags==StudentTheme) && (not.null) (violations fSpec) 
         then verboseLn flags explainviols else verboseLn flags "No violations found." 
      >> verboseLn flags "Generating prototype..."
-     >> phpObjServices fSpec flags  
+     >> phpObjInterfaces fSpec flags  
      >> verboseLn flags ("Prototype files have been written to " ++  (dirPrototype flags) ++ "." )
      >> if (test flags) then verboseLn flags (show (vplugInfos fSpec)) else verboseLn flags ""
      where 

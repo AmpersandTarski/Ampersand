@@ -8,8 +8,8 @@ where
   import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
   import DatabaseDesign.Ampersand_Prototype.Version 
    
-  interfaceDef :: Fspc -> [Service] -> Options -> String
-  interfaceDef fspc svcs flags = intercalate "\n"
+  interfaceDef :: Fspc -> [Interface] -> Options -> String
+  interfaceDef fspc ifcs flags = intercalate "\n"
      (
         [ "<?php"
         , "// interfaceDef.inc.php"
@@ -103,8 +103,8 @@ where
         , "</html>"
         , "<?php"
         , "}"
-        , "function serviceref($svc,$new=false,$edit=false,$env=array() ) {"
-        , "  $ref = '"++name fspc++".php?content='.$svc;"
+        , "function interfaceref($ifc,$new=false,$edit=false,$env=array() ) {"
+        , "  $ref = '"++name fspc++".php?content='.$ifc;"
         , "    if ($new) $ref=$ref.'&new=1';"
         , "    elseif ($edit) $ref=$ref.'&edit=1';"
         , "  if (isset($GLOBALS['ctxenv'])){"
@@ -127,13 +127,13 @@ where
      where
      hometitle = case language flags of Dutch -> "Terug naar script"; English -> "Back to script"
      menuItems 
-       = concat [ [ "<a href=\""++svcref
+       = concat [ [ "<a href=\""++ifcref
                 , "  "++name o++""
                 , "</a>"
                 ]
-                | svc<-svcs, let o=svObj svc
+                | ifc<-ifcs, let o=ifcObj ifc
                 , isOne o
                 , theme flags/=StudentTheme 
-                , let svctitle = case language flags of Dutch -> "Toon alle "++name svc; English -> "Show all " ++name svc
-                , let svcref="<?php echo serviceref('"++name svc++"');?>\" TITLE=\""++svctitle++"\" class=\"menuItem\">"
+                , let ifctitle = case language flags of Dutch -> "Toon alle "++name ifc; English -> "Show all " ++name ifc
+                , let ifcref="<?php echo interfaceref('"++name ifc++"');?>\" TITLE=\""++ifctitle++"\" class=\"menuItem\">"
                 ]

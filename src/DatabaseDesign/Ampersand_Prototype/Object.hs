@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
 module DatabaseDesign.Ampersand_Prototype.Object
-   (objectServices) 
+   (objectInterfaces) 
 where
 import Data.Maybe
 import Data.List  hiding (group)
@@ -14,11 +14,11 @@ import DatabaseDesign.Ampersand_Prototype.Version
 fatal :: Int -> String -> a
 fatal = fatalMsg "Object"
 
-objectServices :: Options 
-               -> Fspc
-               -> ObjectDef
-               -> String
-objectServices flags fSpec o
+objectInterfaces :: Options 
+                     -> Fspc
+                     -> ObjectDef
+                     -> String
+objectInterfaces flags fSpec o
  = (intercalate "\n  "
    ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
@@ -34,14 +34,14 @@ objectServices flags fSpec o
     ++
     ( if isOne o  -- If the current object is the universal singleton...
       then []
-      else generateService_getEach fSpec (name o) o ++
-           generateService_read    fSpec (name o) o ++
-           generateService_delete  fSpec (name o) o
+      else generateInterface_getEach fSpec (name o) o ++
+           generateInterface_read    fSpec (name o) o ++
+           generateInterface_delete  fSpec (name o) o
     )
    )) ++ "\n?>"
 
-generateService_getEach :: Fspc -> String -> ObjectDef -> [String]
-generateService_getEach fSpec nm o
+generateInterface_getEach :: Fspc -> String -> ObjectDef -> [String]
+generateInterface_getEach fSpec nm o
  = if sql==Nothing then fatal 42 "Cannot generate getEach code"
    else
    ["function getEach"++phpIdentifier nm++"(){"
@@ -51,8 +51,8 @@ generateService_getEach fSpec nm o
    ,"}\n"]
  where sql = ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
  
-generateService_read :: Fspc -> String -> ObjectDef -> [String]
-generateService_read _ nm object
+generateInterface_read :: Fspc -> String -> ObjectDef -> [String]
+generateInterface_read _ nm object
  = ["function read"++phpIdentifier nm++"($id){"
    ,"    // check existence of $id"
    ,"    $obj = new "++phpIdentifier (name object)++"($id);"
@@ -62,8 +62,8 @@ generateService_read _ nm object
 phpVar :: String -> String
 phpVar x = "$_"++phpIdentifier x
 
-generateService_delete :: Fspc -> String -> ObjectDef -> [String]
-generateService_delete _ nm _
+generateInterface_delete :: Fspc -> String -> ObjectDef -> [String]
+generateInterface_delete _ nm _
  = ["function del"++phpIdentifier nm++"($id){"
    ,"  $tobeDeleted = new "++phpIdentifier nm++"($id);"
    ,"  if($tobeDeleted->isNew()) return true; // item never existed in the first place"
@@ -73,12 +73,12 @@ generateService_delete _ nm _
 
 -- | The function showClasses defines the PHP class of an object o and also (recursively) the
 --   PHP-classes of all subordinate objects (i.e. the attributes) of o.
---   context  : the Context of object o. In due time, this will be replaced by an Fspc
+--   context  : the P_Context of object o. In due time, this will be replaced by an Fspc
 --   triggers : a [possibly empty] set of triggers, that is used to generate automated functionality.
 --              Precondition: This set contains precisely those triggers that may be used within the transaction
 --              boundary of the class.
 --              In due time, this parameter will become a selection from the entire set of triggers in Fspc.
---   nms      : the name trail of all super-objects until the root of this service. This is used to generate unique names for every field.
+--   nms      : the name trail of all super-objects until the root of this interface. This is used to generate unique names for every field.
 --   o        : the object to be transformed in a class.
 showClasses :: Options -> Fspc -> ObjectDef -> [String]
 showClasses flags fSpec o
@@ -95,7 +95,7 @@ showClasses flags fSpec o
             [["  // check if it exists:"
              ,"  $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
              ,"  if(count($ctx)==0) $this->_new=true; else $this->_new=false;"]
-            |null(attributes o),not(target(ctx o)==cptS)] --SERVICE o: ctx where target ctx/=ONE and objats=[]
+            |null(attributes o),not(target(ctx o)==cptS)] --INTERFACE o: ctx where target ctx/=ONE and objats=[]
          ++ concat (take 1 [  [ "  if(!isset("++phpVar (name a')++")"++(if isOne o then "" else " && isset($id)")++"){"
                                , "    // get a "++(myName)++" based on its identifier"] ++
                                ( if isOne o then [] else
@@ -249,9 +249,9 @@ saveTransactions flags fSpec object
   --                (cluster of kernel field = all required fields of kernel field [note: some kernel fields may contain NULL])
   --                when fldexpr of attr fields is an univalent and total complex expr e.g. r;s;t with source C
   --                     and I[C] is a kernel fldexpr
-  --                     and SERVICE svc: I[C] = [theR : r = [theS : s = [theT : t]]] 
+  --                     and INTERFACE ifc: I[C] = [theR : r = [theS : s = [theT : t]]] 
   --                     then trgfld with fldexpr r;s;t is required, but it will not be in occurences => isLargeOccurance=False
-  --                     however it has been covered by the service, so isLargeOccurance should be True
+  --                     however it has been covered by the interface, so isLargeOccurance should be True
   --                Thus, the php save function may be incorrect for plugs with complex exprs as fldexpr of attr fields
   occurences       plug = (eqCl fst) $ rd $ plugAts plug object
   --fullOccurences are occurences of some object covering all fields in a plug
@@ -373,7 +373,7 @@ saveTransactions flags fSpec object
               objkfld --this is the kernel field with instances of $id of this object
                 | null (findkfld++keys) = fatal 371 $ "There is no key for this object in plug "++name plug
                 | otherwise = head (findkfld++keys)
-              findkfld = [(svc,fld)|(svc,fld)<-keys,concept attobj==target(fldexpr fld)]
+              findkfld = [(ifc,fld)|(ifc,fld)<-keys,concept attobj==target(fldexpr fld)]
                 -- nunios: Not UNI ObjectS: objects that are not Uni
               nunios = [(o,f)|(o,f)<-ownAts, attobj/=o, not $ isUni (objctx o)]
               ownAts = map snd ids
@@ -420,9 +420,9 @@ saveTransactions flags fSpec object
                         )
                   ++ ")\", 5)"
               --var and everything that requires var is set to NULL in the current record of var (WHERE varfld=var)
-              --all these vars must be covered in this service to be able to insert them in 
-              --TODO151210 -> service generation does not put fldexpr=(flp r) [UNI] in the service of its kernel field 
-              --              but in the service of its target field
+              --all these vars must be covered in this interface to be able to insert them in 
+              --TODO151210 -> interface generation does not put fldexpr=(flp r) [UNI] in the interface of its kernel field 
+              --              but in the interface of its target field
               --              Put it in both!! 
 --      //(tblfields behalve wat ik al heb) && required
 --      $old = firstRow(DB_doquer("SELECT `Datatype`.`I` FROM `Datatype` WHERE `Datatype`.`value1`='".addslashes($me['id'])."'")); 
@@ -446,10 +446,10 @@ saveTransactions flags fSpec object
                   , if null copyflds then insQuery var 
                     else copyinsQuery var
                   ]
-               | otherwise = ["//Service is not suitable for updates in plug "++ name plug]
+               | otherwise = ["//Interface is not suitable for updates in plug "++ name plug]
               requiresFld = [f |f<-tblfields plug, requires plug (f,snd objkfld)]
               --copyflds is tblfields which are required by $id (objkfld) except what's in $me (i.e. occurencesfields ids)
-              --this way I do not require a very large service object only to be able to edit an object
+              --this way I do not require a very large interface object only to be able to edit an object
               copyflds = [f|f<-tblfields plug, elem f (requiredFields plug (snd objkfld)),not(elem f (occurencesfields ids))]
               updQuery var
                 = "DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
@@ -471,7 +471,7 @@ saveTransactions flags fSpec object
                                       else "$"++(phpIdentifier $ name o)
                               ) ++ maybeId o
 
---objPlugs returns the plugs needed to save data visible in this service.
+--objPlugs returns the plugs needed to save data visible in this interface.
 --A plug is needed if sqlPlugFields returns two fields for some objctx of object/objats or the identify of its target (see plugAts)
 --REMARK: only used for php function save()
 --WHY151210 -> (see also Data.FSpec and Rendering.ClassDiagram) can't a php plug be a (php-)function for saving things?
@@ -516,7 +516,7 @@ doPhpGet fSpec objVar depth objIn objOut
     ++ 
     concat [getArrayOf aout |aout <- arrsNeeded]
     ++
-    --fill attributes of attributes of objOut (recursion on objats of SERVICE a.k.a. objOut)
+    --fill attributes of attributes of objOut (recursion on objats of INTERFACE a.k.a. objOut)
     concat [ if isObjUni aout
              then [idvar++" = "++var++";"] ++ nest
              else ["foreach("++mname aout++" as $i"++show depth
@@ -579,7 +579,7 @@ doPhpGet fSpec objVar depth objIn objOut
 doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
  | length(objats objOut)==1 && isIdent(objctx objOut)  
-   --different query composer is used to prevent NULL in lists of SERVICE Concepts:I[ONE] = [listOfConcepts:V[ONE*Concept]]
+   --different query composer is used to prevent NULL in lists of INTERFACE Concepts:I[ONE] = [listOfConcepts:V[ONE*Concept]]
    && source(objctx objOut)==S && isTrue((objctx.head.objats)objOut) = [showsql(SqlSel1(selectdomain fSpec ((target.objctx.head.objats)objOut)))]
  | otherwise
   = ["SELECT DISTINCT " ++ head fieldNames      ]
@@ -829,7 +829,7 @@ savefunction _ fSpec fnm depth this
     ,if depth==0 then "starttransaction(); //transaction runs untill closed by somebody" else ""
     ,""
     ,"//me is a record with a kernelfield for this->id "
-    ,"//this class/service can only create me records (and the identity of concepts in them => kernelfields)"
+    ,"//this class/interface can only create me records (and the identity of concepts in them => kernelfields)"
     ,"//this->id is an instance of some concept"
     ,"//$this contains possibly new values from the screen"
     ,"//one value has one certain relation r with this->id"

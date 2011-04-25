@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
+module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces)
   where
  
    import DatabaseDesign.Ampersand_Prototype.ConnectToDataBase   (connectToDataBase)
-   import DatabaseDesign.Ampersand_Prototype.Object              (objectServices)
+   import DatabaseDesign.Ampersand_Prototype.Object              (objectInterfaces)
    import DatabaseDesign.Ampersand_Prototype.Wrapper             (objectWrapper)
    import DatabaseDesign.Ampersand_Prototype.Installer           (installer)
    import DatabaseDesign.Ampersand_Prototype.InterfaceDef        (interfaceDef)
@@ -17,28 +17,28 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
    import DatabaseDesign.Ampersand  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
    
-   phpObjServices :: Fspc -> Options -> IO()
-   phpObjServices fSpec flags
+   phpObjInterfaces :: Fspc -> Options -> IO()
+   phpObjInterfaces fSpec flags
      = writeStaticFiles flags
       >> verboseLn flags "---------------------------"
       >> verboseLn flags "Generating php Object files with Ampersand"
       >> verboseLn flags "---------------------------"
-      >> write "index.htm"                 (htmlindex fSpec svcs flags)
+      >> write "index.htm"                 (htmlindex fSpec ifcs flags)
       >> write "Installer.php"             (installer fSpec flags)
       >> write (name fSpec++".php")        (contextGen fSpec)
-      >> write "interfaceDef.inc.php"      (interfaceDef fSpec svcs flags)
+      >> write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
       >> write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
       >> verboseLn flags ("  Writing username and password: dbsettings.php")
       >> writeFile (combine targetDir "dbsettings.php") dbsettings
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
-         [ write (addExtension (name svc) ".inc.php") (objectServices flags fSpec (svObj svc))
-         | svc <- svcs
+         [ write (addExtension (name ifc) ".inc.php") (objectInterfaces flags fSpec (ifcObj ifc))
+         | ifc <- ifcs
          ]
       >> verboseLn flags ("Wrapper files for all objects:")
       >> sequence_
-         [ write (addExtension (name svc) ".php") (objectWrapper fSpec svcs svc flags)
-         | svc <- svcs
+         [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc flags)
+         | ifc <- ifcs
          ]
       >> sequence_  [ doGenAtlas    fSpec flags | genAtlas     flags] 
       >> verboseLn flags ("\n")
@@ -52,7 +52,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjServices)
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
-       svcs = serviceS fSpec++ serviceG fSpec
+       ifcs = interfaceS fSpec++ interfaceG fSpec
 
    doGenAtlas :: Fspc -> Options -> IO()
    doGenAtlas fSpec flags =
