@@ -190,19 +190,25 @@ makectx cxs pats rls rulpattern relpattern
    (xs,errs') = typecheckAdl1 (Arch [rawctx]) []
    errs = map fst errs'
    rawctx 
-    = (Ctx 
-       (thehead cxs "no context found in Atlas DB")
-       [] empty []
-       [atlas2pattern p rls rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|p<-pats]
-       [] []
-       [] --in pattern:(atlas2rules fSpec tbls)
-       [] --in pattern:(atlas2decls fSpec tbls)
-       [Cd (fatal 200 "This context has no position") x False y []|(x,y)<-cptdescribes,not(null y)] --cptdefs
-       [] [] --explainContent2String
-       (atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg)
-       (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)
-       [] [] (Tm(V [] (cptAnything,cptAnything)) (-1),[])
-      )
+    = Ctx {
+         ctxnm    = thehead cxs "no context found in Atlas DB"
+       , ctxon    = []
+       , ctxisa   = empty
+       , ctxwrld  = []
+       , ctxpats  = [atlas2pattern p rls rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|p<-pats]
+       , ctxPPrcs = []
+       , ctxprocs = []
+       , ctxrs    = [] --in pattern:(atlas2rules fSpec tbls)
+       , ctxds    = [] --in pattern:(atlas2decls fSpec tbls)
+       , ctxcs    = [Cd (fatal 200 "This context has no position") x False y []|(x,y)<-cptdescribes,not(null y)]
+       , ctxks    = []
+       , ctxsvcs  = []
+       , ctxps    = atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
+       , ctxpops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
+       , ctxsql   = []
+       , ctxphp   = []
+       , ctxenv   = (Tm(V [] (cptAnything,cptAnything)) (-1),[])
+      }
 
 parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation Concept)]
 parserules rulpattern ruleexpr ruldescribes
@@ -228,22 +234,22 @@ atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax p
 
 emptySignalDeclaration :: String -> Declaration Concept
 emptySignalDeclaration nm
-    = Sgn nm          -- decnm
-          cptAnything -- desrc
-          cptAnything -- detrg
-          []          -- decprps
-          []          -- decprps_calc
-          ""          -- decprL
-          ""          -- decprM
-          ""          -- decprR
-          []          -- decpopu
-          (fatal 240 "this declaration has no position") -- decfpos
-          0           -- decid
-          True        -- deciss    -- initially, all rules are signals
-          False       -- decusr
-          ""          -- decpat
-          True        -- decplug
-
+    = Sgn { decnm = nm
+          , desrc = cptAnything
+          , detrg = cptAnything
+          , decprps = []
+          , decprps_calc = []
+          , decprL = ""
+          , decprM = ""
+          , decprR = ""
+          , decpopu = []
+          , decfpos = fatal 240 "this declaration has no position" 
+          , decid = 0
+          , deciss = True    -- initially, all rules are signals
+          , decusr = False
+          , decpat = ""
+          , decplug = True
+          }
 geta :: [(String,String)] -> String -> String
 geta f x = (\xs-> if null xs then error ("there is no geta for " ++ x) else head xs) [y|(x',y)<-f,x==x']
 atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [Population Concept]
@@ -256,43 +262,47 @@ atlas2decl :: String -> Int -> [(String,String)] -> [(String,String)] -> [(Strin
                             -> [(String,String)] -> [(String,String)] -> [(String,String)]
                             -> [(String,String)] -> [(String,String)] -> Declaration Concept
 atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
- = Sgn nm          -- decnm
-       s -- desrc
-       t -- detrg
-       [case geta propsyntax prp of 
-          "UNI"->Uni
-          "TOT"->Tot
-          "INJ"->Inj
-          "SUR"->Sur
-          "RFX"->Rfx
-          "IRF"->Irf
-          "TRN"->Trn
-          "SYM"->Sym
-          "ASY"->Asy
-          _ -> error "unknown prop in atlas"
-       |(prp,rel)<-relprp,relstr==rel]          -- decprps
-       [case geta propsyntax prp of 
-          "UNI"->Uni
-          "TOT"->Tot
-          "INJ"->Inj
-          "SUR"->Sur
-          "RFX"->Rfx
-          "IRF"->Irf
-          "TRN"->Trn
-          "SYM"->Sym
-          "ASY"->Asy
-          _ -> error "unknown prop in atlas"
-       |(prp,rel)<-relprp,relstr==rel]           -- decprps_calc
-       [c|(rel,x)<-pragma1,relstr==rel,c<-x]          -- decprL
-       [c|(rel,x)<-pragma2,relstr==rel,c<-x]          -- decprM
-       [c|(rel,x)<-pragma3,relstr==rel,c<-x]          -- decprR
-       []          -- decpopu
-       (FilePos ( "Atlas DB", Pos i 0, []))     -- decfpos
-       0           -- decid
-       True        -- deciss    -- initially, all rules are signals
-       True        -- decusr
-       []          -- decpat
-       False       -- decplug[Popu (makerel(fst(head cl))) (map (makepair.snd) cl)|cl<-eqCl fst relcontent,not(null cl)]
+ = Sgn { decnm = nm
+       , desrc = s
+       , detrg = t
+       , decprps = [case geta propsyntax prp of 
+                        "UNI"->Uni
+                        "TOT"->Tot
+                        "INJ"->Inj
+                        "SUR"->Sur
+                        "RFX"->Rfx
+                        "IRF"->Irf
+                        "TRN"->Trn
+                        "SYM"->Sym
+                        "ASY"->Asy
+                        _ -> error "unknown prop in atlas"
+                    |(prp,rel)<-relprp,relstr==rel
+                    ]
+       , decprps_calc 
+                  = [case geta propsyntax prp of 
+                        "UNI"->Uni
+                        "TOT"->Tot
+                        "INJ"->Inj
+                        "SUR"->Sur
+                        "RFX"->Rfx
+                        "IRF"->Irf
+                        "TRN"->Trn
+                        "SYM"->Sym
+                        "ASY"->Asy
+                        _ -> error "unknown prop in atlas"
+                    |(prp,rel)<-relprp,relstr==rel
+                    ]
+       , decprL = [c|(rel,x)<-pragma1,relstr==rel,c<-x]
+       , decprM = [c|(rel,x)<-pragma2,relstr==rel,c<-x]
+       , decprR = [c|(rel,x)<-pragma3,relstr==rel,c<-x]
+       , decpopu = []
+       , decfpos = fatal 290 "The position of a generated rule cannot be shown."
+       , decid  = 0
+       , deciss = True  -- initially, all rules are signals
+       , decusr = True
+       , decpat = []
+       , decplug =False       -- decplug[Popu (makerel(fst(head cl))) (map (makepair.snd) cl)|cl<-eqCl fst relcontent,not(null cl)]
+       }
    where
    nm =geta relname relstr
    s = cptnew(geta relsc relstr)
@@ -307,6 +317,7 @@ atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
   ++ [PExpl (fatal 307 "this PExplanation has no position") (PExplDeclaration r) Dutch [] y|(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
   ++ [PExpl (fatal 308 "this PExplanation has no position") (PExplConceptDef x) Dutch [] y|(x,y)<-cptpurpose]
 
+makerel :: String -> [(String, String)] -> [(String, String)] -> [(String, String)] -> Relation Concept
 makerel relstr relname relsc reltg = 
       let
       nm =geta relname relstr
