@@ -21,13 +21,15 @@ import DatabaseDesign.Ampersand
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Data.List  (intercalate)
-import qualified Data.ByteString.Char8 as Bytes
-import qualified Data.ByteString.UTF8 as BUTF8
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import DatabaseDesign.Ampersand.Version (fatalMsg)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Basics"
+------
+dsnatlas::String
+dsnatlas = "DSN=Atlasv2"
+
 ------
 --runMany IGNORES all SQL errors!!!
 --used to DROP tables if exist
@@ -95,7 +97,7 @@ creates conn (tbl:tbls) =
 fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
    do verboseLn flags "Connecting to atlas..."
-      conn<-connectODBC "DSN=atlas"
+      conn<-connectODBC dsnatlas
       verboseLn flags "Connected."
       _ <- runMany conn ["DROP TABLE "++name p| InternalPlug p<-plugInfos fSpec]
       verboseLn flags "Creating tables..."
@@ -135,7 +137,7 @@ atlas2context :: Fspc -> Options -> IO A_Context
 atlas2context fSpec flags =
    do --tbls <- readAtlas fSpec flags
       verboseLn flags "Connecting to atlas..."
-      conn<-connectODBC "DSN=atlas"
+      conn<-connectODBC dsnatlas
       verboseLn flags "Connected."
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff

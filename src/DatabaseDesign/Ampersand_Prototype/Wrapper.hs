@@ -33,11 +33,11 @@ objectWrapper fSpec ifcs ifc flags
    indentBlock 4 (concat [phpList2Array 0 ("$"++phpIdentifier (name a)) (show n) a | (a,n)<-zip (objats o) [(0::Integer)..]])
   ++
    ( if isOne o
-     then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
+     then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++",False);"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++");"
           ] 
      else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']" ++ [','|not(null (objats o))]
-                                  ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
+                                  ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++",False);"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++".'&" ++ objectId ++"='.urlencode($"++objectId++"->getId())"++");"
           ] 
    )
@@ -54,7 +54,6 @@ objectWrapper fSpec ifcs ifc flags
      then [ "if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;" ]
          ++
           [ "$"++objectId++"=new "++objectId++"();" ]
-         ++ indentBlock 2 showObjectCode --(see showObjectCode below)
          ++ 
           [ "if(!$edit) "++
                 if visibleedit 
@@ -64,6 +63,7 @@ objectWrapper fSpec ifcs ifc flags
           , "  $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1');\",\"Save\")"
           , "           .ifaceButton("++selfref++",\"Cancel\");"
           ]
+         ++ indentBlock 2 showObjectCode --(see showObjectCode below)
      else [ "if(isset($_REQUEST['new'])) $new=true; else $new=false;"
           , "if(isset($_REQUEST['edit'])||$new) $edit=true; else $edit=false;"
           , "$del=isset($_REQUEST['del']);"
@@ -76,7 +76,6 @@ objectWrapper fSpec ifcs ifc flags
           ]
          ++
           [ "if($"++objectId++"){" ]
-         ++ indentBlock 2 showObjectCode --(see showObjectCode below)
          ++
           [ " if($del) echo \"<P><I>Delete failed</I></P>\";"
           , " if($edit){"
@@ -93,8 +92,10 @@ objectWrapper fSpec ifcs ifc flags
           , if visibledel
             then "        $buttons.=ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
             else "        $buttons=$buttons;"
-          , "       }"
-          , "}else{"
+          , "       }"]
+         ++ indentBlock 2 showObjectCode --(see showObjectCode below)
+         ++
+          [ "}else{"
           , "  if($del){"
           , "    writeHead(\"<TITLE>Delete geslaagd</TITLE>\");"
           , "    echo 'The "++objectName++" is deleted';"
@@ -106,7 +107,7 @@ objectWrapper fSpec ifcs ifc flags
           ]
    )
   ++
-   [ "  writeTail($buttons);"
+   [ "  writeTail();"
    , "?>"
    ]
    where
@@ -117,13 +118,13 @@ objectWrapper fSpec ifcs ifc flags
    editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
             | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
    visibleedit = foldr (||) visiblenew [mayedit x editable|x<-allobjctx o]
-   visibledel = visiblenew --if you may add you may delete 
+   visibledel = False --del() not implemented yet -- visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable
    allobjctx obj = (objctx obj):(concat (map allobjctx (objats obj)))
    showObjectCode --display some concept instance in read or edit mode by definition of INTERFACE
     = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - Ampersand Prototype</TITLE>\""
       , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
-                ++ " src=\"js/navigate.js\"></SCRIPT>'.\"\\n\" );"
+                ++ " src=\"js/navigate.js\"></SCRIPT>'.\"\\n\", $buttons );"
       , "if($edit)"
       , "    echo '<FORM name=\"editForm\" action=\"'.$_SERVER['PHP_SELF'].'\" method=\"POST\" class=\"Edit\">';"
       ]
@@ -311,18 +312,18 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
         ++ 
         --BEGIN:add item to editable item list
         --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
-        if not(mayedit (objctx att) editable) then [] else
-        [ "if($edit) {"
-        , "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
-        ]
+        if not(mayedit (objctx att) editable) then [] else [ "if($edit) {"]
+        ++
+        [ "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")
+                   ++"\">vul een bestaand(e) "++(name.target.objctx) att++" in</LI>';"| not(isTrue(objctx att) || isIdent(objctx att))]
         ++
         (if not(null gotoP) && mayadd (target(objctx att)) editable 
          --if there is a INTERFACE for the target concept, and you may create new elements of that concept
          then 
          [ "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"]
          ++ (if length gotoP==1 
-             then [ "  echo '<A HREF=\""++(fst$head gotoP)++"\">new instance of "++name att++"</A>';"]
-             else [ "  echo '<A class=\"GotoLink\" id=\"To"++path++"\">new instance of "++name att++"</A>';"]
+             then [ "  echo '<A HREF=\""++(fst$head gotoP)++"\">maak nieuw(e) "++(name.target.objctx) att++"</A>';"]
+             else [ "  echo '<A class=\"GotoLink\" id=\"To"++path++"\">maak nieuw(e) "++(name.target.objctx) att++"</A>';"]
                   ++ indentBlock 2 (gotoDiv gotoP path)
             )
          ++
@@ -566,8 +567,8 @@ phpList2ArrayUni depth var rqvar a
    | (a',n)<-zip (objats a) [(0::Integer)..],not (isUni (objctx a'))]
 phpList2ArrayVal :: String->String->ObjectDef->[String]
 phpList2ArrayVal var rqvar a
- = if null (objats a) then ["@$r['"++rqvar++"']"]
-   else [ "array( 'id' => @$r['"++rqvar'++"']"] ++ 
+ = if null (objats a) then ["savevalue(@$r['"++rqvar++"'])"]
+   else [ "array( 'id' => savevalue(@$r['"++rqvar'++"'])"] ++ 
         [ ", '" ++ name a' ++ "' => "
           ++ concat (phpList2ArrayVal var (rqvar++'.':show n) a')
         | (a',n)<-zip (objats a) [(0::Integer)..], isUni (objctx a')] ++

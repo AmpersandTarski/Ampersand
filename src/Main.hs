@@ -6,12 +6,10 @@ import System.FilePath        (combine,replaceExtension,dropFileName,takeBaseNam
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
 import DatabaseDesign.Ampersand
 import DatabaseDesign.Ampersand_Prototype.Version
-
-import DatabaseDesign.Ampersand_Prototype.Code 
+import qualified Control.Exception as Exc  
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
@@ -24,18 +22,26 @@ main
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts flags)
        else
-          (    parseFile flags 
+          (    Exc.catch (parseFile flags PV1) (trysecond flags) 
            >>= calculate flags 
            >>= generate flags
           ) 
+    where
+    trysecond :: Options -> Exc.ErrorCall -> IO (A_Context)
+    trysecond flags _ = Exc.catch (parseFile flags PV2) (errorsoffirst flags) --try 2
+    errorsoffirst :: Options -> Exc.ErrorCall -> IO (A_Context)
+    errorsoffirst flags _ = Exc.catch (parseFile flags PV1) reporterrors --report on second (or first)
+    reporterrors :: Exc.ErrorCall -> IO (A_Context)
+    reporterrors (Exc.ErrorCall msg) = error msg
+
                 
-parseFile :: Options -> IO(A_Context)
-parseFile flags  
+parseFile :: Options -> ParserVersion -> IO(A_Context)
+parseFile flags pv 
       = let fnFull = fileName flags in
-        do verbose flags "Parsing... "
+        do verbose flags ("Parsing("++show pv++")... ")
            adlText <- readFile fnFull
-           importpops <- parseImportFile adlText fnFull flags 
-           parsedfile <- parseADL1 adlText importpops flags fnFull 
+           importpops <- parseImportFile adlText pv fnFull flags 
+           parsedfile <- parseADL1 adlText (if null(importfile flags) then pv else PV1) importpops flags fnFull 
            atlasfspec <- calculate flags parsedfile           
 --           verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec c))|c<-concs atlasfspec])
   --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c))|c<-concs atlasfspec])
@@ -50,8 +56,8 @@ parseFile flags
            parsedatlas <- atlas2context atlasfspec flags
            if interfacesG flags then return parsedatlas else return parsedfile
 
-parseImportFile :: String -> String -> Options -> IO(Populations Concept)  
-parseImportFile adlText adlfn flags  
+parseImportFile :: String -> ParserVersion -> String -> Options -> IO(Populations Concept)  
+parseImportFile adlText pv adlfn flags  
  = let fn = importfile flags 
        fnnxt fspec = name fspec ++ "'"
        fdir = let d=dropFileName fn in if null d then "." else d
@@ -79,13 +85,13 @@ parseImportFile adlText adlfn flags
            case importformat flags of
              Adl1PopFormat -> do verbose flags "Importing ADL1 populations file... "
                                  parseADL1Pop popText fn 
-             Adl1Format -> do verbose flags "Importing ADL1 file... "
-                              cx <- parseADL1 popText [] flags fn
+             Adl1Format -> do verbose flags ("Importing ADL1 file "++fn++"... ")
+                              cx <- parseADL1 popText pv [] flags fn
                               fspec <- calculate flags cx
                               verbose flags "writing pictures for atlas... "
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
-                              verbose flags "pictures for atlas written... "
-                              atlas <- parseADL1 adlText [] flags adlfn
+                              verbose flags ("pictures for atlas written... "++show pv)
+                              atlas <- parseADL1 adlText PV1 [] flags adlfn
                               myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
                               verboseLn flags "Generating pictures for atlas..."
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]

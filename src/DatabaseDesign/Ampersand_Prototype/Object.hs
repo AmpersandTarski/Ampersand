@@ -88,7 +88,7 @@ showClasses flags fSpec o
          ++ ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]++
          ["function "++myName++"(" ++ (if isOne o then "" else "$id=null" ++ [','|not(null(attributes o))])
                                      ++ (intercalate ", " [phpVar (name a)++"=null" | a<-attributes o])
-                                     ++"){"
+                                     ++",$sel=True){"
          ]++["  $this->id=$id;" | not (isOne o)]
          ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
          ++ concat
@@ -96,7 +96,8 @@ showClasses flags fSpec o
              ,"  $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
              ,"  if(count($ctx)==0) $this->_new=true; else $this->_new=false;"]
             |null(attributes o),not(target(ctx o)==cptS)] --INTERFACE o: ctx where target ctx/=ONE and objats=[]
-         ++ concat (take 1 [  [ "  if(!isset("++phpVar (name a')++")"++(if isOne o then "" else " && isset($id)")++"){"
+         ++  (           [ "  if(" -- ++(head (["!isset("++phpVar (name a')++")"|a'<-attributes o,mayedit (objctx a') editable]++["True"]))
+                                        ++(if isOne o then "$sel" else "$sel && isset($id)")++"){"
                                , "    // get a "++(myName)++" based on its identifier"] ++
                                ( if isOne o then [] else
                                  [ "    // check if it exists:"
@@ -129,7 +130,6 @@ showClasses flags fSpec o
                                , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
                                , "    $this->_new=(count($ctx)==0);"
                                , "  }" ]
-                           | a' <- attributes o]
                    ) ++
          ["}\n"]
          ++ savefunction flags fSpec "save" 0 o
@@ -164,6 +164,10 @@ showClasses flags fSpec o
          ) ++
    [ "}\n" ]
  where
+  editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
+           | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
+  mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
+  mayedit item editable = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
@@ -742,7 +746,7 @@ splitLineBreak (l:s)
 --TODO -> block inserts with plugid=NULL or "" (or suggest a new page if transactions can be larger than one page)
 --the php name of the save function (uniqfnm) is fnm+depth except when depth=0 then it is "save"
 savefunction :: Options -> Fspc -> String -> Int -> ObjectDef -> [String]
-savefunction _ fSpec fnm depth this
+savefunction flags fSpec fnm depth this
   | isOne this = ["function "++uniqfnm fnm depth++"{}"] --TODO
   | otherwise 
   = let thiscpt = target(objctx this)
@@ -790,19 +794,29 @@ savefunction _ fSpec fnm depth this
         reqbyid_and_notinthis_flds = [fld|fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
         reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
         notinthis_flds =  [fld|fld<-tblfields myplug, not(elem fld (map fst thismematch))]
-        ---------myatts
+        onscreen =  "$onscreen = array("++ intercalate "," ["'"++fldname f++"'=>1" |f<-tblfields myplug, elem f (map fst thismematch)] ++ ");"
+        shouldcut = not(null notreqid_and_notinthis_flds)
+        cancut = null reqbyid_and_notinthis_flds
+        --editable
+        editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
+                 | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
+        mayedit :: Expression(Relation Concept) -> Bool
+        mayedit item = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
+        ---------myatts(editable only)
         myattsinthis = [((plug,fld0,fld1),a)
                    |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
                    ,(plug@(TblSQL{}),fld0,fld1)<-sqlRelPlugs fSpec (objctx a) --fld0 => src objat (find id), fld1 => trg objat (kernelfld)
-                   ]
-        ---------myassociations
+                   ,mayedit (objctx a)]
+        ---------myassociations(editable only)
         myassocinthis = [((plug,fld0,fld1),a)
                    |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
                    ,(plug@(BinSQL{}),fld0,fld1)<-sqlRelPlugs fSpec (objctx a) --fld0 => src objat (find id), fld1 => trg objat (assocfld)
-                   ]
+                   ,mayedit (objctx a)]
+        ---------myattflds(editable only)
         myattflds = [(attfld,cfld,p)
                     |(attfld,_)<-thismematch
                     ,not(iskey myplug attfld)
+                    ,mayedit (fldexpr attfld)
                     ,(p,cfld)<-inplugs (target (fldexpr attfld))]
         checkinstances mevar attflds
          = [["//check the existence of attributes"
@@ -848,6 +862,7 @@ savefunction _ fSpec fnm depth this
  --   ++ 
     [inime "$oldme" myplug
     ,thisme
+    ,onscreen
     ,inime "$newme" myplug
     ]
     ++
@@ -859,60 +874,66 @@ savefunction _ fSpec fnm depth this
 --		    // and fields not requiring this->id and not in this exist (see Haskell)
 --		    // then there should be a new record for this => cut this->id, everything requiring id (these maybe fields not in this)
 --		    // thus,the cluster of this->id is cut
-    , if null notreqid_and_notinthis_flds 
-      then "$shouldcut = false;"
-      else "$shouldcut = $oldme[\""++fldname plugkey++"\"]!=$me[\""++fldname plugkey++"\"];"
---		    // every kernelfield required by this->id, but not requiring this->id back must have changed (and be in this) to be able to cut it ()
---		    // those values stay in cutoldme and have a UNIQUE INDEX
---		    // paste (i.e. insert) may still fail, because of UNIQUE INDEX of some kernelfield of this => TODO, now rollback
---    ,"$allrequiredinthis = true; //hide by haskell, just $cancut=false;"
-    , if null reqbyid_and_notinthis_flds
-      then "$cancut = true;"
-      else "$cancut = false; //" ++ intercalate ", " [fldname fld|fld<-reqbyid_and_notinthis_flds]
-    ,"$cutoldme = false;"
-    ,"if ($shouldcut){"
-    ,"   if ($cancut){"
-    ,"      $cutoldme = array(" 
-               ++ intercalate ", " 
-               --the old record keeps the old plugkey + fields not in this + fields in this required by but not requiring the id of this 
-               [if elem fld notinthis_flds || fld==plugkey || elem fld reqbyid_and_notreqid_flds
-                then "\""++fldname fld++"\"=>$oldme[\""++fldname fld++"\"]"
-                else "\""++fldname fld++"\"=>null" | fld<-tblfields myplug, not(fldauto fld)]
-               ++");"
-    ,"      foreach ($oldme as $fld => $oldval){"
-    ,"         if (isset($me[$fld]))"
-    ,"            $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
-    ,"         elseif (!isset($cutoldme[$fld]))"
-    ,"            $newme[$fld] = $oldval; //cut old values not in cutoldme"
-    ,"      }"
-    ,"   } else { //should cut but can't because kernelfields will not unique or not all requiredfields for this->id are in this"
-    ,"      rollbacktransaction();"
-    ,"      $myerrors[] = print_r(array('xxx'=>'xxx'));"
-    ,"      return false;"
-    ,"   }"
-    ,"} else { //no cutting just copy me to newme completed with old values (requires allrequiredinthis)"
+    ] ++ 
+    (if shouldcut then
+      ["$shouldcut = $oldme[\""++fldname plugkey++"\"]!=$me[\""++fldname plugkey++"\"];"
+--  		    // every kernelfield required by this->id, but not requiring this->id back must have changed (and be in this) to be able to cut it ()
+--  		    // those values stay in cutoldme and have a UNIQUE INDEX
+--  		    // paste (i.e. insert) may still fail, because of UNIQUE INDEX of some kernelfield of this => TODO, now rollback
+--      ,"$allrequiredinthis = true; //hide by haskell, just $cancut=false;"
+      , if cancut
+        then "$cancut = true;"
+        else "$cancut = false; //" ++ intercalate ", " [fldname fld|fld<-reqbyid_and_notinthis_flds]
+      ,"$cutoldme = false;"
+      ,"if ($shouldcut){"
+      ,"   if ($cancut){"
+      ,"      $cutoldme = array(" 
+                 ++ intercalate ", " 
+                 --the old record keeps the old plugkey + fields not in this + fields in this required by but not requiring the id of this 
+                 [if elem fld notinthis_flds || fld==plugkey || elem fld reqbyid_and_notreqid_flds
+                  then "\""++fldname fld++"\"=>$oldme[\""++fldname fld++"\"]"
+                  else "\""++fldname fld++"\"=>null" | fld<-tblfields myplug, not(fldauto fld)]
+                 ++");"
+      ,"      foreach ($oldme as $fld => $oldval){"
+      ,"         if (isset($onscreen[$fld]))"
+      ,"            $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
+      ,"         elseif (!isset($cutoldme[$fld]))"
+      ,"            $newme[$fld] = $oldval; //cut old values not in cutoldme"
+      ,"      }"
+      ,"   } else { //should cut but can't because kernelfields will not unique or not all requiredfields for this->id are in this"
+      ,"      rollbacktransaction();"
+      ,"      $myerrors[] = print_r(array('xxx'=>'xxx'));"
+      ,"      return false;"
+      ,"   }"
+      ,"} else { "
+      ]
+    else []) ++
+    ["//no cutting just copy me to newme completed with old values (requires allrequiredinthis)"
     ,"   foreach ($oldme as $fld => $oldval){"
-    ,"      if (isset($me[$fld]))"
+    ,"      if (isset($onscreen[$fld]))"
     ,"         $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
     ,"      else"
     ,"         $newme[$fld] = $oldval;"
     ,"   }"
-    ,"}"
-    ,"if ($cutoldme){ //try INS cutoldme (failure would be strange)"
-    ,"   "++insme "$cutoldme" myplug
-    ,"   if(mysql_errno()!=0) {"
-    ,"      $err = mysql_error();"
-    ,"      rollbacktransaction();"
-    ,"      $myerrors[] = print_r(array('yyy'=>'yyy','error'=>$err));"
-    ,"      return false;"
-    ,"   }"
-    ]
-    ++ concat (checkinstances "$cutoldme" myattflds)
-    ++ ["}"]) --end indentBlock if(!new)		    
+    ] ++
+    (if shouldcut then
+      ["}"
+      ,"if ($cutoldme){ //try INS cutoldme (failure would be strange)"
+      ,"   "++insme "$cutoldme" myplug
+      ,"   if(mysql_errno()!=0) {"
+      ,"      $err = mysql_error();"
+      ,"      rollbacktransaction();"
+      ,"      $myerrors[] = print_r(array('yyy'=>'yyy','error'=>$err));"
+      ,"      return false;"
+      ,"   }"
+      ]
+      ++ concat (checkinstances "$cutoldme" myattflds)
+      ++ ["}"] 
+    else [])) --end indentBlock if(!new)		    
     ++
     ["} else {"--else if(new)
     ,"   foreach ($newme as $fld => $nullval){"
-    ,"      if (isset($me[$fld]))"
+    ,"      if (isset($onscreen[$fld]))"
     ,"         $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
     ,"   }"
     ,"}"] 
@@ -924,40 +945,41 @@ savefunction _ fSpec fnm depth this
     --otherwise we would delete concept instances (kernelfield holds I of some concept)
     --attRels in this overwrite the old record
     --if so than update this key with the values of this and keep the old ones not in this
-    ["$selkey = DB_doquer(\"SELECT * FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\");"
-    ,"if (count($selkey)>0){"
-    ,"   $oldkey = firstRow($selkey);"
-    ,"   if ("++intercalate " && " 
-                ["($oldkey[\""++fldname fld++"\"]==$newme[\""++fldname fld++"\"]"
-                ++ " || !isset($oldkey[\""++fldname fld++"\"])"
-                ++ " || !isset($newme[\""++fldname fld++"\"]))"
-                |fld<-tblfields myplug,not(fldauto fld),iskey myplug fld]
-              ++"){"
-    ,"      DB_doquer(\"DELETE FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\",5);"
-    ,"      foreach ($newme as $fld => $newval){"
-    ,"         if (isset($me[$fld]))"
-    ,"            $newme[$fld] = $newval; //the value on the screen is at least in newme"
-    ,"         else"
-    ,"            $newme[$fld] = $oldkey[$fld];"
-    ,"      }"
-    ,"   } else {"
-    ,"      rollbacktransaction();"
-    ]
-    ++
-    ["      if ($oldkey[\""++fldname fld++"\"]!=$newme[\""++fldname fld++"\"]"
-                ++ " && isset($oldkey[\""++fldname fld++"\"])"
-                ++ " && isset($newme[\""++fldname fld++"\"]))"
-                ++ " $myerrors[] = print_r(array('error'=>\""++ name(target(fldexpr plugkey)) ++" \".$newme['"++fldname plugkey++"'].\" already identifies "
-                ++ name(target(fldexpr fld)) ++ " \".$oldkey['"++fldname fld++"'].\" overwriting it with \".$newme['" ++fldname fld++"'].\""
-                ++ " would delete \".$oldkey['"++fldname fld++"'].\". Please assign it to a different "++ name(target(fldexpr plugkey)) 
-                ++ " or delete it first.\"));"
-    |fld<-tblfields myplug,not(fldauto fld),iskey myplug fld]
-    ++
-    ["      return false;"
-    ,"   }"
-    ,"}"
-    ]
-    ++
+    (if shouldcut then
+      ["$selkey = DB_doquer(\"SELECT * FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\");"
+      ,"if (count($selkey)>0){"
+      ,"   $oldkey = firstRow($selkey);"
+      ,"   if ("++intercalate " && " 
+                  ["($oldkey[\""++fldname fld++"\"]==$newme[\""++fldname fld++"\"]"
+                  ++ " || !isset($oldkey[\""++fldname fld++"\"])"
+                  ++ " || !isset($newme[\""++fldname fld++"\"]))"
+                  |fld<-tblfields myplug,not(fldauto fld),iskey myplug fld]
+                ++"){"
+      ,"      DB_doquer(\"DELETE FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\",5);"
+      ,"      foreach ($newme as $fld => $newval){"
+      ,"         if (isset($onscreen[$fld]))"
+      ,"            $newme[$fld] = $newval; //the value on the screen is at least in newme"
+      ,"         else"
+      ,"            $newme[$fld] = $oldkey[$fld];"
+      ,"      }"
+      ,"   } else {"
+      ,"      rollbacktransaction();"
+      ]
+      ++
+      ["      if ($oldkey[\""++fldname fld++"\"]!=$newme[\""++fldname fld++"\"]"
+                  ++ " && isset($oldkey[\""++fldname fld++"\"])"
+                  ++ " && isset($newme[\""++fldname fld++"\"]))"
+                  ++ " $myerrors[] = print_r(array('error'=>\""++ name(target(fldexpr plugkey)) ++" \".$newme['"++fldname plugkey++"'].\" already identifies "
+                  ++ name(target(fldexpr fld)) ++ " \".$oldkey['"++fldname fld++"'].\" overwriting it with \".$newme['" ++fldname fld++"'].\""
+                  ++ " would delete \".$oldkey['"++fldname fld++"'].\". Please assign it to a different "++ name(target(fldexpr plugkey)) 
+                  ++ " or delete it first.\"));"
+      |fld<-tblfields myplug,not(fldauto fld),iskey myplug fld]
+      ++
+      ["      return false;"
+      ,"   }"
+      ,"}"
+      ]    
+    else []) ++
     -- 	    //try INS newme (failure could be some UNIQUE INDEX or a missing required field, but not the UNIQUE KEY)
     --	    //ins($newme);
     [insme "$newme" myplug
@@ -974,23 +996,73 @@ savefunction _ fSpec fnm depth this
     ,""]
     ++ concat (checkinstances "$newme" myattflds)
     ++
-    concat 
+    concat --TODO -> select myatts, then try to insert each myatt with or without an association to me (which fails in case of without and myatt is total)
     [["//myatts"
-     ,"//first delete myatt relations (SET to NULL)"
-     ,"DB_doquer(\"UPDATE `"++name plug++"` SET `"++fldname fld0++"`=NULL WHERE `"++fldname fld0++"`='\".addslashes($this->getId()).\"' \");"
-     ,"//then insert myatt relations as defined in this (key=$val is assumed to exist)"
+     ,"//check if the atts exist"
      ,"foreach ($this->_"++phpIdentifier (name att)++" as $k => $val){"
-     ,"   DB_doquer(\"UPDATE `"++name plug
-                 ++"` SET `"++fldname fld0++"`='\".addslashes($this->getId()).\"' WHERE `"++fldname fld1++"`='\".addslashes($val).\"' \");"
+     ,"   $att = DB_doquer(\"SELECT * FROM `"++name plug++"` WHERE `"++fldname fld1++"`='\".addslashes($val).\"' \");"
+     ,"   if(count($att)==0){"
+     ,"      $err = mysql_error();"
+     ,"      rollbacktransaction();"
+     ,"      $myerrors[] = print_r(array('observation'=>'sql error while saving instance.'.$this->getId(),'erroranalysis'=>'Instance '.$val.' of "++name att++" does not exist.','sqlerror'=>$err));"
+     ,"      return false;"
+     ,"   }"
+     ,"}"
+     ,"//first delete myatt relations (SET to NULL)"
+     ,"$rows = DB_doquer(\"SELECT * FROM `"++name plug++"` \");"
+     ,"DB_doquer(\"DELETE FROM `"++name plug++"` \");"
+     ,"//then insert myatt relations as defined in this (key=$val is assumed to exist)"
+     ,"foreach ($rows as $row){"
+     ,"  $reinserted=False;" --every row must be reinserted
+     ,"  foreach ($this->_"++phpIdentifier (name att)++" as $k => $val){"
+     ,"     if($row['"++fldname fld1++"']==$val){" --reinsert with association to me
+     ,"        "++insqry True True
+     ,"        if(mysql_errno()!=0) {"
+     ,"           $err = mysql_error();"
+     ,"           rollbacktransaction();"
+     ,"           $myerrors[] = print_r(array('observation'=>'sql error while saving instance.'.$this->getId(),'erroranalysis'=>'Unexpected behaviour (a bug). Notify the administrator','sqlerror'=>$err)).print_r($row);"
+     ,"           return false;"
+     ,"        }"
+     ,"        $reinserted=True;"
+     ,"     }"
+     ,"   }"
+     ,"   if (!$reinserted) {"
+     ,"      if($row['"++fldname fld0++"']==$this->getId())"
+     ,"         "++insqry False True
+     ,"      else"
+     ,"         "++insqry True False
+     ,"      if(mysql_errno()!=0) {"
+     ,"         $err = mysql_error();"
+     ,"         rollbacktransaction();"
+     ,"         $myerrors[] = print_r(array('observation'=>'sql error while saving instance.'.$this->getId(),'erroranalysis'=>'Each "++name att++" x requires aparent like '.$this->getId().'. Navigate to x to assign a different parent to it.','sqlerror'=>$err)).print_r($row);"
+     ,"         return false;"
+     ,"      }"
+     ,"   }" --reinsert without association to me
      ,"}"]
-    |((plug,fld0,fld1),att)<-myattsinthis]
+    |((plug,fld0,fld1),att)<-myattsinthis
+    , let insqry with mine ="DB_doquer(\"INSERT INTO `"++name plug
+                 ++"` ("       ++ (intercalate ", " ["`"++fldname f++"`" |f<-tblfields plug])
+                 ++") VALUES ("++ (intercalate ", " [if f/=fld0 || with then "'\".addslashes("++fval++").\"'" else "NULL"
+                                                    |f<-tblfields plug
+                                                    ,let fval=if f==fld0 && mine then "$this->getId()" else "$row['"++fldname f++"']"])
+                 ++")\");"]
     --	    //insert binrels of this instance in the BinPlug
     --	    //, "binrel" => $this->_binrel
  
     --	    //$ctxenv["transaction"]["check"][] = rule(); //add rules, don't know how yet (rule() is a function that needs to be checked before commit)
     ++
-    concat 
+    concat --TODO -> check if the things this is associated with exist
     [["//myassociations"
+     ,"//check if the associated exist"
+     ,"foreach ($this->_"++phpIdentifier (name att)++" as $k => $val){"
+     ,"   $att = DB_doquer(\"SELECT * FROM `"++name trgplug++"` WHERE `"++fldname trgfld++"`='\".addslashes($val).\"' \");"
+     ,"   if(count($att)==0){"
+     ,"      $err = mysql_error();"
+     ,"      rollbacktransaction();"
+     ,"      $myerrors[] = print_r(array('observation'=>'sql error while saving instance.'.$this->getId(),'erroranalysis'=>'Instance '.$val.' of "++name att++" does not exist.','sqlerror'=>$err));"
+     ,"      return false;"
+     ,"   }"
+     ,"}"
      ,"//first delete myassociation with fld0=id"
      ,"DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++fldname fld0++"`='\".addslashes($this->getId()).\"' \");"
      ,"//then insert myassociation for fld0=id as defined in this (key=$val is assumed to exist)"
@@ -999,7 +1071,10 @@ savefunction _ fSpec fnm depth this
                  ++"` ("++fldname fld0++","++fldname fld1
                  ++") VALUES ('\".addslashes($this->getId()).\"','\".addslashes($val).\"') \");"
      ,"}"]
-    |((plug,fld0,fld1),att)<-myassocinthis]
+    |((plug,fld0,fld1),att)<-myassocinthis
+    ,let trgtbls = sqlRelPlugs fSpec (Tm(mIs(target(objctx att)))(-1))
+    ,let (trgplug,trgfld,_) = if null trgtbls then error "no target tabel" else head trgtbls
+    ]
     ++	    
     [""
     ,if depth==0 then "if (closetransaction()) {return $this->getId();} else { return false;}" else ""

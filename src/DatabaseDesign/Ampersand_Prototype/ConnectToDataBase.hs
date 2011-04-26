@@ -130,8 +130,8 @@ where
       ++
       [ "\n  function checkRule"++show (runum rule)++"(){\n    "++
            (if isFalse rule'
-            then "// "++(langwords!!2)++": "++showexpression rule++"\n     "
-            else "// "++(langwords!!3)++" ("++showexpression rule++")\n    "++
+            then "// "++(langwords!!2)++": "++showexpression (showADLcode fSpec) rule++"\n     "
+            else "// "++(langwords!!3)++" ("++showexpression (showADLcode fSpec) rule++")\n    "++
                  concat [ "//            rule':: "++(showADLcode fSpec rule') ++"\n    " | pDebug] ++
                    "\n    $v = DB_doquer_lookups('"++ showsql(SqlSel2(selectbinary fSpec rule'))++"');\n"
                    -- ++ showCode 4 (code rule')

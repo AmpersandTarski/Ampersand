@@ -16,8 +16,12 @@ DEFINE("COMPILATIONS_PATH","comp/".USER."/");
 DEFINE("FILEPATH","comp/".USER."/uploads/");
 @mkdir(FILEPATH);
 
-$fullfile = 'empty.adl';
-if (isset($_REQUEST['file'])) {$fullfile = $_REQUEST['file'];}
+//prevent undefined indexes
+if(isset($_REQUEST['output'])) {DEFINE("REQ_OUTPUT",$_REQUEST['output']);} else {DEFINE("REQ_OUTPUT",'');}
+if(isset($_REQUEST['operation'])) {DEFINE("REQ_OPERATION",$_REQUEST['operation']);} else {DEFINE("REQ_OPERATION",-1);}
+if(isset($_REQUEST['file'])) {DEFINE("REQ_FILE",$_REQUEST['file']);} else {DEFINE("REQ_FILE",'empty.adl');}
+
+$fullfile = REQ_FILE;
 if(isset($_POST['adlbestand'])){
         $tmp_name = $_FILES["uploadfile"]["tmp_name"];
         $i=1;
@@ -33,9 +37,9 @@ if(isset($_POST['adlbestand'])){
 if(isset($_POST['adllaad'])){
         $fullfile = FILEPATH.$_POST['filename'];
 }
-if(isset($_POST['adltekst']) || $_REQUEST['operation']==3 || $_REQUEST['operation']==2){
+if(isset($_POST['adltekst']) || REQ_OPERATION==3 || REQ_OPERATION==2){
    $dtstr = '.'.strftime('%Y%m%d%H%M%S').'.';
-   $oldfile = basename($_REQUEST['file']);
+   $oldfile = basename(REQ_FILE);
    if (isset($_POST['filename'])) {$oldfile = $_POST['filename'];} 
    if (preg_match("/\.\d{14}\./", $oldfile)==0)
        {echo 'x'; $fullfile = FILEPATH.str_replace(".adl","",$oldfile).$dtstr."adl";}
@@ -49,8 +53,8 @@ DEFINE("LOGPATH","comp/".USER."/log/");
 //$target = escapeshellcmd(COMPILATIONS_PATH.'log/');
 //$source = escapeshellcmd(FILEPATH.$file->getId().'.adl');
 //if(!is_dir($target)) mkdir($target) or exit('error:could not create directory '.$target);
-unlink(LOGPATH.'error.txt');
-unlink(LOGPATH.'verbose.txt');
+if(is_file(LOGPATH.'error.txt')) unlink(LOGPATH.'error.txt');
+if(is_file(LOGPATH.'verbose.txt')) unlink(LOGPATH.'verbose.txt');
 $descriptorspec = array(
       0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
       //1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
@@ -71,10 +75,10 @@ $str = array(
      99 => './adl --verbose "'.$fullfile.'"'
      );
 $compileurl = array(
-     1 => COMPILATIONS_PATH.'ctxAtlas.php?content=Meterkast&Meterkast='.USER,
+     1 => COMPILATIONS_PATH.'ctxAtlas.php?content=Contextoverzicht',
      2 => 'index.php?file='.$fullfile,
      3 => 'index.php?file='.$fullfile.'&operation=1',
-     4 => COMPILATIONS_PATH.$_REQUEST['output'],
+     4 => COMPILATIONS_PATH.REQ_OUTPUT,
      5 => COMPILATIONS_PATH.'proto/index.htm',
      99 => ''
      );
@@ -99,6 +103,8 @@ if (isset($_REQUEST['operation']) || isset($_POST['adltekst']) || isset($_POST['
        $return_value = proc_close($process);
    }
 
+   $errorlns = '';
+   $verboselns = '';
    if (file_exists(LOGPATH.'error.txt')){
        foreach( file ( escapeshellcmd(LOGPATH.'error.txt')) as $line)
               {$errorlns = $errorlns.'<p>'.$line.'</p>'; }
@@ -112,12 +118,18 @@ if (isset($_REQUEST['operation']) || isset($_POST['adltekst']) || isset($_POST['
 <HTML>
 <HEAD>
 <?php
-if (isset($operation) && $compileurl[$operation]!='' && !isset($errorlns))
-   echo '<meta HTTP-EQUIV="REFRESH" content="0; url='.$compileurl[$operation].'">';
+if (isset($operation) && $compileurl[$operation]!='' && $errorlns=='')
+   $url = $compileurl[$operation];
 if (isset($_REQUEST['adlhuidige']))
-   echo '<meta HTTP-EQUIV="REFRESH" content="0; url='.$compileurl[1].'">';
+   $url = $compileurl[1];
 if (isset($_REQUEST['logout']))
-   echo '<meta HTTP-EQUIV="REFRESH" content="0; url=logout.htm">';
+   $url = 'logout.htm';
+if (isset($url)){
+	$x = explode('?',$url);
+	if (file_exists($x[0])) echo '<meta HTTP-EQUIV="REFRESH" content="0; url='.$url.'">';
+	else $notarget=True;
+}
+
 ?>
 <TITLE>Ampersand</TITLE>
 <SCRIPT type="text/javascript" src="overlib421/overlib.js"><!-- overLIB (c) Erik Bosrup --></SCRIPT>
@@ -129,8 +141,9 @@ if (isset($_REQUEST['logout']))
 <p><div style="width:100%;background-color:#ffffff;margin:0px;padding:0px;top:0px"> <img style="margin:0px;padding:0px" src="ou.jpg">
 </div></p>
 <?php
+if (isset($notarget)) echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
 if (isset($operation)){
-   if ($compileurl[$operation]!='' && !isset($errorlns))
+   if ($compileurl[$operation]!='' && $errorlns=='')
       echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
    echo '<p>'.$str[$operation].'</p>';
    echo $verboselns;
@@ -138,12 +151,13 @@ if (isset($operation)){
 }else{
    echo '<FORM name="myForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" enctype="multipart/form-data">';
    echo '<H1>Laad de context in de Atlas...</H1>';
-
-   echo '<p><input type="submit" name="adlhuidige" value="... die '.USER.' het laatst geladen heeft"/>';
-   echo '<a href="javascript:void(0);"';
-   echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
-   echo 'onmouseout="return nd();">';
-   echo '<IMG SRC="warning.png" /></a></p>';
+   if (file_exists(COMPILATIONS_PATH.'ctxAtlas.php')){
+     echo '<p><input type="submit" name="adlhuidige" value="... die '.USER.' het laatst geladen heeft"/>';
+     echo '<a href="javascript:void(0);"';
+     echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
+     echo 'onmouseout="return nd();">';
+     echo '<IMG SRC="warning.png" /></a></p>';
+   }
 
    echo '<p><input type="submit" name="adlbestand" value="... uit bestand op uw computer" />';
    echo '<a href="javascript:void(0);"';
