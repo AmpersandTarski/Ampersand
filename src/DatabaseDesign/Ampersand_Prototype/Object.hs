@@ -22,7 +22,7 @@ objectInterfaces flags fSpec o
  = (intercalate "\n  "
    ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
-    , "/********* on "++(show (pos o))
+    , "/********* on "++(show (origin o))
     , showADLcode fSpec o
     , " *********/"
     , ""

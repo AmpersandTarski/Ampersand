@@ -202,7 +202,7 @@ makectx cxs pats rls rulpattern relpattern
        , ctx_procs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd (fatal 200 "This context has no position") x False y []|(x,y)<-cptdescribes,not(null y)]
+       , ctx_cs    = [Cd (DBLoc "Atlas(ConceptDef)") x False y []|(x,y)<-cptdescribes,not(null y)]
        , ctx_ks    = []
        , ctx_ifcs  = []
        , ctx_ps    = atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
@@ -223,7 +223,7 @@ atlas2pattern :: AtomVal -> [Rule(Relation Concept)] -> RelTbl -> RelTbl -> RelT
                          -> RelTbl -> RelTbl -> Pattern
 atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
  = Pat { ptnm  = p
-       , ptpos = fatal 218 "No position in this pattern"
+       , ptpos = ParsedFrom(DBLoc "Atlas(Pattern)")
        , ptrls = [r|(rulstr,p')<-rulpattern,p==p',r<-rs,name r==rulstr]
        , ptgns = []
        , ptdcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|(i,(relstr,p'))<-zip [1..] relpattern,p==p']
@@ -245,7 +245,7 @@ emptySignalDeclaration nm
           , decprM = ""
           , decprR = ""
           , decpopu = []
-          , decfpos = fatal 240 "this declaration has no position" 
+          , decfpos = ParsedFrom(DBLoc "Atlas(Relation)")
           , decid = 0
           , deciss = True    -- initially, all rules are signals
           , decusr = False
@@ -298,7 +298,7 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
        , decprM = [c|(rel,x)<-pragma2,relstr==rel,c<-x]
        , decprR = [c|(rel,x)<-pragma3,relstr==rel,c<-x]
        , decpopu = []
-       , decfpos = fatal 290 "The position of a generated rule cannot be shown."
+       , decfpos = ParsedFrom(DBLoc$"Atlas(Declaration)"++show i)
        , decid  = 0
        , deciss = True  -- initially, all rules are signals
        , decusr = True
@@ -314,10 +314,10 @@ atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [
                                   -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PExplanation]
 atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
  = --error(show (patpurpose, rulpurpose, relpurpose, cptpurpose)) ++
-     [PExpl (fatal 305 "this PExplanation has no position") (PExplPattern x) Dutch [] y|(x,y)<-patpurpose]
-  ++ [PExpl (fatal 306 "this PExplanation has no position") (PExplRule x) Dutch [] y|(x,y)<-rulpurpose]
-  ++ [PExpl (fatal 307 "this PExplanation has no position") (PExplDeclaration r) Dutch [] y|(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
-  ++ [PExpl (fatal 308 "this PExplanation has no position") (PExplConceptDef x) Dutch [] y|(x,y)<-cptpurpose]
+     [PExpl (DBLoc "Atlas(PatPurpose)") (PExplPattern x) Dutch [] y|(x,y)<-patpurpose]
+  ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) Dutch [] y|(x,y)<-rulpurpose]
+  ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r) Dutch [] y|(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
+  ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) Dutch [] y|(x,y)<-cptpurpose]
 
 makerel :: String -> [(String, String)] -> [(String, String)] -> [(String, String)] -> Relation Concept
 makerel relstr relname relsc reltg = 
@@ -327,7 +327,7 @@ makerel relstr relname relsc reltg =
       t = cptnew(geta reltg relstr)
       in
       Rel  { relnm = nm
-           , relpos = fatal 317 "this Relanation has no position"
+           , relpos = ParsedFrom(DBLoc "Atlas(Relation)")
            , relats = [s,t]
            , relsrc = s
            , reltrg = t
