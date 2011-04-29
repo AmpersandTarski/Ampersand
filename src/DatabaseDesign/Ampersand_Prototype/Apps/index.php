@@ -64,24 +64,7 @@ $descriptorspec = array(
   //    2 => array("file", "/error-output.txt" ,"a") // stderr is a file to write to
       );
 //echo getcwd();
-
-
-$str = array(
-     1 => './adl --verbose -p'.COMPILATIONS_PATH.' --theme=student --import="'.$fullfile.'" --namespace='.USER.' --importformat=adl atlas',
-     2 => './adl --verbose -o'.FILEPATH.' --export='.$file.' --namespace='.USER.' atlas',
-     3 => './adl --verbose -o'.FILEPATH.' --export='.$file.' --namespace='.USER.' atlas',
-     4 => './amp --verbose -o'.COMPILATIONS_PATH.' -f Latex "'.$fullfile.'"',
-     5 => './adl --verbose -p'.COMPILATIONS_PATH.'proto/ --theme=student "'.$fullfile.'"',
-     99 => './adl --verbose "'.$fullfile.'"'
-     );
-$compileurl = array(
-     1 => COMPILATIONS_PATH.'ctxAtlas.php?content=Contextoverzicht',
-     2 => 'index.php?file='.$fullfile,
-     3 => 'index.php?file='.$fullfile.'&operation=1',
-     4 => COMPILATIONS_PATH.REQ_OUTPUT,
-     5 => COMPILATIONS_PATH.'proto/index.htm',
-     99 => ''
-     );
+include "operations.php";
 
 if (isset($_REQUEST['operation']) || isset($_POST['adltekst']) || isset($_POST['adlbestand']) || isset ($_POST['adllaad'])){
    if (isset($_POST['adllaad'])|| isset($_POST['adlbestand'])) {$operation = 1;}
@@ -90,7 +73,7 @@ if (isset($_REQUEST['operation']) || isset($_POST['adltekst']) || isset($_POST['
           file_put_contents($fullfile,$_POST['adltext']);
    } else $operation = $_REQUEST['operation'];
 
-   $process = proc_open($str[$operation], $descriptorspec, $pipes, getcwd());
+   $process = proc_open($commandstr[$operation], $descriptorspec, $pipes, getcwd());
    if (is_resource($process)) {
         fclose($pipes[0]);
        //fclose($pipes[2]);
@@ -145,7 +128,7 @@ if (isset($notarget)) echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de syste
 if (isset($operation)){
    if ($compileurl[$operation]!='' && $errorlns=='')
       echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
-   echo '<p>'.$str[$operation].'</p>';
+   echo '<p>'.$commandstr[$operation].'</p>';
    echo $verboselns;
    echo $errorlns;
 }else{

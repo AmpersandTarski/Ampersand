@@ -53,8 +53,7 @@ parseFile flags pv
   --                             ,showCode 0 x
     --                           ,show r')|r<-rules atlasfspec,let r'=(conjNF . Cpx . normExpr) r,head(showexpression r)=='I'
       --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
-           parsedatlas <- atlas2context atlasfspec flags
-           if interfacesG flags then return parsedatlas else return parsedfile
+           if interfacesG flags then atlas2context atlasfspec flags else return parsedfile
 
 parseImportFile :: String -> ParserVersion -> String -> Options -> IO(Populations Concept)  
 parseImportFile adlText pv adlfn flags  
