@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.InterfaceDef
   (interfaceDef)
 where
   import Data.List
-  import DatabaseDesign.Ampersand 
+  import DatabaseDesign.Ampersand_Prototype.CoreImporter
   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(commentBlock, indentBlock)
   import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
   import DatabaseDesign.Ampersand_Prototype.Version 

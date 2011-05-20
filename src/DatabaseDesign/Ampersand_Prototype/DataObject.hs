@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentif
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List  hiding (group)
-import DatabaseDesign.Ampersand-- .Misc
+import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 --For each data object (i.e. generated kernel-based SQL plugs) there is one dataInterfaces file (data_*.inc.php).

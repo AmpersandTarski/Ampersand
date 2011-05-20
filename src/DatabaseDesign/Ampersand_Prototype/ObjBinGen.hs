@@ -14,7 +14,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces)
    import System.FilePath               
    import System.Directory
    import qualified Data.ByteString as Bin
-   import DatabaseDesign.Ampersand  
+   import DatabaseDesign.Ampersand_Prototype.CoreImporter  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
    
    phpObjInterfaces :: Fspc -> Options -> IO()

@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
       ,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpflp,phpsign
       ) where
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
- import DatabaseDesign.Ampersand -- .ADL1 (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
+ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
  data Statement

@@ -7,7 +7,7 @@ import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
-import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import qualified Control.Exception as Exc  
 
@@ -20,7 +20,7 @@ main :: IO ()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
-       then mapM_ putStr (helpNVersionTexts flags)
+       then mapM_ putStr (helpNVersionTexts ("ProtoVs"++versionNumberPrototype++"ADLvs" ++ versionNumber) flags)
        else
           (    Exc.catch (parseFile flags PV1) (trysecond flags) 
            >>= calculate flags 
@@ -34,7 +34,6 @@ main
     errorsoffirst flags _ = Exc.catch (parseFilePrototype flags PV1) reporterrors --report on second (or first)
     reporterrors :: Exc.ErrorCall -> IO (A_Context)
     reporterrors (Exc.ErrorCall msg) = error msg
-
                 
 parseFilePrototype :: Options -> ParserVersion -> IO(A_Context)
 parseFilePrototype flags pv 

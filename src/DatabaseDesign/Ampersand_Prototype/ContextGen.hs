@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.ContextGen
   (contextGen)
 where
   import Data.List
-  import DatabaseDesign.Ampersand
+  import DatabaseDesign.Ampersand_Prototype.CoreImporter
   import DatabaseDesign.Ampersand_Prototype.Version 
   contextGen :: Fspc -> String
   contextGen fspc = "<?php\n  " ++ intercalate "\n  "

@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Installer
   (installer)
 where
   import Data.List
-  import DatabaseDesign.Ampersand
+  import DatabaseDesign.Ampersand_Prototype.CoreImporter
   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
   
 --  import Debug.Trace

@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase
  (connectToDataBase) 
 where
  import Data.List
- import DatabaseDesign.Ampersand
+ import DatabaseDesign.Ampersand_Prototype.CoreImporter
  import DatabaseDesign.Ampersand_Prototype.Code
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))

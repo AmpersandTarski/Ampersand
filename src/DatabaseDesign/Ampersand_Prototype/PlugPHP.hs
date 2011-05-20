@@ -13,7 +13,7 @@ module DatabaseDesign.Ampersand_Prototype.PlugPHP
 where
 import Data.List
 import Data.Maybe (listToMaybe)
-import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))

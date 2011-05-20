@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne',InPlug(..),showsql,SqlSelect(..)
  ) where 
-import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                  ,cChain,filterEmpty,phpIndent)
@@ -21,7 +21,7 @@ fatal = fatalMsg "RelBinGenSQL"
 --
 -- Bovenstaand commentaar snap ik niet (gmi)
 -- in de php code heb je een instantie van een concept (ID=,$id,etc.) 
--- soms is het id constant i.e. source (ctx o) == cptS.
+-- soms is het id constant i.e. source (ctx o) == Singleton.
 -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
 -- daarom heb ik ze opgesplitst
 isOneExpr :: Expression (Relation Concept) -> Bool
@@ -42,7 +42,7 @@ isOne' o = isOne o -- isOneExpr$ctx o
                    --  attr1 :: Obj * Attr [UNI].
                    --  value2 :: Attr -> Datatype.
 isOne :: ObjectDef -> Bool
-isOne o = source (ctx o) == cptS
+isOne o = source (ctx o) == Singleton
 
 selectExpr ::    Fspc    -- current context
               -> Int        -- indentation
@@ -126,7 +126,7 @@ selectExpr fSpec i src trg (Fix [e']) = selectExpr fSpec i src trg e'
 -- Reason: Fix [] should not occur in the query at all! This is not a question of whether the data is in the database.. it might be (it depends on the type of Fi []), but we just don't know
 selectExpr _     _ _   _   (Fix [] ) = fatal 123 "Cannot create query for Fi [] because type is unknown"
 
-selectExpr fSpec i src trg (F (Tm (V _ (s,_))_:fs@(_:_))) | s==cptS
+selectExpr fSpec i src trg (F (Tm (V _ (Singleton,_))_:fs@(_:_)))
   = selectGeneric i ("1",src) ("fst."++trg',trg)
                     (selectExprBrac fSpec i src' trg' (F fs) +++ " AS fst")
                     (Just$ "fst."++trg'++" IS NOT NULL")
@@ -232,9 +232,9 @@ selectExpr fSpec i src trg (Tm (V _ (s,t))_   )
                , (t',trg') <- concNames "cfst" t
                , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                ]
- where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c)(-1))]
+ where concNames pfx c = [([],"1")|c==Singleton]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c)(-1))]
 
-selectExpr fSpec i src trg (Tm (I _ s _) _  ) | s == cptS = selectExpr fSpec i src trg (Tm (V [] (s,s))(-1))
+selectExpr fSpec i src trg (Tm (I _ Singleton _) _  ) = selectExpr fSpec i src trg (Tm (V [] (Singleton,Singleton))(-1))
 
 selectExpr fSpec i src trg (Tm mrph   _   ) = selectExprMorph fSpec i src trg mrph
 selectExpr fSpec i src trg (Tc expr      ) = selectExpr fSpec i src trg expr
@@ -579,7 +579,7 @@ sqlConcept fSpec c = name (sqlConceptPlug fSpec c)
    
 -- sqlConcept yields the plug that contains all atoms of concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: Fspc -> Concept -> PlugSQL
-sqlConceptPlug fSpec c | c==cptS = fatal 583 "Concept ONE may not be represented in SQL."
+sqlConceptPlug fSpec c | c==Singleton = fatal 583 "Concept ONE may not be represented in SQL."
                        | otherwise
              = if null ps then fatal 585 $ "Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                head ps
@@ -588,7 +588,7 @@ sqlConceptPlug fSpec c | c==cptS = fatal 583 "Concept ONE may not be represented
 
 
 sqlAttConcept :: Fspc -> Concept -> String
-sqlAttConcept fSpec c | c==cptS = "ONE"
+sqlAttConcept fSpec c | c==Singleton = "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                head cs

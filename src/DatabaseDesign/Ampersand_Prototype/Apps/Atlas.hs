@@ -17,7 +17,7 @@
 module DatabaseDesign.Ampersand_Prototype.Apps.Atlas 
    (fillAtlas,picturesForAtlas,atlas2context)
 where
-import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Data.List  (intercalate)
@@ -209,7 +209,7 @@ makectx cxs pats rls rulpattern relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
-       , ctx_env   = (Tm(V [] (cptAnything,cptAnything)) (-1),[])
+       , ctx_env   = (Tm(V [] (Anything,Anything)) (-1),[])
       }
 
 parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation Concept)]
@@ -237,13 +237,14 @@ atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax p
 emptySignalDeclaration :: String -> Declaration Concept
 emptySignalDeclaration nm
     = Sgn { decnm = nm
-          , desrc = cptAnything
-          , detrg = cptAnything
+          , desrc = Anything
+          , detrg = Anything
           , decprps = []
           , decprps_calc = []
           , decprL = ""
           , decprM = ""
           , decprR = ""
+          , decMean = ""
           , decpopu = []
           , decfpos = ParsedFrom(DBLoc "Atlas(Relation)")
           , decid = 0
@@ -297,6 +298,7 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
        , decprL = [c|(rel,x)<-pragma1,relstr==rel,c<-x]
        , decprM = [c|(rel,x)<-pragma2,relstr==rel,c<-x]
        , decprR = [c|(rel,x)<-pragma3,relstr==rel,c<-x]
+       , decMean = ""
        , decpopu = []
        , decfpos = ParsedFrom(DBLoc$"Atlas(Declaration)"++show i)
        , decid  = 0

@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock)
    import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
 --   import System.FilePath (addExtension)
-   import DatabaseDesign.Ampersand
+   import DatabaseDesign.Ampersand_Prototype.CoreImporter
    import DatabaseDesign.Ampersand_Prototype.Version 
    
    
