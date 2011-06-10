@@ -28,7 +28,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces)
       >> write (name fSpec++".php")        (contextGen fSpec)
       >> write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
       >> write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
-      >> verboseLn flags ("  Writing username and password: dbsettings.php")
+      >> verboseLn flags ("  Writing: dbsettings.php")
       >> writeFile (combine targetDir "dbsettings.php") dbsettings
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_

@@ -24,7 +24,7 @@ import DatabaseDesign.Ampersand
    , Prop(..)
    , Lang(..)
    , Options(..), DocTheme(..)
-   , Picture(..), writePicture
+   , Picture(..), writePicture, DrawingType(..)
    , Origin(..), IOLocation(..)
    , FPA(..), FPcompl(..)
    , mkPair

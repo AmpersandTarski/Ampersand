@@ -170,7 +170,7 @@ selectExpr fSpec i src trg (F lst'@(fstm:_:_))
          mainTrg = (if isNeg (last lst') then "c"++show (length lst') else "F"++show (length lst'-1))++"."++trg'
          -- de strings die de source en target van F lst' weergeven. Bij gelijke namen vindt ontdubbeling van naam plaats met noCollideUnlessTm'
          src'    = quote$sqlExprSrc fSpec fstm
-         trg'    = noCollideUnlessTm' fstm [src'] (quote$sqlExprTrg fSpec (last lst'))
+         trg'    = {-noCollideUnlessTm' fstm [src']-} (quote$sqlExprTrg fSpec (last lst'))
          -- ncs geeft alleen de concepten uit lst', die in SQL doorlopen moeten worden, inclusief rangnummer
          ncs     = [ (0,source (head lst'))  | isNeg (head lst') ]++
                    [ (n',c)
@@ -228,8 +228,8 @@ selectExpr _     _ _   _   (F  [] ) = fatal 223 "Cannot create query for F [] be
 
 selectExpr fSpec i src trg (Tm (V _ (s,t))_   ) 
  = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
-               | (s',src') <- concNames "cfst" s
-               , (t',trg') <- concNames "cfst" t
+               | (s',src') <- concNames (if name s==name t then "cfst0" else "cfst") s
+               , (t',trg') <- concNames (if name s==name t then "cfst1" else "cfst") t
                , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                ]
  where concNames pfx c = [([],"1")|c==Singleton]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c)(-1))]

@@ -22,10 +22,10 @@ import Database.HDBC.ODBC
 import Database.HDBC
 import Data.List  (intercalate)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
-import DatabaseDesign.Ampersand.Version (fatalMsg)
+-- import DatabaseDesign.Ampersand.Version (fatalMsg)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Basics"
+-- fatal :: Int -> String -> a
+-- fatal = fatalMsg "Basics"
 ------
 dsnatlas::String
 dsnatlas = "DSN=Atlasv2"
@@ -110,9 +110,9 @@ fillAtlas fSpec flags =
 
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
-   = [makePicture flags fSpec p | p <- patterns fSpec] ++
-     [makePicture flags fSpec userRule | userRule <- rules fSpec]++
-     [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
+   = [makePicture flags fSpec Plain_CG p | p <- patterns fSpec] ++
+     [makePicture flags fSpec Plain_CG userRule | userRule <- rules fSpec]++
+     [makePicture flags fSpec Plain_CG cpt | cpt <- (concs fSpec)]
 
 ----------------------------------------------------
 
@@ -162,7 +162,6 @@ atlas2context fSpec flags =
       ruleexpr <- selectdecl conn fSpec (therel fSpec "ruleexpr" [] [])
       --Pattern--
       rulpattern <- selectdecl conn fSpec (therel fSpec "rulpattern" [] [])
-      isapattern <- selectdecl conn fSpec (therel fSpec "isapattern" [] [])
       relpattern <- selectdecl conn fSpec (therel fSpec "relpattern" [] [])
       --PExplainable--
       patpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Pattern" [])
@@ -241,16 +240,16 @@ emptySignalDeclaration nm
           , detrg = Anything
           , decprps = []
           , decprps_calc = []
-          , decprL = ""
-          , decprM = ""
-          , decprR = ""
+          , decprL  = ""
+          , decprM  = ""
+          , decprR  = ""
           , decMean = ""
           , decpopu = []
           , decfpos = ParsedFrom(DBLoc "Atlas(Relation)")
-          , decid = 0
-          , deciss = True    -- initially, all rules are signals
-          , decusr = False
-          , decpat = ""
+          , decid   = 0
+          , deciss  = True    -- initially, all rules are signals
+          , decusr  = False
+          , decpat  = ""
           , decplug = True
           }
 geta :: [(String,String)] -> String -> String
