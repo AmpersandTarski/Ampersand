@@ -107,10 +107,10 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
      (Cpx e')  -> Cpx (phpflp e')
 
  conc2php :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- conc2php e = mapExpression (mapMorphism PHPC) e
+ conc2php e = mapExpression (mapRelation PHPC) e
 
  php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
- php2conc e = mapExpression (mapMorphism f) e
+ php2conc e = mapExpression (mapRelation f) e
               where f (PHPC c) = c
                     f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
 

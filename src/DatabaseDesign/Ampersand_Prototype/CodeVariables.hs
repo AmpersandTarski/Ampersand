@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  singletonCV
   = CodeVar { cvIndexed    = NotIndexed
             , cvContent    = Right []
-            , cvExpression = Tm (mIs (PHPC Singleton)) (fatal 22 "Term number undefined")
+            , cvExpression = Tm (I (PHPC Singleton)) (fatal 22 "Term number undefined")
             }
  -- | create a new singleton scalar variable, useful for in loops (as with newSingleton, but make sure the variable name is not taken)
  freshSingleton :: [Named CodeVar] -- ^ variables with which this var should not collide by name
@@ -35,9 +35,9 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  -- | create a new singleton scalar variable, used by newSingleton, but also useful for in content attribute of a new CodeVarObject
  newSingleton :: String -> CodeVar
  newSingleton nm
-   = singletonCV{cvExpression=(Tm (mIs (PHPI1 (Named nm (UseVar []))))(-1))}
+   = singletonCV{cvExpression=(Tm (I (PHPI1 (Named nm (UseVar []))))(-1))}
 -- WHY is newSingleton not defined as:
---   = singletonCV{cvExpression=(Tm (mIs (PHPC S))(-1))}
+--   = singletonCV{cvExpression=(Tm (I (PHPC S))(-1))}
 --   ???
  -- | Create a new variable with the value of some expression, ensure that its name does not exist yet
  newVarFor :: [String] -- ^ list of forbidden names

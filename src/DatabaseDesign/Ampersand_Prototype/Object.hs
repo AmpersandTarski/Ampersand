@@ -115,7 +115,7 @@ showClasses flags fSpec o
                                                "$me"
                                                0
                                                (o  {objnm =if isOne o then "1" else "$id"
-                                                   ,objctx=Tm(mIs(concept o))(-1)
+                                                   ,objctx=Tm(I(concept o))(-1)
                                                    ,objats=[]}
                                                )
                                                o
@@ -165,7 +165,7 @@ showClasses flags fSpec o
    [ "}\n" ]
  where
   editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
-           | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
+           | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
   mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
   mayedit item editable = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
@@ -494,7 +494,7 @@ plugAts plug object = plugAts' object object --you do not want to forget to ment
   plugAts' p o 
    = nub$
      ([ ((o,sf),(o,tf))
-      | (sf,tf)<-sqlPlugFields plug (Tm (mIs (target (objctx o))) (-1))
+      | (sf,tf)<-sqlPlugFields plug (Tm (I (target (objctx o))) (-1))
       ]
      ++
       [ ((p,sf),(o,tf))
@@ -555,7 +555,7 @@ doPhpGet fSpec objVar depth objIn objOut
      | null unisNeeded = []
      | otherwise
         = let idAt = trunc(objOut{objctx=targetCpt,objnm="id"})
-              targetCpt = Tm(mIs$target$objctx objOut)(-1) 
+              targetCpt = Tm(I$target$objctx objOut)(-1) 
           in doQuer (objVar++"=firstRow") (doSqlGet fSpec False objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt}))
     -- getArrayOf: code for leaves or for nodes (in the objDef tree) is different. For leaves: use firstCol to show them
     getArrayOf aout 
@@ -647,7 +647,7 @@ doSqlGet fSpec isArr objIn objOut
          (  comboGroups' {-[gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s]-}
          ++ 
             [((p,(objIn,s)),[(objIn,t)])
-            | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]   -- zoek een conceptentabel op....
+            | (p,s,t)<-sqlRelPlugs fSpec (Tm(I$target (objctx objIn))(-1))]   -- zoek een conceptentabel op....
          -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
          -- dan hebben we dus geen keyGroup, maar dat geeft niet voor ONE
          -- in andere gevallen geeft dat wel.
@@ -799,7 +799,7 @@ savefunction flags fSpec fnm depth this
         cancut = null reqbyid_and_notinthis_flds
         --editable
         editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
-                 | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
+                 | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
         mayedit :: Expression(Relation Concept) -> Bool
         mayedit item = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
         ---------myatts(editable only)
@@ -1072,7 +1072,7 @@ savefunction flags fSpec fnm depth this
                  ++") VALUES ('\".addslashes($this->getId()).\"','\".addslashes($val).\"') \");"
      ,"}"]
     |((plug,fld0,fld1),att)<-myassocinthis
-    ,let trgtbls = sqlRelPlugs fSpec (Tm(mIs(target(objctx att)))(-1))
+    ,let trgtbls = sqlRelPlugs fSpec (Tm(I(target(objctx att)))(-1))
     ,let (trgplug,trgfld,_) = if null trgtbls then error "no target tabel" else head trgtbls
     ]
     ++	    

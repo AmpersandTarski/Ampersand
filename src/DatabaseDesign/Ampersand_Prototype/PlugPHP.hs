@@ -136,11 +136,11 @@ makePhpPlug obj
    toAttr :: ObjectDef -> CodeVar
    toAttr a = CodeVar{cvIndexed=IndexByName -- TODO, read this from parameters
                      ,cvContent=Right [] -- TODO!! Allow complex objects..
-                     ,cvExpression=mapExpression (mapMorphism PHPC) (objctx a)}
+                     ,cvExpression=mapExpression (mapRelation PHPC) (objctx a)}
    outObj :: CodeVar
    outObj = CodeVar{cvIndexed=IndexByName
                    ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
-                   ,cvExpression=mapExpression (mapMorphism PHPC) (objctx obj)}
+                   ,cvExpression=mapExpression (mapRelation PHPC) (objctx obj)}
    verifiesInput::Bool
    verifiesInput = True   
 

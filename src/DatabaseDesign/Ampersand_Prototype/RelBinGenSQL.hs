@@ -104,11 +104,11 @@ selectExpr fSpec i src trg (Fix lst'@(_:_:_))
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                      ]++
-                     [Just$ "isect0."++src'++" = "++rel1val r -- sorce and target are equal because this is the case with Mp1
+                     [Just$ "isect0."++src'++" = "++relval r -- sorce and target are equal because this is the case with Mp1
                      | (Tm r@(Mp1{}) _) <- mp1Tm
                      ]++
-                     [Just$ "isect0."++src'++" = "++rel1val m1 -- sorce and target are unequal
-                       ++ " AND isect0."++trg'++" = "++rel1val m2 -- sorce and target are unequal
+                     [Just$ "isect0."++src'++" = "++relval m1 -- sorce and target are unequal
+                       ++ " AND isect0."++trg'++" = "++relval m2 -- sorce and target are unequal
                      | (F ((Tm m1@(Mp1{}) _):(Tm (V _ _)_):(Tm m2@(Mp1{})_):[])) <- mp1Tm
                      ]++
                      [if isI l
@@ -136,12 +136,12 @@ selectExpr fSpec i src trg (F (s1@(Tm (Mp1{})_):(s2@(Tm (V _ _)_):(s3@(Tm (Mp1{}
   =  selectExpr fSpec i src trg (F ((F (s1:s2:s3:[])):fx))
 
 selectExpr _ _ src trg (F ((Tm sr@(Mp1{})_):((Tm (V _ _)_):((Tm tr@(Mp1{})_):[])))) -- this will occur quite often because of doSubsExpr
-  = Just$ "SELECT "++rel1val sr++" AS "++src++", "++rel1val tr++" AS "++trg
+  = Just$ "SELECT "++relval sr++" AS "++src++", "++relval tr++" AS "++trg
 
 selectExpr fSpec i src trg (F (e'@(Tm sr@(Mp1{})_):(f:fx)))
    = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                      (selectExprBrac fSpec i src' trg' (F (f:fx))+++" AS fst")
-                     (Just$"fst."++src'++" = "++rel1val sr)
+                     (Just$"fst."++src'++" = "++relval sr)
                      where src' = quote$sqlExprSrc fSpec e'
                            trg' = noCollideUnlessTm' (F (f:fx)) [src'] (quote$sqlExprTrg fSpec (F (f:fx)))
 
@@ -182,7 +182,7 @@ selectExpr fSpec i src trg (F lst'@(fstm:_:_))
          -- de SQL-expressies voor de concepten van lst', maar nu in SQL
          concExprs = [e| (_,e,_)<-concExpr]
          concExpr  = [ (n,selectExprBrac fSpec i sm sm tm +++ " AS "++concNm n, sm)
-                     | (n,c)<-ncs, tm<-[Tm (mIs c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
+                     | (n,c)<-ncs, tm<-[Tm (I c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
          concTp n = head ([t| (i',_,t)<-concExpr, n==i']++fatal 182 "concTp")
          concNm n = head (["c"++show n| (i',_,_)<-concExpr, n==i']++fatal 183 "concNm")
          -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
@@ -220,7 +220,7 @@ selectExpr fSpec i src trg (F lst'@(fstm:_:_))
                      , trg'''<-[noCollideUnlessTm' l [src'''] (quote$sqlExprTrg fSpec l)]
                      , src''<-[quote$sqlExprSrc fSpec l']
                      ]++
-                     [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm (mIs c)(-1)))++" IS NOT NULL"
+                     [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm (I c)(-1)))++" IS NOT NULL"
                      | (n,c)<-ncs
                      ]
                      where inCs n = n `elem` map fst ncs
@@ -246,7 +246,7 @@ selectExpr fSpec i src trg (Fux es') = (phpIndent i) ++ "(" +++ (selectExprInUni
 selectExpr fSpec i src trg (Cpx (Tm (V _ _)_)) = selectExpr fSpec i src trg (Fux [])
 selectExpr fSpec i src trg (Cpx e' )
    = selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
-                     (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "+++selectExprBrac fSpec i trg' trg' (Tm (mIs (target e'))(-1))+++" AS csnd")
+                     (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "+++selectExprBrac fSpec i trg' trg' (Tm (I (target e'))(-1))+++" AS csnd")
                      ("NOT EXISTS ("+++ (selectExists' (i+12)
                                                       ((selectExprBrac fSpec (i+12) src2 trg2 e') +++ " AS cp")
                                                       ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
@@ -282,7 +282,7 @@ selectExpr fSpec i src trg (Fdx lst'@(fstm:_:_))
                    ]
          -- de SQL-expressies voor de concepten van lst', maar nu in SQL
          concExprs i' ncs'' = [ selectExprBrac fSpec i' sm sm tm +++ " AS c"++show n
-                           | (n,c)<-ncs'', tm<-[Tm (mIs c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
+                           | (n,c)<-ncs'', tm<-[Tm (I c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
          -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
          inner     = "NOT EXISTS ("+++selectExists' (i+19)
                                                           (cChain ", " (concExprs (i+19) ncs'))
@@ -307,7 +307,7 @@ selectExpr fSpec i src trg (Fdx lst'@(fstm:_:_))
                      , trg''<-[(quote$sqlExprTrg fSpec l)]
                      , src''<-[quote$sqlExprSrc fSpec l']
                      ] where inCs n = n `elem` map fst (ncs++ncs')
-         cclauses ncs'' = [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm ( mIs c)(-1)))++" IS NOT NULL"
+         cclauses ncs'' = [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm ( I c)(-1)))++" IS NOT NULL"
                         | (n,c)<-ncs''
                         ]
                      
@@ -396,10 +396,10 @@ selectExprMorph fSpec i src trg rel@V{}
        trg'="vsnd."++sqlAttConcept fSpec (target rel)
 selectExprMorph _ _ src trg rel@Mp1{}
  | src == ""&&trg=="" = fatal 394 "Source and target are \"\", use selectExists' for this purpose"
- | src == ""  = Just$ "SELECT "++rel1val rel++" AS "++trg
- | trg == ""  = Just$ "SELECT "++rel1val rel++" AS "++src
- | src == trg = Just$ "SELECT "++rel1val rel++" AS "++src
- | otherwise  = Just$ "SELECT "++rel1val rel++" AS "++src++", "++rel1val rel++" AS "++trg
+ | src == ""  = Just$ "SELECT "++relval rel++" AS "++trg
+ | trg == ""  = Just$ "SELECT "++relval rel++" AS "++src
+ | src == trg = Just$ "SELECT "++relval rel++" AS "++src
+ | otherwise  = Just$ "SELECT "++relval rel++" AS "++src++", "++relval rel++" AS "++trg
 selectExprMorph fSpec i src trg rel -- made for both Rel and I
  = listToMaybe [selectGeneric i (quote s,src) (quote t,trg) (quote p) "1"
                | (p,s,t)<-sqlRelPlugNames fSpec (Tm rel (-1))
@@ -481,10 +481,10 @@ sqlPlugFields p e'
            The code below fixes exactly these ommissions
         -}
         || (isProp (se) && (te == e)
-           && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e))(-1), simplF [e,flp e] ]
+           && (isTrue$disjNF$Fux [Fix [ Tm (I (source e))(-1), simplF [e,flp e] ]
                                 ,Cpx$se]))
         || (isProp (te) && (se == flp e)
-           && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e))(-1), simplF [flp e,e] ]
+           && (isTrue$disjNF$Fux [Fix [ Tm (I (source e))(-1), simplF [flp e,e] ]
                                 ,Cpx$te]))
         {- found another exception:
              isFalse (I;I /\ -I)
@@ -535,7 +535,7 @@ sqlPlugFields p e'
     where fs = [ts | F ts <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
            -- null occurs especialy in cases of [I;e] and [e;I]
   replF (k:k2:ks) | k == flp k2 && isInj k && isTot k
-         = if null ks then Tm(mIs$source k)(-1) else replF ks
+         = if null ks then Tm(I$source k)(-1) else replF ks
   replF [a] = F [a]
   replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF
     = if null fs then F [k,res] else replF (k:head fs) -- we might replace something again!
@@ -721,7 +721,7 @@ instance InPlug Concept where
           fld = (cslfld csel){sfdfrom=sel1}
           w = SqlEQ (SqlVar fld) (SqlVal x)
       in CptSel {cslfld=rename fld "fld1",cslfrom=sel1,cslwhere=Just w,cslas=[]}
-   domainlocs fs c = [(f,p)|(p,_,f)<-sqlRelPlugs fs (Tm(mIs c)(-1))]
+   domainlocs fs c = [(f,p)|(p,_,f)<-sqlRelPlugs fs (Tm(I c)(-1))]
    targetlocs = domainlocs
    
 instance InPlug (Relation Concept) where
@@ -754,7 +754,7 @@ instance InPlug (Expression (Relation Concept)) where
                in RelSel{rslfld=(rename sfld "fld1", rename tfld "fld2")
                         ,rslfrom=[sel1,sel2],rsljoin=Nothing,rslwhere=Nothing,rslas=[]}
         I{} -> selectbinary fs (source r)
-        Mp1{} -> let csel = selectvector fs (rel1val r) (source r)
+        Mp1{} -> let csel = selectvector fs (relval r) (source r)
                      cfld = cslfld csel
                      sel = rename (SqlSel1 csel) "sourcer"
                      fld1 = cfld{sfdfrom=sel} 

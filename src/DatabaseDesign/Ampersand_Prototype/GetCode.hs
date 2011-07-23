@@ -82,8 +82,8 @@ where
            ]
         getAllTarget tp@(PHPC c)
          = [[Assignment pre (o:pre) (use o) (SQLComposed c [Named (name c) pxpr] sql)]
-           | let pxpr=Tm (mIs tp) (-1)
-           , let expr=Tm (mIs c) (-1)
+           | let pxpr=Tm (I tp) (-1)
+           , let expr=Tm (I c) (-1)
            , CodeVar{cvContent=Right []} <-[obj]
            , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
            ]++
@@ -298,7 +298,7 @@ where
  changeSource c (Fdx fs) = Fdx [changeSource c f | f<-fs]
  changeSource c (Fix ts) = Fix [changeSource c t | t<-ts]
  changeSource c (Fux ts) = Fux [changeSource c t | t<-ts]
- changeSource c (Cpx x ) = F [Tm (mIs c)(-1),Cpx x]    -- TODO: is dit correct?
+ changeSource c (Cpx x ) = F [Tm (I c)(-1),Cpx x]    -- TODO: is dit correct?
  changeSource c (Tm r i) = Tm r' i
   where r' = case r of
                Rel{} -> r{relsrc=c}

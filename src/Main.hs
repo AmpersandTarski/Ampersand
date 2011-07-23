@@ -55,7 +55,7 @@ parseFilePrototype flags pv
       --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
            if interfacesG flags then atlas2context atlasfspec flags else return parsedfile
 
-parseImportFile :: String -> ParserVersion -> String -> Options -> IO(Populations Concept)  
+parseImportFile :: String -> ParserVersion -> String -> Options -> IO(P_Populations Concept)  
 parseImportFile adlText pv adlfn flags  
  = let fn = importfile flags 
        fnnxt fspec = name fspec ++ "'"
@@ -70,13 +70,13 @@ parseImportFile adlText pv adlfn flags
        funfsp atlas = [makeRelation d|d<-declarations atlas,name d=="funcspec"]
        funrep atlas = [makeRelation d|d<-declarations atlas,name d=="report"]
        funadl atlas = [makeRelation d|d<-declarations atlas,name d=="showadl"]
-       loadcontext r fspec = [Popu{ popm=getr r, popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
-       loadedfile r        = [Popu{ popm=getr r, popps=[mkPair usr fn]         }| not (null usr)]
-      -- uploadfile r        = [Popu{ popm=getr r, popps=[mkPair usr "browse"]   }| not (null usr)]
+       loadcontext r fspec = [Popu{ p_popm=getr r, p_popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
+       loadedfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr fn]         }| not (null usr)]
+      -- uploadfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr "browse"]   }| not (null usr)]
        --TODO -> the user has more files, how do I get them in this population
-       fileof r myfiles    = [Popu{ popm=getr r, popps=[mkPair (combine fdir f) usr| f<-myfiles, not (null usr)] }]
+       fileof r myfiles    = [Popu{ p_popm=getr r, p_popps=[mkPair (combine fdir f) usr| f<-myfiles, not (null usr)] }]
        contextfunction fspec r x
-                           = [Popu{ popm=getr r, popps=[mkPair (name fspec) x] }]
+                           = [Popu{ p_popm=getr r, p_popps=[mkPair (name fspec) x] }]
    in
    if not(null fn)
    then do verbose flags "Parsing import file... "

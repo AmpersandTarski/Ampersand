@@ -11,9 +11,13 @@ fatalMsg haskellModuleName lineNr msg
  = error ("!fatal "++show lineNr++" (module "++haskellModuleName++", "++ampersandPrototypeVersionBanner++")\n  "++msg)
 
 versionNumberPrototype :: String
-versionNumberPrototype = "2.0.1.933" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumberPrototype = "2.0.1.936" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-Small changes in the data structure due to Ticket #100:
-This version is compilable with Ampersand vs. 2.1.0.73
+Ticket #104:
+Han and I are busy transforming the code to a separated A-structure and P-structure (ticket #85).
+In order to collaborate on this issue, the code I am checking in is code in progress.
+It is NOT compilable. The coming days will show more of such check-ins.
+This ticket will be finalized once the code compiles again. This goes for the prototype as well as the core Ampersand repositories.
+Please use earlier releases or wait for a while to check out compilable code.
 -}

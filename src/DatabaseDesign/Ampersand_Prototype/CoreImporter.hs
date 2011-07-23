@@ -15,7 +15,7 @@ import DatabaseDesign.Ampersand
    , Pattern(..)
    , Declaration(..)
    , Expression(..)
-   , Population(..)
+   , P_Population(..)
    , Fspc(..)
    , ObjectDef(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
@@ -28,7 +28,7 @@ import DatabaseDesign.Ampersand
    , Origin(..), IOLocation(..)
    , FPA(..), FPcompl(..)
    , mkPair
-   , Populations
+   , P_Populations
    -- * Classes:
    , Association(..)
    , Collection(..)
@@ -54,8 +54,7 @@ import DatabaseDesign.Ampersand
    , conjNF, disjNF, simplify
    , v, notCp, isPos, isNeg
    , isI
-   , mIs
-   , mapExpression, mapMorphism
+   , mapExpression, mapRelation
    -- * Functions with plugs:
    , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff

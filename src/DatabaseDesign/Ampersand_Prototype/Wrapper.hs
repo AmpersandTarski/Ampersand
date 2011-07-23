@@ -116,7 +116,7 @@ objectWrapper fSpec ifcs ifc flags
    objectId        = phpIdentifier objectName
    appname         = name fSpec
    editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
-            | otherwise = map makeRelation (declarations fSpec) ++map mIs (concs fSpec)
+            | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
    visibleedit = foldr (||) visiblenew [mayedit x editable|x<-allobjctx o]
    visibledel = False --del() not implemented yet -- visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable

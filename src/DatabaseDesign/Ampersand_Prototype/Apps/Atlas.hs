@@ -153,7 +153,7 @@ atlas2context fSpec flags =
       pragma1 <- selectdecl conn fSpec (therel fSpec "pragma1" [] [])
       pragma2 <- selectdecl conn fSpec (therel fSpec "pragma2" [] [])
       pragma3 <- selectdecl conn fSpec (therel fSpec "pragma3" [] [])
-      --Population--
+      --P_Population--
       relcontent <- selectdecl conn fSpec (therel fSpec "content" [] [])
       pairleft <- selectdecl conn fSpec (therel fSpec "left" [] [])
       pairright <- selectdecl conn fSpec (therel fSpec "right" [] [])
@@ -254,7 +254,7 @@ emptySignalDeclaration nm
           }
 geta :: [(String,String)] -> String -> String
 geta f x = (\xs-> if null xs then error ("there is no geta for " ++ x) else head xs) [y|(x',y)<-f,x==x']
-atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [Population Concept]
+atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [P_Population Concept]
 atlas2pops relcontent relname relsc reltg pairleft pairright atomsyntax 
  = [Popu (makerel(fst(head cl)) relname relsc reltg) (map (makepair.snd) cl)|cl<-eqCl fst relcontent,not(null cl)]
    where
