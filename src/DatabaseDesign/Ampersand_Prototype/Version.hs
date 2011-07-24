@@ -11,7 +11,7 @@ fatalMsg haskellModuleName lineNr msg
  = error ("!fatal "++show lineNr++" (module "++haskellModuleName++", "++ampersandPrototypeVersionBanner++")\n  "++msg)
 
 versionNumberPrototype :: String
-versionNumberPrototype = "2.0.1.936" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumberPrototype = "2.0.1.937" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
 Ticket #104:

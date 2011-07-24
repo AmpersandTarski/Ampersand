@@ -208,7 +208,7 @@ makectx cxs pats rls rulpattern relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
-       , ctx_env   = (Tm(V [] (Anything,Anything)) (-1),[])
+       , ctx_env   = (Tm(V (Anything,Anything)) (-1),[])
       }
 
 parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation Concept)]

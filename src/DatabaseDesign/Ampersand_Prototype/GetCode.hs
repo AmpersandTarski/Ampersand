@@ -303,5 +303,5 @@ where
   where r' = case r of
                Rel{} -> r{relsrc=c}
                I{} -> I [] c c
-               V{reltyp=(_,t)} -> V [] (c,t)
+               V{reltyp=(_,t)} -> V (c,t)
                Mp1{} -> fatal 311 "changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

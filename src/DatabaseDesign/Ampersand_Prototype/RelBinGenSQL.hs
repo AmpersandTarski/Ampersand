@@ -234,7 +234,7 @@ selectExpr fSpec i src trg (Tm (V _ (s,t))_   )
                ]
  where concNames pfx c = [([],"1")|c==Singleton]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c)(-1))]
 
-selectExpr fSpec i src trg (Tm (I _ Singleton _) _  ) = selectExpr fSpec i src trg (Tm (V [] (Singleton,Singleton))(-1))
+selectExpr fSpec i src trg (Tm (I _ Singleton _) _  ) = selectExpr fSpec i src trg (Tm (V (Singleton,Singleton))(-1))
 
 selectExpr fSpec i src trg (Tm mrph   _   ) = selectExprMorph fSpec i src trg mrph
 selectExpr fSpec i src trg (Tc expr      ) = selectExpr fSpec i src trg expr
@@ -763,7 +763,7 @@ instance InPlug (Expression (Relation Concept)) where
    selectbinary fs (Tc ex)  = selectbinary fs ex
    selectbinary fs (Cpx(Cpx ex)) = selectbinary fs ex --TODO -> not(EXISTS (not EXISTS selex) seems to be wrong (e.g. r |- s;t)
    selectbinary fs (Cpx ex) 
-    = let vex = Tm (V [] (sign ex))(-1)
+    = let vex = Tm (V (sign ex))(-1)
           vsel = selectbinary fs vex
           sel1=rename (SqlSel2 vsel) "vsel"
           sfld=(fst$rslfld vsel){sfdfrom=sel1}

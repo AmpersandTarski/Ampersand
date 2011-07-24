@@ -49,7 +49,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                         , cvExpression = expr
                                         , cvIndexed    = NotIndexed}
                  ,cvIndexed=IndexByName
-                 ,cvExpression=(Tm (V [] (PHPC Singleton, phpsource expr)) (fatal 52 "did not assign number to Tm"))
+                 ,cvExpression=(Tm (V (PHPC Singleton, phpsource expr)) (fatal 52 "did not assign number to Tm"))
                  }
     where
      -- | Create a new name with the value of some expression, ensure that its name does not exist yet
@@ -82,7 +82,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                                         ,cvContent=Right []
                                                         }
                                       ]
-                     ,cvExpression=Tm (V [] (PHPC Singleton, phpsource srcRel)) (-1) -- source srcRel == source trgRel
+                     ,cvExpression=Tm (V (PHPC Singleton, phpsource srcRel)) (-1) -- source srcRel == source trgRel
                      ,cvIndexed=Indexed
                      }
     where 
