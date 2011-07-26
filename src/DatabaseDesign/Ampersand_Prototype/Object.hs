@@ -95,7 +95,7 @@ showClasses flags fSpec o
             [["  // check if it exists:"
              ,"  $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
              ,"  if(count($ctx)==0) $this->_new=true; else $this->_new=false;"]
-            |null(attributes o),not(target(ctx o)==Singleton)] --INTERFACE o: ctx where target ctx/=ONE and objats=[]
+            |null(attributes o),not(target(ctx o)==ONE)] --INTERFACE o: ctx where target ctx/=ONE and objats=[]
          ++  (           [ "  if(" -- ++(head (["!isset("++phpVar (name a')++")"|a'<-attributes o,mayedit (objctx a') editable]++["True"]))
                                         ++(if isOne o then "$sel" else "$sel && isset($id)")++"){"
                                , "    // get a "++(myName)++" based on its identifier"] ++
@@ -584,7 +584,7 @@ doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
  | length(objats objOut)==1 && isIdent(objctx objOut)  
    --different query composer is used to prevent NULL in lists of INTERFACE Concepts:I[ONE] = [listOfConcepts:V[ONE*Concept]]
-   && source(objctx objOut)==Singleton && isTrue((objctx.head.objats)objOut) = [showsql(SqlSel1(selectdomain fSpec ((target.objctx.head.objats)objOut)))]
+   && source(objctx objOut)==ONE && isTrue((objctx.head.objats)objOut) = [showsql(SqlSel1(selectdomain fSpec ((target.objctx.head.objats)objOut)))]
  | otherwise
   = ["SELECT DISTINCT " ++ head fieldNames      ]
     ++ map ((++) "     , ")

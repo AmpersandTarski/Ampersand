@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  singletonCV
   = CodeVar { cvIndexed    = NotIndexed
             , cvContent    = Right []
-            , cvExpression = Tm (I (PHPC Singleton)) (fatal 22 "Term number undefined")
+            , cvExpression = Tm (I (PHPC ONE)) (fatal 22 "Term number undefined")
             }
  -- | create a new singleton scalar variable, useful for in loops (as with newSingleton, but make sure the variable name is not taken)
  freshSingleton :: [Named CodeVar] -- ^ variables with which this var should not collide by name
@@ -49,7 +49,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                         , cvExpression = expr
                                         , cvIndexed    = NotIndexed}
                  ,cvIndexed=IndexByName
-                 ,cvExpression=(Tm (V (PHPC Singleton, phpsource expr)) (fatal 52 "did not assign number to Tm"))
+                 ,cvExpression=(Tm (V (PHPC ONE, phpsource expr)) (fatal 52 "did not assign number to Tm"))
                  }
     where
      -- | Create a new name with the value of some expression, ensure that its name does not exist yet
@@ -82,7 +82,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                                         ,cvContent=Right []
                                                         }
                                       ]
-                     ,cvExpression=Tm (V (PHPC Singleton, phpsource srcRel)) (-1) -- source srcRel == source trgRel
+                     ,cvExpression=Tm (V (PHPC ONE, phpsource srcRel)) (-1) -- source srcRel == source trgRel
                      ,cvIndexed=Indexed
                      }
     where 
