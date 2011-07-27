@@ -150,7 +150,7 @@ if (isset($operation)){
    echo '<input type="file" name="uploadfile" /></p>';
 
    if (!isset($_REQUEST['browse'])){     
-     echo '<p><input type="submit" name="adltekst" value="... uit onderstaand tekstveld (save)"/>';
+     echo '<p><input type="submit" name="adltekst" value="... uit onderstaand tekstveld (bewaar)"/>';
      echo '<a href="javascript:void(0);"';
      echo 'onmouseover="return overlib(\'<p>Let op! Eventuele niet gecommitte wijzigingen in de laatst geladen context in de Atlas gaan verloren!</p>\',WIDTH, 350);"';
      echo 'onmouseout="return nd();">';

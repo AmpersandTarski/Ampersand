@@ -99,6 +99,7 @@ fillAtlas fSpec flags =
    do verboseLn flags "Connecting to atlas..."
       conn<-connectODBC dsnatlas
       verboseLn flags "Connected."
+--      _ <- error(show ["DROP TABLE "++name p| InternalPlug p<-plugInfos fSpec])
       _ <- runMany conn ["DROP TABLE "++name p| InternalPlug p<-plugInfos fSpec]
       verboseLn flags "Creating tables..."
       _ <- creates conn [p|InternalPlug p<-plugInfos fSpec]
@@ -208,7 +209,7 @@ makectx cxs pats rls rulpattern relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
-       , ctx_env   = (Tm(V (Anything,Anything)) (-1),[])
+       , ctx_env   = (Tm(V (Anything,Anything)),[])
       }
 
 parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation Concept)]

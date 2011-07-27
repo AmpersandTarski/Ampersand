@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  singletonCV
   = CodeVar { cvIndexed    = NotIndexed
             , cvContent    = Right []
-            , cvExpression = Tm (I (PHPC ONE)) (fatal 22 "Term number undefined")
+            , cvExpression = Tm (I (PHPC ONE))
             }
  -- | create a new singleton scalar variable, useful for in loops (as with newSingleton, but make sure the variable name is not taken)
  freshSingleton :: [Named CodeVar] -- ^ variables with which this var should not collide by name
@@ -35,9 +35,9 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  -- | create a new singleton scalar variable, used by newSingleton, but also useful for in content attribute of a new CodeVarObject
  newSingleton :: String -> CodeVar
  newSingleton nm
-   = singletonCV{cvExpression=(Tm (I (PHPI1 (Named nm (UseVar []))))(-1))}
+   = singletonCV{cvExpression=(Tm (I (PHPI1 (Named nm (UseVar [])))))}
 -- WHY is newSingleton not defined as:
---   = singletonCV{cvExpression=(Tm (I (PHPC S))(-1))}
+--   = singletonCV{cvExpression=(Tm (I (PHPC S)))}
 --   ???
  -- | Create a new variable with the value of some expression, ensure that its name does not exist yet
  newVarFor :: [String] -- ^ list of forbidden names
@@ -49,7 +49,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                         , cvExpression = expr
                                         , cvIndexed    = NotIndexed}
                  ,cvIndexed=IndexByName
-                 ,cvExpression=(Tm (V (PHPC ONE, phpsource expr)) (fatal 52 "did not assign number to Tm"))
+                 ,cvExpression=(Tm (V (PHPC ONE, phpsource expr)))
                  }
     where
      -- | Create a new name with the value of some expression, ensure that its name does not exist yet
@@ -57,14 +57,14 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                       [String] -- ^ list of forbidden names
                       -> Expression r -- ^ value of the variable
                       -> String -- ^ the resulting name
-     newVarNameFor forb (Tm a _) = noCollide forb (name a)
-     newVarNameFor forb (F _)    = noCollide forb "join"
-     newVarNameFor forb (Fix _)  = noCollide forb "isct"
-     newVarNameFor forb (Fux _)  = noCollide forb "unio"
-     newVarNameFor forb (Fdx _)  = noCollide forb "dggr"
-     newVarNameFor forb (K0x _)  = noCollide forb "reflfixpt"
-     newVarNameFor forb (K1x _)  = noCollide forb "fixpt"
-     newVarNameFor forb (Cpx _)  = noCollide forb "cmplt"
+     newVarNameFor forb (Tm a) = noCollide forb (name a)
+     newVarNameFor forb (Fc _)    = noCollide forb "join"
+     newVarNameFor forb (Bi _)  = noCollide forb "isct"
+     newVarNameFor forb (Bu _)  = noCollide forb "unio"
+     newVarNameFor forb (Fd _)  = noCollide forb "dggr"
+     newVarNameFor forb (K0 _)  = noCollide forb "reflfixpt"
+     newVarNameFor forb (K1 _)  = noCollide forb "fixpt"
+     newVarNameFor forb (Cp _)  = noCollide forb "cmplt"
      newVarNameFor forb _        = noCollide forb "expr"
  
  -- | Creates a codeVariable that contains the pairs indicated by some expression.
@@ -82,7 +82,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                                                         ,cvContent=Right []
                                                         }
                                       ]
-                     ,cvExpression=Tm (V (PHPC ONE, phpsource srcRel)) (-1) -- source srcRel == source trgRel
+                     ,cvExpression=Tm (V (PHPC ONE, phpsource srcRel)) -- source srcRel == source trgRel
                      ,cvIndexed=Indexed
                      }
     where 
@@ -92,18 +92,18 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
  
  -- | removes all daggers from the given expression
  noDaggers :: Expression r -> Expression r
- noDaggers (F (fs)) = F (map noDaggers fs)
- noDaggers (Fix (fs)) = Fix (map noDaggers fs)
- noDaggers (Fux (fs)) = Fix (map noDaggers fs)
- noDaggers (Fdx (fs)) = Cpx (F (map noDaggers (map Cpx fs)))
- noDaggers (Cpx (Cpx a)) = a
- noDaggers (Cpx (Fdx fs)) = F (map noDaggers (map Cpx fs))
- noDaggers (K0x e) = K0x (noDaggers e)
- noDaggers (K1x e) = K1x (noDaggers e)
+ noDaggers (Fc (fs)) = Fc (map noDaggers fs)
+ noDaggers (Bi (fs)) = Bi (map noDaggers fs)
+ noDaggers (Bu (fs)) = Bi (map noDaggers fs)
+ noDaggers (Fd (fs)) = Cp (Fc (map noDaggers (map Cp fs)))
+ noDaggers (Cp (Cp a)) = a
+ noDaggers (Cp (Fd fs)) = Fc (map noDaggers (map Cp fs))
+ noDaggers (K0 e) = K0 (noDaggers e)
+ noDaggers (K1 e) = K1 (noDaggers e)
  noDaggers c = c
  
  pairSourceExpr :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- pairSourceExpr e = Tm (makeRelation (pairSourceDecl e)) (fatal 102 "Term number undefined for pairSourceExpr")
+ pairSourceExpr e = Tm (makeRelation (pairSourceDecl e))
  pairSourceDecl :: Expression (Relation Concept) -> Declaration PHPconcept
  pairSourceDecl expr = Sgn { decnm="src", desrc=PHPexp expr, detrg=PHPC (source expr), decplug=True
                            , decprps=[], decprps_calc=[Uni,Tot]
@@ -117,6 +117,6 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
                            }
 
  pairTargetExpr :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- pairTargetExpr e = Tm (makeRelation (pairTargetDecl e)) (fatal 116 "Term number undefined for pairTargetExpr")
+ pairTargetExpr e = Tm (makeRelation (pairTargetDecl e))
  pairTargetDecl :: Expression (Relation Concept) -> Declaration PHPconcept
  pairTargetDecl e = (pairSourceDecl e){decnm="trg",detrg=PHPC (target e)}

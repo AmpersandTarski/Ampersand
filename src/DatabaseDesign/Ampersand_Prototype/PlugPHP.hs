@@ -130,7 +130,7 @@ makePhpPlug obj
   where
    inFile :: Maybe String
    inFile = listToMaybe [ str    --objstrs obj = [["FILE=date.plug.php"]]
-                        | x<-objstrs obj, 'F':'I':'L':'E':'=':str<-x ]
+                        | x<-objstrs obj, 'Fc':'I':'L':'E':'=':str<-x ]
    inAttrs :: [CodeVar]
    inAttrs = [toAttr attr | attr<-objats obj, (or$ map (elem "PHPARG") (objstrs attr))]
    toAttr :: ObjectDef -> CodeVar

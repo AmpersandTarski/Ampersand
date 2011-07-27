@@ -43,7 +43,7 @@ where
      -- We try to find a singleton, those values we know already
      [ code |
        code<-case e of
-        (Tm (V{reltyp=(_,t)}) _) -- source is al automatisch een singleton
+        (Tm (V{reltyp=(_,t)})) -- source is al automatisch een singleton
          -> getAllTarget t
         _ -> fatal 44 $ "please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e
      ]
@@ -82,8 +82,10 @@ where
            ]
         getAllTarget tp@(PHPC c)
          = [[Assignment pre (o:pre) (use o) (SQLComposed c [Named (name c) pxpr] sql)]
-           | let pxpr=Tm (I tp) (-1)
-           , let expr=Tm (I c) (-1)
+           | let pxpr=Tm (I tp)
+           , let expr=Tm (I c)
+           | let pxpr=Tm (mIs tp)
+           , let expr=Tm (mIs c)
            , CodeVar{cvContent=Right []} <-[obj]
            , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
            ]++
@@ -107,10 +109,10 @@ where
               -> Expression (Relation PHPconcept)    -- ^ expression we'd like to know
               -> [[Statement]]   -- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
  getAllInExpr fSpec pre var (Tc   e ) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (F   [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Fix [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Fux [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Fdx [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (Fc   [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (Bi [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (Bu [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (Fd [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var composed
   =  -- There are several approaches to get the expression
      -- 1. find the information in the preknowledge
@@ -133,11 +135,11 @@ where
      -- We may do 'divide' in several ways.
      -- Either get both sides of the operator completely, which is done below
      [get1++get2++join++forget
-     | (e1,e2,opr) <- case expr of (Fix (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
-                                   (Fix (Cpx b:a:x)) -> [(F (a:x),b,PHPIsectComp)]
-                                   (F   (f:fs))      -> [(f,(F   fs),PHPJoin)]
-                                   (Fix (f:fs))      -> [(f,(Fix fs),PHPIntersect)]
-                                   (Fux (f:fs))      -> [(f,(Fix fs),PHPUnion)]
+     | (e1,e2,opr) <- case expr of (Bi (a:Cp b:x)) -> [(Fc (a:x),b,PHPIsectComp)]
+                                   (Bi (Cp b:a:x)) -> [(Fc (a:x),b,PHPIsectComp)]
+                                   (Fc   (f:fs))      -> [(f,(Fc   fs),PHPJoin)]
+                                   (Bi (f:fs))      -> [(f,(Bi fs),PHPIntersect)]
+                                   (Bu (f:fs))      -> [(f,(Bi fs),PHPUnion)]
                                    _ -> [] -- fatal 145 $ "Failed composed namely "++show composed
      , let var1=getAVar pre (conc2php e1)
      , let var2=getAVar (var1:pre) (conc2php e2)
@@ -164,9 +166,9 @@ where
      --  (the actual implementation of the latter works by flipping the entire example)
      [ code
      | code <- case composed of
-                -- NOTE ON Cpx !!! When Cpx becomes typed, the pattern below should be changed, and changeSource as well!
-                (F [Tm (I _ (PHPI1 s) _) _, Cpx f, Tm (I _ (PHPI1 t) _) _])
-                       -> atleastOne ("!Fatal (module GetCode 177): getCodeForSingle should return something in Cpx for "++show f)$ -- SJC put this here
+                -- NOTE ON Cp !!! When Cp becomes typed, the pattern below should be changed, and changeSource as well!
+                (Fc [Tm (I _ (PHPI1 s) _), Cp f, Tm (I _ (PHPI1 t) _)])
+                       -> atleastOne ("!Fatal (module GetCode 177): getCodeForSingle should return something in Cp for "++show f)$ -- SJC put this here
                           [ assignment++
                             [Assignment (var1:pre)
                                         (obj:var1:pre)
@@ -180,7 +182,7 @@ where
                                     ]
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           ] 
-                (F fs) -> [assignment++
+                (Fc fs) -> [assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
                                       [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
@@ -192,12 +194,12 @@ where
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right s]))
                                                                    (CQPlain t)]
-                                           ,x)) (splitAssoc F fs)
+                                           ,x)) (splitAssoc Fc fs)
                               ++ map (\x->(\pre' var2 s t->[Assignment pre' 
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right t]))
                                                                    (CQPlain s)]
-                                           ,x)) (splitAssoc F (map phpflp (reverse fs)))
+                                           ,x)) (splitAssoc Fc (map phpflp (reverse fs)))
                           , let var1 = getAVar (obj:pre) f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
@@ -213,7 +215,7 @@ where
                                       , get<-getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
-                (Fix fs)->[assignment++
+                (Bi fs)->[assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
                                       [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
@@ -221,7 +223,7 @@ where
                                       ]
                            ,Forget (var1:obj:pre) (obj:pre)]
                           | (i,f1) <- zipnum fs
-                          , f2<-applyOprOnLists Fix$ take i fs ++ drop (i+1) fs
+                          , f2<-applyOprOnLists Bi$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
@@ -292,14 +294,22 @@ where
  -- | change the source of some expression into c. We assume that c ISA source expression.
  changeSource :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
  changeSource c (Tc  x)  = Tc  (changeSource c x)
- changeSource c (K0x x)  = K0x (changeSource c x)
- changeSource c (K1x x)  = K1x (changeSource c x)
- changeSource c (F fs)   = F   [changeSource c f | f<-fs]
- changeSource c (Fdx fs) = Fdx [changeSource c f | f<-fs]
- changeSource c (Fix ts) = Fix [changeSource c t | t<-ts]
- changeSource c (Fux ts) = Fux [changeSource c t | t<-ts]
- changeSource c (Cpx x ) = F [Tm (I c)(-1),Cpx x]    -- TODO: is dit correct?
- changeSource c (Tm r i) = Tm r' i
+ changeSource c (K0 x)  = K0 (changeSource c x)
+ changeSource c (K1 x)  = K1 (changeSource c x)
+ changeSource c (Fc fs)   = Fc   [changeSource c f | f<-fs]
+ changeSource c (Fd fs) = Fd [changeSource c f | f<-fs]
+ changeSource c (Bi ts) = Bi [changeSource c t | t<-ts]
+ changeSource c (Bu ts) = Bu [changeSource c t | t<-ts]
+ changeSource c (Cp x ) = Fc [Tm (I c),Cp x]    -- TODO: is dit correct?
+ changeSource c (Tm r) = Tm r'
+ changeSource c (K0 x)  = K0 (changeSource c x)
+ changeSource c (K1 x)  = K1 (changeSource c x)
+ changeSource c (Fc fs)   = Fc   [changeSource c f | f<-fs]
+ changeSource c (Fd fs) = Fd [changeSource c f | f<-fs]
+ changeSource c (Bi ts) = Bi [changeSource c t | t<-ts]
+ changeSource c (Bu ts) = Bu [changeSource c t | t<-ts]
+ changeSource c (Cp x ) = Fc [Tm (mIs c),Cp x]    -- TODO: is dit correct?
+ changeSource c (Tm r) = Tm r'
   where r' = case r of
                Rel{} -> r{relsrc=c}
                I{} -> I [] c c
