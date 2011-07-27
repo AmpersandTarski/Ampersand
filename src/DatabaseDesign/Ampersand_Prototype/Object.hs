@@ -30,7 +30,8 @@ objectInterfaces flags fSpec o
     ++
     showClasses flags fSpec o
     ++
-    concat[showClasses flags fSpec att|att<-attributes o,(not.null)(attributes att)]
+    concat[showClasses flags fSpec att|att<-attributes o,(not.null)(attributes att),not(isOne att)]
+                                --      ,let att=if isOne att then att{objctx=Tm(mIs(target(objctx att)))} else att']
     ++
     ( if isOne o  -- If the current object is the universal singleton...
       then []
@@ -115,7 +116,7 @@ showClasses flags fSpec o
                                                "$me"
                                                0
                                                (o  {objnm =if isOne o then "1" else "$id"
-                                                   ,objctx=Tm(I(concept o))(-1)
+                                                   ,objctx=Tm(I(concept o))
                                                    ,objats=[]}
                                                )
                                                o
@@ -167,15 +168,15 @@ showClasses flags fSpec o
   editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
            | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
   mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
-  mayedit item editable = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
+  mayedit item editable = let rexprs=[Tm r|r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
    = if sql==Nothing then fatal 167 "Cannot check if exists in Object.hs" else fromJust sql
-   where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
-         tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))(-1)
+   where expr = if null fs then Fc [ tm, ctx'] else Fc (tm:head fs)
+         tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
          ctx' = simplify $ flp (ctx o)
-         fs   = [es' | F es' <- [ctx']]
+         fs   = [es' | Fc es' <- [ctx']]
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
 {- still working on new save() and del()
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
@@ -494,7 +495,7 @@ plugAts plug object = plugAts' object object --you do not want to forget to ment
   plugAts' p o 
    = nub$
      ([ ((o,sf),(o,tf))
-      | (sf,tf)<-sqlPlugFields plug (Tm (I (target (objctx o))) (-1))
+      | (sf,tf)<-sqlPlugFields plug (Tm (I (target (objctx o))))
       ]
      ++
       [ ((p,sf),(o,tf))
@@ -555,7 +556,7 @@ doPhpGet fSpec objVar depth objIn objOut
      | null unisNeeded = []
      | otherwise
         = let idAt = trunc(objOut{objctx=targetCpt,objnm="id"})
-              targetCpt = Tm(I$target$objctx objOut)(-1) 
+              targetCpt = Tm(I$target$objctx objOut)
           in doQuer (objVar++"=firstRow") (doSqlGet fSpec False objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt}))
     -- getArrayOf: code for leaves or for nodes (in the objDef tree) is different. For leaves: use firstCol to show them
     getArrayOf aout 
@@ -582,7 +583,7 @@ doPhpGet fSpec objVar depth objIn objOut
 -}
 doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
- | length(objats objOut)==1 && isIdent(objctx objOut)  
+ | length(objats objOut)==1 && isIdent(objctx objOut)
    --different query composer is used to prevent NULL in lists of INTERFACE Concepts:I[ONE] = [listOfConcepts:V[ONE*Concept]]
    && source(objctx objOut)==ONE && isTrue((objctx.head.objats)objOut) = [showsql(SqlSel1(selectdomain fSpec ((target.objctx.head.objats)objOut)))]
  | otherwise
@@ -628,11 +629,11 @@ doSqlGet fSpec isArr objIn objOut
          | ai<-[objIn] 
          , a<-aOuts
          , source(objctx ai) == target (objctx a) --just to be sure
-         , (plug,fld0,fld1)<-sqlRelPlugs fSpec (F [objctx ai,objctx a])
+         , (plug,fld0,fld1)<-sqlRelPlugs fSpec (Fc [objctx ai,objctx a])
          ]
    takeOff :: (Show c, Identified c, ConceptStructure c c) => Expression (Relation c)->Expression (Relation c)->Maybe (Expression (Relation c))
-   takeOff (F (a:as)) (F (b:bs)) | disjNF a==disjNF b = takeOff (F as) (F bs)
-   takeOff a (F (b:bs)) | disjNF a== disjNF b = Just (F bs)
+   takeOff (Fc (a:as)) (Fc (b:bs)) | disjNF a==disjNF b = takeOff (Fc as) (Fc bs)
+   takeOff a (Fc (b:bs)) | disjNF a== disjNF b = Just (Fc bs)
    takeOff a e' | isIdent a = Just e'
    takeOff _ _ = Nothing
    comboGroups = keyGroups `uni` comboGroups'
@@ -647,7 +648,7 @@ doSqlGet fSpec isArr objIn objOut
          (  comboGroups' {-[gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s]-}
          ++ 
             [((p,(objIn,s)),[(objIn,t)])
-            | (p,s,t)<-sqlRelPlugs fSpec (Tm(I$target (objctx objIn))(-1))]   -- zoek een conceptentabel op....
+            | (p,s,t)<-sqlRelPlugs fSpec (Tm(I$target (objctx objIn)))]   -- zoek een conceptentabel op....
          -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
          -- dan hebben we dus geen keyGroup, maar dat geeft niet voor ONE
          -- in andere gevallen geeft dat wel.
@@ -801,7 +802,7 @@ savefunction flags fSpec fnm depth this
         editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
                  | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
         mayedit :: Expression(Relation Concept) -> Bool
-        mayedit item = let rexprs=[Tm r (-1)|r<-editable] in elem item (rexprs++map flp rexprs)
+        mayedit item = let rexprs=[Tm r|r<-editable] in elem item (rexprs++map flp rexprs)
         ---------myatts(editable only)
         myattsinthis = [((plug,fld0,fld1),a)
                    |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
@@ -1072,7 +1073,7 @@ savefunction flags fSpec fnm depth this
                  ++") VALUES ('\".addslashes($this->getId()).\"','\".addslashes($val).\"') \");"
      ,"}"]
     |((plug,fld0,fld1),att)<-myassocinthis
-    ,let trgtbls = sqlRelPlugs fSpec (Tm(I(target(objctx att)))(-1))
+    ,let trgtbls = sqlRelPlugs fSpec (Tm(I(target(objctx att))))
     ,let (trgplug,trgfld,_) = if null trgtbls then error "no target tabel" else head trgtbls
     ]
     ++	    
