@@ -330,7 +330,6 @@ makerel relstr relname relsc reltg =
       in
       Rel  { relnm = nm
            , relpos = ParsedFrom(DBLoc "Atlas(Relation)")
-           , relats = [s,t]
            , relsrc = s
            , reltrg = t
            , relyin = True

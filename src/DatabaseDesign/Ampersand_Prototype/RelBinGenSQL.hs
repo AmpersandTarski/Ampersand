@@ -568,7 +568,7 @@ sqlExprSrc fSpec expr = ses expr
    ses (Tc e)    = ses e
    ses (Tm r)  = case r of
                     Mp1{} -> "Mp"++(name (rel1typ r))
-                    V{} -> ses (Tm I{relats=[],relgen=source r,relspc=source r})
+                    V{} -> ses (Tm I{reltyp=source r})
                     _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm r)]++[show r])
 sqlExprTrg :: Fspc->Expression (Relation Concept) -> String
 sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
