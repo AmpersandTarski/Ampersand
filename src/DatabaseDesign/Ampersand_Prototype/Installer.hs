@@ -53,7 +53,9 @@ where
           ] ++ indentBlock 2 (concat (map checkPlugexists (plugInfos fSpec)))
           ++ ["}"]
           ++ concat (map plugCode [p| InternalPlug p<-plugInfos fSpec])
-          ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
+          ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
+             ,"if ($err=='')"
+             ,"  echo 'The database has been reset to its initial population.<br/><br/><button onclick=\"history.go(-1)\">Ok</button>';"]
         ) ++
         [ "}" ]
      ) ++ "\n?>\n"
