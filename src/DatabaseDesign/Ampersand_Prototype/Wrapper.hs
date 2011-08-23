@@ -77,25 +77,25 @@ objectWrapper fSpec ifcs ifc flags
          ++
           [ "if($"++objectId++"){" ]
          ++
-          [ " if($del) echo \"<P><I>Delete failed</I></P>\";"
-          , " if($edit){"
-          , "   if($new) "
-          , "     $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1', document.forms[0].ID.value);\",\"Save\");"
-          , "   else { "
-          , "     $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1','\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\");"
-          , "     $buttons.=ifaceButton(" ++ selfref1 objectId ++ ",\"Cancel\");"
-          , "   } "
-          , "} else {"
+          [ "  if($del) echo \"<P><I>Delete failed</I></P>\";"
+          , "  if($edit){"
+          , "    if($new) "
+          , "      $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1', document.forms[0].ID.value);\",\"Save\");"
+          , "    else { "
+          , "      $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1','\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\");"
+          , "      $buttons.=ifaceButton(" ++ selfref1 objectId ++ ",\"Cancel\");"
+          , "    } "
+          , "  } else {"
           , if visibleedit
-            then "        $buttons.=ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\");"
-            else "        $buttons=$buttons;"
+            then "    $buttons.=ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\");"
+            else "    $buttons=$buttons;"
           , if visibledel
-            then "        $buttons.=ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
-            else "        $buttons=$buttons;"
-          , "       }"]
+            then "    $buttons.=ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
+            else "    $buttons=$buttons;"
+          , "  }"]
          ++ indentBlock 2 showObjectCode --(see showObjectCode below)
          ++
-          [ "}else{"
+          [ "} else {"
           , "  if($del){"
           , "    writeHead(\"<TITLE>Delete geslaagd</TITLE>\");"
           , "    echo 'The "++objectName++" is deleted';"
