@@ -63,7 +63,7 @@ objectWrapper fSpec ifcs ifc flags
           , "  $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1');\",\"Save\")"
           , "           .ifaceButton("++selfref++",\"Cancel\");"
           ]
-         ++ indentBlock 2 showObjectCode --(see showObjectCode below)
+         ++ showObjectCode --(see showObjectCode below)
      else [ "if(isset($_REQUEST['new'])) $new=true; else $new=false;"
           , "if(isset($_REQUEST['edit'])||$new) $edit=true; else $edit=false;"
           , "$del=isset($_REQUEST['del']);"
