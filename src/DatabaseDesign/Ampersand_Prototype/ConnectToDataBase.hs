@@ -153,7 +153,7 @@ where
                  Just x  -> x
        dbError rule
         = phpShow((langwords!!0)++" ("++show (source rule)++" ")++".$vs."++phpShow(","++show (target rule)++" ")++".$vt."++
-          phpShow(")\n"++(langwords!!1)++": \""++head ([explainContent2String xs|Means _ xs<-rrxpl rule]++[""])++"\"<BR>")++"" 
+          phpShow(")\n"++(langwords!!1)++": \""++head ([explainContent2String xs |Means _ xs<-rrxpl rule]++[""])++"\"<BR>")++"" 
        langwords :: [String]
        langwords
         = case language flags of

@@ -10,12 +10,12 @@ module DatabaseDesign.Ampersand_Prototype.PlugPHP
                  ,PlugPHP(..)
                  ,makePhpPlug --make a phpplug from an ObjectDef (user-defined php plug)
                  )
-where
+where 
 import Data.List
 import Data.Maybe (listToMaybe)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
-import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
+import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..),mapRelation,mapExpression)
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
 import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..))
 import DatabaseDesign.Ampersand_Prototype.Version 
@@ -67,10 +67,10 @@ instance ShowHS PlugPHP where
  showHS flags indent plug
     = (intercalate indent 
          ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
-                 --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
+                 --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields p] ++indent++"in"
          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.name) plug
          ,"       , phpfile   = "++show (phpfile plug)
-         ,"       , phpinArgs = [ "++intercalate (indent++"                   , ") [show cv| cv <-phpinArgs plug] ++ "]"
+         ,"       , phpinArgs = [ "++intercalate (indent++"                   , ") [show cv | cv <-phpinArgs plug] ++ "]"
          ,"       , phpOut    = "++show (phpOut plug)
          ,"       , phpSafe   = "++show (phpSafe plug)
          ,"       , phpfpa    = " ++ showHS flags "" (fpa plug)

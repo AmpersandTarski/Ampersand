@@ -1,7 +1,7 @@
         {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Version
   (ampersandPrototypeVersionBanner, versionNumberPrototype, fatalMsg)
-where
+where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter (versionNumber)
 ampersandPrototypeVersionBanner :: String
 ampersandPrototypeVersionBanner = "Prototype vs. "++versionNumberPrototype++ "(core vs. "++versionNumber++")"

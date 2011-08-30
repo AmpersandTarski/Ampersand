@@ -24,7 +24,7 @@ where
         (a:_,Just as) -> Just (a ++ as)
         _ -> Nothing
   where
-   new  = [p|p<-post,notElem p pre]
+   new  = [p |p<-post,notElem p pre]
    next = (getCodeForSingle fSpec pre (head new),getCodeFor fSpec ((head new):pre) post)
  
   
@@ -43,11 +43,11 @@ where
      -- We try to find a singleton, those values we know already
      [ code |
        code<-case e of
-        (Tm (V{reltyp=(_,t)})) -- source is al automatisch een singleton
+        (Tm (V{reltyp=Sign _ t})) -- source is al automatisch een singleton
          -> getAllTarget t
         _ -> fatal 44 $ "please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e
      ]
-  where e = cvExpression obj
+  where  e = cvExpression obj
         obj = nObject o
         getAllTarget (PHPexp e') -- this makes the object very predictable: it will have a source (0) and a target (1) relation
          = atleastOne ("!Fatal (module GetCode 53): getAllTarget did not return something for (PHPexp e') with e'="++show e')
@@ -74,8 +74,8 @@ where
                        , let t'' = nameFresh (s:t:tmpvar:pre) "i" singletonCV
                        , let fromTo = [ (nName f, to)
                                       | f <- c 
-                                      , to <-    [use s|cvExpression (nObject f)==pairSourceExpr e']
-                                              ++ [use t|cvExpression (nObject f)==pairTargetExpr e']
+                                      , to <-    [use s |cvExpression (nObject f)==pairSourceExpr e']
+                                              ++ [use t |cvExpression (nObject f)==pairTargetExpr e']
                                       ]
                        , (length fromTo == length c) || fatal 76 ("Length does not match: "++show (fromTo,c)++", to fix this, start checking and verifying all attributes of obj and get a perfect match. Do NOT fix by just removing this error: this might cause an assignment to not-match")
                        ]
@@ -245,14 +245,14 @@ where
                           ]
                 _ -> []
      ]
-  where expr = php2conc composed
+  where  expr = php2conc composed
         obj =reName (nName var) (newVarFor (map nName pre) composed)
         -- create a new variable, ensuring that no overlap occurs in the namespaces concerning preknowledge
         getAVar pre' = newVarFor (map nName (obj:pre'))
         getScalar pre' nm = freshSingleton (obj:pre') nm
         -- | split a list coming from the use of some associative operator returning two expressions
         splitAssoc opr as
-         = [(a,b)|(i,_)<-zipnum as,let (a',b')=splitAt i as
+         = [(a,b) |(i,_)<-zipnum as,let (a',b')=splitAt i as
            , a<-applyOprOnLists opr a', b<-applyOprOnLists opr b'
            ]
         -- will turn a list of arbitray length into a list of length at most 1, by applying opr::[a]->a to the list if necessary
@@ -287,7 +287,7 @@ where
  sqlQuery :: Fspc -> Expression (Relation Concept)-> Maybe String
  sqlQuery fSpec expr
   = selectExpr fSpec 0 src (noCollide [src] (sqlExprTrg fSpec expr)) expr
-  where src = sqlExprSrc fSpec expr
+  where  src = sqlExprSrc fSpec expr
  
  changeTarget :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
  changeTarget c = phpflp . changeSource c . phpflp
@@ -310,8 +310,8 @@ where
  changeSource c (Bu ts) = Bu [changeSource c t | t<-ts]
  changeSource c (Cp x ) = Fc [Tm (mIs c),Cp x]    -- TODO: is dit correct?
  changeSource c (Tm r) = Tm r'
-  where r' = case r of
+  where  r' = case r of
                Rel{} -> r{relsrc=c}
                I{} -> I [] c c
-               V{reltyp=(_,t)} -> V (c,t)
+               V{reltyp=Sign _ t} -> V (Sign c t)
                Mp1{} -> fatal 311 "changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

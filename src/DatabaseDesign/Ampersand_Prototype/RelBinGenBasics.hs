@@ -42,7 +42,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    infixr 4 +|+
    
    (+++) :: (Concatable a,Concatable b) => a->b->Maybe String
-   (+++) a b = listToMaybe [a'++b'|Just a'<-[toM a],Just b'<-[toM b]]
+   (+++) a b = listToMaybe [a'++b' |Just a'<-[toM a],Just b'<-[toM b]]
    
    filterEmpty :: (Eq a) => [Maybe [a]] -> [Maybe [a]]
    filterEmpty = (filter (\x->not ((==) (Just []) x)))
@@ -77,7 +77,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    indentBlockBetween pre post [s] = pre++s++post
    indentBlockBetween pre post block
     = intercalate (phpIndent (length pre)) ((pre++head block):(init rest++[last rest++post]))
-    where rest = tail block
+    where  rest = tail block
    
    strReplace :: String -> String -> String -> String
    strReplace _ _ "" = ""
@@ -96,7 +96,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 
    phpIdentifier :: String -> String
    phpIdentifier (s:str) | isDigit s = "I"++phpIdentifier (s:str)
-   phpIdentifier str = [c| c<-str, isAlphaNum c]
+   phpIdentifier str = [c | c<-str, isAlphaNum c]
 
    phpShow :: String -> String
    phpShow str = "'" ++ addSlashes str ++ "'"

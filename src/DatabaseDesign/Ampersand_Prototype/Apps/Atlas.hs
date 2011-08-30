@@ -16,7 +16,7 @@
 --the database contains links to the pictures (see Main.hs)
 module DatabaseDesign.Ampersand_Prototype.Apps.Atlas 
    (fillAtlas,picturesForAtlas,atlas2context)
-where
+where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import Database.HDBC.ODBC 
 import Database.HDBC
@@ -49,7 +49,7 @@ inserts :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
 inserts _ [] = return 1
 inserts conn (tbl:tbls) = 
    do stmt<- prepare conn
-             ("INSERT INTO "++name tbl++"("++intercalate "," ["`"++fldname f++"` "|f<-tblfields tbl]++")"
+             ("INSERT INTO "++name tbl++"("++intercalate "," ["`"++fldname f++"` " |f<-tblfields tbl]++")"
                                 ++" VALUES ("++placeholders(tblfields tbl)++")")
       executeMany stmt (map (map toSql) (tblcontents tbl))
       inserts conn tbls
@@ -62,13 +62,13 @@ type RelTbl = [(AtomVal,AtomVal)]
 selectconcept :: (IConnection conn) => conn -> Fspc -> Concept -> IO CptTbl
 selectconcept conn fs cpt
  = do rows <- quickQuery' conn stmt []
-      return [fromSql x|[x]<-rows]
-   where stmt = showsql$SqlSel1 (selectdomain fs cpt)
+      return [fromSql x |[x]<-rows]
+   where  stmt = showsql$SqlSel1 (selectdomain fs cpt)
 selectdecl :: (IConnection conn) => conn -> Fspc -> Relation Concept -> IO RelTbl
 selectdecl conn fs rel
  = do rows <- quickQuery' conn stmt []
-      return [(fromSql x,fromSql y)|[x,y]<-rows]
-   where stmt = showsql$SqlSel2 (selectbinary fs rel)
+      return [(fromSql x,fromSql y) |[x,y]<-rows]
+   where  stmt = showsql$SqlSel2 (selectbinary fs rel)
          
 --create atlas tables for this namespace
 creates :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
@@ -76,9 +76,9 @@ creates _ [] = return 1
 creates conn (tbl:tbls) = 
    do _ <- run conn stmt []
       creates conn tbls
-   where stmt = ("CREATE TABLE "++name tbl
+   where  stmt = ("CREATE TABLE "++name tbl
                ++"("++intercalate "," 
-                      ([createfld f|f<-tblfields tbl]
+                      ([createfld f |f<-tblfields tbl]
                      ++[" UNIQUE KEY (`"++fldname key++"`)"
                        | key <- tblfields tbl, flduniq key, not (fldnull key)]
                      ++[" UNIQUE INDEX (`"++fldname kernelfld++"`)" 
@@ -99,12 +99,12 @@ fillAtlas fSpec flags =
    do verboseLn flags "Connecting to atlas..."
       conn<-connectODBC dsnatlas
       verboseLn flags "Connected."
---      _ <- error(show ["DROP TABLE "++name p| InternalPlug p<-plugInfos fSpec])
-      _ <- runMany conn ["DROP TABLE "++name p| InternalPlug p<-plugInfos fSpec]
+--      _ <- error(show ["DROP TABLE "++name p | InternalPlug p<-plugInfos fSpec])
+      _ <- runMany conn ["DROP TABLE "++name p | InternalPlug p<-plugInfos fSpec]
       verboseLn flags "Creating tables..."
-      _ <- creates conn [p|InternalPlug p<-plugInfos fSpec]
+      _ <- creates conn [p |InternalPlug p<-plugInfos fSpec]
       verboseLn flags "Populating tables..."
-      _ <- inserts conn [p|InternalPlug p<-plugInfos fSpec]
+      _ <- inserts conn [p |InternalPlug p<-plugInfos fSpec]
       commit conn
       verboseLn flags "Committed."
       disconnect conn
@@ -128,7 +128,7 @@ thehead xs err
  | otherwise = error ("no x:" ++ err)
 therel :: Fspc -> String -> String -> String -> Relation Concept
 therel fSpec relname relsource reltarget 
- = theonly [makeRelation d|d<-declarations fSpec
+ = theonly [makeRelation d |d<-declarations fSpec
                           ,relname==name d
                           ,null relsource || relsource==name(source d)
                           ,null reltarget || reltarget==name(target d)]
@@ -188,7 +188,7 @@ makectx cxs pats rls rulpattern relpattern
         relname relsc reltg relcontent pairleft pairright atomsyntax relprp propsyntax pragma1 pragma2 pragma3
         patpurpose rulpurpose relpurpose cptpurpose cptdescribes
  = if null xs then error (show errs) else return (head xs,errs)
-   where 
+   where  
    (xs,errs') = typecheckAdl1 (Arch [rawctx]) []
    errs = map fst errs'
    rawctx 
@@ -197,25 +197,25 @@ makectx cxs pats rls rulpattern relpattern
        , ctx_on    = []
        , ctx_isa   = empty
        , ctx_wrld  = []
-       , ctx_pats  = [atlas2pattern p rls rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|p<-pats]
+       , ctx_pats  = [atlas2pattern p rls rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |p<-pats]
        , ctx_PPrcs = []
        , ctx_procs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd (DBLoc "Atlas(ConceptDef)") x False y []|(x,y)<-cptdescribes,not(null y)]
+       , ctx_cs    = [Cd (DBLoc "Atlas(ConceptDef)") x False y [] |(x,y)<-cptdescribes,not(null y)]
        , ctx_ks    = []
        , ctx_ifcs  = []
        , ctx_ps    = atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
-       , ctx_env   = (Tm(V (Anything,Anything)),[])
+       , ctx_env   = (Tm(V (Sign Anything Anything)),[])
       }
 
 parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation Concept)]
 parserules rulpattern ruleexpr ruldescribes
  = sequence [parseADL1Rule ("RULE \""++r++"\":"++ (geta ruleexpr r)
-                          ++" PHRASE \""++geta ruldescribes r++"\"")|(r,_)<-rulpattern]
+                          ++" PHRASE \""++geta ruldescribes r++"\"") |(r,_)<-rulpattern]
 
 atlas2pattern :: AtomVal -> [Rule(Relation Concept)] -> RelTbl -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl -> RelTbl
@@ -223,10 +223,10 @@ atlas2pattern :: AtomVal -> [Rule(Relation Concept)] -> RelTbl -> RelTbl -> RelT
                          -> RelTbl -> RelTbl -> Pattern
 atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
  = Pat { ptnm  = p
-       , ptpos = ParsedFrom(DBLoc "Atlas(Pattern)")
-       , ptrls = [r|(rulstr,p')<-rulpattern,p==p',r<-rs,name r==rulstr]
+       , ptpos = DBLoc "Atlas(Pattern)"
+       , ptrls = [r |(rulstr,p')<-rulpattern,p==p',r<-rs,name r==rulstr]
        , ptgns = []
-       , ptdcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3|(i,(relstr,p'))<-zip [1..] relpattern,p==p']
+       , ptdcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |(i,(relstr,p'))<-zip [1..] relpattern,p==p']
        , ptcds = []
        , ptkds = []
        , ptxps = []
@@ -237,8 +237,7 @@ atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax p
 emptySignalDeclaration :: String -> Declaration Concept
 emptySignalDeclaration nm
     = Sgn { decnm = nm
-          , desrc = Anything
-          , detrg = Anything
+          , decsgn = Sign Anything Anything
           , decprps = []
           , decprps_calc = []
           , decprL  = ""
@@ -246,18 +245,17 @@ emptySignalDeclaration nm
           , decprR  = ""
           , decMean = ""
           , decpopu = []
-          , decfpos = ParsedFrom(DBLoc "Atlas(Relation)")
-          , decid   = 0
+          , decfpos = DBLoc "Atlas(Relation)"
           , deciss  = True    -- initially, all rules are signals
           , decusr  = False
           , decpat  = ""
           , decplug = True
           }
 geta :: [(String,String)] -> String -> String
-geta f x = (\xs-> if null xs then error ("there is no geta for " ++ x) else head xs) [y|(x',y)<-f,x==x']
+geta f x = (\xs-> if null xs then error ("there is no geta for " ++ x) else head xs) [y |(x',y)<-f,x==x']
 atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [P_Population Concept]
 atlas2pops relcontent relname relsc reltg pairleft pairright atomsyntax 
- = [Popu (makerel(fst(head cl)) relname relsc reltg) (map (makepair.snd) cl)|cl<-eqCl fst relcontent,not(null cl)]
+ = [Popu (makerel(fst(head cl)) relname relsc reltg) (map (makepair.snd) cl) |cl<-eqCl fst relcontent,not(null cl)]
    where
    makepair xystr = (geta atomsyntax (geta pairleft xystr),geta atomsyntax (geta pairright xystr))
 
@@ -266,8 +264,7 @@ atlas2decl :: String -> Int -> [(String,String)] -> [(String,String)] -> [(Strin
                             -> [(String,String)] -> [(String,String)] -> Declaration Concept
 atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
  = Sgn { decnm = nm
-       , desrc = s
-       , detrg = t
+       , decsgn = Sign s t
        , decprps = [case geta propsyntax prp of 
                         "UNI"->Uni
                         "TOT"->Tot
@@ -295,17 +292,16 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
                         _ -> error "unknown prop in atlas"
                     |(prp,rel)<-relprp,relstr==rel
                     ]
-       , decprL = [c|(rel,x)<-pragma1,relstr==rel,c<-x]
-       , decprM = [c|(rel,x)<-pragma2,relstr==rel,c<-x]
-       , decprR = [c|(rel,x)<-pragma3,relstr==rel,c<-x]
+       , decprL = [c |(rel,x)<-pragma1,relstr==rel,c<-x]
+       , decprM = [c |(rel,x)<-pragma2,relstr==rel,c<-x]
+       , decprR = [c |(rel,x)<-pragma3,relstr==rel,c<-x]
        , decMean = ""
        , decpopu = []
-       , decfpos = ParsedFrom(DBLoc$"Atlas(Declaration)"++show i)
-       , decid  = 0
+       , decfpos = DBLoc$"Atlas(Declaration)"++show i
        , deciss = True  -- initially, all rules are signals
        , decusr = True
        , decpat = []
-       , decplug =False       -- decplug[Popu (makerel(fst(head cl))) (map (makepair.snd) cl)|cl<-eqCl fst relcontent,not(null cl)]
+       , decplug =False       -- decplug[Popu (makerel(fst(head cl))) (map (makepair.snd) cl) |cl<-eqCl fst relcontent,not(null cl)]
        }
    where
    nm =geta relname relstr
@@ -316,10 +312,10 @@ atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [
                                   -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PExplanation]
 atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
  = --error(show (patpurpose, rulpurpose, relpurpose, cptpurpose)) ++
-     [PExpl (DBLoc "Atlas(PatPurpose)") (PExplPattern x) Dutch [] y|(x,y)<-patpurpose]
-  ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) Dutch [] y|(x,y)<-rulpurpose]
-  ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r) Dutch [] y|(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
-  ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) Dutch [] y|(x,y)<-cptpurpose]
+     [PExpl (DBLoc "Atlas(PatPurpose)") (PExplPattern x) Dutch [] y |(x,y)<-patpurpose]
+  ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) Dutch [] y |(x,y)<-rulpurpose]
+  ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r) Dutch [] y |(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
+  ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) Dutch [] y |(x,y)<-cptpurpose]
 
 makerel :: String -> [(String, String)] -> [(String, String)] -> [(String, String)] -> Relation Concept
 makerel relstr relname relsc reltg = 
@@ -329,9 +325,7 @@ makerel relstr relname relsc reltg =
       t = cptnew(geta reltg relstr)
       in
       Rel  { relnm = nm
-           , relpos = ParsedFrom(DBLoc "Atlas(Relation)")
-           , relsrc = s
-           , reltrg = t
-           , relyin = True
+           , relpos = DBLoc "Atlas(Relation)"
+           , relsgn = Sign s t
            , reldcl = emptySignalDeclaration nm
            }

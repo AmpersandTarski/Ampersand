@@ -42,12 +42,12 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),CodeVar(.
    | PHPPlug     { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug (must be verified!)
                  , cqoutput ::CodeVar      -- ^ the output variable
                  , cqphpplug::String       -- ^ the name of the plug
-                 , cqphpfile::Maybe String -- ^ the file name on where to find this plug
+                 , cqphpfile::Maybe String -- ^ the file name on where  to find this plug
                  }
    | PHPBinCheck { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug
                  , cqreturn ::(CodeQuery,CodeQuery) -- ^ what to return if the plug did not return False
                  , cqphpplug::String       -- ^ the name of the plug (must be verified!)
-                 , cqphpfile::Maybe String -- ^ the file name on where to find this plug
+                 , cqphpfile::Maybe String -- ^ the file name on where  to find this plug
                  }
    | PHPIntersect{ cqfrom1::CodeQuery
                  , cqfrom2::CodeQuery}

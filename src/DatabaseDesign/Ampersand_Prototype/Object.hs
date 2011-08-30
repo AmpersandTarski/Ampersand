@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables#-}
 module DatabaseDesign.Ampersand_Prototype.Object
    (objectInterfaces) 
-where
+where 
 import Data.Maybe
 import Data.List  hiding (group)
 
@@ -30,7 +30,7 @@ objectInterfaces flags fSpec o
     ++
     showClasses flags fSpec o
     ++
-    concat[showClasses flags fSpec att|att<-attributes o,(not.null)(attributes att),not(isOne att)]
+    concat[showClasses flags fSpec att |att<-attributes o,(not.null)(attributes att),not(isOne att)]
                                 --      ,let att=if isOne att then att{objctx=Tm(mIs(target(objctx att)))} else att']
     ++
     ( if isOne o  -- If the current object is the universal singleton...
@@ -50,7 +50,7 @@ generateInterface_getEach fSpec nm o
      (fromJust sql)  -- TODO: use PHP code instead, this might yield more getEach functions!
      ++"'));"
    ,"}\n"]
- where sql = ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
+ where  sql = ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
  
 generateInterface_read :: Fspc -> String -> ObjectDef -> [String]
 generateInterface_read _ nm object
@@ -86,18 +86,18 @@ showClasses flags fSpec o
  = [ "class "++myName ++" {"] ++
    indentBlock 2 (
          ( if isOne o then [] else ["protected $id=false;","protected $_new=true;"] )
-         ++ ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]++
-         ["function "++myName++"(" ++ (if isOne o then "" else "$id=null" ++ [','|not(null(attributes o))])
+         ++ ["private $_"++phpIdentifier (name a)++";" | a <- attributes o]++
+         ["function "++myName++"(" ++ (if isOne o then "" else "$id=null" ++ [',' |not(null(attributes o))])
                                      ++ (intercalate ", " [phpVar (name a)++"=null" | a<-attributes o])
                                      ++",$sel=True){"
          ]++["  $this->id=$id;" | not (isOne o)]
-         ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
+         ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";" | a <- attributes o]
          ++ concat
             [["  // check if it exists:"
              ,"  $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
              ,"  if(count($ctx)==0) $this->_new=true; else $this->_new=false;"]
-            |null(attributes o),not(target(ctx o)==ONE)] --INTERFACE o: ctx where target ctx/=ONE and objats=[]
-         ++  (           [ "  if(" -- ++(head (["!isset("++phpVar (name a')++")"|a'<-attributes o,mayedit (objctx a') editable]++["True"]))
+            |null(attributes o),not(target(ctx o)==ONE)] --INTERFACE o: ctx where  target ctx/=ONE and objats=[]
+         ++  (           [ "  if(" -- ++(head (["!isset("++phpVar (name a')++")" |a'<-attributes o,mayedit (objctx a') editable]++["True"]))
                                         ++(if isOne o then "$sel" else "$sel && isset($id)")++"){"
                                , "    // get a "++(myName)++" based on its identifier"] ++
                                ( if isOne o then [] else
@@ -109,7 +109,7 @@ showClasses flags fSpec o
                                indentBlock (if isOne o then 4 else 6)
                                ( [ "// fill the attributes"
                                  ] ++
-                                 ( if null [a|a<-objats o,isUni (objctx a)]
+                                 ( if null [a |a<-objats o,isUni (objctx a)]
                                    then ["$me=array();"]
                                    else []            
                                  ) ++ (doPhpGet fSpec
@@ -165,15 +165,15 @@ showClasses flags fSpec o
          ) ++
    [ "}\n" ]
  where
-  editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
+  editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
            | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
   mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
-  mayedit item editable = let rexprs=[Tm r|r<-editable] in elem item (rexprs++map flp rexprs)
+  mayedit item editable = let rexprs=[Tm r |r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
    = if sql==Nothing then fatal 167 "Cannot check if exists in Object.hs" else fromJust sql
-   where expr = if null fs then Fc [ tm, ctx'] else Fc (tm:head fs)
+   where  expr = if null fs then Fc [ tm, ctx'] else Fc (tm:head fs)
          tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
          ctx' = simplify $ flp (ctx o)
          fs   = [es' | Fc es' <- [ctx']]
@@ -181,7 +181,7 @@ showClasses flags fSpec o
 {- still working on new save() and del()
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
 saveTransactions flags fSpec object
-  -- | True = fatal 176 (show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec])
+  -- | True = fatal 176 (show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld)) |fld<-fields plug]) |PlugSql plug@(TblSQL{})<-plugs fSpec])
  | otherwise
  = [ "function save(){"
    , "  DB_doquer('START TRANSACTION');"
@@ -236,7 +236,7 @@ saveTransactions flags fSpec object
   nestTo :: ObjectDef -> (String->[String]) -> [String]
   nestTo attr fnc = if null nt then fatal 229 $ "saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)"
                     else head nt
-    where nt = nestToRecur attr fnc object "$me" 0
+    where  nt = nestToRecur attr fnc object "$me" 0
   nestToRecur :: ObjectDef -> (String->[String]) -> ObjectDef -> String -> Integer -> [[String]]
   nestToRecur attr fnc a var d
     | attr==a   = [ if null (objats a) then fnc var else fnc (var)]
@@ -341,7 +341,7 @@ saveTransactions flags fSpec object
                               -- if an insert of a UNIQUE KEY fails then we may try to update
                               -- if an insert of a UNIQUE INDEX fails we may not
                               -- we need to cut the kernel element var[id] and everything depending on it from its current index (UPDATE)
-                              --         ++ copy deep everything where var[id] depends upon (SELECT)
+                              --         ++ copy deep everything where  var[id] depends upon (SELECT)
                               -- and paste it (with potentially changed values) as a new index (INSERT)
                               [ insQuery var ++";"
                                 -- zoals hierboven gezegd: een key is nodig voor een UPDATE
@@ -351,7 +351,7 @@ saveTransactions flags fSpec object
                               , "  //nothing inserted, try updating:"
                               ]
                               ++ (if fldnull (snd objkfld)
-                                 then [ "  "++line++";"|line<-copycutinsQuery var]
+                                 then [ "  "++line++";" |line<-copycutinsQuery var]
                                  else [ "  "++updQuery var++";"])
                               ++ [ "}" ]
                             )
@@ -365,7 +365,7 @@ saveTransactions flags fSpec object
                     | (_,n)<-reverse $ zip nunios [0..]
                     ]
                 )
-        where attrs  = ownAts ++ -- ook het identiteit-veld toevoegen (meestal de SQL-`id`)
+        where  attrs  = ownAts ++ -- ook het identiteit-veld toevoegen (meestal de SQL-`id`)
                         [ (attobj, attsrc) | attsrc `notElem` (map snd ownAts)]
               keys :: [(ObjectDef,SqlField)]
               keys   = if length attrs==1
@@ -378,9 +378,9 @@ saveTransactions flags fSpec object
               objkfld --this is the kernel field with instances of $id of this object
                 | null (findkfld++keys) = fatal 371 $ "There is no key for this object in plug "++name plug
                 | otherwise = head (findkfld++keys)
-              findkfld = [(ifc,fld)|(ifc,fld)<-keys,concept attobj==target(fldexpr fld)]
+              findkfld = [(ifc,fld) |(ifc,fld)<-keys,concept attobj==target(fldexpr fld)]
                 -- nunios: Not UNI ObjectS: objects that are not Uni
-              nunios = [(o,f)|(o,f)<-ownAts, attobj/=o, not $ isUni (objctx o)]
+              nunios = [(o,f) |(o,f)<-ownAts, attobj/=o, not $ isUni (objctx o)]
               ownAts = map snd ids
               insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
               insQuery var
@@ -438,7 +438,7 @@ saveTransactions flags fSpec object
                | isFullGroup requiresFld ids
                 = [ if null copyflds then "//all required fields are available"
                     else "$old = firstRow(DB_doquer(\"SELECT "
-                                      ++ (intercalate ", " ["`"++fldname f++"`"| f<-copyflds])
+                                      ++ (intercalate ", " ["`"++fldname f++"`" | f<-copyflds])
                                       ++ " FROM `"++name plug++"`"
                                       ++ " WHERE `"++fldname (snd objkfld)++"`='\".addslashes("++varname var (fst objkfld)++").\"'\"));"
                   ,"DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
@@ -455,7 +455,7 @@ saveTransactions flags fSpec object
               requiresFld = [f |f<-tblfields plug, requires plug (f,snd objkfld)]
               --copyflds is tblfields which are required by $id (objkfld) except what's in $me (i.e. occurencesfields ids)
               --this way I do not require a very large interface object only to be able to edit an object
-              copyflds = [f|f<-tblfields plug, elem f (requiredFields plug (snd objkfld)),not(elem f (occurencesfields ids))]
+              copyflds = [f |f<-tblfields plug, elem f (requiredFields plug (snd objkfld)),not(elem f (occurencesfields ids))]
               updQuery var
                 = "DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
                   intercalate ", "
@@ -481,12 +481,12 @@ saveTransactions flags fSpec object
 --REMARK: only used for php function save()
 --WHY151210 -> (see also Data.FSpec and Rendering.ClassDiagram) can't a php plug be a (php-)function for saving things?
 objPlugs :: Fspc -> ObjectDef -> [PlugSQL]
-objPlugs fSpec object = [plug|InternalPlug plug<-plugInfos fSpec, not (null (plugAts plug object))]
+objPlugs fSpec object = [plug |InternalPlug plug<-plugInfos fSpec, not (null (plugAts plug object))]
 
 --plugAts returns the source/target fields related to object=>objats for objctx of object=>objats
 --REMARK: only used for php function save()
 plugAts :: PlugSQL -> ObjectDef -> [((ObjectDef, SqlField), (ObjectDef,SqlField))]
-plugAts plug object = plugAts' object object --you do not want to forget to mention where the (objctx object) is stored (it is not always I)
+plugAts plug object = plugAts' object object --you do not want to forget to mention where  the (objctx object) is stored (it is not always I)
   where
   plugAts' :: ObjectDef           -- parent (wrong values are allowed, see source)
              -> ObjectDef                -- object itself
@@ -537,12 +537,12 @@ doPhpGet fSpec objVar depth objIn objOut
            ,not$null$nest]
   where
     mname aout = objVar++"['"++name aout++"']"
-    unisNeeded = [aout|aout<-allNeeded,isObjUni aout]
-    arrsNeeded = [aout|aout<-allNeeded,not$isObjUni aout]
-    allNeeded  = [aout|aout<-objats objOut {-% ,null[a|a<-objats objIn,objctx a==objctx aout] %-}]
-    depthNeeded= [aout|aout<-objats objOut {-% ,null[a|a<-objats objIn,a `msubset` aout] %-} ]
+    unisNeeded = [aout |aout<-allNeeded,isObjUni aout]
+    arrsNeeded = [aout |aout<-allNeeded,not$isObjUni aout]
+    allNeeded  = [aout |aout<-objats objOut {-% ,null[a |a<-objats objIn,objctx a==objctx aout] %-}]
+    depthNeeded= [aout |aout<-objats objOut {-% ,null[a |a<-objats objIn,a `msubset` aout] %-} ]
     {-% msubset i o= and ((objctx i==objctx o) -- must contain same elems
-                          :[or [msubset i' o'|i'<-objats i] -- and at least every attribute of o must be in i
+                          :[or [msubset i' o' |i'<-objats i] -- and at least every attribute of o must be in i
                            |o'<-objats o]) %-}
     --template to do a query => firstline (DB_doquer( quer ));
     doQuer fl [] = fatal 540 $ "doPhpGet: doQuer has no query for "++fl
@@ -568,11 +568,11 @@ doPhpGet fSpec objVar depth objIn objOut
                          -- de SQL functie gaat (nog) niet goed om met recursie!
                          -- bovendien doet deze PHP functie dit evenmin als de recursie
                          -- verder gaat dan 1 diep, dwz dat onderstaande definitie:
-    -- truncKeepUni att = att{objats=[truncKeepUni a|a<-objats att,isObjUni ( a)]}
+    -- truncKeepUni att = att{objats=[truncKeepUni a |a<-objats att,isObjUni ( a)]}
                          -- ook niet werkt in deze functie, en dat onderstaande:
-    -- truncKeepUni att = att{objats=[trunc a|a<-objats att,isObjUni ( a)]}
+    -- truncKeepUni att = att{objats=[trunc a |a<-objats att,isObjUni ( a)]}
                          -- alleen niet werkt in de SQL functie
-    truncKeepUniNamed nm att = att{objats=[ a{objnm=nm++"["++(show$name a)++"]"}|a<-objats (truncKeepUni att) ]}
+    truncKeepUniNamed nm att = att{objats=[ a{objnm=nm++"["++(show$name a)++"]"} |a<-objats (truncKeepUni att) ]}
     %-}
 
 {- doSqlGet genereert de SQL-query die nodig is om het PHP-object objOut van inhoud te voorzien.
@@ -597,8 +597,8 @@ doSqlGet fSpec isArr objIn objOut
                      ++ concat (map joinOn (tail tbls)) ++
                      (if isOne' objOut then [] else [" WHERE " ++ snd (head tbls)])
                )
-   where 
-   aOuts = [a|a<-objats objOut]
+   where  
+   aOuts = [a |a<-objats objOut]
    rest :: [(ObjectDef,Integer)]
    rest = zip [ a | a<-aOuts, a `notElem` [a' | g <- comboGroups, (a',_) <- snd g]]
               [(1::Integer)..]
@@ -645,7 +645,7 @@ doSqlGet fSpec isArr objIn objOut
       --     dan maakt het toch niet uit of (fldnull s) waar is of niet?
       keyGroups   
        = take 1 
-         (  comboGroups' {-[gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s]-}
+         (  comboGroups' {-[gr |gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s]-}
          ++ 
             [((p,(objIn,s)),[(objIn,t)])
             | (p,s,t)<-sqlRelPlugs fSpec (Tm(I$target (objctx objIn)))]   -- zoek een conceptentabel op....
@@ -724,8 +724,8 @@ doSqlGet fSpec isArr objIn objOut
    renamedTables
      = naming (\p nm->(nm,p))                                                   -- function used to asign name a to element b
               ( (\x->name(fst x))                                               
-               :[(\x->name(fst x)++show n)|n<-[(1::Integer)..]])                -- infinite list of functions to create a name for b
-              (['f':show n|n<-[1..(length rest)]])                              -- list of forbidden names (names already taken)
+               :[(\x->name(fst x)++show n) |n<-[(1::Integer)..]])                -- infinite list of functions to create a name for b
+              (['f':show n |n<-[1..(length rest)]])                              -- list of forbidden names (names already taken)
               (map fst comboGroups)                                             -- list of elements b that need a name
 
 splitLineBreak :: String -> [String]
@@ -752,8 +752,8 @@ savefunction flags fSpec fnm depth this
   | otherwise 
   = let thiscpt = target(objctx this)
         -----------me
-        inplugs cpt = [(plug,fld)|InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]
-                      ++ [(plug,column plug)|InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
+        inplugs cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]
+                      ++ [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
         (myplug,idfld) = if not(null (inplugs thiscpt)) then head (inplugs thiscpt)
                            else fatal 746 "this concept is not stored in any SQL plug."
         plugkey | null (tblfields myplug) = fatal 747 "no tblfields in plug."
@@ -771,9 +771,9 @@ savefunction flags fSpec fnm depth this
         inime :: String -> PlugSQL -> String
         inime mevar plug --e.g. $oldme, $newme, ..
           = mevar ++ " = array("++ intercalate "," ["'"++fldname f++"'=>null" | f<-tblfields plug, not(fldauto f)] ++ ");"
-        thisme  -- -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]
+        thisme  -- -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";" | a <- attributes o]
           = "$me = array("++ intercalate "," 
-                             ["'"++fldname fld++"'=>"++arrayattpath att e| (fld,(att,e))<-thismematch]
+                             ["'"++fldname fld++"'=>"++arrayattpath att e | (fld,(att,e))<-thismematch]
                    ++ ");" 
         thismematch = nubBy (\x y -> fst x == fst y) 
                       --TODO -> identical expressions stored in plugs do not need to be saved twice, but in edit mode they are not synced on the screen (yet)
@@ -791,18 +791,18 @@ savefunction flags fSpec fnm depth this
            --if att has attributes then $this->_att is an array with at least 'id' for the target of objctx att
            | objctx att==e  = "$this->_"++phpIdentifier (name att)++"['id']"
            | otherwise  = "$this->_"++phpIdentifier (name att)++"['"++(name (head (attributes att)))++"']"
-        notreqid_and_notinthis_flds = [fld|fld<-tblfields myplug, not(requires myplug (fld,idfld)), not(elem fld (map fst thismematch))]
-        reqbyid_and_notinthis_flds = [fld|fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
-        reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
-        notinthis_flds =  [fld|fld<-tblfields myplug, not(elem fld (map fst thismematch))]
+        notreqid_and_notinthis_flds = [fld |fld<-tblfields myplug, not(requires myplug (fld,idfld)), not(elem fld (map fst thismematch))]
+        reqbyid_and_notinthis_flds = [fld |fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
+        reqbyid_and_notreqid_flds = [fld |fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
+        notinthis_flds =  [fld |fld<-tblfields myplug, not(elem fld (map fst thismematch))]
         onscreen =  "$onscreen = array("++ intercalate "," ["'"++fldname f++"'=>1" |f<-tblfields myplug, elem f (map fst thismematch)] ++ ");"
         shouldcut = not(null notreqid_and_notinthis_flds)
         cancut = null reqbyid_and_notinthis_flds
         --editable
-        editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
+        editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
                  | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
         mayedit :: Expression(Relation Concept) -> Bool
-        mayedit item = let rexprs=[Tm r|r<-editable] in elem item (rexprs++map flp rexprs)
+        mayedit item = let rexprs=[Tm r |r<-editable] in elem item (rexprs++map flp rexprs)
         ---------myatts(editable only)
         myattsinthis = [((plug,fld0,fld1),a)
                    |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
@@ -855,7 +855,7 @@ savefunction flags fSpec fnm depth this
     ,"//if me is new, then all required fields for this->id in me must be present to be able to insert this->id"
     ,"//the me part of this cannot be inserted the binary way, because it is not stored in a binplug"
     ,"//the other relations in this will be inserted the binary way"
-    ,"//this implies updates of morattfields in other tblplugs than me and del/ins in binplugs where src or trg = this->id"
+    ,"//this implies updates of morattfields in other tblplugs than me and del/ins in binplugs where  src or trg = this->id"
     ,"//updates of morattfields will not check whether it was already set in the old situation i.e. overwrite."
     ]
     ++
@@ -884,7 +884,7 @@ savefunction flags fSpec fnm depth this
 --      ,"$allrequiredinthis = true; //hide by haskell, just $cancut=false;"
       , if cancut
         then "$cancut = true;"
-        else "$cancut = false; //" ++ intercalate ", " [fldname fld|fld<-reqbyid_and_notinthis_flds]
+        else "$cancut = false; //" ++ intercalate ", " [fldname fld |fld<-reqbyid_and_notinthis_flds]
       ,"$cutoldme = false;"
       ,"if ($shouldcut){"
       ,"   if ($cancut){"
@@ -1082,4 +1082,4 @@ savefunction flags fSpec fnm depth this
     ]) --end indentBlock save() for this
     ++
     ["}"] --end of save() for this
-    where uniqfnm nm dpth = if dpth==0 then "save()" else phpIdentifier(nm++show dpth)++"()"
+    where  uniqfnm nm dpth = if dpth==0 then "save()" else phpIdentifier(nm++show dpth)++"()"

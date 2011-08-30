@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
       ,useAttribute
       ,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpflp,phpsign
       ) where
- import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
+ import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..), mapRelation, mapExpression)
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
@@ -57,7 +57,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
               -> Named UseVar -- ^ of this variable
               -> Named UseVar
  useAttribute s var = var{nObject=UseVar {uvList=varlist++[s]}}
-   where varlist=uvList(nObject var)
+   where  varlist=uvList(nObject var)
 
  -- | The following wrapper adds PHP-information to a concept.
  data PHPconcept
@@ -111,7 +111,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
 
  php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
  php2conc e = mapExpression (mapRelation f) e
-              where f (PHPC c) = c
+              where  f (PHPC c) = c
                     f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
 
  data CodeQuery
@@ -123,12 +123,12 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
    | PHPPlug     { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug (must be verified!)
                  , cqoutput ::CodeVar      -- ^ the output variable
                  , cqphpplug::String       -- ^ the name of the plug
-                 , cqphpfile::Maybe String -- ^ the file name on where to find this plug
+                 , cqphpfile::Maybe String -- ^ the file name on where  to find this plug
                  }
    | PHPBinCheck { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug
                  , cqreturn ::(CodeQuery,CodeQuery) -- ^ what to return if the plug did not return False
                  , cqphpplug::String       -- ^ the name of the plug (must be verified!)
-                 , cqphpfile::Maybe String -- ^ the file name on where to find this plug
+                 , cqphpfile::Maybe String -- ^ the file name on where  to find this plug
                  }
    | PHPIntersect{ cqfrom1::CodeQuery
                  , cqfrom2::CodeQuery}

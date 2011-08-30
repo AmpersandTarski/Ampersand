@@ -78,7 +78,7 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces)
                    ++ [ write (absFilePath flags sf) (contentString sf) ]
                 ))
                  
-         where write a b = case isBinary sf of
+         where  write a b = case isBinary sf of
                              True  -> Bin.writeFile a (toBin b)
                              False ->     writeFile a b
                toBin :: String -> Bin.ByteString

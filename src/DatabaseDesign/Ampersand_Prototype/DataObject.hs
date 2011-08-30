@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables#-}
 module DatabaseDesign.Ampersand_Prototype.DataObject(dataInterfaces) where
 --import Adl (
---           --,Concept(..),Declaration(..),isTrue,makeInline
+--           --,Concept(..),Declaration(..),isTrue
 --           ObjectDef(..),Morphic(..)
 --       --    ,Identified(..)
 --           ,Object(..),Expression(..), Concept, FilePos(..), F_TracePos(..)
@@ -65,7 +65,7 @@ dataInterfaces flags fSpec (DataObject dobj)
     ++
     generateInterface_getEach fSpec (DataObject dobj) 
     ++
-    concat[conceptclass flags fSpec (DataObject dobj) x|x<-cLkpTbl dobj]
+    concat[conceptclass flags fSpec (DataObject dobj) x |x<-cLkpTbl dobj]
    )
    ++ "\n?>"
    where
@@ -82,7 +82,7 @@ generateInterface_getEach fSpec (DataObject dobj)
   objcLkp::PlugSQL->[(Concept,Expression)]
   objcLkp plug = case plug of
     ScalarSQL{} -> [(cLkp plug,fldexpr (column plug))]
-    _           -> [(c,fldexpr fld)|(c,fld)<-cLkpTbl plug]
+    _           -> [(c,fldexpr fld) |(c,fld)<-cLkpTbl plug]
   funcs _ Nothing = error "Cannot generate getEach code in DataObject.hs (line 49)"
   funcs c (Just x)
     = ["function getEach"++phpIdentifier (name c)++"(){"
@@ -102,7 +102,7 @@ phpVar x = "$_"++phpIdentifier x
 --In *.inc.php kan ik gebruik maken van classes in data_*.inc.php
 --Als ik een datatype update, dan kan het zo zijn dat ik alleen een attr1 heb gewijzigd.
 --  $x = new Datatype(<waardes>); $x.save();
---  function save(){ $old=new readDatatype($id); vgl($old,$this) and UPDATE(new Obj with old datatype where Obj=NULL)
+--  function save(){ $old=new readDatatype($id); vgl($old,$this) and UPDATE(new Obj with old datatype where  Obj=NULL)
 --                                                                   UPDATE(changed Obj with unchanged datatype)
 --                                                                   INSERT()
 --                                                                   CUTUPDATE(changed datatype)}
@@ -119,7 +119,7 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
  = let 
    --alle velden die van cfld afhankelijk zijn
    requiresFld = [f |f<-tblfields dobj, requires dobj (f,cfld)]
-   flds = [fld|fld<-requiresFld, fld/=cfld] --class fields
+   flds = [fld |fld<-requiresFld, fld/=cfld] --class fields
    commaflds = if null flds then [] else ", "
    myName = name c
    in
@@ -217,14 +217,14 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
 -- $this has to be compared with $old=new ClassOfThis($this->getId())
 --note: INTERFACE initiates and closes TRANSACTION
 --
---saving/deleting this where !isset($id):
+--saving/deleting this where  !isset($id):
 -- find the largest class instance id that isset (the class that requires the least number of fields) and call save/delete on that class
 --
---saving this where isset($id::A) and $_new:
+--saving this where  isset($id::A) and $_new:
 --  INSERT $this => complain if there are missing required fields
 --                  check existence of all morAtts in $this (see NOTE on changing a morAtt)
 --
---saving this where isset($id::A) and !$_new:
+--saving this where  isset($id::A) and !$_new:
 -- -> check changes in morAtt attfld attached to $id or a kernel sibling sibfld (uni,tot,inj,sur) 
 --    (fldexpr attfld==m::A*B) (relatie sibfld=r::A*C)
 --    UPDATE? => complain if there are missing required fields
@@ -249,11 +249,11 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
 --
 -- check changes in kernelFld kfld in kernelcluster of $id (expr::A*B [uni,tot,inj,sur])
 -- check changes in kernelFld kfld attached to $id (fldexpr kfld==m::A*B)
---                                                                   UPDATE(new Obj with old datatype where Obj=NULL)
+--                                                                   UPDATE(new Obj with old datatype where  Obj=NULL)
 --                                                                   UPDATE(changed Obj with unchanged datatype)
 --                                                                   INSERT()
 --                                                                   CUTUPDATE(changed datatype)}
---deleting this where isset($id::A): 
+--deleting this where  isset($id::A): 
 --  if $_new then DO NOTHING
 --  else if not(fldnull $id) then delete $this (DELETE WHERE $id)
 --       else set $this to NULL (UPDATE $this=array of null WHERE $old->id)

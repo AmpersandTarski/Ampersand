@@ -43,15 +43,15 @@ parseFilePrototype flags pv
            importpops <- parseImportFile adlText pv fnFull flags 
            parsedfile <- parseADL1 adlText (if null(importfile flags) then pv else PV1) importpops flags fnFull 
            atlasfspec <- calculate flags parsedfile           
---           verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec c))|c<-concs atlasfspec])
-  --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c))|c<-concs atlasfspec])
-    --       verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d)))|d<-declarations atlasfspec])
---           verbose flags (show[showsql(SqlSel1(selectdomain atlasfspec (makeRelation d)))|d<-declarations atlasfspec])
-  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((Tm (makeRelation d)))))|d<-declarations atlasfspec])
-       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (Bu[Tm(makeRelation d),Tm(flp$makeRelation d)])))|d<-declarations atlasfspec,source d==target d])
+--           verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec c)) |c<-concs atlasfspec])
+  --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c)) |c<-concs atlasfspec])
+    --       verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d))) |d<-declarations atlasfspec])
+--           verbose flags (show[showsql(SqlSel1(selectdomain atlasfspec (makeRelation d))) |d<-declarations atlasfspec])
+  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((Tm (makeRelation d))))) |d<-declarations atlasfspec])
+       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (Bu[Tm(makeRelation d),Tm(flp$makeRelation d)]))) |d<-declarations atlasfspec,source d==target d])
 --           verbose flags (show[(showsql(SqlSel2(selectbinary atlasfspec r'))
   --                             ,showCode 0 x
-    --                           ,show r')|r<-rules atlasfspec,let r'=(conjNF . Cp . normExpr) r,head(showexpression r)=='I'
+    --                           ,show r') |r<-rules atlasfspec,let r'=(conjNF . Cp . normExpr) r,head(showexpression r)=='I'
       --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
            if interfacesG flags then atlas2context atlasfspec flags else return parsedfile
 
@@ -62,19 +62,19 @@ parseImportFile adlText pv adlfn flags
        fdir = let d=dropFileName fn in if null d then "." else d
        usr= namespace flags
        getr r = if length r==1 then head r else error "import error: no or multiple declarations for relvar"
-       impctx atlas = [makeRelation d|d<-declarations atlas,name d=="loadcontext"]
-       impfil atlas = [makeRelation d|d<-declarations atlas,name d=="loadedfile"]
-       impupl atlas = [makeRelation d|d<-declarations atlas,name d=="newcontext"]
-       usrfil atlas = [makeRelation d|d<-declarations atlas,name d=="fileof"]
-       --funrld atlas = [makeRelation d|d<-declarations atlas,name d=="reload"]
-       funfsp atlas = [makeRelation d|d<-declarations atlas,name d=="funcspec"]
-       funrep atlas = [makeRelation d|d<-declarations atlas,name d=="report"]
-       funadl atlas = [makeRelation d|d<-declarations atlas,name d=="showadl"]
+       impctx atlas = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
+       impfil atlas = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
+       impupl atlas = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
+       usrfil atlas = [makeRelation d |d<-declarations atlas,name d=="fileof"]
+       --funrld atlas = [makeRelation d |d<-declarations atlas,name d=="reload"]
+       funfsp atlas = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
+       funrep atlas = [makeRelation d |d<-declarations atlas,name d=="report"]
+       funadl atlas = [makeRelation d |d<-declarations atlas,name d=="showadl"]
        loadcontext r fspec = [Popu{ p_popm=getr r, p_popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
-       loadedfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr fn]         }| not (null usr)]
-      -- uploadfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr "browse"]   }| not (null usr)]
+       loadedfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr fn]         } | not (null usr)]
+      -- uploadfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr "browse"]   } | not (null usr)]
        --TODO -> the user has more files, how do I get them in this population
-       fileof r myfiles    = [Popu{ p_popm=getr r, p_popps=[mkPair (combine fdir f) usr| f<-myfiles, not (null usr)] }]
+       fileof r myfiles    = [Popu{ p_popm=getr r, p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
        contextfunction fspec r x
                            = [Popu{ p_popm=getr r, p_popps=[mkPair (name fspec) x] }]
    in
@@ -115,14 +115,14 @@ generateProtoStuff flags fSpec =
         [ interfaceGen  fSpec flags | interfacesG    flags] ++
         [ verbose flags "Done."]
        ) 
-   where 
+   where  
    protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
 
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
   = (writeFile outputFile $ showADLcode strippedfspec strippedfspec)
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
-    where  
+    where   
     --do not print interfaces (yet) with prototype.exe --export.
     --prototype --export is an export of the Atlas DB.
     --use ampersand --export to get generated interfaces etc in an adl file
@@ -139,6 +139,6 @@ doGenProto fSpec flags
      >> phpObjInterfaces fSpec flags  
      >> verboseLn flags ("Prototype files have been written to " ++  (dirPrototype flags) ++ "." )
      >> if (test flags) then verboseLn flags (show (vplugInfos fSpec)) else verboseLn flags ""
-     where 
-     explainviols = concat [show p++": "++showADLcode fSpec r++"\n"|(r,p)<-violations fSpec]
+     where  
+     explainviols = concat [show p++": "++showADLcode fSpec r++"\n" |(r,p)<-violations fSpec]
 

@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne',InPlug(..),showsql,SqlSelect(..)
- ) where 
+ ) where  
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
@@ -76,18 +76,18 @@ selectExpr fSpec i src trg (Bi lst'@(_:_:_))
                     WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
                       AND NOT EXISTS (SELECT foo)            representing neven
 -}
-   where sqlOk   = and (map isJust exprbracs')
+   where  sqlOk   = and (map isJust exprbracs')
          exprbracs=catMaybes exprbracs'
          src'    = quote$sqlExprSrc fSpec fstm
          trgC    = quote$sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
          trg'    = noCollideUnlessTm' fstm [src'] trgC
          fstm    = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
-         mp1Tm   = take 1 ([t| t@(Tm (Mp1{}))<-lst']++[t| t@(Fc ((Tm (Mp1{})):(Tm (V _ _)):(Tm (Mp1{})):[])) <- lst'])
-         lst     = [t|t<-lst', not (elem t mp1Tm)]
+         mp1Tm   = take 1 ([t | t@(Tm (Mp1{}))<-lst']++[t | t@(Fc ((Tm (Mp1{})):(Tm (V _)):(Tm (Mp1{})):[])) <- lst'])
+         lst     = [t |t<-lst', not (elem t mp1Tm)]
          posTms  = if null posTms' then map notCp (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
          negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
-         posTms' = [t| t<-lst, isPos t && not (isI t)]++[t| t<-lst, isPos t && isI t] -- the code to calculate I is better if it is not the first term
-         negTms' = [notCp t| t<-lst, isNeg t && isI t]++[notCp t| t<-lst, isNeg t && not (isI t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
+         posTms' = [t | t<-lst, isPos t && not (isI t)]++[t | t<-lst, isPos t && isI t] -- the code to calculate I is better if it is not the first term
+         negTms' = [notCp t | t<-lst, isNeg t && isI t]++[notCp t | t<-lst, isNeg t && not (isI t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
          exprbracs' = [ case brc of
                          Just s->Just (s ++ " AS isect"++show n)
                          Nothing->Nothing
@@ -109,7 +109,7 @@ selectExpr fSpec i src trg (Bi lst'@(_:_:_))
                      ]++
                      [Just$ "isect0."++src'++" = "++relval m1 -- sorce and target are unequal
                        ++ " AND isect0."++trg'++" = "++relval m2 -- sorce and target are unequal
-                     | (Fc ((Tm m1@(Mp1{})):(Tm (V _ _)):(Tm m2@(Mp1{})):[])) <- mp1Tm
+                     | (Fc ((Tm m1@(Mp1{})):(Tm (V _)):(Tm m2@(Mp1{})):[])) <- mp1Tm
                      ]++
                      [if isI l
                       then  Just ("isect0."++src'++" <> isect0."++trg') -- this code will calculate ../\-I
@@ -126,33 +126,33 @@ selectExpr fSpec i src trg (Bi [e']) = selectExpr fSpec i src trg e'
 -- Reason: Bi [] should not occur in the query at all! This is not a question of whether the data is in the database.. it might be (it depends on the type of Fi []), but we just don't know
 selectExpr _     _ _   _   (Bi [] ) = fatal 123 "Cannot create query for Fi [] because type is unknown"
 
-selectExpr fSpec i src trg (Fc (Tm (V _ (ONE,_)):fs@(_:_)))
+selectExpr fSpec i src trg (Fc (Tm (V (Sign ONE _)):fs@(_:_)))
   = selectGeneric i ("1",src) ("fst."++trg',trg)
                     (selectExprBrac fSpec i src' trg' (Fc fs) +++ " AS fst")
                     (Just$ "fst."++trg'++" IS NOT NULL")
-                    where src' = noCollideUnlessTm' (Fc fs) [trg'] (quote$sqlExprSrc fSpec (Fc fs))
+                    where  src' = noCollideUnlessTm' (Fc fs) [trg'] (quote$sqlExprSrc fSpec (Fc fs))
                           trg' = quote$sqlExprTrg fSpec (Fc fs)
-selectExpr fSpec i src trg (Fc (s1@(Tm (Mp1{})):(s2@(Tm (V _ _)):(s3@(Tm (Mp1{})):fx@(_:_))))) -- to make more use of the thing below
+selectExpr fSpec i src trg (Fc (s1@(Tm (Mp1{})):(s2@(Tm (V _)):(s3@(Tm (Mp1{})):fx@(_:_))))) -- to make more use of the thing below
   =  selectExpr fSpec i src trg (Fc ((Fc (s1:s2:s3:[])):fx))
 
-selectExpr _ _ src trg (Fc ((Tm sr@(Mp1{})):((Tm (V _ _)):((Tm tr@(Mp1{})):[])))) -- this will occur quite often because of doSubsExpr
+selectExpr _ _ src trg (Fc ((Tm sr@(Mp1{})):((Tm (V _)):((Tm tr@(Mp1{})):[])))) -- this will occur quite often because of doSubsExpr
   = Just$ "SELECT "++relval sr++" AS "++src++", "++relval tr++" AS "++trg
 
 selectExpr fSpec i src trg (Fc (e'@(Tm sr@(Mp1{})):(f:fx)))
    = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                      (selectExprBrac fSpec i src' trg' (Fc (f:fx))+++" AS fst")
                      (Just$"fst."++src'++" = "++relval sr)
-                     where src' = quote$sqlExprSrc fSpec e'
+                     where  src' = quote$sqlExprSrc fSpec e'
                            trg' = noCollideUnlessTm' (Fc (f:fx)) [src'] (quote$sqlExprTrg fSpec (Fc (f:fx)))
 
-selectExpr fSpec i src trg (Fc (e':((Tm (V _ _)):(f:fx)))) = -- prevent calculating V in this case
+selectExpr fSpec i src trg (Fc (e':((Tm (V _)):(f:fx)))) = -- prevent calculating V in this case
     if src==trg && not (isProp e')
     then fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e'
     else
     selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                      ((selectExprBrac fSpec i src' mid' e')+++" AS fst, "+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
                      ("fst."++src'+++" IS NOT NULL")
-         where src' = quote$sqlExprSrc fSpec e'
+         where  src' = quote$sqlExprSrc fSpec e'
                mid' = quote$sqlExprTrg fSpec e'
                mid2'= quote$sqlExprSrc fSpec f
                trg' = noCollideUnlessTm' (Fc (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (Fc (f:fx)))
@@ -166,7 +166,7 @@ selectExpr fSpec i src trg (Fc lst'@(fstm:_:_))
     De elementen in lst' zelf noemen we F0, F1, ... Fc(n-1).
     Deze namen worden aangehouden in de SQL-aliasing. Dat voorkomt naamconflicten op een wat ruwe manier, maar wel overzichtelijk en effectief.
 -}
-   where mainSrc = (if isNeg (head lst') then "c" else "Fc")++"0."++src'
+   where  mainSrc = (if isNeg (head lst') then "c" else "Fc")++"0."++src'
          mainTrg = (if isNeg (last lst') then "c"++show (length lst') else "Fc"++show (length lst'-1))++"."++trg'
          -- de strings die de source en target van Fc lst' weergeven. Bij gelijke namen vindt ontdubbeling van naam plaats met noCollideUnlessTm'
          src'    = quote$sqlExprSrc fSpec fstm
@@ -180,35 +180,35 @@ selectExpr fSpec i src trg (Fc lst'@(fstm:_:_))
                    ]++
                    [ (length lst',target (last lst'))  | isNeg (last lst') ]
          -- de SQL-expressies voor de concepten van lst', maar nu in SQL
-         concExprs = [e| (_,e,_)<-concExpr]
+         concExprs = [e | (_,e,_)<-concExpr]
          concExpr  = [ (n,selectExprBrac fSpec i sm sm tm +++ " AS "++concNm n, sm)
                      | (n,c)<-ncs, tm<-[Tm (I c)], sm<-[quote$sqlExprSrc fSpec tm] ]
-         concTp n = head ([t| (i',_,t)<-concExpr, n==i']++fatal 182 "concTp")
-         concNm n = head (["c"++show n| (i',_,_)<-concExpr, n==i']++fatal 183 "concNm")
+         concTp n = head ([t | (i',_,t)<-concExpr, n==i']++fatal 182 "concTp")
+         concNm n = head (["c"++show n | (i',_,_)<-concExpr, n==i']++fatal 183 "concNm")
          -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
-         exprbracs = [e| (_,e,_,_)<-exprbrac]
+         exprbracs = [e | (_,e,_,_)<-exprbrac]
          exprbrac  = [ (n,selectExprBrac fSpec i src'' trg'' l +++ " AS "++exprNm n , src'' , trg'' )
                      | (n,l)<-zipnum lst'
                      , not (isNeg l)
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                      ]
-         exprS n  = head ([s| (i',_,s,_)<-exprbrac, n==i']++fatal 192 "exprS")  -- source type
-         exprT n  = head ([t| (i',_,_,t)<-exprbrac, n==i']++fatal 193 "exprT")  -- target type
-         exprNm n = head (["Fc"++show n| (i',_,_,_)<-exprbrac, n==i']++fatal 194 "exprNm")
-         -- de where expressies bevatten alle "magie".
+         exprS n  = head ([s | (i',_,s,_)<-exprbrac, n==i']++fatal 192 "exprS")  -- source type
+         exprT n  = head ([t | (i',_,_,t)<-exprbrac, n==i']++fatal 193 "exprT")  -- target type
+         exprNm n = head (["Fc"++show n | (i',_,_,_)<-exprbrac, n==i']++fatal 194 "exprNm")
+         -- de where  expressies bevatten alle "magie".
          wherecl   = filterEmpty
                      [ if isNeg l
                        then "NOT EXISTS ("+++selectExists' (i+12)
                                                           (selectExprBrac fSpec i src'' trg'' (if isNeg l then notCp l else l) +++ " AS Fc"++show n)
                                                           (cChain " AND " ([ concNm  n   ++"."++concTp n   ++ "=Fc"++show n      ++"."++src''        | inCs n ]++
-                                                                          [ exprNm (n-1)++"."++exprT (n-1)++ "=Fc"++show n      ++"."++src''        | n>0, not (inCs n) ]++
-                                                                          [ "Fc"++show n ++"."++trg''       ++ "=" ++concNm (n+1)++"."++concTp (n+1)| inCs (n+1) ]++
-                                                                          [ "Fc"++show n ++"."++trg''       ++ "=" ++exprNm (n+1)++"."++exprS (n+1) | n>0, not (inCs (n+1)) ]++
+                                                                          [ exprNm (n-1)++"."++exprT (n-1)++ "=Fc"++show n      ++"."++src''         | n>0, not (inCs n) ]++
+                                                                          [ "Fc"++show n ++"."++trg''       ++ "=" ++concNm (n+1)++"."++concTp (n+1) | inCs (n+1) ]++
+                                                                          [ "Fc"++show n ++"."++trg''       ++ "=" ++exprNm (n+1)++"."++exprS (n+1)  | n>0, not (inCs (n+1)) ]++
                                                                           []))
                                             +++")"
-                       else cChain " AND " (["c"++show n++"."++src'' ++ "=Fc"++show  n   ++"."++src''| inCs n]++
-                                            ["Fc"++show n++"."++trg'' ++ "=c"++show (n+1)++"."++trg''| inCs (n+1)])
+                       else cChain " AND " (["c"++show n++"."++src'' ++ "=Fc"++show  n   ++"."++src'' | inCs n]++
+                                            ["Fc"++show n++"."++trg'' ++ "=c"++show (n+1)++"."++trg'' | inCs (n+1)])
                      | (n,l)<-zipnum lst'
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
@@ -223,18 +223,18 @@ selectExpr fSpec i src trg (Fc lst'@(fstm:_:_))
                      [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm (I c)))++" IS NOT NULL"
                      | (n,c)<-ncs
                      ]
-                     where inCs n = n `elem` map fst ncs
+                     where  inCs n = n `elem` map fst ncs
 selectExpr _     _ _   _   (Fc  [] ) = fatal 223 "Cannot create query for Fc [] because type is unknown"
 
-selectExpr fSpec i src trg (Tm (V _ (s,t))   ) 
+selectExpr fSpec i src trg (Tm (V (Sign s t))   ) 
  = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
                | (s',src') <- concNames (if name s==name t then "cfst0" else "cfst") s
                , (t',trg') <- concNames (if name s==name t then "cfst1" else "cfst") t
                , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                ]
- where concNames pfx c = [([],"1")|c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c))]
+ where  concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c))]
 
-selectExpr fSpec i src trg (Tm (I _ ONE _)) = selectExpr fSpec i src trg (Tm (V (ONE,ONE)))
+selectExpr fSpec i src trg (Tm (I _ ONE _)) = selectExpr fSpec i src trg (Tm (V (Sign ONE ONE)))
 
 selectExpr fSpec i src trg (Tm mrph) = selectExprMorph fSpec i src trg mrph
 selectExpr fSpec i src trg (Tc expr) = selectExpr fSpec i src trg expr
@@ -243,7 +243,7 @@ selectExpr fSpec i src trg (Tc expr) = selectExpr fSpec i src trg expr
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
 selectExpr _ i src trg (Bu [] ) = toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
 selectExpr fSpec i src trg (Bu es') = (phpIndent i) ++ "(" +++ (selectExprInUnion fSpec i src trg (Bu es')) +++ (phpIndent i) ++ ")"
-selectExpr fSpec i src trg (Cp (Tm (V _ _))) = selectExpr fSpec i src trg (Bu [])
+selectExpr fSpec i src trg (Cp (Tm (V _))) = selectExpr fSpec i src trg (Bu [])
 selectExpr fSpec i src trg (Cp e' )
    = selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                      (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "+++selectExprBrac fSpec i trg' trg' (Tm (I (target e')))+++" AS csnd")
@@ -252,7 +252,7 @@ selectExpr fSpec i src trg (Cp e' )
                                                       ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
                                        ) +++ ")"
                      )
-                     where src' = quote$sqlAttConcept fSpec (source e') 
+                     where  src' = quote$sqlAttConcept fSpec (source e') 
                            trg' = noCollide' [src'] (sqlAttConcept fSpec (target e'))
                            src2 = quote$sqlExprSrc fSpec e'
                            trg2 = noCollideUnlessTm' e' [src2] (quote$sqlExprTrg fSpec e')
@@ -268,7 +268,7 @@ selectExpr fSpec i src trg (Fd lst'@(fstm:_:_))
     De elementen in lst' zelf noemen we reladd0, reladd1, ... reladdd(n-1).
     Deze namen worden aangehouden in de SQL-aliasing. Dat voorkomt naamconflicten op een wat ruwe manier, maar wel overzichtelijk en effectief.
 -}
-   where mainSrc = "c0."++src'
+   where  mainSrc = "c0."++src'
          mainTrg = "c"++show (length lst')++"."++trg'
          -- de strings die de source en target van Fd lst' weergeven. Bij gelijke namen vindt ontdubbeling van naam plaats met noCollideUnlessTm'
          src'    = quote$sqlExprSrc fSpec fstm
@@ -282,13 +282,13 @@ selectExpr fSpec i src trg (Fd lst'@(fstm:_:_))
                    ]
          -- de SQL-expressies voor de concepten van lst', maar nu in SQL
          concExprs i' ncs'' = [ selectExprBrac fSpec i' sm sm tm +++ " AS c"++show n
-                           | (n,c)<-ncs'', tm<-[Tm (I c)], sm<-[quote$sqlExprSrc fSpec tm] ]
+                              | (n,c)<-ncs'', tm<-[Tm (I c)], sm<-[quote$sqlExprSrc fSpec tm] ]
          -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
          inner     = "NOT EXISTS ("+++selectExists' (i+19)
                                                           (cChain ", " (concExprs (i+19) ncs'))
                                                           (cChain (phpIndent (i+19)++"  AND ") (wherecl++cclauses ncs'))
                                             +++")"
-         -- de where expressies bevatten alle "magie". Dit is zgn. "terse code", die omzichtig behandeld moet worden.
+         -- de where  expressies bevatten alle "magie". Dit is zgn. "terse code", die omzichtig behandeld moet worden.
          -- TODO: de volgende code is incorrect. Ook loopt ze uit de pas met de code voor Fc.
          wherecl   = filterEmpty
                      [ (if isNeg l then "   " else "NOT")++
@@ -306,10 +306,10 @@ selectExpr fSpec i src trg (Fd lst'@(fstm:_:_))
                      , isNeg l, isNeg l'
                      , trg''<-[(quote$sqlExprTrg fSpec l)]
                      , src''<-[quote$sqlExprSrc fSpec l']
-                     ] where inCs n = n `elem` map fst (ncs++ncs')
+                     ] where  inCs n = n `elem` map fst (ncs++ncs')
          cclauses ncs'' = [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm ( I c)))++" IS NOT NULL"
-                        | (n,c)<-ncs''
-                        ]
+                          | (n,c)<-ncs''
+                          ]
                      
 selectExpr _     _ _   _   (Fd  [] ) = fatal 310 "Cannot create query for Fd [] because type is unknown"
 
@@ -343,7 +343,7 @@ selectExprBrac fSpec i src trg (Fd [e'])                             = selectExp
 selectExprBrac fSpec i src trg (Bi [e'])                             = selectExprBrac fSpec i src trg e'
 selectExprBrac fSpec i src trg (Bu [e'])                             = selectExprBrac fSpec i src trg e'
 selectExprBrac fSpec i src trg e'@(Tm{})
- = listToMaybe ([quote$p|(p,s,t)<-sqlRelPlugNames fSpec e',quote s==quote src,quote t==quote trg]
+ = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames fSpec e',quote s==quote src,quote t==quote trg]
              ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg e'+++" )"))
 selectExprBrac fSpec i src trg expr
  = phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
@@ -367,11 +367,11 @@ noCollide names nm | nm `elem` names = noCollide names (namepart (reverse nm) ++
    --  changeNr x = show (read x +1)
    string2int :: String -> Int
    string2int  = enc.reverse
-    where enc "" = 0
+    where  enc "" = 0
           enc (c:cs) = digitToInt c + 10* enc cs
    int2string :: Int -> String
    int2string 0 = "0"
-   int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
+   int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10) |n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
 
 noCollideUnlessTm' :: Expression (Relation Concept) 
                   -> [String]
@@ -392,7 +392,7 @@ selectExprMorph fSpec i src trg rel@V{}
  = selectGeneric i (src',src) (trg',trg)
                    (quote (sqlConcept fSpec (source rel)) +++ " AS vfst, "++quote (sqlConcept fSpec (target rel)) ++ " AS vsnd")
                    (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
- where src'="vfst."++sqlAttConcept fSpec (source rel)
+ where  src'="vfst."++sqlAttConcept fSpec (source rel)
        trg'="vsnd."++sqlAttConcept fSpec (target rel)
 selectExprMorph _ _ src trg rel@Mp1{}
  | src == ""&&trg=="" = fatal 394 "Source and target are \"\", use selectExists' for this purpose"
@@ -421,16 +421,16 @@ selectGeneric i src trg tbl whr
  = selectcl ++
    phpIndent i ++ "  FROM " +>+ 
    (if toM whr==Just "1" then tbl else tbl+|+(phpIndent i ++ " WHERE "+>+whr))
-   where selectcl | snd src=="" && snd trg=="" = fatal 421 "Source and target are \"\", use selectExists' for this purpose"
-                  | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
-                  | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
-                  | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
-                  | otherwise = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
+   where  selectcl | snd src=="" && snd trg=="" = fatal 421 "Source and target are \"\", use selectExists' for this purpose"
+                   | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
+                   | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
+                   | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
+                   | otherwise = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
 selectSelItem :: (String, String) -> String
 selectSelItem (att,alias)
   | unquote (afterPoint att) == unquote alias = att
   | otherwise                                 = att++" AS "++alias
- where myafterPoint ('.':xs) = xs
+ where  myafterPoint ('.':xs) = xs
        myafterPoint ( _ :xs) = myafterPoint xs
        myafterPoint []       = []
        afterPoint s = if (myafterPoint s == "") then s else myafterPoint s
@@ -447,7 +447,7 @@ sqlRelPlugs fSpec e
    ]
 
 sqlRelPlugNames :: Fspc -> Expression (Relation Concept)  -> [(String,String,String)] --(plug,source,target)
-sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
+sqlRelPlugNames f e = [(name p,fldname s,fldname t) |(p,s,t)<-sqlRelPlugs f e]
 
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
@@ -458,8 +458,8 @@ sqlPlugFields p e'
   = let e= disjNF e'
     in
     nub [(fld0,fld1)
-        | fld0<-[f|f<-tblfields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
-        , fld1<-[f|f<-tblfields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
+        | fld0<-[f |f<-tblfields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
+        , fld1<-[f |f<-tblfields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
         , let plugexpr = plugpath p fld0 fld1 --the smallest expression from fld0 to fld1 (both in same plug)
         , let se = fldexpr fld0
               te = fldexpr fld1
@@ -532,14 +532,14 @@ sqlPlugFields p e'
   -}
   -- simplF: replace a;a~ by I if INJ&TOT
   simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
-    where fs = [ts | Fc ts <- [simplify $ Fc ks]] -- if null, replF will probably not do a lot.
+    where  fs = [ts | Fc ts <- [simplify $ Fc ks]] -- if null, replF will probably not do a lot.
            -- null occurs especialy in cases of [I;e] and [e;I]
   replF (k:k2:ks) | k == flp k2 && isInj k && isTot k
          = if null ks then Tm(I$source k) else replF ks
   replF [a] = F [a]
   replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF
     = if null fs then Fc [k,res] else replF (k:head fs) -- we might replace something again!
-    where res = replF (k2:ks)
+    where  res = replF (k2:ks)
           fs  = [ts | Fc ts <- [res]]
   replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
    = fatal 542 "Could not define a properly typed I for Fc[] in replF in sqlPlugFields in Prototype/RelBinGenSQL.hs"
@@ -555,10 +555,10 @@ sqlExprSrc fSpec expr = ses expr
    ses (Fc fs)    = ses (head fs)
    ses (Bu [])  = fatal 557 (if expr==Fc[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
    ses (Bu [f]) = ses f
-   ses (Bu fs)  = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+   ses (Bu fs)  = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
    ses (Bi [])  = fatal 560 (if expr==Fc[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
    ses (Bi [f]) = ses f
-   ses (Bi fs)  = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+   ses (Bi fs)  = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
    ses (Fd [])  = fatal 563 (if expr==Fc[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
    ses (Fd [f]) = ses f
    ses (Fd fs)  = ses (head fs)
@@ -569,7 +569,7 @@ sqlExprSrc fSpec expr = ses expr
    ses (Tm r)  = case r of
                     Mp1{} -> "Mp"++(name (rel1typ r))
                     V{} -> ses (Tm I{reltyp=source r})
-                    _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm r)]++[show r])
+                    _ -> head ([s |(_,s,_)<-sqlRelPlugNames fSpec (Tm r)]++[show r])
 sqlExprTrg :: Fspc->Expression (Relation Concept) -> String
 sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 
@@ -583,8 +583,8 @@ sqlConceptPlug fSpec c | c==ONE = fatal 583 "Concept ONE may not be represented 
                        | otherwise
              = if null ps then fatal 585 $ "Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                head ps
-               where ps = [plug|InternalPlug plug<-plugInfos fSpec
-                               , not (null (case plug of ScalarSQL{} -> [c|c==cLkp plug]; _ -> [c'|(c',_)<-cLkpTbl plug, c'==c]))]
+               where  ps = [plug |InternalPlug plug<-plugInfos fSpec
+                                , not (null (case plug of ScalarSQL{} -> [c |c==cLkp plug]; _ -> [c' |(c',_)<-cLkpTbl plug, c'==c]))]
 
 
 sqlAttConcept :: Fspc -> Concept -> String
@@ -592,7 +592,7 @@ sqlAttConcept fSpec c | c==ONE = "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                head cs
-               where cs = [fldname f|f<-tblfields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where  cs = [fldname f |f<-tblfields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                      appname =  name fSpec
 
 ----------------------------------------
@@ -721,7 +721,7 @@ instance InPlug Concept where
           fld = (cslfld csel){sfdfrom=sel1}
           w = SqlEQ (SqlVar fld) (SqlVal x)
       in CptSel {cslfld=rename fld "fld1",cslfrom=sel1,cslwhere=Just w,cslas=[]}
-   domainlocs fs c = [(f,p)|(p,_,f)<-sqlRelPlugs fs (Tm(I c))]
+   domainlocs fs c = [(f,p) |(p,_,f)<-sqlRelPlugs fs (Tm(I c))]
    targetlocs = domainlocs
    
 instance InPlug (Relation Concept) where
@@ -736,12 +736,12 @@ instance InPlug (Relation Concept) where
                 ,rslwhere=Just( SqlAND  (SqlNOT(SqlEQ (SqlVar sfld) SqlNul))
                                         (SqlNOT(SqlEQ (SqlVar tfld) SqlNul))   )
                 ,rslas=[]} 
-   domainlocs fs r = [(f,p)|(p,f,_)<-sqlRelPlugs fs (Tm r)]
-   targetlocs fs r = [(f,p)|(p,_,f)<-sqlRelPlugs fs (Tm r)]
+   domainlocs fs r = [(f,p) |(p,f,_)<-sqlRelPlugs fs (Tm r)]
+   targetlocs fs r = [(f,p) |(p,_,f)<-sqlRelPlugs fs (Tm r)]
    
 instance InPlug (Expression (Relation Concept)) where
-   domainlocs fs ex = [(f,p)|(p,f,_)<-sqlRelPlugs fs ex]
-   targetlocs fs ex = [(f,p)|(p,_,f)<-sqlRelPlugs fs ex]
+   domainlocs fs ex = [(f,p) |(p,f,_)<-sqlRelPlugs fs ex]
+   targetlocs fs ex = [(f,p) |(p,_,f)<-sqlRelPlugs fs ex]
    selectbinary fs (Tm r) 
     = case r of
         Rel{} -> selectbinary fs r

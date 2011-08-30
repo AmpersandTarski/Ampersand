@@ -28,7 +28,7 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
       Assignment{assignTo=to,query=q}
        -> ("\n",Set.empty)+++showAssignmentCode i to q
       Iteration{loopOver=lp,loopBy=lb,loopValue=lv,stcode=c}
-       -> (concat ["\n"++sps++"$"++nName decl++"=array();"|decl<-postknowledge x,notElem (nName decl) ("":map nName (preknowledge x))]
+       -> (concat ["\n"++sps++"$"++nName decl++"=array();" |decl<-postknowledge x,notElem (nName decl) ("":map nName (preknowledge x))]
           ++"\n"++sps++"if(is_array("++showUseVar lp++"))"++"\n"++sps
           ++"foreach("++showUseVar lp++" as $"++nName lb++"=>$"++nName lv++"){"
           ,headersForUV lp)
@@ -67,7 +67,7 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
                           [ c:" '"++nName f++"' => "++fst(assignment (nObject f))
                           | (c,f)<-zip ('(':repeat ',') fm
                           ]
-      , Set.unions [snd$assignment (nObject f)|f<-fm])
+      , Set.unions [snd$assignment (nObject f) |f<-fm])
    assignment (CQPlain nuv) = ("@"++showUseVar nuv,headersForUV nuv)
    assignment rest =
      case rest of
@@ -84,7 +84,7 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
      PHPBinCheck{}
       -> foldr1 (+++)
                 ([("(false==="++cqphpplug rest++"(",Set.empty)]++
-                 [(prefix++str,sets)|(prefix,(str,sets))<-zip ("":repeat ",")$ map assignment (cqinput rest)]
+                 [(prefix++str,sets) |(prefix,(str,sets))<-zip ("":repeat ",")$ map assignment (cqinput rest)]
                  ++[(")?array():array(",Set.empty)
                    ,assignment (fst$ cqreturn rest)
                    ,("=>array(",Set.empty)

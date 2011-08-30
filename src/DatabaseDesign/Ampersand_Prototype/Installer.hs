@@ -52,14 +52,14 @@ where
           , "if($existing==true){"
           ] ++ indentBlock 2 (concat (map checkPlugexists (plugInfos fSpec)))
           ++ ["}"]
-          ++ concat (map plugCode [p| InternalPlug p<-plugInfos fSpec])
+          ++ concat (map plugCode [p | InternalPlug p<-plugInfos fSpec])
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
              ,"if ($err=='')"
              ,"  echo 'The database has been reset to its initial population.<br/><br/><button onclick=\"history.go(-1)\">Ok</button>';"]
         ) ++
         [ "}" ]
      ) ++ "\n?>\n"
-    where plugCode plug
+    where  plugCode plug
            = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug)))
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
@@ -81,7 +81,7 @@ where
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
-                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` "|f<-tblfields plug]++")"
+                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
                                  ]++ indentBlock 12
                                                  ( [ comma++ " (" ++valuechain md++ ")"
                                                    | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")
@@ -90,7 +90,7 @@ where
                                  ++ ["            \");"
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              )
-          valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld|fld<-record]
+          valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld |fld<-record]
           checkPlugexists plug
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(name plug)++"`\")){"
              , "  mysql_query(\"DROP TABLE `"++(name plug)++"`\");" --todo: incremental behaviour

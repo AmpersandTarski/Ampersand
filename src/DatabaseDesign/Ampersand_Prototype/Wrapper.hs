@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand_Prototype.Wrapper (objectWrapper) where
+module DatabaseDesign.Ampersand_Prototype.Wrapper (objectWrapper) where 
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
@@ -36,7 +36,7 @@ objectWrapper fSpec ifcs ifc flags
      then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++",False);"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++");"
           ] 
-     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']" ++ [','|not(null (objats o))]
+     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']" ++ [',' |not(null (objats o))]
                                   ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++",False);"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++".'&" ++ objectId ++"='.urlencode($"++objectId++"->getId())"++");"
           ] 
@@ -115,9 +115,9 @@ objectWrapper fSpec ifcs ifc flags
    objectName      = name o
    objectId        = phpIdentifier objectName
    appname         = name fSpec
-   editable | theme flags==StudentTheme =  [r|("Student",r)<-mayEdit fSpec]
+   editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
             | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
-   visibleedit = foldr (||) visiblenew [mayedit x editable|x<-allobjctx o]
+   visibleedit = foldr (||) visiblenew [mayedit x editable |x<-allobjctx o]
    visibledel = False --del() not implemented yet -- visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable
    allobjctx obj = (objctx obj):(concat (map allobjctx (objats obj)))
@@ -178,15 +178,15 @@ newUI editable item
   | mayedit item editable = "new UI"
   | otherwise = "itemshow UI"
 mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
-mayedit item editable = let rexprs=[Tm r|r<-editable] in elem item (rexprs++map flp rexprs)
+mayedit item editable = let rexprs=[Tm r |r<-editable] in elem item (rexprs++map flp rexprs)
 mayadd :: Concept -> [Relation Concept] -> Bool
-mayadd cpt editable = (not.null) [()|r<-editable,isIdent r||isTrue r,target r==cpt] 
+mayadd cpt editable = (not.null) [() |r<-editable,isIdent r||isTrue r,target r==cpt] 
 
 -----------------------------------------
 --display/edit the instances related to the identifier of some concept instance (objectId) by definition of INTERFACE (att0)
 --ifcs is nodig voor GoToPages
 -- "$" ++ objectId is de instantie van de class die je op het scherm ziet
---path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0|(att0,n)<-atts o]
+--path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0 |(att0,n)<-atts o]
 --siblingatt0s bepaalt of er meer dan 1 (wrapper att0) is. Deze info is nodig om te bepalen of CLASS = '.. UI of UI_*'.
 --att0 is de huidige subinterface
 attributeWrapper::[Interface]->[Relation Concept]->String->String->Bool->ObjectDef->[String]
@@ -201,7 +201,7 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
    --By default javascript controls read and edit mode layout for "item UI" and "new UI" (see edit.js for edit mode)
    --other items are the same in read and edit mode
    --navigate.js handles Goto* classes
-   if elem "PICTURE" [x|xs<-objstrs att0,x<-xs] 
+   if elem "PICTURE" [x |xs<-objstrs att0,x<-xs] 
    --TODO-> replace by checking (target att0)==Cpt "Picture" && Picture ISA Datatype
    --The meaning of and the concept name "Datatype" is claimed by Ampersand.
    --The meaning of and the concept name "String" is claimed by Ampersand. (GEN String ISA Datatype)
@@ -241,7 +241,7 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
    [ "</SCRIPT>"
    , "<?php } ?>"
    ] --END: edit blocks
-   where    
+   where     
    -----------------------------------------
    --CONTENT functions
    -----------------------------------------
@@ -294,7 +294,7 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
         [ "echo '"
         , "<UL>';"
         , "foreach("++var++" as $i"++show depth++"=>"++idvar ++"){"
-        , --atnm is set to I(idvar) or value(idvar), where value is the name of the display relation
+        , --atnm is set to I(idvar) or value(idvar), where  value is the name of the display relation
           "  "++atnm ++"="++(if null (displaydirective att) then idvar
                        else (if null(objats att)
                              then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
@@ -469,10 +469,10 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
         , "</DIV>"
         , "<?php"
         ]
-      where content = attContent var depth path cls att
+      where  content = attContent var depth path cls att
 ----------
 urlstrs :: ObjectDef -> [String]
-urlstrs att = [urlstr|xs<-objstrs att,'U':'R':'L':'=':urlstr<-xs]
+urlstrs att = [urlstr |xs<-objstrs att,'U':'R':'L':'=':urlstr<-xs]
 ----------------------
 --display one or more pictures, assumed to be behind their url values (GEN Picture ISA Datatype)
 embedimage::ObjectDef->Integer->[String]
@@ -574,7 +574,7 @@ phpList2ArrayVal var rqvar a
         | (a',n)<-zip (objats a) [(0::Integer)..], isUni (objctx a')] ++
         [ ")"]
          -- we gebruiken voor rqvar' liever iets waarvan het attribuut ingesteld wordt:
-   where rqvar' = head ( [(rqvar++'.':show n)
+   where  rqvar' = head ( [(rqvar++'.':show n)
                          | (a',n)<-zip (objats a) [(0::Integer)..]
                          , isUni (objctx a')
                          , isIdent (objctx a')

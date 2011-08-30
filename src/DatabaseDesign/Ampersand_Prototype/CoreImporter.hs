@@ -25,12 +25,12 @@ import DatabaseDesign.Ampersand
    , Lang(..)
    , Options(..), DocTheme(..)
    , Picture(..), writePicture, DrawingType(..)
-   , Origin(..), IOLocation(..)
+   , Origin(..)
    , FPA(..), FPcompl(..)
    , mkPair
    , P_Populations
    -- * Classes:
-   , Association(..)
+   , Association(..), flp
    , Collection(..)
    , Identified(..)
    , ProcessStructure(..)
@@ -54,7 +54,6 @@ import DatabaseDesign.Ampersand
    , conjNF, disjNF, simplify
    , v, notCp, isPos, isNeg
    , isI
-   , mapExpression, mapRelation
    -- * Functions with plugs:
    , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff
