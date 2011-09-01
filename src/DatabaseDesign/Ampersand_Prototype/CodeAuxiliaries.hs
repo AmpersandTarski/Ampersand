@@ -4,6 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries
        (Named(..),atleastOne,reName,nameFresh,noCollide,mapExpression, mapRelation, mapDeclaration, mapSign) 
 where
  import Data.Char
+ import DatabaseDesign.Ampersand_Prototype.CoreImporter
  data (Eq a) => Named a = Named { nName :: String, nObject :: a} deriving (Eq)
  instance (Show a,Eq a)=> Show (Named a) where
    show a = "$"++(nName a)++(show (nObject a))
@@ -34,7 +35,7 @@ where
     --  changeNr x = show (read x +1)
     string2int :: String -> Int
     string2int  = enc.reverse
-     where  enc "" = 0
+     where enc "" = 0
            enc (c:cs) = digitToInt c + 10* enc cs
     int2string :: Int -> String
     int2string 0 = "0"
