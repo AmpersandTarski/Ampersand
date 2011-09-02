@@ -178,7 +178,7 @@ newUI editable item
   | mayedit item editable = "new UI"
   | otherwise = "itemshow UI"
 mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
-mayedit item editable = let rexprs=[Tm r |r<-editable] in elem item (rexprs++map flp rexprs)
+mayedit item editable = let rexprs=[Erel r |r<-editable] in elem item (rexprs++map flp rexprs)
 mayadd :: Concept -> [Relation Concept] -> Bool
 mayadd cpt editable = (not.null) [() |r<-editable,isIdent r||isTrue r,target r==cpt] 
 

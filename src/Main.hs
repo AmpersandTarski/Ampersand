@@ -47,11 +47,11 @@ parseFilePrototype flags pv
   --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c)) |c<-concs atlasfspec])
     --       verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d))) |d<-declarations atlasfspec])
 --           verbose flags (show[showsql(SqlSel1(selectdomain atlasfspec (makeRelation d))) |d<-declarations atlasfspec])
-  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((Tm (makeRelation d))))) |d<-declarations atlasfspec])
-       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (Bu[Tm(makeRelation d),Tm(flp$makeRelation d)]))) |d<-declarations atlasfspec,source d==target d])
+  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((Erel (makeRelation d))))) |d<-declarations atlasfspec])
+       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (Euni[Erel(makeRelation d),Erel(flp$makeRelation d)]))) |d<-declarations atlasfspec,source d==target d])
 --           verbose flags (show[(showsql(SqlSel2(selectbinary atlasfspec r'))
   --                             ,showCode 0 x
-    --                           ,show r') |r<-rules atlasfspec,let r'=(conjNF . Cp . normExpr) r,head(showexpression r)=='I'
+    --                           ,show r') |r<-rules atlasfspec,let r'=(conjNF . Ecpl . normExpr) r,head(showexpression r)=='I'
       --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
            if interfacesG flags then atlas2context atlasfspec flags else return parsedfile
 

@@ -125,7 +125,7 @@ where
  ruleFunctions flags fSpec
     = showCodeHeaders 
        ([ (code rule')
-        | rule<-invariants fSpec, rule'<-[(conjNF . Cp . normExpr) rule]
+        | rule<-invariants fSpec, rule'<-[(conjNF . Ecpl . normExpr) rule]
         ])
       ++
       [ "\n  function checkRule"++show (runum rule)++"(){\n    "++
@@ -145,7 +145,7 @@ where
                  "  return false;\n    }"
            )
            ++ "return true;\n  }"
-         | rule<-invariants fSpec, rule'<-[(conjNF . Cp . normExpr) rule]]
+         | rule<-invariants fSpec, rule'<-[(conjNF . Ecpl . normExpr) rule]]
       where
        code :: Expression (Relation Concept) -> [Statement]
        code r = case (getCodeFor fSpec [] [codeVariableForBinary "v" r]) of

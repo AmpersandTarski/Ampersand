@@ -52,22 +52,22 @@ where
            Mp1{} -> r{ rel1typ = f (rel1typ r) }
 
  mapExpression :: (Relation->Relation) -> Expression -> Expression
- mapExpression f (Re (l,r)) = Re (mapExpression f l,mapExpression f r) -- ^ equivalence             =
- mapExpression f (Ri (l,r)) = Ri (mapExpression f l,mapExpression f r) -- ^ implication             |-
- mapExpression f (Bi es)    = Bi (map (mapExpression f) es)            -- ^ intersection            /\
- mapExpression f (Bu es)    = Bu (map (mapExpression f) es)            -- ^ union                   \/
- mapExpression f (Bx (l,r)) = Bx (mapExpression f l,mapExpression f r) -- ^ difference              -
- mapExpression f (Dl (l,r)) = Dl (mapExpression f l,mapExpression f r) -- ^ left residual           /
- mapExpression f (Dr (l,r)) = Dr (mapExpression f l,mapExpression f r) -- ^ right residual          \
- mapExpression f (Fc es)    = Fc (map (mapExpression f) es)            -- ^ composition             ;
- mapExpression f (Fd es)    = Fd (map (mapExpression f) es)            -- ^ relative addition       !
- mapExpression f (K0 e)     = K0 (mapExpression f e)                   -- ^ Rfx.Trn closure         *
- mapExpression f (K1 e)     = K1 (mapExpression f e)                   -- ^ Transitive closure      +
- mapExpression f (Fl e)     = Fl (mapExpression f e)                   -- ^ Conversion              ~
- mapExpression f (Cp e)     = Cp (mapExpression f e)                   -- ^ OBSOLETE.. remove later
- mapExpression f (Tc e)     =     mapExpression f e                    -- ^ bracketed expression ( remove brackets )
- mapExpression f (Sp e _)   =     mapExpression f e                    -- ^ remove type cast, as the type might change as a result of applying f to elements of e.
- mapExpression f (Tm rel)   = Tm (f rel)                               -- ^ simple relation
+ mapExpression f (Eequ (l,r)) = Eequ (mapExpression f l,mapExpression f r) -- ^ equivalence             =
+ mapExpression f (Eimp (l,r)) = Eimp (mapExpression f l,mapExpression f r) -- ^ implication             |-
+ mapExpression f (Eisc es)    = Eisc (map (mapExpression f) es)            -- ^ intersection            /\
+ mapExpression f (Euni es)    = Euni (map (mapExpression f) es)            -- ^ union                   \/
+ mapExpression f (Edif (l,r)) = Edif (mapExpression f l,mapExpression f r) -- ^ difference              -
+ mapExpression f (Elrs (l,r)) = Elrs (mapExpression f l,mapExpression f r) -- ^ left residual           /
+ mapExpression f (Errs (l,r)) = Errs (mapExpression f l,mapExpression f r) -- ^ right residual          \
+ mapExpression f (Ecps es)    = Ecps (map (mapExpression f) es)            -- ^ composition             ;
+ mapExpression f (Erad es)    = Erad (map (mapExpression f) es)            -- ^ relative addition       !
+ mapExpression f (Ekl0 e)     = Ekl0 (mapExpression f e)                   -- ^ Rfx.Trn closure         *
+ mapExpression f (Ekl1 e)     = Ekl1 (mapExpression f e)                   -- ^ Transitive closure      +
+ mapExpression f (Eflp e)     = Eflp (mapExpression f e)                   -- ^ Conversion              ~
+ mapExpression f (Ecpl e)     = Ecpl (mapExpression f e)                   -- ^ OBSOLETE.. remove later
+ mapExpression f (Ebrk e)     =     mapExpression f e                    -- ^ bracketed expression ( remove brackets )
+ mapExpression f (Etyp e _)   =     mapExpression f e                    -- ^ remove type cast, as the type might change as a result of applying f to elements of e.
+ mapExpression f (Erel rel)   = Erel (f rel)                               -- ^ simple relation
 
  mapDeclaration :: (A_Concept->A_Concept) -> Declaration -> Declaration
  mapDeclaration f d@Sgn{}

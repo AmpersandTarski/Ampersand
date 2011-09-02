@@ -77,34 +77,34 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
  
  phpsource :: Expression (Relation PHPconcept) -> PHPconcept
  phpsource expr = case expr of
-     (Tm rel)-> source rel
-     (Tc f)    -> phpsource f
-     (Fc [])    -> error "!Fatal (module CodeStatement 74): Fc []"
-     (Fc fs)    -> phpsource (head fs)
-     (Fd [])  -> error "!Fatal (module CodeStatement 76): Fd []"
-     (Fd fs)  -> phpsource (head fs)
-     (Bu [])  -> error "!Fatal (module CodeStatement 78): Bu []"
-     (Bu fs)  -> phpsource (head fs)
-     (Bi [])  -> error "!Fatal (module CodeStatement 80): Bi []"
-     (Bi fs)  -> phpsource (head fs)
-     (K0 e')  -> phpsource e'
-     (K1 e')  -> phpsource e'
-     (Cp e')  -> phpsource e'
+     (Erel rel)-> source rel
+     (Ebrk f)    -> phpsource f
+     (Ecps [])    -> error "!Fatal (module CodeStatement 74): Ecps []"
+     (Ecps fs)    -> phpsource (head fs)
+     (Erad [])  -> error "!Fatal (module CodeStatement 76): Erad []"
+     (Erad fs)  -> phpsource (head fs)
+     (Euni [])  -> error "!Fatal (module CodeStatement 78): Euni []"
+     (Euni fs)  -> phpsource (head fs)
+     (Eisc [])  -> error "!Fatal (module CodeStatement 80): Eisc []"
+     (Eisc fs)  -> phpsource (head fs)
+     (Ekl0 e')  -> phpsource e'
+     (Ekl1 e')  -> phpsource e'
+     (Ecpl e')  -> phpsource e'
  phptarget  :: Expression (Relation PHPconcept) -> PHPconcept
  phptarget x = phpsource(phpflp x)
  phpsign :: Expression (Relation PHPconcept) -> (PHPconcept,PHPconcept)
  phpsign x = (phpsource x, phptarget x)
  phpflp  :: Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
  phpflp expr = case expr of
-     (Tm rel)-> Tm (flp rel)
-     (Tc f)    -> Tc (phpflp f)
-     (Fc ts)    -> Fc (map phpflp (reverse ts))
-     (Fd ts)  -> Fd (map phpflp (reverse ts))
-     (Bu fs)  -> Bu (map phpflp fs)
-     (Bi fs)  -> Bi (map phpflp fs)
-     (K0 e')  -> K0 (phpflp e')
-     (K1 e')  -> K1 (phpflp e')
-     (Cp e')  -> Cp (phpflp e')
+     (Erel rel)-> Erel (flp rel)
+     (Ebrk f)    -> Ebrk (phpflp f)
+     (Ecps ts)    -> Ecps (map phpflp (reverse ts))
+     (Erad ts)  -> Erad (map phpflp (reverse ts))
+     (Euni fs)  -> Euni (map phpflp fs)
+     (Eisc fs)  -> Eisc (map phpflp fs)
+     (Ekl0 e')  -> Ekl0 (phpflp e')
+     (Ekl1 e')  -> Ekl1 (phpflp e')
+     (Ecpl e')  -> Ecpl (phpflp e')
 
  conc2php :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
  conc2php e = mapExpression (mapRelation PHPC) e
