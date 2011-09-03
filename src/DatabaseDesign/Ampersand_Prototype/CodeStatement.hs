@@ -111,7 +111,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
 
  php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
  php2conc e = mapExpression (mapRelation f) e
-              where  f (PHPC c) = c
+              where f (PHPC c) = c
                     f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
 
  data CodeQuery

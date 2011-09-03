@@ -14,6 +14,8 @@ build-type:    Simple
 license:       OtherLicense
 copyright:     Stef Joosten
 
+
+
 Executable prototype
   Main-Is:         Main.hs
   Hs-Source-Dirs:  src
@@ -21,8 +23,8 @@ Executable prototype
       ghc        >= 7.0 && < 8.0 ,
       Ampersand  == 2.1.1, 
       graphviz   >= 2999.11.0.0 && < 3000 ,
-      HDBC-odbc  >= 2.2.3.2,  
-      HDBC       >= 2.2.6   && < 2.3,
+      HDBC-odbc  >= 2.2.3.2 && < 2.3 ,  
+      HDBC       >= 2.2.6 && < 2.3 ,
       bytestring >= 0.9.1.10 && < 0.10,
       utf8-string>= 0.3.6,
       filepath   >= 1.2 && < 1.3,
@@ -30,4 +32,26 @@ Executable prototype
       base       >= 4.3.1.0 && < 5,
       directory  >= 1.1 && < 1.2,
       containers >= 0.4     && < 0.5    
-  
+  Exposed-modules: DatabaseDesign.Ampersand_Prototype.Apps ,
+                 DatabaseDesign.Ampersand_Prototype.Apps.Atlas ,
+                 DatabaseDesign.Ampersand_Prototype.Code ,
+                 DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries ,
+                 DatabaseDesign.Ampersand_Prototype.CodeStatement ,
+                 DatabaseDesign.Ampersand_Prototype.CodeVariables ,
+                 DatabaseDesign.Ampersand_Prototype.ConnectToDataBase ,
+                 DatabaseDesign.Ampersand_Prototype.ContextGen ,
+                 DatabaseDesign.Ampersand_Prototype.CoreImporter ,
+                 DatabaseDesign.Ampersand_Prototype.DataObject ,
+                 DatabaseDesign.Ampersand_Prototype.GetCode ,
+                 DatabaseDesign.Ampersand_Prototype.Index ,
+                 DatabaseDesign.Ampersand_Prototype.Installer ,
+                 DatabaseDesign.Ampersand_Prototype.InterfaceDef ,
+                 DatabaseDesign.Ampersand_Prototype.ObjBinGen ,
+                 DatabaseDesign.Ampersand_Prototype.Object ,
+                 DatabaseDesign.Ampersand_Prototype.PlugPHP ,
+                 DatabaseDesign.Ampersand_Prototype.RelBinGenBasics ,
+                 DatabaseDesign.Ampersand_Prototype.RelBinGenSQL ,
+                 DatabaseDesign.Ampersand_Prototype.ShowCode ,
+                 DatabaseDesign.Ampersand_Prototype.Version ,
+                 DatabaseDesign.Ampersand_Prototype.Wrapper
+     

@@ -76,7 +76,7 @@ creates _ [] = return 1
 creates conn (tbl:tbls) = 
    do _ <- run conn stmt []
       creates conn tbls
-   where  stmt = ("CREATE TABLE "++name tbl
+   where stmt = ("CREATE TABLE "++name tbl
                ++"("++intercalate "," 
                       ([createfld f |f<-tblfields tbl]
                      ++[" UNIQUE KEY (`"++fldname key++"`)"
@@ -143,8 +143,8 @@ atlas2context fSpec flags =
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
       --Context--
-      cxs <- selectconcept conn fSpec (cptnew "Context")
-      pats <- selectconcept conn fSpec (cptnew "Pattern")
+      cxs <- selectconcept conn fSpec (newAcpt "Context")
+      pats <- selectconcept conn fSpec (newAcpt "Pattern")
       --Relation
       relname <- selectdecl conn fSpec (therel fSpec "rel" [] [])
       relsc <- selectdecl conn fSpec (therel fSpec "src" [] [])
@@ -305,8 +305,8 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
        }
    where
    nm =geta relname relstr
-   s = cptnew(geta relsc relstr)
-   t = cptnew(geta reltg relstr)
+   s = newAcpt(geta relsc relstr)
+   t = newAcpt(geta reltg relstr)
 
 atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)]
                                   -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PExplanation]
@@ -321,8 +321,8 @@ makerel :: String -> [(String, String)] -> [(String, String)] -> [(String, Strin
 makerel relstr relname relsc reltg = 
       let
       nm =geta relname relstr
-      s = cptnew(geta relsc relstr)
-      t = cptnew(geta reltg relstr)
+      s = newAcpt(geta relsc relstr)
+      t = newAcpt(geta reltg relstr)
       in
       Rel  { relnm = nm
            , relpos = DBLoc "Atlas(Relation)"

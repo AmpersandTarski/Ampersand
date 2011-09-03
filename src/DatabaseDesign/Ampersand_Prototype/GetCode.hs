@@ -47,7 +47,7 @@ where
          -> getAllTarget t
         _ -> fatal 44 $ "please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e
      ]
-  where  e = cvExpression obj
+  where e = cvExpression obj
         obj = nObject o
         getAllTarget (PHPexp e') -- this makes the object very predictable: it will have a source (0) and a target (1) relation
          = atleastOne ("!Fatal (module GetCode 53): getAllTarget did not return something for (PHPexp e') with e'="++show e')
@@ -245,7 +245,7 @@ where
                           ]
                 _ -> []
      ]
-  where  expr = php2conc composed
+  where expr = php2conc composed
         obj =reName (nName var) (newVarFor (map nName pre) composed)
         -- create a new variable, ensuring that no overlap occurs in the namespaces concerning preknowledge
         getAVar pre' = newVarFor (map nName (obj:pre'))
