@@ -1,98 +1,89 @@
-Script         = Context { PatternDef } .
-Context        = CONTEXT ADLid [ LangDef ] \n 
-                  [ ":" Expr [ Binding ] ] \n
-                  { ContextElement }  \n
-				  ENDCONTEXT .
-LangDef        = IN (DUTCH | ENGLISH ) .
-Binding        = BINDING BIND Declaration TOPHP (Conid | String)
-                   { "," BIND Declaration TOPHP (Conid | String) } .
+ADL_V2          ::= Context
+Context         ::= "CONTEXT" Id LanguageID (":" Expr Bindings)? ContextElement* "ENDCONTEXT"
+ContextElement  ::= Pattern      |
+                    Process      |
+                    Rule         |
+                    Declaration  |
+                    ConceptDef   |
+                    KeyDef       |
+                    Interface    |
+                    Plug         |
+                    Explain      |
+                    Population  
+Population      ::= "POPULATION" Relation Sign? "CONTAINS" Content
 
-ContextElement = ( PatElem
-                 | UsePattern
-                 | Service
-				 | SqlPlug
-				 | PhpPlug
-				 | RoleService
-				 | RoleRelation
-				 | Population
-				 ).
-UsePattern     = USE PATTERN ADLid .
-PatternDef     = PATTERN ADLid [LangDef] \n
-                 { PatElem } ENDPATTERN .
-PatElem        = ( RuleDef
-                 | Gen
-				 | Declaration
-				 | ConceptDef
-				 | Keydef
-				 | Explain
-				 ).
-Explain        = PURPOSE ExplObj [LangDef] [REF String] Expl .
-ExplObj        = ( CONCEPT (Conid | String)
-                 | RELATION Morphism 
-			     | RULE ADLid
-			     | KEY ADLid
-			     | SERVICE ADLid
-     		     | PATTERN ADLid
-			     | CONTEXT ADLid
-			     ).
-Expl           = "{+" StringZonderQuotes "+}" 			     
-Population     = POPULATION Morphism CONTAINS Content .
-RuleDef        = (  RULE ADLid   \n
-                   ( Expr
-				   | Expr "|-" Expr
-				   | Expr "-|" Expr
-				   | Expr "="  Expr
-                   )  \n
-				   { MEANING [LangDef] Expl }
-                 ).
-Gen            = GEN (Conid | String) ISA (Conid | String) .
-Term1          = ( PreTerm { ";" PreTerm } 
-                 | PreTerm { "!" PreTerm }
-				 ) .
-Term2          = ( Term1 "\" Term1 
-                 | Term1 "/" Term1 
-				 ).
-Term3          = ( Term2 { "\/" Term2 }
-                 | Term2 { "/\" Term2 }
-				 | Term2  "-"  Term2 
-				 ) .
-Expr           = ( Term3 "=" Term3 
-                 | Term3 "|-" Term3 
-                 | Term3 "-|" Term3 
-				 ).
-PreTerm        = PostTerm | "-" PreTerm .
-PostTerm       = PostTerm ( "~" | "*" | "+" ) | Term .
-Term           = Morphism | "(" Expr ")" .
-Morphism       = ( ( I | Atom ) 
-                      [ "[" Concept "]" ] 
-                 | ( V | Varid ) 
-				      [ "[" ( Concept 
-				            | Concept "*" Concept 
-					        ) "]" ] 
-				 ) . 
-Atom           = "'" "a..z,A..Z,0..9,_-etc" "'" . 
-Concept        = ( SELF | Conid | String ) .
-LabelProps     = ADLid [ "{" String { "," String } "}" ] ":" .
-ConceptDef     = CONCEPT (Conid | String) [BYPLUG] String [REF String] .				 
-KeyDef         = KEY LabelProps Concept "("	KeyAtt {"," KeyAtt} ")".
-KeyAtt         = [ LabelProps ] Expr.
-RoleService    = ROLE ADLid { "," ADLid } USES ADLid { "," ADLid } .
-RoleRelation   = ROLE ADLid { "," ADLid } EDITS Morphism { "," Morphism } .
-SqlPlug        = SQLPLUG Obj . 
-PhpPlug        = PHPPLUG Obj . 
-Service        = SERVICE ADLid \n
-                  [ "(" Morphism { "," Morphism } ")" ] \n
-                  [ "{" ADLid { ADLid } [ "," ADLid { ADLid } ] "}" ] \n
-				  ":" Expr \n
-				  [ "=" "[" [ Obj { "," Obj } ] "]" ].
-Obj            = LabelProps Expr \n
-                 [ ALWAYS  {( UNI  | TOT | PROP )} ]  \n
-                 [ "=" "[" Obj { "," Obj } "]" ].		
-Declaration    = Varid "::" Concept ( "*" | "->" ) Concept \n
- 				 [Props] [Pragma] [BYPLUG] "." .	
-Content        = "[" [ Record { ";" Record } ] "]" .
-Record         = "(" String "," String ")". 
-Props          = "[" [ Prop { "," Prop } ] "]" .
-Prop           = ( UNI | INJ |  SUR | TOT | SYM | ASY | TRN | RFX ). 
-Pragma         = PRAGMA String { String } . 	
+Pattern         ::= "PATTERN" Id PatElem* "ENDPATTERN"
+PatElem         ::= Rule         |
+                    Gen          |
+                    Declaration  |
+                    ConceptDef   |
+                    KeyDef       |
+                    Explain      
+
+Process         ::= "PROCESS" Id ProcElem* "ENDPROCESS"
+ProcElem        ::= Rule         |
+                    Gen          |
+                    Declaration  |
+                    RoleRule     |
+                    RoleRelation |
+                    ConceptDef   |
+                    KeyDef       |
+                    Explain
+
+Phrase          ::= "PHRASE" LanguageID String
+Gen             ::= "GEN" Id "ISA" Id
+
+Rule            ::= "RULE" (ADLid ":")? Expr Phrase? 
+Expr            ::= Exp1 (( "=" | "|-") Exp1)?
+Exp1            ::= Exp2 (( "/\" | "\/") Exp2)*
+Exp2            ::= Exp3 ("-" Exp3)?
+Exp3            ::= Exp4 (( "\" | "/") Exp4)?
+Exp4            ::= (Exp5 (";" Exp5)* ) |
+                    (Exp5 ("!" Exp5)* ) |
+                    Exp5
+Exp5            ::= "-"? Exp6 |
+                    Exp6  ( Sign | "~" | "*" | "+")
+Exp6            ::= Relation | 
+                    "("   Expr   ")"
+
+Relation        ::= "I" | "V" | Varid | Atom
+RelSign         ::= Relation Sign?
+Sign            ::= "[" Concept ( "*" Concept)? "]"
+
+Concept         ::= "ONE" | Id
+
+LabelProps      ::= Id ("{" Id ("," Id)* "}")* ":"
+
+ConceptDef      ::= "CONCEPT" Id "BYPLUG"? String String?
+
+KeyDef          ::= "KEY" LabelProps Concept "(" KeyAtt ("," KeyAtt)* ")"
+KeyAtt          ::= LabelProps? Expr
+
+RoleRelation    ::= "ROLE" Id ("," Id)* "EDITS" RelSign ("," RelSign)*
+RoleRule        ::= "ROLE" Id ("," Id)* "MAINTAINS" RelSign ("," RelSign)*
+
+Plug            ::= ("SQLPLUG" | "PHPPLUG") Obj
+
+Interface       ::= "INTERFACE" ("(" RelSign ("," RelSign)* ")")?
+                    ("{" (Id Id*) ("," Id Id*)*"}")?
+                    ":" Expr Box
+
+Box             ::= "BOX" "[" Obj ("," Obj)* "]"
+Obj             ::= LabelProps Expr Box
+
+Declaration     ::= ((Id "::" Concept ( "*"| "->") Concept) |
+                     (RELATION Id Sign))
+                    "BYPLUG"? Props? "BYPLUG"? Pragma? ("MEANING" String)? ("=" Content )? "."?
+Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP')
+                         ("," ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP'))*
+                       )? ']'
+Pragma          ::= 'PRAGMA' String String*
+
+
+
+
+Content         ::= "[" (("(" String "," String ")") (";" ("(" String "," String ")") )*)? "]"
+
+
+
 
