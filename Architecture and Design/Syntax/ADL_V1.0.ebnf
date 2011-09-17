@@ -1,5 +1,5 @@
 ADL_V1          ::= Context
-Context         ::= "CONTEXT" Id 
+Context         ::= 'CONTEXT' Id 
                     (Pattern      |
                     Declaration  |
                     ConceptDef   |
@@ -8,59 +8,59 @@ Context         ::= "CONTEXT" Id
                     Plug         |
                     Explain      |
                     Population  
-                    )* "ENDCONTEXT"
+                    )* 'ENDCONTEXT'
 Explain        ::= 'EXPLAIN' (( ('CONCEPT'|'RULE'|'KEY'|'PATTERN'|'SERVICE'|'CONTEXT') Id)|'RELATION' Relation Sign)
                    ('IN' ('DUTCH' | 'ENGLISH'))?
                    ('REF' String)? ExplainString
-Population      ::= "POPULATION" Relation Sign? "CONTAINS" Content
-Pattern         ::= "PATTERN" Id 
+Population      ::= 'POPULATION' Relation Sign? 'CONTAINS' Content
+Pattern         ::= 'PATTERN' Id 
                    (Rule         |
                     Gen          |
                     Declaration  |
                     ConceptDef   |
                     KeyDef       |
-                    Explain      )* "ENDPATTERN"
+                    Explain      )* 'ENDPATTERN'
 Rule            ::= (('SIGNAL' Id 'ON') | ('RULE' Id ('SIGNALS'|'MAINTAINS') ) )?
                     Expression (('|-' | '-|' | '=' ) Expression)?
                     'EXPLANATION' String
-Gen             ::= "GEN" Id "ISA" Id
-Expression      ::= (("-")? (Relation Sign? | '(' Expression ')') ('~'|'*'|'+'|'-')?)
+Gen             ::= 'GEN' Id 'ISA' Id
+Expression      ::= (('-')? (Relation Sign? | '(' Expression ')') ('~'|'*'|'+'|'-')?)
                    ( (';'|'!'|'/\'|'\/')
-                     (("-")? (Relation Sign? | '(' Expression ')') ('~'|'*'|'+'|'-')?)
+                     (('-')? (Relation Sign? | '(' Expression ')') ('~'|'*'|'+'|'-')?)
                    )*
-Relation        ::= "I" | "V" | Varid | Atom
-Sign            ::= "[" Concept ( "*" Concept)? "]"
-Concept         ::= "ONE" | Id
-LabelProps      ::= Id ("{" Id ("," (Id Id*))* "}")? ":"
-ConceptDef      ::= "CONCEPT" Id String String?
-KeyDef          ::= "KEY" LabelProps Concept "(" (LabelProps? Expression)("," (LabelProps? Expression))* ")"
-Plug            ::= ("SQLPLUG" | "PHPPLUG") Obj
-Service       ::= "SERVICE" ("(" (Relation Sign?) ("," (Relation Sign?))* ")")?
-                    ("{" (Id ) (","?  Id)*"}")?
-                    (":" Expr)
-                    ("=" "[" (Obj ("," Obj)*)? "]")?
+Relation        ::= 'I' | 'V' | Varid | Atom
+Sign            ::= '[' Concept ( '*' Concept)? ']'
+Concept         ::= 'ONE' | Id
+LabelProps      ::= Id ('{' Id (',' (Id Id*))* '}')? ':'
+ConceptDef      ::= 'CONCEPT' Id String String?
+KeyDef          ::= 'KEY' LabelProps Concept '(' (LabelProps? Expression)(',' (LabelProps? Expression))* ')'
+Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
+Service         ::= 'SERVICE' ('(' (Relation Sign?) (',' (Relation Sign?))* ')')?
+                    ('{' (Id ) (','?  Id)*'}')?
+                    (':' Expr)
+                    ('=' '[' (Obj (',' Obj)*)? ']')?
 Obj             ::= LabelProps Expr
-                    ("ALWAYS" ('TOT'|'UNI'|'PROP')*)?
-                    ("=" "[" (Obj ("," Obj)*)? "]")?
+                    ('ALWAYS' ('TOT'|'UNI'|'PROP')*)?
+                    ('=' '[' (Obj (',' Obj)*)? ']')?
 
 HIERGEBLEVEN ::= JAHIER
 
 
 
-Declaration     ::= Id "::" Concept ( "*"| "->") Concept
+Declaration     ::= Id '::' Concept ( '*'| '->') Concept
                     Props?
                     Pragma?
                     (Explanation)?
                     ('=' Content)? '.'
 Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX')
-                         ("," ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'))*
+                         (',' ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'))*
                        )? ']'
 Pragma          ::= 'PRAGMA' String String*
 Explanation     ::= 'EXPLANATION' String
 
 
 
-Content         ::= "[" (("(" String "," String ")") (";" ("(" String "," String ")") )*)? "]"
+Content         ::= '[' (('(' String ',' String ')') (';' ('(' String ',' String ')') )*)? ']'
 
 
 
