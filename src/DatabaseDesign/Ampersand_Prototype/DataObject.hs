@@ -9,8 +9,8 @@ module DatabaseDesign.Ampersand_Prototype.DataObject(dataInterfaces) where
 --           )
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(sqlExprTrg,selectExpr)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,phpIdentifier)
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc.Plug
+--import DatabaseDesign.Ampersand.Fspec    !Not exported by Ampersand library. Anything needed in the prototype should must be exported by the module DatabaseDesign.Ampersand of Ampersand core.
+--import DatabaseDesign.Ampersand.Misc.Plug
 import Data.List  hiding (group)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version 
