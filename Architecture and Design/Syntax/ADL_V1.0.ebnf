@@ -1,6 +1,6 @@
 ADL_V1          ::= Context
 Context         ::= 'CONTEXT' Id 
-                    (Pattern      |
+                    (Pattern     |
                     Declaration  |
                     ConceptDef   |
                     KeyDef       |
@@ -42,26 +42,13 @@ Service         ::= 'SERVICE' ('(' (Relation Sign?) (',' (Relation Sign?))* ')')
 Obj             ::= LabelProps Expr
                     ('ALWAYS' ('TOT'|'UNI'|'PROP')*)?
                     ('=' '[' (Obj (',' Obj)*)? ']')?
-
-HIERGEBLEVEN ::= JAHIER
-
-
-
 Declaration     ::= Id '::' Concept ( '*'| '->') Concept
                     Props?
                     Pragma?
-                    (Explanation)?
+                    ('EXPLANATION' String)?
                     ('=' Content)? '.'
 Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX')
                          (',' ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'))*
                        )? ']'
 Pragma          ::= 'PRAGMA' String String*
-Explanation     ::= 'EXPLANATION' String
-
-
-
 Content         ::= '[' (('(' String ',' String ')') (';' ('(' String ',' String ')') )*)? ']'
-
-
-
-
