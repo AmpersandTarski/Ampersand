@@ -1,39 +1,59 @@
-ADL_V2          ::= Context
-Context         ::= 'CONTEXT' Id LanguageID (':' Expr Bindings)? ContextElement* 'ENDCONTEXT'
-ContextElement  ::= Pattern      |
-                    Process      |
-                    Rule         |
-                    Declaration  |
+ADL_V2          ::= ContextDef
+ContextDef      ::= 'CONTEXT' ContextRef LanguageRef? (':' Expr Bindings)?
+                  ( PatternDef   |
+                    ProcessDef   |
+                    RuleDef      |
+                    RelationDef  |
                     ConceptDef   |
                     KeyDef       |
-                    Interface    |
+                    InterfaceDef |
                     Plug         |
-                    Explain      |
-                    Population  
-Population      ::= 'POPULATION' Relation Sign? 'CONTAINS' Content
-
-Pattern         ::= 'PATTERN' Id PatElem* 'ENDPATTERN'
-PatElem         ::= Rule         |
+                    ExplainDef      |
+                    Population  )* 'ENDCONTEXT'
+PatternDef      ::= 'PATTERN' Id LanguageRef?
+                  ( RuleDef      |
                     Gen          |
-                    Declaration  |
+                    RelationDef  |
                     ConceptDef   |
                     KeyDef       |
-                    Explain      
+                    ExplainDef     )* 'ENDPATTERN'
 
-Process         ::= 'PROCESS' Id ProcElem* 'ENDPROCESS'
-ProcElem        ::= Rule         |
+ProcessDef      ::= 'PROCESS' Id LanguageRef?
+                  ( RuleDef      |
                     Gen          |
-                    Declaration  |
+                    RelationDef  |
                     RoleRule     |
                     RoleRelation |
                     ConceptDef   |
                     KeyDef       |
-                    Explain
+                    ExplainDef)  * 'ENDPROCESS'
+RuleDef         ::= 'RULE' (ADLid ':')? Expr Phrase? 
+RelationDef     ::= ((Id '::' Concept ( '*'| '->') Concept) |
+                     (RELATION Id Sign))
+                    'BYPLUG'? Props? 'BYPLUG'? Pragma? ('MEANING' String)? ('=' Content )? '.'?
+ConceptDef      ::= 'CONCEPT' Id 'BYPLUG'? String String?
+KeyDef          ::= 'KEY' LabelProps Concept '(' KeyAtt (',' KeyAtt)* ')'
+InterfaceDef    ::= 'INTERFACE' ('(' RelSign (',' RelSign)* ')')?
+                    ('{' (Id Id*) (',' Id Id*)*'}')?
+                    ':' Expr Box
+Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
+ExplainDef      ::= ('EXPLAIN' | 'PURPOSE') 
+                    ('CONCEPT' ConceptRef |
+                     'RELATION' RelationRef |
+                     'RULE' RuleRef |
+                     'KEY' KeyRef |
+                     'PATTERN' PatternRef |
+                     'PROCESS' ProcessRef |
+                     'INTERFACE' InterfaceRef |
+                     'CONTEXT' ContextRef ) 
+                    LanguageRef?
+                    ('REF' String)? String
+
+Population      ::= 'POPULATION' RelationRef Sign? 'CONTAINS' Content
 
 Phrase          ::= 'PHRASE' LanguageID String
 Gen             ::= 'GEN' Id 'ISA' Id
 
-Rule            ::= 'RULE' (ADLid ':')? Expr Phrase? 
 Expr            ::= Exp1 (( '=' | '|-') Exp1)?
 Exp1            ::= Exp2 (( '/\' | '\/') Exp2)*
 Exp2            ::= Exp3 ('-' Exp3)?
@@ -43,37 +63,28 @@ Exp4            ::= (Exp5 (';' Exp5)* ) |
                     Exp5
 Exp5            ::= '-'? Exp6 |
                     Exp6  ( Sign | '~' | '*' | '+')
-Exp6            ::= Relation | 
+Exp6            ::= RelationRef | 
                     '('   Expr   ')'
 
-Relation        ::= 'I' | 'V' | Varid | Atom
-RelSign         ::= Relation Sign?
+RelationRef        ::= 'I' | 'V' | Varid | Atom
+RelSign         ::= RelationRef Sign?
 Sign            ::= '[' Concept ( '*' Concept)? ']'
 
 Concept         ::= 'ONE' | Id
 
 LabelProps      ::= Id ('{' Id (',' Id)* '}')* ':'
 
-ConceptDef      ::= 'CONCEPT' Id 'BYPLUG'? String String?
 
-KeyDef          ::= 'KEY' LabelProps Concept '(' KeyAtt (',' KeyAtt)* ')'
 KeyAtt          ::= LabelProps? Expr
 
 RoleRelation    ::= 'ROLE' Id (',' Id)* 'EDITS' RelSign (',' RelSign)*
 RoleRule        ::= 'ROLE' Id (',' Id)* 'MAINTAINS' RelSign (',' RelSign)*
 
-Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
 
-Interface       ::= 'INTERFACE' ('(' RelSign (',' RelSign)* ')')?
-                    ('{' (Id Id*) (',' Id Id*)*'}')?
-                    ':' Expr Box
 
 Box             ::= 'BOX' '[' Obj (',' Obj)* ']'
 Obj             ::= LabelProps Expr Box
 
-Declaration     ::= ((Id '::' Concept ( '*'| '->') Concept) |
-                     (RELATION Id Sign))
-                    'BYPLUG'? Props? 'BYPLUG'? Pragma? ('MEANING' String)? ('=' Content )? '.'?
 Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP')
                          (',' ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP'))*
                        )? ']'
@@ -83,7 +94,4 @@ Pragma          ::= 'PRAGMA' String String*
 
 
 Content         ::= '[' (('(' String ',' String ')') (';' ('(' String ',' String ')') )*)? ']'
-
-
-
 
