@@ -64,7 +64,7 @@ selectconcept conn fs cpt
  = do rows <- quickQuery' conn stmt []
       return [fromSql x |[x]<-rows]
    where  stmt = showsql$SqlSel1 (selectdomain fs cpt)
-selectdecl :: (IConnection conn) => conn -> Fspc -> Relation A_Concept -> IO RelTbl
+selectdecl :: (IConnection conn) => conn -> Fspc -> Relation -> IO RelTbl
 selectdecl conn fs rel
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
@@ -126,7 +126,7 @@ thehead :: [t] -> String -> t
 thehead xs err
  | not(null xs) = head xs
  | otherwise = error ("no x:" ++ err)
-therel :: Fspc -> String -> String -> String -> Relation A_Concept
+therel :: Fspc -> String -> String -> String -> Relation
 therel fSpec relname relsource reltarget 
  = theonly [makeRelation d |d<-declarations fSpec
                           ,relname==name d
@@ -181,7 +181,7 @@ atlas2context fSpec flags =
                      patpurpose rulpurpose relpurpose cptpurpose cptdescribes
       if null errs then return thectx else error (show errs)
 
-makectx :: CptTbl -> CptTbl -> [Rule(Relation A_Concept)] -> RelTbl -> RelTbl ->
+makectx :: CptTbl -> CptTbl -> [RuleRelation] -> RelTbl -> RelTbl ->
            RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl ->
            RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO (A_Context,[String])
 makectx cxs pats rls rulpattern relpattern 
@@ -209,30 +209,34 @@ makectx cxs pats rls rulpattern relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
-       , ctx_env   = (Erel(V (Sign Anything Anything)),[])
+       , ctx_env   = (ERel(V (Sign Anything Anything)),[])
       }
 
-parserules :: RelTbl -> RelTbl -> RelTbl -> IO [Rule(Relation A_Concept)]
+parserules :: RelTbl -> RelTbl -> RelTbl -> IO [RuleRelation]
 parserules rulpattern ruleexpr ruldescribes
- = sequence [parseADL1Rule ("RULE \""++r++"\":"++ (geta ruleexpr r)
+ = sequence [parseADL1Rule ("RULE \""++r++"\":"++ geta ruleexpr r
                           ++" PHRASE \""++geta ruldescribes r++"\"") |(r,_)<-rulpattern]
 
-atlas2pattern :: AtomVal -> [Rule(Relation A_Concept)] -> RelTbl -> RelTbl -> RelTbl
+parseADL1Rule :: String     -- ^ The string to be parsed
+         -> IO(Rule(Relation Concept)) -- ^ The IO monad with the populations. 
+parseADL1Rule rulstr = parseIO pRule (scan keywordstxt keywordsops specialchars opchars rulstr initPos rulstr)
+
+atlas2pattern :: AtomVal -> [RuleRelation] -> RelTbl -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl -> Pattern
 atlas2pattern p rs rulpattern relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
- = Pat { ptnm  = p
-       , ptpos = DBLoc "Atlas(Pattern)"
-       , ptrls = [r |(rulstr,p')<-rulpattern,p==p',r<-rs,name r==rulstr]
-       , ptgns = []
-       , ptdcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |(i,(relstr,p'))<-zip [1..] relpattern,p==p']
-       , ptcds = []
-       , ptkds = []
-       , ptxps = []
-       , testexpr = []
-       , inftestexpr = []
-       }
+ = A_Pat { ptnm  = p
+         , ptpos = DBLoc "Atlas(Pattern)"
+         , ptrls = [r |(rulstr,p')<-rulpattern,p==p',r<-rs,name r==rulstr]
+         , ptgns = []
+         , ptdcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |(i,(relstr,p'))<-zip [1..] relpattern,p==p']
+         , ptcds = []
+         , ptkds = []
+         , ptxps = []
+         , testexpr = []
+         , inftestexpr = []
+         }
 
 emptySignalDeclaration :: String -> Declaration A_Concept
 emptySignalDeclaration nm
@@ -317,7 +321,7 @@ atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
   ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r) Dutch [] y |(x,y)<-relpurpose, let r=makerel x relname relsc reltg]
   ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplA_ConceptDef x) Dutch [] y |(x,y)<-cptpurpose]
 
-makerel :: String -> [(String, String)] -> [(String, String)] -> [(String, String)] -> Relation A_Concept
+makerel :: String -> [(String, String)] -> [(String, String)] -> [(String, String)] -> Relation
 makerel relstr relname relsc reltg = 
       let
       nm =geta relname relstr

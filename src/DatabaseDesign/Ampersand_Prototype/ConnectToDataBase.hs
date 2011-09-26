@@ -125,14 +125,14 @@ where
  ruleFunctions flags fSpec
     = showCodeHeaders 
        ([ (code rule')
-        | rule<-invariants fSpec, rule'<-[(conjNF . Ecpl . normExpr) rule]
+        | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . normExpr) rule]
         ])
       ++
       [ "\n  function checkRule"++show (runum rule)++"(){\n    "++
            (if isFalse rule'
-            then "// "++(langwords!!2)++": "++showexpression (showADLcode fSpec) rule++"\n     "
-            else "// "++(langwords!!3)++" ("++showexpression (showADLcode fSpec) rule++")\n    "++
-                 concat [ "//            rule':: "++(showADLcode fSpec rule') ++"\n    " | pDebug] ++
+            then "// "++(langwords!!2)++": "++showexpression (showADL . disambiguate fSpec) rule++"\n     "
+            else "// "++(langwords!!3)++" ("++showexpression (showADL . disambiguate fSpec) rule++")\n    "++
+                 concat [ "//            rule':: "++(showADL . disambiguate fSpec) rule' ++"\n    " | pDebug] ++
                    "\n    $v = DB_doquer_lookups('"++ showsql(SqlSel2(selectbinary fSpec rule'))++"');\n"
                    -- ++ showCode 4 (code rule')
                  ++
@@ -145,7 +145,7 @@ where
                  "  return false;\n    }"
            )
            ++ "return true;\n  }"
-         | rule<-invariants fSpec, rule'<-[(conjNF . Ecpl . normExpr) rule]]
+         | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . normExpr) rule]]
       where
        code :: Expression (Relation Concept) -> [Statement]
        code r = case (getCodeFor fSpec [] [codeVariableForBinary "v" r]) of

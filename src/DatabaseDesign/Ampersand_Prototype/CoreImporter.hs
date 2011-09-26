@@ -52,7 +52,7 @@ import DatabaseDesign.Ampersand
 --   , showexpression
 --   -- * Functions on expressions:
 --   , conjNF, disjNF, simplify
---   , v, notCp, isPos, isNeg
+--   , v, notCpl, isPos, isNeg
 --   , isI
 --   -- * Functions with plugs:
 --   , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey

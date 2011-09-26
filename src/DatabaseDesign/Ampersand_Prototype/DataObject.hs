@@ -51,7 +51,7 @@ dataInterfaces flags fSpec (DataObject dobj)
    ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
     , "/*********"
-    , showADLcode fSpec dobjdef
+    , (showADL . disambiguate fSpec) dobjdef
     , " *********/"
     , ""
     , "error_reporting(E_ALL); "

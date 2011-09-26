@@ -23,7 +23,7 @@ objectInterfaces flags fSpec o
    ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
     , "/********* on "++(show (origin o))
-    , showADLcode fSpec o
+    , (showADL . disambiguate fSpec) o
     , " *********/"
     , ""
     ]
@@ -31,7 +31,7 @@ objectInterfaces flags fSpec o
     showClasses flags fSpec o
     ++
     concat[showClasses flags fSpec att |att<-attributes o,(not.null)(attributes att),not(isOne att)]
-                                --      ,let att=if isOne att then att{objctx=Erel(mIs(target(objctx att)))} else att']
+                                --      ,let att=if isOne att then att{objctx=ERel(mIs(target(objctx att)))} else att']
     ++
     ( if isOne o  -- If the current object is the universal singleton...
       then []
@@ -116,7 +116,7 @@ showClasses flags fSpec o
                                                "$me"
                                                0
                                                (o  {objnm =if isOne o then "1" else "$id"
-                                                   ,objctx=Erel(I(concept o))
+                                                   ,objctx=ERel(I(concept o))
                                                    ,objats=[]}
                                                )
                                                o
@@ -168,15 +168,15 @@ showClasses flags fSpec o
   editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
            | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
   mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
-  mayedit item editable = let rexprs=[Erel r |r<-editable] in elem item (rexprs++map flp rexprs)
+  mayedit item editable = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
    = if sql==Nothing then fatal 167 "Cannot check if exists in Object.hs" else fromJust sql
-   where  expr = if null fs then Ecps [ tm, ctx'] else Ecps (tm:head fs)
-         tm   = Erel (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
+   where  expr = if null fs then ECps [ tm, ctx'] else ECps (tm:head fs)
+         tm   = ERel (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
          ctx' = simplify $ flp (ctx o)
-         fs   = [es' | Ecps es' <- [ctx']]
+         fs   = [es' | ECps es' <- [ctx']]
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
 {- still working on new save() and del()
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
@@ -495,7 +495,7 @@ plugAts plug object = plugAts' object object --you do not want to forget to ment
   plugAts' p o 
    = nub$
      ([ ((o,sf),(o,tf))
-      | (sf,tf)<-sqlPlugFields plug (Erel (I (target (objctx o))))
+      | (sf,tf)<-sqlPlugFields plug (ERel (I (target (objctx o))))
       ]
      ++
       [ ((p,sf),(o,tf))
@@ -556,7 +556,7 @@ doPhpGet fSpec objVar depth objIn objOut
      | null unisNeeded = []
      | otherwise
         = let idAt = trunc(objOut{objctx=targetCpt,objnm="id"})
-              targetCpt = Erel(I$target$objctx objOut)
+              targetCpt = ERel(I$target$objctx objOut)
           in doQuer (objVar++"=firstRow") (doSqlGet fSpec False objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt}))
     -- getArrayOf: code for leaves or for nodes (in the objDef tree) is different. For leaves: use firstCol to show them
     getArrayOf aout 
@@ -629,11 +629,11 @@ doSqlGet fSpec isArr objIn objOut
          | ai<-[objIn] 
          , a<-aOuts
          , source(objctx ai) == target (objctx a) --just to be sure
-         , (plug,fld0,fld1)<-sqlRelPlugs fSpec (Ecps [objctx ai,objctx a])
+         , (plug,fld0,fld1)<-sqlRelPlugs fSpec (ECps [objctx ai,objctx a])
          ]
    takeOff :: (Show c, Identified c, ConceptStructure c c) => Expression (Relation c)->Expression (Relation c)->Maybe (Expression (Relation c))
-   takeOff (Ecps (a:as)) (Ecps (b:bs)) | disjNF a==disjNF b = takeOff (Ecps as) (Ecps bs)
-   takeOff a (Ecps (b:bs)) | disjNF a== disjNF b = Just (Ecps bs)
+   takeOff (ECps (a:as)) (ECps (b:bs)) | disjNF a==disjNF b = takeOff (ECps as) (ECps bs)
+   takeOff a (ECps (b:bs)) | disjNF a== disjNF b = Just (ECps bs)
    takeOff a e' | isIdent a = Just e'
    takeOff _ _ = Nothing
    comboGroups = keyGroups `uni` comboGroups'
@@ -648,7 +648,7 @@ doSqlGet fSpec isArr objIn objOut
          (  comboGroups' {-[gr |gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s]-}
          ++ 
             [((p,(objIn,s)),[(objIn,t)])
-            | (p,s,t)<-sqlRelPlugs fSpec (Erel(I$target (objctx objIn)))]   -- zoek een conceptentabel op....
+            | (p,s,t)<-sqlRelPlugs fSpec (ERel(I$target (objctx objIn)))]   -- zoek een conceptentabel op....
          -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
          -- dan hebben we dus geen keyGroup, maar dat geeft niet voor ONE
          -- in andere gevallen geeft dat wel.
@@ -802,7 +802,7 @@ savefunction flags fSpec fnm depth this
         editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
                  | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
         mayedit :: Expression(Relation Concept) -> Bool
-        mayedit item = let rexprs=[Erel r |r<-editable] in elem item (rexprs++map flp rexprs)
+        mayedit item = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
         ---------myatts(editable only)
         myattsinthis = [((plug,fld0,fld1),a)
                    |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
@@ -1073,7 +1073,7 @@ savefunction flags fSpec fnm depth this
                  ++") VALUES ('\".addslashes($this->getId()).\"','\".addslashes($val).\"') \");"
      ,"}"]
     |((plug,fld0,fld1),att)<-myassocinthis
-    ,let trgtbls = sqlRelPlugs fSpec (Erel(I(target(objctx att))))
+    ,let trgtbls = sqlRelPlugs fSpec (ERel(I(target(objctx att))))
     ,let (trgplug,trgfld,_) = if null trgtbls then error "no target tabel" else head trgtbls
     ]
     ++	    

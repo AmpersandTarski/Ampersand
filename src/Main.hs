@@ -47,11 +47,11 @@ parseFilePrototype flags pv
   --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c)) |c<-concs atlasfspec])
     --       verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d))) |d<-declarations atlasfspec])
 --           verbose flags (show[showsql(SqlSel1(selectdomain atlasfspec (makeRelation d))) |d<-declarations atlasfspec])
-  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((Erel (makeRelation d))))) |d<-declarations atlasfspec])
-       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (Euni[Erel(makeRelation d),Erel(flp$makeRelation d)]))) |d<-declarations atlasfspec,source d==target d])
+  --         verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec ((ERel (makeRelation d))))) |d<-declarations atlasfspec])
+       --    verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec (EUni[ERel(makeRelation d),ERel(flp$makeRelation d)]))) |d<-declarations atlasfspec,source d==target d])
 --           verbose flags (show[(showsql(SqlSel2(selectbinary atlasfspec r'))
   --                             ,showCode 0 x
-    --                           ,show r') |r<-rules atlasfspec,let r'=(conjNF . Ecpl . normExpr) r,head(showexpression r)=='I'
+    --                           ,show r') |r<-rules atlasfspec,let r'=(conjNF . ECpl . normExpr) r,head(showexpression r)=='I'
       --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
            if interfacesG flags then atlas2context atlasfspec flags else return parsedfile
 
@@ -140,5 +140,5 @@ doGenProto fSpec flags
      >> verboseLn flags ("Prototype files have been written to " ++  (dirPrototype flags) ++ "." )
      >> if (test flags) then verboseLn flags (show (vplugInfos fSpec)) else verboseLn flags ""
      where  
-     explainviols = concat [show p++": "++showADLcode fSpec r++"\n" |(r,p)<-violations fSpec]
+     explainviols = concat [show p++": "++(showADL . disambiguate fSpec) r++"\n" |(r,p)<-violations fSpec]
 

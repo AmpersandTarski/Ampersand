@@ -43,7 +43,7 @@ where
      -- We try to find a singleton, those values we know already
      [ code |
        code<-case e of
-        (Erel (V{reltyp=Sign _ t})) -- source is al automatisch een singleton
+        (ERel (V{reltyp=Sign _ t})) -- source is al automatisch een singleton
          -> getAllTarget t
         _ -> fatal 44 $ "please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e
      ]
@@ -82,10 +82,10 @@ where
            ]
         getAllTarget tp@(PHPC c)
          = [[Assignment pre (o:pre) (use o) (SQLComposed c [Named (name c) pxpr] sql)]
-           | let pxpr=Erel (I tp)
-           , let expr=Erel (I c)
-           | let pxpr=Erel (mIs tp)
-           , let expr=Erel (mIs c)
+           | let pxpr=ERel (I tp)
+           , let expr=ERel (I c)
+           | let pxpr=ERel (mIs tp)
+           , let expr=ERel (mIs c)
            , CodeVar{cvContent=Right []} <-[obj]
            , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
            ]++
@@ -108,11 +108,11 @@ where
               -> Named UseVar    -- ^ variable to assign Expression to (see Assignment for details)
               -> Expression (Relation PHPconcept)    -- ^ expression we'd like to know
               -> [[Statement]]   -- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
- getAllInExpr fSpec pre var (Ebrk   e ) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Ecps   [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Eisc [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Euni [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (Erad [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (EBrk   e ) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (ECps   [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (EIsc [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (EUni [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (ERad [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var composed
   =  -- There are several approaches to get the expression
      -- 1. find the information in the preknowledge
@@ -135,11 +135,11 @@ where
      -- We may do 'divide' in several ways.
      -- Either get both sides of the operator completely, which is done below
      [get1++get2++join++forget
-     | (e1,e2,opr) <- case expr of (Eisc (a:Ecpl b:x)) -> [(Ecps (a:x),b,PHPIsectComp)]
-                                   (Eisc (Ecpl b:a:x)) -> [(Ecps (a:x),b,PHPIsectComp)]
-                                   (Ecps   (f:fs))      -> [(f,(Ecps   fs),PHPJoin)]
-                                   (Eisc (f:fs))      -> [(f,(Eisc fs),PHPIntersect)]
-                                   (Euni (f:fs))      -> [(f,(Eisc fs),PHPUnion)]
+     | (e1,e2,opr) <- case expr of (EIsc (a:ECpl b:x)) -> [(ECps (a:x),b,PHPIsectComp)]
+                                   (EIsc (ECpl b:a:x)) -> [(ECps (a:x),b,PHPIsectComp)]
+                                   (ECps   (f:fs))      -> [(f,(ECps   fs),PHPJoin)]
+                                   (EIsc (f:fs))      -> [(f,(EIsc fs),PHPIntersect)]
+                                   (EUni (f:fs))      -> [(f,(EIsc fs),PHPUnion)]
                                    _ -> [] -- fatal 145 $ "Failed composed namely "++show composed
      , let var1=getAVar pre (conc2php e1)
      , let var2=getAVar (var1:pre) (conc2php e2)
@@ -166,9 +166,9 @@ where
      --  (the actual implementation of the latter works by flipping the entire example)
      [ code
      | code <- case composed of
-                -- NOTE ON Ecpl !!! When Ecpl becomes typed, the pattern below should be changed, and changeSource as well!
-                (Ecps [Erel (I _ (PHPI1 s) _), Ecpl f, Erel (I _ (PHPI1 t) _)])
-                       -> atleastOne ("!Fatal (module GetCode 177): getCodeForSingle should return something in Ecpl for "++show f)$ -- SJC put this here
+                -- NOTE ON ECpl !!! When ECpl becomes typed, the pattern below should be changed, and changeSource as well!
+                (ECps [ERel (I _ (PHPI1 s) _), ECpl f, ERel (I _ (PHPI1 t) _)])
+                       -> atleastOne ("!Fatal (module GetCode 177): getCodeForSingle should return something in ECpl for "++show f)$ -- SJC put this here
                           [ assignment++
                             [Assignment (var1:pre)
                                         (obj:var1:pre)
@@ -182,7 +182,7 @@ where
                                     ]
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           ] 
-                (Ecps fs) -> [assignment++
+                (ECps fs) -> [assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
                                       [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
@@ -194,12 +194,12 @@ where
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right s]))
                                                                    (CQPlain t)]
-                                           ,x)) (splitAssoc Ecps fs)
+                                           ,x)) (splitAssoc ECps fs)
                               ++ map (\x->(\pre' var2 s t->[Assignment pre' 
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right t]))
                                                                    (CQPlain s)]
-                                           ,x)) (splitAssoc Ecps (map phpflp (reverse fs)))
+                                           ,x)) (splitAssoc ECps (map phpflp (reverse fs)))
                           , let var1 = getAVar (obj:pre) f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
@@ -215,7 +215,7 @@ where
                                       , get<-getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
-                (Eisc fs)->[assignment++
+                (EIsc fs)->[assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
                                       [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
@@ -223,7 +223,7 @@ where
                                       ]
                            ,Forget (var1:obj:pre) (obj:pre)]
                           | (i,f1) <- zipnum fs
-                          , f2<-applyOprOnLists Eisc$ take i fs ++ drop (i+1) fs
+                          , f2<-applyOprOnLists EIsc$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
@@ -239,7 +239,7 @@ where
                                       | let pre'=(obj:loopby:tmp:var1:tmp2:loopvalue:pre)
                                       , let var2=getAVar pre' (changeSource (PHPI1 (use loopby)) (changeTarget (PHPI1 (use loopvalue)) f2))
                                       , let addTo=(Named (nName var ) (UseVar [Right (use loopby)]))
-                                      , get<-atleastOne ("!Fatal (module GetCode 248): getCodeForSingle should return something in Fi for "++show var2++" (just removing this error on line 231 might fix the problem)")$
+                                      , get<-atleastOne ("!Fatal (module GetCode 248): getCodeForSingle should return something in EIsc for "++show var2++" (just removing this error on line 231 might fix the problem)")$
                                              getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
@@ -293,23 +293,23 @@ where
  changeTarget c = phpflp . changeSource c . phpflp
  -- | change the source of some expression into c. We assume that c ISA source expression.
  changeSource :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
- changeSource c (Ebrk  x)  = Ebrk  (changeSource c x)
- changeSource c (Ekl0 x)  = Ekl0 (changeSource c x)
- changeSource c (Ekl1 x)  = Ekl1 (changeSource c x)
- changeSource c (Ecps fs)   = Ecps   [changeSource c f | f<-fs]
- changeSource c (Erad fs) = Erad [changeSource c f | f<-fs]
- changeSource c (Eisc ts) = Eisc [changeSource c t | t<-ts]
- changeSource c (Euni ts) = Euni [changeSource c t | t<-ts]
- changeSource c (Ecpl x ) = Ecps [Erel (I c),Ecpl x]    -- TODO: is dit correct?
- changeSource c (Erel r) = Erel r'
- changeSource c (Ekl0 x)  = Ekl0 (changeSource c x)
- changeSource c (Ekl1 x)  = Ekl1 (changeSource c x)
- changeSource c (Ecps fs)   = Ecps   [changeSource c f | f<-fs]
- changeSource c (Erad fs) = Erad [changeSource c f | f<-fs]
- changeSource c (Eisc ts) = Eisc [changeSource c t | t<-ts]
- changeSource c (Euni ts) = Euni [changeSource c t | t<-ts]
- changeSource c (Ecpl x ) = Ecps [Erel (mIs c),Ecpl x]    -- TODO: is dit correct?
- changeSource c (Erel r) = Erel r'
+ changeSource c (EBrk  x)  = EBrk  (changeSource c x)
+ changeSource c (EKl0 x)  = EKl0 (changeSource c x)
+ changeSource c (EKl1 x)  = EKl1 (changeSource c x)
+ changeSource c (ECps fs)   = ECps   [changeSource c f | f<-fs]
+ changeSource c (ERad fs) = ERad [changeSource c f | f<-fs]
+ changeSource c (EIsc ts) = EIsc [changeSource c t | t<-ts]
+ changeSource c (EUni ts) = EUni [changeSource c t | t<-ts]
+ changeSource c (ECpl x ) = ECps [ERel (I c),ECpl x]    -- TODO: is dit correct?
+ changeSource c (ERel r) = ERel r'
+ changeSource c (EKl0 x)  = EKl0 (changeSource c x)
+ changeSource c (EKl1 x)  = EKl1 (changeSource c x)
+ changeSource c (ECps fs)   = ECps   [changeSource c f | f<-fs]
+ changeSource c (ERad fs) = ERad [changeSource c f | f<-fs]
+ changeSource c (EIsc ts) = EIsc [changeSource c t | t<-ts]
+ changeSource c (EUni ts) = EUni [changeSource c t | t<-ts]
+ changeSource c (ECpl x ) = ECps [ERel (mIs c),ECpl x]    -- TODO: is dit correct?
+ changeSource c (ERel r) = ERel r'
   where  r' = case r of
                Rel{} -> r{relsrc=c}
                I{} -> I [] c c

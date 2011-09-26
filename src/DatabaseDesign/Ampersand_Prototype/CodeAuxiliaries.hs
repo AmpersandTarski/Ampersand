@@ -52,22 +52,22 @@ where
            Mp1{} -> r{ rel1typ = f (rel1typ r) }
 
  mapExpression :: (Relation->Relation) -> Expression -> Expression
- mapExpression f (Eequ (l,r)) = Eequ (mapExpression f l,mapExpression f r) -- ^ equivalence             =
- mapExpression f (Eimp (l,r)) = Eimp (mapExpression f l,mapExpression f r) -- ^ implication             |-
- mapExpression f (Eisc es)    = Eisc (map (mapExpression f) es)            -- ^ intersection            /\
- mapExpression f (Euni es)    = Euni (map (mapExpression f) es)            -- ^ union                   \/
- mapExpression f (Edif (l,r)) = Edif (mapExpression f l,mapExpression f r) -- ^ difference              -
- mapExpression f (Elrs (l,r)) = Elrs (mapExpression f l,mapExpression f r) -- ^ left residual           /
- mapExpression f (Errs (l,r)) = Errs (mapExpression f l,mapExpression f r) -- ^ right residual          \
- mapExpression f (Ecps es)    = Ecps (map (mapExpression f) es)            -- ^ composition             ;
- mapExpression f (Erad es)    = Erad (map (mapExpression f) es)            -- ^ relative addition       !
- mapExpression f (Ekl0 e)     = Ekl0 (mapExpression f e)                   -- ^ Rfx.Trn closure         *
- mapExpression f (Ekl1 e)     = Ekl1 (mapExpression f e)                   -- ^ Transitive closure      +
- mapExpression f (Eflp e)     = Eflp (mapExpression f e)                   -- ^ Conversion              ~
- mapExpression f (Ecpl e)     = Ecpl (mapExpression f e)                   -- ^ OBSOLETE.. remove later
- mapExpression f (Ebrk e)     =     mapExpression f e                    -- ^ bracketed expression ( remove brackets )
- mapExpression f (Etyp e _)   =     mapExpression f e                    -- ^ remove type cast, as the type might change as a result of applying f to elements of e.
- mapExpression f (Erel rel)   = Erel (f rel)                               -- ^ simple relation
+ mapExpression f (EEqu (l,r)) = EEqu (mapExpression f l,mapExpression f r) -- ^ equivalence             =
+ mapExpression f (EImp (l,r)) = EImp (mapExpression f l,mapExpression f r) -- ^ implication             |-
+ mapExpression f (EIsc es)    = EIsc (map (mapExpression f) es)            -- ^ intersection            /\
+ mapExpression f (EUni es)    = EUni (map (mapExpression f) es)            -- ^ union                   \/
+ mapExpression f (EDif (l,r)) = EDif (mapExpression f l,mapExpression f r) -- ^ difference              -
+ mapExpression f (ELrs (l,r)) = ELrs (mapExpression f l,mapExpression f r) -- ^ left residual           /
+ mapExpression f (ERrs (l,r)) = ERrs (mapExpression f l,mapExpression f r) -- ^ right residual          \
+ mapExpression f (ECps es)    = ECps (map (mapExpression f) es)            -- ^ composition             ;
+ mapExpression f (ERad es)    = ERad (map (mapExpression f) es)            -- ^ relative addition       !
+ mapExpression f (EKl0 e)     = EKl0 (mapExpression f e)                   -- ^ Rfx.Trn closure         *
+ mapExpression f (EKl1 e)     = EKl1 (mapExpression f e)                   -- ^ Transitive closure      +
+ mapExpression f (EFlp e)     = EFlp (mapExpression f e)                   -- ^ Conversion              ~
+ mapExpression f (ECpl e)     = ECpl (mapExpression f e)                   -- ^ OBSOLETE.. remove later
+ mapExpression f (EBrk e)     =     mapExpression f e                    -- ^ bracketed expression ( remove brackets )
+ mapExpression f (ETyp e _)   =     mapExpression f e                    -- ^ remove type cast, as the type might change as a result of applying f to elements of e.
+ mapExpression f (ERel rel)   = ERel (f rel)                               -- ^ simple relation
 
  mapDeclaration :: (A_Concept->A_Concept) -> Declaration -> Declaration
  mapDeclaration f d@Sgn{}
