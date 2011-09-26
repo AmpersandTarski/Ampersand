@@ -71,9 +71,9 @@ where
 
  mapDeclaration :: (A_Concept->A_Concept) -> Declaration -> Declaration
  mapDeclaration f d@Sgn{}
-          = d{ decsgn = mapSign f (decsgn r) }
+          = d{ decsgn = mapSign f (decsgn d) }
  mapDeclaration f d@Vs{}
-          = d{ decsgn = mapSign f (decsgn r) }
+          = d{ decsgn = mapSign f (decsgn d) }
  mapDeclaration f d
           = d{ detyp = f (detyp d) }
 

@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase
 where
  import Data.List
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
- import DatabaseDesign.Ampersand_Prototype.Code
+-- import DatabaseDesign.Ampersand_Prototype.Code
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
  import DatabaseDesign.Ampersand_Prototype.Version 
@@ -106,7 +106,7 @@ where
        , "}"
        , ""
        ] 
-       ++ (ruleFunctions flags fSpec)
+       ++ [] --TEMP DISABLED -> (ruleFunctions flags fSpec)
        ++
        [ ""
        , "//if($DB_debug>=3){"
@@ -120,7 +120,7 @@ where
       )) ++ "\n?>"
    
    
-   
+{-   
  ruleFunctions :: Options -> Fspc -> [String]
  ruleFunctions flags fSpec
     = showCodeHeaders 
@@ -159,3 +159,4 @@ where
         = case language flags of
            Dutch   -> ["Overtreding","reden","Tautologie","Overtredingen horen niet voor te komen in"]
            English -> ["Violation", "reason","Tautology","No violations should occur in"]
+-}

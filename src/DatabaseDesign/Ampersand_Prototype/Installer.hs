@@ -59,7 +59,7 @@ where
         ) ++
         [ "}" ]
      ) ++ "\n?>\n"
-    where  plugCode plug
+    where plugCode plug
            = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug)))
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]

@@ -167,14 +167,14 @@ showClasses flags fSpec o
  where
   editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
            | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
-  mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
+  mayedit :: Expression -> [Relation] -> Bool
   mayedit item editable = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
    = if sql==Nothing then fatal 167 "Cannot check if exists in Object.hs" else fromJust sql
-   where  expr = if null fs then ECps [ tm, ctx'] else ECps (tm:head fs)
-         tm   = ERel (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
+   where expr = if null fs then ECps [ tm, ctx'] else ECps (tm:head fs)
+         tm   = ERel (Mp1 ("\\''.addSlashes("++var++").'\\'") (concept o))
          ctx' = simplify $ flp (ctx o)
          fs   = [es' | ECps es' <- [ctx']]
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
@@ -631,7 +631,7 @@ doSqlGet fSpec isArr objIn objOut
          , source(objctx ai) == target (objctx a) --just to be sure
          , (plug,fld0,fld1)<-sqlRelPlugs fSpec (ECps [objctx ai,objctx a])
          ]
-   takeOff :: (Show c, Identified c, ConceptStructure c c) => Expression (Relation c)->Expression (Relation c)->Maybe (Expression (Relation c))
+   takeOff :: Expression->Expression->Maybe Expression
    takeOff (ECps (a:as)) (ECps (b:bs)) | disjNF a==disjNF b = takeOff (ECps as) (ECps bs)
    takeOff a (ECps (b:bs)) | disjNF a== disjNF b = Just (ECps bs)
    takeOff a e' | isIdent a = Just e'
@@ -801,7 +801,7 @@ savefunction flags fSpec fnm depth this
         --editable
         editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
                  | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
-        mayedit :: Expression(Relation Concept) -> Bool
+        mayedit :: Expression -> Bool
         mayedit item = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
         ---------myatts(editable only)
         myattsinthis = [((plug,fld0,fld1),a)

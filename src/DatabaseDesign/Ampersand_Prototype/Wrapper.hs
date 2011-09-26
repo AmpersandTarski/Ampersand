@@ -169,17 +169,17 @@ displaycol obj = snd(head$displaydirective obj)
 novalue::String
 novalue = "<I>Nothing</I>"
 --class "item UI*" and "new UI*" are editable (see edit.js)
-itemUI :: [Relation Concept] -> Expression(Relation Concept) -> String
+itemUI :: [Relation] -> Expression -> String
 itemUI editable item
   | mayedit item editable = "item UI"
   | otherwise = "itemshow UI"
-newUI :: [Relation Concept] -> Expression(Relation Concept) -> String
+newUI :: [Relation] -> Expression -> String
 newUI editable item
   | mayedit item editable = "new UI"
   | otherwise = "itemshow UI"
-mayedit :: Expression(Relation Concept) -> [Relation Concept] -> Bool
+mayedit :: Expression -> [Relation] -> Bool
 mayedit item editable = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
-mayadd :: Concept -> [Relation Concept] -> Bool
+mayadd :: A_Concept -> [Relation] -> Bool
 mayadd cpt editable = (not.null) [() |r<-editable,isIdent r||isTrue r,target r==cpt] 
 
 -----------------------------------------
@@ -189,7 +189,7 @@ mayadd cpt editable = (not.null) [() |r<-editable,isIdent r||isTrue r,target r==
 --path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0 |(att0,n)<-atts o]
 --siblingatt0s bepaalt of er meer dan 1 (wrapper att0) is. Deze info is nodig om te bepalen of CLASS = '.. UI of UI_*'.
 --att0 is de huidige subinterface
-attributeWrapper::[Interface]->[Relation Concept]->String->String->Bool->ObjectDef->[String]
+attributeWrapper::[Interface]->[Relation]->String->String->Bool->ObjectDef->[String]
 attributeWrapper ifcs editable objectId path0 siblingatt0s att0
  = let 
    cls0 | siblingatt0s = "_"++phpIdentifier (name att0) 
@@ -486,7 +486,7 @@ embedimage att depth
 -----------------------------------------
 --EDIT BLOCK functions
 -----------------------------------------
-showBlockJS::String->[Relation Concept]->ObjectDef->[String]
+showBlockJS::String->[Relation]->ObjectDef->[String]
 showBlockJS cls editable att
  = [ "function UI"++cls++"(id){"
    , "  return " ++ head attCode'] ++ (map ((++) "       + ") (tail attCode')) ++

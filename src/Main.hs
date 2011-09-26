@@ -120,7 +120,7 @@ generateProtoStuff flags fSpec =
 
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
-  = (writeFile outputFile $ showADLcode strippedfspec strippedfspec)
+  = (writeFile outputFile $ showADL strippedfspec)
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
     where   
     --do not print interfaces (yet) with prototype.exe --export.
