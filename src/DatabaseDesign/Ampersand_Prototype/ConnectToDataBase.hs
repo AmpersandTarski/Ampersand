@@ -106,7 +106,7 @@ where
        , "}"
        , ""
        ] 
-       ++ [] --TEMP DISABLED -> (ruleFunctions flags fSpec)
+       ++ (ruleFunctions flags fSpec)
        ++
        [ ""
        , "//if($DB_debug>=3){"
@@ -120,7 +120,6 @@ where
       )) ++ "\n?>"
    
    
-{-   
  ruleFunctions :: Options -> Fspc -> [String]
  ruleFunctions flags fSpec
     = showCodeHeaders 
@@ -159,4 +158,3 @@ where
         = case language flags of
            Dutch   -> ["Overtreding","reden","Tautologie","Overtredingen horen niet voor te komen in"]
            English -> ["Violation", "reason","Tautology","No violations should occur in"]
--}

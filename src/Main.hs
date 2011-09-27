@@ -9,6 +9,7 @@ import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
+--import DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
 import qualified Control.Exception as Exc  
 
 fatal :: Int -> String -> a
@@ -16,32 +17,87 @@ fatal = fatalMsg "Main"
 
 --import Data.Ampersand.Main
 
-main :: IO ()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts ("ProtoVs"++versionNumberPrototype++"ADLvs" ++ versionNumber) flags)
-       else
-          (    Exc.catch (parseFile flags PV1) (trysecond flags) 
-           >>= calculate flags 
-           >>= (generate flags
-                >> generateProtoStuff flags)
-          ) 
-    where
-    trysecond :: Options -> Exc.ErrorCall -> IO (A_Context)
-    trysecond flags _ = Exc.catch (parseFilePrototype flags PV2) (errorsoffirst flags) --try 2
-    errorsoffirst :: Options -> Exc.ErrorCall -> IO (A_Context)
-    errorsoffirst flags _ = Exc.catch (parseFilePrototype flags PV1) reporterrors --report on second (or first)
-    reporterrors :: Exc.ErrorCall -> IO (A_Context)
-    reporterrors (Exc.ErrorCall msg) = error msg
-                
+       else do (ctx,err) <- parseAndTypeCheck flags
+               if nocxe err 
+                 then let fspc = calculate flags ctx in
+                      do generateProtoStuff flags fspc
+                 else putStr (show err) 
+  where
+  parseAndTypeCheck :: Options -> IO(A_Context,CtxError) 
+  parseAndTypeCheck flags 
+   = let scriptName = fileName flags
+         fn = importfile flags
+     in
+     do scriptText <- readFile scriptName
+        verboseLn flags "x..."
+        pCtx <- parseCtxM_ scriptText flags scriptName
+        pPops <- case fn of
+           [] -> return []
+           fn -> do popsText <- readFile fn
+                    case importformat flags of
+                       Adl1PopFormat -> parsePopsM_ popsText flags fn
+                       Adl1Format -> return [] --TODO -> fix DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
+                                     {-do verbose flags ("Importing ADL1 file "++fn++"... ")
+                                        cx <- parseCtxM_ popsText flags fn
+                                        (acx,err) <- typeCheck cx []
+                                        if nocxe err 
+                                        then let fspec = calculate flags acx
+                                                 fnnxt fspec = name fspec ++ "'"
+                                                 fdir = let d=dropFileName fn in if null d then "." else d
+                                                 usr= namespace flags
+                                                 getr r = if length r==1 then head r else error "import error: no or multiple declarations for relvar"
+                                                 impctx atlas = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
+                                                 impfil atlas = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
+                                                 impupl atlas = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
+                                                 usrfil atlas = [makeRelation d |d<-declarations atlas,name d=="fileof"]
+                                                 --funrld atlas = [makeRelation d |d<-declarations atlas,name d=="reload"]
+                                                 funfsp atlas = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
+                                                 funrep atlas = [makeRelation d |d<-declarations atlas,name d=="report"]
+                                                 funadl atlas = [makeRelation d |d<-declarations atlas,name d=="showadl"]
+                                                 loadcontext r fspec 
+                                                  = [Popu{ p_popm=getr r, p_popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
+                                                 loadedfile r
+                                                  = [Popu{ p_popm=getr r, p_popps=[mkPair usr fn]         } | not (null usr)]
+                                                 -- uploadfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr "browse"]   } | not (null usr)]
+                                                 --TODO -> the user has more files, how do I get them in this population
+                                                 fileof r myfiles
+                                                  = [Popu{ p_popm=getr r, p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
+                                                 contextfunction fspec r x
+                                                  = [Popu{ p_popm=getr r, p_popps=[mkPair (name fspec) x] }]
+                                             in
+                                             do verbose flags "writing pictures for atlas... "
+                                                sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
+                                                verbose flags "pictures for atlas written... "
+                                                atlas <- typeCheck pCtx []
+                                                myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
+                                                verboseLn flags "Generating pictures for atlas..."
+                                                sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
+                                                return (makeADL1Populations (declarations atlas) [fspec]
+                                                      ++makeADL1Populations (declarations atlas) (picturesForAtlas flags fspec)
+                                                      ++loadcontext (impctx atlas) fspec
+                                                      ++loadedfile (impfil atlas)
+                                                      ++contextfunction fspec (impupl atlas) "new context"
+                                                      ++fileof (usrfil atlas) myfiles
+                                                     -- ++ contextfunction fspec (funrld atlas) (name fspec)
+                                                      ++ contextfunction fspec (funfsp atlas) (takeBaseName fn ++ ".pdf")
+                                                      ++ contextfunction fspec (funrep atlas) (name fspec)
+                                                      ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
+                                                       )
+                                        else putStr (show err)-}
+        verboseLn flags "Type checking..."
+        return (typeCheck pCtx pPops)
+  {-              
 parseFilePrototype :: Options -> ParserVersion -> IO(A_Context)
 parseFilePrototype flags pv 
       = let fnFull = fileName flags in
         do verbose flags ("Parsing("++show pv++")... ")
            adlText <- readFile fnFull
            importpops <- parseImportFile adlText pv fnFull flags 
-           parsedfile <- parseADL1 adlText (if null(importfile flags) then pv else PV1) importpops flags fnFull 
+           parsedfile <- parseADL1 adlText (if null(importfile flags) then pv else PV2011) importpops flags fnFull 
            atlasfspec <- calculate flags parsedfile           
 --           verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec c)) |c<-concs atlasfspec])
   --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c)) |c<-concs atlasfspec])
@@ -90,7 +146,7 @@ parseImportFile adlText pv adlfn flags
                               verbose flags "writing pictures for atlas... "
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
                               verbose flags ("pictures for atlas written... "++show pv)
-                              atlas <- parseADL1 adlText PV1 [] flags adlfn
+                              atlas <- parseADL1 adlText PV2011 [] flags adlfn
                               myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
                               verboseLn flags "Generating pictures for atlas..."
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
@@ -106,20 +162,20 @@ parseImportFile adlText pv adlfn flags
                                     ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
                                      )
    else return []
-
+-}
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff flags fSpec = 
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
         [ doGenProto    (protonm fSpec) flags | genPrototype flags] ++
-        [ interfaceGen  fSpec flags | interfacesG    flags] ++
+        [ interfaceGenProto  fSpec flags | interfacesG    flags] ++
         [ verbose flags "Done."]
        ) 
    where  
    protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
 
-interfaceGen :: Fspc -> Options -> IO()
-interfaceGen    fSpec flags
+interfaceGenProto :: Fspc -> Options -> IO()
+interfaceGenProto    fSpec flags
   = (writeFile outputFile $ showADL strippedfspec)
     >> verboseLn flags ("Ampersand-script written to " ++ outputFile ++ ".")
     where   
