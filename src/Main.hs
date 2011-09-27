@@ -121,7 +121,7 @@ generateProtoStuff flags fSpec =
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
   = (writeFile outputFile $ showADL strippedfspec)
-    >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
+    >> verboseLn flags ("Ampersand-script written to " ++ outputFile ++ ".")
     where   
     --do not print interfaces (yet) with prototype.exe --export.
     --prototype --export is an export of the Atlas DB.
