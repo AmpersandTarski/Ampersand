@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.GetCode
 where
  import Data.Maybe (listToMaybe)
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
- import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpsign,phpflp)
+ import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpsign,phpflp,PHPDeclaration(..),PHPRelation(..),PHPExpression(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..))
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
@@ -43,7 +43,7 @@ where
      -- We try to find a singleton, those values we know already
      [ code |
        code<-case e of
-        (ERel (V{reltyp=Sign _ t})) -- source is al automatisch een singleton
+        (PHPERel (PHPV (_,t))) -- source is al automatisch een singleton
          -> getAllTarget t
         _ -> fatal 44 $ "please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e
      ]
@@ -82,10 +82,8 @@ where
            ]
         getAllTarget tp@(PHPC c)
          = [[Assignment pre (o:pre) (use o) (SQLComposed c [Named (name c) pxpr] sql)]
-           | let pxpr=ERel (I tp)
+           | let pxpr=PHPERel (PHPI tp)
            , let expr=ERel (I c)
-           | let pxpr=ERel (mIs tp)
-           , let expr=ERel (mIs c)
            , CodeVar{cvContent=Right []} <-[obj]
            , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
            ]++
@@ -106,13 +104,13 @@ where
  getAllInExpr :: Fspc            -- ^ contains information on what's in a DB and what's in a different kind of plug
               -> [Named CodeVar] -- ^ preknowledge (for administrative purposes)
               -> Named UseVar    -- ^ variable to assign Expression to (see Assignment for details)
-              -> Expression (Relation PHPconcept)    -- ^ expression we'd like to know
+              -> PHPExpression    -- ^ expression we'd like to know
               -> [[Statement]]   -- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
- getAllInExpr fSpec pre var (EBrk   e ) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (ECps   [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (EIsc [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (EUni [e]) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (ERad [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPEBrk   e ) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPECps   [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPEIsc [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPEUni [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPERad [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var composed
   =  -- There are several approaches to get the expression
      -- 1. find the information in the preknowledge
@@ -167,7 +165,7 @@ where
      [ code
      | code <- case composed of
                 -- NOTE ON ECpl !!! When ECpl becomes typed, the pattern below should be changed, and changeSource as well!
-                (ECps [ERel (I _ (PHPI1 s) _), ECpl f, ERel (I _ (PHPI1 t) _)])
+                (PHPECps [PHPERel (PHPI (PHPI1 s) ), PHPECpl f, PHPERel (PHPI (PHPI1 t) )])
                        -> atleastOne ("!Fatal (module GetCode 177): getCodeForSingle should return something in ECpl for "++show f)$ -- SJC put this here
                           [ assignment++
                             [Assignment (var1:pre)
@@ -182,7 +180,7 @@ where
                                     ]
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           ] 
-                (ECps fs) -> [assignment++
+                (PHPECps fs) -> [assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
                                       [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
@@ -194,12 +192,12 @@ where
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right s]))
                                                                    (CQPlain t)]
-                                           ,x)) (splitAssoc ECps fs)
+                                           ,x)) (splitAssoc PHPECps fs)
                               ++ map (\x->(\pre' var2 s t->[Assignment pre' 
                                                                    (var2:pre')
                                                                    (Named (nName var ) (UseVar [Right t]))
                                                                    (CQPlain s)]
-                                           ,x)) (splitAssoc ECps (map phpflp (reverse fs)))
+                                           ,x)) (splitAssoc PHPECps (map phpflp (reverse fs)))
                           , let var1 = getAVar (obj:pre) f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
@@ -215,7 +213,7 @@ where
                                       , get<-getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
-                (EIsc fs)->[assignment++
+                (PHPEIsc fs)->[assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
                                       [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
@@ -223,7 +221,7 @@ where
                                       ]
                            ,Forget (var1:obj:pre) (obj:pre)]
                           | (i,f1) <- zipnum fs
-                          , f2<-applyOprOnLists EIsc$ take i fs ++ drop (i+1) fs
+                          , f2<-applyOprOnLists PHPEIsc$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (phpsource f1)
@@ -265,7 +263,7 @@ where
  use s = Named (nName s) (UseVar [])
  
  -- | will get a straight-forward php expression (binary)
- phpQuery :: Fspc -> [Named CodeVar] -> Expression (Relation PHPconcept) -> Maybe (CodeQuery)
+ phpQuery :: Fspc -> [Named CodeVar] -> PHPExpression -> Maybe (CodeQuery)
  phpQuery fSpec _ expr
   = listToMaybe
       [  PHPBinCheck {cqinput=map CQPlain [s,t] -- arguments passed to the plug
@@ -284,34 +282,26 @@ where
 
  -- | will get a straightforward sql expression (binary) with a nice name for source and target
  -- | if, of course, such a sql expression exists
- sqlQuery :: Fspc -> Expression (Relation Concept)-> Maybe String
+ sqlQuery :: Fspc -> Expression-> Maybe String
  sqlQuery fSpec expr
   = selectExpr fSpec 0 src (noCollide [src] (sqlExprTrg fSpec expr)) expr
   where  src = sqlExprSrc fSpec expr
  
- changeTarget :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
+ changeTarget :: PHPconcept -> PHPExpression -> PHPExpression
  changeTarget c = phpflp . changeSource c . phpflp
  -- | change the source of some expression into c. We assume that c ISA source expression.
- changeSource :: PHPconcept -> Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
- changeSource c (EBrk  x)  = EBrk  (changeSource c x)
- changeSource c (EKl0 x)  = EKl0 (changeSource c x)
- changeSource c (EKl1 x)  = EKl1 (changeSource c x)
- changeSource c (ECps fs)   = ECps   [changeSource c f | f<-fs]
- changeSource c (ERad fs) = ERad [changeSource c f | f<-fs]
- changeSource c (EIsc ts) = EIsc [changeSource c t | t<-ts]
- changeSource c (EUni ts) = EUni [changeSource c t | t<-ts]
- changeSource c (ECpl x ) = ECps [ERel (I c),ECpl x]    -- TODO: is dit correct?
- changeSource c (ERel r) = ERel r'
- changeSource c (EKl0 x)  = EKl0 (changeSource c x)
- changeSource c (EKl1 x)  = EKl1 (changeSource c x)
- changeSource c (ECps fs)   = ECps   [changeSource c f | f<-fs]
- changeSource c (ERad fs) = ERad [changeSource c f | f<-fs]
- changeSource c (EIsc ts) = EIsc [changeSource c t | t<-ts]
- changeSource c (EUni ts) = EUni [changeSource c t | t<-ts]
- changeSource c (ECpl x ) = ECps [ERel (mIs c),ECpl x]    -- TODO: is dit correct?
- changeSource c (ERel r) = ERel r'
+ changeSource :: PHPconcept -> PHPExpression -> PHPExpression
+ changeSource c (PHPEBrk  x)  = PHPEBrk  (changeSource c x)
+ changeSource c (PHPEKl0 x)  = PHPEKl0 (changeSource c x)
+ changeSource c (PHPEKl1 x)  = PHPEKl1 (changeSource c x)
+ changeSource c (PHPECps fs)   = PHPECps   [changeSource c f | f<-fs]
+ changeSource c (PHPERad fs) = PHPERad [changeSource c f | f<-fs]
+ changeSource c (PHPEIsc ts) = PHPEIsc [changeSource c t | t<-ts]
+ changeSource c (PHPEUni ts) = PHPEUni [changeSource c t | t<-ts]
+ changeSource c (PHPECpl x ) = PHPECps [PHPERel (PHPI c),PHPECpl x]    -- TODO: is dit correct?
+ changeSource c (PHPERel r) = PHPERel r'
   where  r' = case r of
-               Rel{} -> r{relsrc=c}
-               I{} -> I [] c c
-               V{reltyp=Sign _ t} -> V (Sign c t)
-               Mp1{} -> fatal 311 "changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."
+               PHPRel nm pos (_,t) d -> PHPRel nm pos (c,t) d
+               PHPI{} -> PHPI c
+               PHPV (_,t) -> PHPV (c,t)
+               PHPMp1{} -> fatal 311 "changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

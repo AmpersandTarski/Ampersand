@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.ConnectToDataBase
 where
  import Data.List
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
--- import DatabaseDesign.Ampersand_Prototype.Code
+ import DatabaseDesign.Ampersand_Prototype.Code
  import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
  import DatabaseDesign.Ampersand_Prototype.Version 
@@ -124,13 +124,13 @@ where
  ruleFunctions flags fSpec
     = showCodeHeaders 
        ([ (code rule')
-        | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . normExpr) rule]
+        | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . rrexp {- . normExpr -}) rule]
         ])
-      ++
+      ++ 
       [ "\n  function checkRule"++show (runum rule)++"(){\n    "++
            (if isFalse rule'
-            then "// "++(langwords!!2)++": "++showexpression (showADL . disambiguate fSpec) rule++"\n     "
-            else "// "++(langwords!!3)++" ("++showexpression (showADL . disambiguate fSpec) rule++")\n    "++
+            then "// "++(langwords!!2)++": "++ (showADL . disambiguate fSpec) rule'++"\n     "
+            else "// "++(langwords!!3)++" ("++ (showADL . disambiguate fSpec) rule'++")\n    "++
                  concat [ "//            rule':: "++(showADL . disambiguate fSpec) rule' ++"\n    " | pDebug] ++
                    "\n    $v = DB_doquer_lookups('"++ showsql(SqlSel2(selectbinary fSpec rule'))++"');\n"
                    -- ++ showCode 4 (code rule')
@@ -144,9 +144,9 @@ where
                  "  return false;\n    }"
            )
            ++ "return true;\n  }"
-         | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . normExpr) rule]]
+         | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . rrexp {- . normExpr -}) rule]]
       where
-       code :: Expression (Relation Concept) -> [Statement]
+       code :: Expression -> [Statement]
        code r = case (getCodeFor fSpec [] [codeVariableForBinary "v" r]) of
                  Nothing -> fatal 139 "No codes returned"
                  Just x  -> x

@@ -17,7 +17,7 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..),mapRelation,mapExpression)
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
-import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..))
+import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..),conc2php)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
@@ -56,7 +56,7 @@ data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
 type PhpArgs = [(Int,PhpValue)]
 data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
 --DO you need on::[Relation Concept]? makeFspec sets an empty list
-data PhpAction = PhpAction {action::ActionType, on::[Relation Concept]} deriving (Show)
+data PhpAction = PhpAction {action::ActionType, on::[Relation]} deriving (Show)
 data ActionType = Create | Read | Update | Delete deriving (Show)
 
 instance Identified PhpValue where
@@ -130,17 +130,17 @@ makePhpPlug obj
   where
    inFile :: Maybe String
    inFile = listToMaybe [ str    --objstrs obj = [["FILE=date.plug.php"]]
-                        | x<-objstrs obj, 'ECps':'I':'L':'E':'=':str<-x ]
+                        | x<-objstrs obj, 'F':'I':'L':'E':'=':str<-x ]
    inAttrs :: [CodeVar]
    inAttrs = [toAttr attr | attr<-objats obj, (or$ map (elem "PHPARG") (objstrs attr))]
    toAttr :: ObjectDef -> CodeVar
    toAttr a = CodeVar{cvIndexed=IndexByName -- TODO, read this from parameters
                      ,cvContent=Right [] -- TODO!! Allow complex objects..
-                     ,cvExpression=mapExpression (mapRelation PHPC) (objctx a)}
+                     ,cvExpression=conc2php (objctx a)}
    outObj :: CodeVar
    outObj = CodeVar{cvIndexed=IndexByName
                    ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
-                   ,cvExpression=mapExpression (mapRelation PHPC) (objctx obj)}
+                   ,cvExpression=conc2php (objctx obj)}
    verifiesInput::Bool
    verifiesInput = True   
 

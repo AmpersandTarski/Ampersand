@@ -6,7 +6,11 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
       ,CodeVar(..)
       ,CodeVarIndexed(..)
       ,useAttribute
-      ,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpflp,phpsign
+      ,PHPconcept(..)
+      ,php2conc,conc2php
+      ,phpsource
+      ,phptarget,phpflp,phpsign
+      ,PHPDeclaration(..),PHPRelation(..),PHPExpression(..)
       ) where
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..), mapRelation, mapExpression)
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
@@ -34,7 +38,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
     -- | Content can either be a CodeVar, intended for indexed stuff: $var[$i] returns a codeVar,
     --                    OR  [Named CodeVar], intended for objects/associative arrays: $var["nName"] is a codeVar 
   , cvContent :: Either CodeVar [Named CodeVar] 
-  , cvExpression :: Expression (Relation PHPconcept)
+  , cvExpression :: PHPExpression
   }
  
  instance Eq CodeVar where
@@ -61,8 +65,8 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
 
  -- | The following wrapper adds PHP-information to a concept.
  data PHPconcept
-    = PHPC Concept -- ^Usual concept
-    | PHPexp (Expression (Relation Concept)) -- ^A concept containing pairs representing the population in the expression.
+    = PHPC A_Concept -- ^Usual concept
+    | PHPexp Expression -- ^A concept containing pairs representing the population in the expression.
     | PHPI1  { cpvar :: Named UseVar }
     deriving (Eq,Show)
 
@@ -75,50 +79,42 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
   name (PHPexp _)   = "SomeExpression"
   name (PHPI1 x)    = nName x
  
- phpsource :: Expression (Relation PHPconcept) -> PHPconcept
+ phpsource :: PHPExpression -> PHPconcept
  phpsource expr = case expr of
-     (ERel rel)-> source rel
-     (EBrk f)    -> phpsource f
-     (ECps [])    -> error "!Fatal (module CodeStatement 74): ECps []"
-     (ECps fs)    -> phpsource (head fs)
-     (ERad [])  -> error "!Fatal (module CodeStatement 76): ERad []"
-     (ERad fs)  -> phpsource (head fs)
-     (EUni [])  -> error "!Fatal (module CodeStatement 78): EUni []"
-     (EUni fs)  -> phpsource (head fs)
-     (EIsc [])  -> error "!Fatal (module CodeStatement 80): EIsc []"
-     (EIsc fs)  -> phpsource (head fs)
-     (EKl0 e')  -> phpsource e'
-     (EKl1 e')  -> phpsource e'
-     (ECpl e')  -> phpsource e'
- phptarget  :: Expression (Relation PHPconcept) -> PHPconcept
+     (PHPERel rel)-> phprelsource rel
+     (PHPEBrk f)    -> phpsource f
+     (PHPECps [])    -> error "!Fatal (module CodeStatement 74): ECps []"
+     (PHPECps fs)    -> phpsource (head fs)
+     (PHPERad [])  -> error "!Fatal (module CodeStatement 76): ERad []"
+     (PHPERad fs)  -> phpsource (head fs)
+     (PHPEUni [])  -> error "!Fatal (module CodeStatement 78): EUni []"
+     (PHPEUni fs)  -> phpsource (head fs)
+     (PHPEIsc [])  -> error "!Fatal (module CodeStatement 80): EIsc []"
+     (PHPEIsc fs)  -> phpsource (head fs)
+     (PHPEKl0 e')  -> phpsource e'
+     (PHPEKl1 e')  -> phpsource e'
+     (PHPECpl e')  -> phpsource e'
+ phptarget  :: PHPExpression -> PHPconcept
  phptarget x = phpsource(phpflp x)
- phpsign :: Expression (Relation PHPconcept) -> (PHPconcept,PHPconcept)
+ phpsign :: PHPExpression -> (PHPconcept,PHPconcept)
  phpsign x = (phpsource x, phptarget x)
- phpflp  :: Expression (Relation PHPconcept) -> Expression (Relation PHPconcept)
+ phpflp  :: PHPExpression -> PHPExpression
  phpflp expr = case expr of
-     (ERel rel)-> ERel (flp rel)
-     (EBrk f)    -> EBrk (phpflp f)
-     (ECps ts)    -> ECps (map phpflp (reverse ts))
-     (ERad ts)  -> ERad (map phpflp (reverse ts))
-     (EUni fs)  -> EUni (map phpflp fs)
-     (EIsc fs)  -> EIsc (map phpflp fs)
-     (EKl0 e')  -> EKl0 (phpflp e')
-     (EKl1 e')  -> EKl1 (phpflp e')
-     (ECpl e')  -> ECpl (phpflp e')
-
- conc2php :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- conc2php e = mapExpression (mapRelation PHPC) e
-
- php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
- php2conc e = mapExpression (mapRelation f) e
-              where f (PHPC c) = c
-                    f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
+     (PHPERel rel)-> PHPERel (phprelflp rel)
+     (PHPEBrk f)    -> PHPEBrk (phpflp f)
+     (PHPECps ts)    -> PHPECps (map phpflp (reverse ts))
+     (PHPERad ts)  -> PHPERad (map phpflp (reverse ts))
+     (PHPEUni fs)  -> PHPEUni (map phpflp fs)
+     (PHPEIsc fs)  -> PHPEIsc (map phpflp fs)
+     (PHPEKl0 e')  -> PHPEKl0 (phpflp e')
+     (PHPEKl1 e')  -> PHPEKl1 (phpflp e')
+     (PHPECpl e')  -> PHPECpl (phpflp e')
 
  data CodeQuery
-  =  SQLBinary   { cqexpression ::Expression (Relation PHPconcept)
+  =  SQLBinary   { cqexpression ::PHPExpression
                  , sqlquery     ::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually) Will fill target only
-   | SQLComposed { cqsource     :: Concept
-                 , cqExpressions::[Named (Expression (Relation PHPconcept))]
+   | SQLComposed { cqsource     :: A_Concept
+                 , cqExpressions::[Named (PHPExpression)]
                  , sqlquery ::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
    | PHPPlug     { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug (must be verified!)
                  , cqoutput ::CodeVar      -- ^ the output variable
@@ -148,3 +144,126 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
    | CQPlain     (Named UseVar)                -- ^ simply get some variable and return it
    | CQConstant  {cqQuotedValue::String}       -- ^ a constant such as "Hello world", true, or date()
    deriving (Eq, Show)
+
+
+
+
+-------------------------------------------------
+ data PHPExpression 
+      = PHPEEqu (PHPExpression,PHPExpression)   
+      | PHPEImp (PHPExpression,PHPExpression)   
+      | PHPEIsc [PHPExpression]                 
+      | PHPEUni [PHPExpression]                 
+      | PHPEDif (PHPExpression,PHPExpression)   
+      | PHPELrs (PHPExpression,PHPExpression)   
+      | PHPERrs (PHPExpression,PHPExpression)   
+      | PHPECps [PHPExpression]                 
+      | PHPERad [PHPExpression]                 
+      | PHPEKl0 PHPExpression                  
+      | PHPEKl1 PHPExpression                  
+      | PHPEFlp PHPExpression                   
+      | PHPECpl PHPExpression                   
+      | PHPEBrk PHPExpression                   
+      | PHPETyp PHPExpression (PHPconcept,PHPconcept)
+      | PHPERel PHPRelation                      
+      deriving (Eq,Show)
+ data PHPRelation = 
+  PHPRel { phpnm   :: String 
+         , phppos  :: Origin       
+         , phpsgn  :: (PHPconcept,PHPconcept)            
+         , phpdcl  :: Declaration     
+         } |
+  PHPI    { php1typ :: PHPconcept       
+          } |
+  PHPV    { phptyp  :: (PHPconcept,PHPconcept)            
+          } |
+  PHPMp1  { phpval  :: String       
+          , php1typ :: PHPconcept       
+          } deriving (Show)
+
+ instance Eq PHPRelation where
+  PHPRel nm _ sgn _ == PHPRel nm' _ sgn' _ = nm==nm' && sgn==sgn'
+  PHPI c            == PHPI c'             = c==c'
+  PHPV sgn          == PHPV sgn'           = sgn==sgn'
+  PHPMp1 s c        == PHPMp1 s' c'        = s==s' && c==c'
+  _ == _ = False
+
+ instance Identified PHPRelation where
+  name (PHPRel nm _ _ _) = nm
+  name (PHPI{}) = "I"
+  name (PHPV{}) = "V"
+  name (PHPMp1{}) = "I"
+
+ phprelsource (PHPRel _ _ (c,_) _) = c
+ phprelsource (PHPI c) = c
+ phprelsource (PHPV (c,_)) = c
+ phprelsource (PHPMp1 s c) = c
+
+ php2conc :: PHPExpression -> Expression
+ php2conc (PHPEEqu (l,r)) = EEqu (php2conc l,php2conc r) 
+ php2conc (PHPEImp (l,r)) = EImp (php2conc l,php2conc r) 
+ php2conc (PHPEIsc es)    = EIsc (map (php2conc) es)             
+ php2conc (PHPEUni es)    = EUni (map (php2conc) es)             
+ php2conc (PHPEDif (l,r)) = EDif (php2conc l,php2conc r) 
+ php2conc (PHPELrs (l,r)) = ELrs (php2conc l,php2conc r) 
+ php2conc (PHPERrs (l,r)) = ERrs (php2conc l,php2conc r) 
+ php2conc (PHPECps es)    = ECps (map (php2conc) es)             
+ php2conc (PHPERad es)    = ERad (map (php2conc) es)             
+ php2conc (PHPEKl0 e)     = EKl0 (php2conc e)                    
+ php2conc (PHPEKl1 e)     = EKl1 (php2conc e)                    
+ php2conc (PHPEFlp e)     = EFlp (php2conc e)                    
+ php2conc (PHPECpl e)     = ECpl (php2conc e)                    
+ php2conc (PHPEBrk e)     =     php2conc e                       
+ php2conc (PHPETyp e _)   =     php2conc e                    
+ php2conc (PHPERel rel)
+  = let f (PHPC c) = c
+        f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
+    in case rel of
+           PHPRel nm pos (s,t) d -> ERel (Rel nm pos (Sign (f s) (f t)) d)
+           PHPI  c -> ERel (I (f c))
+           PHPV  (s,t) -> ERel (V (Sign (f s) (f t)))
+           PHPMp1 val c -> ERel (Mp1 val (f c)) 
+
+ conc2php (EEqu (l,r)) = PHPEEqu (conc2php l,conc2php r) 
+ conc2php (EImp (l,r)) = PHPEImp (conc2php l,conc2php r) 
+ conc2php (EIsc es)    = PHPEIsc (map (conc2php) es)             
+ conc2php (EUni es)    = PHPEUni (map (conc2php) es)             
+ conc2php (EDif (l,r)) = PHPEDif (conc2php l,conc2php r) 
+ conc2php (ELrs (l,r)) = PHPELrs (conc2php l,conc2php r) 
+ conc2php (ERrs (l,r)) = PHPERrs (conc2php l,conc2php r) 
+ conc2php (ECps es)    = PHPECps (map (conc2php) es)             
+ conc2php (ERad es)    = PHPERad (map (conc2php) es)             
+ conc2php (EKl0 e)     = PHPEKl0 (conc2php e)                    
+ conc2php (EKl1 e)     = PHPEKl1 (conc2php e)                    
+ conc2php (EFlp e)     = PHPEFlp (conc2php e)                    
+ conc2php (ECpl e)     = PHPECpl (conc2php e)                    
+ conc2php (EBrk e)     =     conc2php e                       
+ conc2php (ETyp e _)   =     conc2php e                    
+ conc2php (ERel rel)
+  = case rel of
+           Rel nm pos (Sign s t) d -> PHPERel (PHPRel nm pos (PHPC s,PHPC t) d)
+           I  c -> PHPERel (PHPI (PHPC c))
+           V  (Sign s t) -> PHPERel (PHPV (PHPC s,PHPC t))
+           Mp1 val c -> PHPERel (PHPMp1 val (PHPC c))  
+
+
+
+ data PHPDeclaration = 
+  PHPSgn { phpdecnm   :: String  
+      , phpdecsgn  :: (PHPconcept,PHPconcept)       
+      --, decprps :: [Prop]     
+      , phpdecprps_calc :: [Prop]
+      --, decprL  :: String     
+      --, decprM  :: String     
+      --, decprR  :: String
+      --, decMean :: String     
+      --, decpopu :: Pairs      
+      --, decfpos :: Origin     
+      , phpdeciss  :: Bool       
+      , phpdecusr  :: Bool       
+      --, decpat  :: String     
+      , phpdecplug :: Bool       
+      } 
+
+ phprelflp :: PHPRelation -> PHPRelation
+ phprelflp (PHPRel nm pos (s,t) d) = PHPRel nm pos (t,s) d

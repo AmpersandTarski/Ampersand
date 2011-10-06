@@ -819,6 +819,8 @@ instance InPlug Expression where
 --      | ERad (Expressions rel)  -- ts   ^ relative addition                       !
   --    | EIsc (Expressions rel)  -- fs   ^ intersection                            /\
     --  | EUni (Expressions rel)  -- fs   ^ union                                   \/     
-   selectbinary fs _ = fatal 748 "not supported" 
+   selectbinary fs (EFlp x) = let sb=selectbinary fs x in sb{rslfld=(fst(rslfld sb),snd(rslfld sb))}
+   selectbinary fs (ETyp x _) = selectbinary fs x
+   selectbinary fs x = fatal 748 ("not supported" ++ show x)
 
  
