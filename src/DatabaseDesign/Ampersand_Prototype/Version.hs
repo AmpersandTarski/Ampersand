@@ -1,4 +1,4 @@
-        {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Version
   (ampersandPrototypeVersionBanner, versionNumberPrototype, fatalMsg)
 where 

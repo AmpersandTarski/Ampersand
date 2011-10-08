@@ -165,7 +165,7 @@ showClasses flags fSpec o
          ) ++
    [ "}\n" ]
  where
-  editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
+  editable | theme flags==StudentTheme =  [r |("Student",r)<-fRoleRels fSpec]
            | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
   mayedit :: Expression -> [Relation] -> Bool
   mayedit item editable = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
@@ -431,9 +431,9 @@ saveTransactions flags fSpec object
               --              Put it in both!! 
 --      //(tblfields behalve wat ik al heb) && required
 --      $old = firstRow(DB_doquer("SELECT `Datatype`.`I` FROM `Datatype` WHERE `Datatype`.`value1`='".addslashes($me['id'])."'")); 
---	//set to NULL value1 en alles dat value1 als requiredFld heeft
---	DB_doquer("UPDATE `Datatype` SET `value1`=NULL, `attr1`=NULL, `attr2`=NULL WHERE `value1`='".addslashes($me['id'])."'", 5);
---	//nog een keer insert
+--        //set to NULL value1 en alles dat value1 als requiredFld heeft
+--        DB_doquer("UPDATE `Datatype` SET `value1`=NULL, `attr1`=NULL, `attr2`=NULL WHERE `value1`='".addslashes($me['id'])."'", 5);
+--        //nog een keer insert
               copycutinsQuery var
                | isFullGroup requiresFld ids
                 = [ if null copyflds then "//all required fields are available"
@@ -799,7 +799,7 @@ savefunction flags fSpec fnm depth this
         shouldcut = not(null notreqid_and_notinthis_flds)
         cancut = null reqbyid_and_notinthis_flds
         --editable
-        editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
+        editable | theme flags==StudentTheme =  [r |("Student",r)<-fRoleRels fSpec]
                  | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
         mayedit :: Expression -> Bool
         mayedit item = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
@@ -871,16 +871,16 @@ savefunction flags fSpec fnm depth this
     ++ indentBlock 3 (
     ["$oldme = firstRow(DB_doquer(\"SELECT * FROM `"++name myplug++"` WHERE `"++fldname idfld++"`='\".addslashes($this->getId()).\"'\"));"
     ,"DB_doquer(\"DELETE FROM `"++name myplug++"` WHERE `"++fldname idfld++"`='\".addslashes($this->getId()).\"'\",5);"
---		    //if there is a change in one of the keys (this->id of me must be the same, because it is used to select oldme)
---		    // and fields not requiring this->id and not in this exist (see Haskell)
---		    // then there should be a new record for this => cut this->id, everything requiring id (these maybe fields not in this)
---		    // thus,the cluster of this->id is cut
+--                    //if there is a change in one of the keys (this->id of me must be the same, because it is used to select oldme)
+--                    // and fields not requiring this->id and not in this exist (see Haskell)
+--                    // then there should be a new record for this => cut this->id, everything requiring id (these maybe fields not in this)
+--                    // thus,the cluster of this->id is cut
     ] ++ 
     (if shouldcut then
       ["$shouldcut = $oldme[\""++fldname plugkey++"\"]!=$me[\""++fldname plugkey++"\"];"
---  		    // every kernelfield required by this->id, but not requiring this->id back must have changed (and be in this) to be able to cut it ()
---  		    // those values stay in cutoldme and have a UNIQUE INDEX
---  		    // paste (i.e. insert) may still fail, because of UNIQUE INDEX of some kernelfield of this => TODO, now rollback
+--                      // every kernelfield required by this->id, but not requiring this->id back must have changed (and be in this) to be able to cut it ()
+--                      // those values stay in cutoldme and have a UNIQUE INDEX
+--                      // paste (i.e. insert) may still fail, because of UNIQUE INDEX of some kernelfield of this => TODO, now rollback
 --      ,"$allrequiredinthis = true; //hide by haskell, just $cancut=false;"
       , if cancut
         then "$cancut = true;"
@@ -930,7 +930,7 @@ savefunction flags fSpec fnm depth this
       ]
       ++ concat (checkinstances "$cutoldme" myattflds)
       ++ ["}"] 
-    else [])) --end indentBlock if(!new)		    
+    else [])) --end indentBlock if(!new)                    
     ++
     ["} else {"--else if(new)
     ,"   foreach ($newme as $fld => $nullval){"
@@ -981,8 +981,8 @@ savefunction flags fSpec fnm depth this
       ,"}"
       ]    
     else []) ++
-    -- 	    //try INS newme (failure could be some UNIQUE INDEX or a missing required field, but not the UNIQUE KEY)
-    --	    //ins($newme);
+    --             //try INS newme (failure could be some UNIQUE INDEX or a missing required field, but not the UNIQUE KEY)
+    --            //ins($newme);
     [insme "$newme" myplug
     ,"if(mysql_errno()!=0) {"
     ,"   $err = mysql_error();"
@@ -992,8 +992,8 @@ savefunction flags fSpec fnm depth this
     ,"}"
     --REMARK -> the rest can be done the binary way!
     --            //update attribute relations (morAtt) in other records (maybe my, maybe other tblplug) (if attribute already set, then there is a choice: overwrite or not)
-    --	    //    (thus I am a partial function from a kernelfield of another plug to this->Id)
-    --	    
+    --            //    (thus I am a partial function from a kernelfield of another plug to this->Id)
+    --            
     ,""]
     ++ concat (checkinstances "$newme" myattflds)
     ++
@@ -1047,10 +1047,10 @@ savefunction flags fSpec fnm depth this
                                                     |f<-tblfields plug
                                                     ,let fval=if f==fld0 && mine then "$this->getId()" else "$row['"++fldname f++"']"])
                  ++")\");"]
-    --	    //insert binrels of this instance in the BinPlug
-    --	    //, "binrel" => $this->_binrel
+    --            //insert binrels of this instance in the BinPlug
+    --            //, "binrel" => $this->_binrel
  
-    --	    //$ctxenv["transaction"]["check"][] = rule(); //add rules, don't know how yet (rule() is a function that needs to be checked before commit)
+    --            //$ctxenv["transaction"]["check"][] = rule(); //add rules, don't know how yet (rule() is a function that needs to be checked before commit)
     ++
     concat --TODO -> check if the things this is associated with exist
     [["//myassociations"
@@ -1076,7 +1076,7 @@ savefunction flags fSpec fnm depth this
     ,let trgtbls = sqlRelPlugs fSpec (ERel(I(target(objctx att))))
     ,let (trgplug,trgfld,_) = if null trgtbls then error "no target tabel" else head trgtbls
     ]
-    ++	    
+    ++            
     [""
     ,if depth==0 then "if (closetransaction()) {return $this->getId();} else { return false;}" else ""
     ]) --end indentBlock save() for this

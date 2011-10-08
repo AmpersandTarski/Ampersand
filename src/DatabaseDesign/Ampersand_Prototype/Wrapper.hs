@@ -115,14 +115,14 @@ objectWrapper fSpec ifcs ifc flags
    objectName      = name o
    objectId        = phpIdentifier objectName
    appname         = name fSpec
-   editable | theme flags==StudentTheme =  [r |("Student",r)<-mayEdit fSpec]
+   editable | theme flags==StudentTheme =  [r |("Student",r)<-fRoleRels fSpec]
             | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
    visibleedit = foldr (||) visiblenew [mayedit x editable |x<-allobjctx o]
    visibledel = False --del() not implemented yet -- visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable
-   allobjctx obj = (objctx obj):(concat (map allobjctx (objats obj)))
+   allobjctx obj = objctx obj : concatMap allobjctx (objats obj)
    showObjectCode --display some concept instance in read or edit mode by definition of INTERFACE
-    = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - Ampersand Prototype</TITLE>\""
+    = [ "writeHead(\"<TITLE>"++objectName++" - "++appname++" - Ampersand Prototype</TITLE>\""
       , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
                 ++ " src=\"js/navigate.js\"></SCRIPT>'.\"\\n\", $buttons );"
       , "if($edit)"
@@ -368,7 +368,7 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
 --        [ "echo '</DIV>';" ]
     | otherwise --attContent (UNI with or without objats)
       = let
-        content = uniAtt (var) var depth path cls att
+        content = uniAtt var var depth path cls att
         in
         --TODO -> when dropdown is implemented a <new instance> link exists in the dropdown
         --        untill then new instances have to be created in a separate transaction (only picking existing)
