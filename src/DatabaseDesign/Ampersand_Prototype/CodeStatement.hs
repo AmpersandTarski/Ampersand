@@ -15,6 +15,15 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..), mapRelation, mapExpression)
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
+{- Expressions are evaluated preferrably in SQL, since the database should do the work wherever possible.
+In some cases, however, a mixture of PHP and SQL is needed to evaluate an Expression.
+Therefore, the Expression data structure also exists in a PHP-variant.
+(Critical question, why is this necessary? It has the same structure, so WHY?)
+For every Expression there is a corresponding PHPExpression,
+for instance ECps has a corresponding PHPECps, and so on for every constructor in Expression.
+The functions php2conc and conc2php define the correspondence betwee Expression PHPExpression.
+-}
+
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
  data Statement
   =  Iteration   { preknowledge :: [Named CodeVar]
@@ -81,34 +90,49 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
  
  phpsource :: PHPExpression -> PHPconcept
  phpsource expr = case expr of
-     (PHPERel rel)-> phprelsource rel
-     (PHPEBrk f)    -> phpsource f
+     (PHPEEqu (l,r)) -> phpsource l
+     (PHPEImp (l,r)) -> phpsource l
+     (PHPEIsc [])    -> error "!Fatal (module CodeStatement 80): EIsc []"
+     (PHPEIsc es)    -> phpsource (head es)
+     (PHPEUni [])    -> error "!Fatal (module CodeStatement 78): EUni []"
+     (PHPEUni es)    -> phpsource (head es)
+     (PHPEDif (l,r)) -> phpsource l
+     (PHPELrs (l,r)) -> phpsource l
+     (PHPERrs (l,r)) -> phptarget r
      (PHPECps [])    -> error "!Fatal (module CodeStatement 74): ECps []"
-     (PHPECps fs)    -> phpsource (head fs)
-     (PHPERad [])  -> error "!Fatal (module CodeStatement 76): ERad []"
-     (PHPERad fs)  -> phpsource (head fs)
-     (PHPEUni [])  -> error "!Fatal (module CodeStatement 78): EUni []"
-     (PHPEUni fs)  -> phpsource (head fs)
-     (PHPEIsc [])  -> error "!Fatal (module CodeStatement 80): EIsc []"
-     (PHPEIsc fs)  -> phpsource (head fs)
-     (PHPEKl0 e')  -> phpsource e'
-     (PHPEKl1 e')  -> phpsource e'
-     (PHPECpl e')  -> phpsource e'
+     (PHPECps es)    -> phpsource (head es)
+     (PHPERad [])    -> error "!Fatal (module CodeStatement 76): ERad []"
+     (PHPERad es)    -> phpsource (head es)
+     (PHPEKl0 e)     -> phpsource e
+     (PHPEKl1 e)     -> phpsource e
+     (PHPEFlp e)     -> phptarget e
+     (PHPECpl e)     -> phpsource e
+     (PHPEBrk e)     -> phpsource e
+     (PHPETyp e t)   -> phpsource e
+     (PHPERel rel)   -> phprelsource rel
  phptarget  :: PHPExpression -> PHPconcept
  phptarget x = phpsource(phpflp x)
  phpsign :: PHPExpression -> (PHPconcept,PHPconcept)
  phpsign x = (phpsource x, phptarget x)
  phpflp  :: PHPExpression -> PHPExpression
  phpflp expr = case expr of
-     (PHPERel rel)-> PHPERel (phprelflp rel)
-     (PHPEBrk f)    -> PHPEBrk (phpflp f)
-     (PHPECps ts)    -> PHPECps (map phpflp (reverse ts))
-     (PHPERad ts)  -> PHPERad (map phpflp (reverse ts))
-     (PHPEUni fs)  -> PHPEUni (map phpflp fs)
-     (PHPEIsc fs)  -> PHPEIsc (map phpflp fs)
-     (PHPEKl0 e')  -> PHPEKl0 (phpflp e')
-     (PHPEKl1 e')  -> PHPEKl1 (phpflp e')
-     (PHPECpl e')  -> PHPECpl (phpflp e')
+     (PHPEEqu (l,r))   -> PHPEEqu (phpflp l, phpflp r)
+     (PHPEImp (l,r))   -> PHPEImp (phpflp l, phpflp r)
+     (PHPEIsc es)      -> PHPEIsc (map phpflp (reverse es))
+     (PHPEUni es)      -> PHPEUni (map phpflp (reverse es))
+     (PHPEDif (l,r))   -> PHPEDif (phpflp l, phpflp r)
+     (PHPELrs (l,r))   -> PHPELrs (phpflp r, phpflp l)
+     (PHPERrs (l,r))   -> PHPERrs (phpflp r, phpflp l)
+     (PHPECps es)      -> PHPECps (map phpflp (reverse es))
+     (PHPERad es)      -> PHPERad (map phpflp (reverse es))
+     (PHPEKl0 e)       -> PHPEKl0 (phpflp e)
+     (PHPEKl1 e)       -> PHPEKl1 (phpflp e)
+     (PHPEFlp e)       -> PHPEFlp (phpflp e)
+     (PHPECpl e)       -> PHPECpl (phpflp e)
+     (PHPEBrk e)       -> PHPEBrk (phpflp e)
+     (PHPETyp e (s,t)) -> PHPETyp (phpflp e) (t,s)
+     (PHPERel rel)     -> PHPERel (phprelflp rel)
+
 
  data CodeQuery
   =  SQLBinary   { cqexpression ::PHPExpression
@@ -214,7 +238,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
  php2conc (PHPEFlp e)     = EFlp (php2conc e)                    
  php2conc (PHPECpl e)     = ECpl (php2conc e)                    
  php2conc (PHPEBrk e)     =     php2conc e                       
- php2conc (PHPETyp e _)   =     php2conc e                    
+ php2conc (PHPETyp e t)   =     php2conc e
  php2conc (PHPERel rel)
   = let f (PHPC c) = c
         f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
