@@ -44,6 +44,8 @@ isOne' o = isOne o -- isOneExpr$ctx o
 isOne :: ObjectDef -> Bool
 isOne o = source (ctx o) == ONE
 
+{- selectExpr translates an Expression (which is in Ampersand's A-structure) into an SQL expression in textual form.
+-}
 selectExpr ::    Fspc       -- current context
               -> Int        -- indentation
               -> String     -- SQL name of the source of this expression, as assigned by the environment 
@@ -264,9 +266,9 @@ selectExpr fSpec i src trg (ERad  [e']       ) = selectExpr fSpec i src trg e'
 selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
  = selectGeneric i (mainSrc,src) (mainTrg,trg)
                         (cChain ", " (concExprs i ncs)) (cChain (phpIndent i++"  AND ") (inner: cclauses ncs))
-{-  De concepten in lst' noemen we c0, c1, ... cn (met n de lengte van lst')
-    De elementen in lst' zelf noemen we reladd0, reladd1, ... reladdd(n-1).
-    Deze namen worden aangehouden in de SQL-aliasing. Dat voorkomt naamconflicten op een wat ruwe manier, maar wel overzichtelijk en effectief.
+{-  The concepts in lst' are called c0, c1, ... cn (with n being the length of lst')
+    The elements in lst' are called reladd0, reladd1, ... reladdd(n-1).
+    These names are also used in the SQL-aliasing. This prevents name conflicts in a somewhat rough manner, yet insightful and effective.
 -}
    where mainSrc = "c0."++src'
          mainTrg = "c"++show (length lst')++"."++trg'
@@ -546,30 +548,49 @@ sqlPlugFields p e'
            -- this error does not guarantee, however, that simplF yields no ECps []. In particular: simplify (ECps [I;I]) == ECps []
   replF ks = ECps (ks)
   -----------------
-
+  
+-- | sqlExprSrc gives the SQL-string that serves as the attribute name in SQL.
+--   we want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TRG" would suffice)
+--   It is not clear why the recursion over expressions is repeated here...
+--   WHY not ask for the type of the expression and assemble a nice name? (TODO)
 sqlExprSrc :: Fspc->Expression -> String
 sqlExprSrc fSpec expr = ses expr
  where
-   ses (ECps [])  = fatal 554 (if expr==ECps[] then "calling sqlExprSrc (ECps [])" else "evaluating (ECps []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
-   ses (ECps [f]) = ses f
-   ses (ECps fs)  = ses (head fs)
-   ses (EUni [])  = fatal 557 (if expr==ECps[] then "calling sqlExprSrc (EUni [])" else "evaluating (EUni []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
-   ses (EUni [f]) = ses f
-   ses (EUni fs)  = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
-   ses (EIsc [])  = fatal 560 (if expr==ECps[] then "calling sqlExprSrc (EIsc [])" else "evaluating (EIsc []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
-   ses (EIsc [f]) = ses f
-   ses (EIsc fs)  = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
-   ses (ERad [])  = fatal 563 (if expr==ECps[] then "calling sqlExprSrc (ERad [])" else "evaluating (ERad []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
-   ses (ERad [f]) = ses f
-   ses (ERad fs)  = ses (head fs)
-   ses (ECpl e)   = ses e
-   ses (EKl0 e)   = ses e
-   ses (EKl1 e)   = ses e
-   ses (EBrk e)   = ses e
-   ses (ERel r)   = case r of
-                    Mp1{} -> "Mp"++(name (rel1typ r))
-                    V{} -> ses (ERel I{rel1typ=source r})
-                    _ -> head ([s |(_,s,_)<-sqlRelPlugNames fSpec (ERel r)]++[show r])
+   ses (EEqu (l,_)) = ses l
+   ses (EImp (l,_)) = ses l
+   ses (EIsc [])    = fatal 560 (if expr==ECps[] then "calling sqlExprSrc (EIsc [])" else "evaluating (EIsc []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (EIsc [f])   = ses f
+   ses (EIsc fs)    = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
+   ses (EUni [])    = fatal 557 (if expr==ECps[] then "calling sqlExprSrc (EUni [])" else "evaluating (EUni []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (EUni [f])   = ses f
+   ses (EUni fs)    = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
+   ses (EDif (l,_)) = ses l
+{- It's not obvious for ELrs and ERrs. As a help to motivate ses, here are the type definitions (copied from sign::Expression)
+ sign (ELrs (l,r))   = if target l `comparable` target r
+                     then Sign (source l) (source r)
+                     else fatal 252 $ "type checker failed to verify "++show (ELrs (l,r))++"."
+ sign (ERrs (l,r))   = if source l `comparable` source r
+                     then Sign (target l) (target r)
+                     else fatal 255 $ "type checker failed to verify "++show (ERrs (l,r))++"."
+-}
+   ses (ELrs (l,_)) = ses l
+   ses (ERrs (_,r)) = sqlExprTrg fSpec r
+   ses (ECps [])    = fatal 554 (if expr==ECps[] then "calling sqlExprSrc (ECps [])" else "evaluating (ECps []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (ECps [f])   = ses f
+   ses (ECps fs)    = ses (head fs)
+   ses (ERad [])    = fatal 563 (if expr==ECps[] then "calling sqlExprSrc (ERad [])" else "evaluating (ERad []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (ERad [f])   = ses f
+   ses (ERad fs)    = ses (head fs)
+   ses (ECpl e)     = ses e
+   ses (EKl0 e)     = ses e
+   ses (EKl1 e)     = ses e
+   ses (EFlp e)     = ses e
+   ses (EBrk e)     = ses e
+   ses (ETyp e _)   = ses e
+   ses (ERel r)     = case r of
+                      Mp1{} -> "Mp"++(name (rel1typ r))
+                      V{} -> ses (ERel I{rel1typ=source r})
+                      _ -> head ([s |(_,s,_)<-sqlRelPlugNames fSpec (ERel r)]++[show r])
 sqlExprTrg :: Fspc->Expression -> String
 sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 

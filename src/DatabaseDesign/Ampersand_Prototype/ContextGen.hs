@@ -10,7 +10,6 @@ where
      (
         [ "// "++name fspc++".php"
         , "// Generated with "++ ampersandPrototypeVersionBanner
-        , "// Prototype interface design by Milan van Bruggen and Sebastiaan J.C. Joosten"
         , ""
         , ""
         , "error_reporting(E_ALL); "
