@@ -31,9 +31,11 @@ main
   parseAndTypeCheck flags 
    = let scriptName = fileName flags
          fn = importfile flags
+         thepCtx (Left pCtx) = pCtx
+         thepCtx (Right err) = error (show err)
      in
      do scriptText <- readFile scriptName
-        pCtx <- parseCtxM_ scriptText flags scriptName
+        ePCtxErr <- parseCtxM_ scriptText flags scriptName
         pPops <- case fn of
            [] -> return []
            fn -> do popsText <- readFile fn
@@ -41,9 +43,9 @@ main
                        Adl1PopFormat -> parsePopsM_ popsText flags fn
                        Adl1Format -> do verbose flags ("Importing ADL1 file "++fn++"... ")
                                         cx <- parseCtxM_ popsText flags fn
-                                        if nocxe (snd(typeCheck cx [])) 
-                                         then let (atlas,_) = typeCheck pCtx [] -- the atlas without the import
-                                                  fspec = calculate flags (fst(typeCheck cx [])) -- the fspec of the adl file to import as a pop of atlas.adl
+                                        if nocxe (snd(typeCheck (thepCtx cx) [])) 
+                                         then let (atlas,_) = typeCheck (thepCtx ePCtxErr) [] -- the atlas without the import
+                                                  fspec = calculate flags (fst(typeCheck (thepCtx cx) [])) -- the fspec of the adl file to import as a pop of atlas.adl
                                                   fnnxt fspec = name fspec ++ "'" -- a name for a not yet existing next version
                                                   fdir = let d=dropFileName fn in if null d then "." else d
                                                   usr= namespace flags
@@ -84,9 +86,9 @@ main
                                                        ++ contextfunction fspec (funrep atlas) (name fspec)
                                                        ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
                                                         )
-                                         else error (show (snd(typeCheck cx [])))
+                                         else error (show (snd(typeCheck (thepCtx cx) [])))
         verboseLn flags "Type checking..."
-        return (typeCheck pCtx pPops)
+        return (typeCheck (thepCtx ePCtxErr) pPops)
   {-              
 parseFilePrototype :: Options -> ParserVersion -> IO(A_Context)
 parseFilePrototype flags pv 

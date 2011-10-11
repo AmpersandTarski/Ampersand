@@ -37,11 +37,11 @@ data PlugPHP
              deriving (Show)
 
 instance Identified PlugPHP where
-  name p = phpname p
+  name = phpname
   rename p x = p{phpname=x}
 
 instance FPAble PlugPHP where
-  fpa p = phpfpa p
+  fpa = phpfpa
 
 instance Eq PlugPHP where
   x==y = name x==name y && phpfile x == phpfile y && phpinArgs x == phpinArgs y
@@ -65,7 +65,7 @@ instance Identified PhpValue where
 instance ShowHS PlugPHP where
  showHSname plug = haskellIdentifier ("plug_"++name plug)
  showHS flags indent plug
-    = (intercalate indent 
+    = intercalate indent 
          ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
                  --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields p] ++indent++"in"
          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.name) plug
@@ -75,7 +75,7 @@ instance ShowHS PlugPHP where
          ,"       , phpSafe   = "++show (phpSafe plug)
          ,"       , phpfpa    = " ++ showHS flags "" (fpa plug)
          ,"       }"
-         ])
+         ]
 instance ShowHS PhpValue where
  showHSname _ = fatal 75 "PhpValue is anonymous with respect to showHS flags."
  showHS flags _ phpVal
@@ -97,11 +97,11 @@ instance ShowHS PhpReturn where
 instance ShowHS PhpAction where
  showHSname _ = fatal 93 "PhpAction is anonymous with respect to showHS flags."
  showHS flags indent act
-   = (intercalate (indent ++"    ") 
+   = intercalate (indent ++"    ") 
        [ "PhpAction { action = " ++ showHS flags "" (action act)
        , "          , on     = " ++ "["++intercalate ", " (map (showHS flags "") (on act))++"]"
        , "          }"
-       ])
+       ]
 instance ShowHS ActionType where
  showHSname _ = fatal 101 "\"ActionType\" is anonymous with respect to showHS flags."
  showHS _ indent Create = indent++"Create"
@@ -139,7 +139,7 @@ makePhpPlug obj
                      ,cvExpression=conc2php (objctx a)}
    outObj :: CodeVar
    outObj = CodeVar{cvIndexed=IndexByName
-                   ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
+                   ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj,  ["PHPARGS"] `notElem` objstrs attr]
                    ,cvExpression=conc2php (objctx obj)}
    verifiesInput::Bool
    verifiesInput = True   
