@@ -34,6 +34,7 @@ Executable prototype
       containers >= 0.4     && < 0.5    
   other-modules: DatabaseDesign.Ampersand_Prototype.Apps ,
                  DatabaseDesign.Ampersand_Prototype.Apps.Atlas ,
+                 DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable ,
                  DatabaseDesign.Ampersand_Prototype.Code ,
                  DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries ,
                  DatabaseDesign.Ampersand_Prototype.CodeStatement ,

@@ -234,6 +234,7 @@ atlas2pattern p rulpattern rls lang ruldescribes relpattern relname relsc reltg 
          , pt_cds = []
          , pt_kds = []
          , pt_xps = []
+         , pt_pop = []
          }
 
 geta :: [(String,b)] -> String -> b

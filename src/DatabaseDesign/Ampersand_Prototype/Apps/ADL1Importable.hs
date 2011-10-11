@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 --for example, importing an ADL1 file into the Atlas application as defined in DatabaseDesign\Ampersand_Prototype\Apps\atlas.adl
 --             USE -> cmd: ampersand --importfile=some.adl --importformat=adl atlas.adl
-module DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable   (makePopulations)
+module DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable   (makePopulations, ADL1Importable(..))
 where
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
@@ -62,7 +62,7 @@ makepopu _ _ rs _
 declarationid :: Declaration -> String
 declarationid x = name x ++ "::" ++ name(source x) ++ "*" ++ name(target x)
 relationid :: Relation -> String
-relationid x = declarationid (makeDeclaration x)
+relationid x = name x ++ "::" ++ name(source x) ++ "*" ++ name(target x)
 ----------------------------------------------------------------------------------
 
 
