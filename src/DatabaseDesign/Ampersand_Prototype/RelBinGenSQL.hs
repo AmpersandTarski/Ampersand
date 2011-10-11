@@ -44,6 +44,11 @@ isOne' o = isOne o -- isOneExpr$ctx o
 isOne :: ObjectDef -> Bool
 isOne o = source (ctx o) == ONE
 
+-- | add comments to Maybe sql strings, for example for debugging purposes
+sqlcomment :: String -> Maybe String -> Maybe String 
+sqlcomment _ Nothing = Nothing
+sqlcomment cmt (Just sql) = Just (" /*"++cmt++"*/ "++sql)
+
 {- selectExpr translates an Expression (which is in Ampersand's A-structure) into an SQL expression in textual form.
 -}
 selectExpr ::    Fspc       -- current context
@@ -60,9 +65,10 @@ selectExpr fSpec i src       trg@(_:_) e' | head trg /= '`'
 
 --TODO
 selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
- = if sqlOk then (selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
-                        (cChain ", " exprbracs) (cChain " AND " wherecl))
-            else Nothing
+ | sqlOk =  sqlcomment "(EIsc lst@(_:_:_))" 
+            (selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
+                             (cChain ", " exprbracs) (cChain " AND " wherecl))
+ | otherwise = Nothing
 {- The story:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
  For now, we explain only the otherwise clause (code: selectGeneric i ("isect0."++ ...)
@@ -123,34 +129,37 @@ selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                      ]++[Just$ "isect0."++src'++" IS NOT NULL",Just$ "isect0."++trg'++" IS NOT NULL"]
-selectExpr fSpec i src trg (EIsc [e']) = selectExpr fSpec i src trg e'
+selectExpr fSpec i src trg (EIsc [e']) = sqlcomment "(EIsc [e])"$ selectExpr fSpec i src trg e'
 -- Why not return Nothing?
 -- Reason: EIsc [] should not occur in the query at all! This is not a question of whether the data is in the database.. it might be (it depends on the type of EIsc []), but we just don't know
 selectExpr _     _ _   _   (EIsc [] ) = fatal 123 "Cannot create query for EIsc [] because type is unknown"
 
 selectExpr fSpec i src trg (ECps (ERel (V (Sign ONE _)):fs@(_:_)))
-  = selectGeneric i ("1",src) ("fst."++trg',trg)
+  = sqlcomment "(ECps (ERel (V (Sign ONE _)):fs@(_:_)))"$
+    selectGeneric i ("1",src) ("fst."++trg',trg)
                     (selectExprBrac fSpec i src' trg' (ECps fs) +++ " AS fst")
                     (Just$ "fst."++trg'++" IS NOT NULL")
                     where src' = noCollideUnlessTm' (ECps fs) [trg'] (quote$sqlExprSrc fSpec (ECps fs))
                           trg' = quote$sqlExprTrg fSpec (ECps fs)
 selectExpr fSpec i src trg (ECps (s1@(ERel (Mp1{})):(s2@(ERel (V _)):(s3@(ERel (Mp1{})):fx@(_:_))))) -- to make more use of the thing below
-  =  selectExpr fSpec i src trg (ECps ((ECps (s1:s2:s3:[])):fx))
+  = sqlcomment "(ECps (s1@(ERel (Mp1{})):(s2@(ERel (V _)):(s3@(ERel (Mp1{})):fx@(_:_)))))"$
+    selectExpr fSpec i src trg (ECps ((ECps (s1:s2:s3:[])):fx))
 
 selectExpr _ _ src trg (ECps ((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[])))) -- this will occur quite often because of doSubsExpr
-  = Just$ "SELECT "++relval sr++" AS "++src++", "++relval tr++" AS "++trg
+  = sqlcomment "(ECps ((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[]))))"$
+    Just$ "SELECT "++relval sr++" AS "++src++", "++relval tr++" AS "++trg
 
 selectExpr fSpec i src trg (ECps (e'@(ERel sr@(Mp1{})):(f:fx)))
-   = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
+   = sqlcomment "(ECps (e@(ERel sr@(Mp1{})):(f:fx)))"$
+     selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                      (selectExprBrac fSpec i src' trg' (ECps (f:fx))+++" AS fst")
                      (Just$"fst."++src'++" = "++relval sr)
                      where src' = quote$sqlExprSrc fSpec e'
                            trg' = noCollideUnlessTm' (ECps (f:fx)) [src'] (quote$sqlExprTrg fSpec (ECps (f:fx)))
 
-selectExpr fSpec i src trg (ECps (e':((ERel (V _)):(f:fx)))) = -- prevent calculating V in this case
-    if src==trg && not (isProp e')
-    then fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e'
-    else
+selectExpr fSpec i src trg (ECps (e':((ERel (V _)):(f:fx)))) -- prevent calculating V in this case
+ | src==trg && not (isProp e') = fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e'
+ | otherwise = sqlcomment "(ECps (e:((ERel (V _)):(f:fx))))"$
     selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                      ((selectExprBrac fSpec i src' mid' e')+++" AS fst, "+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
                      ("fst."++src'+++" IS NOT NULL")
@@ -158,9 +167,10 @@ selectExpr fSpec i src trg (ECps (e':((ERel (V _)):(f:fx)))) = -- prevent calcul
                mid' = quote$sqlExprTrg fSpec e'
                mid2'= quote$sqlExprSrc fSpec f
                trg' = noCollideUnlessTm' (ECps (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (ECps (f:fx)))
-selectExpr fSpec i src trg (ECps  [e']       ) = selectExpr fSpec i src trg e'
+selectExpr fSpec i src trg (ECps  [e']       ) = sqlcomment "(ECps  [e])"$ selectExpr fSpec i src trg e'
 selectExpr fSpec i src trg (ECps lst'@(fstm:_:_))
- = selectGeneric i (mainSrc,src) (mainTrg,trg)
+ = sqlcomment "(ECps lst@(fstm:_:_))"$
+   selectGeneric i (mainSrc,src) (mainTrg,trg)
                         (cChain ", " (concExprs++exprbracs)) (cChain (phpIndent i++" AND ") wherecl)
 {-  De ECps gedraagt zich als een join. Het is dus zaak om enigszins efficiente code te genereren.
     Dat doen we door de complement-operatoren van de elementen uit lst' te betrekken in de codegeneratie.
@@ -229,25 +239,27 @@ selectExpr fSpec i src trg (ECps lst'@(fstm:_:_))
 selectExpr _     _ _   _   (ECps  [] ) = fatal 223 "Cannot create query for ECps [] because type is unknown"
 
 selectExpr fSpec i src trg (ERel (V (Sign s t))   ) 
- = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
+ = sqlcomment "(ERel (V (Sign s t)))"$
+   listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
                | (s',src') <- concNames (if name s==name t then "cfst0" else "cfst") s
                , (t',trg') <- concNames (if name s==name t then "cfst1" else "cfst") t
                , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                ]
  where concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (ERel (I c))]
 
-selectExpr fSpec i src trg (ERel (I ONE)) = selectExpr fSpec i src trg (ERel (V (Sign ONE ONE)))
+selectExpr fSpec i src trg (ERel (I ONE)) = sqlcomment "I[ONE]"$ selectExpr fSpec i src trg (ERel (V (Sign ONE ONE)))
 
-selectExpr fSpec i src trg (ERel mrph) = selectExprMorph fSpec i src trg mrph
-selectExpr fSpec i src trg (EBrk expr) = selectExpr fSpec i src trg expr
+selectExpr fSpec i src trg (ERel mrph) = sqlcomment "ERel r"$ selectExprMorph fSpec i src trg mrph
+selectExpr fSpec i src trg (EBrk expr) = sqlcomment "EBrk" $selectExpr fSpec i src trg expr
 
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
-selectExpr _ i src trg (EUni [] ) = toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
-selectExpr fSpec i src trg (EUni es') = (phpIndent i) ++ "(" +++ (selectExprInUnion fSpec i src trg (EUni es')) +++ (phpIndent i) ++ ")"
-selectExpr fSpec i src trg (ECpl (ERel (V _))) = selectExpr fSpec i src trg (EUni [])
+selectExpr _ i src trg (EUni [] ) = sqlcomment "EUni []"$ toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
+selectExpr fSpec i src trg (EUni es') = (phpIndent i) ++ "(" +++ (sqlcomment "EUni es" (selectExprInUnion fSpec i src trg (EUni es'))) +++ (phpIndent i) ++ ")"
+selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment "-V"$ selectExpr fSpec i src trg (EUni [])
 selectExpr fSpec i src trg (ECpl e' )
-   = selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
+   = sqlcomment "-e"$
+     selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                      (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "+++selectExprBrac fSpec i trg' trg' (ERel (I (target e')))+++" AS csnd")
                      ("NOT EXISTS ("+++ (selectExists' (i+12)
                                                       ((selectExprBrac fSpec (i+12) src2 trg2 e') +++ " AS cp")
@@ -262,9 +274,10 @@ selectExpr _ _ _ _ (EKl0 _)
    = fatal 256 "SQL cannot create closures EKl0"
 selectExpr _ _ _ _ (EKl1 _)
    = fatal 258 "SQL cannot create closures EKl1"
-selectExpr fSpec i src trg (ERad  [e']       ) = selectExpr fSpec i src trg e'
+selectExpr fSpec i src trg (ERad  [e']       ) = sqlcomment "ERad [e]"$ selectExpr fSpec i src trg e'
 selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
- = selectGeneric i (mainSrc,src) (mainTrg,trg)
+ = sqlcomment "(ERad lst@(fstm:_:_))"$
+   selectGeneric i (mainSrc,src) (mainTrg,trg)
                         (cChain ", " (concExprs i ncs)) (cChain (phpIndent i++"  AND ") (inner: cclauses ncs))
 {-  The concepts in lst' are called c0, c1, ... cn (with n being the length of lst')
     The elements in lst' are called reladd0, reladd1, ... reladdd(n-1).
@@ -314,8 +327,8 @@ selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
                           ]
                      
 selectExpr _     _ _   _   (ERad  [] ) = fatal 310 "Cannot create query for ERad [] because type is unknown"
-selectExpr fSpec i src trg (ETyp x _) = selectExpr fSpec i src trg x
-selectExpr fSpec i src trg (EFlp x) = selectExpr fSpec i trg src x
+selectExpr fSpec i src trg (ETyp x _) = sqlcomment "ETyp x _"$ selectExpr fSpec i src trg x
+selectExpr fSpec i src trg (EFlp x) = sqlcomment "EFlp x"$ selectExpr fSpec i trg src x
 selectExpr _     _ _   _   x           = Just ("/* TODO - selectExpr implementation for "++showADL x++"*/")
 
 -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
@@ -587,15 +600,21 @@ sqlExprSrc fSpec expr = ses expr
    ses (ECpl e)     = ses e
    ses (EKl0 e)     = ses e
    ses (EKl1 e)     = ses e
-   ses (EFlp e)     = ses e
    ses (EBrk e)     = ses e
    ses (ETyp e _)   = ses e
    ses (ERel r)     = case r of
                       Mp1{} -> "Mp"++(name (rel1typ r))
                       V{} -> ses (ERel I{rel1typ=source r})
                       _ -> head ([s |(_,s,_)<-sqlRelPlugNames fSpec (ERel r)]++[show r])
+   ses (EFlp (ERel r))
+                    = case r of
+                      Mp1{} -> "Mp"++(name (rel1typ r))
+                      V{} -> ses (ERel I{rel1typ=target r})
+                      _ -> head ([t |(_,_,t)<-sqlRelPlugNames fSpec (ERel r)]++[show r])
+   ses (EFlp e)     = ses (flp e)
 sqlExprTrg :: Fspc->Expression -> String
 sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
+
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: Fspc -> A_Concept -> String
