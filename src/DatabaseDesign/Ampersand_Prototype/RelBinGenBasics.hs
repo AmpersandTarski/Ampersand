@@ -94,9 +94,12 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    phpIndent :: Int -> [Char]
    phpIndent i = "\n"++take i (repeat ' ')
 
+   -- | guarantees a valid identifier name. The function is NOT injective! 
    phpIdentifier :: String -> String
-   phpIdentifier (s:str) | isDigit s = "I"++phpIdentifier (s:str)
-   phpIdentifier str = [c | c<-str, isAlphaNum c]
+   phpIdentifier (s:str)
+    | isDigit s = 'I':s:g str
+    | otherwise = g (s:str)
+      where g str = [c | c<-str, isAlphaNum c]
 
    phpShow :: String -> String
    phpShow str = "'" ++ addSlashes str ++ "'"

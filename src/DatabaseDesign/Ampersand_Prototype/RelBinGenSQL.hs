@@ -314,6 +314,7 @@ selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
                           ]
                      
 selectExpr _     _ _   _   (ERad  [] ) = fatal 310 "Cannot create query for ERad [] because type is unknown"
+selectExpr _     _ _   _   x           = Just ("/* TODO - selectExpr implementation for "++showADL x++"*/")
 
 -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
 selectExprInUnion :: Fspc

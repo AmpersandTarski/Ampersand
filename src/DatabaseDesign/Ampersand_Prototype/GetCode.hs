@@ -299,6 +299,14 @@ where
  changeSource c (PHPEIsc ts) = PHPEIsc [changeSource c t | t<-ts]
  changeSource c (PHPEUni ts) = PHPEUni [changeSource c t | t<-ts]
  changeSource c (PHPECpl x ) = PHPECps [PHPERel (PHPI c),PHPECpl x]    -- TODO: is dit correct?
+
+ changeSource c (PHPEEqu (x,y))  = PHPEEqu (changeSource c x,changeSource c y)
+ changeSource c (PHPEImp (x,y))  = PHPEImp (changeSource c x,changeSource c y)
+ changeSource c (PHPEDif (x,y))  = PHPEDif (changeSource c x,changeSource c y)
+ changeSource c (PHPELrs (x,y))  = PHPEDif (changeSource c x,changeSource c y)
+ changeSource c (PHPERrs (x,y))  = PHPEDif (changeTarget c x,changeTarget c y)
+ changeSource c (PHPEFlp x)  = PHPEFlp (changeTarget c x)
+ changeSource c (PHPETyp x (_,t))  = PHPETyp (changeSource c x) (c,t)
  changeSource c (PHPERel r) = PHPERel r'
   where  r' = case r of
                PHPRel nm pos (_,t) d -> PHPRel nm pos (c,t) d

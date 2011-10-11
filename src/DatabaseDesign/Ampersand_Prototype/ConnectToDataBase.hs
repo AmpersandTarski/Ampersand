@@ -5,7 +5,7 @@ where
  import Data.List
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
  import DatabaseDesign.Ampersand_Prototype.Code
- import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,pDebug)
+ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpIdentifier,phpShow,pDebug)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL    (InPlug(..),showsql,SqlSelect(..))
  import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -113,7 +113,7 @@ where
        , "function checkRules(){"
        , "  return" 
              ++(intercalate " &" --REMARK -> bitwise AND to get all violations on all rules 
-                [ " checkRule"++show (runum r)++"()" | r<-invariants fSpec ])
+                [ " "++phpIdentifier("checkRule"++name r)++"()" | r<-invariants fSpec ])
              ++ ";"
        , "}"
        ]
@@ -127,7 +127,7 @@ where
         | rule<-invariants fSpec, rule'<-[(conjNF . ECpl . rrexp {- . normExpr -}) rule]
         ])
       ++ 
-      [ "\n  function checkRule"++show (runum rule)++"(){\n    "++
+      [ "\n  function " ++ phpIdentifier("checkRule"++name rule)++"(){\n    "++
            (if isFalse rule'
             then "// "++(langwords!!2)++": "++ (showADL . disambiguate fSpec) rule'++"\n     "
             else "// "++(langwords!!3)++" ("++ (showADL . disambiguate fSpec) rule'++")\n    "++
