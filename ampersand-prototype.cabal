@@ -42,7 +42,6 @@ Executable prototype
                  DatabaseDesign.Ampersand_Prototype.ConnectToDataBase ,
                  DatabaseDesign.Ampersand_Prototype.ContextGen ,
                  DatabaseDesign.Ampersand_Prototype.CoreImporter ,
-                 DatabaseDesign.Ampersand_Prototype.DataObject ,
                  DatabaseDesign.Ampersand_Prototype.GetCode ,
                  DatabaseDesign.Ampersand_Prototype.Index ,
                  DatabaseDesign.Ampersand_Prototype.Installer ,
