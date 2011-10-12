@@ -387,7 +387,10 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
    uniAtt var idvar depth path cls att
     | null (objats att)
       = let
-        content=if null gotoP || isIdent (ctx att) then ["echo "++echobit++";"]
+        content=if null gotoP || isIdent (ctx att) 
+                then if null (urlstrs att) 
+                     then ["echo "++echobit++";"]
+                     else ["echo '<A HREF=\""++head(urlstrs att)++"\">'."++echobit++".'</A>';"]
                 else if length gotoP == 1
                      then ["if(!$edit) echo '"
                           ,if null (urlstrs att)

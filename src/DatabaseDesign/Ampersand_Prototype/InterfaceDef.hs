@@ -22,8 +22,7 @@ where
                           , "If extra JavaScript is needed, or to get a title,"
                           , "use the $extraheaders argument to pass extra headers"
                           ] ++
-        [ "session_start();"
-        , "function writeHead($extraHeaders=\"\", $buttons=\"\"){"
+        [ "function writeHead($extraHeaders=\"\", $buttons=\"\"){"
         , "  ?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
         , "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         , "<head>"
@@ -50,13 +49,19 @@ where
         , "    <div class=\"primairy\">"
         , "      <ul><li>"
         ] ++ indentBlock 6 menuItems ++
-        
-        
-        [ "    <?php if (isset($_SESSION[\"home\"])) { //$_SESSION[\"home\"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas"
-        , "      echo '<a HREF=\"'.$_SESSION[\"home\"].'\" TITLE=\""++hometitle++"\" class=\"menuItem\" >"
-        , "      "++hometitle
-	, "      </a>';} ?>"
-        , "      </li></ul>"
+        (if name fspc == "ctxAtlas"
+         then
+          [ "      <a HREF=\"ctxAtlas.php?content=Atlas&Atlas="
+                ++head([x|c<-concs fspc,name c=="Context",x<-cptos' c]++[error "Bug at line 52 of InterfaceDef.hs"])
+                ++"\" TITLE=\"Functies die u kunt uitvoeren op de huidige context\" class=\"menuItem\" >Acties</a>"
+          , "      <a HREF=\"ctxAtlas.php?content=Meterkast&Meterkast="++namespace flags
+                ++"\" TITLE=\"Overzicht van uw eerder geladen Ampersand scripts\" class=\"menuItem\" >Bestandsoverzicht</a>"
+          , "      <a HREF=\"../../index.php?file="++importfile flags
+                ++"\" TITLE=\"Navigeer direct naar het geladen Ampersand script\" class=\"menuItem\" >SCRIPT</a>"
+          ]
+         else [])
+        ++
+        [ "      </li></ul>"
         , "    </div>"
         , "    <!-- End .primairy -->"
         , "  </div>"
@@ -70,7 +75,22 @@ where
         , "<?php"
         , "}"
         , "function writeTail(){"
-        , "?>"
+        ] ++
+        (if name fspc=="ctxAtlas"
+         then 
+          ["  if ($_REQUEST['content']=='Contextoverzicht') {"
+          , "    echo \"<DIV class='Floater ctxinfo'>\";"
+          , "    echo \"  <DIV class='FloaterHeader'>\";"
+          , "    echo \"    <DIV class='FloaterContent'>aantal relaties : "++show(length[x|c<-concs fspc,name c=="Relation",x<-cptos' c])++"</DIV>\";"
+          , "    echo \"    <DIV class='FloaterContent'>aantal concepten: "++show(length[x|c<-concs fspc,name c=="Concept",x<-cptos' c])++"</DIV>\";"
+          , "    echo \"    <DIV class='FloaterContent'>aantal regels   : "++show(length[x|c<-concs fspc,name c=="UserRule",x<-cptos' c])++"</DIV>\";"
+          , "    echo \"  </DIV>\";"
+          , "    echo \"</DIV>\";"
+          , "  }"
+          ]
+         else [])
+        ++
+        [ "?>"
         , "  </div>"
         , "  <!-- End #content -->"
         , "  <div id=\"notice\">"

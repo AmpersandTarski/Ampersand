@@ -1,0 +1,384 @@
+CONTEXT Atlas
+
+INTERFACE Contextoverzicht : I[ONE]
+ BOX [ "van"{"URL=ctxAtlas.php?content=Contextoverzicht"} : V[ONE*Context];loadcontext~;loadedfile~;loadedfile;loadcontext
+     BOX ["met patterns" : context~]
+     , "versie"{"URL=../../index.php?file='.$v0.'"}: V[ONE*Context];loadcontext~;loadedfile~;loadedfile
+     ]
+--REMARK -> Functions are run over files not DB-content! 
+--       When a function func uses the data that can be modified in the DB, e.g. prototype, you should run operation save;reload;func instead of just func
+INTERFACE Atlas: I[Context]
+ BOX [ "versie"{"URL=../../index.php?file='.$v0.'"}: loadcontext~
+     , "functionele specificatie"
+        {"URL=../../index.php?operation=4&file='.reset($Atlas->get_versie()).'&output='.reset($Atlas->get_functionelespecificatie()).'"}
+        : funcspec 
+     , "diagnoserapport"
+        {"URL=../../index.php?operation=6&file='.reset($Atlas->get_versie()).'&output='.reset($Atlas->get_functionelespecificatie()).'"}
+        : funcspec 
+--Nuttig als er ge-edit wordt in de atlas zelf i.p.v. via het script
+--     , "bewaar wijzigingen in bestand"
+--        {"URL=../../index.php?operation=2&file='.reset($Atlas->get_versie()).'"}
+--        : showadl
+--     , "bewaar wijzigingen en herlaad"
+--        {"URL=../../index.php?operation=3&file='.reset($Atlas->get_versie()).'"}
+--        : showadl
+     ]
+INTERFACE Meterkast: I[User] --user login at index.php which redirects to Meterkast of user
+ BOX [ "nieuw bestand"{"URL=../../index.php"} : loadedfile;loadcontext;newcontext --EDIT mode = popup, SAVE = upload file to server (and new loadedfile)
+     , "bewaarde bestanden"{"URL=../../index.php?file='.$v0.'"} : fileof~ --not editable
+     ]
+--INTERFACE Bestanden: I[ONE]
+-- BOX [ "mijn bestanden": V[ONE*File]
+--   ]
+--INTERFACE LaadBestand: I[File]
+-- BOX [ ""
+--   ]
+--PROCESS Meterkast
+--ROLE Student EDITS loadedfile -- , fileof, V[ONE*File]
+--ROLE Student USES Bestanden
+--ENDPROCESS
+
+PATTERN Meterkast
+loadedfile::User->Bestand. --the file loaded in the textbox, which is the import=file
+fileof::Bestand->User.
+newcontext::Context->Bestand.
+--convert::Bestand->Bestand. --backwardscompatible to some extend
+ENDPATTERN
+
+PATTERN RAPDevelopment
+--reload = showADL;loadedfile;loadcontext  (convert not needed)
+--load::Context->Context. --will trigger exe to calculate new Context and navigate to that Context  (CONTEXT Atlas: I[Context])
+funcspec::Context->FuncSpec. --will trigger exe to calculate new funcspec and navigate to that pdf (INTERFACE pdf{"PDF"}: I[FuncSpec])
+report::Context->Report. --will trigger exe to calculate new report and navigate to that pdf (INTERFACE pdf{"PDF"}: I[Report])
+--GEN Bestand ISA Context
+showadl::Context->Bestand.
+loadcontext::Bestand->Context[SUR]. --SUR because the business rule is that all contexts are persisted on the file system (not the DB) 
+ENDPATTERN
+-------------------------------
+PATTERN Specificatie
+PURPOSE PATTERN Specificatie 
+   IN DUTCH {+
+   Pattern Specificatie definieert de taal voor studenten om een Ampersand regelspecificatie op te stellen.
+   De bedrijfsregels in dit pattern zijn regels voor naamruimtes en syntaxregels, zoals geïmplementeerd in CC.hs 2.0.0.27 (de Ampersand parser).
+   Middels statements in de specificatie declareert men syntactisch concepten en relaties daartussen.
+   Afleidingen uit Ampersand regelspecificaties vallen buiten de scope van dit pattern.
+   Regelexpressies (elementen van het concept Regels) kunnen in de specificatie geen typefouten bevatten omdat uses::Expression*Relation.
+   -}
+
+-----------
+--CONTEXT--
+-----------
+--REMARK -> CONCEPT Architectuur (een lijst van contexten) is niet gemodelleerd
+--          Voor studenten bevat 1 specificatie precies 1 context
+CONCEPT Context "ctxnm = pConid"
+--ctxon    = on
+--ctxisa   = empty
+--ctxwrld  = []
+--ctxpats  = [p| CPat p<-ces]
+context::Pattern->Context.
+--ctxPPrcs = [p| CPrc p<-ces]
+--ctxprocs = error ("!Fatal")
+--ctxrs    = [r| CRul r<-ces]
+--context::UserRule->Context = relpattern;context
+--ctxds    = [d| CDcl d<-ces]
+--relcontext::Relation->Context
+--ctxcs    = [c| CCon c<-ces]
+cptcontext::Concept->Context. -- (src\/trg);relpattern;context
+--ctxks    = [k| CKey k<-ces]
+--ctxsvcs  = [s| Csvc s<-ces]
+--ctxps    = [e| CXpl e<-ces]
+--ctxpops  = [p| CPop p<-ces]
+--popcontext::UPair->Context = pairsyntax~;content~;relpattern;context
+--ctxsql   = [plug| CSqlPlug plug<-ces]
+--ctxphp   = [plug| CPhpPlug plug<-ces]
+--ctxenv   = env
+
+--WHERE
+  -----------
+  --PATTERN--
+  -----------
+  CONCEPT Pattern "ptnm = pConid <|> pString"
+  CONCEPT IsaRelation "GEN <*> pConcept <*> ISA <*> pConcept"
+  --ptrls       = [r{r_env=nm, r_usr=True}|Pr r<-pes]
+  rulpattern::UserRule->Pattern.
+  --ptgns       = [gen{genpat=nm} |Pg gen<-pes]
+  isapattern::IsaRelation->Pattern.
+  --ptdcs       = [d{decpat=nm}| Pd d@(Sgn{})<-pes]
+  relpattern::Relation->Pattern.
+  --ptcds       = [c| Pc c<-pes]
+  --cptpattern::Concept->Pattern (zie cptcontext, concept declaraties zijn impliciet)
+  --ptkds       = [k| Pk k<-pes]
+  --ptxps       = [e| Pe e<-pes]
+  --testexpr    = [e|Ptest e<-pes]
+  --inftestexpr = []
+
+  -----------
+  --CONCEPT--
+  -----------
+  --REMARK -> ONE is niet bekend bij studenten (geen INTERFACEs)
+  CONCEPT Concept "pConid <|> pString"
+  CONCEPT Atom "Concept. <*> trim <$> pString" --Atom is qualified by Concept (the namespace of an UAtom)
+  CONCEPT UAtom "trim <$> pString"
+  atomof::Atom->Concept.
+  atomsyntax::Atom->UAtom.
+  spec::IsaRelation->Concept.
+  gen::IsaRelation->Concept.
+
+  --------
+  --PAIR--
+  --------
+  --REMARK -> Pairs exist in the context of a relation term (Relation or Rule), which have a type
+  --          (Relation,Pair) -> (UAtom,UAtom)
+  CONCEPT Pair "(Atom,Atom)"
+  left::Pair->Atom.
+  right::Pair->Atom.
+  --pairsyntax::Pair*UPair = ( left;displayatom , right;displayatom )
+--  RULE "test1": left;left~
+--  RULE "testa": (-(left;left~))
+--  RULE "test2": right;right~
+--  RULE "testb": (-(right;right~))
+--  RULE "test3": I[Pair] 
+--  RULE "testc": (-I[Pair])
+--  RULE "test4": (-(left;left~ /\ right;right~))
+--TODO ->
+--  RULE "key pair": I  = left;left~ /\ right;right~
+--       PHRASE "a left and right identify a pair."
+
+  ------------
+  --RELATION--
+  ------------
+  CONCEPT Relation "pVarid <*> :: <*> pConcept <*> (* <|> ->) <*> pConcept"
+  CONCEPT RelVar "pVarid"
+  CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>POP"
+  CONCEPT PropertyRule "pADLid"
+  CONCEPT Pragma1 "pString"
+  CONCEPT Pragma2 "pString"
+  CONCEPT Pragma3 "pString"
+  --rebuild :: String -> FilePos -> Concept -> [Char] -> Concept -> Bool
+  --                  -> [Prop] -> Bool -> [String] -> Pairs -> Declaration Concept
+  --rebuild nm pos' s fun' t bp1 props bp2 pragma content
+  -- = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content pos' 0 False True [](bp1||bp2)
+  --   where pr = pragma++["","",""]
+  --         props'= rd props `uni` if fun'=="->" then [Uni,Tot] else []
+  rel::Relation->RelVar.
+  src::Relation->Concept.
+  trg::Relation->Concept.
+  propertyof::PropertyRule*Relation[UNI].
+  propsyntax::PropertyRule->Property.
+  propexpr::PropertyRule->Expression.
+  pragma1::Relation*Pragma1[UNI].
+  pragma2::Relation*Pragma2[UNI].
+  pragma3::Relation*Pragma3[UNI].
+  content::Relation*Pair. -- [TOT]. --total, because students must populate relations
+  RULE "typed domain": content;left  |- src;atomof~
+       PHRASE "The type of the elements in the domain of a relation is the source of that relation."
+  RULE "typed codomain": content;right |- trg;atomof~
+       PHRASE "The type of the elements in the codomain of a relation is the target of that relation."
+
+  ------------
+  --USERRULE--
+  ------------
+  CONCEPT UserRule "pADLid"
+  CONCEPT Explanation "pPhrase"
+  CONCEPT Expression "ASCII expression statement (not modelled)"
+  ruleexpr::UserRule->Expression.
+  uses::Expression*Relation[TOT].
+
+ENDPATTERN
+
+PATTERN Graphics
+picture::Pattern*CptPicture[UNI].
+picture::UserRule*CptPicture[UNI].
+picture::Concept*CptPicture[UNI].
+ENDPATTERN
+
+--atomen kunnen meerdere purposes hebben, bv. verschillende talen of gewoon andere insteek
+PATTERN Purpose
+purpose::Pattern*PatPurpose.
+describes::UserRule->Description. --total, because there is an auto explanation
+purpose::UserRule*RulPurpose.
+describes::Relation->Explanation. --total, because there is an auto explanation
+purpose::Relation*RelPurpose.
+describes::Concept*Definition[UNI]. --ConceptDefs. univalent, because multiple defs are parsed but rejected
+purpose::Concept*CptPurpose.
+ENDPATTERN
+
+--als je over violations wil praten dan moeten alle Expressions een type hebben zoals Relaties
+--voor regelexpressies (rulexpr \/ propexpr) vinden we de content niet interessant, maar de violations
+PATTERN Violations
+CONCEPT Violation "violation#"
+violates::Violation->Expression.
+violationpair::Violation->Pair.
+--(ruleexpr\/propexpr);violates;left;atomof
+ENDPATTERN
+
+--relaties krijgen al een type in de specificatie, dit geldt niet voor expressies
+PATTERN Typed
+source::Expression->Concept.
+target::Expression->Concept.
+ENDPATTERN
+
+PATTERN RuleNavigation
+next::UserRule->UserRule[INJ,SUR]. --irreflexive except in case there is only one rule
+--previous = next~
+-- I[Rule] |- next+ to be able to loop over all rules in the context
+ENDPATTERN
+
+POPULATION context CONTAINS
+   [("Pat","Ctx")]
+POPULATION cptcontext CONTAINS
+   [("A","Ctx");("B","Ctx");("B","Csdtx");("C","Ctx")]
+
+POPULATION next CONTAINS
+   [("x1","x2")]
+
+PROCESS Specificatie
+--all services containing a (label: rel) where rel is one of the EDITS or the converse will get a visible Edit button
+--Only those labels will be editable in edit mode
+--("item *" and "new *" css classes are editable, others are not, see edit.js)
+--TODO -> why edit button on INTERFACEs Violation, Concept
+
+--ENABLE to get Edit buttons
+--ROLE Student EDITS content,left,right,atomof,atomsyntax,V[ONE*Pair],V[ONE*Atom],V[ONE*UAtom]
+
+          --TODO multiline txtbox -- ,purpose[Pattern*PatPurpose],purpose[UserRule*Explanation],purpose[Relation*RelPurpose],purpose[Concept*CptPurpose]
+--For the moment:
+--the atlas assumes that users are students
+--the tab bar will be configured for students when --theme=student
+--for the rest USES is still ignored
+--USES HAS BEEN DELETED => ROLE Student USES ... HAS BEEN HARDCODED IN InterfaceDef.hs
+--ROLE Student USES Contextoverzicht, Pattern, Overtredingen,Violation,Regels,Regel{-,Regelexpressies-}
+  --               ,Expression,Relaties,Relatie,Paren,Paar{-,Eigenschapsexpressies-},Concepten,Concept
+    --             ,Termen,Term
+ENDPROCESS
+
+INTERFACE Pattern : I[Pattern]
+   BOX [ "uitleg" : purpose
+     , "context"{"URL=ctxAtlas.php?content=Contextoverzicht"} : context
+     , "regels" : rulpattern~
+     , "relaties" : relpattern~
+     , "isa-relaties" : isapattern~
+     , "Conceptueel diagram"{"PICTURE"}: picture
+     ]
+INTERFACE Isa : I[IsaRelation]
+   BOX [ "specifiek concept" : spec 
+     , "generiek concept" : gen
+     , "ga naar pattern" : isapattern
+     ]
+
+
+INTERFACE Overtredingen: I[ONE]
+   BOX [ "regelovertredingen" : V[ONE*Violation];violates;ruleexpr~;ruleexpr;violates~
+     , "overtredingen op relatie-eigenschappen" : V[ONE*Violation];violates;propexpr~
+     ]
+INTERFACE Overtreding : I[Violation]
+   BOX [ "overtreding van regel" : violates;ruleexpr~
+     , "overtreding van eigenschap van" : violates;propexpr~;propertyof
+     ]
+INTERFACE Eigenschapsregel : I[PropertyRule]
+   BOX [ "eigenschap van" : propertyof
+     ]
+INTERFACE Eigenschap : I[Property]
+   BOX [ "is eigenschap van" : propsyntax~;propertyof
+     ]
+
+
+INTERFACE Regels : I[ONE]
+   BOX [ "Regellijst" : V[ONE*UserRule]
+     ]
+INTERFACE Regel : I[UserRule]
+   BOX [ "expressie" : ruleexpr
+     , "beschrijving" : describes
+ --    , "uitleg" : purpose
+     , "source" : ruleexpr;source
+     , "target" : ruleexpr;target
+     , "overtredingen" : ruleexpr;violates~
+     , "toegepaste relaties" : ruleexpr;uses
+       BOX ["met eigenschappen":propertyof~;propsyntax]
+     , "pattern" : rulpattern
+     , "ga naar vorige regel" : next~ 
+     , "ga naar volgende regel" : next 
+     , "Conceptueel diagram"{"PICTURE"}: picture]
+INTERFACE Regelexpressies : I[ONE]
+   BOX [ "Expressielijst" : V[ONE*Expression];ruleexpr~;ruleexpr
+     ]
+INTERFACE Expression : I[Expression]
+   BOX [ "source" : source
+     , "target" : target
+     , "toegepaste relatie(s)" : uses
+     ]
+
+
+INTERFACE Relaties : I[ONE]
+   BOX [ "Relatielijst" : V[ONE*Relation]
+     ]
+--TODO -> HIDE = laat value niet zien, default is laat zien (bv. INTERFACE Overzicht)
+--TODO (automatische regelhandhaving) -> hoe laat ik studenten eenvoudig een property toevoegen (door enkel een propsyntax op te geven)
+--TODO (automatische regelhandhaving) -> bij een new/edit relation wil ik de identiteit opmaken uit rel src en trg
+--TODO (automatische regelhandhaving) 
+--     -> bij wijzigingen in content wil ik automatisch de populaties van concepten bijwerken (left,right, atomof en atomsyntax)
+INTERFACE Relatie{"AUTOMATIC(label:name,::,label:source,*,label:target)"}   : I[Relation] --automatic input (zie expressionbuilder e.d.)
+   BOX [ "beschrijving" : describes
+     , "naam" : rel
+     , "source" : src
+     , "target" : trg
+     , "relatie-eigenschappen"{"HIDE","SMARTCHOICE(label:eigenschap)"} : propertyof~;propsyntax --TODO -> relatieeigenschappen worden weggegooid on save
+     , "relatie-eigenschapsovertredingen"  : propertyof~;propexpr;violates~
+     , "toepassing in regels" : uses~;ruleexpr~
+     , "pattern" : relpattern
+     , "populatie"  : content
+--TODO -> Error 1048 in query "INSERT INTO `nsgmiPragma1` (`Pragma1`) VALUES (NULL)": Column 'Pragma1' cannot be null
+  --   , "pragma1" : pragma1
+  --   , "pragma2" : pragma2
+  --   , "pragma3" : pragma3
+  --   , "uitleg" : purpose
+     ]
+--TODO -> NO INTERFACE FOR I[Pair], automatisch via INTERFACE Relatie
+INTERFACE Paren : I[ONE]
+   BOX [ "Parenlijst" : V[ONE*Pair]]
+INTERFACE Paar : I[Pair]
+   BOX [ "in populatie van relatie" : content~
+     , "term uit source" : left
+  --   , "linkslinks" : left;left~ --bad SELECT SQL!
+     , "term uit target" : right
+  --   , "rechtsrechts" : right;right~ --bad SELECT SQL!
+     , "in overtredingspopulatie van regel" : violationpair~;violates;ruleexpr~
+     , "in overtredingspopulatie van relatie-eigenschap" : violationpair~;violates;propexpr~
+     ]
+INTERFACE Eigenschapsexpressies : I[ONE]
+   BOX [ "Expressielijst" : V[ONE*Expression];propexpr~;propexpr 
+     ]
+--TODO -> NO INTERFACE FOR I[RelVar]
+--TODO -> INTERFACE FOR I[PropertyRule]? Ja, maar wel als smart choicebox (zie expressionbuilder e.d.)
+
+INTERFACE Concepten : I[ONE]
+   BOX [ "Conceptenlijst" : V[ONE*Concept]]
+--TODO (automatische regelhandhaving) -> Bij een new uatom wil ik automatisch ook een new atom opgemaakt uit I[Concept] en atomsyntax
+INTERFACE Concept : I[Concept]
+   BOX [ "definitie" : describes
+     , "populatie"{"SMARTINPUT"} : atomof~ -- ;atomsyntax --smart text input (zie expressionbuilder e.d.)
+     , "toepassing in regels" {"Action=Select"}: (src~ \/ trg~);uses~;ruleexpr~
+     , "toepassing in relaties" {"Action=Select"}: (src~ \/ trg~)
+       BOX ["met eigenschappen":propertyof~;propsyntax]
+     , "context"{"URL=ctxAtlas.php?content=Contextoverzicht"} : cptcontext
+  --   , "uitleg" : purpose
+     , "Conceptueel diagram"{"PICTURE"}: picture
+     ]
+POPULATION purpose[Concept*CptPurpose] CONTAINS
+   [("A","A's zijn heel belangrijk");("B","B's zijn heel belangrijk");("C","C's zijn heel belangrijk")]
+--TODO -> NO INTERFACE FOR I[UAtom], automatisch via INTERFACE Concept / Relatie
+--TODO -> NO INTERFACE FOR I[Atom], automatisch via INTERFACE Concept / Relatie
+INTERFACE Termen : I[ONE]
+   BOX [ "Termenlijst" : V[ONE*Atom]]
+INTERFACE Term : I[Atom]
+   BOX [ "concept" : atomof
+     , "waarde" : atomsyntax
+     ]
+INTERFACE Value : I[UAtom]
+   BOX [ "term" : atomsyntax~
+     ]
+
+
+ENDCONTEXT
+
+

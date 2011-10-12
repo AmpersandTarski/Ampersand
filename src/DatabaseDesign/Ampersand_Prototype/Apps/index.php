@@ -135,36 +135,34 @@ if (isset($operation)){
    echo '<FORM name="myForm" action="'.$_SERVER['PHP_SELF'].'" method="POST" enctype="multipart/form-data">';
    echo '<H1>Laad de context in de Atlas...</H1>';
    if (file_exists(COMPILATIONS_PATH.'ctxAtlas.php')){
-     echo '<p><input type="submit" name="adlhuidige" value="... die '.USER.' het laatst geladen heeft"/>';
+     echo '<p><input type="submit" name="adlhuidige" value="... die '.USER.' het laatst geladen heeft (return/cancel)"/>';
      echo '<a href="javascript:void(0);"';
      echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
      echo 'onmouseout="return nd();">';
      echo '<IMG SRC="warning.png" /></a></p>';
    }
 
-   echo '<p><input type="submit" name="adlbestand" value="... uit bestand op uw computer" />';
+   echo '<p><input type="submit" name="adlbestand" value="... uit bestand op uw computer (upload)" />';
    echo '<a href="javascript:void(0);"';
-   echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p><p>Let op! Eventuele niet gecommitte wijzigingen in de laatst geladen context in de Atlas gaan verloren!</p>\',WIDTH, 350);"';
+   echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="warning.png" /></a>';
    echo '<input type="file" name="uploadfile" /></p>';
 
    if (!isset($_REQUEST['browse'])){     
-     echo '<p><input type="submit" name="adltekst" value="... uit onderstaand tekstveld (bewaar)"/>';
-     echo '<a href="javascript:void(0);"';
-     echo 'onmouseover="return overlib(\'<p>Let op! Eventuele niet gecommitte wijzigingen in de laatst geladen context in de Atlas gaan verloren!</p>\',WIDTH, 350);"';
-     echo 'onmouseout="return nd();">';
-     echo '<IMG SRC="warning.png" /></a></p>';
+     echo '<p><input type="submit" name="adltekst" value="... uit onderstaand tekstveld (save)"/></p>';
 
-     echo '<p><input type="submit" name="adllaad" value="... uit in tekstveld geladen versie"/>';
-     echo '<a href="javascript:void(0);"';
-     echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p><p>Let op! Eventuele niet gecommitte wijzigingen in de laatst geladen context in de Atlas gaan verloren!</p>\',WIDTH, 350);"';
-     echo 'onmouseout="return nd();">';
-     echo '<IMG SRC="warning.png" /></a>';
-     echo '<a href="javascript:void(0);"';
-     echo 'onmouseover="return overlib(\'<p>De laadoptie &quot;uit onderstaand tekstveld (save)&quot; creëert een nieuwe contextversie<p/><p>Als u geen wijzigingen in het tekstveld heeft gemaakt, of deze niet wil opslaan, gebruik dan deze laadoptie</p><p>De contextversie uit serverbestand '.$fullfile.' zal worden geladen.</p>\',WIDTH, 350);"';
-     echo 'onmouseout="return nd();">';
-     echo '<IMG SRC="info.png" /></a></p>';
+     if (isset($_REQUEST['file'])){
+       echo '<p><input type="submit" name="adllaad" value="... uit in tekstveld geladen bestand (reload)"/>';
+       echo '<a href="javascript:void(0);"';
+       echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
+       echo 'onmouseout="return nd();">';
+       echo '<IMG SRC="warning.png" /></a>';
+       echo '<a href="javascript:void(0);"';
+       echo 'onmouseover="return overlib(\'<p>De laadoptie &quot;uit onderstaand tekstveld (save)&quot; creëert een nieuwe contextversie in een nieuw serverbestand<p/><p>Als u geen wijzigingen in het tekstveld heeft gemaakt, of deze niet wil opslaan, gebruik dan deze laadoptie</p><p>De contextversie uit serverbestand '.$fullfile.' zal worden geladen.</p>\',WIDTH, 350);"';
+       echo 'onmouseout="return nd();">';
+       echo '<IMG SRC="info.png" /></a></p>';
+     }
 
      echo '<p>Naam van contextversie in tekstveld ';
      echo '<input type="text" name="filename" value="'.$file.'"/>';
