@@ -1,0 +1,50 @@
+{-
+An ObjectDef extends expressions.
+The effective expression of a child ObjectDef is the expression
+        "the effective expression of the parent ObjectDef";"the declared expression of the Child ObjectDef"
+The correct processing of this expression is tested.
+TODO -> Only errors from the type checker are displayed to the user, and not a correcty processed [Context]. To test a correct [Context]
+        I should be able to serialize a correct [Context] resulting from the typechecker, and do a regression test on this expected output
+        instead of a regression test on the output of an old typechecker.
+-}
+CONTEXT Test
+
+--Testing if all nested object defs are processed
+SERVICE Svc1 : I[Ba]
+   = [
+        --Testing if all nested expressions are processed
+        label1    : ra
+                 = [ label1a      : I[Ea]
+                     , label1b   : ra~;I
+                     , label1c   : ra~;I[Da]
+                   ],
+        --Testing composition with specific concept
+        --Svc1 I[Ba] remains gen and spc Ba and not I[Aa], so expression looks at higher level exprs only
+        label2 : sa,
+        --Testing composition with generic concept
+        label3 : sa2
+     ]
+
+--Testing if all services are processed
+SERVICE Svc2 : I[Ba]
+   = [
+        label1 : sa,
+        label2 : sa2
+     ]
+
+PATTERN PatA
+GEN Aa ISA Ba
+GEN Aa ISA Ca
+GEN Ba ISA Da
+GEN Ba ISA Ca
+GEN Ca ISA Da
+ra :: Ba * Ea.
+sa :: Aa * Ba.
+sa1 :: Ba * Aa.
+sa2 :: Da * Ea.
+sa3 :: Ba * Da.
+ENDPATTERN
+
+ENDCONTEXT
+
+
