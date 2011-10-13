@@ -1,0 +1,22 @@
+CONTEXT Test2
+  -- hiermee worden services getest (bij 2 plugs)
+  SERVICE B  : I[B] -- Insert was ooit onmogelijk ivm bug
+   = [  r    : r~
+      , s    : s~
+     ]
+  SERVICE A  : I[A]
+   = [  r    : r
+      , s    : s
+     ]
+  SERVICE All : I[ONE]
+   = [ a : V[ONE*A]
+     , b : V[ONE*B]
+     ]
+  
+  
+PATTERN Type1Error
+r :: A->B.
+s :: A->B.
+ENDPATTERN
+
+ENDCONTEXT
