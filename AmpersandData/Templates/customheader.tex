@@ -1,0 +1,33 @@
+\documentclass[10pt,a4paper]{report}
+\usepackage[dutch]{babel}
+\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs.
+\parindent 0em                      % Width of paragraph indentation.
+\usepackage{theorem}
+\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{definition}{Definitie}[section]
+\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{designrule}[definition]{Ontwerpregel}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{longtable}
+\def\id#1{\mbox{\em #1\/}}
+\def\define#1{\label{dfn:#1}{\em #1}}
+\newcommand{\iden}{\mathbb{I}}
+\newcommand{\ident}[1]{\mathbb{I}_{#1}}
+\newcommand{\full}{\mathbb{V}}
+\newcommand{\fullt}[1]{\mathbb{V}_{[#1]}}
+\newcommand{\relAdd}{\dagger}
+\newcommand{\flip}[1]{{#1}^\smallsmile} %formerly:  {#1}^\backsim
+\newcommand{\kleeneplus}[1]{{#1}^{+}}
+\newcommand{\kleenestar}[1]{{#1}^{*}}
+\newcommand{\cmpl}[1]{\overline{#1}}
+\newcommand{\rel}{\times}
+\newcommand{\compose}{;}
+\newcommand{\subs}{\vdash}
+\newcommand{\fun}{\rightarrow}
+\newcommand{\isa}{\sqsubseteq}
+\newcommand{\N}{\mbox{\msb N}}
+\newcommand{\disjn}[1]{\id{disjoint}(#1)}
+\newcommand{\fsignat}[3]{\id{#1}:\id{#2}\mbox{$\rightarrow$}\id{#3}}
+\newcommand{\signat}[3]{\mbox{${#1}_{[{#2},{#3}]}$}}
+\newcommand{\declare}[3]{\id{#1}:\id{#2}\mbox{$\times$}\id{#3}}
+\newcommand{\fdeclare}[3]{\id{#1}:\id{#2}\mbox{$\fun$}\id{#3}}
+\selectlanguage{dutch}
