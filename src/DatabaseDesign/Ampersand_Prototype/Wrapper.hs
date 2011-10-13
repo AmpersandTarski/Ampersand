@@ -387,7 +387,7 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
    uniAtt var idvar depth path cls att
     | null (objats att)
       = let
-        content=if null gotoP || isIdent (ctx att) 
+        content=if null gotoP || isIdent (contextOf att) 
                 then if null (urlstrs att) 
                      then ["echo "++echobit++";"]
                      else ["echo '<A HREF=\""++head(urlstrs att)++"\">'."++echobit++".'</A>';"]

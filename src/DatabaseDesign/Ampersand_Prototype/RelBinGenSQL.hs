@@ -14,20 +14,20 @@ import DatabaseDesign.Ampersand_Prototype.Version
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
 
--- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
+-- isOne: het is niet voldoende om alleen te controleren of: source (contextOf o) == ONE
 -- De interface op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
 -- de vraag die we hier stellen is: komen we steeds op eenzelfde A_Concept uit
 -- als dit zo is, hoeven we alleen dat ene A_Concept te tonen
 --
 -- Bovenstaand commentaar snap ik niet (gmi)
 -- in de php code heb je een instantie van een A_Concept (ID=,$id,etc.) 
--- soms is het id constant i.e. source (ctx o) == ONE.
+-- soms is het id constant i.e. source (contextOf o) == ONE.
 -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
 -- daarom heb ik ze opgesplitst
 -- isOneExpr :: Expression -> Bool
 -- isOneExpr e' = (isUni.conjNF.ECps) [ERel (V (Sign (source e') (source e'))),e']
 isOne' :: ObjectDef -> Bool
-isOne' o = isOne o -- isOneExpr$ctx o
+isOne' o = isOne o -- isOneExpr$contextOf o
                    --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.
                    --      isOneExpr (rev:771) kan in de problemen komen bij doSqlGet (error "line 578 Object.hs"). 
                    --      in dat geval komt isOne (huidige rev) ook in de problemen (error iets met keygroup)
@@ -42,7 +42,7 @@ isOne' o = isOne o -- isOneExpr$ctx o
                    --  attr1 :: Obj * Attr [UNI].
                    --  value2 :: Attr -> Datatype.
 isOne :: ObjectDef -> Bool
-isOne o = source (ctx o) == ONE
+isOne o = source (contextOf o) == ONE
 
 -- | add comments to Maybe sql strings, for example for debugging purposes
 sqlcomment :: String -> Maybe String -> Maybe String 

@@ -50,7 +50,7 @@ generateInterface_getEach fSpec nm o
      (fromJust sql)  -- TODO: use PHP code instead, this might yield more getEach functions!
      ++"'));"
    ,"}\n"]
- where  sql = ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
+ where  sql = ( selectExpr fSpec 31 (sqlExprTrg fSpec (contextOf o)) "" (flp (contextOf o)))
  
 generateInterface_read :: Fspc -> String -> ObjectDef -> [String]
 generateInterface_read _ nm object
@@ -96,7 +96,7 @@ showClasses flags fSpec o
             [["  // check if it exists:"
              ,"  $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
              ,"  if(count($ctx)==0) $this->_new=true; else $this->_new=false;"]
-            |null(attributes o),not(target(ctx o)==ONE)] --INTERFACE o: ctx where  target ctx/=ONE and objats=[]
+            |null(attributes o),not(target(contextOf o)==ONE)] --INTERFACE o: ctx where  target ctx/=ONE and objats=[]
          ++  (           [ "  if(" -- ++(head (["!isset("++phpVar (name a')++")" |a'<-attributes o,mayedit (objctx a') editable]++["True"]))
                                         ++(if isOne o then "$sel" else "$sel && isset($id)")++"){"
                                , "    // get a "++(myName)++" based on its identifier"] ++
@@ -171,7 +171,7 @@ showClasses flags fSpec o
    = if sql==Nothing then fatal 167 "Cannot check if exists in Object.hs" else fromJust sql
    where expr = if null fs then ECps [ tm, ctx'] else ECps (tm:head fs)
          tm   = ERel (Mp1 ("\\''.addSlashes("++var++").'\\'") (concept o))
-         ctx' = simplify $ flp (ctx o)
+         ctx' = simplify $ flp (contextOf o)
          fs   = [es' | ECps es' <- [ctx']]
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
 {- still working on new save() and del()
