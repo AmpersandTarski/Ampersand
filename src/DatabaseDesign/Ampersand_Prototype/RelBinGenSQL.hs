@@ -670,15 +670,21 @@ showsql (SqlSel2 rsel)
    ++ selectwhere(rslwhere rsel)
 showsql (SqlFrom tbl) = "SELECT * FROM `"++ tblnm tbl ++"`"
 
+selectflds :: [SqlFld] -> String
 selectflds flds = intercalate ", " (map selectfld flds)
+selectfrms :: [SqlSelect] -> String
 selectfrms frms = intercalate ", " (map selectfrm frms)
+selectfld :: SqlFld -> String
 selectfld fld = "`"++ name(sfdfrom fld) ++"`.`"++ sfdfld fld ++"`"
                    ++ (if null(sfdas fld) then [] else " AS " ++ sfdas fld)
+selectfrm :: SqlSelect -> String
 selectfrm (SqlFrom tbl) = "`"++ tblnm tbl ++"`" 
                              ++ (if null(tblas tbl) then [] else " AS " ++ tblas tbl)
 selectfrm sel = "("++ showsql sel ++") AS " ++ name sel
+selectwhere :: Maybe SqlClause -> String
 selectwhere Nothing = []
 selectwhere (Just w) = " WHERE " ++ showsqlwhere w
+selectjoin :: Maybe (SqlSelect, SqlFld, SqlFld) -> String
 selectjoin Nothing = []
 selectjoin (Just (sel,f1,f2)) = " JOIN "++ selectfrm sel ++" ON " ++ wherevar f1 ++ "=" ++ wherevar f2
 
@@ -693,7 +699,9 @@ showsqlwhere (SqlNOT w)                          = "NOT("++ showsqlwhere w ++")"
 showsqlwhere (SqlOR w1 w2)                       = "("++ showsqlwhere w1 ++") OR ("++ showsqlwhere w2 ++")"
 showsqlwhere (SqlEXISTS sel)                     = "EXISTS ("++ showsql sel ++")"
 
+wherevar :: SqlFld -> String
 wherevar fld = "`"++ name(sfdfrom fld) ++"`.`"++ name fld ++"`"
+whereval :: String -> String
 whereval val = "'"++ val ++"'"
 
 --NAMING CONVENTION
@@ -740,7 +748,9 @@ class (Show rel) => InPlug rel where
           w = SqlEQ (SqlVar fld1) (SqlVal x)
       in CptSel {cslfld=rename fld2 "fld1", cslfrom=sel1,cslwhere=Just w,cslas=[]}
 
+makesqlfld :: (Identified a) => SqlField -> a -> SqlFld
 makesqlfld pf p = SqlFld {sfdfrom=makesqltbl p, sfdfld=fldname pf, sfdas=[]}
+makesqltbl :: (Identified a) => a -> SqlSelect
 makesqltbl p = SqlFrom(SqlTbl {tblnm=name p, tblas=[]})
 
 instance InPlug A_Concept where
@@ -822,7 +832,7 @@ instance InPlug Expression where
           sel2 = SqlSel2(selex{rslwhere=Just w2})
       in RelSel{rslfld=(rename sfld "fld1", rename tfld "fld2")
                         ,rslfrom=[sel1],rsljoin=Nothing,rslwhere=Just w,rslas=[]}
-   selectbinary fs (ECps []) = fatal 783 "ECps[]"
+   selectbinary _ (ECps []) = fatal 783 "ECps[]"
    selectbinary fs (ECps (ex:[])) = selectbinary fs ex
    selectbinary fs (ECps (ex:exs))
     = let selex = selectbinary fs ex
@@ -837,7 +847,7 @@ instance InPlug Expression where
                         ,rslfrom=[sel1],rsljoin=Just (sel2,s2fld,t1fld),rslwhere=Nothing,rslas=[]}
    selectbinary fs (ERad exs) = selectbinary fs (ECpl(ECps(map ECpl exs))) --TODO
    selectbinary fs (EUni exs) = selectbinary fs (ECpl(EIsc(map ECpl exs))) --TODO
-   selectbinary fs (EIsc []) = fatal 783 "EIsc[]"
+   selectbinary _ (EIsc []) = fatal 783 "EIsc[]"
    selectbinary fs (EIsc (ex:[])) = selectbinary fs ex
    selectbinary fs (EIsc (ex:exs)) 
     = let selex = selectbinary fs ex
@@ -864,6 +874,6 @@ instance InPlug Expression where
     --  | EUni (Expressions rel)  -- fs   ^ union                                   \/     
    selectbinary fs (EFlp x) = let sb=selectbinary fs x in sb{rslfld=(fst(rslfld sb),snd(rslfld sb))}
    selectbinary fs (ETyp x _) = selectbinary fs x
-   selectbinary fs x = fatal 748 ("not supported" ++ show x)
+   selectbinary _ x = fatal 748 ("not supported" ++ show x)
 
  

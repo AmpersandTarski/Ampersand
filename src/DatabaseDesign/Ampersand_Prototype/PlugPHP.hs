@@ -15,9 +15,9 @@ import Data.List
 import Data.Maybe (listToMaybe)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
-import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..),mapRelation,mapExpression)
+import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
 import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
-import DatabaseDesign.Ampersand_Prototype.CodeStatement (PHPconcept(..),conc2php)
+import DatabaseDesign.Ampersand_Prototype.CodeStatement (conc2php)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a

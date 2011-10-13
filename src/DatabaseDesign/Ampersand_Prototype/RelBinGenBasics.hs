@@ -96,10 +96,11 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 
    -- | guarantees a valid identifier name. The function is NOT injective! 
    phpIdentifier :: String -> String
+   phpIdentifier [] = []
    phpIdentifier (s:str)
     | isDigit s = 'I':s:g str
     | otherwise = g (s:str)
-      where g str = [c | c<-str, isAlphaNum c]
+      where g xs = [c | c<-xs, isAlphaNum c]
 
    phpShow :: String -> String
    phpShow str = "'" ++ addSlashes str ++ "'"

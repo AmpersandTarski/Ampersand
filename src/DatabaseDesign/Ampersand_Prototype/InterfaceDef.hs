@@ -148,7 +148,6 @@ where
         ]
      )
      where
-     hometitle = case language flags of Dutch -> "Terug naar script"; English -> "Back to script"
      menuItems 
        = concat [ [ "<a href=\""++ifcref
                 , "  "++name o++""

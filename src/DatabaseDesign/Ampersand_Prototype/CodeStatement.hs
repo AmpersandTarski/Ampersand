@@ -12,7 +12,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeStatement
       ,phptarget,phpflp,phpsign
       ,PHPDeclaration(..),PHPRelation(..),PHPExpression(..)
       ) where
- import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..), mapRelation, mapExpression)
+ import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (Named(..))
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 {- Expressions are evaluated preferrably in SQL, since the database should do the work wherever possible.
@@ -56,7 +56,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
  data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
  
  instance Show CodeVar where
-   show (CodeVar i c e) = show i++" "++show c -- ++" '"++show e++"'"
+   show (CodeVar i c _) = show i++" "++show c -- ++" '"++show e++"'"
  
  -- | The actual use of a variable. In practice, use Named UseVar.
  -- | Example: the PHP usage $people[$i]["Name"] becomes Named "people" [Right (Named "i" []),Left "Name"]
@@ -90,15 +90,15 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
  
  phpsource :: PHPExpression -> PHPconcept
  phpsource expr = case expr of
-     (PHPEEqu (l,r)) -> phpsource l
-     (PHPEImp (l,r)) -> phpsource l
+     (PHPEEqu (l,_)) -> phpsource l
+     (PHPEImp (l,_)) -> phpsource l
      (PHPEIsc [])    -> error "!Fatal (module CodeStatement 80): EIsc []"
      (PHPEIsc es)    -> phpsource (head es)
      (PHPEUni [])    -> error "!Fatal (module CodeStatement 78): EUni []"
      (PHPEUni es)    -> phpsource (head es)
-     (PHPEDif (l,r)) -> phpsource l
-     (PHPELrs (l,r)) -> phpsource l
-     (PHPERrs (l,r)) -> phptarget r
+     (PHPEDif (l,_)) -> phpsource l
+     (PHPELrs (l,_)) -> phpsource l
+     (PHPERrs (_,r)) -> phptarget r
      (PHPECps [])    -> error "!Fatal (module CodeStatement 74): ECps []"
      (PHPECps es)    -> phpsource (head es)
      (PHPERad [])    -> error "!Fatal (module CodeStatement 76): ERad []"
@@ -108,7 +108,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
      (PHPEFlp e)     -> phptarget e
      (PHPECpl e)     -> phpsource e
      (PHPEBrk e)     -> phpsource e
-     (PHPETyp e t)   -> phpsource e
+     (PHPETyp e _)   -> phpsource e
      (PHPERel rel)   -> phprelsource rel
  phptarget  :: PHPExpression -> PHPconcept
  phptarget x = phpsource(phpflp x)
@@ -218,10 +218,11 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
   name (PHPV{}) = "V"
   name (PHPMp1{}) = "I"
 
+ phprelsource :: PHPRelation -> PHPconcept
  phprelsource (PHPRel _ _ (c,_) _) = c
  phprelsource (PHPI c) = c
  phprelsource (PHPV (c,_)) = c
- phprelsource (PHPMp1 s c) = c
+ phprelsource (PHPMp1 _ c) = c
 
  php2conc :: PHPExpression -> Expression
  php2conc (PHPEEqu (l,r)) = EEqu (php2conc l,php2conc r) 
@@ -238,7 +239,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
  php2conc (PHPEFlp e)     = EFlp (php2conc e)                    
  php2conc (PHPECpl e)     = ECpl (php2conc e)                    
  php2conc (PHPEBrk e)     =     php2conc e                       
- php2conc (PHPETyp e t)   =     php2conc e
+ php2conc (PHPETyp e _)   =     php2conc e
  php2conc (PHPERel rel)
   = let f (PHPC c) = c
         f _ = error("!Fatal (module CodeStatement 101): Non-exhaustive pattern for PHPconcept in php2conc")
@@ -248,6 +249,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
            PHPV  (s,t) -> ERel (V (Sign (f s) (f t)))
            PHPMp1 val c -> ERel (Mp1 val (f c)) 
 
+ conc2php :: Expression -> PHPExpression
  conc2php (EEqu (l,r)) = PHPEEqu (conc2php l,conc2php r) 
  conc2php (EImp (l,r)) = PHPEImp (conc2php l,conc2php r) 
  conc2php (EIsc es)    = PHPEIsc (map (conc2php) es)             
@@ -291,3 +293,5 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
 
  phprelflp :: PHPRelation -> PHPRelation
  phprelflp (PHPRel nm pos (s,t) d) = PHPRel nm pos (t,s) d
+ phprelflp (PHPV (s,t)) = PHPV (t,s)
+ phprelflp x = x

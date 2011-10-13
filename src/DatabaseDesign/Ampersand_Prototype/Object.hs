@@ -165,10 +165,6 @@ showClasses flags fSpec o
          ) ++
    [ "}\n" ]
  where
-  editable | theme flags==StudentTheme =  [r |("Student",r)<-fRoleRels fSpec]
-           | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
-  mayedit :: Expression -> [Relation] -> Bool
-  mayedit item editable = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)
   myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var

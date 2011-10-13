@@ -6,24 +6,22 @@ import System.FilePath        (combine,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
-import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas,atlas2context)
+import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
-import qualified Control.Exception as Exc  
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
---import Data.Ampersand.Main
-
+main :: IO()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts ("ProtoVs"++versionNumberPrototype++"ADLvs" ++ versionNumber) flags)
-       else do (ctx,err) <- parseAndTypeCheck flags
+       else do (cx,err) <- parseAndTypeCheck flags
                if nocxe err 
-                 then let fspc = calculate flags ctx in
+                 then let fspc = calculate flags cx in
                       do generateProtoStuff flags fspc
                  else putStr (show err) 
   where
@@ -36,9 +34,8 @@ main
      in
      do scriptText <- readFile scriptName
         ePCtxErr <- parseCtxM_ scriptText flags scriptName
-        pPops <- case fn of
-           [] -> return []
-           fn -> do popsText <- readFile fn
+        pPops <- if null fn then return [] else
+                 do popsText <- readFile fn
                     case importformat flags of
                        Adl1PopFormat -> parsePopsM_ popsText flags fn
                        Adl1Format -> do verbose flags ("Importing ADL1 file "++fn++"... ")
@@ -46,27 +43,27 @@ main
                                         if nocxe (snd(typeCheck (thepCtx cx) [])) 
                                          then let (atlas,_) = typeCheck (thepCtx ePCtxErr) [] -- the atlas without the import
                                                   fspec = calculate flags (fst(typeCheck (thepCtx cx) [])) -- the fspec of the adl file to import as a pop of atlas.adl
-                                                  fnnxt fspec = name fspec ++ "'" -- a name for a not yet existing next version
+                                                  fnnxt = name fspec ++ "'" -- a name for a not yet existing next version
                                                   fdir = let d=dropFileName fn in if null d then "." else d
                                                   usr= namespace flags
                                                   getr r = if length r==1 then P_Rel {rel_nm = relnm (head r), rel_pos = relpos (head r)} else error "import error: no or multiple declarations for relvar"
-                                                  impctx atlas = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
-                                                  impfil atlas = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
-                                                  impupl atlas = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
-                                                  usrfil atlas = [makeRelation d |d<-declarations atlas,name d=="fileof"]
-                                                  --funrld atlas = [makeRelation d |d<-declarations atlas,name d=="reload"]
-                                                  funfsp atlas = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
-                                                  funrep atlas = [makeRelation d |d<-declarations atlas,name d=="report"]
-                                                  funadl atlas = [makeRelation d |d<-declarations atlas,name d=="showadl"]
-                                                  loadcontext r fspec 
-                                                   = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
+                                                  impctx = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
+                                                  impfil = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
+                                                  impupl = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
+                                                  usrfil = [makeRelation d |d<-declarations atlas,name d=="fileof"]
+                                                  --funrld = [makeRelation d |d<-declarations atlas,name d=="reload"]
+                                                  funfsp = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
+                                                  funrep = [makeRelation d |d<-declarations atlas,name d=="report"]
+                                                  funadl = [makeRelation d |d<-declarations atlas,name d=="showadl"]
+                                                  loadcontext r 
+                                                   = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair fn (name fspec),mkPair fnnxt fnnxt]}]
                                                   loadedfile r
                                                    = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair usr fn]         } | not (null usr)]
                                                   -- uploadfile r        = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair usr "browse"]   } | not (null usr)]
                                                   --TODO -> the user has more files, how do I get them in this population
                                                   fileof r myfiles
                                                    = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
-                                                  contextfunction fspec r x
+                                                  contextfunction r x
                                                    = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair (name fspec) x] }]
                                               in
                                               do verbose flags "writing pictures for atlas... "
@@ -77,14 +74,14 @@ main
                                                  sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
                                                  return (makeADL1Populations (declarations atlas) [fspec]
                                                        ++makeADL1Populations (declarations atlas) (picturesForAtlas flags fspec)
-                                                       ++loadcontext (impctx atlas) fspec
-                                                       ++loadedfile (impfil atlas)
-                                                       ++contextfunction fspec (impupl atlas) "new context"
-                                                       ++fileof (usrfil atlas) myfiles
-                                                       -- ++ contextfunction fspec (funrld atlas) (name fspec)
-                                                       ++ contextfunction fspec (funfsp atlas) (takeBaseName fn ++ ".pdf")
-                                                       ++ contextfunction fspec (funrep atlas) (name fspec)
-                                                       ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
+                                                       ++loadcontext impctx
+                                                       ++loadedfile impfil
+                                                       ++contextfunction impupl "new context"
+                                                       ++fileof usrfil myfiles
+                                                       -- ++ contextfunction funrld (name fspec)
+                                                       ++ contextfunction funfsp (takeBaseName fn ++ ".pdf")
+                                                       ++ contextfunction funrep (name fspec)
+                                                       ++ contextfunction funadl fnnxt
                                                         )
                                          else error (show (snd(typeCheck (thepCtx cx) [])))
         verboseLn flags "Type checking..."

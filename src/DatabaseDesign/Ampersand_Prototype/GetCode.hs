@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.GetCode
 where
  import Data.Maybe (listToMaybe)
  import DatabaseDesign.Ampersand_Prototype.CoreImporter
- import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpsign,phpflp,PHPDeclaration(..),PHPRelation(..),PHPExpression(..))
+ import DatabaseDesign.Ampersand_Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..),php2conc,conc2php,phpsource,phptarget,phpsign,phpflp,PHPRelation(..),PHPExpression(..))
  import DatabaseDesign.Ampersand_Prototype.CodeVariables (CodeVar(..))
  import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
  import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
