@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    (pContext, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
-            , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
+            , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger)
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
             (Parser
             , (<$>) , (<$), (<*>), (<*), (*>), (<|>), (<??>)
@@ -529,11 +529,13 @@ and the grammar must be disambiguated in order to get a performant parser...
                                  where pr = pragma++["","",""]
 
    pContent         :: Parser Token Pairs
-   pContent          = pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
+   pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
+                   <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
        where
-        pRecord          :: Parser Token Paire
-        pRecord           = mkPair<$ pSpec '(' <*> (trim <$> pString)  <* pComma   <*> (trim <$> pString)  <* pSpec ')'
-                          --where trimpair (x,y) = (trim x,trim y)
+       pRecord = mkPair<$> pValue <* pKey "*" <*> pValue
+       pValue  = pAtom <|> pConid <|> pVarid <|> pDigit <|> ((++)<$>pDigit<*>pConid) <|> ((++)<$>pDigit<*>pVarid)
+       pDigit  = show <$> pInteger
+       pRecordObs = mkPair<$ pSpec '(' <*> (trim <$> pString)  <* pComma   <*> (trim <$> pString)  <* pSpec ')' --obsolete
 
    -- | pProps is bedoeld voor gebruik in relatie-declaraties.
    pProps           :: Parser Token [Prop]

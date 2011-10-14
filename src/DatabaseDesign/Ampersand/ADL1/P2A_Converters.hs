@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XRelaxedPolyRec#-}
+-- -XRelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters 
      ( pGen2aGen
      , pCpt2aCpt
@@ -34,7 +35,7 @@ fatal = fatalMsg "P2A_Converter"
 pCtx2aCtx :: P_Context -> (A_Context,CtxError)
 pCtx2aCtx pctx
  = (actx
-   ,cxelist (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes))
+   ,cxelist ( cxerrs++if nocxe(cxelist cxerrs) then nmchks else []))
    where
     actx = 
          ACtx{ ctxnm    = name pctx    -- The name of this context
@@ -54,6 +55,8 @@ pCtx2aCtx pctx
              , ctxphp   = phpPlugs     -- user defined phpplugs, taken from the Ampersand script
              , ctxenv   = (ERel(V (Sign ONE ONE)) ,[])
              }
+    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes
+    nmchks = rulenmchk
     (partOrder,_,_) = makePartialOrder hierarchy
     hierarchy = 
        let ctx_gens = ctx_gs pctx `uni` concatMap pt_gns (ctx_pats pctx) `uni` concatMap procGens (ctx_PPrcs pctx)
@@ -83,6 +86,8 @@ pCtx2aCtx pctx
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
+    rulenmchk = nub [newcxe ("Rules with identical names at positions "++show(map origin rs))
+                    |r<-rules actx, let rs=[r'|r'<-rules actx,name r==name r'],length rs>1]
 
 pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
 pPat2aPat actx pops ppat 

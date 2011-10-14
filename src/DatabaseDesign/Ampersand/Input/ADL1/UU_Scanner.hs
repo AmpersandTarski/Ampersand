@@ -4,6 +4,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
    import Data.Char
    import Data.List
    import Data.Maybe
+   import DatabaseDesign.Ampersand.Basics(trim)
    import DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees(tab2tree,btLocateIn)
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
 
@@ -319,7 +320,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
 
    pString        =   gsym TkString    ""        ""
    pExpl          =   gsym TkExpl      ""        ""
-   pAtom          =   gsym TkAtom      ""        ""
+   pAtom          =   trim <$> gsym TkAtom      ""        ""
    pChar          =   gsym TkChar      ""        "\NUL"
    pInteger8      =   gsym TkInteger8  ""        "1"
    pInteger10     =   gsym TkInteger10 ""        "1"
