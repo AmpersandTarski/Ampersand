@@ -27,6 +27,7 @@ import DatabaseDesign.Ampersand.Basics
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
 import System                 (system, ExitCode(ExitSuccess,ExitFailure))
+import System.IO              (hPutStrLn, stderr)
 --import System.Process
 import System.FilePath        (combine,addExtension,replaceExtension)
 import System.Directory
@@ -109,17 +110,23 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce :: IO ()
                                 callPdfLatexOnce = 
                                    do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                                then system ("pdflatex "++pdfflags++ outputFile++[x |x<-"> "++combine (dirOutput flags) "pdflog",not(verboseP flags)])  
+                                                then system $ "pdflatex "++commonFlags++pdfflags++ outputFile++
+                                                              if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog"  
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                                else system ("cd "++dirOutput flags
-                                                           ++" && pdflatex "
-                                                           ++ addExtension (baseName flags) ".tex"
-                                                           ++ [x |x<-"> pdflog",not(verboseP flags)])
+                                                else system $ "cd "++dirOutput flags++
+                                                              " && pdflatex "++commonFlags++
+                                                              texFilename ++ if verboseP flags then "" else "> pdflog"
                                       case result of 
                                          ExitSuccess   -> verboseLn flags "PDF file created."
-                                         ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
+                                         ExitFailure _ -> hPutStrLn stderr $  if verboseP flags 
+                                                                              then "" -- in verbose mode, Latex already gave plenty of information
+                                                                              else "\nLatex error.\nFor more information, run pdflatex on "++texFilename++
+                                                                                    " or rerun ampersand with the --verbose option"
                                       where
                                       pdfflags = " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
+                                      texFilename = addExtension (baseName flags) ".tex"
+                                      commonFlags = if verboseP flags then "" else "-halt-on-error "
+                                      -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it 
                _  -> return()            
                
 -- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
