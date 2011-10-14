@@ -123,9 +123,10 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                                               else "\nLatex error.\nFor more information, run pdflatex on "++texFilename++
                                                                                     " or rerun ampersand with the --verbose option"
                                       where
-                                      pdfflags = " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
+                                      pdfflags = (if verboseP flags then "" else " --disable-installer") ++
+                                                 " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
                                       texFilename = addExtension (baseName flags) ".tex"
-                                      commonFlags = if verboseP flags then "" else "-halt-on-error "
+                                      commonFlags = if verboseP flags then "" else "--halt-on-error "
                                       -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it 
                _  -> return()            
                
