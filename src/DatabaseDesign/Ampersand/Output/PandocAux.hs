@@ -126,8 +126,10 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       pdfflags = (if verboseP flags then "" else " --disable-installer") ++
                                                  " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
                                       texFilename = addExtension (baseName flags) ".tex"
-                                      commonFlags = if verboseP flags then "" else "--halt-on-error "
-                                      -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it 
+                                      commonFlags = if verboseP flags then "" else "--interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted 
+                                      -- when verbose is off, let latex halt on error to prevent waiting for user input without prompting for it
+                                      -- on windows, we also do --disable-installer, since otherwise a missing package may cause interaction,
+                                      -- even with --interaction=nonstopmode.
                _  -> return()            
                
 -- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
