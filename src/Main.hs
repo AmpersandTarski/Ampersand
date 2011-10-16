@@ -21,7 +21,7 @@ main
        then mapM_ putStr (helpNVersionTexts ("ProtoVs"++versionNumberPrototype++"ADLvs" ++ versionNumber) flags)
        else do (cx,err) <- parseAndTypeCheck flags
                if nocxe err 
-                 then let fspc = calculate flags cx in
+                 then let fspc = makeFspec flags cx in
                       do generateProtoStuff flags fspc
                  else putStr (show err) 
   where
@@ -42,7 +42,7 @@ main
                                         cx <- parseCtxM_ popsText flags fn
                                         if nocxe (snd(typeCheck (thepCtx cx) [])) 
                                          then let (atlas,_) = typeCheck (thepCtx ePCtxErr) [] -- the atlas without the import
-                                                  fspec = calculate flags (fst(typeCheck (thepCtx cx) [])) -- the fspec of the adl file to import as a pop of atlas.adl
+                                                  fspec = makeFspec flags (fst(typeCheck (thepCtx cx) [])) -- the fspec of the adl file to import as a pop of atlas.adl
                                                   fnnxt = name fspec ++ "'" -- a name for a not yet existing next version
                                                   fdir = let d=dropFileName fn in if null d then "." else d
                                                   usr= namespace flags
@@ -94,7 +94,7 @@ parseFilePrototype flags pv
            adlText <- readFile fnFull
            importpops <- parseImportFile adlText pv fnFull flags 
            parsedfile <- parseADL1 adlText (if null(importfile flags) then pv else PV2011) importpops flags fnFull 
-           atlasfspec <- calculate flags parsedfile           
+           atlasfspec <- makeFspec flags parsedfile           
 --           verbose flags (show[showsql(SqlSel2(selectbinary atlasfspec c)) |c<-concs atlasfspec])
   --         verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c)) |c<-concs atlasfspec])
     --       verbose flags (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d))) |d<-declarations atlasfspec])
@@ -138,7 +138,7 @@ parseImportFile adlText pv adlfn flags
                                  parseADL1Pop popText fn 
              Adl1Format -> do verbose flags ("Importing ADL1 file "++fn++"... ")
                               cx <- parseADL1 popText pv [] flags fn
-                              fspec <- calculate flags cx
+                              fspec <- makeFspec flags cx
                               verbose flags "writing pictures for atlas... "
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
                               verbose flags ("pictures for atlas written... "++show pv)

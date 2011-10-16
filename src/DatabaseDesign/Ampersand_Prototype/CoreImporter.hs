@@ -67,7 +67,7 @@ import DatabaseDesign.Ampersand
 --   -- * Prettyprinters
 --   , showADL, showADLcode, showSQL
 --   -- * Generators
---   , calculate
+--   , makeFspec
 --   , generate
 --   -- * Functions with Options
 --   , getOptions
