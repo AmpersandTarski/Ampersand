@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Version (ampersandCoreVersionBanner, versionNumber, fatalMsg)
+module DatabaseDesign.Ampersand.Basics.Version (ampersandCoreVersionBanner, versionNumber, fatalMsg)
 where
 
 import DatabaseDesign.Ampersand.BuildInfo_Generated
