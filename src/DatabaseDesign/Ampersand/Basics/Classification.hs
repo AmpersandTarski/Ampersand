@@ -10,7 +10,7 @@ where
    import Data.List hiding (insert)
    import Data.Char        (toLower)
    import DatabaseDesign.Ampersand.Basics.Auxiliaries   (eqCl)
-   import DatabaseDesign.Ampersand.Version (fatalMsg)
+   import DatabaseDesign.Ampersand.Basics.Version (fatalMsg)
 
    fatal :: Int -> String -> a
    fatal = fatalMsg "Basics.Classification"
