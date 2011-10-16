@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    , combinations
    )
   where
-   import DatabaseDesign.Ampersand.Version (fatalMsg)
+   import DatabaseDesign.Ampersand.Basics.Version (fatalMsg)
  
    fatal :: Int -> String -> a
    fatal = fatalMsg "Basics.Auxiliaries"

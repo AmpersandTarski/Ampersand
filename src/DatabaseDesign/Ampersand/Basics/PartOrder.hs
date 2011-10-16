@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Basics.PartOrder(PartialOrder(..),makePartialOrd
 where
    import DatabaseDesign.Ampersand.Basics.Auxiliaries (sort', eqCl)
    import DatabaseDesign.Ampersand.Basics.Collection ((>-), isc)
-   import DatabaseDesign.Ampersand.Version (fatalMsg)
+   import DatabaseDesign.Ampersand.Basics.Version (fatalMsg)
    import Data.List
 
    fatal :: Int -> String -> a
