@@ -19,7 +19,7 @@ main
         then mapM_ putStr (helpNVersionTexts ("AmpersandVs" ++ versionNumber) flags)
         else do (ctx,err) <- parseAndTypeCheck flags
                 if nocxe err 
-                  then let fspc = calculate flags ctx in
+                  then let fspc = makeFspec flags ctx in
                        generate flags fspc
                   else putStr (show err)
                   
