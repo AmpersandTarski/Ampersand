@@ -54,7 +54,7 @@ module DatabaseDesign.Ampersand
    , parseADL1pExpr
     -- * Type checking and calculus
    , typeCheck
-   , calculate
+   , makeFspec
     -- * Generators of output
    , interfaceGen
    , prove

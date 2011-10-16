@@ -10,7 +10,7 @@ module DatabaseDesign.Ampersand.Components
    , parseADL1pExpr
     -- * Type checking and calculus
    , typeCheck
-   , calculate
+   , makeFspec
     -- * Generators of output
    , interfaceGen
    , prove
@@ -104,10 +104,6 @@ typeCheck :: P_Context -> [P_Population] -> (A_Context, CtxError)
 typeCheck pCtx []   = let (aCtx,ctxcheck)=pCtx2aCtx pCtx                  in (aCtx,cxes ctxcheck)
 typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aCtx,cxes ctxcheck)
   
-
-calculate :: Options -> A_Context -> Fspc
-calculate = makeFspec 
-
 
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
