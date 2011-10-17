@@ -15,6 +15,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      , pProc2aProc
      , pODef2aODef
      , pExpl2aExpl
+     , disambiguate
      )
 where
 
@@ -135,14 +136,14 @@ pProc2aProc actx pops pproc
     (keys,keycxes)    = (unzip . map (pKDef2aKDef actx)            . procKds) pproc
     (expls,explcxes)  = (unzip . map (pExpl2aExpl actx)            . procXps) pproc
 
-pRRul2aRRul :: A_Context -> RoleRule -> (RoleRule,CtxError)
+pRRul2aRRul :: (Language l, ConceptStructure l, Identified l) => l -> RoleRule -> (RoleRule,CtxError)
 pRRul2aRRul actx prrul
  = ( prrul, CxeOrig (cxelist rrcxes) "role rule" "" (origin prrul))
    where
      rrcxes = [ newcxe ("Rule '"++r++" does not exist.")
               | r<-mRules prrul, null [rul | rul<-rules actx, name rul==r]]
      
-pRRel2aRRel :: A_Context -> P_RoleRelation -> (RoleRelation,CtxError)
+pRRel2aRRel :: (Language l, ConceptStructure l, Identified l) => l -> P_RoleRelation -> (RoleRelation,CtxError)
 pRRel2aRRel actx prrel
  = ( RR { rrRoles = rr_Roles prrel
         , rrRels  = rels
@@ -152,7 +153,7 @@ pRRel2aRRel actx prrel
    where
      (rels,editcxes) = unzip [pRel2aRel actx (psign t) r | (r,t)<-rr_Rels prrel]
  
-pRul2aRul :: A_Context -> String -> P_Rule -> (Rule,CtxError)
+pRul2aRul :: (Language l, ConceptStructure l, Identified l) => l -> String -> P_Rule -> (Rule,CtxError)
 pRul2aRul actx patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
  = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
        , rrexp = aexpr                      -- The rule expression
@@ -188,7 +189,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
    
 
 -- | pKDef2aKDef checks compatibility of composition with key concept on equality
-pKDef2aKDef :: A_Context -> P_KeyDef -> (KeyDef, CtxError)
+pKDef2aKDef :: (Language l, ConceptStructure l, Identified l) => l -> P_KeyDef -> (KeyDef, CtxError)
 pKDef2aKDef actx pkdef
  = (Kd { kdpos = kd_pos pkdef
        , kdlbl = kd_lbl pkdef
@@ -205,7 +206,7 @@ pKDef2aKDef actx pkdef
                                        |x<-ats,source (objctx x)/=c])
 
 -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
-pIFC2aIFC :: A_Context -> P_Interface -> (Interface,CtxError)
+pIFC2aIFC :: (Language l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)
 pIFC2aIFC actx pifc 
  = (Ifc { ifcName = ifc_Name pifc
         , ifcParams = prms
@@ -220,7 +221,7 @@ pIFC2aIFC actx pifc
     (obj,objcxe)  = pODef2aODef actx NoCast (ifc_Obj pifc)
     (prms,prmcxes)  = unzip [pRel2aRel actx (psign sgn) r | (r,sgn)<-ifc_Params pifc]
 -- | pODef2aODef checks compatibility of composition of expressions on equality
-pODef2aODef :: A_Context -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
+pODef2aODef :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
 pODef2aODef actx cast podef 
  = (Obj { objnm = obj_nm podef
         , objpos = obj_pos podef
@@ -265,7 +266,7 @@ pExOb2aExOb actx (PExplContext str     ) = (ExplContext str,   newcxeif(name act
 pExOb2aExOb actx (PExplFspc str        ) = (ExplFspc str,      newcxeif( name actx/=str)("No specification named '"++str++"'") )
 
 
-pPop2aPop :: A_Context -> P_Population -> (Population,CtxError)
+pPop2aPop :: (Language l, ConceptStructure l, Identified l) => l -> P_Population -> (Population,CtxError)
 pPop2aPop contxt p
  = ( Popu { popm  = prel
           , popps = p_popps p
@@ -273,7 +274,7 @@ pPop2aPop contxt p
    , relcxe)
    where (prel,relcxe) = pRel2aRel contxt (p_type p) (p_popm p)
 
-pGen2aGen :: A_Context -> String -> P_Gen -> A_Gen
+pGen2aGen :: (Language l, ConceptStructure l, Identified l) => l -> String -> P_Gen -> A_Gen
 pGen2aGen contxt patNm pg
    = Gen{genfp  = gen_fp  pg
         ,gengen = pCpt2aCpt contxt (gen_gen pg)
@@ -281,11 +282,11 @@ pGen2aGen contxt patNm pg
         ,genpat = patNm
         }
           
-pSign2aSign :: A_Context -> P_Sign -> Sign
+pSign2aSign :: (Language l, ConceptStructure l, Identified l) => l -> P_Sign -> Sign
 pSign2aSign contxt (P_Sign cs) = Sign (head ts) (last ts)
   where ts = map (pCpt2aCpt contxt) cs
         
-pCpt2aCpt :: A_Context -> P_Concept -> A_Concept
+pCpt2aCpt :: (Language l, ConceptStructure l, Identified l) => l -> P_Concept -> A_Concept
 pCpt2aCpt contxt pc
     = case pc of
         PCpt{} -> c 
@@ -297,7 +298,7 @@ pCpt2aCpt contxt pc
                        ++[trgPaire p |d<-declarations contxt,p<-contents d,c <= target d]
             }
 
-pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> Declaration
+pDecl2aDecl :: (Language l, ConceptStructure l, Identified l) => l -> [Population] -> String -> P_Declaration -> Declaration
 pDecl2aDecl contxt pops patname pd
  = Sgn { decnm   = dec_nm pd
        , decsgn  = pSign2aSign contxt (dec_sign pd)
@@ -321,7 +322,7 @@ pDecl2aDecl contxt pops patname pd
        }
 
 -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in an expression.
-pRel2aRel :: A_Context -> [P_Concept] -> P_Relation -> (Relation,CtxError)
+pRel2aRel :: (Language l, ConceptStructure l, Identified l) => l -> [P_Concept] -> P_Relation -> (Relation,CtxError)
 pRel2aRel contxt sgn P_V 
  = case sgn of
     [] -> (fatal 326 "Ambiguous universal relation."
@@ -421,18 +422,53 @@ flpcast (Cast x y) = Cast y x
 
 type TErr = String
 
+--the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
+--applying the type checker on an complete, explicit typed expression is equivalent to disambiguating the expression
+disambiguate :: (Language l, ConceptStructure l, Identified l) => l -> Expression -> Expression
+disambiguate contxt x 
+ | nocxe errs = expr 
+ | otherwise = fatal 428 ("an expression must be type correct, but this one is not:\n" ++ show errs)
+ where
+ (expr,errs) = pExpr2aExpr contxt NoCast (f x)
+ -- f transforms x to a P_Expression using full relation signatures
+ f (EEqu (l,r)) = Pequ (f l,f r)
+ f (EImp (l,r)) = Pimp (f l,f r)
+ f (EIsc es)    = Pisc (map f es)
+ f (EUni es)    = PUni (map f es)
+ f (EDif (l,r)) = PDif (f l,f r)
+ f (ELrs (l,r)) = PLrs (f l,f r)
+ f (ERrs (l,r)) = PRrs (f l,f r)
+ f (ECps es)    = PCps (map f es)
+ f (ERad es)    = PRad (map f es)
+ f (EKl0 e)     = PKl0 (f e)
+ f (EKl1 e)     = PKl1 (f e)
+ f (EFlp e)     = PFlp (f e)
+ f (ECpl e)     = PCpl (f e)
+ f (EBrk e)     = PBrk (f e)
+ f (ETyp e _) = f e
+ f (ERel rel@(Rel{})) = PTyp (Prel (P_Rel (name rel) (origin rel))) (P_Sign [g (source rel),g (target rel)])
+ f (ERel rel@(I{}))   = PTyp (Prel  P_I                           ) (P_Sign [g (source rel)])
+ f (ERel rel@(V{}))   = PTyp (Prel  P_V                           ) (P_Sign [g (source rel),g (target rel)])
+ f (ERel rel@(Mp1{})) = PTyp (Prel (P_Mp1 (relval rel)           )) (P_Sign [g (source rel)])
+ g c@(C{}) = PCpt (name c)
+ g ONE     = P_Singleton
+
 {- The story of type checking an expression.
 Invariants:
  1. inference yields either one solution or else one or more error messages.
 
 Step 1:
+
+---------
+the type checker always returns an expression with sufficient type casts.
+it removes some of the redundant ones i.e. (PTyp e sgn) for which the isolated e would have been inferred to sgn anyway.
 -}
-pExpr2aExpr :: A_Context -> AutoCast -> P_Expression -> (Expression, CtxError)
+pExpr2aExpr :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_Expression -> (Expression, CtxError)
 pExpr2aExpr contxt cast pexpr = case infer contxt pexpr cast of
    ([] ,[])   -> ( fatal 389 ("Illegal reference to expression '"++showADL pexpr++".")
                  , newcxe "Unknown type error") --should not be possible
    ([x],[])   -> if isTypeable x
-                 then (disambiguate contxt x,cxenone)
+                 then (x,cxenone)
                  else fatal 393 ("expression "++show x++" contains untypeable elements.")
    (xs ,[])   -> ( fatal 394 ("Illegal reference to expression '"++showADL pexpr++".")
                  , newcxe ("Ambiguous expression: "++showADL pexpr++"\nPossible types are: "++ show (map sign xs)++"."))
@@ -440,7 +476,7 @@ pExpr2aExpr contxt cast pexpr = case infer contxt pexpr cast of
                  , cxelist (map newcxe errs))
 
 -- | p2a for p_relations in a p_expression. Returns all (ERel arel) expressions matching the p_relation and AutoCast within a certain context.
-pRel2aExpr :: P_Relation -> A_Context -> InfExpression 
+pRel2aExpr :: (Language l, ConceptStructure l, Identified l) => P_Relation -> l -> InfExpression 
 pRel2aExpr P_V contxt ac
  = (alts, ["The context has no concepts" |null alts])
    where
@@ -492,7 +528,7 @@ pRel2aExpr prel contxt ac
                 }
 
 
-infer :: A_Context
+infer :: (Language l, ConceptStructure l, Identified l) => l
          -> P_Expression              -- ^ the expression e to be analyzed
          -> AutoCast                  -- ^ a type in which expression e is cast. (possible values: NoCast, SourceCast s, TargetCast t, Cast s t)
          -> ( [Expression], [TErr])   -- ^ all interpretations of e that are possible in this context AND
@@ -514,7 +550,11 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
                              "\nuc: "++show uc++
                              "\ncandidates: "++show candidates++
                              "\nalts: "++show [ ETyp e uc | e <- candidates, sign e <= uc]) else -}
-                 [ ETyp e uc | e <- candidates, sign e <= uc]
+                 [ if 1==length (fst (infer contxt p_r  NoCast))
+                      && uc==sign e -- would the type be the same without cast PTyp i.e. one candidate with uc==sign e?
+                   then e           -- then remove this redundant PTyp
+                   else ETyp e uc   -- else keep it
+                 | e <- candidates, sign e <= uc]
           unknowncs = nub[c |c<-concs uc, c `notElem` concs contxt]
           msgs = ["Unknown concept: '"++name (head unknowncs)++"'." |length unknowncs == 1] ++
                  ["Unknown concepts: '"++name (head unknowncs)++"' and '"++name (last unknowncs)++"'." |length unknowncs > 1] ++
@@ -596,8 +636,8 @@ infer contxt e@(PDif (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else 
                       | not (srcTypeable p_l)&&not (srcTypeable p_r) || not (trgTypeable p_r)&&not (trgTypeable p_l) ]
 
 -- | the inference procedure for \/ and /\  (i.e. union  and  intersect)
-inferUniIsc :: ShowADL a =>
-               A_Context
+inferUniIsc :: (ShowADL a,Language l, ConceptStructure l, Identified l) =>
+               l
                -> ([P_Expression] -> a)
                -> ([Expression] -> Expression)
                -> Bool
@@ -664,8 +704,8 @@ inferUniIsc contxt pconstructor constructor specific p_rs ac = (solutions,messag
                            | cl<-(eqClass comparable.nub.concat) altss ]       -- make equivalence classes of subexpressions with comparable type
 
 -- | the inference procedure for = and |-  (i.e. equivalence  and  implication/subset)
-inferEquImp :: (ShowADL a1, Eq a) =>
-               A_Context
+inferEquImp :: (ShowADL a1, Eq a,Language l, ConceptStructure l, Identified l) =>
+               l
                -> ((P_Expression, P_Expression) -> a1)
                -> ((Expression, Expression) -> a)
                -> (P_Expression, P_Expression)
@@ -705,8 +745,8 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
                       | not (srcTypeable p_l)&&not (srcTypeable p_r) || not (trgTypeable p_r)&&not (trgTypeable p_l) ]
 
 -- | the inference procedure for ; and ! (i.e. composition and relational addition)
-inferCpsRad :: Show a =>
-               A_Context                       -- ^ The context, from which the declarations and concepts are used.
+inferCpsRad :: (Show a,Language l, ConceptStructure l, Identified l) =>
+               l                       -- ^ The context, from which the declarations and concepts are used.
                -> ([P_Expression] -> a)        -- ^ The constructor, which is either PCps or Rad
                -> ([Expression] -> Expression)
                -> [P_Expression]

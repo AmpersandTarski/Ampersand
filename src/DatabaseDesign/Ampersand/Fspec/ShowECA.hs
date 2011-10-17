@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
    import DatabaseDesign.Ampersand.Fspec.Fspec
+   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Basics                       (Identified(..))
    import DatabaseDesign.Ampersand.Fspec.ShowADL            (ShowADL(..))

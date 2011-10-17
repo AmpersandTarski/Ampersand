@@ -7,9 +7,10 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    import Data.List
    import DatabaseDesign.Ampersand.Basics        (fatalMsg,Collection(..),Identified(..))
    import DatabaseDesign.Ampersand.ADL1
+   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
+   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
 --   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) -- for testing purposes
    
    fatal :: Int -> String -> a
@@ -219,11 +220,11 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
         nameONode = nmLkp fSpec "out_"
 
 
-   nmLkp :: (Eq a, ShowADL a) => Fspc -> String -> [a] -> a -> String
+   nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => Fspc -> String -> [a] -> a -> String
    nmLkp fSpec prefix xs x
     = head ([prefix++show (i::Int) | (i,e)<-zip [1..] xs, e==x]++
-            fatal 216 ("illegal lookup in nmLkp: " ++showADL (disambiguate fSpec x)++
-                       "\nin: ["++intercalate ", " (map (showADL.disambiguate fSpec) xs)++"]")
+            fatal 216 ("illegal lookup in nmLkp: " ++showADL (mapexprs disambiguate fSpec x)++
+                       "\nin: ["++intercalate ", " (map (showADL.mapexprs disambiguate fSpec) xs)++"]")
            )
    positiveIn :: Expression -> Relation -> [Bool]
    positiveIn expr rel = f expr   -- all are True, so an insert in rel means an insert in expr
