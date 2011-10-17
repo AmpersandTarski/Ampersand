@@ -11,9 +11,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
    import Data.List
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.ADL1
+   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Event(..),Quad(..),ECArule(..),InsDel(..),PAclause(..))
-   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
+   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
 --   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
@@ -27,7 +28,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
 
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
-    = "\nRule: "++(showADL.disambiguate fSpec) (cl_rule cl) ++concat
+    = "\nRule: "++(showADL.mapexprs disambiguate fSpec) (cl_rule cl) ++concat
        [if null shifts then "\nNo clauses" else
         "\nConjunct: "++(showADL.disambiguate fSpec) conj++
         concat ["\n   Clause: "++(showADL.disambiguate fSpec) clause | clause<-shifts]
@@ -40,8 +41,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
    testInterface fSpec ifc
     = "\nInterface "++ name ifc++"("++intercalate ", " [showADL r++":"++name (target r) | r<-rels]++")\n"++
       " - The parameters correspond to editable fields in a user interface.\n   "++
-      (showADL . disambiguate fSpec) ifc++"\n"++
-      " - Invariants:\n   "++intercalate "\n   " [(showADL . disambiguate fSpec) rule    | rule<-invs]++"\n"++
+      (showADL .mapexprs disambiguate fSpec) ifc++"\n"++
+      " - Invariants:\n   "++intercalate "\n   " [(showADL .mapexprs disambiguate fSpec) rule    | rule<-invs]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invs]++"\n"++
 {-

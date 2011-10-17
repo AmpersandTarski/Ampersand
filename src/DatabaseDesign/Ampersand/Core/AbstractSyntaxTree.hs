@@ -333,8 +333,14 @@ showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul,  rAdd,  clos
      showchar (EFlp e)     = showchar e++flp'
      showchar (ECpl e)     = compl (showchar e)
      showchar (EBrk e)     = lpar++showchar e++rpar
-     showchar (ETyp e sgn) = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
-     showchar (ERel rel)   = show rel
+     showchar (ETyp e sgn) 
+      | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
+      | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
+     -- relations in expressions are printed without type signature, use ETyp to print signatures
+     showchar (ERel rel@(Rel{})) = name rel
+     showchar (ERel      I{})    = "I"
+     showchar (ERel      V{})    = "V"
+     showchar (ERel rel@(Mp1{})) = "'"++relval rel++"'"
 
 insParentheses :: Expression -> Expression
 insParentheses expr = insPar 0 expr

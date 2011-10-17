@@ -6,6 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),uniqueNames,eqCl, eqClass)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
+   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc        (Options(..),DocTheme(..),plural)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify,isI)

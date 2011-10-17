@@ -105,9 +105,11 @@ typeCheck pCtx []   = let (aCtx,ctxcheck)=pCtx2aCtx pCtx                  in (aC
 typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aCtx,cxes ctxcheck)
   
 
+-- Q: Should we disambiguate the exprs in the fspec i.e. mapexprs disambiguate fSpec fSpec?
+--    Or do we assume a correct implementation with unambiguous expressions only?
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
-  =    writeFile outputFile ((showADL . disambiguate fSpec) fSpec)
+  =    writeFile outputFile (showADL fSpec) 
     >> verboseLn flags ("Ampersand-script written to " ++ outputFile ++ ".")
     where  outputFile = combine (dirOutput flags) "Generated.adl"
 
