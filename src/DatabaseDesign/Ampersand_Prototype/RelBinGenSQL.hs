@@ -574,10 +574,10 @@ sqlExprSrc fSpec expr = ses expr
  where
    ses (EEqu (l,_)) = ses l
    ses (EImp (l,_)) = ses l
-   ses (EIsc [])    = fatal 560 (if expr==ECps[] then "calling sqlExprSrc (EIsc [])" else "evaluating (EIsc []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (EIsc [])    = fatal 560 (if expr==ECps[] then "calling sqlExprSrc (EIsc [])" else "evaluating (EIsc []) in sqlExprSrc ("++showADL expr++")")
    ses (EIsc [f])   = ses f
    ses (EIsc fs)    = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
-   ses (EUni [])    = fatal 557 (if expr==ECps[] then "calling sqlExprSrc (EUni [])" else "evaluating (EUni []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (EUni [])    = fatal 557 (if expr==ECps[] then "calling sqlExprSrc (EUni [])" else "evaluating (EUni []) in sqlExprSrc ("++showADL expr++")")
    ses (EUni [f])   = ses f
    ses (EUni fs)    = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where  l = (==foldr1 lub (map source fs)).source
    ses (EDif (l,_)) = ses l
@@ -591,10 +591,10 @@ sqlExprSrc fSpec expr = ses expr
 -}
    ses (ELrs (l,_)) = ses l
    ses (ERrs (_,r)) = sqlExprTrg fSpec r
-   ses (ECps [])    = fatal 554 (if expr==ECps[] then "calling sqlExprSrc (ECps [])" else "evaluating (ECps []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (ECps [])    = fatal 554 (if expr==ECps[] then "calling sqlExprSrc (ECps [])" else "evaluating (ECps []) in sqlExprSrc ("++showADL expr++")")
    ses (ECps [f])   = ses f
    ses (ECps fs)    = ses (head fs)
-   ses (ERad [])    = fatal 563 (if expr==ECps[] then "calling sqlExprSrc (ERad [])" else "evaluating (ERad []) in sqlExprSrc ("++(showADL . disambiguate fSpec) expr++")")
+   ses (ERad [])    = fatal 563 (if expr==ECps[] then "calling sqlExprSrc (ERad [])" else "evaluating (ERad []) in sqlExprSrc ("++showADL expr++")")
    ses (ERad [f])   = ses f
    ses (ERad fs)    = ses (head fs)
    ses (ECpl e)     = ses e

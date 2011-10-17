@@ -192,5 +192,5 @@ doGenProto fSpec flags
      >> verboseLn flags ("Prototype files have been written to " ++  (dirPrototype flags) ++ "." )
      >> if (test flags) then verboseLn flags (show (vplugInfos fSpec)) else verboseLn flags ""
      where  
-     explainviols = concat [show p++": "++(showADL . disambiguate fSpec) r++"\n" |(r,p)<-violations fSpec]
+     explainviols = concat [show p++": "++showADL r++"\n" |(r,p)<-violations fSpec]
 

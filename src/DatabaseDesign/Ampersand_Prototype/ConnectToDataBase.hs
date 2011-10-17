@@ -129,9 +129,9 @@ where
       ++ 
       [ "\n  function " ++ phpIdentifier("checkRule"++name rule)++"(){\n    "++
            (if isFalse rule'
-            then "// "++(langwords!!2)++": "++ (showADL . disambiguate fSpec) rule'++"\n     "
-            else "// "++(langwords!!3)++" ("++ (showADL . disambiguate fSpec) rule'++")\n    "++
-                 concat [ "//            rule':: "++(showADL . disambiguate fSpec) rule' ++"\n    " | pDebug] ++
+            then "// "++(langwords!!2)++": "++ showADL rule'++"\n     "
+            else "// "++(langwords!!3)++" ("++ showADL rule'++")\n    "++
+                 concat [ "//            rule':: "++showADL rule' ++"\n    " | pDebug] ++
                    "\n    $v = DB_doquer_lookups('"++ showsql(SqlSel2(selectbinary fSpec rule'))++"');\n"
                    -- ++ showCode 4 (code rule')
                  ++

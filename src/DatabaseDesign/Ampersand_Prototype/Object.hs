@@ -23,7 +23,7 @@ objectInterfaces flags fSpec o
    ([ "<?php // generated with "++ampersandPrototypeVersionBanner
     , ""
     , "/********* on "++(show (origin o))
-    , (showADL . disambiguate fSpec) o
+    , showADL  o
     , " *********/"
     , ""
     ]
