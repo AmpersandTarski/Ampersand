@@ -5,7 +5,7 @@ import Control.Monad
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
+import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (buildTimeStr) -- we importbuildTimeStr directly, to avoid a cascade of recompiled modules on each build
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
