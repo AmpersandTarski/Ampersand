@@ -29,14 +29,14 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; time <- getClockTime
 
-    ; writeFile "src/DatabaseDesign/Ampersand/BuildInfo_Generated.hs" $
+    ; writeFile "src/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule version svnRevision (show time)
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
 
 buildInfoModule version revision time =
-  "module DatabaseDesign.Ampersand.BuildInfo_Generated (versionStr, svnRevisionStr, buildTimeStr) where\n" ++ 
+  "module DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (versionStr, svnRevisionStr, buildTimeStr) where\n" ++ 
   "\n" ++
   "-- This module is generated automatically by Setup.hs before building. Do not edit!\n" ++
   "\n" ++
