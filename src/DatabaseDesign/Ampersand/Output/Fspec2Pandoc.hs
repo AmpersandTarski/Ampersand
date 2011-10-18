@@ -1564,7 +1564,7 @@ chpDataAnalysis lev fSpec flags
   txtSwitchboard
    = (case language flags of                                     -- announce the switchboard diagram
            Dutch   -> [Para [ Str "Figuur ", xrefReference (figlabel picSwitchboard)
-                            , Str " geeft het schakelpaneel (switchboard diagram) weer."
+                            , Str " geeft het schakelpaneel (switchboard diagram) weer. "
                             , Str "Dit wordt gebruikt bij het ontwerpen van de database functionaliteit."] ]
            English -> [Para [ Str "Figure ", xrefReference (figlabel picSwitchboard)
                             , Str " shows the switchboard diagram."
@@ -1901,14 +1901,14 @@ chpDataAnalysis lev fSpec flags
                               ]
            Dutch   -> case irs of
                        []  -> []
-                       [e] -> [ Para [ Str "De volgende regel definieert de integriteit van gegevens binnen deze gegevensverzameling. Hij moet te allen tijd blijven gelden. " ]
+                       [e] -> [ Para [ Str "De volgende regel definieert de integriteit van gegevens binnen deze gegevensverzameling. Hij moet te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
                                 else if isTypeable e
                                      then Para [ Math DisplayMath $ showMathDamb fSpec e]
                                      else fatal 1760 ("Untypeable "++show e)
                               ]
-                       es  -> [ Para [ Str "De volgende regels definiëren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijd blijven gelden. " ]
+                       es  -> [ Para [ Str "De volgende regels definiëren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
                                 else BulletList [ if isTypeable e
