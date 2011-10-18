@@ -556,46 +556,46 @@ commaNLPandoc  _  []     = []
 ---------------------------
 
 texOnly_Id :: String -> String
-texOnly_Id s = "{\\id{"++latexEscShw s++"}}"
+texOnly_Id s = "\\id{"++latexEscShw s++"} "
 
 texOnly_fun :: String
-texOnly_fun = "{\\rightarrow}"
+texOnly_fun = "\\rightarrow "
 
 texOnly_rel :: String
-texOnly_rel = "{\\times}"
+texOnly_rel = "\\times "
 
 texOnly_relAdd :: String
-texOnly_relAdd = "{\\dagger}"
+texOnly_relAdd = "\\dagger "
 
 texOnly_compose :: String
 texOnly_compose = ";"
 
 texOnly_inter :: String
-texOnly_inter = "{\\cap}"
+texOnly_inter = "\\cap "
 
 texOnly_union :: String
-texOnly_union = "{\\cup}"
+texOnly_union = "\\cup "
 
 texOnly_subs :: String
-texOnly_subs = "{\\vdash}"
+texOnly_subs = "\\vdash "
 
 texOnly_equals :: String
 texOnly_equals = "="
 
 texOnly_star :: String
-texOnly_star = "{*}"
+texOnly_star = "^* "
 
 texOnly_plus :: String
-texOnly_plus = "{+}"
+texOnly_plus = "^+ "
 
 texOnly_bx :: String
-texOnly_bx = "{-}"
+texOnly_bx = " - "
 
 texOnly_lRes :: String
-texOnly_lRes = "{/}"
+texOnly_lRes = " / "
 
 texOnly_rRes :: String
-texOnly_rRes = "{\\backslash}"
+texOnly_rRes = " \\backslash "
 
 texOnly_flip :: String
-texOnly_flip = "{~}"
+texOnly_flip = "\\flip"
