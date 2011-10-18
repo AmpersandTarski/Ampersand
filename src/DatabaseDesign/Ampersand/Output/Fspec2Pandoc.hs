@@ -1461,7 +1461,11 @@ chpDataAnalysis lev fSpec flags
      daContents ++
      daAssociations remainingDecls ++
      [b | InternalPlug p<-plugInfos fSpec, b<-daPlug p] ++
-     txtSwitchboard
+     txtSwitchboard ++
+     [Header (lev+1) [Str $ case language flags of
+                              Dutch   ->  "Schakelpaneel"   
+                              English ->  "Switchboard"
+                     ]]
    , [classificationPicture, classDiagramPicture, picSwitchboard] )
  where 
   remainingDecls = mors fSpec >- [r | p<-plugInfos fSpec, r<-mors p]
