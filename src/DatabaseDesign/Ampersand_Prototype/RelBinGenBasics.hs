@@ -19,7 +19,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    
    pDebug :: Bool
    pDebug = True
-   
+
    class Concatable a where
      toM :: a -> Maybe String
      (+<+) :: a -> String -> a
