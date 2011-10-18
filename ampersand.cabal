@@ -7,15 +7,15 @@ description:    You can define your business processes by means of rules, writte
 homepage:       ampersand.sourceforge.net
 category:       Database Design
 stability:      alpha
-cabal-version:  >= 1.6
+cabal-version:  >= 1.8
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
 tested-with:    GHC == 7.0.2
-
 data-files:     testData/fail/test_error_contexts_extloop.adl, testData/fail/test_error_contexts_unique.adl, testData/fail/test_error_declarations_namingconventions.adl, testData/fail/test_error_keydefs.adl, testData/fail/test_error_objectdefs.adl, testData/fail/test_error_patterns_scopes.adl, testData/fail/test_error_rules_exprs.adl, testData/fail/test_KeyDef.adl, testData/fail/test_ObjectDef.adl, testData/fail/test_Rules_Expressions.adl, testData/fail/test_Structure_and_Declarations.adl, testData/pass/Aanvraag.adl, testData/pass/Deliver.adl, testData/pass/DeliverDates_oldWay.adl, testData/pass/DeliverDates.adl, testData/pass/Delivery6.adl, testData/pass/OUNL.adl, testData/pass/Outlook.adl, testData/pass/sick.adl, testData/pass/test.adl, testData/pass/Test2.adl, testData/pass/VIRO.adl, testData/README
+
 source-repository head
   type:      svn
   location:  https://ampersand.svn.sourceforge.net/svnroot/ampersand
@@ -28,43 +28,34 @@ flag library
   description:  Build the ampersand library.
   default:      True
 
-flag tests
-  description:  Build test-ampersand.
-  default:      False
-
 library
   hs-source-dirs:   src
-  build-depends:    ghc >= 7.0 && < 8.0, graphviz >= 2999.11.0.0 && < 2999.12, pandoc-types >= 1.8 && < 1.9, pandoc >= 1.8 && < 1.9, bytestring >= 0.9.1.10 && < 0.10, utf8-string>= 0.3.6, filepath >= 1.2.0.0 && < 1.3, haskell98 >= 1.1.0.1 && < 1.2, base >= 4.3.1.0 && < 5, directory >= 1.1.0.0 && < 1.2, containers >= 0.4     && < 0.5
-  exposed-modules:  DatabaseDesign.Ampersand, DatabaseDesign.Ampersand.ADL1, DatabaseDesign.Ampersand.ADL1.Concept, DatabaseDesign.Ampersand.ADL1.ECArule, DatabaseDesign.Ampersand.ADL1.Expression, DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration, DatabaseDesign.Ampersand.ADL1.P2A_Converters, DatabaseDesign.Ampersand.ADL1.Pair, DatabaseDesign.Ampersand.ADL1.Prop, DatabaseDesign.Ampersand.ADL1.Rule, DatabaseDesign.Ampersand.Basics, DatabaseDesign.Ampersand.Basics.Auxiliaries, DatabaseDesign.Ampersand.Basics.Classification, DatabaseDesign.Ampersand.Basics.Collection, DatabaseDesign.Ampersand.Basics.PartOrder, DatabaseDesign.Ampersand.Basics.String, DatabaseDesign.Ampersand.Basics.UTF8, DatabaseDesign.Ampersand.Basics.BuildInfo_Generated, DatabaseDesign.Ampersand.Classes, DatabaseDesign.Ampersand.Classes.ConceptStructure, DatabaseDesign.Ampersand.Classes.Object, DatabaseDesign.Ampersand.Classes.Populated, DatabaseDesign.Ampersand.Classes.ViewPoint, DatabaseDesign.Ampersand.Components, DatabaseDesign.Ampersand.Core.ParseTree, DatabaseDesign.Ampersand.Fspec, DatabaseDesign.Ampersand.Fspec.FPA, DatabaseDesign.Ampersand.Fspec.Fspec, DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram, DatabaseDesign.Ampersand.Fspec.Graphic.Graphics, DatabaseDesign.Ampersand.Fspec.Graphic.Picture, DatabaseDesign.Ampersand.Fspec.Plug, DatabaseDesign.Ampersand.Fspec.ShowADL, DatabaseDesign.Ampersand.Fspec.ShowECA, DatabaseDesign.Ampersand.Fspec.ShowHS, DatabaseDesign.Ampersand.Fspec.ShowXMLtiny, DatabaseDesign.Ampersand.Fspec.Switchboard, DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec, DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug, DatabaseDesign.Ampersand.Fspec.ToFspec.Calc, DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms, DatabaseDesign.Ampersand.Input, DatabaseDesign.Ampersand.Input.ADL1.CC, DatabaseDesign.Ampersand.Input.ADL1.CC664, DatabaseDesign.Ampersand.Input.ADL1.CtxError, DatabaseDesign.Ampersand.Input.ADL1.FilePos, DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees, DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing, DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner, DatabaseDesign.Ampersand.Misc, DatabaseDesign.Ampersand.Misc.Explain, DatabaseDesign.Ampersand.Misc.Languages, DatabaseDesign.Ampersand.Misc.Options, DatabaseDesign.Ampersand.Misc.TinyXML, DatabaseDesign.Ampersand.Output, DatabaseDesign.Ampersand.Output.AdlExplanation, DatabaseDesign.Ampersand.Output.Fspec2Pandoc, DatabaseDesign.Ampersand.Output.PandocAux, DatabaseDesign.Ampersand.Output.PredLogic, DatabaseDesign.Ampersand.Output.Statistics, DatabaseDesign.Ampersand.Basics.Version
+  build-depends:    ghc >= 7.0 && < 8.0, graphviz >= 2999.11.0.0 && < 2999.12, pandoc-types == 1.8.*, pandoc >= 1.8.2.1 && < 1.9, bytestring >= 0.9.1.10 && < 0.10, utf8-string>= 0.3.6, filepath >= 1.2.0.0 && < 1.3, haskell98 >= 1.1.0.1 && < 1.2, base >= 4.3.1.0 && < 5, directory >= 1.1.0.0 && < 1.2, containers >= 0.4     && < 0.5
+  exposed-modules:  DatabaseDesign.Ampersand, DatabaseDesign.Ampersand.ADL1, DatabaseDesign.Ampersand.ADL1.Concept, DatabaseDesign.Ampersand.ADL1.ECArule, DatabaseDesign.Ampersand.ADL1.Expression, DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration, DatabaseDesign.Ampersand.ADL1.P2A_Converters, DatabaseDesign.Ampersand.ADL1.Pair, DatabaseDesign.Ampersand.ADL1.Prop, DatabaseDesign.Ampersand.ADL1.Rule, DatabaseDesign.Ampersand.Basics, DatabaseDesign.Ampersand.Basics.Auxiliaries, DatabaseDesign.Ampersand.Basics.Classification, DatabaseDesign.Ampersand.Basics.Collection, DatabaseDesign.Ampersand.Basics.PartOrder, DatabaseDesign.Ampersand.Basics.String, DatabaseDesign.Ampersand.Basics.UTF8, DatabaseDesign.Ampersand.BuildInfo_Generated, DatabaseDesign.Ampersand.Classes, DatabaseDesign.Ampersand.Classes.ConceptStructure, DatabaseDesign.Ampersand.Classes.Object, DatabaseDesign.Ampersand.Classes.Populated, DatabaseDesign.Ampersand.Classes.ViewPoint, DatabaseDesign.Ampersand.Components, DatabaseDesign.Ampersand.Core.ParseTree, DatabaseDesign.Ampersand.Fspec, DatabaseDesign.Ampersand.Fspec.FPA, DatabaseDesign.Ampersand.Fspec.Fspec, DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram, DatabaseDesign.Ampersand.Fspec.Graphic.Graphics, DatabaseDesign.Ampersand.Fspec.Graphic.Picture, DatabaseDesign.Ampersand.Fspec.Plug, DatabaseDesign.Ampersand.Fspec.ShowADL, DatabaseDesign.Ampersand.Fspec.ShowECA, DatabaseDesign.Ampersand.Fspec.ShowHS, DatabaseDesign.Ampersand.Fspec.ShowXMLtiny, DatabaseDesign.Ampersand.Fspec.Switchboard, DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec, DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug, DatabaseDesign.Ampersand.Fspec.ToFspec.Calc, DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms, DatabaseDesign.Ampersand.Input, DatabaseDesign.Ampersand.Input.ADL1.CC, DatabaseDesign.Ampersand.Input.ADL1.CC664, DatabaseDesign.Ampersand.Input.ADL1.CtxError, DatabaseDesign.Ampersand.Input.ADL1.FilePos, DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees, DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing, DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner, DatabaseDesign.Ampersand.Misc, DatabaseDesign.Ampersand.Misc.Explain, DatabaseDesign.Ampersand.Misc.Languages, DatabaseDesign.Ampersand.Misc.Options, DatabaseDesign.Ampersand.Misc.TinyXML, DatabaseDesign.Ampersand.Output, DatabaseDesign.Ampersand.Output.AdlExplanation, DatabaseDesign.Ampersand.Output.Fspec2Pandoc, DatabaseDesign.Ampersand.Output.PandocAux, DatabaseDesign.Ampersand.Output.PredLogic, DatabaseDesign.Ampersand.Output.Statistics, DatabaseDesign.Ampersand.Basics.Version
+  other-modules:    DatabaseDesign.Ampersand.Parsing, DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
   if flag(library)
     buildable:  True
-
   else
     buildable:  False
-  other-modules:    DatabaseDesign.Ampersand.Parsing, DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
 executable ampersand
-  main-is:         Main.hs
-  hs-source-dirs:  src
-  build-depends:   ghc >= 7.0 && < 8.0, graphviz >= 2999.11.0.0 && < 3000, pandoc-types >= 1.8 && < 1.9, pandoc >= 1.8 && < 1.9, bytestring >= 0.9.1.10 && < 0.10, utf8-string>= 0.3.6, filepath >= 1.2.0.0 && < 1.3, haskell98 >= 1.1.0.1 && < 1.2, base >= 4.3.1.0 && < 5, directory >= 1.1.0.0 && < 1.2, containers >= 0.4     && < 0.5
+  main-is:          Main.hs
+  hs-source-dirs:   src
+  build-depends:    ghc >= 7.0 && < 8.0, graphviz >= 2999.11.0.0 && < 2999.12, pandoc-types == 1.8.*, pandoc >= 1.8.2.1 && < 1.9, bytestring >= 0.9.1.10 && < 0.10, utf8-string>= 0.3.6, filepath >= 1.2.0.0 && < 1.3, haskell98 >= 1.1.0.1 && < 1.2, base >= 4.3.1.0 && < 5, directory >= 1.1.0.0 && < 1.2, containers >= 0.4     && < 0.5
+  other-modules:    DatabaseDesign.Ampersand.Parsing, DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
   if flag(executable)
     buildable:  True
-
   else
     buildable:  False
-  other-modules:   DatabaseDesign.Ampersand.Parsing, DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
-executable test-ampersand
+test-suite AmpersandTests
+  type:            exitcode-stdio-1.0
+  x-uses-tf:       true
+  build-depends:   base >= 4, HUnit >= 1.2 && < 2, QuickCheck >= 2.4, test-framework >= 0.4.1, test-framework-quickcheck2, test-framework-hunit, ghc >= 7.0 && < 8.0, graphviz >= 2999.11.0.0 && < 2999.12, pandoc-types == 1.8.*, pandoc >= 1.8.2.1 && < 1.9, bytestring >= 0.9.1.10 && < 0.10, utf8-string>= 0.3.6, filepath >= 1.2.0.0 && < 1.3, haskell98 >= 1.1.0.1 && < 1.2, base >= 4.3.1.0 && < 5, directory >= 1.1.0.0 && < 1.2, containers >= 0.4     && < 0.5
   hs-source-dirs:  src
-  build-depends:   base >= 4 && < 5, Diff, test-framework >= 0.3 && < 0.4, test-framework-hunit >= 0.2 && < 0.3, test-framework-quickcheck2 >= 0.2.9 && < 0.3, QuickCheck >= 2.4 && < 2.6, HUnit >= 1.2 && < 1.3, template-haskell >= 2.4 && < 2.6, ansi-terminal == 0.5.*
+  ghc-options:     -rtsopts
   main-is:         test-ampersand.hs
-
-  if flag(tests)
-    buildable:  True
-
-  else
-    buildable:  False
-  other-modules:   DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+  other-modules:   DatabaseDesign.Ampersand, DatabaseDesign.Ampersand.ADL1, DatabaseDesign.Ampersand.ADL1.Concept, DatabaseDesign.Ampersand.ADL1.ECArule, DatabaseDesign.Ampersand.ADL1.Expression, DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration, DatabaseDesign.Ampersand.ADL1.P2A_Converters, DatabaseDesign.Ampersand.ADL1.Pair, DatabaseDesign.Ampersand.ADL1.Prop, DatabaseDesign.Ampersand.ADL1.Rule, DatabaseDesign.Ampersand.Basics, DatabaseDesign.Ampersand.Basics.Auxiliaries, DatabaseDesign.Ampersand.Basics.Classification, DatabaseDesign.Ampersand.Basics.Collection, DatabaseDesign.Ampersand.Basics.PartOrder, DatabaseDesign.Ampersand.Basics.String, DatabaseDesign.Ampersand.Basics.UTF8, DatabaseDesign.Ampersand.Basics.Version, DatabaseDesign.Ampersand.BuildInfo_Generated, DatabaseDesign.Ampersand.Classes, DatabaseDesign.Ampersand.Classes.ConceptStructure, DatabaseDesign.Ampersand.Classes.Object, DatabaseDesign.Ampersand.Classes.Populated, DatabaseDesign.Ampersand.Classes.ViewPoint, DatabaseDesign.Ampersand.Components, DatabaseDesign.Ampersand.Core.AbstractSyntaxTree, DatabaseDesign.Ampersand.Core.ParseTree, DatabaseDesign.Ampersand.Fspec, DatabaseDesign.Ampersand.Fspec.FPA, DatabaseDesign.Ampersand.Fspec.Fspec, DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram, DatabaseDesign.Ampersand.Fspec.Graphic.Graphics, DatabaseDesign.Ampersand.Fspec.Graphic.Picture, DatabaseDesign.Ampersand.Fspec.Plug, DatabaseDesign.Ampersand.Fspec.ShowADL, DatabaseDesign.Ampersand.Fspec.ShowECA, DatabaseDesign.Ampersand.Fspec.ShowHS, DatabaseDesign.Ampersand.Fspec.ShowXMLtiny, DatabaseDesign.Ampersand.Fspec.Switchboard, DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec, DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug, DatabaseDesign.Ampersand.Fspec.ToFspec.Calc, DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms, DatabaseDesign.Ampersand.Input, DatabaseDesign.Ampersand.Input.ADL1.CC, DatabaseDesign.Ampersand.Input.ADL1.CC664, DatabaseDesign.Ampersand.Input.ADL1.CtxError, DatabaseDesign.Ampersand.Input.ADL1.FilePos, DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees, DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing, DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner, DatabaseDesign.Ampersand.Misc, DatabaseDesign.Ampersand.Misc.Explain, DatabaseDesign.Ampersand.Misc.Languages, DatabaseDesign.Ampersand.Misc.Options, DatabaseDesign.Ampersand.Misc.TinyXML, DatabaseDesign.Ampersand.Output, DatabaseDesign.Ampersand.Output.AdlExplanation, DatabaseDesign.Ampersand.Output.Fspec2Pandoc, DatabaseDesign.Ampersand.Output.PandocAux, DatabaseDesign.Ampersand.Output.PredLogic, DatabaseDesign.Ampersand.Output.Statistics, DatabaseDesign.Ampersand.Parsing, Paths_Ampersand
 
