@@ -272,13 +272,13 @@ where
     name = dec_nm
    instance Traced P_Declaration where
     origin = dec_fpos
-              
+
    data P_Relation = 
         P_Rel   { rel_nm   :: String            -- ^ the name of the relation.
                 , rel_pos  :: Origin            -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable.
                 }
         | P_I
-        | P_V   
+        | P_V
         | P_Mp1 { rel_1val :: String }          -- ^ the value of the one morphism
         deriving Eq
         

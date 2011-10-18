@@ -275,16 +275,17 @@ data Population
          , popps :: Pairs
          }
 
-
+{- To avoid a compile time loop, names were used in the old data structure. Since we have a distinction between P-structure and A-structure,
+the reason for doing this has evaporated. So we should be able to fix this without trouble. TODO -}
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
              | ExplRule Rule
              | ExplKeyDef KeyDef
-             | ExplPattern String   -- SJ: To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
-             | ExplProcess String   -- SJ: To avoid a compile time loop, the name of the process is used rather than the entire process. Hence, for patterns the PExplProcess is identical to the ExplProcess
-             | ExplInterface String -- SJ: To avoid a compile time loop, the name of the interface is used rather than the entire interface. Hence, for interfaces the PExplInterface is identical to the ExplInterface
-             | ExplContext String   -- SJ: To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PExplContext is identical to the ExplContext
-             | ExplFspc String      -- SJ: To avoid a compile time loop, the name of the fSpec is used rather than the entire fSpec. Hence, for contexts the PExplFspc is identical to the ExplFspc
+             | ExplPattern String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
+             | ExplProcess String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the process is used rather than the entire process. Hence, for patterns the PExplProcess is identical to the ExplProcess
+             | ExplInterface String -- SJ: (now obsolete...) To avoid a compile time loop, the name of the interface is used rather than the entire interface. Hence, for interfaces the PExplInterface is identical to the ExplInterface
+             | ExplContext String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PExplContext is identical to the ExplContext
+             | ExplFspc String      -- SJ: (now obsolete...) To avoid a compile time loop, the name of the fSpec is used rather than the entire fSpec. Hence, for contexts the PExplFspc is identical to the ExplFspc
           deriving (Show ,Eq)
                   
 

@@ -464,7 +464,8 @@ the type checker always returns an expression with sufficient type casts.
 it removes some of the redundant ones i.e. (PTyp e sgn) for which the isolated e would have been inferred to sgn anyway.
 -}
 pExpr2aExpr :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_Expression -> (Expression, CtxError)
-pExpr2aExpr contxt cast pexpr = case infer contxt pexpr cast of
+pExpr2aExpr contxt cast pexpr
+ = case infer contxt pexpr cast of
    ([] ,[])   -> ( fatal 389 ("Illegal reference to expression '"++showADL pexpr++".")
                  , newcxe "Unknown type error") --should not be possible
    ([x],[])   -> if isTypeable x
@@ -477,6 +478,7 @@ pExpr2aExpr contxt cast pexpr = case infer contxt pexpr cast of
 
 -- | p2a for p_relations in a p_expression. Returns all (ERel arel) expressions matching the p_relation and AutoCast within a certain context.
 pRel2aExpr :: (Language l, ConceptStructure l, Identified l) => P_Relation -> l -> InfExpression 
+--   A P_Relation contains no type information. Therefore, it cannot be checked.
 pRel2aExpr P_V contxt ac
  = (alts, ["The context has no concepts" |null alts])
    where
@@ -502,25 +504,28 @@ pRel2aExpr (P_Mp1 x) contxt ac
      TargetCast t -> [ERel(Mp1 x t)]
      Cast s t     -> [ERel(Mp1 x s) |s==t]
 pRel2aExpr prel contxt ac
- = (alts, [ "Relation not declared: " ++ showADL prel |null alts]
-        ++[ "Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."
-          | d<-declarations contxt, name prel==name d,let Sign s t = cast d
-          , source d == target d          -- the declaration is endo (DOUBT: could this be: source d `comparable` target d ?)
-          , s/=t                          -- but the enforced type is not endo
-          , (not.null) (endomults d)]     -- and it has properties reserved for endorelations.
-        ++[ "Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."
-          | d<-declarations contxt, name prel==name d
-          , source d /= target d          -- the declaration is not endo (DOUBT: could this be: source d `comparable` target d ?)
-          , (not.null) (endomults d)])    -- but it has properties reserved for endorelations.
+ = ( candidates2
+   , case (candidates0, candidates1) of
+          ([] , _  ) -> ["Relation not declared: " ++ showADL prel]
+          ([d], [] ) -> ["Relation " ++ showADL prel ++" does not match " ++ showADL d]
+          (ds , [] ) -> ["The type of relation " ++ showADL prel ++" does not match any of the following types:\n   " ++ show [cast d| d<-ds]]
+          ( _ , [d]) -> if endocheck d then [] else
+                        if source d==target d
+                        then ["Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
+                        else ["Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
+          ( _ , ds ) -> ["This relation matches multiple declarations with distinct types:" ++ show ["\n   The declaration on "++show (origin d)++": "++show (cast d)| d<-ds]]
+   )
    where
     cast d = case ac of         -- make sure the declaration satisfies the desired genericity.
      NoCast       -> Sign (source d) (target d)
      SourceCast s -> Sign s (target d)
      TargetCast t -> Sign (source d) t
      Cast s t     -> Sign s t
-    alts = [ERel (arel d) |d<-declarations contxt,name d==name prel, sign d `comparable` cast d, endocheck d]
+    candidates2  = [ERel (arel d) |d<-candidates1, endocheck d]
+    candidates1  = [d |d<-candidates0, sign d `comparable` cast d]
+    candidates0  = [d |d<-declarations contxt,name d==name prel]
     endocheck d = null (endomults d) || source d==target d
-    endomults d     = [x |x<-multiplicities d,  x `elem` endoprops]
+    endomults d = [x |x<-multiplicities d, x `elem` endoprops]
     arel d = Rel{ relnm  = name prel
                 , relpos = origin prel
                 , relsgn = sign d
