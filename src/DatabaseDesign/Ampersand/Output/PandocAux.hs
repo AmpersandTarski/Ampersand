@@ -151,6 +151,7 @@ theTemplate flags
                , "\\parskip 12pt plus 2.5pt minus 4pt                % Extra vertical space between paragraphs.\n"
                , "\\parindent 0em                                    % Width of paragraph indentation.\n\n"
                , "% -- packages used for several purposes:\n"
+               , "\\usepackage{float}\n"
                , "\\usepackage{ctable}\n"
                , "\\usepackage{glossary}\n"
                , "\\makeglossary\n"
