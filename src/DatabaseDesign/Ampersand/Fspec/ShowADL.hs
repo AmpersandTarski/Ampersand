@@ -13,7 +13,6 @@ module DatabaseDesign.Ampersand.Fspec.ShowADL
 where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import Data.Char                                 (isAlphaNum)
 import DatabaseDesign.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Misc
@@ -66,14 +65,12 @@ instance ShowADL ObjectDef where
          = ind++" BOX [ "++
            intercalate (ind++"     , ") 
                                [ showstr (name o)++
-                                  (if null (objstrs o) then "" else " {"++intercalate ", " [unwords (map str ss) | ss<-objstrs o]++"}")++
+                                  (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
                                   " : "++showADL (objctx o)++
                                   if null (objats o) then "" else recur (ind++"     ") (objats o)
                                | o<-objs
                                ]++
            ind++"     ]"
-        str ss | and [isAlphaNum c | c<-ss] = ss
-               | otherwise                 = "\""++ss++"\""
 
 instance ShowADL Explanation where
  showADL expl = "PURPOSE "++showADL (explObj expl)++" IN "++showADL (explLang expl)
@@ -162,7 +159,7 @@ instance ShowADL Interface where
  showADL ifc 
   = "INTERFACE "++name ifc
           ++(if null (ifcParams ifc) then [] else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
-          ++(if null (ifcArgs ifc) then [] else "{"++intercalate ", " [unwords strs | strs<-ifcArgs ifc]++"}")
+          ++(if null (ifcArgs ifc) then [] else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
           ++showADL (ifcObj ifc)
 
 instance ShowADL KeyDef where
@@ -218,9 +215,12 @@ instance ShowADL A_Context where
     ++ (if null (ctxks context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxks context))   ++ "\n")
     ++ (if null (ctxgs context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxgs context))   ++ "\n")
     ++ (if null (ctxcs context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxcs context))   ++ "\n")
+    ++ (if null showADLpops        then "" else "\n"++intercalate "\n\n" showADLpops                           ++ "\n")
     ++ (if null (ctxsql context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxsql context)) ++ "\n")
     ++ (if null (ctxphp context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxphp context)) ++ "\n")
     ++ "\n\nENDCONTEXT"
+    where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
+                        | d<-declarations context, decusr d, not (null (decpopu d))]
 
 instance ShowADL Fspc where
  showADL fSpec
@@ -251,8 +251,10 @@ instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
 instance ShowADL Population where
  showADL (Popu r ps)
   = "POPULATION "++showADL r++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)->"'"++x++"' * '"++y++"'") ps)++indent++"]"
+    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) ps)++indent++"]"
     where indent = "   "
+showatom :: String -> String
+showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
 --used to compose error messages at p2a time
 instance ShowADL P_Expression where
