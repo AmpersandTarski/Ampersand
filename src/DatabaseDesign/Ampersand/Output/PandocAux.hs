@@ -475,10 +475,10 @@ showchar (ECps [])    = "I"
 showchar (ECps ts)    = intercalate texOnly_compose [showchar t | t<-ts] -- relative multiplication (semicolon)
 showchar (ERad [])    = "-I[?]"
 showchar (ERad ts)    = intercalate texOnly_relAdd [showchar t | t<-ts]  -- relative addition (dagger)
-showchar (EKl0 e')    = showchar e'++"^"++texOnly_star
-showchar (EKl1 e')    = showchar e'++"^"++texOnly_plus
+showchar (EKl0 e')    = showchar e'++"^{"++texOnly_star++"}"
+showchar (EKl1 e')    = showchar e'++"^{"++texOnly_plus++"}"
 showchar (ECpl e')    = "\\cmpl{"++showchar e'++"}"
-showchar (EFlp e')    = showchar e'++"^"++texOnly_flip
+showchar (EFlp e')    = showchar e'++"^{"++texOnly_flip++"}"
 showchar (ETyp e' sgn)
        | isEndo sgn = showchar e' ++ "_{["++name (source sgn)++"]}"
        | otherwise  = showchar e' ++ "_{["++name (source sgn)++texOnly_rel++name (target sgn)++"]}"
@@ -598,4 +598,4 @@ texOnly_rRes :: String
 texOnly_rRes = " \\backslash "
 
 texOnly_flip :: String
-texOnly_flip = "\\flip"
+texOnly_flip = "\\smallsmile "
