@@ -9,7 +9,7 @@ where
   contextGen fspc = "<?php\n  " ++ intercalate "\n  "
      (
         [ "// "++name fspc++".php"
-        , "// Generated with "++ ampersandPrototypeVersionBanner
+        , "// Generated with "++ prototypeVersionStr
         , ""
         , ""
         , "error_reporting(E_ALL); "

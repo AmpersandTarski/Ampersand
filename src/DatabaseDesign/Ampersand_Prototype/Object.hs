@@ -20,7 +20,7 @@ objectInterfaces :: Options
                      -> String
 objectInterfaces flags fSpec o
  = (intercalate "\n  "
-   ([ "<?php // generated with "++ampersandPrototypeVersionBanner
+   ([ "<?php // generated with "++prototypeVersionStr
     , ""
     , "/********* on "++(show (origin o))
     , showADL  o

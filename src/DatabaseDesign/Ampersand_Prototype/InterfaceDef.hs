@@ -13,7 +13,7 @@ where
      (
         [ "<?php"
         , "// interfaceDef.inc.php"
-        , "// Generated with "++ ampersandPrototypeVersionBanner
+        , "// Generated with "++ prototypeVersionStr
         , ""
         , "// this file contains large chunks of HTML code to improve code readability and reuse"
         , ""
@@ -94,7 +94,7 @@ where
         , "  </div>"
         , "  <!-- End #content -->"
         , "  <div id=\"notice\">"
-        , "    <span title=\"generated with "++ampersandPrototypeVersionBanner++"\">Layout V3.0 (Milan Interface)</span>"
+        , "    <span title=\"generated with "++prototypeVersionStr++"\">Layout V3.0 (Milan Interface)</span>"
         , "  </div>"
         , "  <!-- End #notice -->"
         , "<!-- ********** Javascript ********** -->"

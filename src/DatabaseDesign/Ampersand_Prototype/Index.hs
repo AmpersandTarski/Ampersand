@@ -40,7 +40,7 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
         , "  <!--"
         , "  <h2>Some data:</h2>"
         , "  <ul>"
-        , "    <li>Compiled with: "++ampersandPrototypeVersionBanner++"</li>"
+        , "    <li>Compiled with: "++prototypeVersionStr++"</li>"
         , "    <li>Application name: "++appname++"</li>"
         , "    <li>Database host: "++sqlHost flags++"</li>"
         , "    <li>Database Usename / password set: "++(if sqlLogPwdDefd flags then "YES" else "NO")++"</li>"

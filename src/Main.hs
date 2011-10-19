@@ -5,6 +5,7 @@ import Control.Monad
 import System.FilePath        (combine,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
+import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (buildTimeStr) -- importbuildTimeStr directly, to avoid a cascade of recompiled modules on each build
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
@@ -18,7 +19,7 @@ main :: IO()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
-       then mapM_ putStr (helpNVersionTexts ("ProtoVs"++versionNumberPrototype++"ADLvs" ++ versionNumber) flags)
+       then mapM_ putStr (helpNVersionTexts (prototypeVersionStr++", build time: "++buildTimeStr) flags)
        else do (cx,err) <- parseAndTypeCheck flags
                if nocxe err 
                  then let fspc = makeFspec flags cx in
@@ -165,7 +166,7 @@ generateProtoStuff flags fSpec =
        ([ verboseLn     flags "Generating..."]++
         [ doGenProto    (protonm fSpec) flags | genPrototype flags] ++
         [ interfaceGenProto  fSpec flags | interfacesG    flags] ++
-        [ verbose flags "Done."]
+        [ verbose flags "Done.\n"]
        ) 
    where  
    protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)

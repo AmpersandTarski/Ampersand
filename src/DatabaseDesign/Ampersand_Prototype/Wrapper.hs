@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand_Prototype.Version
 objectWrapper :: Fspc -> [Interface] ->  Interface -> Options -> String
 objectWrapper fSpec ifcs ifc flags
  = intercalate "\n" $
-   [ "<?php // generated with "++ampersandPrototypeVersionBanner ]
+   [ "<?php // generated with "++prototypeVersionStr ]
   ++
    commentBlock ["","  Interface V1.3.1","","","  Using interfaceDef",""]
   ++

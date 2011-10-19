@@ -15,7 +15,7 @@ where
  connectToDataBase :: Fspc -> Options -> String
  connectToDataBase fSpec flags 
     = (intercalate "\n  " 
-      ([ "<?php // generated with "++ampersandPrototypeVersionBanner
+      ([ "<?php // generated with "++prototypeVersionStr
        , "require \"dbsettings.php\";"
        , ""
        , "function display($tbl,$col,$id){"

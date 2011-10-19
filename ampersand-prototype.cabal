@@ -10,7 +10,7 @@ homepage:      ampersand.sourceforge.net
 category:      Database Design
 stability:     alpha
 Cabal-Version: >= 1.6
-build-type:    Simple
+build-type:    Custom
 license:       OtherLicense
 copyright:     Stef Joosten
 
