@@ -114,7 +114,7 @@ instance ADL1Importable Declaration where
         :(makepopu ds declarationid dclpr3 (dpragma 3))
         --properties
         :(makepopu dps (name.snd) dclpof (declarationid.fst.fst))
-        :(makepopu dpps (name.snd) dclpex (showADL.snd))
+        :(makepopu dpps (name.snd) dclpex (showADL.rrexp.snd))
         :(makepopu dpps (showADL.snd) dclpsc (name.source.snd))
         :(makepopu dpps (showADL.snd) dclptg (name.target.snd))
         :(makepopu dpps (showADL.snd) dclpus (declarationid.fst.fst))
@@ -147,10 +147,10 @@ instance ADL1Importable Rule where
          rultrg = [makeRelation d |d<-atlasds,name d=="target"]
          ruluss = [makeRelation d |d<-atlasds,name d=="uses"]
          ruldcr = [setRelats(makeRelation d) |d<-atlasds,name d=="describes",name(source d)=="UserRule"]  
-     in  (makepopu rs name rulexp showADL)
-        :(makepopu rs showADL rulsrc (name.source))
-        :(makepopu rs showADL rultrg (name.target))
-        :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.fst) ruluss (relationid.snd))
+     in  (makepopu rs name rulexp (showADL.rrexp))
+        :(makepopu rs (showADL.rrexp) rulsrc (name.source))
+        :(makepopu rs (showADL.rrexp) rultrg (name.target))
+        :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.rrexp.fst) ruluss (relationid.snd))
         :(makepopu rs name ruldcr (\x -> explainContent2String$meaning Dutch x))
         :[]
 
@@ -177,7 +177,7 @@ instance ADL1Importable (Rule,Paire) where
          violpr = [makeRelation d |d<-atlasds,name d=="violationpair"]
          viodom = [makeRelation d |d<-atlasds,name d=="left"]
          viorng = [makeRelation d |d<-atlasds,name d=="right"]
-     in  (makepopu viols violationid rulvio (showADL.fst))
+     in  (makepopu viols violationid rulvio (showADL.rrexp.fst))
         :(makepopu viols violationid violpr violationpair)
         :(makepopu viols violationpair viodom (\(r,(x,_))->source r#>x))
         :(makepopu viols violationpair viorng (\(r,(_,y))->target r#>y))

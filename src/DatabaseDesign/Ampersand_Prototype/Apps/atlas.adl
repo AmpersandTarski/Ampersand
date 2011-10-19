@@ -16,16 +16,16 @@ INTERFACE Atlas: I[Context]
         {"URL=../../index.php?operation=6&file='.reset($Atlas->get_versie()).'&output='.reset($Atlas->get_functionelespecificatie()).'"}
         : funcspec 
 --Nuttig als er ge-edit wordt in de atlas zelf i.p.v. via het script
---     , "bewaar wijzigingen in bestand"
+--     , "exporteer naar script"
 --        {"URL=../../index.php?operation=2&file='.reset($Atlas->get_versie()).'"}
 --        : showadl
---     , "bewaar wijzigingen en herlaad"
---        {"URL=../../index.php?operation=3&file='.reset($Atlas->get_versie()).'"}
---        : showadl
+     , "exporteer naar script en herlaad"
+        {"URL=../../index.php?operation=3&file='.reset($Atlas->get_versie()).'"}
+        : showadl
      ]
 INTERFACE Meterkast: I[User] --user login at index.php which redirects to Meterkast of user
  BOX [ "nieuw bestand"{"URL=../../index.php"} : loadedfile;loadcontext;newcontext --EDIT mode = popup, SAVE = upload file to server (and new loadedfile)
-     , "bewaarde bestanden"{"URL=../../index.php?file='.$v0.'"} : fileof~ --not editable
+     , "bewaarde bestanden"{"URL=../../index.php?operation=1&file='.$v0.'"} : fileof~ --not editable
      ]
 --INTERFACE Bestanden: I[ONE]
 -- BOX [ "mijn bestanden": V[ONE*File]

@@ -8,6 +8,7 @@ import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (buildTimeStr) -- importbuildTimeStr directly, to avoid a cascade of recompiled modules on each build
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
+import DatabaseDesign.Ampersand_Prototype.Apps.Atlas   (atlas2context)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
@@ -165,21 +166,20 @@ generateProtoStuff flags fSpec =
     sequence_ 
        ([ verboseLn     flags "Generating..."]++
         [ doGenProto    (protonm fSpec) flags | genPrototype flags] ++
-        [ interfaceGenProto  fSpec flags | interfacesG    flags] ++
+        --interfacesG flags has a different meaning than in ampersand
+        --in prototype it means export the DB of the prototype to .adl file
+        [ exportProto  fSpec flags | interfacesG    flags] ++ 
         [ verbose flags "Done.\n"]
        ) 
    where  
    protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
 
-interfaceGenProto :: Fspc -> Options -> IO()
-interfaceGenProto    fSpec flags
-  = (writeFile outputFile $ showADL strippedfspec)
-    >> verboseLn flags ("Ampersand-script written to " ++ outputFile ++ ".")
+exportProto :: Fspc -> Options -> IO()
+exportProto    fSpec flags
+  = do cx<-atlas2context fSpec flags
+       (writeFile outputFile $ showADL cx)
+       verboseLn flags ("Ampersand-script written to " ++ outputFile ++ ".")
     where   
-    --do not print interfaces (yet) with prototype.exe --export.
-    --prototype --export is an export of the Atlas DB.
-    --use ampersand --export to get generated interfaces etc in an adl file
-    strippedfspec = fSpec -- {fInterfaces=[]} 
     outputFile = combine (dirOutput flags) (outputfile flags)
 
                

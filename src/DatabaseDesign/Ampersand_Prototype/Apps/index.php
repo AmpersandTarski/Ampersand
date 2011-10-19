@@ -42,7 +42,7 @@ if(isset($_POST['adltekst']) || REQ_OPERATION==3 || REQ_OPERATION==2){
    $oldfile = basename(REQ_FILE);
    if (isset($_POST['filename'])) {$oldfile = $_POST['filename'];} 
    if (preg_match("/\.\d{14}\./", $oldfile)==0)
-       {echo 'x'; $fullfile = FILEPATH.str_replace(".adl","",$oldfile).$dtstr."adl";}
+       {$fullfile = FILEPATH.str_replace(".adl","",$oldfile).$dtstr."adl";}
    else
        $fullfile = FILEPATH.preg_replace("/\.\d{14}\./",$dtstr, $oldfile);
 }
@@ -125,10 +125,10 @@ if (isset($url)){
 </div></p>
 <?php
 if (isset($notarget)) echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
+if (REQ_OPERATION==3) echo '<H2>Het script wordt geladen. Wacht tot de browser aangeeft klaar te zijn.</H2>';
 if (isset($operation)){
    if ($compileurl[$operation]!='' && $errorlns=='')
       echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
-   echo '<p>'.$commandstr[$operation].'</p>';
    echo $verboselns;
    echo $errorlns;
 }else{
@@ -152,6 +152,7 @@ if (isset($operation)){
    if (!isset($_REQUEST['browse'])){     
      echo '<p><input type="submit" name="adltekst" value="... uit onderstaand tekstveld (save)"/></p>';
 
+ /* not needed?
      if (isset($_REQUEST['file'])){
        echo '<p><input type="submit" name="adllaad" value="... uit in tekstveld geladen bestand (reload)"/>';
        echo '<a href="javascript:void(0);"';
@@ -163,6 +164,7 @@ if (isset($operation)){
        echo 'onmouseout="return nd();">';
        echo '<IMG SRC="info.png" /></a></p>';
      }
+ */
 
      echo '<p>Naam van contextversie in tekstveld ';
      echo '<input type="text" name="filename" value="'.$file.'"/>';

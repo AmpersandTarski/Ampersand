@@ -79,7 +79,6 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
     | PHPI1  { cpvar :: Named UseVar }
     deriving (Eq,Show)
 
- instance SpecHierarchy PHPconcept
  instance Ord PHPconcept where
    x <= y = x == y
 

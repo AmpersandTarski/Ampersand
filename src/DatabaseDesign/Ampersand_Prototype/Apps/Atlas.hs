@@ -173,8 +173,8 @@ atlas2context fSpec flags =
       patpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Pattern" [])
       rulpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "UserRule" [])
       relpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Relation" [])
-      cptpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "A_Concept" [])
-      cptdescribes <- selectdecl conn fSpec (therel fSpec "describes" "A_Concept" [])
+      cptpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Concept" [])
+      cptdescribes <- selectdecl conn fSpec (therel fSpec "describes" "Concept" [])
       ruldescribes <- selectdecl conn fSpec (therel fSpec "describes" "UserRule" [])
       -----------
       disconnect conn
@@ -216,9 +216,9 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
 atlas2rule :: String -> [(String,P_Expression)] -> Lang -> RelTbl -> P_Rule
 atlas2rule rulstr rls lang ruldescribes
  = P_Ru { rr_nm   = rulstr
-        , rr_exp  = geta rls rulstr
+        , rr_exp  = geta rls rulstr  (error "while geta rls.")
         , rr_fps  = DBLoc "Atlas(Rule)"
-        , rr_mean = (lang,geta ruldescribes rulstr)
+        , rr_mean = (lang,geta ruldescribes rulstr "")
         }
 
 atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Lang -> RelTbl -> RelTbl -> RelTbl
@@ -237,25 +237,26 @@ atlas2pattern p rulpattern rls lang ruldescribes relpattern relname relsc reltg 
          , pt_pop = []
          }
 
-geta :: [(String,b)] -> String -> b
-geta f x = (\xs-> if null xs then error ("there is no geta for " ++ x) else head xs) [y |(x',y)<-f,x==x']
+geta :: [(String,b)] -> String -> b -> b
+geta f x notfound = (\xs-> if null xs then notfound else head xs) [y |(x',y)<-f,x==x']
 atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [P_Population]
 atlas2pops relcontent relname relsc reltg pairleft pairright atomsyntax 
  = [P_Popu r [s,t] (map (makepair.snd) cl)
    |cl<-eqCl fst relcontent,not(null cl)
    , let r = makerel (fst(head cl)) relname
-   , let s = PCpt(geta relsc (fst(head cl)))
-   , let t = PCpt(geta reltg (fst(head cl)))]
+   , let s = PCpt(geta relsc (fst(head cl)) (error "while geta relsc1."))
+   , let t = PCpt(geta reltg (fst(head cl)) (error "while geta reltg1."))]
    where
-   makepair xystr = (geta atomsyntax (geta pairleft xystr),geta atomsyntax (geta pairright xystr))
+   makepair xystr = (geta atomsyntax (geta pairleft xystr  (error "while pairleft relsc."))  (error "while geta atomsyntax1.")
+                    ,geta atomsyntax (geta pairright xystr (error "while pairright relsc.")) (error "while geta atomsyntax2."))
 
 atlas2decl :: String -> Int -> [(String,String)] -> [(String,String)] -> [(String,String)]
                             -> [(String,String)] -> [(String,String)] -> [(String,String)]
                             -> [(String,String)] -> [(String,String)] -> P_Declaration
 atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
- = P_Sgn { dec_nm = geta relname relstr
-         , dec_sign = P_Sign [PCpt(geta relsc relstr),PCpt(geta reltg relstr)]
-         , dec_prps = [case geta propsyntax prp of 
+ = P_Sgn { dec_nm = geta relname relstr (error "while geta relname1.")
+         , dec_sign = P_Sign [PCpt(geta relsc relstr (error "while geta relsc2.")),PCpt(geta reltg relstr (error "while geta reltg2."))]
+         , dec_prps = [case geta propsyntax prp  (error "while geta propsyntax.") of 
                         "UNI"->Uni
                         "TOT"->Tot
                         "INJ"->Inj
@@ -285,13 +286,14 @@ atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
      |(x,y)<-patpurpose]
   ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) Dutch [] y
      |(x,y)<-rulpurpose]
-  ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r (P_Sign [PCpt(geta relsc x),PCpt(geta reltg x)])) Dutch [] y
+  ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r (P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
+                                                                    ,PCpt(geta reltg x (error "while geta reltg3."))])) Dutch [] y
      |(x,y)<-relpurpose, let r=makerel x relname]
   ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) Dutch [] y
      |(x,y)<-cptpurpose]
 
 makerel :: String -> [(String, String)] -> P_Relation
 makerel relstr relname
- = P_Rel  { rel_nm = geta relname relstr
+ = P_Rel  { rel_nm = geta relname relstr  (error "while geta relname2.")
           , rel_pos = DBLoc "Atlas(Relation)"
           }
