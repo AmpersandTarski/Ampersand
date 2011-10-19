@@ -33,11 +33,12 @@ module DatabaseDesign.Ampersand
    , Object(..)
    , Plugable(..)
    , Traced(..)
-   , SpecHierarchy(..)
    , Language(..)
    , Dotable(..)
    , FPAble(..)
    , ShowHS(..), haskellIdentifier
+   -- * Functions on concepts
+   , comparable,lub,order,glb
    -- * Functions on declarations
    , makeRelation
    -- * Functions on rules
