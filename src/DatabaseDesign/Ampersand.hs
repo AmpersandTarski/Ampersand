@@ -69,7 +69,7 @@ module DatabaseDesign.Ampersand
    , ImportFormat(..),helpNVersionTexts
    -- * Other functions
    , eqCl, naming
-   , versionNumber
+   , ampersandVersionStr
    , DatabaseDesign.Ampersand.Basics.putStr
    , DatabaseDesign.Ampersand.Basics.readFile
    , DatabaseDesign.Ampersand.Basics.writeFile

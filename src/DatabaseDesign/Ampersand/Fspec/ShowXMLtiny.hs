@@ -42,7 +42,7 @@ where
               "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
               "xsi:schemaLocation=\"http://ampersand.sourceforge.net/AdlDocs "++
               "ADL.xsd \">"++
-              "<!-- Generated with "++ versionNumber ++", at "++ show now ++" -->" ++
+              "<!-- Generated with "++ ampersandVersionStr ++", at "++ show now ++" -->" ++
               showXTree ( mkXmlTree fSpec) ++
               "</tns:ADL>"   
 

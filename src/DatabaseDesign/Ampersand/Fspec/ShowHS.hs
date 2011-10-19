@@ -22,7 +22,7 @@ where
    fSpec2Haskell :: Fspc -> Options -> String
    fSpec2Haskell fSpec flags
            = "{-# OPTIONS_GHC -Wall #-}"
-             ++"\n{-Generated code by "++versionNumber++" at "++show (genTime flags)++"-}"
+             ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
              ++"\n  import ADL"
