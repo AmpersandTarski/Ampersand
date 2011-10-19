@@ -24,7 +24,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , GenR
  , Signaling(..)
  , Association(..)
- , SpecHierarchy(comparable,lub,order,glb)
+ , comparable,lub,order,glb
  , makeDeclaration
  , showExpr
  , insParentheses
@@ -497,8 +497,7 @@ instance Eq A_Concept where
 So, we can expect it to represent the concept "Session".
 -}
 instance Ord A_Concept where
-  a@(C _ gE _) <= b   = a `gE` b
-  a            <= b   = a==b
+  a <= b   = (order a) a b
 
 instance Identified A_Concept where
   name (C {cptnm = nm}) = nm
@@ -536,34 +535,24 @@ class Association rel where
 class Signaling a where
   isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
     
-{- class SpecHierarchy was previously called ABoolAlg -}
-  --  |class SpecHierarchy supports generalisation and specialisation.
+{- glb,lub,comparable and order used to be a part of class SpecHierarchy which was previously called ABoolAlg -}
+  --  class SpecHierarchy supported generalisation and specialisation.
   --  a <= b means that concept a is more generic than b and b is more specific than a. For instance 'Animal' <= 'Elephant'
   --  The generalization relation <= between concepts is a partial order.
   --  Partiality reflects the fact that not every pair of elements of a specification need be related.
   --  A partial order is by definition reflexive, antisymmetric, and transitive)
   --  For every concept a and b in Ampersand, the following rule holds: a<=b || b<=a || a\= b
-class Ord c => SpecHierarchy c where
-  glb,lub    :: c -> c -> c
-  comparable :: c -> c -> Bool
-  order      :: c -> GenR
-  top,bottom :: c
-  glb a b | b <= a = b
-          | a <= b = a
-          | otherwise  = fatal 67 "glb undefined"
-  lub a b | a <= b = b
-          | b <= a = a
-          | otherwise = fatal 70 "lub undefined"
-  comparable a b | a <= b = True
-                 | b <= a = True
-                 | otherwise = False
-  order _ = (<=)
-  top = fatal 75 "top undefined"
-  bottom = fatal 76 "bottom undefined"
-instance (Ord c,Show c) => SpecHierarchy c where
-  glb a b | b <= a = b
-          | a <= b = a
-          | otherwise = fatal 79 $ "glb undefined: a="++show a++", b="++show b
-  lub a b | a <= b = b
-          | b <= a = a
-          | otherwise = fatal 82 $ "lub undefined: a="++show a++", b="++show b
+glb,lub    :: (Show c,Ord c) => c -> c -> c
+comparable :: Ord c => c -> c -> Bool
+order      :: A_Concept -> GenR
+glb a b | b <= a = b
+        | a <= b = a
+        | otherwise = fatal 79 $ "glb undefined: a="++show a++", b="++show b
+lub a b | a <= b = b
+        | b <= a = a
+        | otherwise = fatal 82 $ "lub undefined: a="++show a++", b="++show b
+comparable a b | a <= b = True
+               | b <= a = True
+               | otherwise = False
+order (C _ gE _) = gE
+order _ = (==)
