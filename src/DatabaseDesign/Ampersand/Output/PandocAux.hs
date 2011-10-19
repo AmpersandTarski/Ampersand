@@ -142,7 +142,7 @@ theTemplate flags
   = case fspecFormat flags of
     FLatex ->  concat $
                [ "% This header is the default LaTeX template for generating documents with Ampersand.\n"
-               , "% It was generated with "++versionNumber++"\n"
+               , "% It was generated with "++ampersandVersionStr++"\n"
                , "% You can modify this file to make it fit your needs. However, the required knowledge of \n"
                , "% LaTeX is not documented here. You can find help with that at http://en.wikibooks.org/wiki/LaTeX\n"
                , "% see the ampersand user guide (TODO) for more information on how to apply your own LaTeX header\n"
