@@ -56,7 +56,8 @@ getSVNRevisionStr =
     }
 
 noSVNRevisionStr =
- do { putStrLn "\nSetup.lhs: Execution of 'svnversion' command failed."
-    ; putStrLn "BuildInfo_Generated.hs does not contain revision information.\n\n"
+ do { putStrLn "\n\n\nWARNING: Execution of 'svnversion' command failed."
+    ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
+                 "Please install a subversion client that supports the command-line 'svnversion'\ncommand.\n"
     ; return "??"
     }
