@@ -31,7 +31,6 @@ generateBuildInfoHook pd  lbi uh bf =
     ; calendarTime <- toCalendarTime clockTime
     ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
                          show (ctHour calendarTime) ++ ":" ++ show (ctMin calendarTime) ++ "." ++ show (ctSec calendarTime) 
-      -- only to disambiguate between versions compiled soon after each other, so 
     
     ; writeFile "src/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
