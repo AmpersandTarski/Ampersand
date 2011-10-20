@@ -1,14 +1,17 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Basics.Version (ampersandVersionStr, fatalMsg) where
+module DatabaseDesign.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatalMsg) where
 
 import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
 
 fatalMsg :: String -> Int -> String -> a
 fatalMsg haskellModuleName lineNr msg
- = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++ampersandVersionStr++")\n  "++msg)
+ = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++ampersandVersionWithoutBuildTimeStr++")\n  "++msg)
 
 ampersandVersionStr :: String
-ampersandVersionStr = "Ampersand v"++cabalVersionStr++"."++svnRevisionStr ++", build time: "++buildTimeStr
+ampersandVersionStr = ampersandVersionWithoutBuildTimeStr ++", build time: "++buildTimeStr
+
+ampersandVersionWithoutBuildTimeStr :: String
+ampersandVersionWithoutBuildTimeStr = "Ampersand v"++cabalVersionStr++"."++svnRevisionStr
 {- 
    #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); 
    #4 SVN revision number: 
