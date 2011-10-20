@@ -172,7 +172,7 @@ rel2fld keyds                                       -- >
 -----------------------------------------
 {- makeEntities computes a set of plugs to obtain wide tables with little redundancy.
    It computes entities with their attributes.
-   It is based on the principle that each concept is represented in one plug, and each relation in at most one plug.
+   It is based on the principle that each concept is represented in at most one plug, and each relation in at most one plug.
    First, we determine the kernels for all plugs.
    For that, we collect all relations that are univalent, injective, and surjective (the kernel relations).
    By the way, that includes all isa-relations, since they are univalent, injective, and surjective by themselves.
@@ -202,7 +202,7 @@ makeEntities context allRels exclusions
              (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
     , let mainkernel = [head cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
-                                                        -- note that eqCl guarantees that cl is not empty.
+                                                         -- note that eqCl guarantees that cl is not empty.
           restkernel = kernel >- mainkernel --the complement of mainkernel
           c = if null mainkernel
               then fatal 198 "null mainkernel."
@@ -223,13 +223,16 @@ makeEntities context allRels exclusions
    where   
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
+    rels,unis :: [Relation]
     rels = [rel | rel <- allRels>-mors exclusions, not (isIdent rel)]
     unis = [r | r<-rels, isUni r, isInj r]
 -- In order to make kernels as large as possible,
 -- all relations that are univalent and injective are flipped if that makes them surjective.
 -- kernelRels contains all relations that occur in kernels.
+    kernelRels  :: [Expression]
     kernelRels   = [ERel r |r<-unis, isSur r]++[EFlp (ERel r) |r<-unis, not (isSur r), isTot r]
 -- attRels contains all relations that will be attribute of a kernel.
+    attRels     :: [Expression]
     attRels      = [ERel r | r<-rs, isUni r]
                 ++ [EFlp (ERel r) | r<-rs, not (isUni r), isInj r]
                    where rs = rels>-mors kernelRels
