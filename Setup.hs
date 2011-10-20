@@ -30,13 +30,14 @@ generateBuildInfoHook pd  lbi uh bf =
     ; clockTime <- getClockTime
     ; calendarTime <- toCalendarTime clockTime
     ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
-                         show (ctHour calendarTime) ++ ":" ++ show (ctMin calendarTime) ++ "." ++ show (ctSec calendarTime) 
+                         show (ctHour calendarTime) ++ ":" ++ showPadded (ctMin calendarTime) ++ "." ++ showPadded (ctSec calendarTime) 
     
     ; writeFile "src/DatabaseDesign/Ampersand_Prototype/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
+ where showPadded n = (if n<10 then "0" else "") ++ show n
 
 buildInfoModule cabalVersion revision time =
   "module DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where\n" ++ 
