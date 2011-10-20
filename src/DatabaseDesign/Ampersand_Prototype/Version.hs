@@ -10,7 +10,7 @@ fatalMsg haskellModuleName lineNr msg
  = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++prototypeVersionStr++")\n  "++msg)
 
 prototypeVersionStr :: String
-prototypeVersionStr = "Prototype v"++versionStr++"."++svnRevisionStr ++ " (lib: "++ampersandVersionStr++")"
+prototypeVersionStr = "Prototype v"++cabalVersionStr++"."++svnRevisionStr ++ " (lib: "++ampersandVersionStr++"), build time: "++buildTimeStr
 {- 
    #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); 
    #4 SVN revision number: 

@@ -5,7 +5,6 @@ import Control.Monad
 import System.FilePath        (combine,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
-import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (buildTimeStr) -- importbuildTimeStr directly, to avoid a cascade of recompiled modules on each build
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
 import DatabaseDesign.Ampersand_Prototype.Apps.Atlas   (atlas2context)
@@ -20,7 +19,7 @@ main :: IO()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
-       then mapM_ putStr (helpNVersionTexts (prototypeVersionStr++", build time: "++buildTimeStr) flags)
+       then mapM_ putStr (helpNVersionTexts prototypeVersionStr flags)
        else do (cx,err) <- parseAndTypeCheck flags
                if nocxe err 
                  then let fspc = makeFspec flags cx in
