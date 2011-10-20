@@ -46,7 +46,7 @@ where
         , "  </div>"
         , "  <!-- End #header -->"
         , "  <div id=\"menu\">"
-        , "    <div class=\"primairy\">"
+        , "    <div class=\"primary\">"
         , "      <ul><li>"
         ] ++ indentBlock 6 menuItems ++
         (if name fspc == "ctxAtlas"
@@ -63,7 +63,7 @@ where
         ++
         [ "      </li></ul>"
         , "    </div>"
-        , "    <!-- End .primairy -->"
+        , "    <!-- End .primary -->"
         , "  </div>"
         , "  <!-- End #menu -->"
         , "  <div id=\"buttons\">"
@@ -102,7 +102,7 @@ where
         , "<script src=\"js/cufon-yui.js\" type=\"text/javascript\"></script>"
         , "<script src=\"fonts/myriad_pro_700.font.js\" type=\"text/javascript\"></script>"
         , "<script type=\"text/javascript\">"
-        , "  Cufon.replace('#menu .primairy ul li a, h1, h2, .FloaterHeader, h3, h4, h5, h6', {"
+        , "  Cufon.replace('#menu .primary ul li a, h1, h2, .FloaterHeader, h3, h4, h5, h6', {"
         , "    fontFamily: 'Myriad Pro',"
         , " hover: 'true'"
         , "  });"
