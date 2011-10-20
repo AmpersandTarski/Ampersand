@@ -16,9 +16,9 @@ main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook
 
 generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 generateBuildInfoHook pd  lbi uh bf = 
- do { let cabalVersion = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
+ do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
 
-    ; svnRevision <- do { r <- catch getSVNRevisionStr $ \err -> 
+    ; svnRevisionStr <- do { r <- catch getSVNRevisionStr $ \err -> 
                                 do { print err
                                    ; noSVNRevisionStr
                                    }
@@ -27,10 +27,14 @@ generateBuildInfoHook pd  lbi uh bf =
                           else return r
                         }
 
-    ; time <- getClockTime
-
+    ; clockTime <- getClockTime
+    ; calendarTime <- toCalendarTime clockTime
+    ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
+                         show (ctHour calendarTime) ++ ":" ++ show (ctMin calendarTime) ++ "." ++ show (ctSec calendarTime) 
+      -- only to disambiguate between versions compiled soon after each other, so 
+    
     ; writeFile "src/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
-        buildInfoModule cabalVersion svnRevision (show time)
+        buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
