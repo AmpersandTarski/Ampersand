@@ -5,7 +5,6 @@ import Control.Monad
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (buildTimeStr) -- importbuildTimeStr directly, to avoid a cascade of recompiled modules on each build
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
@@ -17,7 +16,7 @@ main :: IO ()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
-        then mapM_ putStr (helpNVersionTexts (ampersandVersionStr ++", build time: "++buildTimeStr) flags)
+        then mapM_ putStr (helpNVersionTexts ampersandVersionStr flags)
         else do (ctx,err) <- parseAndTypeCheck flags
                 if nocxe err 
                   then let fspc = makeFspec flags ctx in
