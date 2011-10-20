@@ -88,7 +88,7 @@ pCtx2aCtx pctx
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
     rulenmchk = nub [newcxe ("Rules with identical names at positions "++show(map origin rs))
-                    |r<-rules actx, let rs=[r'|r'<-rules actx,name r==name r'],length rs>1]
+                    |r<-rules actx, let rs=[r' |r'<-rules actx,name r==name r'],length rs>1]
 
 pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
 pPat2aPat actx pops ppat 
