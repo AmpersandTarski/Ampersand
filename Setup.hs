@@ -40,10 +40,13 @@ buildInfoModule version revision time =
   "\n" ++
   "-- This module is generated automatically by Setup.hs before building. Do not edit!\n" ++
   "\n" ++
+  "{-# NOINLINE versionStr #-}\n" ++ -- disable inlining to prevent recompilation of dependent modules on each build
   "versionStr = \"" ++ version ++ "\"\n" ++
   "\n" ++
+  "{-# NOINLINE svnRevisionStr #-}\n" ++
   "svnRevisionStr = \"" ++ revision ++ "\"\n" ++
   "\n" ++
+  "{-# NOINLINE buildTimeStr #-}\n" ++
   "buildTimeStr = \"" ++ time ++ "\"\n"
 
 getSVNRevisionStr = 
