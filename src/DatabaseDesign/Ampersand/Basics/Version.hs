@@ -8,7 +8,7 @@ fatalMsg haskellModuleName lineNr msg
  = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++ampersandVersionStr++")\n  "++msg)
 
 ampersandVersionStr :: String
-ampersandVersionStr = "Ampersand v"++cabalVersionStr++"."++svnRevisionStr
+ampersandVersionStr = "Ampersand v"++cabalVersionStr++"."++svnRevisionStr ++", build time: "++buildTimeStr
 {- 
    #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); 
    #4 SVN revision number: 
