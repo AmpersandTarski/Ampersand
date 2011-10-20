@@ -2,15 +2,21 @@
 module DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr, fatalMsg) where 
 
 import DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated
-import DatabaseDesign.Ampersand_Prototype.CoreImporter (ampersandVersionStr)
+import DatabaseDesign.Ampersand_Prototype.CoreImporter (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr)
 
 
 fatalMsg :: String -> Int -> String -> a
 fatalMsg haskellModuleName lineNr msg
- = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++prototypeVersionStr++")\n  "++msg)
+ = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++prototypeVersionWithoutBuildtimeStr++")\n  "++msg)
 
 prototypeVersionStr :: String
-prototypeVersionStr = "Prototype v"++cabalVersionStr++"."++svnRevisionStr++", build time: "++buildTimeStr++ " (lib: "++ampersandVersionStr++")"
+prototypeVersionStr = prototypeOnlyVersionStr++", build time: "++buildTimeStr++ " (lib: "++ampersandVersionStr++")"
+
+prototypeVersionWithoutBuildtimeStr :: String
+prototypeVersionWithoutBuildtimeStr = prototypeOnlyVersionStr ++ " (lib: "++ampersandVersionWithoutBuildTimeStr++")"
+
+prototypeOnlyVersionStr :: String
+prototypeOnlyVersionStr = "Prototype v"++cabalVersionStr++"."++svnRevisionStr
 {- 
    #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); 
    #4 SVN revision number: 
