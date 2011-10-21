@@ -35,12 +35,25 @@ objectInterfaces flags fSpec o
     ++
     ( if isOne o  -- If the current object is the universal singleton...
       then []
-      else generateInterface_getEach fSpec (name o) o ++
+      else concatMap (generateGetAllAtomsForConcept fSpec) (concs o) ++
+           generateInterface_getEach fSpec (name o) o ++
            generateInterface_read    fSpec (name o) o ++
            generateInterface_delete  fSpec (name o) o
     )
    )) ++ "\n?>"
 
+-- getAllAtomsForConcept is generated for each concept that is used in the object (and therefore in the interface)
+-- this leads to a small duplication of getAllAtoms.. functions for concepts that are used in several interfaces.
+generateGetAllAtomsForConcept :: Fspc -> A_Concept -> [String]
+generateGetAllAtomsForConcept fSpec aConcept =
+  [ "function getAllAtomsForConcept"++phpIdentifier(name aConcept)++"() {"
+  , "  $resultOrError = new stdClass;"
+  , case selectExpr fSpec 44 "" "Dummy" (ERel $ I aConcept) of -- Dummy is necessary because selectExpr doesn't allow both SQL name args to be empty
+       Just selectQuery -> "  $resultOrError->res = firstCol(DB_doquer('"++selectQuery++"'));"
+       Nothing          -> "  $resultOrError->err = \"Object.generateGetAllAtomsForConcept failed for getAllAtomsForConcept"++phpIdentifier(name aConcept)++".\";"                 
+  , "  return $resultOrError;"
+  , "}\n"]
+  
 generateInterface_getEach :: Fspc -> String -> ObjectDef -> [String]
 generateInterface_getEach fSpec nm o
  = if sql==Nothing then fatal 42 "Cannot generate getEach code"

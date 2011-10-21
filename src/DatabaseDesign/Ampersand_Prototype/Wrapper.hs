@@ -18,9 +18,30 @@ objectWrapper fSpec ifcs ifc flags
    , "  ini_set(\"display_errors\", 1);"
    , "  require \"interfaceDef.inc.php\";"
    , "  require \""++objectName++".inc.php\";"
-   , "  require \"connectToDataBase.inc.php\";"
-   ]
-  ++ --BEGIN: handle save request
+   , "  require \"connectToDataBase.inc.php\";" ] ++
+   
+   -- Handle atomList=<concept> request, which returns all atoms for <concept>. 
+   -- Precondition: <concept> must be used in interface ifc 
+   [ "  if (isset($_REQUEST['atomList'])) { // handle ajax save request (do not show the interface)"
+   , "    $conceptName=$_REQUEST['atomList'];"
+   
+   -- because the php function we need to call depends on the string $conceptName, we use a switch
+   -- to map the conceptName to the php function.
+   , "    switch ($conceptName) {" ] ++
+   concat [ [ "      case \""++phpConcept++"\":"
+            , "        $resultOrError = getAllAtomsForConcept"++phpConcept++"();"
+            , "        break;"
+            ]
+          |  aConcept <- concs ifc, let phpConcept = phpIdentifier $ name aConcept
+          ] ++
+   [ "      default:"
+   , "        $resultOrError = new stdClass;"
+   , "        $resultOrError->err = \"Request for concept \".$conceptName.\" which is not used in interface "++name ifc++".\";"
+   , "    }"
+   , "    echo (json_encode ($resultOrError));"
+   , "    exit();"
+   , "  }" ] ++
+    --BEGIN: handle save request
    [ "  if(isset($_REQUEST['save'])) { // handle ajax save request (do not show the interface)"]
   ++
    [ "    // we posted . characters, but something converts them to _ (HTTP 1.1 standard)"
@@ -143,7 +164,7 @@ objectWrapper fSpec ifcs ifc flags
              ]
         else ["?><H1>"++objectName++"</H1>"] --the context element is a constant, it is nicer to display the ifclabel (objectName)
       ) --END: display/edit the identifier of some concept instance
-     ++ concat [attributeWrapper ifcs editable objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
+     ++ concat [attributeWrapper fSpec ifcs editable objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
      ++  --(see attributeWrapper below)
       ["<?php"
       ,"if($edit) echo '</FORM>';"
@@ -189,8 +210,8 @@ mayadd cpt editable = (not.null) [() |r<-editable,isIdent r||isTrue r,target r==
 --path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0 |(att0,n)<-atts o]
 --siblingatt0s bepaalt of er meer dan 1 (wrapper att0) is. Deze info is nodig om te bepalen of CLASS = '.. UI of UI_*'.
 --att0 is de huidige subinterface
-attributeWrapper::[Interface]->[Relation]->String->String->Bool->ObjectDef->[String]
-attributeWrapper ifcs editable objectId path0 siblingatt0s att0
+attributeWrapper :: Fspc -> [Interface]->[Relation]->String->String->Bool->ObjectDef->[String]
+attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
  = let 
    cls0 | siblingatt0s = "_"++phpIdentifier (name att0) 
         | otherwise    = ""
@@ -300,7 +321,7 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
                              then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
                              else idvar)) ++ ";" 
         , "  echo '"
-        , "  <LI CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"
+        , "  <LI CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\" "++autocompleteHtmlAttrs++">';"
         , if null(objats att) || null(displaydirective att) 
           then [] 
           else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);"
@@ -314,8 +335,8 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
         --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
         if not(mayedit (objctx att) editable) then [] else [ "if($edit) {"]
         ++
-        [ "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")
-                   ++"\">vul een bestaand(e) "++(name.target.objctx) att++" in</LI>';"| not(isTrue(objctx att) || isIdent(objctx att))]
+        [ "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\" "++autocompleteHtmlAttrs++
+          ">vulll een bestaand(e) "++(name.target.objctx) att++" in</LI>';"| not(isTrue(objctx att) || isIdent(objctx att))]
         ++
         (if not(null gotoP) && mayadd (target(objctx att)) editable 
          --if there is a INTERFACE for the target concept, and you may create new elements of that concept
@@ -376,13 +397,14 @@ attributeWrapper ifcs editable objectId path0 siblingatt0s att0
         , "if(isset("++var++")){" --in case of TOT (+UNI), $var must be set.
                                   --TODO: in new mode it is implemented as $var='', which is wrong, because at save '' will become an instance of the target concept
            --the relation instance exists => item UI
-        , "  echo '<DIV CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++path++"\">';"
+        , "  echo '<DIV CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++path++"\" "++autocompleteHtmlAttrs++">';"
         , "}else{"
           --no relation instance exists => new UI
         , "  echo '<DIV CLASS=\""++newUI editable (objctx att)++cls++"\" ID=\""++path++"\">';"
         , "}"]
         ++ indentBlock 4 content --uniAtt returns novalue if $var is not set or $var==''
         ++ [ "echo '</DIV>';"]
+    where autocompleteHtmlAttrs = "context=\""++name fSpec++"\" interface=\""++objectId++"\" concept=\""++show (target $ objctx att)++"\""
    ----------------end: attContent
    uniAtt var idvar depth path cls att
     | null (objats att)
