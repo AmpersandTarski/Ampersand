@@ -513,7 +513,7 @@ pRel2aExpr prel contxt ac
                         if source d==target d
                         then ["Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
                         else ["Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
-          ( _ , ds ) -> ["This relation matches multiple declarations with distinct types:" ++ show ["\n   The declaration on "++show (origin d)++": "++show (cast d)| d<-ds]]
+          ( _ , ds ) -> ["This relation matches multiple declarations with distinct types:" ++ concat ["\n   The declaration on "++show (origin d)++": "++show (cast d)| d<-ds]]
    )
    where
     cast d = case ac of         -- make sure the declaration satisfies the desired genericity.
