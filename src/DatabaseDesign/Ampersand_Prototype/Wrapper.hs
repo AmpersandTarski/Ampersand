@@ -336,7 +336,7 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
         if not(mayedit (objctx att) editable) then [] else [ "if($edit) {"]
         ++
         [ "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\" "++autocompleteHtmlAttrs++
-          ">vulll een bestaand(e) "++(name.target.objctx) att++" in</LI>';"| not(isTrue(objctx att) || isIdent(objctx att))]
+          ">vul een bestaand(e) "++(name.target.objctx) att++" in</LI>';"| not(isTrue(objctx att) || isIdent(objctx att))]
         ++
         (if not(null gotoP) && mayadd (target(objctx att)) editable 
          --if there is a INTERFACE for the target concept, and you may create new elements of that concept
