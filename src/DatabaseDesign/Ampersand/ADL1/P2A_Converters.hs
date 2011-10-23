@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wall -XRelaxedPolyRec#-}
--- -XRelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
+{-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE RelaxedPolyRec #-} -- -RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters 
      ( pGen2aGen
      , pCpt2aCpt
@@ -509,10 +509,11 @@ pRel2aExpr prel contxt ac
           ([] , _  ) -> ["Relation not declared: " ++ showADL prel]
           ([d], [] ) -> ["Relation " ++ showADL prel ++" does not match " ++ showADL d]
           (ds , [] ) -> ["The type of relation " ++ showADL prel ++" does not match any of the following types:\n   " ++ show [cast d| d<-ds]]
-          ( _ , [d]) -> if endocheck d then [] else
-                        if source d==target d
-                        then ["Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
-                        else ["Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
+          ( _ , [d]) | endocheck d -> []
+                     | source d==target d
+                         -> ["Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
+                     | otherwise
+                         -> ["Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
           ( _ , ds ) -> ["This relation matches multiple declarations with distinct types:" ++ concat ["\n   The declaration on "++show (origin d)++": "++show (cast d)| d<-ds]]
    )
    where
