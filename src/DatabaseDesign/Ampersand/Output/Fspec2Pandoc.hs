@@ -1646,15 +1646,15 @@ chpDataAnalysis lev fSpec flags
        then []
        else [ Para [ case language flags of
                           Dutch   ->
-                            Math InlineMath $ "Er is één endorelatie, "++texOnly_Id(name d)++" met de volgende eigenschappen: "
+                            Str $ "Er is één endorelatie, "++texOnly_Id(name d)++" met de volgende eigenschappen: "
                           English   ->
-                            Math InlineMath $ "There is one endorelation, "++texOnly_Id(name d)++" with the following properties: "]
+                            Str $ "There is one endorelation, "++texOnly_Id(name d)++" with the following properties: "]
             | length hMults==1, d<-hMults ]++
             [ Para [ case language flags of
                           Dutch   ->
-                            Math InlineMath "In aanvulling daarop hebben de endorelaties de volgende eigenschappen: "
+                            Str $ "In aanvulling daarop hebben de endorelaties de volgende eigenschappen: "
                           English   ->
-                            Math InlineMath "Additionally, the endorelations come with the following properties: "]
+                            Str $ "Additionally, the endorelations come with the following properties: "]
             | length hMults>1 ]++
             [Table [] [AlignLeft,AlignCenter,AlignCenter,AlignCenter,AlignCenter,AlignCenter,AlignCenter] [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
              [[case language flags of
