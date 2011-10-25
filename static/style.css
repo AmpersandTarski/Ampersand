@@ -1,0 +1,142 @@
+td,h3,a,p,body{
+  font-size  : 12pt;
+  color      : black;
+  font-family: Helvetica;
+}
+body{
+  background-color : #EEE;
+}
+.hidden{
+  border-style   : hidden;
+  border-collapse: collapse;
+  padding        : 0;
+  margin         : 0;
+  border         : 0;
+}
+.cNotice a{
+  text-decoration: none;
+  color          : #3A5B7E;
+}
+.cNotice{
+  clear: both;
+}
+html,body{
+  margin : 0;
+  padding: 0;
+  height : 100%;
+  border : none
+}
+.Floater {
+  border:1px;
+  border-style: dotted;
+  border-collapse:collapse;
+  background-color: #FFFFFF;
+  margin:5px;
+  margin-top:22px;
+  padding:5px;
+  float:left;
+}
+
+.content{
+  clear:both;
+  padding:12px;
+  display:block;
+}
+
+.Goto{
+  position: absolute;
+  display: none;
+}
+.GotoArrow, .x{
+  float: right;
+  width : 20px;
+  height : 20px;
+}
+.GotoLink{
+  text-decoration: none;
+  border-bottom: 3px double;
+  cursor:pointer;
+}
+
+.Goto ul,.menuDiv ul, ul.buttons{
+  list-style: none;
+  display:block;
+  clear:both;
+  padding: 2px;
+}
+.menuDiv li, .buttons li
+{
+  display: block;
+  float: left;
+  padding: 2px;
+}
+.menu li a, .buttons li a, .Goto li a
+{
+  width: 130px;
+  padding: 5px;
+}
+
+.menu li a:hover,.buttons li a:hover,.Goto li a:hover,.GotoArrow:hover,#x:hover{
+  background-color: #def;
+  border: 1px solid #89b;
+}
+
+.menu li a,.buttons li a, .Goto li a, .GotoArrow, #x{
+  display: block;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid #abc;
+  text-align: center;
+  vertical-align: middle;
+  color         : #0A2B5E;
+  background-color: #cde;
+}
+
+div.item{
+  width:100%;
+}
+.item,.new{
+  margin:0px;
+  padding:3px;
+  width:100%;
+}
+.Edit .item, .Edit .new{
+  cursor:pointer;
+}
+.Edit .hover,.Edit .hover{
+  background-color: #9999FF
+}
+
+.HolderContent {
+  border:1px;
+  border-style: solid;
+  border-collapse:collapse;
+  margin:0px;
+  padding:0px;
+}
+.Holder{padding:5px;}
+ul {
+  margin: 0px;
+  padding: 0px 0px 0px 15px;
+  list-style-position: outside;
+  text-indent: 0px;
+}
+p { margin: 2px; }
+.FloaterHeader {
+  font-size: 11px;
+  background-color: #FFFFFF;
+  margin-top: -22px;
+  position: relative;
+  display: block;
+  clear:both;
+  overflow: show;
+  border-style: dotted dotted solid dotted;
+  border-width: 1px;
+  border-color:black black white black;
+  border-collapse: collapse;
+  padding:3px 3px 0px 3px;
+}
+
+#errorPopup{
+  background-color: #FF5;
+}
