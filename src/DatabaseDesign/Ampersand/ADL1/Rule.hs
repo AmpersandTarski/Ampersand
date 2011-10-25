@@ -30,7 +30,7 @@ where
     = case rrexp r of
         EEqu (_,re) -> re
         EImp (_,re) -> re
-        _         -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
+        x         -> x
                    
    ruleviolations :: Rule -> Pairs
    ruleviolations r
