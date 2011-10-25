@@ -7,6 +7,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
    import DatabaseDesign.Ampersand.Core.ParseTree               (Paire)
    import DatabaseDesign.Ampersand.ADL1.Expression              (flp)
+   import DatabaseDesign.Ampersand.ADL1.Concept                 (cptos')
    import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
    import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Collection(..), Identified(..))
    import Data.List
@@ -240,7 +241,7 @@ where
                                 , decprM  = "is a"
                                 , decprR  = ""
                                 , decMean = ""
-                                , decpopu = []
+                                , decpopu = [(a,b) | a <- cptos'(source g), b <- cptos'(target g), a==b]
                                 , decfpos = Origin "generated isa by declarations (Language Pattern)"
                                 , deciss  = True
                                 , decusr  = False

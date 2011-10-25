@@ -294,8 +294,8 @@ pCpt2aCpt contxt pc
       where 
       c = C {cptnm = p_cptnm pc
             ,cptgE = genE contxt
-            ,cptos = nub$[srcPaire p |d<-declarations contxt,p<-contents d,c <= source d]
-                       ++[trgPaire p |d<-declarations contxt,p<-contents d,c <= target d]
+            ,cptos = nub$[srcPaire p |d<-declarations contxt,decusr d,p<-contents d,c <= source d]
+                       ++[trgPaire p |d<-declarations contxt,decusr d,p<-contents d,c <= target d]
             }
 
 pDecl2aDecl :: (Language l, ConceptStructure l, Identified l) => l -> [Population] -> String -> P_Declaration -> Declaration
