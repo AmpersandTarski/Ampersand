@@ -31,8 +31,10 @@ Executable prototype
       haskell98  >= 1.1.0.1 && < 1.2,
       base       >= 4.3.1.0 && < 5,
       directory  >= 1.1 && < 1.2,
-      containers >= 0.4     && < 0.5    
-  other-modules: DatabaseDesign.Ampersand_Prototype.Apps ,
+      containers >= 0.4 && < 0.5, 
+      old-time   >= 1.0 && < 1.1  
+  other-modules: 
+                 DatabaseDesign.Ampersand_Prototype.Apps ,
                  DatabaseDesign.Ampersand_Prototype.Apps.Atlas ,
                  DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable ,
                  DatabaseDesign.Ampersand_Prototype.Code ,
