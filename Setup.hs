@@ -6,6 +6,9 @@ import System.Time
 import System.Process
 import System.IO
 import Data.List
+import System.Directory
+import System.FilePath
+import qualified Data.ByteString as BS
 
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
@@ -35,9 +38,14 @@ generateBuildInfoHook pd  lbi uh bf =
     ; writeFile "src/DatabaseDesign/Ampersand_Prototype/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
+    ; staticFilesGeneratedContents <- getStaticFilesModuleContents 
+    ; writeFile (pathFromModule staticFileModuleName) staticFilesGeneratedContents 
+
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
  where showPadded n = (if n<10 then "0" else "") ++ show n
+       pathFromModule mod = "src/" ++ [if c == '.' then '/' else c | c <- mod] ++ ".hs"
+       
 
 buildInfoModule cabalVersion revision time =
   "module DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where\n" ++ 
@@ -68,3 +76,49 @@ noSVNRevisionStr =
                  "Please install a subversion client that supports the command-line 'svnversion'\ncommand.\n"
     ; return "??"
     }
+
+
+{- In order to handle static files, we generate a module StaticFiles_Generated.
+
+   For each file in the directory trees static and staticBinary, we generate a StaticFile value,
+   which contains the information needed to have Ampersand create the file at run-time.  
+
+-}
+
+staticFileModuleName = "DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated"
+
+getStaticFilesModuleContents =
+ do { staticFiles       <- readStaticFiles False "static" ""
+    ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
+    ; return $ "module "++staticFileModuleName++" where\n"++
+               "\n"++
+               "import System.Time\n"++
+               "\n"++
+               "data StaticFile = SF { filePath      :: FilePath -- relative path, including extension\n"++
+               "                     , timeStamp     :: ClockTime\n"++
+               "                     , isBinary      :: Bool\n"++
+               "                     , contentString :: String\n"++
+               "                     }\n"++
+               "\n"++
+               "{-# NOINLINE allStaticFiles #-}\n" ++
+               "allStaticFiles = [\n  "++ 
+               intercalate "  ," (staticFiles ++ staticFilesBinary) ++
+               "  ]\n"
+    }
+    
+readStaticFiles isBin base fileOrDir = 
+  do { isDir <- doesDirectoryExist $ combine base fileOrDir
+     ; if isDir then 
+        do { fOrDs <- getProperDirectoryContents $ combine base fileOrDir
+           ; fmap concat $ mapM (\fOrD -> readStaticFiles isBin base (combine fileOrDir fOrD)) fOrDs
+           }
+       else
+        do { timeStamp@(TOD sec pico) <- getModificationTime $ combine base fileOrDir
+           ; fileContents <- if isBin then fmap show $ BS.readFile $ combine base fileOrDir 
+                                      else readFile $ combine base fileOrDir
+           ; return ["SF "++show fileOrDir++" (TOD "++show sec++" "++show pico++"){- "++show timeStamp++" -} "++
+                            show isBin++" "++show fileContents]
+           }
+     }
+     
+getProperDirectoryContents pth = fmap (filter (`notElem` [".",".."])) $ getDirectoryContents pth 
