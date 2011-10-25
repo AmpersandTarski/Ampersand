@@ -82,7 +82,7 @@ noSVNRevisionStr =
 
    For each file in the directory trees static and staticBinary, we generate a StaticFile value,
    which contains the information needed to have Ampersand create the file at run-time.  
-
+   
 -}
 
 staticFileModuleName = "DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated"
@@ -121,4 +121,4 @@ readStaticFiles isBin base fileOrDir =
            }
      }
      
-getProperDirectoryContents pth = fmap (filter (`notElem` [".",".."])) $ getDirectoryContents pth 
+getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth 
