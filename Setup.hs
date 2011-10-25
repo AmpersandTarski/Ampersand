@@ -107,15 +107,16 @@ getStaticFilesModuleContents =
     }
     
 readStaticFiles isBin base fileOrDir = 
-  do { isDir <- doesDirectoryExist $ combine base fileOrDir
+  do { let path = combine base fileOrDir
+     ; isDir <- doesDirectoryExist path
      ; if isDir then 
-        do { fOrDs <- getProperDirectoryContents $ combine base fileOrDir
+        do { fOrDs <- getProperDirectoryContents path
            ; fmap concat $ mapM (\fOrD -> readStaticFiles isBin base (combine fileOrDir fOrD)) fOrDs
            }
        else
-        do { timeStamp@(TOD sec pico) <- getModificationTime $ combine base fileOrDir
-           ; fileContents <- if isBin then fmap show $ BS.readFile $ combine base fileOrDir 
-                                      else readFile $ combine base fileOrDir
+        do { timeStamp@(TOD sec pico) <- getModificationTime path
+           ; fileContents <- if isBin then fmap show $ BS.readFile path 
+                                      else readFile path
            ; return ["SF "++show fileOrDir++" (TOD "++show sec++" "++show pico++"){- "++show timeStamp++" -} "++
                             show isBin++" "++show fileContents]
            }
