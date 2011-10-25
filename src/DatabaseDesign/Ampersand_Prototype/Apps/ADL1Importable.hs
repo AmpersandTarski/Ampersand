@@ -225,7 +225,7 @@ instance ADL1Importable Fspc where
             ++ contextelements (patterns fs) ctxpts fs --the patterns
             ++ makeADL1Populations atlasds (patterns fs) --the rules + relations + gens of patterns
             ++ makeADL1Populations atlasds (fSexpls fs) --the purposes
---            ++ makeADL1Populations atlasds (violations fs) --the violations can currently not be used as population. Please fix.
+            ++ makeADL1Populations atlasds (violations fs) --the violations
             --REMARK -> the pictures are not part of fspec, but derived from them (see Main.hs of prototype.exe)
             |fs<-fss --REMARK -> probably there will be only one fs
             ,let ctxcps = [makeRelation d |d<-atlasds,name d=="cptcontext"]

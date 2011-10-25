@@ -10,10 +10,10 @@ INTERFACE Contextoverzicht : I[ONE]
 INTERFACE Atlas: I[Context]
  BOX [ "versie"{"URL=../../index.php?file='.$v0.'"}: loadcontext~
      , "functionele specificatie"
-        {"URL=../../index.php?operation=4&file='.reset($Atlas->get_versie()).'&output='.reset($Atlas->get_functionelespecificatie()).'"}
+        {"URL=../../index.php?operation=4&file='.reset($Atlas->get_versie()).'&output='.$Atlas->get_functionelespecificatie().'"}
         : funcspec 
      , "diagnoserapport"
-        {"URL=../../index.php?operation=6&file='.reset($Atlas->get_versie()).'&output='.reset($Atlas->get_functionelespecificatie()).'"}
+        {"URL=../../index.php?operation=6&file='.reset($Atlas->get_versie()).'&output='.$Atlas->get_functionelespecificatie().'"}
         : funcspec 
 --Nuttig als er ge-edit wordt in de atlas zelf i.p.v. via het script
 --     , "exporteer naar script"
