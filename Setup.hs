@@ -101,9 +101,9 @@ getStaticFilesModuleContents =
                "                     }\n"++
                "\n"++
                "{-# NOINLINE allStaticFiles #-}\n" ++
-               "allStaticFiles = [\n  "++ 
-               intercalate "  ," (staticFiles ++ staticFilesBinary) ++
-               "  ]\n"
+               "allStaticFiles =\n  [ "++ 
+               intercalate "\n  , " (staticFiles ++ staticFilesBinary) ++
+               "\n  ]\n"
     }
     
 readStaticFiles isBin base fileOrDir = 
