@@ -62,28 +62,42 @@ module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces)
      >> verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
      >> verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
      >> fillAtlas fSpec flags
-                     
-   writeIfMissing :: Options -> StaticFile -> IO()
-   writeIfMissing flags sf 
-      = do exists <- doesFileExist (absFilePath flags sf) 
-           if exists 
-             then verboseLn flags ( "  Skipping "++absFilePath flags sf++", because it already exists.")
-             else 
-                ( sequence_(
-                      [ verboseLn flags ("  Writing static file "++ absFilePath flags sf)]
-                   ++ [ createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))]
-                   ++ [ write (absFilePath flags sf) (contentString sf) ]
-                ))
-                 
-         where write a b = case isBinary sf of
-                             True  -> Bin.writeFile a (toBin b)
-                             False ->     writeFile a b
-               toBin :: String -> Bin.ByteString
-               toBin x = read x
+                   
+                   
+   writeStaticFiles :: Options -> IO()
+   writeStaticFiles flags =  sequence_ [ writeWhenMissingOrOutdated flags sf (writeStaticFile flags sf)
+                                       | sf <- allStaticFiles 
+                                       ]
+
+   writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
+   writeWhenMissingOrOutdated flags staticFile act =
+    do { exists <- doesFileExist $ absFilePath flags staticFile 
+       ; if exists then
+          do { oldTimeStamp <- getModificationTime $ absFilePath flags staticFile
+             ; if oldTimeStamp < timeStamp staticFile then
+                do { verboseLn flags $ "  Replacing static file "++ absFilePath flags staticFile ++" with current version."
+                   ; act
+                   }
+               else
+                 return () -- skip is not really worth logging
+             }
+         else
+          do { verboseLn flags $ "  Writing static file "++ absFilePath flags staticFile
+             ; act
+             }
+       }       
+                                       
+   writeStaticFile :: Options -> StaticFile -> IO()
+   writeStaticFile flags sf = 
+     do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
+        ; write (absFilePath flags sf) (contentString sf) 
+        }
+    where write a b = case isBinary sf of
+                        True  -> Bin.writeFile a (toBin b)
+                        False ->     writeFile a b
+          toBin :: String -> Bin.ByteString
+          toBin x = read x
 
    absFilePath :: Options -> StaticFile -> FilePath
    absFilePath flags sf = combine (dirPrototype flags) (filePath sf)
-
-
-   writeStaticFiles :: Options -> IO()
-   writeStaticFiles flags =  mapM_ (writeIfMissing flags) allStaticFiles
+   
