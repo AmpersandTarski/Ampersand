@@ -11,6 +11,7 @@ import DatabaseDesign.Ampersand_Prototype.Index               (htmlindex)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
 import DatabaseDesign.Ampersand_Prototype.ContextGen          (contextGen)
 import DatabaseDesign.Ampersand_Prototype.Apps
+import DatabaseDesign.Ampersand_Prototype.Generate            (generateAll)
 import System.FilePath               
 import System.Directory
 import qualified Data.ByteString as Bin
@@ -24,34 +25,37 @@ import System.Time.Utils   -- modification time.
 #endif
 
 phpObjInterfaces :: Fspc -> Options -> IO()
-phpObjInterfaces fSpec flags
-  = writeStaticFiles flags
-   >> verboseLn flags "---------------------------"
-   >> verboseLn flags "Generating php Object files with Ampersand"
-   >> verboseLn flags "---------------------------"
-   >> write "index.htm"                 (htmlindex fSpec ifcs flags)
-   >> write "Installer.php"             (installer fSpec flags)
-   >> write (name fSpec++".php")        (contextGen fSpec)
-   >> write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
-   >> write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
-   >> verboseLn flags ("  Writing: dbsettings.php")
-   >> writeFile (combine targetDir "dbsettings.php") dbsettings
-   >> verboseLn flags ("Includable files for all objects:")
-   >> sequence_
+phpObjInterfaces fSpec flags =
+ do { writeStaticFiles flags
+    ; verboseLn flags "---------------------------"
+    ; verboseLn flags "Generating php Object files with Ampersand"
+    ; verboseLn flags "---------------------------"
+    ; write "index.htm"                 (htmlindex fSpec ifcs flags)
+    ; write "Installer.php"             (installer fSpec flags)
+    ; write (name fSpec++".php")        (contextGen fSpec)
+    ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
+    ; write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
+    ; verboseLn flags "  Writing: dbsettings.php"
+    ; writeFile (combine targetDir "dbsettings.php") dbsettings
+    ; verboseLn flags "Includable files for all objects:"
+    ; sequence_
       [ write (addExtension (name ifc) ".inc.php") (objectInterfaces flags fSpec (ifcObj ifc))
       | ifc <- ifcs
       ]
-   >> verboseLn flags ("Wrapper files for all objects:")
-   >> sequence_
+    ; verboseLn flags "Wrapper files for all objects:"
+    ; sequence_
       [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc flags)
       | ifc <- ifcs
       ]
-   >> sequence_  [ doGenAtlas    fSpec flags | genAtlas     flags] 
-   >> verboseLn flags ("\n")
+    ; sequence_  [ doGenAtlas    fSpec flags | genAtlas     flags]
+    ; generateAll fSpec flags
+    ; verboseLn flags "\n"
+    }
    where
-    write fname content
-       =   verboseLn flags ("  Generating "++fname)
-        >> writeFile (combine targetDir fname) content
+    write fname content =
+     do { verboseLn flags ("  Generating "++fname)
+        ; writeFile (combine targetDir fname) content
+        }
     dbsettings = "<?php $DB_link=mysql_connect("
                  ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
                  ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
@@ -62,11 +66,11 @@ phpObjInterfaces fSpec flags
 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
-     verboseLn flags ("Installing the Atlas application:")
-  >> verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
-  >> verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
-  >> fillAtlas fSpec flags
-                
+ do { verboseLn flags ("Installing the Atlas application:")
+    ; verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
+    ; verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
+    ; fillAtlas fSpec flags
+    }             
                 
 writeStaticFiles :: Options -> IO()
 writeStaticFiles flags =  
