@@ -96,7 +96,7 @@ flpSign (Sign s t) = Sign t s
 
 instance Relational Declaration where
     multiplicities d = case d of
-           Sgn {}       -> decprps d++decprps_calc d
+           Sgn {}       -> decprps_calc d --according to comment in data Declaration, decprps_calc also contains user defined prps
            Isn{}        -> [Uni,Tot,Inj,Sym,Asy,Trn,Rfx,Sur]
            Iscompl{}    -> [Sym]
            Vs{}         -> [Tot,Sur]
