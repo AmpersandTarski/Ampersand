@@ -298,12 +298,12 @@ pCpt2aCpt contxt pc
                        ++[trgPaire p |d<-declarations contxt,decusr d,p<-contents d,c <= target d]
             }
 
-pDecl2aDecl :: (Language l, ConceptStructure l, Identified l) => l -> [Population] -> String -> P_Declaration -> Declaration
+pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> Declaration
 pDecl2aDecl contxt pops patname pd
  = Sgn { decnm   = dec_nm pd
        , decsgn  = pSign2aSign contxt (dec_sign pd)
        , decprps = dec_prps pd
-       , decprps_calc = [] --TODO -> calculate (see ticket 119)
+       , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
        , decprL  = dec_prL pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
