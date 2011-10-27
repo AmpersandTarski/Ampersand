@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL
 --   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..))
    import Data.List (nub)
-   import Debug.Trace
+   
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
 
@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    makeFspec flags context = fSpec
     where
         allQuads = quads (\_->True) (rules context++multrules context++keyrules context)
-        fSpec = trace ("Trace ") $
+        fSpec =
             Fspc { fsName       = name context
                    -- interfaceS contains the interfaces defined in the Ampersand script.
                    -- interfaces are meant to create user interfaces, programming interfaces and messaging interfaces.
