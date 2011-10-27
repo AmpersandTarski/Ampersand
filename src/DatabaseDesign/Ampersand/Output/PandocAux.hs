@@ -110,8 +110,9 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce :: IO ()
                                 callPdfLatexOnce = 
                                    do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                                then system $ "pdflatex "++commonFlags++pdfflags++ outputFile++
-                                                              if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog"  
+                                                then system ( pdfLatexCommand++
+                                                              (if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog") ++"\n"++
+                                                              makeIndexCommand)
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                                 else system $ "cd "++dirOutput flags++
                                                               " && pdflatex "++commonFlags++
@@ -123,6 +124,9 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                                               else "\nLatex error.\nFor more information, run pdflatex on "++texFilename++
                                                                                     " or rerun ampersand with the --verbose option"
                                       where
+                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
+                                      -- the following command line has been taken directly from the documentation of "glossary.sty"
+                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo"
                                       pdfflags = (if verboseP flags then "" else " --disable-installer") ++
                                                  " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
                                       texFilename = addExtension (baseName flags) ".tex"
