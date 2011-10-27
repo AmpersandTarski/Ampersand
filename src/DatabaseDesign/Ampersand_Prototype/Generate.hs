@@ -26,7 +26,21 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   phpPreliminaries ++
   ["require \"php/DatabaseUtils.php\";"
   , ""
+  , "echo '<html>';"
+  , "echo '<head>';"
   , "echo '<link href=\"css/Experimental.css\" rel=\"stylesheet\" type=\"text/css\"/>';"
+  , "echo '<link href=\"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css\" rel=\"stylesheet\" type=\"text/css\"/>';"
+  , "echo '<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js\"></script>';"
+  , "echo '<script src=\"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js\"></script>';"
+  , "echo '<script src=\"js/Experimental.js\"></script>';"
+  , "echo '<script type=\"text/javascript\">';"
+  , "echo 'function init() {';"
+  , "echo '  initializeLinks();';"
+  , "echo '}';"
+  , "echo '</script>';"
+  , "echo '</head>';"
+  , "echo '<body onload=\"init()\">';"
+  
   , ""
   , "$allInterfaceObjects ="
   , "  array" ] ++
@@ -34,6 +48,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ ""
 --  , "printBinaryTable(DB_doquer('"++dbName opts++"', getQueryOverview_as()));"
 --  , "print_r( getCoDomainAtoms( 'Hello', '2', getQueryId_notIdentifies() ));"
+  , "echo generateInterfaceMap($allInterfaceObjects);"
+  , ""
   , "if (isset($_REQUEST['interface']) && isset($_REQUEST['atom'])) {"
   , "    $interface=$_REQUEST['interface'];"
   , "    $atom=$_REQUEST['atom'];"
@@ -45,6 +61,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , " echo generateInterface('Hello', $allInterfaceObjects['Id'], '2');"
   , " echo generateInterface('Hello', $allInterfaceObjects['Th'], 'France');"
   , "}"
+  , "echo '</body>';"
+  , "echo '</html>';"
   ]     
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
@@ -58,6 +76,7 @@ genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   [ "array ( 'name' => '"++name object++"'"
   , "      // relation: "++show (objctx object)
+  , "      , 'concept' => '"++show (target $ objctx object)++"'" -- only needed for top level
   , "      , 'isUnivalent' => " ++ (phpBool $ isUni (objctx object))
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"

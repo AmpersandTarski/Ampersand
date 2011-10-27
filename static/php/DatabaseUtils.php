@@ -9,6 +9,7 @@
 -rewrite DB_doquer
 -Do we want objects instead of arrays? do they add anything?
 - escape correctly (also need to use htmlSpecialChars?)
+- use an array for getAllAtomsFor
 */
 
 require "dbsettings.php";
@@ -74,12 +75,19 @@ function DB_doquer($DbName, $quer,$debug=5)
 
 ///////// Interface stuff (does not belong here) /////////
 
+function generateInterfaceMap($interfaces) {
+  foreach($interfaces as $interface) {
+    echo "interfaceMap.$interface[name] = '$interface[concept]';<br/>";
+  }
+}
+
 function generateInterfaceList($db, $interfaces, $atom) {
   $html = "";
-  if (count($interfaces) == 0)
-    emit($html, withClass('Atom',$atom));
-  else {
-    emit($html, withClass('Atom',$atom)); // just for debugging
+
+  // the old prototype did not show the atom when there are subinterfaces
+  // for now, we always show it, for debugging purposes
+  emit($html, "<div class=Atom atom=$atom> $atom </div>"); // todo: escape!
+  if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
       emit($html, generateInterface($db, $interface, $atom));
