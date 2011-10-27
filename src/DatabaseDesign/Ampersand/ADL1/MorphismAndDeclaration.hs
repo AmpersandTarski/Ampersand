@@ -3,8 +3,10 @@ module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Associ
                                   ,Declaration(..)
                                   ,makeRelation
                                   ,isSgn
-                                  )
-where
+                                  ) where
+
+import Data.Maybe
+                                  
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1.Concept      (Conceptual(..))
 import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),flipProps)
@@ -152,7 +154,14 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl0 e'  -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      EKl1 e'  -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
      ECpl e'  -> [p |p<-multiplicities e', p==Sym]
-     _      -> []
+     ETyp e' _ -> multiplicities e'
+     EFlp e'  -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EEqu _   -> []
+     EImp _   -> []
+     EDif _   -> []
+     ELrs _   -> []
+     ERrs _   -> []
+
  isTrue expr
   = case expr of
      EEqu (l,r)   -> isTrue l && isTrue r

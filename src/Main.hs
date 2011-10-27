@@ -9,6 +9,9 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
+
+import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
@@ -20,7 +23,9 @@ main
         else do (ctx,err) <- parseAndTypeCheck flags
                 if nocxe err 
                   then let fspc = makeFspec flags ctx in
-                       generate flags fspc
+                        do { --print $ totals fspc
+                           ; generate flags fspc
+                           }
                   else putStr (show err)
                   
   where
