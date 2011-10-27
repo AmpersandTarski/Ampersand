@@ -3,6 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
+import Data.Maybe
 import System.FilePath               
 import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -25,46 +26,61 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   phpPreliminaries ++
   ["require \"php/DatabaseUtils.php\";"
   , ""
-  , "printBinaryTable(DB_doquer('"++dbName opts++"', getQueryOverview_as()));"
-  , "print_r( getCoDomainAtoms( 'Hello', '2', getQueryId_notIdentifies() ));"
+  , "echo '<link href=\"css/Experimental.css\" rel=\"stylesheet\" type=\"text/css\"/>';"
   , ""
-  , "function getCoDomainAtoms($dbName, $atom, $selectRel) {"
-  , "  return targetCol(DB_doquer($dbName, selectCoDomain($atom, $selectRel)));"
-  , "}"
-  , ""
-  , "function selectCoDomain($atom, $selectRel) {"
-  , "  return 'SELECT DISTINCT `tgt` FROM ('.$selectRel.') as results where src='.$atom;"
-  , "}"
-  , ""  ] ++
-  concatMap (generateInterface fSpec opts) allInterfaces ++
+  , "$allInterfaceObjects ="
+  , "  array" ] ++
+    (addToLastLine ";" $ indent 4 $ blockParenthesize $ map (generateInterface fSpec opts) allInterfaces) ++
   [ ""
-  , "echo 'einde';"
+--  , "printBinaryTable(DB_doquer('"++dbName opts++"', getQueryOverview_as()));"
+--  , "print_r( getCoDomainAtoms( 'Hello', '2', getQueryId_notIdentifies() ));"
+  , ""
+  , "echo generateInterface('"++dbName opts++"', $allInterfaceObjects['Overview'], '1');"
+  , "echo generateInterface('"++dbName opts++"', $allInterfaceObjects['Id'], '2');"
+  , "echo generateInterface('"++dbName opts++"', $allInterfaceObjects['Th'], 'France');"
+  , ""
   ]     
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
 generateInterface fSpec opts interface =
-  [ "// "++name interface ++":" ] ++
-  traverse fSpec opts [] (ifcObj interface) 
+  [ "// Top-level interface "++name interface ++":"
+  , "'"++name interface ++"' => " ] ++
+  genInterfaceObjects fSpec opts 1 (ifcObj interface) 
   
-traverse fSpec opts parentObjs object = ("// "++(name object ++ " " ++ show (objctx object))) :
-  generateQuery fSpec opts (toPhp $ intercalate "_" $ parentObjs ++ [name object]) (objctx object) ++
-  case objats object of
-      [] -> []
-      objects -> concatMap (traverse fSpec opts (parentObjs ++ [name object])) objects 
-  
--- could be constants, but then we need to define them before the place where they are used..
-generateQuery :: Fspc -> Options -> String -> Expression -> [String]
-generateQuery fSpec opts name exp =
-  [ "function getQuery"++name++"() {"
-  , case selectExpr fSpec 25 "src" "tgt" exp of
-       Just selectQuery -> "  return '"++selectQuery++"';"
-       Nothing          -> "  return null;" -- todo give an error                 
-  , "}\n"]
+-- two arrays: one for the object and one for the list of subinterfaces
+genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
+genInterfaceObjects fSpec opts depth object = indent (depth*2) $
+  [ "array ( 'name' => '"++name object++"'"
+  , "      , 'isUnivalent' => " ++ (phpBool $ isUni (objctx object))
+  , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
+  , "      , 'subInterfaces' =>"
+  , "          array"
+  ] ++ (indent 10 $ blockParenthesize $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
+  [ "      )"
+  ]
  
+blockParenthesize :: [[String]] -> [String]
+blockParenthesize [] = ["()"]
+blockParenthesize liness = concat [ zipWith (++) (sep:repeat "  ") (lines::[String]) | (sep, lines) <- zip ("( ":repeat ", ") liness ] ++ [")"]
+-- [["line"], ["line1", "line2", "line3"],["linea", "lineb"] ->
+-- ( line
+-- , line1
+--   line2
+--   line3
+-- , linea
+--   lineb
+-- )
+
+addToLastLine :: String -> [String] -> [String]
+addToLastLine str [] = [str] 
+addToLastLine str lines = init lines ++ [last lines ++ str] 
+  
 toPhp str = map replace str
  where replace ' ' = '_'
        replace c   = c
   
+phpBool b = if b then "true" else "false"
+
 -- GenUtil
 phpPreliminaries = -- Maybe this will be put in an imported Php module
   [ "error_reporting(E_ALL); "
