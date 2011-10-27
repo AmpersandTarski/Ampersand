@@ -34,11 +34,17 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ ""
 --  , "printBinaryTable(DB_doquer('"++dbName opts++"', getQueryOverview_as()));"
 --  , "print_r( getCoDomainAtoms( 'Hello', '2', getQueryId_notIdentifies() ));"
-  , ""
-  , "echo generateInterface('"++dbName opts++"', $allInterfaceObjects['Overview'], '1');"
-  , "echo generateInterface('"++dbName opts++"', $allInterfaceObjects['Id'], '2');"
-  , "echo generateInterface('"++dbName opts++"', $allInterfaceObjects['Th'], 'France');"
-  , ""
+  , "if (isset($_REQUEST['interface']) && isset($_REQUEST['atom'])) {"
+  , "    $interface=$_REQUEST['interface'];"
+  , "    $atom=$_REQUEST['atom'];"
+  , "    echo \"Showing interface '$interface' for atom '$atom'\";"
+  , "    echo generateInterface('Hello', $allInterfaceObjects[$interface], $atom); "
+  , "} else {"
+  , " echo \"some test stuff for Hello.adl (will most likely fail for other adls)\";"
+  , " echo generateInterface('Hello', $allInterfaceObjects['Overview'], '1');"
+  , " echo generateInterface('Hello', $allInterfaceObjects['Id'], '2');"
+  , " echo generateInterface('Hello', $allInterfaceObjects['Th'], 'France');"
+  , "}"
   ]     
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
@@ -51,6 +57,7 @@ generateInterface fSpec opts interface =
 genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   [ "array ( 'name' => '"++name object++"'"
+  , "      // relation: "++show (objctx object)
   , "      , 'isUnivalent' => " ++ (phpBool $ isUni (objctx object))
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
