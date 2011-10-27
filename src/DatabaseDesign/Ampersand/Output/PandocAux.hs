@@ -111,8 +111,8 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce = 
                                    do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
                                                 then system ( pdfLatexCommand++
-                                                              (if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog") ++"\n"++
-                                                              makeIndexCommand)
+                                                              if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog" ) >>
+                                                     system ( makeIndexCommand )
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                                 else system $ "cd "++dirOutput flags++
                                                               " && pdflatex "++commonFlags++
