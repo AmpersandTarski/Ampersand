@@ -35,6 +35,7 @@ module DatabaseDesign.Ampersand_Prototype.ShowCode
           +++showCodeAndGetHeaders (i+2) c
           +++("\n"++sps++"}",Set.empty)
       Forget{} -> ("",Set.empty)
+      CommentLine str -> ("\n//"++str ++ "\n",Set.empty)
     )+++showCodeAndGetHeaders i xs
    where
      sps = take i (repeat ' ')

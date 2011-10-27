@@ -271,9 +271,9 @@ selectExpr fSpec i src trg (ECpl e' )
                            src2 = quote$sqlExprSrc fSpec e'
                            trg2 = noCollideUnlessTm' e' [src2] (quote$sqlExprTrg fSpec e')
 selectExpr _ _ _ _ (EKl0 _)
-   = fatal 256 "SQL cannot create closures EKl0"
+   = sqlcomment "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
 selectExpr _ _ _ _ (EKl1 _)
-   = fatal 258 "SQL cannot create closures EKl1"
+   = sqlcomment "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
 selectExpr fSpec i src trg (ERad  [e']       ) = sqlcomment "ERad [e]"$ selectExpr fSpec i src trg e'
 selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
  = sqlcomment "(ERad lst@(fstm:_:_))"$
@@ -329,6 +329,7 @@ selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
 selectExpr _     _ _   _   (ERad  [] ) = fatal 310 "Cannot create query for ERad [] because type is unknown"
 selectExpr fSpec i src trg (ETyp x _)  = sqlcomment "ETyp x _"$ selectExpr fSpec i src trg x
 selectExpr fSpec i src trg (EFlp x)    = sqlcomment "EFlp x"$ selectExpr fSpec i trg src x
+selectExpr fSpec i src trg (EDif (ERel V{},x)) = sqlcomment "EDif V x"$ selectExpr fSpec i src trg (ECpl x) 
 selectExpr _     _ _   _   x           = fatal 332 ("Cannot create query for "++showADL x)
 
 -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
@@ -875,6 +876,13 @@ instance InPlug Expression where
     --  | EUni (Expressions rel)  -- fs   ^ union                                   \/     
    selectbinary fs (EFlp x) = let sb=selectbinary fs x in sb{rslfld=(fst(rslfld sb),snd(rslfld sb))}
    selectbinary fs (ETyp x _) = selectbinary fs x
+   selectbinary _ (EKl0{}) = RelSel (SqlFld (SqlFrom (SqlTbl "NotExistingKl0" "")) "x" ""
+                                     ,SqlFld (SqlFrom (SqlTbl "NotExistingKl0" "")) "y" "")
+                                     [SqlFrom (SqlTbl "NotExistingKl0" "")] Nothing Nothing ""
+   selectbinary _ (EKl1{}) = RelSel (SqlFld (SqlFrom (SqlTbl "NotExistingKl1" "")) "x" ""
+                                     ,SqlFld (SqlFrom (SqlTbl "NotExistingKl1" "")) "y" "")
+                                     [SqlFrom (SqlTbl "NotExistingKl1" "")] Nothing Nothing ""
+   selectbinary fs (EDif (ERel V{},x)) = selectbinary fs (ECpl x)
    selectbinary _ x = fatal 748 ("not supported" ++ show x)
 
  

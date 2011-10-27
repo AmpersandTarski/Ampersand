@@ -42,6 +42,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
    | Forget      { preknowledge :: [Named CodeVar] -- ^ variables we used to know (before this statement)
                  , postknowledge:: [Named CodeVar] -- ^ variables we still know (not cleaned up)
                  }
+   | CommentLine String
  data CodeVar = CodeVar
   { cvIndexed :: CodeVarIndexed
     -- | Content can either be a CodeVar, intended for indexed stuff: $var[$i] returns a codeVar,
