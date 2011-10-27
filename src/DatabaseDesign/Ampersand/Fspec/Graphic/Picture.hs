@@ -81,9 +81,9 @@ makePictureObj flags nm pTyp dotsource
                             (PTClassDiagram,English) -> "Class Diagram of " ++ nm
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
                             (PTPattern     ,English) -> "Concept analysis of the rules in " ++ nm
-                            (PTPattern     ,Dutch  ) -> "Conceptuele analysis van de regels in " ++ nm
+                            (PTPattern     ,Dutch  ) -> "Conceptuele analyse van de regels in " ++ nm
                             (PTFullPat     ,English) -> "Concept analysis of relations in " ++ nm
-                            (PTFullPat     ,Dutch  ) -> "Conceptuele analysis van relaties in " ++ nm
+                            (PTFullPat     ,Dutch  ) -> "Conceptuele analyse van relaties in " ++ nm
                             (PTProcess     ,English) -> "Process model of " ++ nm
                             (PTProcess     ,Dutch  ) -> "Procesmodel van " ++ nm
                             (PTSwitchBoard ,English) -> "Switchboard diagram of " ++ nm

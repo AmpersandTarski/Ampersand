@@ -108,24 +108,23 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           docContents
            | diagnosisOnly flags = diagTxt
            | otherwise           =
-               chpIntroduction  level fSpec flags        ++   -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
-               chpNatLangReqs   level fSpec flags        ++   -- this chapter gives an account of this context in natural language.
-                                                              --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
-                                                              --   any skills in formal specification or information systems modeling.
-               if noDiagnosis flags then [] else diagTxt ++   -- This chapter is meant for the author. It points to places in the text that might need work.
-               caTxt                                     ++   -- This chapter is the conceptual analysis. It is meant for the design team to verify whether the natural language phrases and their formal counterparts match.
-               (if noProcesses fSpec then [] else paTxt) ++   -- This chapter discusses the processes and patterns in this context.
-               fpAnalysis level fSpec flags              ++   -- This chapter does a function point analysis on the specification.
-               daTxt                                     ++   -- This chapter provides a data analysis together with a data model.
-                                                              --   It is meant for implementors who must build the system.
-               if studentversion then [] else [b | (blocks,_)<-acts, b<-blocks] ++
-               (if genEcaDoc flags then chpECArules level fSpec flags else [])            ++ -- This chapter reports on the ECA rules generated in this system.
-              glossary level fSpec flags                     -- At the end, a glossary is generated.
+               chpIntroduction  level fSpec flags          ++   -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
+               chpNatLangReqs   level fSpec flags          ++   -- this chapter gives an account of this context in natural language.
+                                                                --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
+                                                                --   any skills in formal specification or information systems modeling.
+               (if noDiagnosis flags then [] else diagTxt) ++   -- This chapter is meant for the author. It points to places in the text that might need work.
+               caTxt                                       ++   -- This chapter is the conceptual analysis. It is meant for the design team to verify whether the natural language phrases and their formal counterparts match.
+               (if noProcesses fSpec then [] else paTxt)   ++   -- This chapter discusses the processes and patterns in this context.
+               fpAnalysis level fSpec flags                ++   -- This chapter does a function point analysis on the specification.
+               daTxt                                       ++   -- This chapter provides a data analysis together with a data model.
+                                                                --   It is meant for implementors who must build the system.
+               [b | studentversion, (blocks,_)<-acts, b<-blocks] ++ -- in the student version, document the activities
+               (if genEcaDoc flags then chpECArules level fSpec flags else [])    ++ -- This chapter reports on the ECA rules generated in this system.
+               glossary level fSpec flags                        -- At the end, a glossary is generated.
                
-             where acts = [interfaceChap level fSpec flags act | act <-fActivities fSpec,not studentversion]
+          acts = [interfaceChap level fSpec flags act | act <-fActivities fSpec]
           pictures = if diagnosisOnly flags then diagPics else
                      daPics++caPics++diagPics++paPics++[p | (_,pics)<-acts, p<-pics] 
-             where acts = [interfaceChap level fSpec flags act | act <-fActivities fSpec,not studentversion]
           (caTxt  ,caPics)   = chpConceptualAnalysis level fSpec flags
           (diagTxt,diagPics) = chpDiagnosis          level fSpec flags
           (paTxt  ,paPics)   = chpProcessAnalysis    level fSpec flags
@@ -315,7 +314,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
       printOneTheme mPat (cDefs2print, rels2print, rules2print) counters1
-              = ( header' ++ explainsPat ++ concBlocks ++ relBlocks ++ ruleBlocks
+              = ( header' ++ explainsPat ++ sctcsIntro cDefs2print ++ concBlocks ++ relBlocks ++ ruleBlocks
                 , counters4
                 )
            where 
@@ -343,69 +342,84 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                       )]
                          Just pat -> explains2Blocks (purpose fSpec (language flags) pat)
 
-              sctcs :: [(A_Concept, [ConceptDef])] -> Counter -> ([Block],Counter)
-              sctcs xs c0
+              sctcsIntro :: [(A_Concept, [ConceptDef])] -> [Block]
+              sctcsIntro xs
                 = case xs of
-                    []   -> ([],c0)
-                    ccds -> ( case language flags of
-                                Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
-                                                         ([] ,_) -> []
-                                                         ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
-                                                         (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
-                                                                    commaNLPandoc (Str "en") cs++
-                                                                    [ Str ". Daarna worden de basiszinnen en regels geïntroduceerd."]
-                                                         ([c],_) -> [ Str "Deze sectie introduceert het concept "
-                                                                    , c]
-                                                         (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
-                                                                    commaNLPandoc (Str "en") cs++
-                                                                    [ Str ". "]
-                                                   )++
-                                                   (let cs = [(c,cds) | (c,cds)<-ccds, length cds>1] in
-                                                    case (cs, length cs==length ccds) of
-                                                     ([] ,   _  ) -> []
-                                                     ([(c,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
-                                                     (_        , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst) cs)++[Str " meerdere definities. "]
-                                                     ([(_,cds)], True ) -> [ Str $ "Deze heeft "++count flags (length cds) "definitie"++". " ]
-                                                     (_        , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
-                                                   )
-                                            ]
-                                English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
-                                                         ([] ,_) -> []
-                                                         ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
-                                                         (cs ,1) -> [ Str "At this point, the definitions of "]++
-                                                                    commaEngPandoc (Str "and") cs++
-                                                                    [ Str " are given. Directly after that, the basic sentences and rules are introduced."]
-                                                         ([c],_) -> [ Str "This section introduces concept "
-                                                                    , Emph [c]]
-                                                         (cs ,_) -> [ Str "This section introduces concepts "]++
-                                                                    commaEngPandoc (Str "and") cs++
-                                                                    [ Str ". "]
-                                                   )++
-                                                   (let cs = [(c,cds) | (c,cds)<-ccds, length cds>1] in
-                                                    case (cs, length cs==length ccds) of
-                                                     ([] ,   _  ) -> []
-                                                     ([(c,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
-                                                     (_        , False) -> [ Str "Of those concepts "]++commaEngPandoc (Str "and") (map (Str . name . fst) cs)++[Str " have multiple definitions. "]
-                                                     ([(_,cds)], True ) -> [ Str $ "It has "++count flags (length cds) "definition"++". " ]
-                                                     (_        , True ) -> [ Str "Each one has several definitions. "]
-                                                   )
-                                            ]
-                             ++
-                             concatMap conceptdefinitions xs
-                           , c0
-                           )
-                    
+                    []   -> []
+                    ccds -> case language flags of
+                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
+                                                       ([] ,_) -> []
+                                                       ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
+                                                       (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
+                                                                  commaNLPandoc (Str "en") cs++
+                                                                  [ Str ". Daarna worden de basiszinnen en regels geïntroduceerd."]
+                                                       ([c],_) -> [ Str "Deze sectie introduceert het concept "
+                                                                  , c]
+                                                       (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
+                                                                  commaNLPandoc (Str "en") cs++
+                                                                  [ Str ". "]
+                                                 )++
+                                                 (let cs = [(c,cds) | (c,cds)<-ccds, length cds>1] in
+                                                  case (cs, length cs==length ccds) of
+                                                   ([] ,   _  ) -> []
+                                                   ([(c,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
+                                                   (_        , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst) cs)++[Str " meerdere definities. "]
+                                                   ([(_,cds)], True ) -> [ Str $ "Deze heeft "++count flags (length cds) "definitie"++". " ]
+                                                   (_        , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
+                                                 )
+                                          ]
+                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
+                                                       ([] ,_) -> []
+                                                       ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
+                                                       (cs ,1) -> [ Str "At this point, the definitions of "]++
+                                                                  commaEngPandoc (Str "and") cs++
+                                                                  [ Str " are given. Directly after that, the basic sentences and rules are introduced."]
+                                                       ([c],_) -> [ Str "This section introduces concept "
+                                                                  , Emph [c]]
+                                                       (cs ,_) -> [ Str "This section introduces concepts "]++
+                                                                  commaEngPandoc (Str "and") cs++
+                                                                  [ Str ". "]
+                                                 )++
+                                                 (let cs = [(c,cds) | (c,cds)<-ccds, length cds>1] in
+                                                  case (cs, length cs==length ccds) of
+                                                   ([] ,   _  ) -> []
+                                                   ([(c,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
+                                                   (_        , False) -> [ Str "Of those concepts "]++commaEngPandoc (Str "and") (map (Str . name . fst) cs)++[Str " have multiple definitions. "]
+                                                   ([(_,cds)], True ) -> [ Str $ "It has "++count flags (length cds) "definition"++". " ]
+                                                   (_        , True ) -> [ Str "Each one has several definitions. "]
+                                                 )
+                                          ]
+
+              sctcs :: [(A_Concept, [ConceptDef])] -> Counter -> ([Block],Counter)
+              sctcs xs c0 
+                = case xs of
+                    []  -> ([],c0)
+                    _   -> (fstBlocks ++ restBlocks,c2)
                   where
-                      conceptdefinitions :: (A_Concept,[ConceptDef]) -> [Block] -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
-                      conceptdefinitions (c,cds)
+                      d':ds' = xs
+                      (fstBlocks,c1) = conceptdefinitions d' c0
+                      (restBlocks,c2) = sctcs ds' c1
+                      conceptdefinitions :: (A_Concept,[ConceptDef]) -> Counter -> ([Block],Counter)
+                      conceptdefinitions (c,cds) cnt -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
                       -- First print a glossary entry (only implemented for LaTeX for now), then write the definition and then explain its purpose(s).
-                       = (Para $ concat [ [RawInline "latex" ("\\glossary{name={"++name cd++"}, description={"++cddef cd++"}}"++if i==1 then symDefLabel c else "")
-                                          | defaultPandocReader flags==LaTeX
-                                          ] ++
-                                          makeDefinition flags (name c) (cddef cd)
-                                        | (i::Int,cd)<-zip [1..] cds]
-                         ) : explains c
-                      explains cd = explains2Blocks (purpose fSpec (language flags) cd)
+                       = ( explains2Blocks (purpose fSpec (language flags) c)++
+                           [DefinitionList [ ( [ Str (case language flags of
+                                                        Dutch   -> "Definitie "
+                                                        English -> "Definition ")
+                                               , Str (show(getEisnr cnt))
+                                               , Str ":"]
+                                             , [ [ Para $ concat [ [ RawInline "latex" (symDefLabel c++"\n") | i==1]++
+                                                                   [ RawInline "latex" ("\\glossary{name={"++name cd++"}, description={"++cddef cd++"}}\n")
+                                                                   | fspecFormat flags==FLatex
+                                                                   ] ++
+                                                                   makeDefinition flags (name c) (cddef cd)
+                                                                 | (i::Int,cd)<-zip [1..] cds]
+                                                 ]
+                                               ]
+                                             )
+                                           ]
+                           ]
+                         , incEis cnt )
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               sctds :: [Relation] -> Counter -> ([Block],Counter)
@@ -962,7 +976,7 @@ chpDiagnosis lev fSpec flags
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                if defaultPandocReader flags==LaTeX then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
+                if fspecFormat flags==FLatex then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
                 (case language flags of
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]
@@ -1054,7 +1068,7 @@ chpDiagnosis lev fSpec flags
                    Dutch   -> Str "Regel"
                    English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                if defaultPandocReader flags==LaTeX then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
+                if fspecFormat flags==FLatex then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
                 (case language flags of
                     Dutch   -> [ Str "luidt: " ]
                     English -> [ Str "says: "])
@@ -2268,7 +2282,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
 ------------------------------------------------------------
 glossary :: Int -> Fspc -> Options ->  [Block]
 glossary _ fSpec flags
- = if defaultPandocReader flags==LaTeX
+ = if fspecFormat flags==FLatex
    then [ Para [RawInline "latex" "\\printglossary"] ]
    else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
           ( case language flags of
@@ -2280,6 +2294,8 @@ glossary _ fSpec flags
           [ [ [Plain [(Str . name)  cd]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
           | cd<-conceptDefs fSpec, name cd `elem` map name (concs fSpec)
           ]]
+
+
 --type Proof expr = [(expr,[String],String)]
 --showProof :: (expr->String) -> Proof expr -> String
 --showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
