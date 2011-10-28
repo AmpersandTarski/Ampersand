@@ -6,3 +6,28 @@
            ; -moz-border-radius: 5px       /* rounded corners for Firefox */
            ; -webkit-border-radius: 5px    /* rounded corners for Safari */
            }
+
+.InterfaceContextMenu
+  { position: absolute;
+  ; border-style: solid
+  ; color: black
+  ; background-color: #f8f8f8
+  ; border-width: 1px
+  ; padding-top: 4px
+  ; padding-bottom: 4px
+  }
+  
+.InterfaceContextMenuItem
+  { display: block 
+  ; font-family: Arial
+  ; color: black
+  ; text-decoration:none /* no underline */
+  ; padding-left:6px
+  ; padding-right:16px
+  }
+
+.InterfaceContextMenuItem:hover 
+  { font-family: Arial
+  ; color: white
+  ; background-color: blue
+  }

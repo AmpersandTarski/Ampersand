@@ -75,26 +75,21 @@ function DB_doquer($DbName, $quer,$debug=5)
 
 ///////// Interface stuff (does not belong here) /////////
 
-function generateInterfaceMap($interfaces) {
+function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
-    echo "interfaceMap.$interface[name] = '$interface[concept]';<br/>";
+    if ($interface['concept']=='ONE')
+      echo "<a href='Interfaces.php?interface=$interface[name]&atom=1'>$interface[name]</a><br>";
   }
 }
 
-function generateInterfaceList($db, $interfaces, $atom) {
-  $html = "";
-
-  // the old prototype did not show the atom when there are subinterfaces
-  // for now, we always show it, for debugging purposes
-  emit($html, "<div class=Atom atom=$atom> $atom </div>"); // todo: escape!
-  if (count($interfaces) > 0) {
-    emit($html, '<div class=Interface>');
-    foreach($interfaces as $interface) {
-      emit($html, generateInterface($db, $interface, $atom));
-    }
-    emit($html, '</div>');
+function generateInterfaceMap($interfaces) {
+  echo "function getInterfacesMap() {";
+  echo "  var interfacesMap = new Array();";
+  foreach($interfaces as $interface) {
+    echo "  mapInsert(interfacesMap, '$interface[concept]', '$interface[name]');";
   }
-  return $html;
+  echo "  return interfacesMap;";
+  echo "}";
 }
 
 function generateInterface($db, $interface, $srcAtom) {
@@ -109,11 +104,28 @@ function generateInterface($db, $interface, $srcAtom) {
   else         emit($html, '<div class=Atomic>');
   foreach($codomainAtoms as $tgtAtom) {
     if (!$isUni) emit($html, '<li>');
-    emit($html, generateInterfaceList($db, $interface['subInterfaces'], $tgtAtom));
+    emit($html, generateInterfaceList($db, $interface, $tgtAtom));
     if (!$isUni) emit($html,'</li>'); 
   }
   if (!$isUni) emit($html, '</ul></div>');
   else         emit($html, '</div>');
+  return $html;
+}
+
+function generateInterfaceList($db, $parentInterface, $atom) {
+  $html = "";
+  $interfaces = $parentInterface['subInterfaces'];
+  // the old prototype did not show the atom when there are subinterfaces
+  // for now, we always show it, for debugging purposes
+  $concept = $parentInterface['concept'];
+  emit($html, "<div class=Atom concept=$concept atom=$atom> $atom </div>"); // todo: escape!
+  if (count($interfaces) > 0) {
+    emit($html, '<div class=Interface>');
+    foreach($interfaces as $interface) {
+      emit($html, generateInterface($db, $interface, $atom));
+    }
+    emit($html, '</div>');
+  }
   return $html;
 }
 
