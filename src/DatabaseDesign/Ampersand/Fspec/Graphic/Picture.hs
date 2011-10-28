@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 -- This module is for the definition of Picture and PictureList.
 module DatabaseDesign.Ampersand.Fspec.Graphic.Picture
-    ( Picture(origName,uniqueName,figlabel,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
+    ( Picture(origName,uniqueName,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
     , Pictures,PictType(..),uniquePicName
     , makePictureObj,writePicture)
 where
@@ -25,7 +25,6 @@ data Picture = Pict { origName     :: String    -- ^ The original name of the ob
                     , atlasPath    :: FilePath  -- ^ the full file path where the .png and .map file resides for Atlas
                     , imgURL       :: EscString -- ^ the URL that points to the generated .png imagefile, for use in the atlas
                     , dotProgName  :: String    -- ^ the name of the program to use  ("dot" or "neato" )
-                    , figlabel     :: String    -- ^ the label of a picture (usefull for reffering to it e.g. in LaTeX)
                     , caption      :: String    -- ^ a human readable name of this picture
                     }
 data PictType = PTClassDiagram -- a UML class diagram, or something that comes close
@@ -72,7 +71,6 @@ makePictureObj flags nm pTyp dotsource
            , atlasPath  = absImgPath </> System.FilePath.addExtension cdName "png"
            , imgURL     = relImgPath </> System.FilePath.addExtension cdName "png"
            , pType      = pTyp
-           , figlabel   = "fig:" ++ cdName
            , dotProgName = case pTyp of
                      PTClassDiagram -> "dot"
                      PTSwitchBoard  -> "dot"
