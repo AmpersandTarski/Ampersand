@@ -2,11 +2,11 @@
 module DatabaseDesign.Ampersand.Output.PandocAux
       ( writepandoc
       , labeledHeader
-      , xrefReference
+    --  , xrefReference
       , symDefLabel, symDefRef
       , symReqLabel, symReqRef, symReqPageRef
       , makeDefinition
-      , xrefFigure1
+    --  , xrefFigure1
       , pandocEqnArray
       , pandocEquation
       , count
@@ -413,16 +413,6 @@ xrefLabel myLabel = RawInline "latex" ("\\label{"++myLabel++"}")
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
 xrefCitation myLabel = RawInline "latex" ("\\cite{"++myLabel++"}")
 
---Image [Inline] Target
---      alt.text (URL,title)
-xrefFigure1 :: Picture -> [Inline]
-xrefFigure1 pict = 
-   [ RawInline "latex" "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] (uniqueName pict, figlabel pict)
-   , RawInline "latex" "}\n"
-   , RawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
-   , xrefLabel (figlabel pict)
-   , RawInline "latex" "\n\\end{center}\n\\end{figure}"]
 
 -- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
 pandocEqnArray :: [(String,String,String)] -> [Block]
