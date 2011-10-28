@@ -95,7 +95,7 @@ where
            | CodeVar{cvContent=Right cv}<-[obj]
            ]
         getAllTarget _
-         = [[CommentLine "missing code for getAllTarget"]]
+         = fatal 94 "missing code for getAllTarget"
 
 
  -- | Create code to fill a single variable with some expression.
