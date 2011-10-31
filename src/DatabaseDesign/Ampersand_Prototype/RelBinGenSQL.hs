@@ -241,8 +241,8 @@ selectExpr _     _ _   _   (ECps  [] ) = fatal 223 "Cannot create query for ECps
 selectExpr fSpec i src trg (ERel (V (Sign s t))   ) 
  = sqlcomment "(ERel (V (Sign s t)))"$
    listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
-               | (s',src') <- concNames (if name s==name t then "cfst0" else "cfst") s
-               , (t',trg') <- concNames (if name s==name t then "cfst1" else "cfst") t
+               | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
+               , (t',trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
                , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                ]
  where concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (ERel (I c))]
