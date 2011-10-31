@@ -427,7 +427,7 @@ eLkpTbl p = let mst=[(r,s,t) |(r,s,t)<-mLkpTbl p, s/=t] in addIs (eLkpTbl' mst [
     addback  ms = [(e,es,et) |(e,es,et)<-est,ms==et]
     things2add = [() |(_,ms,mt)<-mst,_<-addfront mt++addback ms]
     recur = eLkpTbl'
-      [(r,ms,mt) |(r,ms,mt)<-mst,(not.null)(addfront mt),(not.null)(addback ms)] --keep the mst that will not be added to the front or the back (yet)
+      [(r,ms,mt) |(r,ms,mt)<-mst,null(addfront mt),null(addback ms)] --keep the mst that will not be added to the front or the back (yet)
       (est --keep what you got
        ++ [(ERel r :e  ,ms,et) |(r,ms,mt)<-mst,(e,_,et)<-addfront mt] --add r to the front (except identities)
        ++ [(e++[ERel r ] ,es,mt) |(r,ms,mt)<-mst,(e,es,_)<-addback ms] --add r to the back  (except identities) 
