@@ -9,7 +9,6 @@ function initializeLinks(interfacesMap) {
       $(this).css("cursor","pointer");
       $(this).css("color","blue"); // add an attr and use stylesheet for this
       $(this).click(function (event) {
-        console.log('click menu');
         if (interfaces.length == 1)
           window.location.href = "Interfaces.php?interface="+interfaces[0]+"&atom="+atom;
         else
