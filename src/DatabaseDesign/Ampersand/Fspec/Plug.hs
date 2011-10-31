@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand.Fspec.Plug
 where
 import DatabaseDesign.Ampersand.ADL1 
 import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),ConceptStructure(..))
-import DatabaseDesign.Ampersand.Basics (fatalMsg,Identified(..),(>-),sort',eqClass)
+import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),fatalMsg,Identified(..),(>-),sort',eqClass)
 import Data.List(elemIndex,nub)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
@@ -411,27 +411,20 @@ plugpath p@(TblSQL{}) srcfld trgfld
                     |(srce,srces,_)<-pathsfromIs s
                     ,(trge,trges,_)<-pathsfromIs t
                     ,srces==trges, let ECps flpsrce= flp(ECps (tail srce))] 
-  
 
---[Expression] implies a 'composition' from SqlField to SqlField which may be empty (no path found) or length==1 (no composition but just head)
+--the expression LkpTbl of a plug is the transitive closure of the mLkpTbl of the plug
+--Warshall's transitive closure algorithm clos1 :: (Eq a) => [(a,a)] -> [(a,a)] is extended to combine paths i.e. r++r'
+--[Expression] implies a 'composition' from a kernel SqlField to another SqlField
 --use plugpath to get the Expression from srcfld to trgfld
+--plugpath also combines expressions with head I like (I;tail1)~;(I;tail2) <=> tail1;tail2
 eLkpTbl::PlugSQL -> [([Expression],SqlField,SqlField)]
-eLkpTbl p = let mst=[(r,s,t) |(r,s,t)<-mLkpTbl p, s/=t] in addIs (eLkpTbl' mst [([ERel r ],s,t) |(r,s,t)<-mst])
+eLkpTbl p = clos1 [([ERel r],s,t)|(r,s,t)<-mLkpTbl p]
   where
-  addIs est = let ist=[(i,ifld) |(i,ifld,ifld')<-mLkpTbl p, ifld==ifld']
-              in est ++ [(ERel i:e,ifld,et) |(i,ifld)<-ist,(e,es,et)<-est,es==ifld]
-  eLkpTbl'::[(Relation,SqlField,SqlField)]->[([Expression],SqlField,SqlField)]->[([Expression],SqlField,SqlField)]
-  eLkpTbl' mst est = if null things2add then nub est else recur
-    where
-    addfront mt = [(e,es,et) |(e,es,et)<-est,mt==es]
-    addback  ms = [(e,es,et) |(e,es,et)<-est,ms==et]
-    things2add = [() |(_,ms,mt)<-mst,_<-addfront mt++addback ms]
-    recur = eLkpTbl'
-      [(r,ms,mt) |(r,ms,mt)<-mst,null(addfront mt),null(addback ms)] --keep the mst that will not be added to the front or the back (yet)
-      (est --keep what you got
-       ++ [(ERel r :e  ,ms,et) |(r,ms,mt)<-mst,(e,_,et)<-addfront mt] --add r to the front (except identities)
-       ++ [(e++[ERel r ] ,es,mt) |(r,ms,mt)<-mst,(e,es,_)<-addback ms] --add r to the back  (except identities) 
-      )
+  clos1 :: [([Expression],SqlField,SqlField)] -> [([Expression],SqlField,SqlField)]     -- e.g. a list of SqlField pairs
+  clos1 xs
+     = foldl f xs (nub (map (\(_,x,_)->x) xs) `isc` nub (map (\(_,_,x)->x) xs))
+       where
+        f q x = q `uni` [( r++r' , a, b') | (r ,a, b) <- q, b == x, (r', a', b') <- q, a' == x]
 
 --bijective fields of f (incl. f)
 bijectivefields::PlugSQL -> SqlField -> [SqlField]
