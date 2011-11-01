@@ -78,7 +78,18 @@ genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   [ "array ( 'name' => '"++name object++"'"
   , "      // relation: "++show (objctx object)
-  , "      , 'concept' => '"++show (target $ objctx object)++"'" -- only needed for top level
+  ] ++ case objctx object of
+           ERel r ->        [ "      , 'relation' => '"++show r++"'" 
+                            , "      , 'relationIsFlipped' => 'False'" 
+                            ]
+           EFlp (ERel r) -> [ "      , 'relation' => '"++show r++"'" 
+                            , "      , 'relationIsFlipped' => 'True'" 
+                            ]          
+           _             -> [ "      , 'relation' => ''" 
+                            , "      , 'relationIsFlipped' => ''" 
+                            ]          
+  ++     
+  [ "      , 'concept' => '"++show (target $ objctx object)++"'" -- only needed for top level
   , "      , 'isUnivalent' => " ++ (phpBool $ isUni (objctx object))
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"

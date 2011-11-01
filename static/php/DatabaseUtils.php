@@ -99,15 +99,15 @@ function generateInterface($db, $interface, $srcAtom) {
   //print_r($codomainAtoms);
   
   $isUni = $interface['isUnivalent'];  
-  
-  if (!$isUni) emit($html, '<div class=AtomList><ul>');
-  else         emit($html, '<div class=Atomic>');
+  $relationAttrs = $interface['relation']=='' ? '' : "relation='$interface[relation]' relationIsFlipped=$interface[relationIsFlipped]";
+  if (!$isUni) emit($html, "<table class=\"AtomList Container\" concept='$interface[concept]' $relationAttrs><tbody>"); // todo: change name, these things are not necessarily atoms
+  else         emit($html, "<div class=\"Atomic Container\" concept='$interface[concept]' $relationAttrs>"); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {
-    if (!$isUni) emit($html, '<li>');
+    if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
-    if (!$isUni) emit($html,'</li>'); 
+    if (!$isUni) emit($html,'</td></tr>'); 
   }
-  if (!$isUni) emit($html, '</ul></div>');
+  if (!$isUni) emit($html, "<tr><td></td><td class=AddStub>Add new $interface[concept]</td></tr><tbody></table>");
   else         emit($html, '</div>');
   return $html;
 }
@@ -117,8 +117,7 @@ function generateInterfaceList($db, $parentInterface, $atom) {
   $interfaces = $parentInterface['subInterfaces'];
   // the old prototype did not show the atom when there are subinterfaces
   // for now, we always show it, for debugging purposes
-  $concept = $parentInterface['concept'];
-  emit($html, "<div class=Atom concept=$concept atom=$atom> $atom </div>"); // todo: escape!
+  emit($html, "<div class=Atom atom=$atom> $atom </div>"); // todo: escape!
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {

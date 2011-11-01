@@ -1,16 +1,20 @@
 // navigation
 
 function initializeLinks(interfacesMap) {
+  $("body").attr('editing','True');
+  initializeEditButtons();
+  
   $(".Atom").map(function () {
-    var concept = $(this).attr('concept');
+    $containerElt = $(this).parents().filter(".Container"); 
+    concept =$containerElt.attr('concept');
     var atom = $(this).attr('atom');
     var interfaces = interfacesMap[concept];
-    if (typeof(interfaces) != 'undefined') { // if there are no interfaces, don't change the pointer and don't add a click event
+    if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't add a click event
       $(this).css("cursor","pointer");
       $(this).css("color","blue"); // add an attr and use stylesheet for this
       $(this).click(function (event) {
         if (interfaces.length == 1)
-          window.location.href = "Interfaces.php?interface="+interfaces[0]+"&atom="+atom;
+          window.location.href = "Interfaces.php?interface="+interfaces[0]+"&atom="+atom;     // todo: figure out return value for click handlers
         else
           mkInterfaceMenu(event, $(this), interfaces, atom);
       });
@@ -41,6 +45,50 @@ function addClickEvent($item, url) { // need a separate function here, to preven
     window.location.href = url;
     $('.InterfaceContextMenu').remove(); // so the menu is gone when we press back
     return false;
+  });
+}
+
+// Editing
+// todo: editing -> editingHover oid
+//       editing attr of doc root
+function initializeEditButtons() {
+
+  $('.Container').hover(function () {
+    $parentInterface = $(this).parents().filter('.Container').first();
+    
+    $parentInterface.attr('hover', 'False');
+    if ($(this).attr('relation'))
+        $(this).attr('hover', 'True');
+    }, function () {
+    $parentInterface = $(this).parents().filter('.Container').first();
+    if ($parentInterface.attr('relation'))
+        $parentInterface.attr('hover', 'True');
+    $(this).attr('hover', 'False');
+  });
+  $('.Atom').click(function(){
+    var concept = $(this).attr('concept');
+    var atom = $(this).attr('atom');
+    $containerElt = $(this).parents().filter(".Container"); 
+    concept =$containerElt.attr('concept');
+    relation = $containerElt.attr('relation'); 
+    relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    alert('Update: '+atom+' : '+concept+' from relation '+(relationIsFlipped?'~':'')+relation);
+  });
+  $('.DeleteStub').click(function() {
+    $containerElt = $(this).parents().filter(".Container"); 
+    concept =$containerElt.attr('concept');
+    relation = $containerElt.attr('relation'); 
+    relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    $atomElt = $(this).next().children().first();
+    atom =$atomElt.attr('atom')
+    alert('Delete: '+atom+' : '+concept+' from relation '+(relationIsFlipped?'~':'')+relation);
+  });
+  $('.AddStub').click(function (event) {
+    $containerElt = $(this).parents().filter(".Container"); 
+    concept =$containerElt.attr('concept');
+    relation = $containerElt.attr('relation'); 
+    relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    alert('Add: '+concept+' to relation '+(relationIsFlipped?'~':'')+relation);
   });
 }
 
