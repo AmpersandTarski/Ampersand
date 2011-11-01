@@ -46,6 +46,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "echo '</script>';"
   , "echo '</head>';"
   , "echo '<body onload=\"init()\">';"
+  , "echo '<button class=\"EditButton\" onclick=\"startEditing()\">Edit</button>';"
+  , "echo '<button class=\"CancelButton\" onclick=\"stopEditing(getInterfacesMap())\">Cancel</button>';"
   , ""
 --  , "printBinaryTable(DB_doquer('"++dbName opts++"', getQueryOverview_as()));"
 --  , "print_r( getCoDomainAtoms( 'Hello', '2', getQueryId_notIdentifies() ));"

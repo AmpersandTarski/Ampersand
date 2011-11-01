@@ -1,9 +1,21 @@
+function startEditing() {
+  $('.Atom').unbind('click');
+  $('body').attr('editing','True');
+  initializeEditButtons();
+
+}
+
+// todo interfacesMap arg is annoying
+//      maybe there's an easy way to prevent having to do initializeLinks again (check for 'editing' in the click handler)
+function stopEditing(interfacesMap) {
+  $('.Atom').unbind('click');
+  $('body').attr('editing','False');
+  initializeLinks(interfacesMap);
+}
+
 // navigation
 
-function initializeLinks(interfacesMap) {
-  $("body").attr('editing','True');
-  initializeEditButtons();
-  
+function initializeLinks(interfacesMap) {  
   $(".Atom").map(function () {
     $containerElt = $(this).parents().filter(".Container"); 
     concept =$containerElt.attr('concept');
@@ -66,6 +78,7 @@ function initializeEditButtons() {
     $(this).attr('hover', 'False');
   });
   $('.Atom').click(function(){
+    console.log("click");
     var concept = $(this).attr('concept');
     var atom = $(this).attr('atom');
     $containerElt = $(this).parents().filter(".Container"); 
