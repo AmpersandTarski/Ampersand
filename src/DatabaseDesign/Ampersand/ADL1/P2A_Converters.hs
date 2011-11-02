@@ -36,7 +36,7 @@ fatal = fatalMsg "P2A_Converter"
 pCtx2aCtx :: P_Context -> (A_Context,CtxError)
 pCtx2aCtx pctx
  = (actx
-   ,cxelist ( cxerrs++if nocxe(cxelist cxerrs) then nmchks else []))
+   ,cxelist ( cxerrs++if nocxe(cxelist cxerrs) then postchks else []))
    where
     actx = 
          ACtx{ ctxnm    = name pctx    -- The name of this context
@@ -56,8 +56,9 @@ pCtx2aCtx pctx
              , ctxphp   = phpPlugs     -- user defined phpplugs, taken from the Ampersand script
              , ctxenv   = (ERel(V (Sign ONE ONE)) ,[])
              }
-    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes
-    nmchks = rulenmchk
+    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk
+    --postchcks are those checks that require null cxerrs 
+    postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk
     (partOrder,_,_) = makePartialOrder hierarchy
     hierarchy = 
        let ctx_gens = ctx_gs pctx `uni` concatMap pt_gns (ctx_pats pctx) `uni` concatMap procGens (ctx_PPrcs pctx)
@@ -89,6 +90,19 @@ pCtx2aCtx pctx
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
     rulenmchk = nub [newcxe ("Rules with identical names at positions "++show(map origin rs))
                     |r<-rules actx, let rs=[r' |r'<-rules actx,name r==name r'],length rs>1]
+    ifcnmchk  = nub [newcxe ("Interfaces with identical names at positions "++show(map origin xs))
+                    |ifc<-ifcs, let xs=[ifc' |ifc'<-ifcs,name ifc==name ifc'],length xs>1]
+    patnmchk  = nub [newcxe ("Patterns with identical names at positions "++show(map origin xs))
+                    |p<-pats, let xs=[p' |p'<-pats,name p==name p'],length xs>1]
+    procnmchk = nub [newcxe ("Processes with identical names at positions "++show(map origin xs))
+                    |p<-procs, let xs=[p' |p'<-procs,name p==name p'],length xs>1]
+    declnmchk = nub [newcxe ("Declarations with comparable signatures at positions "++show(map origin ds))
+                    | d<-declarations actx
+                    , let ds=[d' | d'<-declarations actx
+                                 , name d==name d'
+                                 , source d `comparable` source d'
+                                 , target d `comparable` target d']
+                    ,length ds>1]
 
 pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
 pPat2aPat actx pops ppat 
@@ -196,7 +210,7 @@ pKDef2aKDef actx pkdef
        , kdcpt = c
        , kdats = ats
                     }
-   , CxeOrig (cxelist (kdcxe:atscxes)) "key definition" "" (origin pkdef) )
+   , CxeOrig (cxelist (nmchk:kdcxe:atscxes)) "key definition" "" (origin pkdef) )
    where
     (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
     c  = pCpt2aCpt actx (kd_cpt pkdef)
@@ -204,6 +218,8 @@ pKDef2aKDef actx pkdef
                      (intercalate "\n" ["The source of expression " ++ showADL (objctx x) 
                                         ++" ("++showADL (source (objctx x))++") is not equal to the key concept ("++ showADL c ++ ")."
                                        |x<-ats,source (objctx x)/=c])
+    nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
+                         |at<-kd_ats pkdef, let xs=[at' |at'<-kd_ats pkdef,name at==name at'],length xs>1]
 
 -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
 pIFC2aIFC :: (Language l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)
@@ -229,7 +245,7 @@ pODef2aODef actx cast podef
         , objats = ats
         , objstrs = obj_strs podef
                     }
-   , CxeOrig (cxelist (odcxe:exprcxe:atscxes)) "object definition" "" (origin podef) )
+   , CxeOrig (cxelist (nmchk:odcxe:exprcxe:atscxes)) "object definition" "" (origin podef) )
    where
     (ats,atscxes)  = unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
     (expr,exprcxe)  = pExpr2aExpr actx cast (obj_ctx podef)
@@ -238,6 +254,8 @@ pODef2aODef actx cast podef
                                         ++" ("++showADL (source (objctx x))++") is not compatible with the target of expression "
                                         ++ showADL expr ++ " ("++ showADL (target expr) ++ ")."
                                        |x<-ats,source (objctx x)/=target expr])
+    nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
+                         |at<-obj_ats podef, let xs=[at' |at'<-obj_ats podef,name at==name at'],length xs>1]
 
 pExpl2aExpl :: A_Context -> PExplanation -> (Explanation, CtxError)
 pExpl2aExpl actx pexpl

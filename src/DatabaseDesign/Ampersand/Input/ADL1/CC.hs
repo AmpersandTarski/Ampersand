@@ -416,7 +416,7 @@ and the grammar must be disambiguated in order to get a performant parser...
                               kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
                                                            , kd_lbl = nm
                                                            , kd_cpt = c
-                                                           , kd_ats = ats
+                                                           , kd_ats = [if null (obj_nm x) then x{obj_nm=show i} else x | (i,x)<-zip [(1::Integer)..] ats]
                                                            }
 
    pKeyAtt          :: Parser Token P_ObjectDef
