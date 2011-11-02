@@ -78,18 +78,18 @@ function DB_doquer($DbName, $quer,$debug=5)
 function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['concept']=='ONE')
-      echo "<a href='Interfaces.php?interface=$interface[name]&atom=1'>$interface[name]</a><br>";
+      echo "<a href='Interfaces.php?interface=".escapeJsStr($interface['name'])."&atom=1'>$interface[name]</a><br>";
   }
 }
 
 function generateInterfaceMap($interfaces) {
-  echo "function getInterfacesMap() {";
-  echo "  var interfacesMap = new Array();";
+  echo 'function getInterfacesMap() {';
+  echo '  var interfacesMap = new Array();';
   foreach($interfaces as $interface) {
-    echo "  mapInsert(interfacesMap, '$interface[concept]', '$interface[name]');";
+    echo '  mapInsert(interfacesMap, '.showJsStr($interface['concept']).', '.showJsStr($interface['name']).');';
   }
-  echo "  return interfacesMap;";
-  echo "}";
+  echo '  return interfacesMap;';
+  echo '}';
 }
 
 function generateInterface($db, $interface, $srcAtom) {
@@ -99,9 +99,9 @@ function generateInterface($db, $interface, $srcAtom) {
   //print_r($codomainAtoms);
   
   $isUni = $interface['isUnivalent'];  
-  $relationAttrs = $interface['relation']=='' ? '' : "relation='$interface[relation]' relationIsFlipped=$interface[relationIsFlipped]";
-  if (!$isUni) emit($html, "<table class=\"AtomList Container\" concept='$interface[concept]' $relationAttrs><tbody>"); // todo: change name, these things are not necessarily atoms
-  else         emit($html, "<div class=\"Atomic Container\" concept='$interface[concept]' $relationAttrs>"); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showJsStr($interface['relation']).' relationIsFlipped='.showJsStr($interface['relationIsFlipped']);
+  if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showJsStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" concept='.showJsStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {
     if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
@@ -117,7 +117,7 @@ function generateInterfaceList($db, $parentInterface, $atom) {
   $interfaces = $parentInterface['subInterfaces'];
   // the old prototype did not show the atom when there are subinterfaces
   // for now, we always show it, for debugging purposes
-  emit($html, "<div class=Atom atom=$atom> $atom </div>"); // todo: escape!
+  emit($html, '<div class=Atom atom='.showJsStr($atom).'> '.$atom.' </div>'); // todo: escape html!
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
@@ -145,6 +145,17 @@ function withClass($class, $elt) {
 
 function emit(&$lines,$line) {
   $lines.=$line."\n";
+}
+
+
+// showJsStr escapes the str and puts ' ' around it:  showJsStr("'\"") -> "'\'\"'"
+// NOTE this does not escape html chars such as > < and &
+function showJsStr($str) {
+    return "'".escapeJsStr($str)."'";
+}
+
+function escapeJsStr($str) {
+    return addSlashes($str);
 }
 
 ?>
