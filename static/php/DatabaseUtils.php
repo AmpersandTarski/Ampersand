@@ -78,7 +78,7 @@ function DB_doquer($DbName, $quer,$debug=5)
 function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['concept']=='ONE')
-      echo '<a href="Interfaces.php?interface='.escapeJsStr($interface['name']).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
+      echo '<a href="Interfaces.php?interface='.escapeHtmlAttrStr($interface['name']).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
   }
 }
 
@@ -94,7 +94,7 @@ function generateInterfaceMap($interfaces) {
 
 function generateInterface($db, $interface, $srcAtom) {
   $html = "";
-  emit($html, withClass('Label', $interface['name']));
+  emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
   $codomainAtoms = getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery']);
   //print_r($codomainAtoms);
   
