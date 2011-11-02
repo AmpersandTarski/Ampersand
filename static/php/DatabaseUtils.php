@@ -78,7 +78,7 @@ function DB_doquer($DbName, $quer,$debug=5)
 function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['concept']=='ONE')
-      echo "<a href='Interfaces.php?interface=".escapeJsStr($interface['name'])."&atom=1'>$interface[name]</a><br>";
+      echo '<a href="Interfaces.php?interface='.escapeJsStr($interface['name']).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
   }
 }
 
@@ -107,7 +107,7 @@ function generateInterface($db, $interface, $srcAtom) {
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
     if (!$isUni) emit($html,'</td></tr>'); 
   }
-  if (!$isUni) emit($html, "<tr><td></td><td class=AddStub>Add new $interface[concept]</td></tr><tbody></table>");
+  if (!$isUni) emit($html, '<tr><td></td><td class=AddStub>Add new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
   else         emit($html, '</div>');
   return $html;
 }
@@ -117,7 +117,7 @@ function generateInterfaceList($db, $parentInterface, $atom) {
   $interfaces = $parentInterface['subInterfaces'];
   // the old prototype did not show the atom when there are subinterfaces
   // for now, we always show it, for debugging purposes
-  emit($html, '<div class=Atom atom='.showJsStr($atom).'> '.$atom.' </div>'); // todo: escape html!
+  emit($html, '<div class=Atom atom='.showJsStr($atom).'> '.htmlSpecialChars($atom).' </div>'); // todo: escape html!
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
