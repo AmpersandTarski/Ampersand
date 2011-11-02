@@ -55,7 +55,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "if (isset($_REQUEST['interface']) && isset($_REQUEST['atom'])) {"
   , "    $interface=$_REQUEST['interface'];"
   , "    $atom=$_REQUEST['atom'];"
-  , "    echo \"<h3>Interface '$interface' for atom '$atom'</h3>\";"
+  , "    echo '<h3>Interface \\''.htmlSpecialChars($interface).'\\' for atom \\''.htmlSpecialChars($atom).'\\'</h3>';"
   , "    echo generateInterface('"++dbName opts++"', $allInterfaceObjects[$interface], $atom); "
   , "} else {"
   , "echo '<h3>Top-level interfaces</h3>';"
