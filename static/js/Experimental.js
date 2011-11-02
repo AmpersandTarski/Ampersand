@@ -15,6 +15,10 @@ function stopEditing(interfacesMap) {
 
 // navigation
 
+function getNavigationUrl(interface, atom) {
+  return "Interfaces.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
+}
+
 function initializeLinks(interfacesMap) {  
   $(".Atom").map(function () {
     $containerElt = $(this).parents().filter(".Container"); 
@@ -24,9 +28,9 @@ function initializeLinks(interfacesMap) {
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't add a click event
       $(this).css("cursor","pointer");
       $(this).css("color","blue"); // add an attr and use stylesheet for this
-      $(this).click(function (event) {
+      $(this).click(function (event) {     // todo: figure out return value for click handlers
         if (interfaces.length == 1)
-          window.location.href = "Interfaces.php?interface="+interfaces[0]+"&atom="+atom;     // todo: figure out return value for click handlers
+          window.location.href = getNavigationUrl(interfaces[0], atom);
         else
           mkInterfaceMenu(event, $(this), interfaces, atom);
       });
@@ -42,7 +46,7 @@ function mkInterfaceMenu(event, $parent, interfaces, atom) {
   $menu.offset({ top: event.pageY, left: event.pageX });
 
   for (i=0; i<interfaces.length; i++) {
-    var url = "Interfaces.php?interface="+interfaces[i]+"&atom="+atom;
+    var url = getNavigationUrl(interfaces[i],atom);
     var $item = $('<a class=InterfaceContextMenuItem hsref='+url+' interface='+
                 interfaces[i]+'>'+interfaces[i]+'</a>');   
 
