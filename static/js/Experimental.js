@@ -15,8 +15,8 @@ function stopEditing(interfacesMap) {
 
 // navigation
 
-function getNavigationUrl(interface, atom) {
-  return "Interfaces.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
+function navigateTo(interface, atom) {
+  window.location.href = "Interfaces.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
 function initializeLinks(interfacesMap) {  
@@ -30,13 +30,12 @@ function initializeLinks(interfacesMap) {
       $(this).css("color","blue"); // add an attr and use stylesheet for this
       $(this).click(function (event) {     // todo: figure out return value for click handlers
         if (interfaces.length == 1)
-          window.location.href = getNavigationUrl(interfaces[0], atom);
+          navigateTo(interfaces[0], atom);
         else
           mkInterfaceMenu(event, $(this), interfaces, atom);
       });
     }     
   });
-
 }
 
 function mkInterfaceMenu(event, $parent, interfaces, atom) {
@@ -46,19 +45,18 @@ function mkInterfaceMenu(event, $parent, interfaces, atom) {
   $menu.offset({ top: event.pageY, left: event.pageX });
 
   for (i=0; i<interfaces.length; i++) {
-    var url = getNavigationUrl(interfaces[i],atom);
-    var $item = $('<a class=InterfaceContextMenuItem hsref='+url+' interface='+
-                interfaces[i]+'>'+interfaces[i]+'</a>');   
+    var $item = $('<div class=InterfaceContextMenuItem interface='+
+                interfaces[i]+'>'+interfaces[i]+'</div>');   
 
     $menu = $menu.append($item);
     
-    addClickEvent($item,url);
+    addClickEvent($item,interfaces[i],atom);
   }
 }
 
-function addClickEvent($item, url) { // need a separate function here, to prevent dynamic scoping (see bug below)
+function addClickEvent($item, interface, atom) { // need a separate function here, to prevent dynamic scoping (see bug below)
   $item.click(function () {
-    window.location.href = url;
+    navigateTo(interface, atom);
     $('.InterfaceContextMenu').remove(); // so the menu is gone when we press back
     return false;
   });
