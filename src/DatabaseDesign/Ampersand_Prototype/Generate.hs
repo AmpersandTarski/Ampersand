@@ -82,10 +82,10 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   , "      // relation: "++showPhpStr (show (objctx object))  -- escape for the pathological case that one of the names in the relation contains a newline
   ] ++ case objctx object of
            ERel r ->        [ "      , 'relation' => "++showPhpStr (show r) 
-                            , "      , 'relationIsFlipped' => 'False'" 
+                            , "      , 'relationIsFlipped' => False" 
                             ]
            EFlp (ERel r) -> [ "      , 'relation' => "++showPhpStr (show r) 
-                            , "      , 'relationIsFlipped' => 'True'" 
+                            , "      , 'relationIsFlipped' => True" 
                             ]          
            _             -> [ "      , 'relation' => ''" 
                             , "      , 'relationIsFlipped' => ''" 

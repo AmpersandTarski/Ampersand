@@ -98,10 +98,11 @@ function generateInterface($db, $interface, $srcAtom) {
   $codomainAtoms = getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery']);
   //print_r($codomainAtoms);
   
+  // maybe Container should be called Relation?
   $isUni = $interface['isUnivalent'];  
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr($interface['relationIsFlipped']);
-  if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  if (!$isUni) emit($html, '<table class="AtomList Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {
     if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));

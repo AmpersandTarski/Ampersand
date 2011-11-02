@@ -1,5 +1,5 @@
 function startEditing() {
-  $('.Atom').unbind('click');
+  $('.Atom').unbind('click').css("cursor","default").css("color","black"); // undo coloring by initializeLinks. Not nice, css cannot be used now. TODO: fix this by using attr to signal presence of interfaces
   $('body').attr('editing','True');
   initializeEditButtons();
 
@@ -27,7 +27,7 @@ function initializeLinks(interfacesMap) {
     var interfaces = interfacesMap[concept];
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't add a click event
       $(this).css("cursor","pointer");
-      $(this).css("color","blue"); // add an attr and use stylesheet for this
+      $(this).css("color","blue"); // todo add an attr and use stylesheet for this
       $(this).click(function (event) {     // todo: figure out return value for click handlers
         if (interfaces.length == 1)
           navigateTo(interfaces[0], atom);
@@ -68,47 +68,63 @@ function addClickEvent($item, interface, atom) { // need a separate function her
 function initializeEditButtons() {
 
   $('.Container').hover(function () {
-    $parentInterface = $(this).parents().filter('.Container').first();
+    var $parentInterface = getParentContainer($(this));
     
     $parentInterface.attr('hover', 'False');
     if ($(this).attr('relation'))
         $(this).attr('hover', 'True');
     }, function () {
-    $parentInterface = $(this).parents().filter('.Container').first();
+    $parentInterface = getParentContainer($(this));
     if ($parentInterface.attr('relation'))
         $parentInterface.attr('hover', 'True');
     $(this).attr('hover', 'False');
   });
   $('.Atom').click(function(){
-    console.log("click");
-    var concept = $(this).attr('concept');
-    var atom = $(this).attr('atom');
-    $containerElt = $(this).parents().filter(".Container"); 
-    concept =$containerElt.attr('concept');
-    relation = $containerElt.attr('relation'); 
-    relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-    alert('Update: '+atom+' : '+concept+' from relation '+(relationIsFlipped?'~':'')+relation);
+    var $containerElt = getParentContainer($(this));
+    var relation = $containerElt.attr('relation'); 
+    if (relation) {
+      var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+      var srcAtom =$containerElt.attr('srcAtom');
+      var atom = $(this).attr('atom');
+    
+      if (relationIsFlipped)
+        alert('Update: ('+atom+','+srcAtom+ ') in ~'+relation);
+      else 
+        alert('Update: ('+srcAtom+','+atom+ ') in '+relation);
+    }
   });
   $('.DeleteStub').click(function() {
-    $containerElt = $(this).parents().filter(".Container"); 
-    concept =$containerElt.attr('concept');
-    relation = $containerElt.attr('relation'); 
-    relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-    $atomElt = $(this).next().children().first();
-    atom =$atomElt.attr('atom')
-    alert('Delete: '+atom+' : '+concept+' from relation '+(relationIsFlipped?'~':'')+relation);
+    var $containerElt = getParentContainer($(this));
+    var relation = $containerElt.attr('relation'); 
+    var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    var srcAtom =$containerElt.attr('srcAtom');
+    var $atomElt = $(this).next().children().first();
+    var atom =$atomElt.attr('atom')
+    if (relationIsFlipped)
+      alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
+    else 
+      alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
   });
   $('.AddStub').click(function (event) {
-    $containerElt = $(this).parents().filter(".Container"); 
-    concept =$containerElt.attr('concept');
-    relation = $containerElt.attr('relation'); 
-    relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-    alert('Add: '+concept+' to relation '+(relationIsFlipped?'~':'')+relation);
+    var $containerElt = getParentContainer($(this));
+    var relation = $containerElt.attr('relation'); 
+    var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    var srcAtom =$containerElt.attr('srcAtom');
+    var atom = 'new';
+    if (relationIsFlipped)
+      alert('Add: ('+atom+','+srcAtom+ ') to ~'+relation);
+    else 
+      alert('Add: ('+srcAtom+','+atom+ ') to '+relation);
   });
 }
 
 
-// util
+
+// utils
+
+function getParentContainer($elt) {
+  return $elt.parents().filter('.Container').first();
+}
 
 function mapInsert(map, key, value) {
   if (map[key])
