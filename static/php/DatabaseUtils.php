@@ -133,7 +133,7 @@ function getCoDomainAtoms($db, $atom, $selectRel) {
 }
 
 function selectCoDomain($atom, $selectRel) {
-  return 'SELECT DISTINCT `tgt` FROM ('.$selectRel.') as results where src=\''.$atom.'\'';
+  return 'SELECT DISTINCT `tgt` FROM ('.addSlashes($selectRel).') as results where src=\''.addSlashes($atom).'\'';
 }
 
 
