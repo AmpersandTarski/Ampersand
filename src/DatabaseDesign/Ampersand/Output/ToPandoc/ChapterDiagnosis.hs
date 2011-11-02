@@ -187,7 +187,7 @@ chpDiagnosis lev fSpec flags
                          [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
                          [ Str " is not documented."
                        ] ]
-     where missing = [(Math InlineMath . showMathDamb fSpec . ERel) r  -- ERel is always typeable, so showMathDamb may be used.
+     where missing = [(Math InlineMath . showMath . ERel) r  -- ERel is always typeable, so showMathDamb may be used.
                      | r@(Rel{}) <-mors fSpec, not (isIdent r)
                      , null (purpose fSpec (language flags) r)
                      ]
@@ -251,7 +251,7 @@ chpDiagnosis lev fSpec flags
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMathDamb fSpec . ERel . makeRelation) d  -- makeRelation d is always typeable, so showMathDamb may be used.
+     where notUsed = nub [(Math InlineMath . showMath . ERel . makeRelation) d  -- makeRelation d is always typeable, so showMathDamb may be used.
                          | d@(Sgn{}) <- declarations fSpec, decusr d
                          , d `notElem` (nub . map makeDeclaration . mors . rules) fSpec
                          ]
@@ -459,10 +459,10 @@ chpDiagnosis lev fSpec flags
         (English,[], [] ) -> [ Str "This script is empty. " ]
         (Dutch,  [],  _ ) -> [ Str "Dit script bevat geen populatie. " ]
         (English,[],  _ ) -> [ Str "This script contains no population. " ]
-        (Dutch,  [d],[_]) -> [ Str "Relatie ", Math InlineMath (showMathDamb fSpec d), Str " heeft een populatie van ", Str (count flags (length (decpopu d)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
-        (English,[d],[_]) -> [ Str "Relation ", Math InlineMath (showMathDamb fSpec d), Str " has ", Str (count flags (length (decpopu d)) "pair"), Str " in its population. " ]
-        (Dutch,  [d], _ ) -> [ Str "Alleen relatie ", Math InlineMath (showMathDamb fSpec d), Str " heeft een populatie. Deze bevat ", Str (count flags (length (decpopu d)) "paar"), Str ". " ]
-        (English,[d], _ ) -> [ Str "Only relation ", Math InlineMath (showMathDamb fSpec d), Str " is populated. It contains ", Str (count flags (length (decpopu d)) "pair"), Str ". " ]
+        (Dutch,  [d],[_]) -> [ Str "Relatie ", Math InlineMath (showMath d), Str " heeft een populatie van ", Str (count flags (length (decpopu d)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
+        (English,[d],[_]) -> [ Str "Relation ", Math InlineMath (showMath d), Str " has ", Str (count flags (length (decpopu d)) "pair"), Str " in its population. " ]
+        (Dutch,  [d], _ ) -> [ Str "Alleen relatie ", Math InlineMath (showMath d), Str " heeft een populatie. Deze bevat ", Str (count flags (length (decpopu d)) "paar"), Str ". " ]
+        (English,[d], _ ) -> [ Str "Only relation ", Math InlineMath (showMath d), Str " is populated. It contains ", Str (count flags (length (decpopu d)) "pair"), Str ". " ]
         (Dutch,   _ , _ ) -> [ Str "De onderstaande tabel geeft de populatie van de verschillende relaties weer. " ]
         (English, _ , _ ) -> [ Str "The following table represents the population of various relations. " ])
      ] ++
@@ -484,7 +484,7 @@ chpDiagnosis lev fSpec flags
           Dutch   -> [[Plain [Str "Relatie"]],  [Plain [Str "Populatie"]  ]]
           English -> [[Plain [Str "Relation"]], [Plain [Str "Population"] ]]
         )
-        [ [[Plain [Math InlineMath (showMathDamb fSpec d)]], [Plain [(Str . show . length . decpopu) d]]]  -- Every d is typeable, so showMathDamb may be used.
+        [ [[Plain [Math InlineMath (showMath d)]], [Plain [(Str . show . length . decpopu) d]]]  -- Every d is typeable, so showMathDamb may be used.
         | d<-ds
         ]
      | length ds>1 ]

@@ -157,7 +157,7 @@ interfaceChap lev fSpec flags act
                             | otherwise        = fld e f ++
                                                  [ BulletList [recur (ECps [e,fld_expr f']) f' | f'<-fld_sub f] ]
            fld e f = [ Para [ Str (dealWithUnderscores (fld_name f)++if null cols then "" else "("++intercalate ", " cols++")") ]
-                     , Para [ Str "display on start: ", Math InlineMath $ showMathDamb fSpec (conjNF e) ]
+                     , Para [ Str "display on start: ", Math InlineMath $ showMath (conjNF e) ]
                      ] 
             where cols = ["lijst"         | fld_list    f]++
                          ["verplicht"     | fld_must    f]++

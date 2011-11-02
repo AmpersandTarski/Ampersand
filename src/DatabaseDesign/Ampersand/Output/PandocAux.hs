@@ -434,26 +434,18 @@ pandocEquation x
 
 class ShowMath a where
  showMath :: a -> String
- showMathDamb :: Fspc -> a -> String
 
 instance ShowMath A_Concept where
  showMath c = texOnly_Id (name c)
- showMathDamb _ = showMath 
 
 instance ShowMath A_Gen where
  showMath g     = showMath (genspc g)           ++"\\ \\le\\ "++showMath           (gengen g)
- showMathDamb _ = showMath
 
 instance ShowMath Rule where
  showMath r = showMath (rrexp r)
- showMathDamb fSpec r
-  = showMathDamb fSpec (rrexp r)
 
 instance ShowMath Expression where
  showMath             = showchar.insParentheses
- showMathDamb fSpec e = if isTypeable e
-                        then (showchar.insParentheses.disambiguate fSpec) e
-                        else fatal 447 ("Don't call disambiguate on "++show e++",\n  because it is not typeable.")
 
 showchar :: Expression -> String
 showchar (EEqu (r,s)) = showchar r ++ texOnly_equals ++ showchar s
@@ -488,7 +480,6 @@ instance ShowMath Relation where
   = "V"
  showMath r@(Mp1{})
   = "'"++relval r++"'"
- showMathDamb fSpec = showMath . disambiguate fSpec . ERel -- ERel is always typeable, so disambiguate may be used.
 
 instance ShowMath Declaration where
  showMath decl@(Sgn{})
@@ -499,7 +490,6 @@ instance ShowMath Declaration where
   = "\\full"
  showMath Iscompl{}
   = "\\cmpl{\\iden}"
- showMathDamb _ = showMath
 
 latexEscShw :: String -> String
 latexEscShw "" = ""
