@@ -403,7 +403,10 @@ instance Association Expression where
                      if and [r `comparable` l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
                      then Sign (source (head ss)) (target (last ss))
                      else fatal 265 $ "type checker failed to verify "++show (ERad es)++"."
- sign (EKl0 e)       = sign e
+ sign (EKl0 e)       = --see #166 
+                     if source e `comparable` target e
+                     then Sign (source e `lub` target e)(source e `lub` target e)
+                     else fatal 409 $ "type checker failed to verify "++show (EKl0 e)++"."
  sign (EKl1 e)       = sign e
  sign (EFlp e)       = Sign t s where Sign s t=sign e
  sign (ECpl e)       = sign e
