@@ -63,7 +63,7 @@ where
                           then []
                           else foldr1 join (map contents es)
             (EKl0 e)     -> if source e `comparable` target e
-                          then closPair (contents e) `join` contents (source e `lub` target e)
+                          then closPair (contents e `uni` contents (source e `lub` target e))
                           else fatal 69 ("source and target of "++show e++show (sign e)++ " are not comparable.")
             (EKl1 e)     -> closPair (contents e)
             (EFlp e)     -> [(b,a) | (a,b)<-contents e]
