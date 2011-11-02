@@ -78,7 +78,7 @@ function DB_doquer($DbName, $quer,$debug=5)
 function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['concept']=='ONE')
-      echo '<a href="Interfaces.php?interface='.escapeHtmlAttrStr($interface['name']).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
+      echo '<a href="Interfaces.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
   }
 }
 
@@ -167,5 +167,10 @@ function escapeJsStr($str) {
     return addSlashes($str);
 }
 
+// This is needed for non-javascript urls, where javascript would call encodeURIComponent
+// We only handle the &, the browser takes care of the rest.
+function escapeURI($str) {
+    return str_replace(array('&'), array('%26'), $str); // replace & by %26
+}
 
 ?>
