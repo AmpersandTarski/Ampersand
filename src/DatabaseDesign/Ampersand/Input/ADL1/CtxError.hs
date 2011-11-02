@@ -36,8 +36,8 @@ instance Show CtxError where
   showsPrec _ (Cxe cxe x) = showString (x ++ "\n" ++ show cxe)
   showsPrec _ CxeNone = showString ""
   showsPrec _ (PE msg) = showString $ "Parse error:\n"++ show (case msg of 
-                                                              [] -> fatal 35 "No messages??? The imposible happend!" 
-                                                              x:_ -> show x)
+                                                              [] -> fatal 35 "No messages??? The impossible happened!" 
+                                                              x:_ -> x)
 newcxe :: String -> CtxError
 newcxe = Cxe CxeNone
 newcxeif :: Bool -> String -> CtxError
