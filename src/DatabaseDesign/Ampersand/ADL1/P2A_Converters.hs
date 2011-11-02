@@ -571,7 +571,16 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
 infer contxt (PBrk r) ac      = ([EBrk e |e<-alts], messages) where (alts,messages) = infer contxt r ac
 infer contxt (PFlp r) ac      = ([EFlp e |e<-alts], messages) where (alts,messages) = infer contxt r (flpcast ac)
 infer contxt (PCpl r) ac      = ([ECpl e |e<-alts], messages) where (alts,messages) = infer contxt r ac
-infer contxt (PKl0 r) ac      = ([EKl0 e |e<-alts], messages) where (alts,messages) = infer contxt r ac
+infer contxt (PKl0 r) ac      = (alts, if null deepMsgs then combMsgs else deepMsgs) 
+    where -- Step 1: infer contxt types of r
+           (eAlts,eMsgs) = infer contxt r ac
+          -- Step 2: compute the viable alternatives
+           alts = nub [EKl0 e | e<-eAlts, source e `comparable` target e] -- see #166
+          -- Step 3: compute messages
+           deepMsgs = eMsgs
+           combMsgs = [ "Source and target of "++showADL r++" do not match:\n"++
+                        "\n  Possible types of "++showADL r++": "++ (show.nub) (map sign eAlts)++"."
+                      | null alts]
 infer contxt (PKl1 r) ac      = ([EKl1 e |e<-alts], messages) where (alts,messages) = infer contxt r ac
 infer contxt (PRrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
     where -- Step 1: infer contxt types of left hand side and right hand sides
