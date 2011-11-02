@@ -29,7 +29,7 @@ chpConceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
   where
   header :: [Block]
-  header = labeledHeader lev (xLabel ConceptualAnalisys)
+  header = labeledHeader lev (xLabel ConceptualAnalysis)
                                         (case language flags of
                                             Dutch   ->  "Conceptuele Analyse"   
                                             English ->  "Conceptual Analysis"
