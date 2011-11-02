@@ -62,9 +62,9 @@ where
             (ECps es)    -> if null es 
                           then []
                           else foldr1 join (map contents es)
-            (EKl0 e)     -> if source e `comparable` target e
-                          then closPair (contents e `uni` contents (source e `lub` target e))
-                          else fatal 69 ("source and target of "++show e++show (sign e)++ " are not comparable.")
+            (EKl0 e)     -> if source e == target e --see #166
+                          then closPair (contents e `uni` contents (source e))
+                          else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
             (EKl1 e)     -> closPair (contents e)
             (EFlp e)     -> [(b,a) | (a,b)<-contents e]
             (ECpl e)     -> [apair | apair <-cartesianProduct (contents (source e)) (contents (target e))
