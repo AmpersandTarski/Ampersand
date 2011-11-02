@@ -151,7 +151,7 @@ function emit(&$lines,$line) {
 // showJsStr escapes the str and puts ' ' around it:  showJsStr("'\"") -> "'\'\"'"
 // NOTE this does not escape html chars such as > < and &
 function showJsStr($str) {
-    return "'".escapeJsStr($str)."'";
+    return '"'.escapeJsStr($str).'"';
 }
 
 function escapeJsStr($str) {
