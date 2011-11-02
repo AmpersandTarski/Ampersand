@@ -72,27 +72,27 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
 
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
-  , "'"++name interface ++"' => " ] ++
+  , showPhpStr (name interface) ++" => " ] ++
   genInterfaceObjects fSpec opts 1 (ifcObj interface) 
   
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts depth object = indent (depth*2) $
-  [ "array ( 'name' => '"++name object++"'"
-  , "      // relation: "++show (objctx object)
+  [ "array ( 'name' => "++showPhpStr (name object)
+  , "      // relation: "++showPhpStr (show (objctx object))  -- escape for the pathological case that one of the names in the relation contains a newline
   ] ++ case objctx object of
-           ERel r ->        [ "      , 'relation' => '"++show r++"'" 
+           ERel r ->        [ "      , 'relation' => "++showPhpStr (show r) 
                             , "      , 'relationIsFlipped' => 'False'" 
                             ]
-           EFlp (ERel r) -> [ "      , 'relation' => '"++show r++"'" 
+           EFlp (ERel r) -> [ "      , 'relation' => "++showPhpStr (show r) 
                             , "      , 'relationIsFlipped' => 'True'" 
                             ]          
            _             -> [ "      , 'relation' => ''" 
                             , "      , 'relationIsFlipped' => ''" 
                             ]          
   ++     
-  [ "      , 'concept' => '"++show (target $ objctx object)++"'" -- only needed for top level
-  , "      , 'isUnivalent' => " ++ (phpBool $ isUni (objctx object))
+  [ "      , 'concept' => "++showPhpStr (show (target $ objctx object)) -- only needed for top level
+  , "      , 'isUnivalent' => " ++ (showPhpBool $ isUni (objctx object))
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
@@ -119,8 +119,14 @@ addToLastLine str lines = init lines ++ [last lines ++ str]
 toPhp str = map replace str
  where replace ' ' = '_'
        replace c   = c
-  
-phpBool b = if b then "true" else "false"
+ 
+showPhpStr str = "'"++escapePhpStr str++"'"
+
+-- NOTE: we assume a single quote php string, so $ and " are not escaped
+escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\"),('\n', "\\n")] | c<-cs ] -- escape '   \   \n
+-- todo: escape everything else (unicode, etc)
+
+showPhpBool b = if b then "true" else "false"
 
 -- GenUtil
 phpPreliminaries = -- Maybe this will be put in an imported Php module
