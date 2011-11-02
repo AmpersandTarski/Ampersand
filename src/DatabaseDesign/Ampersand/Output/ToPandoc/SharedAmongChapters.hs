@@ -16,7 +16,6 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc (reprAsRule)
 import DatabaseDesign.Ampersand.Fspec.FPA (fpa) 
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -88,20 +87,14 @@ dpRule fSpec flags = dpR
              [ Plain text2 | not (null rds)] ++
              [ Plain text3 ] ++
              (if showPredExpr flags
-              then pandocEquation ((showLatex.toPredLogic.reprAsRule r.conjNF.rrexp) r++symDefLabel r)
-              else let cr = (conjNF.rrexp) r in
-                   if isTypeable cr
-                   then pandocEquation ((showMathDamb fSpec.reprAsRule r) cr++symDefLabel r)
-                   else fatal 1101 ("Untypeable "++show cr)
+              then pandocEquation ((showLatex.toPredLogic) r++symDefLabel r)
+              else pandocEquation (showMath r++symDefLabel r)
              )++
              [ Plain text4 | isSignal r] ++
              (if not (isSignal r) then [] else
               if showPredExpr flags
-              then pandocEquation ((showLatex.toPredLogic.reprAsRule r.disjNF.notCpl.rrexp) r++symDefLabel r)
-              else let dr = (disjNF.notCpl.rrexp) r in
-                   if isTypeable dr
-                   then pandocEquation ((showMathDamb fSpec.reprAsRule r) dr++symDefLabel r)
-                   else fatal 1110 ("Untypeable "++show dr)
+              then pandocEquation ((showLatex.toPredLogic) r++symDefLabel r)
+              else pandocEquation (showMath r++symDefLabel r)
              )++
              [ Plain text5 | length nds>1]
            ] 
