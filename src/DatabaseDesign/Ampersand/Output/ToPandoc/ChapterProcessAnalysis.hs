@@ -116,14 +116,14 @@ chpProcessAnalysis lev fSpec flags
                        English -> "Role&Relation\\\\ \\hline\n")
                ]++
                [ RawInline "latex" $ intercalate "\\\\ \\hline\n   " 
-                       [ role++" & $"++showMathDamb fSpec r++"$"++
-                         concat[ "\\\\\n   &$"++showMathDamb fSpec (snd rs)++"$" | rs<-tail rrClass]
+                       [ role++" & $"++showMath r++"$"++
+                         concat[ "\\\\\n   &$"++showMath (snd rs)++"$" | rs<-tail rrClass]
                        | rrClass<-eqCl fst (fRoleRels fSpec)
                        , let role=fst (head rrClass), let r=snd (head rrClass)
                        ]
                ]++
                [ RawInline "latex" "\\\\ \\hline\n" | not (null rolelessRels)]++
-               [ RawInline "latex" $ intercalate "\\\\\n   " [ "&$"++showMathDamb fSpec d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
+               [ RawInline "latex" $ intercalate "\\\\\n   " [ "&$"++showMath d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
                [ RawInline "latex" "\\\\ \\hline\n\\end{tabular}"
                ]
      ]

@@ -162,7 +162,7 @@ chpDataAnalysis lev fSpec flags
         []  -> []
         [r] -> [ case language flags of
                    Dutch   ->
-                      Para [ Str $ upCap (name fSpec)++" heeft Ã©Ã©n associatie: "++(showADL . disambiguate fSpec . ERel) r++". Deze associatie "++ -- ERel r is typeable for each r, so disambibuate (ERel r) is defined.
+                      Para [ Str $ upCap (name fSpec)++" heeft Ã©Ã©n associatie: "++showADL r++". Deze associatie "++ 
                                    case (isTot r, isSur r) of
                                     (False, False) -> "heeft geen beperkingen ten aanzien van multipliciteit."
                                     (True,  False) -> "is totaal."
@@ -170,7 +170,7 @@ chpDataAnalysis lev fSpec flags
                                     (True,  True ) -> "is totaal en surjectief."
                            ]
                    English ->
-                      Para [ Str $ upCap (name fSpec)++" has one association: "++(showADL . disambiguate fSpec . ERel) r++". This association "++ -- ERel r is typeable for each r, so disambibuate (ERel r) is defined.
+                      Para [ Str $ upCap (name fSpec)++" has one association: "++showADL r++". This association "++ 
                                    case (isTot r, isSur r) of
                                     (False, False) -> "has no restrictions with respect to multiplicities. "
                                     (True,  False) -> "is total."
@@ -182,11 +182,11 @@ chpDataAnalysis lev fSpec flags
                [r] -> [ case language flags of
                           Dutch   ->
                              Para [ Str $ upCap (name fSpec)++" heeft "++count flags (length rs) "associatie"++". "
-                                  , Str $ " Daarvan is "++(showADL . disambiguate fSpec . ERel) r++if isTot r then "totaal" else "surjectief"
+                                  , Str $ " Daarvan is "++showADL r++if isTot r then "totaal" else "surjectief"
                                   ]
                           English   ->
                             Para [ Str $ upCap (name fSpec)++" has "++count flags (length rs) "association"++". "
-                                  , Str $ " Association "++(showADL . disambiguate fSpec . ERel) r++" is "++if isTot r then "total" else "surjective"
+                                  , Str $ " Association "++showADL r++" is "++if isTot r then "total" else "surjective"
                                   ]
                       ]
                _   -> [ case language flags of
@@ -207,7 +207,7 @@ chpDataAnalysis lev fSpec flags
                                , [Plain [Str "total"]]
                                , [Plain [Str "surjective"]]]
                         )
-                        [[[Plain [Math InlineMath (showMathDamb fSpec r)]] -- r is a relation, and therefore isTypeable r. So  showMathDamb fSpec r  exists.
+                        [[[Plain [Math InlineMath (showMath r)]] -- r is a relation, and therefore isTypeable r. So  showMath r  exists.
                          ,[Plain [Math InlineMath "\\surd" | isTot r]]
                          ,[Plain [Math InlineMath "\\surd" | isSur r]]]
                         | r<-rs', not (isAttribute r)
@@ -239,7 +239,7 @@ chpDataAnalysis lev fSpec flags
              ,[Plain [Str "Sym"]]
              ,[Plain [Str "Asy"]]
              ,[Plain [Str "Prop"]]]
-             [[[Plain [Math InlineMath (showMathDamb fSpec d)]] -- d is a declaration, and therefore typeable. So  showMathDamb fSpec d  exists.
+             [[[Plain [Math InlineMath (showMath d)]] -- d is a declaration, and therefore typeable. So  showMath d  exists.
               ,[Plain [Math InlineMath "\\surd" | isRfx d ]]
               ,[Plain [Math InlineMath "\\surd" | isIrf d ]]
               ,[Plain [Math InlineMath "\\surd" | isTrn d ]]
@@ -360,14 +360,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
                                 else if isTypeable (rrexp r)
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec r]
+                                     then Para [ Math DisplayMath $ showMath r]
                                      else fatal 1635 ("Untypeable "++show r)
                               ]
                        rs  -> [ Para [ Str "Within this data set, the following integrity rules shall be true at all times. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
                                 else BulletList [ if isTypeable (rrexp r)
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec r]]
+                                                  then [Para [Math DisplayMath $ showMath r]]
                                                   else fatal 1642 ("Untypeable "++show r)
                                                 | r<-rs ]
                               ]
@@ -377,14 +377,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
                                 else if isTypeable (rrexp r)
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec r]
+                                     then Para [ Math DisplayMath $ showMath r]
                                      else fatal 1652 ("Untypeable "++show r)
                               ]
                        rs  -> [ Para [ Str "Binnen deze gegevensverzameling dienen de volgende integriteitsregels te allen tijde waar te zijn. " ]
                               , if showPredExpr flags
                                 then BulletList [ [Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
                                 else BulletList [ if isTypeable (rrexp r)
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec r]]
+                                                  then [Para [Math DisplayMath $ showMath r]]
                                                   else fatal 1659 ("Untypeable "++show r)
                                                 | r<-rs ]
                               ]
@@ -396,14 +396,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
                                 else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec s]
+                                     then Para [ Math DisplayMath $ showMath s]
                                      else fatal 1671 ("Untypeable "++show s)
                               ]
                        ss  -> [ Para [ Str "This data set contains the following keys. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
                                 else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec s]]
+                                                  then [Para [Math DisplayMath $ showMath s]]
                                                   else fatal 1678 ("Untypeable "++show s)
                                                 | s<-ss ]
                               ]
@@ -413,14 +413,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
                                 else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec s]
+                                     then Para [ Math DisplayMath $ showMath s]
                                      else fatal 1688 ("Untypeable "++show s)
                               ]
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende keys. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
                                 else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec s]]
+                                                  then [Para [Math DisplayMath $ showMath s]]
                                                   else fatal 1695 ("Untypeable "++show s)
                                                 | s<-ss ]
                               ]
@@ -432,14 +432,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
                                 else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec s]
+                                     then Para [ Math DisplayMath $ showMath s]
                                      else fatal 1707 ("Untypeable "++show s)
                               ] 
             (English, ss)  -> [  Para [ Str "This data set generates the following process rules. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
                                 else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec s]]
+                                                  then [Para [Math DisplayMath $ showMath s]]
                                                   else fatal 1714 ("Untypeable "++show s)
                                                 | s<-ss ]
                               ]
@@ -447,14 +447,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
                                 else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec s]
+                                     then Para [ Math DisplayMath $ showMath s]
                                      else fatal 1724 ("Untypeable "++show s)
                               ]
             (Dutch  ,  ss ) -> [ Para [ Str "Deze gegevensverzameling genereert de volgende procesregels. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
                                 else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec s]]
+                                                  then [Para [Math DisplayMath $ showMath s]]
                                                   else fatal 1731 ("Untypeable "++show s)
                                                 | s<-ss ]
                               ]
@@ -466,14 +466,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
                                 else if isTypeable e
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec e]
+                                     then Para [ Math DisplayMath $ showMath e]
                                      else fatal 1743 ("Untypeable "++show e)
                               ]
                        es  -> [ Para [ Str "The following rules define the integrity of data within this data set. They must remain true at all times. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
                                 else BulletList [ if isTypeable e
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec e]]
+                                                  then [Para [Math DisplayMath $ showMath e]]
                                                   else fatal 1750 ("Untypeable "++show e)
                                                 | e<-es ]
                               ]
@@ -483,14 +483,14 @@ chpDataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
                                 else if isTypeable e
-                                     then Para [ Math DisplayMath $ showMathDamb fSpec e]
+                                     then Para [ Math DisplayMath $ showMath e]
                                      else fatal 1760 ("Untypeable "++show e)
                               ]
                        es  -> [ Para [ Str "De volgende regels definiÃ«ren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
                                 else BulletList [ if isTypeable e
-                                                  then [Para [Math DisplayMath $ showMathDamb fSpec e]]
+                                                  then [Para [Math DisplayMath $ showMath e]]
                                                   else fatal 1767 ("Untypeable "++show e)
                                                 | e<-es ]
                               ]
