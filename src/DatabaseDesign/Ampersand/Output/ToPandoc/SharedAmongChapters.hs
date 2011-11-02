@@ -37,7 +37,7 @@ data Chapter = Intro
              | NatLangReqs
              | FunctionalRequirements 
              | Diagnosis 
-             | ConceptualAnalisys
+             | ConceptualAnalysis
              | ProcessAnalisys
              | DataAnalisys
              | SoftwareMetrics

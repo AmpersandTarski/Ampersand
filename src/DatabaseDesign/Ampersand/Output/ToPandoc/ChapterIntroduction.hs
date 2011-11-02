@@ -47,7 +47,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                 , Str " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                 ]
           , Para 
-                [ Str "De conceptuele analysis in hoofdstuk ", xrefReference ConceptualAnalisys
+                [ Str "De conceptuele analyse in hoofdstuk ", xrefReference ConceptualAnalysis
                 , Str " is bedoeld voor requirements engineers en architecten om de afspraken uit hoofdstuk "
                 , xrefReference FunctionalRequirements, Str " te valideren en te formaliseren. "
                 , Str "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
@@ -83,7 +83,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                 , Str " is meant to help the authors identify shortcomings in their Ampersand script."
                 ]
           , Para 
-                [ Str "The conceptual analysis in chapter ", xrefReference ConceptualAnalisys
+                [ Str "The conceptual analysis in chapter ", xrefReference ConceptualAnalysis
                 , Str " is meant for requirements engineers and architects to validate and formalize the requirements from chapter "
                 , xrefReference FunctionalRequirements, Str ". "
                 , Str "It is also meant for testers to come up with correct test cases. "
