@@ -86,7 +86,7 @@ function generateInterfaceMap($interfaces) {
   echo 'function getInterfacesMap() {';
   echo '  var interfacesMap = new Array();';
   foreach($interfaces as $interface) {
-    echo '  mapInsert(interfacesMap, '.showJsStr($interface['concept']).', '.showJsStr($interface['name']).');';
+    echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['concept']).', '.showHtmlAttrStr($interface['name']).');';
   }
   echo '  return interfacesMap;';
   echo '}';
@@ -99,9 +99,9 @@ function generateInterface($db, $interface, $srcAtom) {
   //print_r($codomainAtoms);
   
   $isUni = $interface['isUnivalent'];  
-  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showJsStr($interface['relation']).' relationIsFlipped='.showJsStr($interface['relationIsFlipped']);
-  if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showJsStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" concept='.showJsStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr($interface['relationIsFlipped']);
+  if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {
     if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
@@ -117,7 +117,7 @@ function generateInterfaceList($db, $parentInterface, $atom) {
   $interfaces = $parentInterface['subInterfaces'];
   // the old prototype did not show the atom when there are subinterfaces
   // for now, we always show it, for debugging purposes
-  emit($html, '<div class=Atom atom='.showJsStr($atom).'> '.htmlSpecialChars($atom).' </div>'); // todo: escape html!
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).'> '.htmlSpecialChars($atom).' </div>'); // todo: escape html!
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
@@ -148,14 +148,24 @@ function emit(&$lines,$line) {
 }
 
 
-// showJsStr escapes the str and puts ' ' around it:  showJsStr("'\"") -> "'\'\"'"
-// NOTE this does not escape html chars such as > < and &
+
+// for use in specifiying values for attributes to html elements (eg. <div attr=VALUE>)
+// " -> &quot,  
+function showHtmlAttrStr($str) {
+    return '"'.escapeHtmlAttrStr($str).'"';
+}
+
+function escapeHtmlAttrStr($str) {
+    return str_replace(array('"'), array('&quot;'), $str); // we do addSlashes and replace \" by &quot; and \' by '
+}
+
 function showJsStr($str) {
-    return '"'.escapeJsStr($str).'"';
+    return "'".escapeJsStr($str)."'";
 }
 
 function escapeJsStr($str) {
     return addSlashes($str);
 }
+
 
 ?>
