@@ -543,8 +543,8 @@ infer :: (Language l, ConceptStructure l, Identified l) => l
 
 infer contxt (Pequ (p_l,p_r)) ac = inferEquImp contxt Pequ EEqu (p_l,p_r) ac
 infer contxt (Pimp (p_l,p_r)) ac = inferEquImp contxt Pimp EImp (p_l,p_r) ac
-infer contxt (PUni p_rs) ac      = inferUniIsc contxt PUni EUni True  p_rs ac -- True is used to infer contxt the most specific type.
-infer contxt (Pisc p_rs) ac      = inferUniIsc contxt Pisc EIsc False p_rs ac -- False is used to infer contxt the most generic type.
+infer contxt (PUni p_rs) ac      = inferUniIsc contxt PUni EUni p_rs ac -- True is used to infer contxt the most specific type.
+infer contxt (Pisc p_rs) ac      = inferUniIsc contxt Pisc EIsc p_rs ac -- False is used to infer contxt the most generic type.
 infer contxt (PCps p_es) ac      = inferCpsRad contxt PCps ECps p_es ac
 infer contxt (PRad p_es) ac      = inferCpsRad contxt PRad ERad p_es ac   
 infer contxt (Prel rel) ac       = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
@@ -561,7 +561,7 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
                       && uc==sign e -- would the type be the same without cast PTyp i.e. one candidate with uc==sign e?
                    then e           -- then remove this redundant PTyp
                    else ETyp e uc   -- else keep it
-                 | e <- candidates, sign e <= uc]
+                 | e <- candidates, sign e `comparable` uc]
           unknowncs = nub[c |c<-concs uc, c `notElem` concs contxt]
           msgs = ["Unknown concept: '"++name (head unknowncs)++"'." |length unknowncs == 1] ++
                  ["Unknown concepts: '"++name (head unknowncs)++"' and '"++name (last unknowncs)++"'." |length unknowncs > 1] ++
@@ -632,35 +632,39 @@ infer contxt e@(PDif (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else 
            (lAlts',lMsgs)=infer contxt p_l uc
            (rAlts',rMsgs)=infer contxt p_r uc
           -- Step 4: compute the viable alternatives 
-           alts = nub [EDif (l,r) |l<-lAlts',r<-rAlts',sign r <= sign l]
+           alts = nub [EDif (l,r) |l<-lAlts',r<-rAlts',sign r `comparable` sign l]
           -- Step 5: compute messages
            deepMsgs = lMsgs++rMsgs
            combMsgs = [ "Incompatible types in: "++showADL e++"."++
                         "\n  Possible types of "++showADL p_l++": "++ show (map sign lAlts')++"."++
                         "\n  Possible types of "++showADL p_r++": "++ show (map sign rAlts')++"."
                       | null alts]++
-                      [ "Ambiguous types in "++showADL e
-                      | not (srcTypeable p_l)&&not (srcTypeable p_r) || not (trgTypeable p_r)&&not (trgTypeable p_l) ]
+                      [ "Ambiguous types in "++showADL e++
+                        case uc of
+                         Cast s t     -> fatal 644 "Cast s t cannot occur in an type error message"
+                         SourceCast s -> showCast uc++"; the target cannot be determined."
+                         TargetCast t -> showCast uc++"; the source cannot be determined."
+                         NoCast       -> "; neither source nor target can be determined."
+                      | null [ () | Cast _ _<-[uc]]   -- if the type is cast to Cast s t, the expression is typeable in all cases.
+                      , not (srcTypeable p_l)&&not (srcTypeable p_r) || not (trgTypeable p_r)&&not (trgTypeable p_l) ]
 
 -- | the inference procedure for \/ and /\  (i.e. union  and  intersect)
 inferUniIsc :: (ShowADL a,Language l, ConceptStructure l, Identified l) =>
                l
                -> ([P_Expression] -> a)
                -> ([Expression] -> Expression)
-               -> Bool
                -> [P_Expression]
                -> AutoCast
                -> ([Expression], [TErr])
-inferUniIsc _      _            _           _       [] _     = fatal 610 "Type checking (PUni []) or (Pisc []) should never occur."
-inferUniIsc contxt _            _           _       [p_e] ac = infer contxt p_e ac
-inferUniIsc contxt pconstructor constructor specific p_rs ac = (solutions,messages)
+inferUniIsc _      _            _           []    _  = fatal 610 "Type checking (PUni []) or (Pisc []) should never occur."
+inferUniIsc contxt _            _           [p_e] ac = infer contxt p_e ac
+inferUniIsc contxt pconstructor constructor p_rs  ac = (solutions,messages)
     where -- Step 1: do inference on all subexpressions,-- example: e = hoofdplaats[Gerecht*Plaats]~\/neven[Plaats*Rechtbank]
           terms     = [infer contxt p_e ac | p_e<-p_rs]        -- example: terms = [[hoofdplaats[Gerecht*Plaats]~],[neven[Plaats*Rechtbank]]]
           -- Step 2: find the most generic type that is determined.
-          detS   = (if specific then sort else reverse.sort)                         -- example: detS=[Plaats,Plaats]
-                   [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
-          detT   = (if specific then sort else reverse.sort)                         -- example: detT=[Gerecht,Rechtbank], because Rechtbank ISA Gerecht
-                   [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
+          --         by sorting the list, the most generic type comes up front.
+          detS   = sort [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
+          detT   = sort [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
           uc     = case (detS,detT) of                                               -- example: uc  =Cast Plaats Gerecht, i.e. the most generic
                     (s:_,t:_) -> Cast s t
                     (s:_, []) -> SourceCast s
@@ -722,6 +726,7 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
     where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps [Prel beslissing,Prel van,Prel jurisdictie],Prel bevoegd)
            terms     = [infer contxt p_e ac | p_e<-[p_l,p_r]]                    -- example: [[beslissing[Zaak*Beslissing];van[Beslissing*Orgaan];jurisdictie[Orgaan*Rechtbank]],[bevoegd[Zaak*Gerecht]]]
           -- Step 2: find the most general type that is determined.
+          --         By sorting the list, the most general type will come first.
            detS   = sort [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]  -- example: [Zaak,Zaak]
            detT   = sort [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]  -- example: [Gerecht,Rechtbank]
            uc     = case (detS,detT) of                                                -- example: Cast Zaak Gerecht
@@ -741,7 +746,7 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
                               "\nRAlts': "++show rAlts'++
                               "\ndetS, detT, uc: "++show detS++"    "++show detT++"    "++show uc++
                               "\nalts: "++show (nub [EImp (l,r) |l<-lAlts',r<-rAlts',sign r <= sign l])) else -}
-                  nub [constructor (l,r) |l<-lAlts',r<-rAlts',sign r <= sign l]
+                  nub [constructor (l,r) |l<-lAlts',r<-rAlts',sign r `comparable` sign l]
           -- Step 5: compute messages
            deepMsgs = lMsgs++rMsgs
            combMsgs = [ "Left and right types must be equal in: "++showADL (pconstructor (p_l,p_r))++"."++
@@ -822,16 +827,17 @@ inferCpsRad contxt pconstructor constructor p_rs ac = (solutions,messages)
                       | (is,(lft,rht))<-zip inter (splits p_rs), length is>1]   -- example: splits [1,2,3,4] = [([1],[2,3,4]),([1,2],[3,4]),([1,2,3],[4])]
           messages  = if null deepMsgs
                       then (case solutions of
-                             []  -> (concat.take 1) combMsgs     -- the messages found by combining terms, from which an arbitrary wrong combination is taken
-                             [_] -> []                           -- we have solutions without deep messages. 
-                             _  -> interMsgs)                   -- we have multiple solutions, so something is wrong in between terms.
+                             []  -> (concat.take 1) combMsgs   -- the messages found by combining terms, from which an arbitrary wrong combination is taken
+                             [_] -> []                         -- we have solutions without deep messages. 
+                             _  -> interMsgs)                  -- we have multiple solutions, so something is wrong in between terms.
                       else deepMsgs                            -- get deep messages before combination-messages.
           makeMessages rs
-           = [ "incomparable types between "++showADL l++showCast ltyp++" and "++showADL r++showCast rtyp++":\n   "++showADL (target l)++" does not match "++showADL (source r)
-             | (l,r,ltyp,rtyp) <- zip4 (init rs) (tail rs) castVector' castVector', not (target l `comparable` source r)]
-          showCast (Cast s t) = "["++show s++"*"++show t++"]"
-          showCast _ = ""
+           = [ "incomparable types between "++showADL l++showCast typ++" and "++showADL r++showCast typ++":\n   "++showADL (target l)++" does not match "++showADL (source r)
+             | (l,r,typ) <- zip3 (init rs) (tail rs) castVector', not (target l `comparable` source r)]
 
+showCast :: AutoCast -> String
+showCast (Cast s t) = "["++show s++"*"++show t++"]"
+showCast _ = ""
 
 -- The following function can be used to determine how much of a set of alternative expression is already determined
 detSrc :: [Expression] -> AutoCast

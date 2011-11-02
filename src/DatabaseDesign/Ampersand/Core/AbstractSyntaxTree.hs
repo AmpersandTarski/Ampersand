@@ -365,17 +365,19 @@ insParentheses expr = insPar 0 expr
        insPar i (EBrk f)     = insPar i f
        insPar _ (ETyp e t)   = ETyp (insPar 10 e) t
        insPar _ (ERel rel)   = ERel rel
+
+-- The following code has been reviewed by Gerard and Stef on nov 1st, 2011 (revision 290)
 instance Association Expression where
- sign (EEqu (l,r))   = if sign l==sign r
-                     then sign l
+ sign (EEqu (l,r))   = if sign l `comparable` sign r
+                     then sign l `lub` sign r
                      else fatal 233 $ "type checker failed to verify "++show (EEqu (l,r))++"."
- sign (EImp (l,r))   = if sign r <= sign l
-                     then sign l
+ sign (EImp (l,r))   = if sign l `comparable` sign r
+                     then sign l `lub` sign r
                      else fatal 236 $ "type checker failed to verify "++show (EImp (l,r))++"."
  sign (EIsc [])      = fatal 237 $ "Ampersand failed to eliminate "++show (EIsc [])++"."
  sign (EIsc es)      = let ss=map sign es in
                      if and [l `comparable` r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss `comparable` s | s<-tail ss] may be wrong, since comparable is not transitive.
-                     then maximum ss -- do not use  foldr1 lub ss, because `comparable` is not transitive.
+                     then minimum ss -- do not use  foldr1 lub ss, because `comparable` is not transitive.
                      else fatal 241 $ "type checker failed to verify "++show (EIsc es)++"."
  sign (EUni [])      = fatal 242 $ "Ampersand failed to eliminate "++show (EUni [])++"."
  sign (EUni es)      = let ss=map sign es in
