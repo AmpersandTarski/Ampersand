@@ -78,7 +78,7 @@ function DB_doquer($DbName, $quer,$debug=5)
 function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['concept']=='ONE')
-      echo '<a href="Interfaces.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
+      echo '<a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
   }
 }
 

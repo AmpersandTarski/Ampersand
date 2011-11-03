@@ -23,51 +23,11 @@ generateAll fSpec opts =
  
   
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
-  phpPreliminaries ++
-  ["require \"php/DatabaseUtils.php\";"
+  [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
   , "$allInterfaceObjects ="
   , "  array" ] ++
-    (addToLastLine ";" $ indent 4 $ blockParenthesize $ map (generateInterface fSpec opts) allInterfaces) ++
-  [ ""
-  , "echo '<html>';"
-  , "echo '<head>';"
-  , "echo '<link href=\"css/Experimental.css\" rel=\"stylesheet\" type=\"text/css\"/>';"
-  , "echo '<link href=\"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css\" rel=\"stylesheet\" type=\"text/css\"/>';"
-  , "echo '<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js\"></script>';"
-  , "echo '<script src=\"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js\"></script>';"
-  , "echo '<script src=\"js/Experimental.js\"></script>';"
-  , "echo '<script type=\"text/javascript\">';"
-  , "echo 'function init() {';"
-  , "echo '  initializeLinks(getInterfacesMap());';"
-  , "echo '}';"
-  , "echo '';"
-  , "echo generateInterfaceMap($allInterfaceObjects);"
-  , "echo '</script>';"
-  , "echo '</head>';"
-  , "echo '<body onload=\"init()\">';"
-  , "echo '<button class=\"EditButton\" onclick=\"startEditing()\">Edit</button>';"
-  , "echo '<button class=\"CancelButton\" onclick=\"stopEditing(getInterfacesMap())\">Cancel</button>';"
-  , ""
---  , "printBinaryTable(DB_doquer('"++dbName opts++"', getQueryOverview_as()));"
---  , "print_r( getCoDomainAtoms( 'Hello', '2', getQueryId_notIdentifies() ));"
-  , ""
-  , "if (isset($_REQUEST['interface']) && isset($_REQUEST['atom'])) {"
-  , "    $interface=$_REQUEST['interface'];"
-  , "    $atom=$_REQUEST['atom'];"
-  , "    echo '<h3>Interface \\''.htmlSpecialChars($interface).'\\' for atom \\''.htmlSpecialChars($atom).'\\'</h3>';"
-  , "    echo generateInterface('"++dbName opts++"', $allInterfaceObjects[$interface], $atom); "
-  , "} else {"
-  , "echo '<h3>Top-level interfaces</h3>';"
-  , "echo topLevelInterfaceLinks($allInterfaceObjects);"
-  --, " echo \"some test stuff for Hello.adl (will most likely fail for other adls)\";"
-  --, " echo generateInterface('Hello', $allInterfaceObjects['Overview'], '1');"
-  --, " echo generateInterface('Hello', $allInterfaceObjects['Id'], '2');"
-  --, " echo generateInterface('Hello', $allInterfaceObjects['Th'], 'France');"
-  , "}"
-  , "echo '</body>';"
-  , "echo '</html>';"
-  ]     
+       (addToLastLine ";" $ indent 4 $ blockParenthesize $ map (generateInterface fSpec opts) allInterfaces)
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
 generateInterface fSpec opts interface =
@@ -127,12 +87,6 @@ escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\")
 -- todo: escape everything else (unicode, etc)
 
 showPhpBool b = if b then "true" else "false"
-
--- GenUtil
-phpPreliminaries = -- Maybe this will be put in an imported Php module
-  [ "error_reporting(E_ALL); "
-  , "ini_set(\"display_errors\", 1);"
-  ]
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $

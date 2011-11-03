@@ -16,7 +16,7 @@ function stopEditing(interfacesMap) {
 // navigation
 
 function navigateTo(interface, atom) {
-  window.location.href = "Interfaces.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
+  window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
 function initializeLinks(interfacesMap) {
