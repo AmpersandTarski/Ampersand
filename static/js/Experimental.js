@@ -19,7 +19,7 @@ function navigateTo(interface, atom) {
   window.location.href = "Interfaces.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
-function initializeLinks(interfacesMap) {  
+function initializeLinks(interfacesMap) {
   $(".Atom").map(function () {
     $containerElt = $(this).parents().filter(".Container"); 
     concept =$containerElt.attr('concept');
@@ -64,7 +64,8 @@ function addClickEvent($item, interface, atom) { // need a separate function her
 
 // Editing
 // todo: editing -> editingHover oid
-//       editing attr of doc root
+//       explain hover
+//       clean up css, now container and AtomList are used next to each other.
 function initializeEditButtons() {
 
   $('.Container').hover(function () {
@@ -85,12 +86,7 @@ function initializeEditButtons() {
     if (relation) {
       var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
       var srcAtom =$containerElt.attr('srcAtom');
-      var atom = $(this).attr('atom');
-    
-      if (relationIsFlipped)
-        alert('Update: ('+atom+','+srcAtom+ ') in ~'+relation);
-      else 
-        alert('Update: ('+srcAtom+','+atom+ ') in '+relation);
+      startAtomEditing($(this));
     }
   });
   $('.DeleteStub').click(function() {
@@ -118,6 +114,55 @@ function initializeEditButtons() {
   });
 }
 
+// Create a form that contains a text field, put it after $atom, and hide $atom.
+function startAtomEditing($atom) {
+  var atom = $atom.attr('atom');
+  $textfield = $('<input type=text value="'+atom+'"/>');
+  $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
+  $form.append($textfield);
+  $atom.after($form);
+  $($textfield).focus();
+  $atom.hide();
+
+  // stop editing when the textfield loses focus
+  $textfield.blur(function () {
+    stopAtomEditing($atom);
+  });
+  // and when the user presses the return key
+  $form.submit(function () {
+    stopAtomEditing($atom);
+    return false; // this prevents the browser from actually submitting the form
+  });
+
+}
+
+// take the old value from $atom and replace its atom attribute as well as its text
+// contents with the new value from the text field. Then show $atom again and
+// remove the text field.
+function stopAtomEditing($atom) {
+  var atom = $atom.attr('atom');
+  $atom.attr('atom',newAtom);
+  var $form = $('#atomEditor');
+  var newAtom = $form.children().filter('input').attr('value');
+  $form.remove();
+  $atom.text(newAtom);
+  $atom.show();
+  if (newAtom!=atom) {
+    var $containerElt = getParentContainer($atom);
+    var relation = $containerElt.attr('relation'); 
+    var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    var srcAtom =$containerElt.attr('srcAtom');
+    if (relationIsFlipped)
+      alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
+    else 
+      alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
+  }
+}
+
+// todo: blur events come after delete and add events
+//       make sure this does not cause problems when deleting
+//       the edited atom
+//       or when pressing cancel!
 
 
 // utils
