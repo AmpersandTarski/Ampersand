@@ -3,22 +3,9 @@
 module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
 import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
-import Data.List
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-import DatabaseDesign.Ampersand.Fspec.FPA (fpa) 
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.Fspec
 import Text.Pandoc
-import Text.Pandoc.Builder  (toList, codeBlock)
-import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), switchboardAct,sbDiagram)
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,meaning,Explainable(..))
-import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
-import DatabaseDesign.Ampersand.Output.PandocAux
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis
@@ -29,13 +16,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 
-
-
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Fspec2Pandoc"
 
 --DESCR ->
 --The functional specification starts with an introduction
@@ -130,14 +111,5 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           (daTxt  ,daPics)   = chpDataAnalysis       level fSpec flags
           studentversion = theme flags == StudentTheme
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
-------------------------------------------------------------                
-
-------------------------------------------------------------
-------------------------------------------------------------
-------------------------------------------------------------
-------------------------------------------------------------
-------------------------------------------------------------
-------------------------------------------------------------
-
 
 

@@ -262,7 +262,7 @@ pODef2aODef actx cast podef
         = cxelist [atscxes,newcxe ("Note that the type of "++ showADL expr ++ " at " ++ show(origin podef) ++ " is "++ show (sign expr) ++ ".")]
      | otherwise     = exprcxe
     -- Step4: check equality
-    eqcxe = newcxeif (length (nub ((target expr):map (source.objctx) ats))/=1)
+    eqcxe = newcxeif (length (nub (target expr:map (source.objctx) ats))/=1)
                      (intercalate "\n" ["The source of expression " 
                                         ++ showADL (objctx x) ++" ("++showADL (source (objctx x))++")"
                                         ++ " is compatible, but not equal to the target of expression "
@@ -545,7 +545,7 @@ pRel2aExpr prel contxt ac
                             else ["Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
           ( _ , ds , []) -> ["Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."| d<-ds, source d==target d]++
                             ["Relation declaration " ++ show (name d) ++ " has endoproperties " ++ show (endomults d) ++ ", which are defined on endorelations only."| d<-ds, source d/=target d]
-          ( _  , _ , ds) -> []
+          ( _  , _ , _ ) -> []
    )
    where
     cast d = case ac of         -- make sure the declaration satisfies the desired genericity.
@@ -680,9 +680,9 @@ infer contxt e@(PDif (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else 
                       | null alts]++
                       [ "Ambiguous types in "++showADL e++
                         case uc of
-                         Cast s t     -> fatal 644 "Cast s t cannot occur in an type error message"
-                         SourceCast s -> showCast uc++"; the target cannot be determined."
-                         TargetCast t -> showCast uc++"; the source cannot be determined."
+                         Cast _ _     -> fatal 644 "Cast s t cannot occur in an type error message"
+                         SourceCast _ -> showCast uc++"; the target cannot be determined."
+                         TargetCast _ -> showCast uc++"; the source cannot be determined."
                          NoCast       -> "; neither source nor target can be determined."
                       | null [ () | Cast _ _<-[uc]]   -- if the type is cast to Cast s t, the expression is typeable in all cases.
                       , not (srcTypeable p_l)&&not (srcTypeable p_r) || not (trgTypeable p_r)&&not (trgTypeable p_l) ]

@@ -6,19 +6,11 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
 import Data.List
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-import DatabaseDesign.Ampersand.Fspec.FPA (fpa) 
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
-import Text.Pandoc
-import Text.Pandoc.Builder  (toList, codeBlock)
-import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), switchboardAct,sbDiagram)
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,meaning,Explainable(..))
-import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
+import DatabaseDesign.Ampersand.Fspec.Switchboard      (switchboardAct)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 interfaceChap :: Int -> Fspc -> Options -> Activity ->  ([Block],[Picture])
