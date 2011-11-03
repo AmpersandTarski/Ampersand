@@ -214,9 +214,10 @@ pKDef2aKDef actx pkdef
    where
     (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
     c  = pCpt2aCpt actx (kd_cpt pkdef)
+    -- check equality
     kdcxe = newcxeif (nocxe (cxelist atscxes) && length (nub (c:map (source.objctx) ats))/=1)
                      (intercalate "\n" ["The source of expression " ++ showADL (objctx x) 
-                                        ++" ("++showADL (source (objctx x))++") is not equal to the key concept ("++ showADL c ++ ")."
+                                        ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the key concept ("++ showADL c ++ ")."
                                        |x<-ats,source (objctx x)/=c])
     nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
                          |at<-kd_ats pkdef, let xs=[at' |at'<-kd_ats pkdef,name at==name at'],length xs>1]
@@ -245,17 +246,28 @@ pODef2aODef actx cast podef
         , objats = ats
         , objstrs = obj_strs podef
                     }
-   , CxeOrig (cxelist (nmchk:odcxe:exprcxe:atscxes)) "object definition" "" (origin podef) )
+   , CxeOrig (cxelist [nmchk,odcxe]) "object definition" "" (origin podef) )
    where
-    (ats,atscxes)  = unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
-    (expr,exprcxe)  = pExpr2aExpr actx cast (obj_ctx podef)
-    odcxe = newcxeif (nocxe (cxelist (exprcxe:atscxes)) && length (nub (target expr:map (source.objctx) ats))/=1)
-                     (intercalate "\n" ["The source of expression " ++ showADL (objctx x) 
-                                        ++" ("++showADL (source (objctx x))++") is not compatible with the target of expression "
-                                        ++ showADL expr ++ " ("++ showADL (target expr) ++ ")."
-                                       |x<-ats,source (objctx x)/=target expr])
     nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
                          |at<-obj_ats podef, let xs=[at' |at'<-obj_ats podef,name at==name at'],length xs>1]
+    -- Step1: check obj_ctx
+    (expr,exprcxe)  = pExpr2aExpr actx cast (obj_ctx podef)
+    -- Step2: check obj_ats in the context of expr
+    (ats,atscxes)  = (\f (x,y) -> (x, f y)) cxelist $ unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
+    -- Step3: compute type error messages
+    odcxe
+     | nocxe exprcxe && nocxe atscxes = eqcxe
+     | nocxe exprcxe && not(nocxe atscxes) 
+          -- the nature of an atscxe is unknown and may be caused by the SourceCast. If so, a note on the type of expr is useful .
+        = cxelist [atscxes,newcxe ("Note that the type of "++ showADL expr ++ " at " ++ show(origin podef) ++ " is "++ show (sign expr) ++ ".")]
+     | otherwise     = exprcxe
+    -- Step4: check equality
+    eqcxe = newcxeif (length (nub ((target expr):map (source.objctx) ats))/=1)
+                     (intercalate "\n" ["The source of expression " 
+                                        ++ showADL (objctx x) ++" ("++showADL (source (objctx x))++")"
+                                        ++ " is compatible, but not equal to the target of expression "
+                                        ++ showADL expr       ++" ("++showADL (target expr) ++ ")."
+                                       |x<-ats,source (objctx x)/=target expr])
 
 pExpl2aExpl :: A_Context -> PExplanation -> (Explanation, CtxError)
 pExpl2aExpl actx pexpl
@@ -561,8 +573,8 @@ infer :: (Language l, ConceptStructure l, Identified l) => l
 
 infer contxt (Pequ (p_l,p_r)) ac = inferEquImp contxt Pequ EEqu (p_l,p_r) ac
 infer contxt (Pimp (p_l,p_r)) ac = inferEquImp contxt Pimp EImp (p_l,p_r) ac
-infer contxt (PUni p_rs) ac      = inferUniIsc contxt PUni EUni p_rs ac -- True is used to infer contxt the most specific type.
-infer contxt (Pisc p_rs) ac      = inferUniIsc contxt Pisc EIsc p_rs ac -- False is used to infer contxt the most generic type.
+infer contxt (PUni p_rs) ac      = inferUniIsc contxt PUni EUni p_rs ac
+infer contxt (Pisc p_rs) ac      = inferUniIsc contxt Pisc EIsc p_rs ac
 infer contxt (PCps p_es) ac      = inferCpsRad contxt PCps ECps p_es ac
 infer contxt (PRad p_es) ac      = inferCpsRad contxt PRad ERad p_es ac   
 infer contxt (Prel rel) ac       = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
