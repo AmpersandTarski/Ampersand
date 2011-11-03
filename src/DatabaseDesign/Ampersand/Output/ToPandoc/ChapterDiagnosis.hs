@@ -9,7 +9,6 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc (reprAsRule)
 import DatabaseDesign.Ampersand.Fspec.FPA (fpa) 
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
