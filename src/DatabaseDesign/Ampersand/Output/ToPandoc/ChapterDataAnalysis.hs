@@ -7,18 +7,11 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import Data.List
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
-import DatabaseDesign.Ampersand.Fspec.FPA (fpa) 
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
-import Text.Pandoc
-import Text.Pandoc.Builder  (toList, codeBlock)
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), switchboardAct,sbDiagram)
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,meaning,Explainable(..))
-import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
+import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), sbDiagram)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -224,9 +217,9 @@ chpDataAnalysis lev fSpec flags
             | length hMults==1, d<-hMults ]++
             [ Para [ case language flags of
                           Dutch   ->
-                            Str $ "In aanvulling daarop hebben de endorelaties de volgende eigenschappen: "
+                            Str "In aanvulling daarop hebben de endorelaties de volgende eigenschappen: "
                           English   ->
-                            Str $ "Additionally, the endorelations come with the following properties: "]
+                            Str "Additionally, the endorelations come with the following properties: "]
             | length hMults>1 ]++
             [Table [] [AlignLeft,AlignCenter,AlignCenter,AlignCenter,AlignCenter,AlignCenter,AlignCenter] [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
              [[case language flags of
