@@ -769,8 +769,8 @@ while maintaining all invariants.
 
    -- TODO: @Stef: Why is this needed?  
    idsOnly :: Expression -> Bool
-   idsOnly e' = and [isIdent r | r<-mors e'] -- > tells whether all the arguments are equivalent to I
-             where mors :: Expression -> [Relation]
-                   mors = foldrMapExpression rdcons id []   -- yields a list of relations from e
+   idsOnly e' = and [isIdent r | r<-mors' e'] -- > tells whether all the arguments are equivalent to I
+             where mors' :: Expression -> [Relation]
+                   mors' = foldrMapExpression rdcons id []   -- yields a list of relations from e
                    rdcons :: Eq a => a -> [a] -> [a]
                    rdcons r ms = if r `elem` ms then ms else r:ms

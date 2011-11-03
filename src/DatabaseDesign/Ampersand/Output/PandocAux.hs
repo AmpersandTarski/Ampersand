@@ -20,7 +20,6 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       )
 where
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec
 import Data.Char hiding (Space)
 import Text.Pandoc
 import DatabaseDesign.Ampersand.Basics
@@ -112,7 +111,7 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                    do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
                                                 then system ( pdfLatexCommand++
                                                               if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog" ) >>
-                                                     system ( makeIndexCommand )
+                                                     system  makeIndexCommand 
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                                 else system $ "cd "++dirOutput flags++
                                                               " && pdflatex "++commonFlags++
@@ -406,8 +405,6 @@ labeledHeader lev lbl str =
                  Header lev [Str str]
                  : [Para [xrefLabel lbl]]
  
-xrefReference :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
-xrefReference myLabel = RawInline "latex" ("\\ref{"++myLabel++"}")
 xrefLabel :: String -> Inline        -- uitbreidbaar voor andere rendering dan LaTeX
 xrefLabel myLabel = RawInline "latex" ("\\label{"++myLabel++"}")
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
