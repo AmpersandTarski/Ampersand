@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule 
-            
+module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
+            ( deriveProofs 
             , lambda
             , checkMono
             , showProof
-            , testInterface
-)  where
+            , testInterface )
+where
 
    import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),sort',eqCl)
    import Data.List
@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
 --   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,cfProof,dfProof,disjNF,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,cfProof,dfProof,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),defaultFlags)
    import DatabaseDesign.Ampersand.Misc.Explain
    import Text.Pandoc
@@ -253,7 +253,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
               , ('\n':showClause fSpec (allClauses rule)
                 , "")
               , ("\nAvailable code fragments on rule "++name rule++":\n     "++
-                   intercalate "\n     " [showADL (reprAsRule rule r)++ " yields\n"++intercalate "\n\n"
+                   intercalate "\n     " [showADL rule++ " yields\n"++intercalate "\n\n"
                                    [ "event = "++show ev++" "++showADL rel++"\n"++
                                      showADL r++"["++showADL rel++":="++showADL (actSem ev rel (delta (sign rel)))++"] = r'\n"++
                                      "r'    = "++conjProof r'++"\n"++
@@ -315,18 +315,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
                  simplify (consequent conclusion)
      where (conclusion,_,_) = last (derivMono expr ev rel)
 
--- For the purpose of showing an expression in the form of a rule, the function reprAsRule is used.
--- If it is already in disjunctive form, as little as possible is changed.
--- If the form is unsuitable, the expression is normalized to disjunctive normal form first.
-   reprAsRule :: Rule -> Expression -> Rule
-   reprAsRule r e
-     = case e of
-         EUni es | or [isNeg t |t<-es]   -> r { rrexp = EImp (EIsc [notCpl t |t<-es,isNeg t], EUni [t |t<-es,isPos t] ) }
-         _                            -> r { rrexp = f (disjNF e) }
-     where  f (EUni es) = if or [isNeg t |t<-es] 
-                        then EImp (EIsc [notCpl t |t<-es,isNeg t], EUni [t |t<-es,isPos t] )
-                        else EUni es
-            f expr    = expr
 
    type Proof expr = [(expr,[String],String)]
    reversePrf :: Proof e -> Proof e
@@ -373,8 +361,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs, reprAsRule
      start Ins  = (ERel rel',EUni [ERel rel',delta (sign rel')])
      start Del  = (EIsc [ERel rel',ECpl (delta (sign rel'))],ERel rel')
 
--- TODO: the function "rule" does roughly the same as "reprAsRule", which is also defined in this module.
---  So get rid of one of them....
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrnm  = ""
                                        , rrfps = Origin "rule generated for isTrue neg' by Calc"
