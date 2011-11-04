@@ -30,13 +30,18 @@ function showCommandQueue() {
   }
 }
 /*
-*/
+
 // todo:
-// use POST for db updates
+// use POST for db updates, now commands are in the url, preventing refresh from working
+// rename add to insert
 // call addnew delete and update directly from makecommand
 
+// relation & concept with equal name cause name clash? table names are not case sensitive (or does quoting help?)
 
-// handle double events when clicking on a button while editing a text field (on blur arrives later)
+// handle double events when clicking on a button (add, delete, cancel, commit, etc.) while editing a text field (strangely enough the blur event arrives later)
+
+Newly inserted Identifier atom goes wrong when we navigate to it (maybe related to absence in id[Thing]
+*/
 
 /*
 Efficiency might be a problem after all. Solutions: no multiple edits, mimic the updates without accessing the database (tricky, and probably resulting in a far more primitive interface)
@@ -165,44 +170,7 @@ function editDelete($rel, $src, $tgt) {
 function editUpdate($rel, $src, $tgt,$dest,$newVal) {
   echo "editUpdate($rel, $src, $tgt,$dest,$newVal)";    
 }
-/*
-        echo 'json:';
-        $json = json_decode($_REQUEST['json']);
-        print_r($json);
-        echo '<br/>';
-        $commandQueue = $_SESSION['commandQueue'];
-        $command = mkCommand('addnew');
-        if ($command) {
-          array_push($commandQueue, $command);
-          $_SESSION['commandQueue'] = $commandQueue; 
-          showCommandQueue();
-        }
-        return true;
-      case 'editdelete':
-        $commandQueue = $_SESSION['commandQueue'];
-        $command = mkCommand('delete');
-        if ($command) {
-          $rel = $command['rel'];
-          $src = $command['src'];
-          $tgt = $command['tgt'];
-          $table = $relationTables[$rel]['table'];
-          $srcCol = $relationTables[$rel]['srcCol'];
-          $tgtCol = $relationTables[$rel]['tgtCol'];
-          DB_doquer($dbName, 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';');
-          array_push($commandQueue, $command);
-          $_SESSION['commandQueue'] = $commandQueue; 
-          showCommandQueue();
-        }
-        return true;
-      case 'editupdate':
-        $commandQueue = $_SESSION['commandQueue'];
-        $command = mkCommand('update');
-        if ($command) {
-          array_push($commandQueue, $command);
-          $_SESSION['commandQueue'] = $commandQueue; 
-          showCommandQueue();
-        }
-*/
+
 // todo: get rid of these echoes by ending php here.
 echo '<html>';
 echo '<head>';

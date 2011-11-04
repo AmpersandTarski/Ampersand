@@ -11,19 +11,14 @@ function commitEditing() {
   sendCommands([{cmd: 'editcommit'}]);
 }
 
-// todo interfacesMap arg is annoying
-//      maybe there's an easy way to prevent having to do initializeLinks again (check for 'editing' in the click handler)
 function cancelEditing() {
   sendCommands([{cmd: 'editrollback'}]);
   /* code below is for dynamic editrollback (without refreshing page from server)
+// maybe there's an easy way to prevent having to do initializeLinks again (check for 'editing' in the click handler)
   $('.Atom').unbind('click');
   $('body').attr('editing','False');
   initializeLinks(interfacesMap);
   */
-}
-
-function testInsert() {
-  sendCommand(addNewCommand('identifies','src','Pino'));
 }
 
 function addNewCommand(relation,destination, otherAtom) {
@@ -46,6 +41,7 @@ function sendCommands(commandArray) {
 
 // navigation
 
+// todo interfacesMap arg is annoying
 function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
@@ -166,7 +162,7 @@ function startAtomEditing($atom) {
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
   $atom.after($form);
-  $($textfield).focus();
+  $textfield.focus().select();
   $atom.hide();
 
   // stop editing when the textfield loses focus
@@ -208,11 +204,6 @@ function stopAtomEditing($atom) {
     }
   }
 }
-
-// todo: blur events come after delete and add events
-//       make sure this does not cause problems when deleting
-//       the edited atom
-//       or when pressing cancel!
 
 
 // utils

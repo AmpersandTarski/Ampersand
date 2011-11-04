@@ -22,19 +22,13 @@
  { display: none
  }
 [editing=true] .SaveButton
- { display: block
+ { display: inline
  }
 .CancelButton
  { display: none
  }
 [editing=true] .CancelButton
- { display: block
- }
-/*.InsertButton
- { display: none
- }*/
-[editing=true] .InsertButton
- { display: block
+ { display: inline
  }
  
 [editing=true] .AtomList[hover=true]
