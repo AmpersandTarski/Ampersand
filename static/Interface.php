@@ -117,15 +117,15 @@ function processEditDatabase($dbCommand) {
       else 
         error("Database command $dbCommand->dbcmd is missing paramaters");
       break;
-    case 'delete':
+    case 'add':
       if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt)
-        editDelete($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
+        editAdd($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
       else 
         error("Database command $dbCommand->dbcmd is missing paramaters");
       break;
-    case 'update':
-      if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt && $dbCommand->dest && $dbCommand->newval)
-        editUpdate($dbCommand->rel, $dbCommand->src, $dbCommand->tgt, $dbCommand->dest, $dbCommand->newval);
+    case 'delete':
+      if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt)
+        editDelete($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
       else 
         error("Database command $dbCommand->dbcmd is missing paramaters");
       break;
@@ -135,9 +135,23 @@ function processEditDatabase($dbCommand) {
 }
 
 function editAddNew($rel, $dest, $otherAtom) {
-  echo "editAddNew($rel, $dest, $otherAtom)";
+  $newAtom = 'New';
+  if ($dest=='src')
+    editAdd($rel, $newAtom, $otherAtom);
+  else
+    editAdd($rel, $otherAtom, $newAtom);
 }
-
+function editAdd($rel, $src, $tgt) {
+  global $dbName;         // necessary, since these are declared in a different module 
+  global $relationTables; //
+  echo "editAdd($rel, $src, $tgt)";
+  $table = $relationTables[$rel]['table'];
+  $srcCol = $relationTables[$rel]['srcCol'];
+  $tgtCol = $relationTables[$rel]['tgtCol'];
+  DB_doquer($dbName, "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')");
+}
+// TODO use backquote for table names? 
+// TODO check escaping for table names
 function editDelete($rel, $src, $tgt) {
   global $dbName;         // necessary, since these are declared in a different module 
   global $relationTables; //

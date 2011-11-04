@@ -30,14 +30,14 @@ function addNewCommand(relation,destination, otherAtom) {
   return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, otheratom: otherAtom}};
 }
 
-function deleteCommand(relation, src, tgt) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'delete', rel: relation, src: src, tgt:tgt}};
+function addCommand(relation, src, tgt) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'add', rel: relation, src: src, tgt: tgt}};
 }
 
-// destination is src or tgt, depending on which value is updated
-function updateCommand(relation,src,tgt,destination,newVal) {
-  return 'command=update&rel='+encodeURIComponent(relation)+'&src='+encodeURIComponent(src)+'&tgt='+encodeURIComponent(tgt)+'&dest='+destination+'&newval='+encodeURIComponent(newVal);
+function deleteCommand(relation, src, tgt) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'delete', rel: relation, src: src, tgt: tgt}};
 }
+
 
 function sendCommands(commandArray) {
   window.location.href = 'Interface.php?interface='+encodeURIComponent($('body').attr('interface'))+'&atom='+encodeURIComponent($('body').attr('atom'))+
@@ -198,10 +198,12 @@ function stopAtomEditing($atom) {
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
     var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     if (relationIsFlipped) {
-      sendCommand(updateCommand(relation,atom,srcAtom,'src',newAtom));
+      sendCommands([ deleteCommand(relation,atom,srcAtom)
+                   , addCommand(relation,newAtom,srcAtom) ]);
       //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
     } else {
-      sendCommand(updateCommand(relation,srcAtom,atom,'tgt',newAtom));
+      sendCommands([ deleteCommand(relation,srcAtom,atom)
+                   , addCommand(relation,srcAtom,newAtom) ]);
       //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
     }
   }
