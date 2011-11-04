@@ -199,7 +199,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
    , CxeOrig exprcxe "rule" "" (origin prul)
    )
    where (aexpr,exprcxe) = pExpr2aExpr actx NoCast (rr_exp prul)
-         meanings (lang,expl) = [ Means lang (string2Blocks (defaultFlags {language=lang}) expl) | not (null expl)] --  TODO: Fix with meaning/ explanation. (related to #106)
+         meanings (lang,expl) = [ Means lang (string2Blocks ReST expl) | not (null expl)] --  TODO: Fix with meaning/ explanation. (related to #106)
    
 
 -- | pKDef2aKDef checks compatibility of composition with key concept on equality

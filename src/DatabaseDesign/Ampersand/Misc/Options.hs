@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,ParserVersion(..)
         ,verboseLn,verbose,FspecFormat(..),ImportFormat(..)
-        ,DocTheme(..),allFspecFormats,defaultFlags,PandocFormat(..),helpNVersionTexts)
+        ,DocTheme(..),allFspecFormats,PandocFormat(..),helpNVersionTexts)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -351,7 +351,8 @@ ftfOpt w opts = opts {defaultPandocReader = case map toUpper w of
                                                  ('M': _ ) -> Markdown
                                                  ('L': _ ) -> LaTeX
                                                  ('H': _ ) -> HTML
-                                                 _         -> ReST
+                                                 ('R': _ ) -> ReST
+                                                 _         -> fatal 355 "unrecognized freeTextFormat"
                      }
 allFspecFormats :: String
 allFspecFormats                     = "Pandoc, Rtf, OpenDocument, Latex, Html"

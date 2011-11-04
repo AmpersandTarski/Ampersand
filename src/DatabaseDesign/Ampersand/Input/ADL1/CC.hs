@@ -242,7 +242,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                           = P_Ru { rr_nm  = lbl
                                  , rr_exp = rexp
                                  , rr_fps = po
-                                 , rr_mean = (lang,expl) -- [Means lang (string2Blocks (defaultFlags {language=lang}) expl) | not (null expl)]
+                                 , rr_mean = (lang,expl)
                                  }
 
 {-  Basically we would have the following expression syntax:
