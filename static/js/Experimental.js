@@ -1,16 +1,47 @@
 function startEditing() {
-  $('.Atom').unbind('click').css("cursor","default").css("color","black"); // undo coloring by initializeLinks. Not nice, css cannot be used now. TODO: fix this by using attr to signal presence of interfaces
+  sendCommands([{cmd: 'editstart'}]);
+  /* code below is for dynamic editstart (without refreshing page from server)
+  $('.Atom').unbind('click').css("cursor","default").css("color","black"); 
   $('body').attr('editing','True');
   initializeEditButtons();
+*/
+}
 
+function commitEditing() {
+  sendCommands([{cmd: 'editcommit'}]);
 }
 
 // todo interfacesMap arg is annoying
 //      maybe there's an easy way to prevent having to do initializeLinks again (check for 'editing' in the click handler)
-function stopEditing(interfacesMap) {
+function cancelEditing() {
+  sendCommands([{cmd: 'editrollback'}]);
+  /* code below is for dynamic editrollback (without refreshing page from server)
   $('.Atom').unbind('click');
   $('body').attr('editing','False');
   initializeLinks(interfacesMap);
+  */
+}
+
+function testInsert() {
+  sendCommand(addNewCommand('identifies','src','Pino'));
+}
+
+function addNewCommand(relation,destination, otherAtom) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, otheratom: otherAtom}};
+}
+
+function deleteCommand(relation, src, tgt) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'delete', rel: relation, src: src, tgt:tgt}};
+}
+
+// destination is src or tgt, depending on which value is updated
+function updateCommand(relation,src,tgt,destination,newVal) {
+  return 'command=update&rel='+encodeURIComponent(relation)+'&src='+encodeURIComponent(src)+'&tgt='+encodeURIComponent(tgt)+'&dest='+destination+'&newval='+encodeURIComponent(newVal);
+}
+
+function sendCommands(commandArray) {
+  window.location.href = 'Interface.php?interface='+encodeURIComponent($('body').attr('interface'))+'&atom='+encodeURIComponent($('body').attr('atom'))+
+                         '&'+'commands='+encodeURIComponent(JSON.stringify(commandArray));
 }
 
 // navigation
@@ -19,6 +50,15 @@ function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
+function initialize(interfacesMap) {
+  console.log('initialize');
+  if ($('body').attr('editing') == 'true')
+    initializeEditButtons();  
+  else
+    initializeLinks(interfacesMap);
+}
+
+// undo coloring by initializeLinks. Not nice, css cannot be used now. TODO: fix this by using attr to signal presence of interfaces
 function initializeLinks(interfacesMap) {
   $(".Atom").map(function () {
     $containerElt = $(this).parents().filter(".Container"); 
@@ -71,14 +111,14 @@ function initializeEditButtons() {
   $('.Container').hover(function () {
     var $parentInterface = getParentContainer($(this));
     
-    $parentInterface.attr('hover', 'False');
+    $parentInterface.attr('hover', 'false'); // todo: move to if below?
     if ($(this).attr('relation'))
-        $(this).attr('hover', 'True');
+        $(this).attr('hover', 'true');
     }, function () {
     $parentInterface = getParentContainer($(this));
     if ($parentInterface.attr('relation'))
-        $parentInterface.attr('hover', 'True');
-    $(this).attr('hover', 'False');
+        $parentInterface.attr('hover', 'true');
+    $(this).attr('hover', 'false');
   });
   $('.Atom').click(function(){
     var $containerElt = getParentContainer($(this));
@@ -93,24 +133,29 @@ function initializeEditButtons() {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-    var srcAtom =$containerElt.attr('srcAtom');
+    var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     var $atomElt = $(this).next().children().first();
     var atom =$atomElt.attr('atom')
-    if (relationIsFlipped)
-      alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
-    else 
-      alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
+    if (relationIsFlipped) {
+      sendCommands([deleteCommand(relation,atom,srcAtom)]);
+      //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
+    } else {
+      sendCommands([deleteCommand(relation,srcAtom,atom)]);
+      //alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
+    }
   });
   $('.AddStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-    var srcAtom =$containerElt.attr('srcAtom');
-    var atom = 'new';
-    if (relationIsFlipped)
-      alert('Add: ('+atom+','+srcAtom+ ') to ~'+relation);
-    else 
-      alert('Add: ('+srcAtom+','+atom+ ') to '+relation);
+    var otherAtom =$containerElt.attr('srcAtom'); // todo: name otherAtom okay?
+    if (relationIsFlipped) {
+      sendCommands([addNewCommand(relation,'src',otherAtom)]);
+      //alert('Add: (new,'+srcAtom+ ') to ~'+relation);
+    }else {
+      sendCommands([addNewCommand(relation,'tgt',otherAtom)]);
+      //alert('Add: ('+srcAtom+',new) to '+relation);
+    }
   });
 }
 
@@ -151,11 +196,14 @@ function stopAtomEditing($atom) {
     var $containerElt = getParentContainer($atom);
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-    var srcAtom =$containerElt.attr('srcAtom');
-    if (relationIsFlipped)
-      alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
-    else 
-      alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
+    var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
+    if (relationIsFlipped) {
+      sendCommand(updateCommand(relation,atom,srcAtom,'src',newAtom));
+      //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
+    } else {
+      sendCommand(updateCommand(relation,srcAtom,atom,'tgt',newAtom));
+      //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
+    }
   }
 }
 

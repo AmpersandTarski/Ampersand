@@ -40,6 +40,21 @@ function printArray($arr) {
     echo $v.'</br>';
 }
 
+function dbStartTransaction($dbName) {
+  echo 'Start transaction';
+  DB_doquer($dbName, 'START TRANSACTION');
+}
+
+function dbCommitTransaction($dbName) {
+  DB_doquer($dbName, 'COMMIT');
+  echo 'Commit transaction';
+}
+
+function dbRollbackTransaction($dbName) {
+  DB_doquer($dbName, 'ROLLBACK');
+  echo 'Rollback transaction';
+}
+
 function DB_debug($txt,$lvl=0){
   global $DB_debug;
   if ($lvl<=$DB_debug) {

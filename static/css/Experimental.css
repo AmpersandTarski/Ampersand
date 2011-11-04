@@ -15,17 +15,29 @@
  { display: none
  }
 
-[editing=True] .EditButton
+[editing=true] .EditButton
  { display: none
+ }
+.SaveButton
+ { display: none
+ }
+[editing=true] .SaveButton
+ { display: block
  }
 .CancelButton
  { display: none
  }
-[editing=True] .CancelButton
+[editing=true] .CancelButton
+ { display: block
+ }
+/*.InsertButton
+ { display: none
+ }*/
+[editing=true] .InsertButton
  { display: block
  }
  
-[editing=True] .AtomList[hover=True]
+[editing=true] .AtomList[hover=true]
  { border-color: #909090
  }
 .Container
@@ -35,26 +47,26 @@
  ; border-style: solid
  ; border-width: 2px 
  }
-[editing=True] .Container[relation]
+[editing=true] .Container[relation]
  { border-color: #0080ff
  ; background-color: #f0f0f0
  }
-[editing=True] .Container[hover=True]
+[editing=true] .Container[hover=true]
  { background-color: #f0f0f0
  }
-[editing=True] .Container[hover=True] .Atom:hover
+[editing=true] .Container[hover=true] .Atom:hover
  { background-color: #808080
  }
-[editing=True] .AtomList[hover=True]>tbody>tr>.DeleteStub
+[editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub
  { background-image: url('../images/DeleteButton.png')
  ; background-repeat:no-repeat
  ; width: 25px
  }
-[editing=True] .AtomList[hover=True]>tbody>tr>.DeleteStub:hover
+[editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub:hover
  { background-image: url('../images/DeleteButtonDown.png')
  }
  
-[editing=True] .AtomList[hover=True]>tbody>tr>.AddStub
+[editing=true] .AtomList[hover=true]>tbody>tr>.AddStub
  { display: block
  ; padding-left: 7px
  ; padding-right: 7px
@@ -69,7 +81,7 @@
  ; -moz-border-radius: 7px       /* rounded corners for Firefox */
  ; -webkit-border-radius: 7px    /* rounded corners for Safari */
  }
-[editing=True] .AtomList[hover=True]>tbody>tr>.AddStub:hover
+[editing=true] .AtomList[hover=true]>tbody>tr>.AddStub:hover
  { background-color: #606060
  ; cursor: default
  }
