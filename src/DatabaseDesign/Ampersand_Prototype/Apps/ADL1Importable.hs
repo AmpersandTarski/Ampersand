@@ -124,7 +124,7 @@ instance ADL1Importable Declaration where
         :(makepopu dcs (show.snd) dcldom (fst.snd))
         :(makepopu dcs (show.snd) dclrng (snd.snd))
         --description
-        :(makepopu ds declarationid dcldcr (\x -> explainContent2String$meaning Dutch x))
+        :(makepopu ds declarationid dcldcr (\x -> explainContent2String LaTeX False$meaning Dutch x))
         :[]
 dpragma :: Integer -> Declaration -> String
 dpragma i (Sgn{decprL=x1,decprM=x2,decprR=x3})
@@ -151,7 +151,7 @@ instance ADL1Importable Rule where
         :(makepopu rs (showADL.rrexp) rulsrc (name.source))
         :(makepopu rs (showADL.rrexp) rultrg (name.target))
         :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.rrexp.fst) ruluss (relationid.snd))
-        :(makepopu rs name ruldcr (\x -> explainContent2String$meaning Dutch x))
+        :(makepopu rs name ruldcr (\x -> explainContent2String LaTeX False$meaning Dutch x))
         :[]
 
 instance ADL1Importable Pattern where
@@ -194,13 +194,13 @@ instance ADL1Importable Explanation where
          purpat = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Pattern"] 
          purrel = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Relation"]  
      in  (makepopu [(explCont e,name cdef) |e<-es, case explObj e of (ExplConceptDef _)->True;_ -> False,let ExplConceptDef cdef = explObj e]
-                  snd purcpt (explainContent2String.fst))
+                  snd purcpt ((explainContent2String LaTeX False).fst))
         :(makepopu [(explCont e,r) |e<-es, case explObj e of (ExplRule _)->True;_ -> False,let ExplRule r = explObj e]
-                  (name.snd) purrul (explainContent2String.fst))
+                  (name.snd) purrul ((explainContent2String LaTeX False).fst))
         :(makepopu [(explCont e,pstr) |e<-es, case explObj e of (ExplPattern _)->True;_ -> False,let ExplPattern pstr = explObj e]
-                  snd purpat (explainContent2String.fst))
+                  snd purpat ((explainContent2String LaTeX False).fst))
         :(makepopu [(explCont e,d) |e<-es, case explObj e of (ExplDeclaration _)->True;_ -> False,let ExplDeclaration d = explObj e]
-                  (declarationid.snd) purrel (explainContent2String.fst))
+                  (declarationid.snd) purrel ((explainContent2String LaTeX False).fst))
         :[]
 
 instance ADL1Importable Picture where
