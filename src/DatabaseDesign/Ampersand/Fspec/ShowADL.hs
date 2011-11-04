@@ -75,7 +75,7 @@ instance ShowADL ObjectDef where
 instance ShowADL Explanation where
  showADL expl = "PURPOSE "++showADL (explObj expl)++" IN "++showADL (explLang expl)
                 ++(if null (explRefId expl) then "" else " REF "++explRefId expl)
-                ++ "{+"++explainContent2String (explCont expl)++"-}"
+                ++ "{+"++explainContent2String LaTeX True (explCont expl)++"-}"
 
 instance ShowADL Lang where
  showADL Dutch   = "DUTCH"
@@ -143,7 +143,7 @@ instance ShowADL Rule where
  showADL r
   = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
      ++ if null phrs then [] else "\n     PHRASE "++ showstr (head phrs)
-     where phrs = [explainContent2String econt | Means _ econt<-rrxpl r]
+     where phrs = [explainContent2String LaTeX True econt | Means _ econt<-rrxpl r]
 
 instance ShowADL A_Gen where
  showADL (Gen _ g s _) = "GEN "++showADL s++" ISA "++showADL g

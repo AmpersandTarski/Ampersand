@@ -76,7 +76,7 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.writeFile
    , DatabaseDesign.Ampersand.Basics.trim
    -- * Stuff that should not be in the prototype
-   , explainContent2String, RuleMeaning(..)
+   , explainContent2String, PandocFormat(..), RuleMeaning(..)
    , Explainable(..), cptos', rulefromProp, allprops, endoprops
    , Populated(..), Paire, Explanation(..), ExplObj(..), PictType(..)
    )
