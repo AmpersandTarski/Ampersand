@@ -19,7 +19,7 @@ where
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,cfProof,dfProof,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
-   import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),defaultFlags)
+   import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST))
    import DatabaseDesign.Ampersand.Misc.Explain
    import Text.Pandoc
    
@@ -365,8 +365,8 @@ where
      rule neg' pos' | isTrue neg' = Ru { rrnm  = ""
                                        , rrfps = Origin "rule generated for isTrue neg' by Calc"
                                        , rrexp = pos'
-                                       , rrxpl = Means Dutch (string2Blocks (defaultFlags {language=Dutch}) "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 317)")
-                                              : [Means English (string2Blocks (defaultFlags {language=English}) "Why is this rule created? (In Calc.hs, line 318)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
+                                       , rrxpl = Means Dutch (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 317)")
+                                              : [Means English (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 318)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , r_env = ""
@@ -377,8 +377,8 @@ where
                     | otherwise   = Ru { rrnm  = ""
                                        , rrfps = Origin "rule generated for not(isTrue neg') by Calc"
                                        , rrexp = EImp (neg',pos')
-                                       , rrxpl = Means Dutch (string2Blocks (defaultFlags {language=Dutch}) "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
-                                               : [Means English (string2Blocks (defaultFlags {language=English}) "Why is this rule created? (In Calc.hs, line 333)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
+                                       , rrxpl = Means Dutch (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
+                                               : [Means English (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 333)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , r_env = ""
