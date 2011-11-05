@@ -29,6 +29,8 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Gen(..),P_Gens
    
    , Lang(..)
+
+   , PandocFormat(..)
    
    , Label(..)
    
@@ -51,6 +53,7 @@ where
    data P_Context
       = PCtx{ ctx_nm    :: String                     -- ^ The name of this context
             , ctx_lang  :: Lang                       -- ^ The default language in this context
+            , ctx_markup:: PandocFormat               -- ^ The default markup format for free text in this context
             , ctx_pats  :: [P_Pattern]                -- ^ The patterns defined in this context
             , ctx_PPrcs :: [P_Process]                -- ^ The processes as defined by the parser
             , ctx_rs    :: [P_Rule]                   -- ^ All user defined rules in this context, but outside patterns and outside processes
@@ -459,6 +462,8 @@ where
     origin = gen_fp
 
    data Lang = Dutch | English deriving (Show, Eq)
+
+   data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
 
    type Props = [Prop]
    data Prop      = Uni          -- ^ univalent

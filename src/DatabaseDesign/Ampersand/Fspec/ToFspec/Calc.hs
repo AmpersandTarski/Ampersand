@@ -19,8 +19,7 @@ where
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,cfProof,dfProof,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
-   import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST))
-   import DatabaseDesign.Ampersand.Misc.Explain
+   import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
    
    fatal :: Int -> String -> a

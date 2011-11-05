@@ -68,7 +68,7 @@ instance Explainable Relation where
 instance Explainable Declaration where
   meaning l decl = if null (decMean decl)
                    then concat [explCont expl | expl<-autoMeaning l decl, explLang expl==l]
-                   else [Plain [Str (decMean decl)]]
+                   else decMean decl
   explForObj _ _ = False
   explanations _ = []
   autoMeaning l d
