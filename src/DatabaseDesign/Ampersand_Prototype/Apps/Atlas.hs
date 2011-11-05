@@ -198,6 +198,7 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
     = PCtx {
          ctx_nm    = thehead cxs "no context found in Atlas DB"
        , ctx_lang  = lang
+       , ctx_markup= LaTeX --ADLImportable writes LaTeX
        , ctx_pats  = [atlas2pattern p rulpattern rls lang ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |p<-pats]
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
