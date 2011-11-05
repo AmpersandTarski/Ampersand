@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,ParserVersion(..)
         ,verboseLn,verbose,FspecFormat(..),ImportFormat(..)
-        ,DocTheme(..),allFspecFormats,PandocFormat(..),helpNVersionTexts)
+        ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -75,13 +75,9 @@ data Options = Options { showVersion   :: Bool
                        , sqlHost       :: String  -- do database queries to the specified host
                        , sqlLogin      :: String  -- pass login name to the database server
                        , sqlPwd        :: String  -- pass password on to the database server
-                       , defaultPandocReader :: PandocFormat 
                        , forcedParserVersion :: Maybe ParserVersion
                        } deriving Show
     
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
-allPandocFormats :: [PandocFormat]
-allPandocFormats = [HTML,ReST,LaTeX,Markdown]
 defaultFlags :: Options 
 defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , dirOutput     = fatal 82 "No monadic options available."
@@ -127,7 +123,6 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , sqlHost       = "localhost"
                       , sqlLogin      = "root"
                       , sqlPwd        = ""
-                      , defaultPandocReader = ReST
                       , forcedParserVersion = Nothing
                       }
                 
@@ -256,9 +251,6 @@ options = map pp
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
-          , (Option []        ["freeTextFormat"]
-                                               (ReqArg ftfOpt "format")    ("default format of free texts like in EXPLANATIONs (format="
-                                                                           ++show allPandocFormats++")."), Public) 
           , (Option []        ["headerfile"]  (ReqArg languageOpt "file") "custom header file to prefix to the text before rendering.", Hidden)
           , (Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics.", Public)
           , (Option []        ["ECA"]         (NoArg genEcaDocOpt)        "generate documentation with ECA rules.", Public)
@@ -346,14 +338,6 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                                  _         -> fspecFormat opts
                                                 
                             }
-ftfOpt :: String -> Options -> Options
-ftfOpt w opts = opts {defaultPandocReader = case map toUpper w of
-                                                 ('M': _ ) -> Markdown
-                                                 ('L': _ ) -> LaTeX
-                                                 ('H': _ ) -> HTML
-                                                 ('R': _ ) -> ReST
-                                                 _         -> fatal 355 "unrecognized freeTextFormat"
-                     }
 allFspecFormats :: String
 allFspecFormats                     = "Pandoc, Rtf, OpenDocument, Latex, Html"
 allImportFormats :: String

@@ -33,7 +33,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
 import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Identified(..),PartialOrder(..))
-import DatabaseDesign.Ampersand.Core.ParseTree               (ConceptDef,ConceptDefs,Origin(..),Traced(..),Numbered(..),Prop,Lang,Pairs)
+import DatabaseDesign.Ampersand.Core.ParseTree               (ConceptDef,ConceptDefs,Origin(..),Traced(..),Numbered(..),Prop,PandocFormat,Lang,Pairs)
 import Text.Pandoc
 import Data.List
 
@@ -45,6 +45,7 @@ data Architecture = A_Arch { arch_Contexts :: [A_Context]}
 
 data A_Context
    = ACtx{ ctxnm    :: String        -- ^ The name of this context
+         , ctxmarkup:: PandocFormat  -- ^ The default markup format for free text in this context
          , ctxpo    :: PartialOrder A_Concept -- ^ A data structure containing the generalization structure of concepts
          , ctxpats  :: [Pattern]     -- ^ The patterns defined in this context
          , ctxprocs :: [Process]     -- ^ The processes defined in this context
@@ -152,7 +153,7 @@ data Declaration =
       , decprL  :: String     -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM  :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR  :: String
-      , decMean :: String     -- ^ the meaning of a declaration, as supplied in the script. If empty, the meaning is generated automatically.
+      , decMean :: [Block]    -- ^ the meaning of a declaration, as supplied in the script. If empty, the meaning is generated automatically.
       , decpopu :: Pairs      -- ^ the list of tuples, of which the relation consists.
       , decfpos :: Origin     -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
       , deciss  :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.

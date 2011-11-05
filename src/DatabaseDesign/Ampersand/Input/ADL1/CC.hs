@@ -13,7 +13,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
             ,opt, Sequence,Alternative, IsParser
             )
    import DatabaseDesign.Ampersand.Basics  (fatalMsg,Collection(..),trim)
-   import DatabaseDesign.Ampersand.Core.ParseTree   
+   import DatabaseDesign.Ampersand.Core.ParseTree    
+   import Data.Char (toUpper)
 --   import DatabaseDesign.Ampersand.Misc         (Lang(..),defaultFlags, Options(..))
 --   import DatabaseDesign.Ampersand.Misc.Explain
    import Data.List (nub,sort)
@@ -25,7 +26,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
 --   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
 
    keywordstxt :: [String]
-   keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
+   keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"
                        , "INTERFACE", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG"
@@ -58,18 +59,18 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
    pBindings = (pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` []
    
    pContext         :: Parser Token P_Context
-   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*> pLanguageID <*>
-                               optional (rebexpr <$ pKey ":" <*> pExpr <*> pBindings )
-                               <*>
+   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*> pLanguageID <*> pPandocFormatID <*>
+                               optional (rebexpr <$ pKey ":" <*> pExpr <*> pBindings ) <*>
                               --    ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
                                pList pContextElement <* pKey "ENDCONTEXT"
                        where
                        rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
                        rebexpr x y = (x,y)
-                       rebuild :: String -> Lang -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
-                       rebuild nm lang env ces =   -- TODO: use the second argument as the default language for this context.
+                       rebuild :: String -> Lang -> PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
+                       rebuild nm lang defaultmarkup env ces =   -- TODO: use the second argument as the default language for this context.
                           PCtx{ ctx_nm    = nm
                               , ctx_lang  = lang
+                              , ctx_markup= defaultmarkup
                               , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
                               , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
                               , ctx_rs    = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
@@ -100,6 +101,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
 
    defaultLang :: Lang
    defaultLang = Dutch
+
+   pPandocFormatID    :: Parser Token PandocFormat
+   pPandocFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid) `opt` ReST
+                         where
+                          f str = case map toUpper str of
+                                      "REST"     -> ReST
+                                      "HTML"     -> HTML
+                                      "LATEX"    -> LaTeX
+                                      "MARKDOWN" -> Markdown
+                                      _ -> fatal 113 (if null str then "must specify a markup format" else "markup format "++str++" is not supported")
 
    pLanguageID        :: Parser Token Lang
    pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` defaultLang

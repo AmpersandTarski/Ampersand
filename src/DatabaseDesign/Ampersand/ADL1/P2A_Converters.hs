@@ -22,7 +22,6 @@ where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Data.List(nub,intercalate)
-import Text.Pandoc
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
@@ -40,6 +39,7 @@ pCtx2aCtx pctx
    where
     actx = 
          ACtx{ ctxnm    = name pctx    -- The name of this context
+             , ctxmarkup= ctx_markup pctx -- The default markup format for free text in this context
              , ctxpo    = partOrder    -- the generalization relation between concepts
              , ctxpats  = pats         -- The patterns defined in this context
                                        -- Each pattern contains all user defined rules inside its scope
@@ -167,7 +167,7 @@ pRRel2aRRel actx prrel
    where
      (rels,editcxes) = unzip [pRel2aRel actx (psign t) r | (r,t)<-rr_Rels prrel]
  
-pRul2aRul :: (Language l, ConceptStructure l, Identified l) => l -> String -> P_Rule -> (Rule,CtxError)
+pRul2aRul :: A_Context -> String -> P_Rule -> (Rule,CtxError)
 pRul2aRul actx patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
  = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
        , rrexp = aexpr                      -- The rule expression
@@ -187,7 +187,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
                      , decprL = ""
                      , decprM = ""
                      , decprR = ""
-                     , decMean = ""
+                     , decMean = []
                      , decpopu = []
                      , decfpos = rr_fps prul
                      , deciss = True
@@ -199,7 +199,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
    , CxeOrig exprcxe "rule" "" (origin prul)
    )
    where (aexpr,exprcxe) = pExpr2aExpr actx NoCast (rr_exp prul)
-         meanings (lang,expl) = [ Means lang (string2Blocks ReST expl) | not (null expl)] --  TODO: Fix with meaning/ explanation. (related to #106)
+         meanings (lang,expl) = [ Means lang (string2Blocks (ctxmarkup actx) expl) | not (null expl)] --  TODO: Fix with meaning/ explanation. (related to #106)
    
 
 -- | pKDef2aKDef checks compatibility of composition with key concept on equality
@@ -275,7 +275,7 @@ pExpl2aExpl actx pexpl
           , explObj   = explobs
           , explLang  = pexLang  pexpl
           , explRefId = pexRefID pexpl
-          , explCont  = [Plain [Str $ pexExpl  pexpl]]
+          , explCont  = string2Blocks (ctxmarkup actx) (pexExpl  pexpl)
           }
    , CxeOrig xplcxe "explanation" "" (origin pexpl))
    where (explobs,xplcxe) = pExOb2aExOb actx (pexObj   pexpl)
@@ -338,7 +338,7 @@ pDecl2aDecl contxt pops patname pd
        , decprL  = dec_prL pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
-       , decMean = dec_Mean pd
+       , decMean = string2Blocks (ctxmarkup contxt) (dec_Mean pd)
        , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
                    dec_popu pd ++ 
                    concat [popps pop | pop<-pops, let ad=popm pop

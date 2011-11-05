@@ -662,7 +662,7 @@ while maintaining all invariants.
                              , decprL  = ""
                              , decprM  = ""
                              , decprR  = ""
-                             , decMean = ""
+                             , decMean = []
                              , decpopu = []
                              , decfpos = Origin "generated relation (Delta)"
                              , deciss  = True

@@ -72,7 +72,7 @@ where
                                , decprL  = ""
                                , decprM  = ""
                                , decprR  = ""
-                               , decMean = ""
+                               , decMean = []
                                , decpopu = []
                                , decfpos = origin key
                                , deciss  = False
@@ -240,7 +240,7 @@ where
                                 , decprL  = ""
                                 , decprM  = "is a"
                                 , decprR  = ""
-                                , decMean = ""
+                                , decMean = []
                                 , decpopu = [(a,b) | a <- cptos'(source g), b <- cptos'(target g), a==b]
                                 , decfpos = Origin "generated isa by declarations (Language Pattern)"
                                 , deciss  = True
