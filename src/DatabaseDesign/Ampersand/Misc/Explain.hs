@@ -2,13 +2,14 @@
 module DatabaseDesign.Ampersand.Misc.Explain
     ( string2Blocks
     , explainContent2String
+    , PandocFormat(..)
     )
 where
 
 import Text.Pandoc
-import DatabaseDesign.Ampersand.Misc.Options
 import Data.List (isPrefixOf)
- 
+import DatabaseDesign.Ampersand.Core.ParseTree      (PandocFormat(..))
+  
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
 -- | defaultPandocReader flags should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]

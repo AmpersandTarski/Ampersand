@@ -31,6 +31,7 @@ where
    import Time                                   (ClockTime)
    import DatabaseDesign.Ampersand.Fspec.Plug 
    import DatabaseDesign.Ampersand.Misc.TinyXML 
+   import DatabaseDesign.Ampersand.Misc.Explain 
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowXMLtiny"
@@ -286,7 +287,7 @@ where
                              [PlainText (show (prL++"%f"++prM++"%t"++prR))] 
                                 | not (null (prL++prM++prR))]
                   ++[Elem (simpleTag "Meaning") 
-                             [PlainText (decMean d)]
+                             [PlainText (explainContent2String LaTeX True (decMean d))]
                                 | not (null (decMean d))]
                   ++[Elem (simpleTag "Population") 
                              (map mkXmlTree (decpopu d)) 
