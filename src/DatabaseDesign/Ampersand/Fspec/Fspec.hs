@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
 where
 --import DatabaseDesign.Ampersand.ADL1          
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Classes          
+import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics           --      (fatalMsg,Identified(..))
 
 fatal :: Int -> String -> a
@@ -238,21 +238,21 @@ data PAclause
               | All { paCls   :: [PAclause]
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Do  { paSrt   :: InsDel                     -- do Insert or Delete
+              | Do  { paSrt   :: InsDel                   -- do Insert or Delete
                     , paTo    :: Expression               -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Sel { paCpt   :: A_Concept                    -- pick an existing instance of type c
+              | Sel { paCpt   :: A_Concept                -- pick an existing instance of type c
                     , paExp   :: Expression               -- the expression to pick from
                     , paCl    :: String->PAclause         -- the completion of the clause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | New { paCpt   :: A_Concept                    -- make a new instance of type c
+              | New { paCpt   :: A_Concept                -- make a new instance of type c
                     , paCl    :: String->PAclause         -- to be done after creating the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Rmv { paCpt   :: A_Concept                    --emove an instance of type c
+              | Rmv { paCpt   :: A_Concept                -- Remove an instance of type c
                     , paCl    :: String->PAclause         -- to be done afteremoving the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
@@ -272,21 +272,6 @@ instance Eq PAclause where
    p@Rmv{}  ==  p'@Rmv{} = paCpt p==paCpt p'
    _ == _ = False
 
-{-
-  instance Show PAclause where
-    showsPrec _ p = showString (showPAclause "\n " p)
-     where
-      showPAclause indent pa@Do{}
-       = ( case paSrt pa of
-            Ins -> "INSERT INTO "
-            Del -> "DELETE FROM ")++
-         show (paTo pa)++
-         " SELECTFROM "++
-         show (paDelta pa)
-         ++concat [ indent++showConj rel | rel<-paMotiv pa ]
-      showConj (conj,rs)
-              = "(TO MAINTAIN"++intercalate ", " ["R"++show (nr r) | r<-rs]++")"
--}
 
 data Clauses  = Clauses
                   { cl_conjNF :: [(Expression
