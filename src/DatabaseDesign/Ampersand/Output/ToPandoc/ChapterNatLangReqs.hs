@@ -213,14 +213,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                         English -> "Definition ")
                                                , Str (show(getEisnr cnt))
                                                , Str ":"]
-                                             , [ [ Para $ concat [ [ RawInline "latex" (symDefLabel c++"\n") | i==1]++
-                                                                   [ RawInline "latex" ("\\glossary{name={"++name cd++"}, description={"++cddef cd++"}}\n")
-                                                                   | fspecFormat flags==FLatex
-                                                                   ] ++
-                                                                   makeDefinition flags (name c) (cddef cd)
-                                                                 | (i::Int,cd)<-zip [1..] cds]
-                                                 ]
-                                               ]
+                                             , [ makeDefinition flags cds ]
                                              )
                                            ]
                            ]

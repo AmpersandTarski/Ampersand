@@ -240,8 +240,8 @@ where
 --    p_concs g   =  nub ((p_concs (gen_gen g)) `uni` (p_concs(gen_spc g))) 
 
 ----------------------End of  Classes -----
-
    type ConceptDefs = [ConceptDef]
+-- | SJ: TODO: In the definition of ConceptDef, we ought to substitute cdnm::String with cdcpt::Concept. That would produce slightly less code duplication elsewhere.
    data ConceptDef 
       = Cd  { cdpos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
             , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.

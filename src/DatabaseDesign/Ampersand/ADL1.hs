@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.ADL1
            , RuleType(..)
            , Prop(..),allprops,endoprops,flipProps
            , isaRule
-           , FilePos(..), Origin(..), Pos(..), Traced(..),Numbered(..)
+           , FilePos(..), Origin(..), Pos(..), Traced(..)
            , makeDeclaration
            , antecedent, notCpl, isCpl
            , Signaling(..)

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.FilePos
-       ( FilePos(..), Origin(..), Pos(Pos) , Traced(..),Numbered(..))
+       ( FilePos(..), Origin(..), Pos(Pos) , Traced(..))
 where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
 --   import DatabaseDesign.Ampersand.Basics      (fatalMsg)
@@ -8,7 +8,6 @@ where
 --   fatal :: Int -> String -> a
 --   fatal = fatalMsg "Input.ADL1.FilePos"
 
-   --Traced a are automatically Numbered a (although only things parsed from files automatically return a number that is not 0)
    --Traced a have an origin, which may be unknown.
    data FilePos = FilePos ( String, Pos, String) deriving Eq
    data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving Eq 
@@ -36,8 +35,5 @@ where
     lineNumber x = case x of 
                      FileLoc (FilePos (_,Pos l _,_)) -> l
                      _ -> 0
-
-   class Numbered a where
-    nr :: a -> Int
 
 

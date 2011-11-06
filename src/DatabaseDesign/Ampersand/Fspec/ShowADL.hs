@@ -296,3 +296,32 @@ instance ShowADL P_Relation where
 --used to compose error messages at p2a time
 instance ShowADL P_Concept where
  showADL = name
+
+instance ShowADL PAclause where
+    showADL p = showPAclause "\n " p
+     where
+      showPAclause indent pa@Chc{}
+       = let indent'=indent++"   " in "execute ONE from"++indent'++intercalate indent' [showPAclause indent' p | p<-paCls pa]
+      showPAclause indent pa@All{}
+       = let indent'=indent++"   " in "execute ALL of"++indent'++intercalate indent' [showPAclause indent' p | p<-paCls pa]
+      showPAclause indent pa@Do{}
+       = ( case paSrt pa of
+            Ins -> "INSERT INTO "
+            Del -> "DELETE FROM ")++
+         show (paTo pa)++
+         " SELECTFROM "++
+         show (paDelta pa)
+         ++concat [ indent++showConj rel | rel<-paMotiv pa ]
+      showPAclause indent pa@Sel{}
+       = let indent'=indent++"   " in
+        "SELECT x:"++show (paCpt pa)++" FROM "++showADL (paExp pa)++";"++indent'++showPAclause indent' (paCl pa "x")
+      showPAclause indent pa@New{}
+       = let indent'=indent++"   " in
+        "CREATE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
+      showPAclause indent pa@New{}
+       = let indent'=indent++"   " in
+        "REMOVE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
+      showPAclause indent pa@Nop{} = "Nop"
+      showPAclause indent pa@Blk{} = "Blk"
+      showConj (conj,rs)
+              = "(TO MAINTAIN"++intercalate ", " [name r | r<-rs]++")"

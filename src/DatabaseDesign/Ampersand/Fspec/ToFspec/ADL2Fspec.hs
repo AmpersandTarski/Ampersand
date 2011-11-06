@@ -3,18 +3,18 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
     (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),uniqueNames,eqCl, eqClass)
+   import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Collection(..),Identified(..),uniqueNames,eqCl, eqClass)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Misc        (Options(..),DocTheme(..),plural)
+   import DatabaseDesign.Ampersand.Misc                         (Options(..),DocTheme(..),plural)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify,isI)
    import DatabaseDesign.Ampersand.Fspec.Plug
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug  (makeSqlPlug,makeEntities,rel2plug)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug       (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
+   import DatabaseDesign.Ampersand.Fspec.ShowHS
 --   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..))
-   import Data.List (nub)
+   import Data.List (nub,intercalate)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
@@ -295,7 +295,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                      --note: scalars with only associations without any multiplicity are not in any Interface
          = let recur trace es
                 = [ Obj { objnm   = if isTypeable t
-                                    then (showADL . disambiguate fSpec) t
+                                    then showADL t
                                     else fatal 298 ("Expression "++showADL t++" contains untypeable elements.")
                         , objpos  = Origin "generated recur object: step 4a - default theme"
                         , objctx  = t
@@ -559,13 +559,13 @@ while maintaining all invariants.
           , let (rel,_,_,_) = head relEq      -- This is the relation
           , let ERel delt = delta (sign rel)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
           , ev<-[Ins,Del]                     -- This determines the event: On ev rel
-          , let act = All [ Chc [ (if isTrue  clause' || isTrue  step   then Nop else
-                                   if isFalse clause'   then Blk else
+          , let act = All [ Chc [ (if isTrue  clause' || isTrue step then Nop else
+                                   if isFalse clause'                then Blk else
 --                                 if not (visible rel) then Blk else
-                                   let visible _ = True in doCode visible ev toExpr viols)
-                                   [(conj,causes)]  -- the motivation for these actions
+                                   let visible _ = True in doCode visible ev toExpr viols
+                                  ) [(conj,causes)]  -- the motivation for these actions
                                 | clause@(EUni fus) <- shifts
-                                , let clause' = conjNF (subst (rel, actSem Ins rel (delta (sign rel))) clause)
+                                , let clause' = conjNF (subst (rel, actSem ev rel (delta (sign rel))) clause)
                                 , let step    = conjNF (EUni[ECpl clause,clause'])
                                 , let viols   = conjNF (notCpl clause')
                                 , let negs    = EUni [f | f<-fus, isNeg f]
@@ -674,16 +674,20 @@ while maintaining all invariants.
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
-   doCode :: (Relation->Bool)                                        --  the relations that may be changed
-             -> InsDel                                                       --  the type of action: Insert or Delete
-             -> Expression                                --  the expression in which a delete or insert takes place
-             -> Expression                                --  the delta to be inserted or deleted
-             -> [(Expression,[Rule])]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+   doCode :: (Relation->Bool)           -- the relations that may be changed
+             -> InsDel                  -- the type of action: Insert or Delete
+             -> Expression              -- the expression in which a delete or insert takes place
+             -> Expression              -- the delta to be inserted or deleted
+             -> [(Expression,[Rule])]   -- the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
              -> PAclause
    doCode editAble tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
+          (_ ,  EFlp x)   -> doCod (flp deltaX) tOp x motiv
+          (_ ,  EBrk x)   -> doCod deltaX tOp x motiv
+          (_ ,  ETyp x t) -> if sign x==sign t then doCod deltaX tOp x motiv else
+                             fatal 691 "TODO: implement narrowing."
           (_ ,  EUni [])  -> Blk motiv
           (_ ,  EIsc [])  -> Nop motiv
           (_ ,  ECps [])  -> fatal 681 $ "doCod ("++showADL deltaX++") "++show tOp++" ECps [],\n"++
@@ -698,20 +702,29 @@ while maintaining all invariants.
           (Del, ECpl x)   -> doCod deltaX Ins x motiv
           (Ins, EUni fs)  -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Ins, EIsc fs)  -> All [ doCod deltaX Ins f []    | f<-fs ] motiv
-          (Ins, ECps ts)    -> Chc [ if ECps ls==flp (ECps rs)
-                                  then Chc [ New c fLft motiv
-                                           , Sel c (ECps ls) fLft motiv
-                                           ] motiv
-                                  else Chc [ New c (\x->All [fLft x, fRht x] motiv) motiv
-                                           , Sel c (ECps ls) fLft motiv
-                                           , Sel c (flp(ECps rs)) fRht motiv
-                                           ] motiv
+          (Ins, ECps ts)  -> Chc [ {- the following might be useful for diagnostics:
+                                   if showADL exprX=="project;partof~"
+                                   then fatal 702 ( "Diagnostic error\n"++
+                                                    "chop ts= "++show [(map showADL ls, map showADL rs)| (ls,rs)<-chop ts ]++
+                                                    "\nConcepts c="++showADL c++",  target (ECps ls)="++showADL (target (ECps ls))++",  source (ECps rs)="++showADL (source (ECps rs))++
+                                                    "\nfLft \"x\"= "++showADL (fLft "x") ++
+                                                    "\nfRht \"x\"= "++showADL (fRht "x")
+                                                  )
+                                   else -}
+                                   if ECps ls==flp (ECps rs)
+                                   then Chc [ New c fLft motiv
+                                            , Sel c (ECps ls) fLft motiv
+                                            ] motiv
+                                   else Chc [ New c (\x->All [fLft x, fRht x] motiv) motiv
+                                            , Sel c (ECps ls) fLft motiv
+                                            , Sel c (flp(ECps rs)) fRht motiv
+                                            ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (ECps rs) `lub` target (ECps ls)
                                 , let fLft atom = doCod (disjNF (EUni[ECps [ERel (Mp1 atom c),ERel (V (Sign c (source deltaX))),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
                                 , let fRht atom = doCod (disjNF (EUni[ECps [deltaX,ERel (V (Sign (target deltaX) c)),ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
                                 ] motiv
-          (Del, ECps ts)    -> Chc [ if ECps ls==flp (ECps rs)
+          (Del, ECps ts) -> Chc [ if ECps ls==flp (ECps rs)
                                   then Chc [ Sel c (disjNF (ECps ls)) (\_->Rmv c fLft motiv) motiv
                                            , Sel c (disjNF (ECps ls)) fLft motiv
                                            ] motiv
@@ -730,11 +743,17 @@ while maintaining all invariants.
           (_  , ERad ts)   -> doCod deltaX tOp (ECpl (ECps (map ECpl ts))) motiv
           (_  , EKl0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , ERel m)   -> -- error ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
+          (_  , ERel m)   -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                              if editAble m then Do tOp exprX deltaX motiv else Blk [(ERel m ,nub [r |(_,rs)<-motiv, r<-rs])]
-          (_ , _)         -> fatal 767 $ "Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
-                                         "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
+          (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\ndoCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
+                                         "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++
+                                         concat
+                                         [ "while trying to maintain conjunct "++showADL conjunct++
+                                           "\nfrom rule "++intercalate "\n          " [show r | r<-rs]
+                                         | (conjunct,rs)<-motive ] ++
+                                         if null motive then "null motive" else ""
+                                         )
 
    switchboard :: Fspc -> Fswitchboard
    switchboard fSpec

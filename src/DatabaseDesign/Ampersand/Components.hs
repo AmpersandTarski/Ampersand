@@ -105,8 +105,10 @@ typeCheck pCtx []   = let (aCtx,ctxcheck)=pCtx2aCtx pCtx                  in (aC
 typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aCtx,cxes ctxcheck)
   
 
+-- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.
 -- Q: Should we disambiguate the exprs in the fspec i.e. mapexprs disambiguate fSpec fSpec?
 --    Or do we assume a correct implementation with unambiguous expressions only?
+-- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
   =    writeFile outputFile (showADL fSpec) 
