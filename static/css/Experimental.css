@@ -8,12 +8,6 @@
  ; padding:0
  ; cell-padding: 0
  }
-.AtomList .DeleteStub
- { width: 25px
- }
-.AtomList .AddStub
- { display: none
- }
 
 [editing=true] .EditButton
  { display: none
@@ -51,6 +45,9 @@
 [editing=true] .Container[hover=true] .Atom:hover
  { background-color: #808080
  }
+.AtomList .DeleteStub
+ { width: 25px
+ }
 [editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub
  { background-image: url('../images/DeleteButton.png')
  ; background-repeat:no-repeat
@@ -60,8 +57,8 @@
  { background-image: url('../images/DeleteButtonDown.png')
  }
  
-[editing=true] .AtomList[hover=true]>tbody>tr>.AddStub
- { display: block
+.AtomList .AddStub
+ { visibility: hidden
  ; padding-left: 7px
  ; padding-right: 7px
  ; font-family: Arial
@@ -74,6 +71,9 @@
  ; border-color: black
  ; -moz-border-radius: 7px       /* rounded corners for Firefox */
  ; -webkit-border-radius: 7px    /* rounded corners for Safari */
+ }
+[editing=true] .AtomList[hover=true]>tbody>tr>.AddStub
+ { visibility: visible
  }
 [editing=true] .AtomList[hover=true]>tbody>tr>.AddStub:hover
  { background-color: #606060

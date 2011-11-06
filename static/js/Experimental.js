@@ -21,8 +21,8 @@ function cancelEditing() {
   */
 }
 
-function addNewCommand(relation,destination, otherAtom) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, otheratom: otherAtom}};
+function addNewCommand(relation, destination, destConcept, otherAtom) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, destConcept: destConcept, otheratom: otherAtom}};
 }
 
 function addCommand(relation, src, tgt) {
@@ -146,10 +146,10 @@ function initializeEditButtons() {
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
     var otherAtom =$containerElt.attr('srcAtom'); // todo: name otherAtom okay?
     if (relationIsFlipped) {
-      sendCommands([addNewCommand(relation,'src',otherAtom)]);
+      sendCommands([addNewCommand(relation,'src',$containerElt.attr('concept'),otherAtom)]);
       //alert('Add: (new,'+srcAtom+ ') to ~'+relation);
     }else {
-      sendCommands([addNewCommand(relation,'tgt',otherAtom)]);
+      sendCommands([addNewCommand(relation,'tgt',$containerElt.attr('concept'),otherAtom)]);
       //alert('Add: ('+srcAtom+',new) to '+relation);
     }
   });

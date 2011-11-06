@@ -30,12 +30,18 @@ function showCommandQueue() {
   }
 }
 /*
-
+bug:
+sometimes statics are replaced when current versions are newer. (or maybe the same?)
 // todo:
+
+make example with multiple relations, all in one table
+check delete and add on that
+
+check for empty string input
+
 // use POST for db updates, now commands are in the url, preventing refresh from working
 // rename add to insert
-// call addnew delete and update directly from makecommand
-
+// can we use this somewhere? $_SERVER['PHP_SELF']
 // relation & concept with equal name cause name clash? table names are not case sensitive (or does quoting help?)
 
 // handle double events when clicking on a button (add, delete, cancel, commit, etc.) while editing a text field (strangely enough the blur event arrives later)
@@ -117,34 +123,65 @@ function processEditDatabase($dbCommand) {
 
   switch ($dbCommand->dbcmd) {
     case 'addnew':
-      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->otheratom)
-        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otheratom);
+      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->destConcept && $dbCommand->otheratom)
+        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->destConcept, $dbCommand->otheratom);
       else 
-        error("Database command $dbCommand->dbcmd is missing paramaters");
+        error("Database command $dbCommand->dbcmd is missing parameters");
       break;
     case 'add':
       if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt)
         editAdd($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
       else 
-        error("Database command $dbCommand->dbcmd is missing paramaters");
+        error("Database command $dbCommand->dbcmd is missing parameters");
       break;
     case 'delete':
       if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt)
         editDelete($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
       else 
-        error("Database command $dbCommand->dbcmd is missing paramaters");
+        error("Database command $dbCommand->dbcmd is missing parameters");
       break;
     default:
       error("Unknown database command '$dbCommand->dbcmd'");
   }
 }
 
-function editAddNew($rel, $dest, $otherAtom) {
-  $newAtom = 'New';
+$newAtomPrefix = 'New';
+
+function mkUniqueAtom($existingAtoms, $concept) {
+  global $newAtomPrefix;
+  if (!in_array($newAtomPrefix.' '.$concept, $existingAtoms))
+    return $newAtomPrefix.' '.$concept;
+  
+  $newAtomNrs = array();
+  foreach ($existingAtoms as $atom) {
+    preg_match('/\A'.$newAtomPrefix.' '.$concept.' \((?P<number>[123456789]\d*)\)\z/', $atom, $matches); 
+    // don't match nrs with leading 0's since we don't generate those
+    $newAtomNrs[] = $matches['number'];
+  }
+
+  $newAtomNrs = array_unique(array_filter($newAtomNrs)); // filter out all the non-numbers and double numbers
+  sort($newAtomNrs);
+  print_r($newAtomNrs);
+  foreach ($newAtomNrs as $i=>&$nr) {
+    if ($nr != $i+1) // as soon as $newAtomNrs[i] != i+1, we arrived at a gap in the sorted number sequence and we can use i+1
+      return $newAtomPrefix.' '.$concept.' ('.($i+1).')';
+  }
+  return $newAtomPrefix.' '.$concept.' ('.(count($newAtomNrs)+1).')';
+}
+    
+function editAddNew($rel, $dest, $destConcept, $otherAtom) {
+  global $dbName;         // necessary, since these are declared in a different module 
+  global $idRelationTables;
+  $conceptTable = $idRelationTables[$destConcept]['table'];
+  $conceptColumn = $idRelationTables[$destConcept]['srcCol'];
+  $existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
+  
+  $newAtom = mkUniqueAtom($existingAtoms, $destConcept);
   if ($dest=='src')
     editAdd($rel, $newAtom, $otherAtom);
   else
     editAdd($rel, $otherAtom, $newAtom);
+  DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$newAtom')");
 }
 function editAdd($rel, $src, $tgt) {
   global $dbName;         // necessary, since these are declared in a different module 
@@ -207,7 +244,6 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<button class="EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="CancelButton" onclick="cancelEditing()">Cancel</button>';
-  echo '<br><button class="InsertButton" onclick="testInsert()">Test insert</button>';
   echo generateInterface($dbName, $allInterfaceObjects[$interface], $atom); 
 
   echo '</body>';

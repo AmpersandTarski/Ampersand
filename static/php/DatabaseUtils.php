@@ -21,11 +21,15 @@ function firstRow($rows) {
 }
   
 function firstCol($rows) {
-  foreach ($rows as $i=>$v) $v=$v[0]; return $rows;
+  foreach ($rows as $i=>&$v) 
+    $v=$v[0]; 
+  return $rows;
 }
 
 function targetCol($rows) {
-  foreach ($rows as $i=>&$v) $v=$v['tgt']; return $rows;
+  foreach ($rows as $i=>&$v)
+    $v=$v['tgt'];
+  return $rows;
 }
 
 function printBinaryTable($table) {
@@ -33,11 +37,6 @@ function printBinaryTable($table) {
   foreach ($table as $row)
     echo '<tr><td>'.$row['src'].'</td><td>'.$row['tgt'].'</td></tr>';
   echo '</table>';
-}
-
-function printArray($arr) {
-  foreach ($arr as $v)
-    echo $v.'</br>';
 }
 
 function dbStartTransaction($dbName) {
@@ -111,13 +110,13 @@ function generateInterface($db, $interface, $srcAtom) {
   $html = "";
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
   $codomainAtoms = getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery']);
-  //print_r($codomainAtoms);
   
+  // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   $isUni = $interface['isUnivalent'];  
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr($interface['relationIsFlipped']);
-  if (!$isUni) emit($html, '<table class="AtomList Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  if (!$isUni) emit($html, '<table class="AtomList Container" srcAtom='.showHtmlAttrStr($srcAtom).' srcConcept='.showHtmlAttrStr($interface['srcConcept']).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" srcAtom='.showHtmlAttrStr($srcAtom).' srcConcept='.showHtmlAttrStr($interface['srcConcept']).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {
     if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
@@ -142,6 +141,10 @@ function generateInterfaceList($db, $parentInterface, $atom) {
     emit($html, '</div>');
   }
   return $html;
+}
+
+function echoLn($str) {
+  echo $str.'<br/>';
 }
 
 function getCoDomainAtoms($db, $atom, $selectRel) {
