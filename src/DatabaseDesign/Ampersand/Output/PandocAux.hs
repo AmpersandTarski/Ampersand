@@ -197,6 +197,7 @@ theTemplate flags
                , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim\n"
                , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}\n"
                , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}\n"
+               , "\\newcommand{\\asterisk}{*}\n"
                , "\\newcommand{\\cmpl}[1]{\\overline{#1}}\n"
            --    , "\\newcommand{\\compose}{;}\n"
                , "\\newcommand{\\subs}{\\vdash}\n"
@@ -377,6 +378,9 @@ class SymRef a where
   symDefPageRef :: a -> String  -- references the definition of a 
   symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
 
+instance SymRef ConceptDef where
+  symLabel cd = "Concept:"++stripSpecialChars (name cd)
+
 instance SymRef A_Concept where
   symLabel c = "Concept:"++stripSpecialChars (name c)
 
@@ -488,10 +492,26 @@ instance ShowMath Declaration where
  showMath Iscompl{}
   = "\\cmpl{\\iden}"
 
+-- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
+--   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
+--   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
 latexEscShw :: String -> String
 latexEscShw "" = ""
-latexEscShw ('_': str) = "\\_"++latexEscShw str
-latexEscShw (c:str)    = c:latexEscShw str
+latexEscShw ('$': str)  = "\\$"++latexEscShw str
+latexEscShw ('^': str)  = "\\^{}"++latexEscShw str
+latexEscShw ('~': str)  = "\\~{}"++latexEscShw str
+latexEscShw ('%': str)  = "\\%"++latexEscShw str
+latexEscShw ('_': str)  = "\\_"++latexEscShw str
+latexEscShw ('{': str)  = "\\{"++latexEscShw str
+latexEscShw ('}': str)  = "\\}"++latexEscShw str
+latexEscShw ('&': str)  = "\\&"++latexEscShw str
+latexEscShw ('#': str)  = "\\#"++latexEscShw str
+latexEscShw ('\\': str) = "\\textbackslash "++latexEscShw str
+latexEscShw ('|': str)  = "\\textbar "      ++latexEscShw str
+latexEscShw ('>': str)  = "\\textgreater "  ++latexEscShw str
+latexEscShw ('<': str)  = "\\textless "     ++latexEscShw str
+latexEscShw ('\"': str) = "\\textquotedbl " ++latexEscShw str
+latexEscShw (c:str)     = c:latexEscShw str
 
 -- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
 stripSpecialChars :: String -> String
@@ -510,14 +530,25 @@ stripSpecialChars x
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-makeDefinition :: Options -> String -> String -> [Inline]
-makeDefinition flags c cdef
+makeDefinition :: Options -> [ConceptDef] -> [Block]
+makeDefinition flags cds
+ = case fspecFormat flags of
+    FLatex ->  [ Para ( take 1 [ RawInline "latex" (symDefLabel cd++"\n") | cd<-cds]++
+                        concat [ [ RawInline "latex" ("\\glossary{name={"++latexEscShw (name cd)++"}, description={"++latexEscShw (cddef cd)++"}}\n") ] ++
+                                 [Str (latexEscShw (cddef cd))] ++ [ Str (" ["++latexEscShw (cdref cd)++"]") | not (null (cdref cd)) ]
+                               | cd<-cds] )
+               ]
+    _      ->  [ Para ( concat [ [Str (cddef cd)] ++ [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ]
+                               | cd<-cds] )
+               ]
+{- used to be the following code, but that is maybe too patronizing. For the time being, we'll let makeDefinition stay. It might be removed later, after the cdef appears to be useful.
   = case language flags of
      English -> [Str ("A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" ")]++str++[Str (" is "++cdef)]
      Dutch   -> [Str "Een "]++str++[Str (" is "++cdef)]
     where
      str = [Emph [Str (latexEscShw (unCap c))]
            ,RawInline "latex" ("\\index{"++latexEscShw (unCap c)++"}\\marge{"++latexEscShw (unCap c)++"}") ]
+-}
 
 commaEngPandoc :: Inline -> [Inline] -> [Inline]
 commaEngPandoc str [a,b,c]= [a,Str ", ",b,Str ", ",str, Str " ", c]

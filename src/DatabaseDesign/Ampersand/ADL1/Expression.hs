@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
 
 subst :: (Relation,Expression) -> Expression -> Expression
-subst (rel,f) t = subs f
+subst (rel,f) t = subs t
      where
        subs (EEqu (l,r)) = EEqu (subs l,subs r)
        subs (EImp (l,r)) = EImp (subs l,subs r)
@@ -29,7 +29,7 @@ subst (rel,f) t = subs f
        subs (EBrk e)     = EBrk (subs e)
        subs (ETyp e sgn) = ETyp (subs e) sgn
        subs (ERel r) | rel==r    = f
-                     | otherwise = t
+                     | otherwise = ERel r
 
 -- | This function is used to replace the n-th relation (counting from the left)
 --   with an expression. The parameter f will therefore be applied to an

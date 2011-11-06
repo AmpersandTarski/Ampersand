@@ -32,8 +32,8 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
-import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Identified(..),PartialOrder(..))
-import DatabaseDesign.Ampersand.Core.ParseTree               (ConceptDef,ConceptDefs,Origin(..),Traced(..),Numbered(..),Prop,PandocFormat,Lang,Pairs)
+import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..),PartialOrder(..))
+import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat)
 import Text.Pandoc
 import Data.List
 
