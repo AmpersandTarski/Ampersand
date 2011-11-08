@@ -80,7 +80,7 @@ function mkInterfaceMenu(event, $parent, interfaces, atom) {
   $parent.append($menu);
   $menu.offset({ top: event.pageY, left: event.pageX });
 
-  for (i=0; i<interfaces.length; i++) {
+  for (var i=0; i<interfaces.length; i++) {
     var $item = $('<div class=InterfaceContextMenuItem interface='+
                 interfaces[i]+'>'+interfaces[i]+'</div>');   
 
@@ -104,7 +104,6 @@ function addClickEvent($item, interface, atom) { // need a separate function her
 //       clean up css, now container and AtomList are used next to each other.
 function initializeEditButtons() {
 
-	console.log('ha');
   $('.Container').hover(function () {
     var $parentInterface = getParentContainer($(this));
     
@@ -121,8 +120,6 @@ function initializeEditButtons() {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     if (relation) {
-      var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
-      var srcAtom =$containerElt.attr('srcAtom');
       startAtomEditing($(this));
     }
   });
@@ -133,26 +130,26 @@ function initializeEditButtons() {
     var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     var $atomElt = $(this).next().children().first();
     var atom =$atomElt.attr('atom');
-    console.log('relationisFlipped '+(relationIsFlipped?'yes':'no'));
     if (relationIsFlipped) {
-      sendCommands([deleteCommand(relation,atom,srcAtom)]);
       //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
+      sendCommands([deleteCommand(relation,atom,srcAtom)]);
     } else {
-      sendCommands([deleteCommand(relation,srcAtom,atom)]);
-      //alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
+        //alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
+    	sendCommands([deleteCommand(relation,srcAtom,atom)]);
     }
   });
   $('.AddStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
-    var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
+    alert(relationIsFlipped);
     var otherAtom =$containerElt.attr('srcAtom'); // todo: name otherAtom okay?
     if (relationIsFlipped) {
+      alert('Add: (new,'+otherAtom+ ') to ~'+relation);
       sendCommands([addNewCommand(relation,'src',otherAtom)]);
-      //alert('Add: (new,'+srcAtom+ ') to ~'+relation);
     }else {
+      alert('Add: ('+otherAtom+',new) to '+relation);
       sendCommands([addNewCommand(relation,'tgt',otherAtom)]);
-      //alert('Add: ('+srcAtom+',new) to '+relation);
     }
   });
 }
@@ -196,13 +193,13 @@ function stopAtomEditing($atom) {
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
     var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     if (relationIsFlipped) {
+      //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
       sendCommands([ deleteCommand(relation,atom,srcAtom)
                    , addCommand(relation,newAtom,srcAtom) ]);
-      //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
     } else {
+      //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
       sendCommands([ deleteCommand(relation,srcAtom,atom)
                    , addCommand(relation,srcAtom,newAtom) ]);
-      //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
     }
   }
 }
@@ -221,7 +218,9 @@ function mapInsert(map, key, value) {
     map[key] = [value];
 }
 
-
+function attrBoolValue(attrStr) {
+  return attrStr.toLowerCase()=="true" ? true : false;
+}
 
 
 
@@ -231,9 +230,10 @@ function mapInsert(map, key, value) {
 
 
 // javascript bug?
-
 // putting functions with references to local variables in an object or array
 // seems to result in some kind of dynamic scoping.
+
+//after figuring this out, update code for mkInterfaceMenu
 
 function test() {
   var fns = bug();

@@ -114,9 +114,9 @@ function generateInterface($db, $interface, $srcAtom) {
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   $isUni = $interface['isUnivalent'];  
-  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr($interface['relationIsFlipped']);
-  if (!$isUni) emit($html, '<table class="AtomList Container" srcAtom='.showHtmlAttrStr($srcAtom).' srcConcept='.showHtmlAttrStr($interface['srcConcept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" srcAtom='.showHtmlAttrStr($srcAtom).' srcConcept='.showHtmlAttrStr($interface['srcConcept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
+  if (!$isUni) emit($html, '<table class="AtomList Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
     if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
@@ -171,21 +171,24 @@ function emit(&$lines,$line) {
 // for use in specifiying values for attributes to html elements (eg. <div attr=VALUE>)
 // " -> &quot,  
 function showHtmlAttrStr($str) {
-    return '"'.escapeHtmlAttrStr($str).'"';
+  return '"'.escapeHtmlAttrStr($str).'"';
 }
 
 function escapeHtmlAttrStr($str) {
-    return str_replace(array('"'), array('&quot;'), $str); // we do addSlashes and replace \" by &quot; and \' by '
+  return str_replace(array('"'), array('&quot;'), $str); // we do addSlashes and replace \" by &quot; and \' by '
 }
 
 function showJsStr($str) {
-    return "'".escapeJsStr($str)."'";
+  return "'".escapeJsStr($str)."'";
 }
 
 function escapeJsStr($str) {
-    return addSlashes($str);
+  return addSlashes($str);
 }
 
+function jsBool($b) {
+	return $b ? 'True' : 'false';
+}
 // This is needed for non-javascript urls, where javascript would call encodeURIComponent
 // We only handle the &, the browser takes care of the rest.
 function escapeURI($str) {

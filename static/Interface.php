@@ -88,7 +88,7 @@ function processCommands() {
 }
 
 function processCommand($command) {
-  global $dbName;         // necessary, since these are declared in a different module 
+  global $dbName; 
   if (!isset($command->cmd))
     error("Malformed command, missing 'cmd'");
   
@@ -162,7 +162,6 @@ function mkUniqueAtom($existingAtoms, $concept) {
 
   $newAtomNrs = array_unique(array_filter($newAtomNrs)); // filter out all the non-numbers and double numbers
   sort($newAtomNrs);
-  print_r($newAtomNrs);
   foreach ($newAtomNrs as $i=>&$nr) {
     if ($nr != $i+1) // as soon as $newAtomNrs[i] != i+1, we arrived at a gap in the sorted number sequence and we can use i+1
       return $newAtomPrefix.' '.$concept.' ('.($i+1).')';
@@ -171,13 +170,11 @@ function mkUniqueAtom($existingAtoms, $concept) {
 }
     
 function editAddNew($rel, $dest, $otherAtom) {
-  global $dbName;         // necessary, since these are declared in a different module 
+  global $dbName; 
   global $relationTables;
   global $idRelationTables;
   
   $destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
-  print_r($rel);//,$relationTables);
-  echo $destConcept.'bla';
   $conceptTable = $idRelationTables[$destConcept]['table'];
   $conceptColumn = $idRelationTables[$destConcept]['srcCol'];
   $existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
@@ -190,8 +187,8 @@ function editAddNew($rel, $dest, $otherAtom) {
   DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$newAtom')");
 }
 function editAdd($rel, $src, $tgt) {
-  global $dbName;         // necessary, since these are declared in a different module 
-  global $relationTables; //
+  global $dbName; 
+  global $relationTables;
   echo "editAdd($rel, $src, $tgt)";
   $table = $relationTables[$rel]['table'];
   $srcCol = $relationTables[$rel]['srcCol'];
@@ -201,8 +198,8 @@ function editAdd($rel, $src, $tgt) {
 // TODO use backquote for table names? 
 // TODO check escaping for table names
 function editDelete($rel, $src, $tgt) {
-  global $dbName;         // necessary, since these are declared in a different module 
-  global $relationTables; //
+  global $dbName; 
+  global $relationTables;
   echo "editDelete($rel, $src, $tgt)";
   $table = $relationTables[$rel]['table'];
   $srcCol = $relationTables[$rel]['srcCol'];
