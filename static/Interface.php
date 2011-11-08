@@ -33,6 +33,7 @@ function showCommandQueue() {
 bug:
 sometimes statics are replaced when current versions are newer. (or maybe the same?)
 // todo:
+make createIf new that adds to id, rather than doing it in addNew and add 
 
 make example with multiple relations, all in one table
 check delete and add on that
@@ -123,8 +124,8 @@ function processEditDatabase($dbCommand) {
 
   switch ($dbCommand->dbcmd) {
     case 'addnew':
-      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->destConcept && $dbCommand->otheratom)
-        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->destConcept, $dbCommand->otheratom);
+      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->otheratom)
+        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otheratom);
       else 
         error("Database command $dbCommand->dbcmd is missing parameters");
       break;
@@ -169,9 +170,14 @@ function mkUniqueAtom($existingAtoms, $concept) {
   return $newAtomPrefix.' '.$concept.' ('.(count($newAtomNrs)+1).')';
 }
     
-function editAddNew($rel, $dest, $destConcept, $otherAtom) {
+function editAddNew($rel, $dest, $otherAtom) {
   global $dbName;         // necessary, since these are declared in a different module 
+  global $relationTables;
   global $idRelationTables;
+  
+  $destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
+  print_r($rel);//,$relationTables);
+  echo $destConcept.'bla';
   $conceptTable = $idRelationTables[$destConcept]['table'];
   $conceptColumn = $idRelationTables[$destConcept]['srcCol'];
   $existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));

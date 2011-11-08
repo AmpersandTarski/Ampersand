@@ -27,7 +27,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "$relationTables ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize
-         [ [showPhpStr rnm++" => array (table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
+         [ [showPhpStr rnm++" => array (srcConcept => "++(showPhpStr $ name $ source rel)++", tgtConcept => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
            | rel@(Rel {relnm = rnm}) <- mors fSpec
            , (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel rel)]) ++
   [ ""     -- the nub is because sqlRelPlugNames may yield multiple results
@@ -53,11 +53,11 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   [ "array ( 'name' => "++showPhpStr (name object)
   , "      // relation: "++showPhpStr (show (objctx object))  -- escape for the pathological case that one of the names in the relation contains a newline
   ] ++ case objctx object of
-           ERel r ->        [ "      , 'relation' => "++showPhpStr (show r) -- only support editing on user-specified relations (no expressions, and no I or V)
-                            , "      , 'relationIsFlipped' => False" 
+           ERel r ->        [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
+                            , "      , 'relationIsFlipped' => false" 
                             ]
-           EFlp (ERel r) -> [ "      , 'relation' => "++showPhpStr (show r) -- and on flipped versions of those relations
-                            , "      , 'relationIsFlipped' => True" 
+           EFlp (ERel r) -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations
+                            , "      , 'relationIsFlipped' => true" 
                             ]          
            _             -> [ "      , 'relation' => ''" 
                             , "      , 'relationIsFlipped' => ''" 

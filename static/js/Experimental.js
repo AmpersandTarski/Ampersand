@@ -21,8 +21,8 @@ function cancelEditing() {
   */
 }
 
-function addNewCommand(relation, destination, destConcept, otherAtom) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, destConcept: destConcept, otheratom: otherAtom}};
+function addNewCommand(relation, destination, otherAtom) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, otheratom: otherAtom}};
 }
 
 function addCommand(relation, src, tgt) {
@@ -104,6 +104,7 @@ function addClickEvent($item, interface, atom) { // need a separate function her
 //       clean up css, now container and AtomList are used next to each other.
 function initializeEditButtons() {
 
+	console.log('ha');
   $('.Container').hover(function () {
     var $parentInterface = getParentContainer($(this));
     
@@ -131,7 +132,8 @@ function initializeEditButtons() {
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
     var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     var $atomElt = $(this).next().children().first();
-    var atom =$atomElt.attr('atom')
+    var atom =$atomElt.attr('atom');
+    console.log('relationisFlipped '+(relationIsFlipped?'yes':'no'));
     if (relationIsFlipped) {
       sendCommands([deleteCommand(relation,atom,srcAtom)]);
       //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
@@ -146,10 +148,10 @@ function initializeEditButtons() {
     var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
     var otherAtom =$containerElt.attr('srcAtom'); // todo: name otherAtom okay?
     if (relationIsFlipped) {
-      sendCommands([addNewCommand(relation,'src',$containerElt.attr('concept'),otherAtom)]);
+      sendCommands([addNewCommand(relation,'src',otherAtom)]);
       //alert('Add: (new,'+srcAtom+ ') to ~'+relation);
     }else {
-      sendCommands([addNewCommand(relation,'tgt',$containerElt.attr('concept'),otherAtom)]);
+      sendCommands([addNewCommand(relation,'tgt',otherAtom)]);
       //alert('Add: ('+srcAtom+',new) to '+relation);
     }
   });
