@@ -109,6 +109,7 @@ typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aC
 -- Q: Should we disambiguate the exprs in the fspec i.e. mapexprs disambiguate fSpec fSpec?
 --    Or do we assume a correct implementation with unambiguous expressions only?
 -- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
+--    So the answer is: we assume a correct implementation with unambiguous expressions only.
 interfaceGen :: Fspc -> Options -> IO()
 interfaceGen    fSpec flags
   =    writeFile outputFile (showADL fSpec) 
