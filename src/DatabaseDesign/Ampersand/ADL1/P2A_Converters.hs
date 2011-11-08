@@ -589,10 +589,9 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
                              "\nuc: "++show uc++
                              "\ncandidates: "++show candidates++
                              "\nalts: "++show [ ETyp e uc | e <- candidates, sign e <= uc]) else -}
-                 [ if 1==length (fst (infer contxt p_r  NoCast))
-                      && uc==sign e -- would the type be the same without cast PTyp i.e. one candidate with uc==sign e?
-                   then e           -- then remove this redundant PTyp
-                   else ETyp e uc   -- else keep it
+                 [ case (infer contxt p_r NoCast, sign e `comparable` uc) of
+                     (([_],[]), True)   -> e --  remove this redundant PTyp
+                     _                  -> ETyp e uc   -- else keep it
                  | e <- candidates, sign e `comparable` uc]
           unknowncs = nub[c |c<-concs uc, c `notElem` concs contxt]
           msgs = ["Unknown concept: '"++name (head unknowncs)++"'." |length unknowncs == 1] ++

@@ -28,9 +28,9 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
        = ( case paSrt pa of
             Ins -> "INSERT INTO "
             Del -> "DELETE FROM ")++
-         (showADL . disambiguate fSpec) (paTo pa)++
+         (showADL {- . disambiguate fSpec-}) (paTo pa)++
          " SELECTFROM"++indent++"  "++
-         (showADL . disambiguate fSpec) (paDelta pa)++
+         (showADL {- . disambiguate fSpec-}) (paDelta pa)++
          motivate indent "TO MAINTAIN" (paMotiv pa)
       showPAclause indent (New c clause cj_ruls)
        = "CREATE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
@@ -39,7 +39,7 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
        = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
       showPAclause indent (Sel c e r cj_ruls)
-       = "SELECT x:"++show c++" FROM codomain("++ (showADL . disambiguate fSpec) e ++");"
+       = "SELECT x:"++show c++" FROM codomain("++ (showADL {- . disambiguate fSpec-}) e ++");"
                  ++indent'++showPAclause indent' (r "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
       showPAclause indent (Chc ds cj_ruls)
@@ -53,4 +53,4 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
       showPAclause indent (Blk cj_ruls)
        = "BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
       motivate indent motive motives = concat [ indent++showConj cj_rul | cj_rul<-motives ]
-         where showConj (conj,rs) = "("++motive++" "++(showADL . disambiguate fSpec) conj++" FROM "++intercalate ", " (map name rs) ++")"
+         where showConj (conj,rs) = "("++motive++" "++(showADL {- . disambiguate fSpec-}) conj++" FROM "++intercalate ", " (map name rs) ++")"
