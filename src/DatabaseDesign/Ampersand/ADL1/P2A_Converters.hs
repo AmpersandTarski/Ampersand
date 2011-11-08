@@ -26,6 +26,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 
@@ -97,12 +98,11 @@ pCtx2aCtx pctx
     procnmchk = nub [newcxe ("Processes with identical names at positions "++show(map origin xs))
                     |p<-procs, let xs=[p' |p'<-procs,name p==name p'],length xs>1]
     declnmchk = nub [newcxe ("Declarations with comparable signatures at positions "++show(map origin ds))
-                    | d<-declarations actx
-                    , let ds=[d' | d'<-declarations actx
+                    | d<-declarations actx, decusr d
+                    , let ds=[d' | d'<-declarations actx, decusr d'
                                  , name d==name d'
-                                 , source d `comparable` source d'
-                                 , target d `comparable` target d']
-                    ,length ds>1]
+                                 , sign d `comparable` sign d']
+                    , length ds>1]
 
 pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
 pPat2aPat actx pops ppat 
@@ -454,35 +454,37 @@ flpcast (Cast x y) = Cast y x
 type TErr = String
 
 --the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
---applying the type checker on an complete, explicit typed expression is equivalent to disambiguating the expression
-disambiguate :: (Language l, ConceptStructure l, Identified l) => l -> Expression -> Expression
-disambiguate contxt x 
+--applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
+disambiguate :: Fspc -> Expression -> Expression
+disambiguate fSpec x
  | nocxe errs = expr 
- | otherwise = fatal 428 ("an expression must be type correct, but this one is not:\n" ++ show errs)
+ | otherwise  = fatal 428 ("an expression must be type correct, but this one is not:\n" ++ show errs)
  where
- (expr,errs) = pExpr2aExpr contxt NoCast (f x)
- -- f transforms x to a P_Expression using full relation signatures
- f (EEqu (l,r)) = Pequ (f l,f r)
- f (EImp (l,r)) = Pimp (f l,f r)
- f (EIsc es)    = Pisc (map f es)
- f (EUni es)    = PUni (map f es)
- f (EDif (l,r)) = PDif (f l,f r)
- f (ELrs (l,r)) = PLrs (f l,f r)
- f (ERrs (l,r)) = PRrs (f l,f r)
- f (ECps es)    = PCps (map f es)
- f (ERad es)    = PRad (map f es)
- f (EKl0 e)     = PKl0 (f e)
- f (EKl1 e)     = PKl1 (f e)
- f (EFlp e)     = PFlp (f e)
- f (ECpl e)     = PCpl (f e)
- f (EBrk e)     = PBrk (f e)
- f (ETyp e _) = f e
- f (ERel rel@(Rel{})) = PTyp (Prel (P_Rel (name rel) (origin rel))) (P_Sign [g (source rel),g (target rel)])
- f (ERel rel@(I{}))   = PTyp (Prel  P_I                           ) (P_Sign [g (source rel)])
- f (ERel rel@(V{}))   = PTyp (Prel  P_V                           ) (P_Sign [g (source rel),g (target rel)])
- f (ERel rel@(Mp1{})) = PTyp (Prel (P_Mp1 (relval rel)           )) (P_Sign [g (source rel)])
- g c@(C{}) = PCpt (name c)
- g ONE     = P_Singleton
+   (expr,errs) = pExpr2aExpr fSpec{vrels=vrels fSpec++deltas} NoCast (f x)
+   -- f transforms x to a P_Expression using full relation signatures
+   f (EEqu (l,r)) = Pequ (f l,f r)
+   f (EImp (l,r)) = Pimp (f l,f r)
+   f (EIsc es)    = Pisc (map f es)
+   f (EUni es)    = PUni (map f es)
+   f (EDif (l,r)) = PDif (f l,f r)
+   f (ELrs (l,r)) = PLrs (f l,f r)
+   f (ERrs (l,r)) = PRrs (f l,f r)
+   f (ECps es)    = PCps (map f es)
+   f (ERad es)    = PRad (map f es)
+   f (EKl0 e)     = PKl0 (f e)
+   f (EKl1 e)     = PKl1 (f e)
+   f (EFlp e)     = PFlp (f e)
+   f (ECpl e)     = PCpl (f e)
+   f (EBrk e)     = PBrk (f e)
+   f (ETyp e _)   = f e
+   f (ERel rel@(Rel{})) = PTyp (Prel (P_Rel (name rel) (origin rel))) (P_Sign [g (source rel),g (target rel)])
+   f (ERel rel@(I{}))   = PTyp (Prel  P_I)                            (P_Sign [g (source rel)])
+   f (ERel rel@(V{}))   = PTyp (Prel  P_V)                            (P_Sign [g (source rel),g (target rel)])
+   f (ERel rel@(Mp1{})) = PTyp (Prel (P_Mp1 (relval rel)))            (P_Sign [g (source rel)])
+   g c@(C{}) = PCpt (name c) 
+   g ONE     = P_Singleton
+   deltas    = [ makeDeclaration r | r<-mors x, name r=="Delta" ]
+
 
 {- The story of type checking an expression.
 Invariants:
@@ -498,7 +500,7 @@ pExpr2aExpr :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -
 pExpr2aExpr contxt cast pexpr
  = case infer contxt pexpr cast of
    ([] ,[])   -> ( fatal 389 ("Illegal reference to expression '"++showADL pexpr++".")
-                 , newcxe "Unknown type error") --should not be possible
+                 , newcxe ("Unknown type error in "++showADL pexpr++".")) --should not be possible
    ([x],[])   -> if isTypeable x
                  then (x,cxenone)
                  else fatal 393 ("expression "++show x++" contains untypeable elements.")
