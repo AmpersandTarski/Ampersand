@@ -21,65 +21,56 @@ generateAll fSpec opts =
         ; writeFile (combine (dirPrototype opts) fname) content
         }
  
-  
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
   , "$relationTables ="
   , "  array" ] ++
+       (addToLastLine ";" $ indent 4 $ blockParenthesize
+         [ [showPhpStr rnm++" => array (table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
+           | rel@(Rel {relnm = rnm}) <- mors fSpec
+           , (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel rel)]) ++
+  [ ""     -- the nub is because sqlRelPlugNames may yield multiple results
+  , "$idRelationTables ="
+  , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize -- todo: why do we get a list of tables and src/tgtCols??
-         [ [showPhpStr rnm++" => array (table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++" )"] 
-           | rel@(Rel {relnm = rnm}) <- concat usedRels, (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel rel)]) ++
+         [ [(showPhpStr $ name c)++" => array (table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
+           | c <- concs fSpec, (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel $ I c)]) ++
   [ ""
   , "$allInterfaceObjects ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize interfaceLines)
+       (addToLastLine ";" $ indent 4 $ blockParenthesize $ map (generateInterface fSpec opts) allInterfaces)
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
-       (interfaceLines, usedRels) = unzip $ map (generateInterface fSpec opts) allInterfaces
 
 generateInterface fSpec opts interface =
-  ( [ "// Top-level interface "++name interface ++":"
-    , showPhpStr (name interface) ++" => " ] ++
-    interfaceObjectsLines
-  , usedRels
-  )
- where (interfaceObjectsLines, usedRels) = genInterfaceObjects fSpec opts 1 (ifcObj interface)  
-
-
+  [ "// Top-level interface "++name interface ++":"
+  , showPhpStr (name interface) ++" => " ] ++
+  genInterfaceObjects fSpec opts 1 (ifcObj interface) 
+  
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> ([String],[Relation])
-genInterfaceObjects fSpec opts depth object = 
-  ( indent (depth*2) $
-    [ "array ( 'name' => "++showPhpStr (name object)
-    , "      // relation: "++showPhpStr (show (objctx object))  -- escape for the pathological case that one of the names in the relation contains a newline
-    ] ++ case objctx object of
-           ERel (Rel { relnm = rnm}) -> -- only support editing on user-specified relations (no expressions, and no I or V)
-             [ "      , 'relation' => "++showPhpStr rnm
-             , "      , 'relationIsFlipped' => False" 
-             ]
-           EFlp (ERel (Rel { relnm = rnm})) -> -- and on flipped versions of those relations
-             [ "      , 'relation' => "++showPhpStr rnm
-             , "      , 'relationIsFlipped' => True" 
-             ]          
-           _ ->
-            [ "      , 'relation' => ''" 
-            , "      , 'relationIsFlipped' => ''" 
-            ]          
-    ++     
-    [ "      , 'concept' => "++showPhpStr (show (target $ objctx object)) -- only needed for top level
-    , "      , 'isUnivalent' => " ++ (showPhpBool $ isUni (objctx object))
-    , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
-    , "      , 'subInterfaces' =>"
-    , "          array"
-    ] ++ (indent 10 $ blockParenthesize $ interfaceObjectsLines) ++
-    [ "      )"
-    ]
-  , concat usedRelss ++ case objctx object of
-                         ERel r@(Rel {})        -> [r] 
-                         EFlp (ERel r@(Rel {})) -> [r]
-                         _                      -> []
-  )
- where (interfaceObjectsLines, usedRelss) = unzip $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object
+genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
+genInterfaceObjects fSpec opts depth object = indent (depth*2) $
+  [ "array ( 'name' => "++showPhpStr (name object)
+  , "      // relation: "++showPhpStr (show (objctx object))  -- escape for the pathological case that one of the names in the relation contains a newline
+  ] ++ case objctx object of
+           ERel r ->        [ "      , 'relation' => "++showPhpStr (show r) -- only support editing on user-specified relations (no expressions, and no I or V)
+                            , "      , 'relationIsFlipped' => False" 
+                            ]
+           EFlp (ERel r) -> [ "      , 'relation' => "++showPhpStr (show r) -- and on flipped versions of those relations
+                            , "      , 'relationIsFlipped' => True" 
+                            ]          
+           _             -> [ "      , 'relation' => ''" 
+                            , "      , 'relationIsFlipped' => ''" 
+                            ]          
+  ++     
+  [ "      , 'concept' => "++showPhpStr (show (target $ objctx object)) -- only needed for top level
+  , "      , 'isUnivalent' => " ++ (showPhpBool $ isUni (objctx object))
+  , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
+  , "      , 'subInterfaces' =>"
+  , "          array"
+  ] ++ (indent 10 $ blockParenthesize $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
+  [ "      )"
+  ]
  
 blockParenthesize :: [[String]] -> [String]
 blockParenthesize [] = ["()"]
