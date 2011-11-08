@@ -17,6 +17,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , PAclause(..)
           , Activity(..)
           , PlugSQL(..)
+          , lookupCpt
           , SqlField(..)
           , FPA(..)
           , FPcompl(..)
@@ -307,7 +308,7 @@ data PlugSQL
  = TblSQL  { sqlname   :: String
            , fields    :: [SqlField]
            , cLkpTbl   :: [(A_Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
-           , mLkpTbl   :: [(Relation,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug (kernel+attRels)
+           , mLkpTbl   :: [(Relation,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
            , sqlfpa    :: FPA -- ^ function point analysis
            }
  | BinSQL  { --see rel2plug in ADL2Fspec.hs
@@ -332,6 +333,13 @@ instance Identified PlugSQL where
 instance Eq PlugSQL where
   x==y = name x==name y
 
+
+-- In a concept lookup, you'll get the plugs that contain the relevant concept table.
+lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
+lookupCpt fSpec cpt
+   = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+     [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+     [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
 
 data SqlField = Fld { fldname     :: String
                     , fldexpr     :: Expression

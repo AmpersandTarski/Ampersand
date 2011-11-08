@@ -12,7 +12,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug       (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
-   import DatabaseDesign.Ampersand.Fspec.ShowHS
+--   import DatabaseDesign.Ampersand.Fspec.ShowHS
 --   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..))
    import Data.List (nub,intercalate)
    
@@ -768,7 +768,7 @@ while maintaining all invariants.
         ecas      = assembleECAs qs
         conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
-        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp (ERel rel) _ _=doAct]
+        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, ERel rel<-[e,flp e]]
         visible _ = True
         
 -- Auxiliaries
