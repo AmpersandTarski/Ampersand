@@ -109,8 +109,8 @@ where
           , LineBreak
           , Str ( case ms of
                   []    -> "no relations affect this clause"
-                  [rel] -> "It can be called when relation " ++(showADL . {- disambiguate fSpec . -} ERel) rel++" is affected."
-                  _     -> "It can be called when relations "++commaEng "or" [(showADL . {- disambiguate fSpec . -} ERel) rel | rel<-ms]++" are affected."
+                  [rel] -> "It can be called when relation " ++(showADL . disambiguate fSpec . ERel) rel++" is affected."
+                  _     -> "It can be called when relations "++commaEng "or" [(showADL . disambiguate fSpec . ERel) rel | rel<-ms]++" are affected."
                 )
           ]
           | (ms,hc,r)<-
@@ -129,12 +129,12 @@ where
       concat
         [ [ LineBreak,Str "-- ECA Rule ", Str (show (ecaNum ecarule)), Str " ---------", LineBreak
           , Str (showECA fSpec "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)}) ]++
-          concat [ [ LineBreak, Str "delta expression", LineBreak, Space, Str (showADL ({- disambiguate fSpec . -} d))
+          concat [ [ LineBreak, Str "delta expression", LineBreak, Space, Str (showADL (disambiguate fSpec d))
                    , LineBreak, Str "derivation:"
                    , LineBreak, Space]++
-                   (showProof (showADL {- . disambiguate fSpec -}). nfProof (showADL {- . disambiguate fSpec -}) ) d ++
+                   (showProof (showADL . disambiguate fSpec). nfProof (showADL . disambiguate fSpec) ) d ++
                    [ LineBreak, Str "disjunctly normalized delta expression" 
-                   , LineBreak, Str ((showADL {- . disambiguate fSpec -}) (disjNF d))
+                   , LineBreak, Str ((showADL . disambiguate fSpec) (disjNF d))
                    ]
                  | verboseP flags, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
         | ecarule <- ecaRs]
@@ -233,15 +233,15 @@ where
          = [Str (showADL rule)]++
            ( if e'==e
              then [Str " is already in conjunctive normal form", LineBreak]
-             else [LineBreak, Str "Convert into conjunctive normal form", LineBreak] ++ showProof (showADL {- . disambiguate fSpec -}) ([(e,[],"<=>")]++prf)
+             else [LineBreak, Str "Convert into conjunctive normal form", LineBreak] ++ showProof (showADL . disambiguate fSpec) ([(e,[],"<=>")]++prf)
            )++
            [ LineBreak, Str "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     " ]++
            (disjProof. ECpl . rrexp) rule++[ LineBreak, LineBreak ] ++
            concat [ [LineBreak, Str "Conjunct: ", Space, Space, Space, Space, Space, Str (showADL conjunct)]++
                     concat [ [LineBreak, Str "This conjunct has ", Str (show (length shifts)), Str " clauses:"] | length shifts>1 ]++
-                    concat [ [LineBreak, Str "   Clause: ", Str (showADL ({-disambiguate fSpec-} clause))] | clause<-shifts]++[ LineBreak]++
+                    concat [ [LineBreak, Str "   Clause: ", Str (showADL (disambiguate fSpec clause))] | clause<-shifts]++[ LineBreak]++
                     concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length shifts>1 ]++
-                     concat [ [LineBreak, Str "   Clause: ", Str (showADL ({-disambiguate fSpec-} clause)), Str " may be affected by the following events:",LineBreak]++
+                     concat [ [LineBreak, Str "   Clause: ", Str (showADL (disambiguate fSpec clause)), Str " may be affected by the following events:",LineBreak]++
                              concat [ [Str "event = ", Str (show ev), Space, Str (showADL rel), Str " means doing the following substitution", LineBreak ] ++
                                       [Str (showADL clause++"["++showADL rel++":="++showADL (actSem ev rel (delta (sign rel)))++"] = clause'"), LineBreak ] ++
                                       [Str ("clause' = "++showADL e'), LineBreak ] ++
