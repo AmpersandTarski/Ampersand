@@ -589,7 +589,7 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
                              "\nuc: "++show uc++
                              "\ncandidates: "++show candidates++
                              "\nalts: "++show [ ETyp e uc | e <- candidates, sign e <= uc]) else -}
-                 [ case (infer contxt p_r NoCast, sign e `comparable` uc) of
+                 [ case (infer contxt p_r NoCast, sign e == uc) of
                      (([_],[]), True)   -> e --  remove this redundant PTyp
                      _                  -> ETyp e uc   -- else keep it
                  | e <- candidates, sign e `comparable` uc]
