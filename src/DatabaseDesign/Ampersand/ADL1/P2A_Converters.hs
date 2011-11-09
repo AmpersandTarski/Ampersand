@@ -562,7 +562,7 @@ pRel2aExpr prel contxt ac
     endomults d = [x |x<-multiplicities d, x `elem` endoprops]
     arel d = Rel{ relnm  = name prel
                 , relpos = origin prel
-                , relsgn = sign d
+                , relsgn = cast d 
                 , reldcl = d
                 }
 
