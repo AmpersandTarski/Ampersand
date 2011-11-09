@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
    Architecture(..)
  , A_Context(..)
@@ -24,7 +24,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , GenR
  , Signaling(..)
  , Association(..)
- , comparable,lub,order,glb
+ , comparable,lub,order,glb,minima
  , makeDeclaration
  , showExpr
  , insParentheses
@@ -32,7 +32,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
-import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..),PartialOrder(..))
+import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..),PartialOrder(..),eqClass)
 import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat)
 import Text.Pandoc
 import Data.List
@@ -412,7 +412,9 @@ instance Association Expression where
  sign (EFlp e)       = Sign t s where Sign s t=sign e
  sign (ECpl e)       = sign e
  sign (EBrk e)       = sign e
- sign (ETyp _ sgn)   = sgn
+ sign (ETyp e sgn)   = if sign e `comparable` sgn
+                     then sgn
+                     else fatal 417 $ "type checker failed to verify "++show (ETyp e sgn)++"."
  sign (ERel rel)     = sign rel
 
 
@@ -549,7 +551,6 @@ class Signaling a where
   --  A partial order is by definition reflexive, antisymmetric, and transitive)
   --  For every concept a and b in Ampersand, the following rule holds: a<=b || b<=a || a\= b
 glb,lub    :: (Show c,Ord c) => c -> c -> c
-comparable :: Ord c => c -> c -> Bool
 order      :: A_Concept -> GenR
 glb a b | b <= a = b
         | a <= b = a
@@ -557,8 +558,18 @@ glb a b | b <= a = b
 lub a b | a <= b = b
         | b <= a = a
         | otherwise = fatal 82 $ "lub undefined: a="++show a++", b="++show b
-comparable a b | a <= b = True
-               | b <= a = True
-               | otherwise = False
 order (C _ gE _) = gE
 order _ = (==)
+-- | minima takes the minimum of all lists of comparable concepts
+minima :: [A_Concept] -> [A_Concept]
+minima cs = map minimum (eqClass comparable cs)
+
+--Do not define comparable :: Ord c => c -> c -> Bool
+--sign x `comparable` sign y was used to check that source x and source y are comparable and target x and target y are comparable
+--however if source x <= source y and target y <= target x, then sign x `comparable` sign y = False
+class Comparable a where
+   comparable :: a -> a -> Bool 
+instance Comparable A_Concept where
+   comparable a b = a <= b || b <= a
+instance Association a => Comparable a where
+   comparable a b = source a `comparable` source b && target a `comparable` target b
