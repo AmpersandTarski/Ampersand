@@ -516,26 +516,26 @@ pRel2aExpr P_V contxt ac
  = (alts, ["The context has no concepts" |null alts])
    where
    alts = case ac of
-     NoCast       -> [ERel(V (Sign a b)) |a<-concs contxt,b<-concs contxt]
-     SourceCast s -> [ERel(V (Sign s b)) |b<-concs contxt]
-     TargetCast t -> [ERel(V (Sign a t)) |a<-concs contxt]
+     NoCast       -> [ERel(V (Sign a b)) |a<-minima(concs contxt),b<-minima(concs contxt)]
+     SourceCast s -> [ERel(V (Sign s b)) |b<-minima(concs contxt)]
+     TargetCast t -> [ERel(V (Sign a t)) |a<-minima(concs contxt)]
      Cast s t     -> [ERel(V (Sign s t)) ]
 pRel2aExpr P_I contxt ac
  = (alts, ["The context has no concepts" |null alts])
    where
    alts = case ac of
-     NoCast       -> [ERel(I c) |c<-concs contxt]
+     NoCast       -> [ERel(I c) |c<-minima(concs contxt)]
      SourceCast s -> [ERel(I s)]
      TargetCast t -> [ERel(I t)]
-     Cast s t     -> [ERel(I s) |s==t]
+     Cast s t     -> [ERel(I (s `lub` t)) |s `comparable` t]
 pRel2aExpr (P_Mp1 x) contxt ac
  = (alts, ["The context has no concepts" |null alts])
    where
    alts = case ac of
-     NoCast       -> [ERel(Mp1 x c) |c<-concs contxt]
+     NoCast       -> [ERel(Mp1 x c) |c<-minima(concs contxt)]
      SourceCast s -> [ERel(Mp1 x s)]
      TargetCast t -> [ERel(Mp1 x t)]
-     Cast s t     -> [ERel(Mp1 x s) |s==t]
+     Cast s t     -> [ERel(Mp1 x (s `lub` t)) |s `comparable` t]
 pRel2aExpr prel contxt ac
  = ( candidates2
    , case (candidates0, candidates1, candidates2) of
@@ -562,7 +562,7 @@ pRel2aExpr prel contxt ac
     endomults d = [x |x<-multiplicities d, x `elem` endoprops]
     arel d = Rel{ relnm  = name prel
                 , relpos = origin prel
-                , relsgn = cast d 
+                , relsgn = sign d
                 , reldcl = d
                 }
 
@@ -582,7 +582,7 @@ infer contxt (PRad p_es) ac      = inferCpsRad contxt PRad ERad p_es ac
 infer contxt (Prel rel) ac       = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
 infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
     where uc = pSign2aSign contxt psgn
-          (candidates,messages) = infer contxt p_r (Cast (source uc) (target uc))
+          (candidates,messages) = infer contxt p_r NoCast
           alts = {- Possibly useful for debugging:
                  if p_r==Prel P_I && psgn==P_Sign [PCpt "Bericht"]
                  then error (show e++
