@@ -106,11 +106,12 @@ where
               -> Named UseVar    -- ^ variable to assign Expression to (see Assignment for details)
               -> PHPExpression    -- ^ expression we'd like to know
               -> [[Statement]]   -- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
- getAllInExpr fSpec pre var (PHPEBrk   e ) = getAllInExpr fSpec pre var e
- getAllInExpr fSpec pre var (PHPECps   [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPEBrk  e ) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPECps [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (PHPEIsc [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (PHPEUni [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (PHPERad [e]) = getAllInExpr fSpec pre var e
+ getAllInExpr fSpec pre var (PHPEPrd [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var composed
   =  -- There are several approaches to get the expression
      -- 1. find the information in the preknowledge
@@ -291,15 +292,15 @@ where
  changeTarget c = phpflp . changeSource c . phpflp
  -- | change the source of some expression into c. We assume that c ISA source expression.
  changeSource :: PHPconcept -> PHPExpression -> PHPExpression
- changeSource c (PHPEBrk  x)  = PHPEBrk  (changeSource c x)
+ changeSource c (PHPEBrk x)  = PHPEBrk  (changeSource c x)
  changeSource c (PHPEKl0 x)  = PHPEKl0 (changeSource c x)
  changeSource c (PHPEKl1 x)  = PHPEKl1 (changeSource c x)
- changeSource c (PHPECps fs)   = PHPECps   [changeSource c f | f<-fs]
+ changeSource c (PHPECps fs) = PHPECps [changeSource c f | f<-fs]
  changeSource c (PHPERad fs) = PHPERad [changeSource c f | f<-fs]
+ changeSource c (PHPEPrd fs) = PHPEPrd [changeSource c f | f<-fs]
  changeSource c (PHPEIsc ts) = PHPEIsc [changeSource c t | t<-ts]
  changeSource c (PHPEUni ts) = PHPEUni [changeSource c t | t<-ts]
  changeSource c (PHPECpl x ) = PHPECps [PHPERel (PHPI c),PHPECpl x]    -- TODO: is dit correct?
-
  changeSource c (PHPEEqu (x,y))  = PHPEEqu (changeSource c x,changeSource c y)
  changeSource c (PHPEImp (x,y))  = PHPEImp (changeSource c x,changeSource c y)
  changeSource c (PHPEDif (x,y))  = PHPEDif (changeSource c x,changeSource c y)

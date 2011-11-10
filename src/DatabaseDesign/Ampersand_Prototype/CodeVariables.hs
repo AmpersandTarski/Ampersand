@@ -62,6 +62,7 @@ module DatabaseDesign.Ampersand_Prototype.CodeVariables
      newVarNameFor forb (PHPEIsc _)  = noCollide forb "isct"
      newVarNameFor forb (PHPEUni _)  = noCollide forb "unio"
      newVarNameFor forb (PHPERad _)  = noCollide forb "dggr"
+     newVarNameFor forb (PHPEPrd _)  = noCollide forb "cardProd"
      newVarNameFor forb (PHPEKl0 _)  = noCollide forb "reflfixpt"
      newVarNameFor forb (PHPEKl1 _)  = noCollide forb "fixpt"
      newVarNameFor forb (PHPECpl _)  = noCollide forb "cmplt"

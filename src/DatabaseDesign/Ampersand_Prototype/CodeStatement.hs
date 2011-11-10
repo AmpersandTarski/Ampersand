@@ -103,6 +103,8 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
      (PHPECps es)    -> phpsource (head es)
      (PHPERad [])    -> error "!Fatal (module CodeStatement 76): ERad []"
      (PHPERad es)    -> phpsource (head es)
+     (PHPEPrd [])    -> error "!Fatal (module CodeStatement 106): EPrd []"
+     (PHPEPrd es)    -> phpsource (head es)
      (PHPEKl0 e)     -> phpsource e
      (PHPEKl1 e)     -> phpsource e
      (PHPEFlp e)     -> phptarget e
@@ -125,6 +127,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
      (PHPERrs (l,r))   -> PHPERrs (phpflp r, phpflp l)
      (PHPECps es)      -> PHPECps (map phpflp (reverse es))
      (PHPERad es)      -> PHPERad (map phpflp (reverse es))
+     (PHPEPrd es)      -> PHPEPrd (map phpflp (reverse es))
      (PHPEKl0 e)       -> PHPEKl0 (phpflp e)
      (PHPEKl1 e)       -> PHPEKl1 (phpflp e)
      (PHPEFlp e)       -> PHPEFlp (phpflp e)
@@ -183,6 +186,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
       | PHPERrs (PHPExpression,PHPExpression)   
       | PHPECps [PHPExpression]                 
       | PHPERad [PHPExpression]                 
+      | PHPEPrd [PHPExpression]                 
       | PHPEKl0 PHPExpression                  
       | PHPEKl1 PHPExpression                  
       | PHPEFlp PHPExpression                   
@@ -234,6 +238,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
  php2conc (PHPERrs (l,r)) = ERrs (php2conc l,php2conc r) 
  php2conc (PHPECps es)    = ECps (map (php2conc) es)             
  php2conc (PHPERad es)    = ERad (map (php2conc) es)             
+ php2conc (PHPEPrd es)    = EPrd (map (php2conc) es)             
  php2conc (PHPEKl0 e)     = EKl0 (php2conc e)                    
  php2conc (PHPEKl1 e)     = EKl1 (php2conc e)                    
  php2conc (PHPEFlp e)     = EFlp (php2conc e)                    
@@ -259,6 +264,7 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
  conc2php (ERrs (l,r)) = PHPERrs (conc2php l,conc2php r) 
  conc2php (ECps es)    = PHPECps (map (conc2php) es)             
  conc2php (ERad es)    = PHPERad (map (conc2php) es)             
+ conc2php (EPrd es)    = PHPEPrd (map (conc2php) es)             
  conc2php (EKl0 e)     = PHPEKl0 (conc2php e)                    
  conc2php (EKl1 e)     = PHPEKl1 (conc2php e)                    
  conc2php (EFlp e)     = PHPEFlp (conc2php e)                    

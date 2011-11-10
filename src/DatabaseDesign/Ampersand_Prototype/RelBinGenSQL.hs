@@ -596,9 +596,12 @@ sqlExprSrc fSpec expr = ses expr
    ses (ECps [])    = fatal 554 (if expr==ECps[] then "calling sqlExprSrc (ECps [])" else "evaluating (ECps []) in sqlExprSrc ("++showADL expr++")")
    ses (ECps [f])   = ses f
    ses (ECps fs)    = ses (head fs)
-   ses (ERad [])    = fatal 563 (if expr==ECps[] then "calling sqlExprSrc (ERad [])" else "evaluating (ERad []) in sqlExprSrc ("++showADL expr++")")
+   ses (ERad [])    = fatal 563 (if expr==ERad[] then "calling sqlExprSrc (ERad [])" else "evaluating (ERad []) in sqlExprSrc ("++showADL expr++")")
    ses (ERad [f])   = ses f
    ses (ERad fs)    = ses (head fs)
+   ses (EPrd [])    = fatal 602 (if expr==EPrd[] then "calling sqlExprSrc (EPrd [])" else "evaluating (EPrd []) in sqlExprSrc ("++showADL expr++")")
+   ses (EPrd [f])   = ses f
+   ses (EPrd fs)    = ses (head fs)
    ses (ECpl e)     = ses e
    ses (EKl0 e)     = ses e
    ses (EKl1 e)     = ses e

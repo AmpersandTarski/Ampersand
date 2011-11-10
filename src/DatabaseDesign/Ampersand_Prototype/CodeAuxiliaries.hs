@@ -61,6 +61,7 @@ where
  mapExpression f (ERrs (l,r)) = ERrs (mapExpression f l,mapExpression f r) -- ^ right residual          \
  mapExpression f (ECps es)    = ECps (map (mapExpression f) es)            -- ^ composition             ;
  mapExpression f (ERad es)    = ERad (map (mapExpression f) es)            -- ^ relative addition       !
+ mapExpression f (EPrd es)    = ERad (map (mapExpression f) es)            -- ^ cartesian product       *
  mapExpression f (EKl0 e)     = EKl0 (mapExpression f e)                   -- ^ Rfx.Trn closure         *
  mapExpression f (EKl1 e)     = EKl1 (mapExpression f e)                   -- ^ Transitive closure      +
  mapExpression f (EFlp e)     = EFlp (mapExpression f e)                   -- ^ Conversion              ~
