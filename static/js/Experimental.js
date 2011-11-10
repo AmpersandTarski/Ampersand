@@ -194,10 +194,12 @@ function startAtomEditing($atom) {
 // remove the text field.
 function stopAtomEditing($atom) {
   var atom = $atom.attr('atom');
-  $atom.attr('atom',newAtom);
+  
   var $form = $('#atomEditor');
   var newAtom = $form.children().filter('input').attr('value');
   $form.remove();
+
+  $atom.attr('atom',newAtom);
   $atom.text(newAtom);
   $atom.show();
   if (newAtom!=atom) {
