@@ -113,3 +113,13 @@
   ; color: white
   ; background-color: blue
   }
+
+.CommandQueue
+  { float: right
+  ; width: 200px
+  ; padding: 10px
+  ; background-color: #d0d0d0
+  ; border-style: solid
+  ; border-width: 1px
+  ; border-color: black
+  }

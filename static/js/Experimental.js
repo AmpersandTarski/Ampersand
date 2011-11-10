@@ -1,6 +1,9 @@
 var commandQueue = new Array();
 
 function queueCommands(commandArray) {
+  jQuery.map(commandArray, function (command) {
+    $('.CommandQueue').append(showCommand(command)+'<br>');
+  });
   commandQueue = commandQueue.concat(commandArray);
 }
 
@@ -14,6 +17,7 @@ function initialize(interfacesMap) {
   if ($('body').attr('editing') == 'true') {  
     commandQueue = new Array();
     initializeEditButtons();
+    $('body').prepend('<div class="CommandQueue">Edit History:<br/></div>');
   }
   else
     initializeLinks(interfacesMap);
@@ -41,6 +45,23 @@ function cancelEditing() {
   $('body').attr('editing','False');
   initializeLinks(interfacesMap);
   */
+}
+
+// only interested in database commands
+function showCommand(command) {
+  switch (command.cmd) {
+    case 'editdatabase':
+      var dbCommand = command.dbcommand;
+      switch (dbCommand.dbcmd) {
+        case 'addnew':
+          return 'AddNew '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '('+dbCommand.otheratom+',new)' : '(new,'+dbCommand.otheratom+')');
+        case 'add':
+          return 'Add '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '(>'+dbCommand.src+'<,'+dbCommand.tgt+')' : '('+dbCommand.src+',>'+dbCommand.tgt+'<)');
+        case 'delete':
+          return 'Delete '+dbCommand.rel+' ('+dbCommand.src+','+dbCommand.tgt+')';
+      }
+  }
+  return 'Undefined command: '+command;
 }
 
 function addNewCommand(relation, dest, otherAtom) {
