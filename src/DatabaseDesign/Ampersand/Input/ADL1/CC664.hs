@@ -218,8 +218,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
 
    pFactorI         :: Parser Token P_Expression
    pFactorI          = f <$> pList1Sep (pKey "/\\") pFactor
-                       where f [x] = x
-                             f  xs = Pisc xs
+                       where f [x]     = x
+                             f  xs     = Pisc xs
 
    pFactor          :: Parser Token P_Expression
    pFactor           = f <$> pList1Sep (pKey "!") pTermD
@@ -227,10 +227,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                              f ts      = PRad ts
 
    pTermD           :: Parser Token P_Expression
-   pTermD            = f <$> pList1Sep (pKey ";") pTerm
-                       where f [PBrk f'] = f'
-                             f [t]     = t
+   pTermD            = f <$> pList1Sep (pKey ";") pTermP
+                       where f [t]     = t
                              f ts      = PCps ts
+
+   pTermP           :: Parser Token P_Expression
+   pTermP            = f <$> pList1Sep (pKey "*") pTerm
+                       where f [t]     = t
+                             f ts      = PPrd ts
 
    pTerm            :: Parser Token P_Expression
    pTerm             = tm <$> (preStr `opt` []) <*> pRelation <*> optional pSign <*> (postStr `opt` [])                            <|>

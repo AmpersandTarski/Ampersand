@@ -471,6 +471,7 @@ disambiguate fSpec x
    f (ERrs (l,r)) = PRrs (f l,f r)
    f (ECps es)    = PCps (map f es)
    f (ERad es)    = PRad (map f es)
+   f (EPrd es)    = PPrd (map f es)
    f (EKl0 e)     = PKl0 (f e)
    f (EKl1 e)     = PKl1 (f e)
    f (EFlp e)     = PFlp (f e)
@@ -579,6 +580,7 @@ infer contxt (PUni p_rs) ac      = inferUniIsc contxt PUni EUni p_rs ac
 infer contxt (Pisc p_rs) ac      = inferUniIsc contxt Pisc EIsc p_rs ac
 infer contxt (PCps p_es) ac      = inferCpsRad contxt PCps ECps p_es ac
 infer contxt (PRad p_es) ac      = inferCpsRad contxt PRad ERad p_es ac   
+infer contxt (PPrd p_es) ac      = inferPrd    contxt p_es ac   
 infer contxt (Prel rel) ac       = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
 infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
     where uc = pSign2aSign contxt psgn
@@ -874,6 +876,51 @@ inferCpsRad contxt pconstructor constructor p_rs ac = (solutions,messages)
           makeMessages rs
            = [ "incomparable types between "++showADL l++showCast typ++" and "++showADL r++showCast typ++":\n   "++showADL (target l)++" does not match "++showADL (source r)
              | (l,r,typ) <- zip3 (init rs) (tail rs) castVector', not (target l `comparable` source r)]
+inferPrd _      []    _  = fatal 469 "Type checking (PPrd []) should never occur."
+inferPrd contxt [p_e] ac = infer contxt p_e ac
+inferPrd contxt p_rs  ac = (solutions,messages)
+    where -- Step 1: do inference on all subexpressions  -- example: PCps [Prel in,Prel zaak]
+          castVector= case ac of                                         -- example: castVector=[SourceCast Document,TargetCast Zaak]
+                       Cast s t     -> SourceCast s : [NoCast | _<-(init.tail) p_rs] ++ [TargetCast t]
+                       SourceCast s -> SourceCast s : [NoCast | _<-tail p_rs]
+                       TargetCast t -> [NoCast | _<-init p_rs] ++ [TargetCast t]
+                       NoCast       -> [NoCast | _<-p_rs]
+          terms     = [ infer contxt p_e ec | (p_e,ec)<-zip p_rs castVector ]   -- example: terms=[[in[Document*Dossier]],[zaak[Dossier*Zaak],zaak[Beslissing*Zaak]]]
+          -- Step 2: determine the intermediate types, if determined
+          inter                                                          -- example: inter=[[Dossier]]
+           = [ case (detTrg lAlts, detSrc rAlts) of
+                (TargetCast t, SourceCast s) -> [s `lub` t| s `comparable` t]
+                (NoCast,       SourceCast s) -> [s]
+                (TargetCast t, NoCast      ) -> [t]
+                (NoCast      , NoCast      ) -> []
+                (_           , _           ) -> fatal 433 "inspect code of detTrg or detSrc"
+             | ((lAlts,_),(rAlts,_)) <- zip (init terms) (tail terms)
+             ]
+          -- Step 3: determine the tightened cast vector
+          inter'                                                         -- example: inter'=[[Document],[Dossier],[Zaak]]
+           = case ac of
+              NoCast       -> [[]] ++inter++[[]]
+              SourceCast s -> [[s]]++inter++[[]]
+              TargetCast t -> [[]] ++inter++[[t]]
+              Cast s t     -> [[s]]++inter++[[t]]
+          castVector'                                                    -- example: castVector'=[Cast Document Dossier,Cast Dossier Zaak]
+           = [ case (ls,rs) of
+                ([s], [t]) -> Cast s t
+                ([s],  _ ) -> SourceCast s
+                ( _ , [t]) -> TargetCast t
+                ( _ ,  _ ) -> NoCast      
+             | (ls,rs)<-zip (init inter') (tail inter') ]
+          -- Step 4: redo inference on all subexpressions
+          terms'    = [ infer contxt p_e ec | (p_e,ec)<-zip p_rs castVector' ]  -- example: terms'=[[in[Document*Dossier]],[zaak[Dossier*Zaak]]]
+          -- Step 5: combine all possibilities                           -- example: combs=[([in[Document*Dossier],zaak[Dossier*Zaak]],[])]
+          combs     = [ rs
+                      | rs<-combinations [es | (es,_)<-[head terms', last  terms']] -- example: combinations [[1,2,3],[10,20],[4]] = [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
+                      , ac <= Cast (source (head rs)) (target (last rs))
+                      ]
+          -- Step 6: determine solutions                       --  example: solutions=[in[Document*Dossier];zaak[Dossier*Zaak]]
+          solutions = nub [EPrd rs | rs<-combs]        -- a combination without error messages is a potential solution
+          -- Step 7: compute messages
+          messages  = [m | (_,msgs)<-terms, m<-msgs]           -- messages from within the terms
 
 showCast :: AutoCast -> String
 showCast (Cast s t) = "["++show s++"*"++show t++"]"
@@ -900,6 +947,8 @@ srcTypeable (PLrs (l,_))   = srcTypeable l
 srcTypeable (PRrs (l,_))   = trgTypeable l
 srcTypeable (PRad [])      = False
 srcTypeable (PRad es)      = srcTypeable (head es)
+srcTypeable (PPrd [])      = False
+srcTypeable (PPrd es)      = srcTypeable (head es)
 srcTypeable (PCps [])      = False
 srcTypeable (PCps es)      = srcTypeable (head es)
 srcTypeable (PKl0 e)       = srcTypeable e
@@ -922,6 +971,8 @@ trgTypeable (PLrs (_,r))   = srcTypeable r
 trgTypeable (PRrs (_,r))   = trgTypeable r
 trgTypeable (PRad [])      = False
 trgTypeable (PRad es)      = trgTypeable (last es)
+trgTypeable (PPrd [])      = False
+trgTypeable (PPrd es)      = trgTypeable (last es)
 trgTypeable (PCps [])      = False
 trgTypeable (PCps es)      = trgTypeable (last es)
 trgTypeable (PKl0 e)       = trgTypeable e
@@ -945,6 +996,7 @@ p_mors expr = case expr of
        PRrs (e,e')  ->  p_mors e `uni` p_mors e'     -- rs  ^ right residual           \
        PCps es      ->  foldr uni [] (map p_mors es) -- ts  ^ composition              ;
        PRad es      ->  foldr uni [] (map p_mors es) -- ts  ^ relative addition        !
+       PRad es      ->  foldr uni [] (map p_mors es) -- ts  ^ cartesian product        *
        PKl0 e       ->  p_mors e                     -- e   ^ Rfx.Trn closure          *
        PKl1 e       ->  p_mors e                     -- e   ^ Transitive closure       +
        PFlp e       ->  p_mors e                     -- e   ^ conversion               ~

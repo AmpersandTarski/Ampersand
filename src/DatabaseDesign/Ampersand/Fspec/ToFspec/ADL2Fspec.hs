@@ -694,10 +694,13 @@ while maintaining all invariants.
                                         "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
           (_ ,  ERad [])  -> fatal 683 $ "doCod ("++showADL deltaX++") "++show tOp++" ERad [],\n"++
                                         "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
+          (_ ,  EPrd [])  -> fatal 697 $ "doCod ("++showADL deltaX++") "++show tOp++" EPrd [],\n"++
+                                        "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
           (_ ,  EUni [t]) -> doCod deltaX tOp t motiv
           (_ ,  EIsc [t]) -> doCod deltaX tOp t motiv
           (_ ,  ECps [t]) -> doCod deltaX tOp t motiv
           (_ ,  ERad [t]) -> doCod deltaX tOp t motiv
+          (_ ,  EPrd [t]) -> doCod deltaX tOp t motiv
           (Ins, ECpl x)   -> doCod deltaX Del x motiv
           (Del, ECpl x)   -> doCod deltaX Ins x motiv
           (Ins, EUni fs)  -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
@@ -721,8 +724,8 @@ while maintaining all invariants.
                                             ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (ECps rs) `lub` target (ECps ls)
-                                , let fLft atom = doCod (disjNF (EUni[ECps [ERel (Mp1 atom c),ERel (V (Sign c (source deltaX))),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
-                                , let fRht atom = doCod (disjNF (EUni[ECps [deltaX,ERel (V (Sign (target deltaX) c)),ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
+                                , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
+                                , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
                                 ] motiv
           (Del, ECps ts) -> Chc [ if ECps ls==flp (ECps rs)
                                   then Chc [ Sel c (disjNF (ECps ls)) (\_->Rmv c fLft motiv) motiv
@@ -734,13 +737,14 @@ while maintaining all invariants.
                                            ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (ECps rs) `lub` target (ECps ls)
-                                , let fLft atom = doCod (disjNF (EUni[ECps [ERel (Mp1 atom c),ERel (V (Sign c (source deltaX))),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
-                                , let fRht atom = doCod (disjNF (EUni[ECps [deltaX,ERel (V (Sign (target deltaX) c)),ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
+                                , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
+                                , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
                                 ] motiv
           (Del, EUni fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, EIsc fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
 -- Op basis van de Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
           (_  , ERad ts)   -> doCod deltaX tOp (ECpl (ECps (map ECpl ts))) motiv
+          (_  , EPrd ts)   -> fatal 745 "TODO"
           (_  , EKl0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
           (_  , ERel m)   -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"

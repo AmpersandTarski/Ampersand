@@ -300,6 +300,7 @@ data Expression
       | ERrs (Expression,Expression)       -- ^ right residual          \
       | ECps [Expression]                  -- ^ composition             ;
       | ERad [Expression]                  -- ^ relative addition       !
+      | EPrd [Expression]                  -- ^ cartesian product       *  -- The argument is a list of Expressions rather than a tuple (l,r), only because * is associative.
       | EKl0 Expression                    -- ^ Rfx.Trn closure         *  (Kleene star)
       | EKl1 Expression                    -- ^ Transitive closure      +  (Kleene plus)
       | EFlp Expression                    -- ^ conversion (flip, wok)  ~
@@ -311,10 +312,10 @@ data Expression
 instance Ord Expression where
  e <= e' = sign e <= sign e'
 instance Show Expression where
- showsPrec _ = showString . showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
-showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
+ showsPrec _ = showString . showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
-showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul,  rAdd,  closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr) expr
+showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr) expr
  = showchar expr
    where
      showchar (EEqu (l,r)) = showchar l++equi++showchar r
@@ -330,6 +331,8 @@ showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul,  rAdd,  clos
      showchar (ECps es)    = intercalate rMul [showchar e | e<-es]
      showchar (ERad [])    = "-I"
      showchar (ERad es)    = intercalate rAdd [showchar e | e<-es]
+     showchar (EPrd [])    = "ONE"
+     showchar (EPrd es)    = intercalate rPrd [showchar e | e<-es]
      showchar (EKl0 e)     = showchar e++closK0
      showchar (EKl1 e)     = showchar e++closK1
      showchar (EFlp e)     = showchar e++flp'
@@ -357,8 +360,9 @@ insParentheses expr = insPar 0 expr
        insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
        insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
        insPar i (ERrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
-       insPar i (ERad ts)    = wrap (i+1) 8 (ERad [insPar 8 t | t<-ts])
        insPar i (ECps ts)    = wrap (i+1) 8 (ECps [insPar 8 t | t<-ts])
+       insPar i (ERad ts)    = wrap (i+1) 8 (ERad [insPar 8 t | t<-ts])
+       insPar i (EPrd ts)    = wrap (i+1) 8 (EPrd [insPar 8 t | t<-ts])
        insPar _ (EKl0 e)     = EKl0 (insPar 10 e)
        insPar _ (EKl1 e)     = EKl1 (insPar 10 e)
        insPar _ (EFlp e)     = EFlp (insPar 10 e)
@@ -404,6 +408,8 @@ instance Association Expression where
                      if and [r `comparable` l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
                      then Sign (source (head ss)) (target (last ss))
                      else fatal 265 $ "type checker failed to verify "++show (ERad es)++"."
+ sign (EPrd [])      = fatal 261 $ "Ampersand failed to eliminate "++show (EPrd [])++"."
+ sign (EPrd es)      = Sign (source (head es)) (target (last es))
  sign (EKl0 e)       = --see #166 
                      if source e `comparable` target e
                      then Sign (source e `lub` target e)(source e `lub` target e)

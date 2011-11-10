@@ -175,7 +175,7 @@ instance ShowADL Relation where
  showADL rel = showADL (ETyp (ERel rel) (sign rel))
 
 instance ShowADL Expression where
- showADL = showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+ showADL = showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
 
 instance ShowADL Declaration where
  showADL decl = 
@@ -258,9 +258,9 @@ showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
 --used to compose error messages at p2a time
 instance ShowADL P_Expression where
- showADL expr = showPExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "+", "~", "(", ")", "[", "*", "]") expr
+ showADL expr = showPExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]") expr
    where
-    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr)
+    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr)
      = showchar
       where
        showchar (Pequ (l,r))          = showchar l++equi++showchar r
@@ -276,6 +276,8 @@ instance ShowADL P_Expression where
        showchar (PCps es)             = intercalate rMul [showchar e | e<-es]
        showchar (PRad [])             = "-I"
        showchar (PRad es)             = intercalate rAdd [showchar e | e<-es]
+       showchar (PPrd [])             = "-I"
+       showchar (PPrd es)             = intercalate rPrd [showchar e | e<-es]
        showchar (PKl0 e)              = showchar e++closK0
        showchar (PKl1 e)              = showchar e++closK1
        showchar (PFlp e)              = showchar e++flp'
@@ -301,9 +303,9 @@ instance ShowADL PAclause where
     showADL p = showPAclause "\n " p
      where
       showPAclause indent pa@Chc{}
-       = let indent'=indent++"   " in "execute ONE from"++indent'++intercalate indent' [showPAclause indent' p | p<-paCls pa]
+       = let indent'=indent++"   " in "execute ONE from"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]
       showPAclause indent pa@All{}
-       = let indent'=indent++"   " in "execute ALL of"++indent'++intercalate indent' [showPAclause indent' p | p<-paCls pa]
+       = let indent'=indent++"   " in "execute ALL of"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]
       showPAclause indent pa@Do{}
        = ( case paSrt pa of
             Ins -> "INSERT INTO "
@@ -311,17 +313,17 @@ instance ShowADL PAclause where
          show (paTo pa)++
          " SELECTFROM "++
          show (paDelta pa)
-         ++concat [ indent++showConj rel | rel<-paMotiv pa ]
+         ++concat [ indent++showConj rs | (_,rs)<-paMotiv pa ]
       showPAclause indent pa@Sel{}
        = let indent'=indent++"   " in
         "SELECT x:"++show (paCpt pa)++" FROM "++showADL (paExp pa)++";"++indent'++showPAclause indent' (paCl pa "x")
       showPAclause indent pa@New{}
        = let indent'=indent++"   " in
         "CREATE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
-      showPAclause indent pa@New{}
+      showPAclause indent pa@Rmv{}
        = let indent'=indent++"   " in
         "REMOVE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
-      showPAclause indent pa@Nop{} = "Nop"
-      showPAclause indent pa@Blk{} = "Blk"
-      showConj (conj,rs)
+      showPAclause _ Nop{} = "Nop"
+      showPAclause _ Blk{} = "Blk"
+      showConj rs
               = "(TO MAINTAIN"++intercalate ", " [name r | r<-rs]++")"

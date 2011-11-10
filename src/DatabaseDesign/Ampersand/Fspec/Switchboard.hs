@@ -56,6 +56,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
          evIn r (EUni es)  = foldr uni [] [evIn r e | e<-es]
          evIn r (ECps es)  = foldr uni [] [evIn r e | e<-es]
          evIn r (ERad es)  = foldr uni [] [evIn r e | e<-es]
+         evIn r (EPrd es)  = foldr uni [] [evIn r e | e<-es]
          evIn r (EKl0 e)   = evIn r e
          evIn r (EKl1 e)   = evIn r e
          evIn r (EFlp e)   = evIn r e
@@ -238,6 +239,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
      f (ERrs (l,r))   = f (ERad [ECpl (EFlp l),r])
      f (ECps es)      = concatMap f es
      f (ERad es)      = concatMap f es
+     f (EPrd es)      = concatMap f es
      f (EKl0 e)       = f e
      f (EKl1 e)       = f e
      f (EFlp e)       = f e

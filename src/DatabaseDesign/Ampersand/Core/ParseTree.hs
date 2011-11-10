@@ -201,6 +201,7 @@ where
 --       PRrs (e,e')  ->  p_concs e `uni` p_concs e'     -- rs  ^ right residual           \
 --       PCps es      ->  foldr uni [] (map p_concs es)  -- ts  ^ composition              ;
 --       PRad es      ->  foldr uni [] (map p_concs es)  -- ts  ^ relative addition        !
+--       PPrd es      ->  foldr uni [] (map p_concs es)  -- ts  ^ cartesian product        *
 --       PKl0 e       ->  p_concs e                      -- e   ^ Rfx.Trn closure          *
 --       PKl1 e       ->  p_concs e                      -- e   ^ Transitive closure       +
 --       PFlp e       ->  p_concs e                      -- e   ^ conversion               ~
@@ -314,6 +315,7 @@ where
       | PRrs (P_Expression,P_Expression)   -- ^ right residual          \
       | PCps [P_Expression]                -- ^ composition             ;
       | PRad [P_Expression]                -- ^ relative addition       !
+      | PPrd [P_Expression]                -- ^ cartesian product       *
       | PKl0 P_Expression                  -- ^ Rfx.Trn closure         *  (Kleene star)
       | PKl1 P_Expression                  -- ^ Transitive closure      +  (Kleene plus)
       | PFlp P_Expression                  -- ^ conversion (flip, wok)  ~

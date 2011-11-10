@@ -9,6 +9,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Misc
+   import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Data.Char (toLower)
    import DatabaseDesign.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
@@ -28,7 +29,9 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       PlK0 PredLogic                 |
       PlK1 PredLogic                 |
       R PredLogic Relation PredLogic |
-      Funs String [Relation]
+      Funs String [Relation]         |
+      Dom Expression Var             |
+      Cod Expression Var
 
    data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
 
@@ -52,9 +55,10 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 -- showLatex ought to produce PandDoc mathematics instead of LaTeX source code.
 -- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
 -- It circumvents the PanDoc structure and goes straight to LaTeX source code.
+-- TODO when PanDoc is up to the job.
    showLatex :: PredLogic -> String
    showLatex x
-    = predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\wedge", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply) x
+    = predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\wedge", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x
       where rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
               = if isIdent r then lhs++"\\ =\\ "++rhs else
                 case name r of
@@ -97,12 +101,13 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                           String -> [(String, A_Concept)] -> String,
                                           String,
                                           String,
-                                          Declaration -> String -> String -> String)
+                                          Declaration -> String -> String -> String,
+                                          String)
    natLangOps l
             = case l of
 -- parameternamen:         (forallP,     existsP,        impliesP, equivP,             orP,  andP,  k0P, k1P, notP,  relP, funP, showVarsP, breakP, spaceP)
-                English -> ("For each",  "There exists", implies, "is equivalent to",  "or", "and", "*", "+", "not",  rel, fun,  langVars , "\n  ", " ", apply)
-                Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply)
+                English -> ("For each",  "There exists", implies, "is equivalent to",  "or", "and", "*", "+", "not",  rel, fun,  langVars , "\n  ", " ", apply, "is element of")
+                Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply, "is element van")
                where
                   rel r = apply (makeDeclaration r)
                   fun r x' = texOnly_Id(name r)++"("++x'++")"
@@ -164,12 +169,13 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                 , String                                    -- notP
                 , Relation -> String -> String -> String    -- relP
                 , Relation -> String -> String              -- funP
-                , String -> [(String, A_Concept)] -> String   -- showVarsP
+                , String -> [(String, A_Concept)] -> String -- showVarsP
                 , String                                    -- breakP
                 , String                                    -- spaceP
                 , Declaration -> String -> String -> String -- apply
+                , String                                    -- set element
                 ) -> PredLogic -> String
-   predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply) e
+   predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el) e
     = charshow 0 e
         where
          wrap i j str = if i<=j then str else "("++str++")"
@@ -189,6 +195,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                   Funs x ls           -> case ls of
                                             []    -> x
                                             r:ms  -> if isIdent r then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
+                  Dom expr (x,_)      -> x++el++funP (makeRel "dom") (showADL expr)
+                  Cod expr (x,_)      -> x++el++funP (makeRel "cod") (showADL expr)
                   R pexpr rel pexpr'  -> case (pexpr,pexpr') of
                                             (Funs l [] , Funs r [])  -> wrap i 5 (apply (makeDeclaration rel) l r)
 {-
@@ -204,7 +212,24 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                   PlK1 rs             -> wrap i 7 (charshow 7 rs++k1P)
                   Not rs              -> wrap i 8 (spaceP++notP++charshow 8 rs)
                   Pred nm v'          -> nm++"{"++v'++"}"
-
+         makeRel :: String -> Relation -- This function exists solely for the purpose of dom and cod
+         makeRel str
+             = makeRelation
+                 (Sgn { decnm   = str
+                      , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
+                      , decprps = [Uni,Tot]
+                      , decprps_calc = []
+                      , decprL  = ""
+                      , decprM  = ""
+                      , decprR  = ""
+                      , decMean = fatal 223 "Do not refer to decMean of this dummy relation"
+                      , decpopu = fatal 224 "Do not refer to decpopu of this dummy relation"
+                      , decfpos = OriginUnknown
+                      , deciss  = fatal 226 "Do not refer to deciss of this dummy relation"
+                      , decusr  = False
+                      , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
+                      , decplug = fatal 229 "Do not refer to decplug of this dummy relation"
+                      })
 
 --objOrShow :: Lang -> PredLogic -> String
 --objOrShow l = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "*", "+", "NOT", rel, fun, langVars l, "\n", " ")
@@ -240,6 +265,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                           eVars = exclVars++[c]
       f exclVars (ECps es)    (a,b) = fC exclVars es (a,b)  -- special treatment, see below
       f exclVars (ERad es)    (a,b) = fD exclVars es (a,b)  -- special treatment, see below
+      f _        (EPrd es)    (a,b) = Conj [Dom (head es) a, Cod (last es) b]
       f exclVars (EKl0 e)     (a,b) = PlK0 (f exclVars e (a,b))
       f exclVars (EKl1 e)     (a,b) = PlK1 (f exclVars e (a,b))
       f exclVars (ECpl e)     (a,b) = Not (f exclVars e (a,b))
