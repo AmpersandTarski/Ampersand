@@ -183,6 +183,9 @@ where
                (ERad [])      -> Elem (simpleTag compl) [ Node (Tag rl [mkAttr "Name" "I"])]
                (ERad [e])     -> mkXmlTree e
                (ERad es)      -> Elem (simpleTag rAdd) (map mkXmlTree es)
+               (EPrd [])      -> Elem (simpleTag compl) [ Node (Tag rl [mkAttr "Name" "I"])]
+               (EPrd [e])     -> mkXmlTree e
+               (EPrd es)      -> Elem (simpleTag rPrd) (map mkXmlTree es)
                (EKl0 e)       -> Elem (simpleTag clos0) [mkXmlTree e]
                (EKl1 e)       -> Elem (simpleTag clos1') [mkXmlTree e]
                (EFlp e)       -> Elem (simpleTag flip') [mkXmlTree e]
@@ -193,8 +196,8 @@ where
 
 
       where
-      (equi,impl,inter,union',diff,lres,rres,rAdd,rMul,clos0,clos1',compl,flip',cast,rl)
-       = ("EQUI","IMPL","CONJ","DISJ","DIFF","LRES","RRES","RADD","RMUL","CLS0","CLS1","CMPL","CONV","CAST","REL")
+      (equi,impl,inter,union',diff,lres,rres,rMul,rAdd,rPrd,clos0,clos1',compl,flip',cast,rl)
+       = ("EQUI","IMPL","CONJ","DISJ","DIFF","LRES","RRES","RMUL","RADD","RPRD","CLS0","CLS1","CMPL","CONV","CAST","REL")
 
 
 

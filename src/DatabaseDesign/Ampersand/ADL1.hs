@@ -10,7 +10,7 @@ module DatabaseDesign.Ampersand.ADL1
            , P_ObjectDef(..), P_ObjectDefs
            , ObjectDef(..), P_Interface(..), Interface(..)
            , P_Expression(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
-           , showExpr, isPos, isNeg, insParentheses, isFc, isFd, isEIsc, isEUni
+           , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
            , A_Gen(..),P_Gen(..), P_Gens
            , Relation(..), flp, isTypeable, makeRelation
            , Declaration(..), flpDecl, isSgn
@@ -57,7 +57,7 @@ where
                                          )
    import DatabaseDesign.Ampersand.ADL1.Concept                    (Conceptual(..), newAcpt,cptos' )
    import DatabaseDesign.Ampersand.ADL1.Expression                 (flp,isTypeable,subst,subsi,foldlMapExpression,foldrMapExpression
-                                         ,isPos,isNeg,isFc,isFd,isEIsc,isEUni,notCpl, isCpl)
+                                         ,isPos,isNeg,isECps,isERad,isEPrd,isEIsc,isEUni,notCpl, isCpl)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..)
                                          ,Association(..),Relational(..)
                                          ,Declaration(..),flpDecl

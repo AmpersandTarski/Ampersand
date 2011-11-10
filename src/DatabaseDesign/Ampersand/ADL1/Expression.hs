@@ -3,7 +3,7 @@
 module DatabaseDesign.Ampersand.ADL1.Expression (
                        flp,isTypeable,subst,subsi
                       ,foldlMapExpression,foldrMapExpression
-                      ,isFc,isFd,isEIsc,isEUni -- ,isI
+                      ,isECps,isERad,isEPrd,isEIsc,isEUni -- ,isI
                       ,isPos,isNeg{- ,idsOnly-} ,notCpl, isCpl)
 where
 -- import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
@@ -22,6 +22,7 @@ subst (rel,f) t = subs t
        subs (ERrs (l,r)) = ERrs (subs l,subs r)
        subs (ECps es)    = ECps (map subs es)
        subs (ERad es)    = ERad (map subs es)
+       subs (EPrd es)    = EPrd (map subs es)
        subs (EKl0 e)     = EKl0 (subs e)
        subs (EKl1 e)     = EKl1 (subs e)
        subs (EFlp e)     = EFlp (subs e)
@@ -74,6 +75,11 @@ subsi n f expr = expr'
                                       where (x',j') = subs j x
                                      propagate _ [] = []
                                      (es',is) = unzip (propagate i es)
+         subs i (EPrd es)    = (EPrd es', if null es then i else last is)
+                               where propagate j (x:xs) = (x',j'): propagate j' xs
+                                      where (x',j') = subs j x
+                                     propagate _ [] = []
+                                     (es',is) = unzip (propagate i es)
          subs i (EKl0 x)     = (EKl0 x', i') where (x',i') = subs i x
          subs i (EKl1 x)     = (EKl1 x', i') where (x',i') = subs i x 
          subs i (EFlp x)     = (EFlp x', i') where (x',i') = subs i x 
@@ -100,6 +106,8 @@ foldrMapExpression _ _ a (ECps [])     = a
 foldrMapExpression f g a (ECps (e:es)) = foldrMapExpression f g (foldrMapExpression f g a e) (ECps es)
 foldrMapExpression _ _ a (ERad [])     = a
 foldrMapExpression f g a (ERad (e:es)) = foldrMapExpression f g (foldrMapExpression f g a e) (ERad es)
+foldrMapExpression _ _ a (EPrd [])     = a
+foldrMapExpression f g a (EPrd (e:es)) = foldrMapExpression f g (foldrMapExpression f g a e) (EPrd es)
 foldrMapExpression f g a (EKl0 e)      = foldrMapExpression f g a                         e
 foldrMapExpression f g a (EKl1 e)      = foldrMapExpression f g a                         e
 foldrMapExpression f g a (EFlp e)      = foldrMapExpression f g a                         e
@@ -110,32 +118,24 @@ foldrMapExpression f g a (ERel rel)    = f (g rel) a
 
 isEUni :: Expression -> Bool
 isEUni EUni{}  = True
-isEUni _     = False
+isEUni _       = False
 
 isEIsc :: Expression -> Bool
 isEIsc EIsc{}  = True
-isEIsc _     = False
+isEIsc _       = False
 
-isFc :: Expression -> Bool
-isFc ECps{}   = True
-isFc _      = False
+isECps :: Expression -> Bool
+isECps ECps{}  = True
+isECps _       = False
 
-isFd :: Expression -> Bool
-isFd ERad{}  = True
-isFd _     = False
+isERad :: Expression -> Bool
+isERad ERad{}  = True
+isERad _       = False
 
-{-
-isI :: Expression -> Bool
-isI (ERel r ) = isIdent r
-isI (EBrk e ) = isI e
-isI (ECps ts) = all isI ts
-isI (EIsc fs) = all isI fs
-isI (EUni fs) = all isI fs
-isI (EKl0 e ) = isI e
-isI (EKl1 e ) = isI e
-isI (ECpl e ) = isI e
-isI _ = False
--}
+isEPrd :: Expression -> Bool
+isEPrd EPrd{}  = True
+isEPrd _       = False
+
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
@@ -169,7 +169,7 @@ isI _ = False
 
 
 -- | In the data structure Expression, every subexpression has one signature, which can be computed by the function sign :: Expression -> Sign.
---   However, the data structure must not have empty lists in a subexpression EIsc, EUni, ECps, or ERad.
+--   However, the data structure must not have empty lists in a subexpression EIsc, EUni, ECps, ERad, or EPrd.
 --   For this reason we have the following test function
 isTypeable :: Expression -> Bool
 isTypeable (EEqu (l,r)) = isTypeable l && isTypeable r
@@ -185,6 +185,8 @@ isTypeable (ECps [])    = False
 isTypeable (ECps es)    = all isTypeable es
 isTypeable (ERad [])    = False
 isTypeable (ERad es)    = all isTypeable es
+isTypeable (EPrd [])    = False
+isTypeable (EPrd es)    = all isTypeable es
 isTypeable (EKl0 e)     = isTypeable e
 isTypeable (EKl1 e)     = isTypeable e
 isTypeable (EFlp e)     = isTypeable e
@@ -204,6 +206,7 @@ flp expr = case expr of
                ERrs (l,r)        -> ELrs (flp r, flp l)
                ECps ts           -> ECps (map flp (reverse ts))
                ERad ts           -> ERad (map flp (reverse ts))
+               EPrd ts           -> EPrd (map flp (reverse ts))
                EFlp e            -> e
                ECpl e            -> ECpl (flp e)
                EKl0 e            -> EKl0 (flp e)

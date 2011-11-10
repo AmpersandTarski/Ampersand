@@ -139,40 +139,47 @@ where
                                   where (res',steps,equ') = nM e' []
      nM (EBrk f)         _      = nM f []
      nM (ECps [t])       _ = nM t []
-     nM (ECps (k:ks))   rs | or [isFc x |x<-k:ks]   = nM (ECps [y | x<-k:ks, y<-if isFc x then unE x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
+     nM (ECps (k:ks))   rs | or [isECps x |x<-k:ks]   = nM (ECps [y | x<-k:ks, y<-if isECps x then unE x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
                            | or [isI  x |x<-k:ks]   = (ECps [x |x<-k:ks,not (isI x)], ["x;I = x"], "<=>")
                    -- If only simplification is required, we are done now.
-                           | simpl                  = (if isFc f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
-                           | not eq && length ks>1 && isFd g && length gs>1
+                           | simpl                  = (if isECps f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
+                           | not eq && length ks>1 && isERad g && length gs>1
                                                     = (ECps (ERad (ECps [k,head gs]:tail gs):ks'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
-                           | not eq && isFd k && length ue>1
+                           | not eq && isERad k && length ue>1
                                                     = (ERad (init ue++[ECps (last ue:ks)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
-                           | not eq && isEIsc k     = (distribute ECps EIsc isFc isEIsc (ECps (k:ks)), ["distribute /\\ over ;"], "==>")
-                           | isEUni k               = (distribute ECps EUni isFc isEUni (ECps (k:ks)), ["distribute \\/ over ;"], "<=>")
+                           | not eq && isEIsc k     = (distribute ECps EIsc isECps isEIsc (ECps (k:ks)), ["distribute /\\ over ;"], "==>")
+                           | isEUni k               = (distribute ECps EUni isECps isEUni (ECps (k:ks)), ["distribute \\/ over ;"], "<=>")
                            | and [isNeg x |x<-k:ks] = (notCpl (ERad [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
                            | isEUni (last (k:ks))   = (EUni [ECps (init (k:ks)++[t']) |EUni xs<-[last (k:ks)], t'<-xs], ["distribute \\/ over ;"], "<=>")
-                           | otherwise              = (if isFc f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
+                           | otherwise              = (if isECps f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
                            where (t,steps, equ')    = nM k []
                                  (f,steps',equ'')   = nM (ECps ks) (k:rs)
                                  ue = unE k
                                  g@(ERad gs):ks' = ks
 
      nM (ERad [k])    _    = nM k []
-     nM (ERad (k:ks)) rs   | or [isFd   x |x<-k:ks] = nM (ERad [y | x<-k:ks, y<-if isFd x then unE x else [x]]) rs
+     nM (ERad (k:ks)) rs   | or [isERad x |x<-k:ks] = nM (ERad [y | x<-k:ks, y<-if isERad x then unE x else [x]]) rs
                            | or [isImin x |x<-k:ks] = (ECps [x |x<-k:ks,not (isImin x)], ["x!-I = x"], "<=>")
                    -- If only simplification is required, we are done now.
-                           | simpl                  = (if isFd f then ERad (t:unE f) else ERad [t,f], steps++steps', fEqu [equ',equ''])
-                           | not eq && isEUni k     = (distribute ERad EUni isFd isEUni (ERad (k:ks)), ["distribute \\/ over !"], "==>")
-                           | isEIsc k               = (distribute ERad EIsc isFd isEIsc (ERad (k:ks)), ["distribute /\\ over !"], "<=>")
+                           | simpl                  = (if isERad f then ERad (t:unE f) else ERad [t,f], steps++steps', fEqu [equ',equ''])
+                           | not eq && isEUni k     = (distribute ERad EUni isERad isEUni (ERad (k:ks)), ["distribute \\/ over !"], "==>")
+                           | isEIsc k               = (distribute ERad EIsc isERad isEIsc (ERad (k:ks)), ["distribute /\\ over !"], "<=>")
                            | and [isNeg x |x<-k:ks] = (notCpl (ECps [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
                            | length ks>1 && isNeg k && isPos g && isFunction k
                                                     = (ECps [notCpl k,ERad ks], ["f-!g = f;g if f is a function"], "<=>")
                            | length ks>1 && isPos k && isNeg g && isFunction (flp g)
                                                     = (ERad ( ECps[k,notCpl g]:ks'), ["f!g- = f;g if g~ is a function"], "<=>")
-                           | otherwise              = (if isFd f then ERad (t:unE f) else ERad [t,f], steps++steps', fEqu [equ',equ''])
+                           | otherwise              = (if isERad f then ERad (t:unE f) else ERad [t,f], steps++steps', fEqu [equ',equ''])
                            where (t,steps, equ')  = nM k []
                                  (f,steps',equ'') = nM (ERad ks) (k:rs)
                                  g:ks' = ks
+     nM (EPrd [k])    _    = nM k []
+     nM (EPrd (k:ks)) rs   | or [isEPrd x |x<-k:ks] = nM (EPrd [y | x<-k:ks, y<-if isEPrd x then unE x else [x]]) rs
+                           | length rs/=length rs'  = (EPrd rs', ["eliminate cartesian product"], "<=>")
+                           | otherwise              = (if isEPrd f then EPrd (t:unE f) else EPrd [t,f], steps++steps', fEqu [equ',equ''])
+                           where rs' = nub [head rs,last rs]
+                                 (t,steps, equ')  = nM k []
+                                 (f,steps',equ'') = nM (EPrd ks) (k:rs)
      nM (EIsc [k]) _   = nM k []
      nM (EUni [k]) _   = nM k []
      nM (EIsc (k:ks)) rs
@@ -247,9 +254,10 @@ where
    unE :: Expression -> [Expression]
    unE (EIsc es')  = es'
    unE (EUni es')  = es'
+   unE (ECps es')  = es'
    unE (ERad es')  = es'
-   unE (ECps  es')  = es'
-   unE x        = [x]
+   unE (EPrd es')  = es'
+   unE x           = [x]
 
 {- 
 Distribution

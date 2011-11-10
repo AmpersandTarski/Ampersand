@@ -270,6 +270,7 @@ pExp3 ::= pExp4   "\\"   pExp4                           |
           pExp4 .
 pExp4 ::= pList1Sep ";" pExp5                            |
           pList1Sep "!" pExp5                            |
+          pList1Sep "*" pExp5                            |
           pExp5 .
 pExp5 ::= "-"     pExp6                                  |
           pExp6   pSign                                  |
@@ -335,14 +336,17 @@ and the grammar must be disambiguated in order to get a performant parser...
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
    pExp4  :: Parser Token P_Expression
-   pExp4   = f <$> pExp5 <*> (pLrad <|> pLcps)
-             where f x (PRad []) = x
-                   f x (PCps []) = x
-                   f x (PRad xs) = PRad (x:xs)
+   pExp4   = f <$> pExp5 <*> (pLrad <|> pLcps <|> pLprd)
+             where f x (PCps []) = x
+                   f x (PRad []) = x
+                   f x (PPrd []) = x
                    f x (PCps xs) = PCps (x:xs)
+                   f x (PRad xs) = PRad (x:xs)
+                   f x (PPrd xs) = PPrd (x:xs)
                    f _ _ = fatal 301 "PRad PCps expected"
                    pLrad = PRad <$> pList1 (pKey "!" *> pExp5)
-                   pLcps = PCps <$> pList  (pKey ";" *> pExp5)
+                   pLcps = PCps <$> pList1 (pKey ";" *> pExp5)
+                   pLprd = PPrd <$> pList  (pKey "*" *> pExp5)
 
    pExp5  :: Parser Token P_Expression
    pExp5  =  f <$> pList (pKey "-") <*> pExp6  <*> pList ( pKey "~" <|> pKey "*" <|> pKey "+" )
