@@ -13,6 +13,9 @@ generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec opts =
  do { verboseLn opts "Experimental Generation"
     ; writePrototypeFile "Interfaces.php" $ generateInterfaces fSpec opts
+    
+    ; verboseLn opts "Generated tables\n"
+    ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
     }
   where
     writePrototypeFile fname content =
@@ -20,26 +23,35 @@ generateAll fSpec opts =
         --; verboseLn opts $ content
         ; writeFile (combine (dirPrototype opts) fname) content
         }
+
+showPlug plug =  ["Table: '"++sqlname plug++"'"] ++ 
+                    (indent 4 $ blockParenthesize "[" "]" "," $ map showField $ sqlFields plug)
+ where sqlFields (TblSQL  {fields = flds}) = flds
+       sqlFields BinSQL  { columns = (fld1,fld2)} = [fld1, fld2]
+       sqlFields ScalarSQL { column = fld} = [fld]
+
+showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++ 
+                 "'"++fldname fld ++ "':"++show (target $ fldexpr fld)]
  
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
   , "$relationTables ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize
+       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [showPhpStr rnm++" => array (srcConcept => "++(showPhpStr $ name $ source rel)++", tgtConcept => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
            | rel@(Rel {relnm = rnm}) <- mors fSpec
            , (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel rel)]) ++
   [ ""     -- the nub is because sqlRelPlugNames may yield multiple results
   , "$idRelationTables ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize -- todo: why do we get a list of tables and src/tgtCols??
+       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" "," -- todo: why do we get a list of tables and src/tgtCols??
          [ [(showPhpStr $ name c)++" => array (table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
            | c <- concs fSpec, (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel $ I c)]) ++
   [ ""
   , "$allInterfaceObjects ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize $ map (generateInterface fSpec opts) allInterfaces)
+       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $ map (generateInterface fSpec opts) allInterfaces)
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
 generateInterface fSpec opts interface =
@@ -68,13 +80,14 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
-  ] ++ (indent 10 $ blockParenthesize $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
+  ] ++ (indent 10 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
   [ "      )"
   ]
  
-blockParenthesize :: [[String]] -> [String]
-blockParenthesize [] = ["()"]
-blockParenthesize liness = concat [ zipWith (++) (sep:repeat "  ") (lines::[String]) | (sep, lines) <- zip ("( ":repeat ", ") liness ] ++ [")"]
+blockParenthesize :: String -> String -> String -> [[String]] -> [String]
+blockParenthesize open close sep [] = [open ++ close]
+blockParenthesize open close sep  liness = concat [ zipWith (++) (pre:repeat "  ") (lines::[String]) 
+                                                  | (pre, lines) <- zip ((open++" "): repeat (sep++" ")) liness ] ++ [close]
 -- [["line"], ["line1", "line2", "line3"],["linea", "lineb"] ->
 -- ( line
 -- , line1
