@@ -98,10 +98,12 @@ function mkInterfaceMenu(event, $parent, interfaces, atom) {
     $menu = $menu.append($item);
     
     addClickEvent($item,interfaces[i],atom);
+    // We need this separate function here to get a reference to i's value rather than the variable i.
+    // (otherwise we encounter the 'infamous loop problem': all i's have the value of i after the loop)
   }
 }
 
-function addClickEvent($item, interface, atom) { // need a separate function here, to prevent dynamic scoping (see bug below)
+function addClickEvent($item, interface, atom) { 
   $item.click(function () {
     navigateTo(interface, atom);
     $('.InterfaceContextMenu').remove(); // so the menu is gone when we press back
@@ -235,79 +237,3 @@ function mapInsert(map, key, value) {
 function attrBoolValue(attrStr) {
   return attrStr.toLowerCase()=="true" ? true : false;
 }
-
-
-
-
-
-
-
-
-// javascript bug?
-// putting functions with references to local variables in an object or array
-// seems to result in some kind of dynamic scoping.
-
-//after figuring this out, update code for mkInterfaceMenu
-
-function test() {
-  var fns = bug();
-  fns[0]();
-  fns[1]();
-  fns[2]();
-  for ( i=0; i<3; i++) {  // no var before i
-    fns[i]();
-  }
-/* results:
-i:3 j:2     both i and j have the value after bug has been executed
-i:3 j:2     ''
-i:3 j:2     ''
-i:0 j:2     i takes its value from the loop variable
-i:1 j:2
-i:2 j:2
-*/
-}
-
-function bug() {
-    //var k = 99;
-    var fns = new Array();
-    for ( i=0; i<3; i++) {  // no var before i
-      var j = i;
-      
-      fns.push( function() {
-        console.log('i:'+i +' j:'+j);
-      });  
-    }
-    return fns;
-}
-
-/* Putting the function push in a separate function doesn't have this problem:
-results for okay():
-i:0 j:0
-i:1 j:1
-i:2 j:2
-i:0 j:0
-i:1 j:1
-i:2 j:2
-*/
-
-
-function okay() {
-    fns = new Array();
-    for (i=0; i<3; i++) {
-      var j = i;
-      
-      writeFn(fns,i,j);  
-    }
-    fns[0]();
-    fns[1]();
-    fns[2]();
-    for (i=0; i<3; i++)
-      fns[i]();
-}
-
-function writeFn(fns,i,j) {
-  fns.push( function() {
-    console.log('i:'+i +' j:'+j);
-  });
-}
-
