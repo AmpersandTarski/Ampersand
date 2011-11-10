@@ -30,16 +30,13 @@ function showCommandQueue() {
   }
 }
 /*
-bug:
-sometimes statics are replaced when current versions are newer. (or maybe the same?)
 // todo:
-make createIf new that adds to id, rather than doing it in addNew and add 
 
 make example with multiple relations, all in one table
 check delete and add on that
 
 check for empty string input
-
+use better way to access/update concept table
 // use POST for db updates, now commands are in the url, preventing refresh from working
 // rename add to insert
 // can we use this somewhere? $_SERVER['PHP_SELF']
@@ -130,8 +127,8 @@ function processEditDatabase($dbCommand) {
         error("Database command $dbCommand->dbcmd is missing parameters");
       break;
     case 'add':
-      if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt)
-        editAdd($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
+      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->src && $dbCommand->tgt)
+        editAdd($dbCommand->rel, $dbCommand->dest, $dbCommand->src, $dbCommand->tgt);
       else 
         error("Database command $dbCommand->dbcmd is missing parameters");
       break;
@@ -168,33 +165,58 @@ function mkUniqueAtom($existingAtoms, $concept) {
   }
   return $newAtomPrefix.' '.$concept.' ('.(count($newAtomNrs)+1).')';
 }
-    
+
 function editAddNew($rel, $dest, $otherAtom) {
   global $dbName; 
   global $relationTables;
   global $idRelationTables;
+  echo "editAddNew($rel, $dest, $otherAtom)";
   
   $destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
   $conceptTable = $idRelationTables[$destConcept]['table'];
   $conceptColumn = $idRelationTables[$destConcept]['srcCol'];
   $existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
-  
   $newAtom = mkUniqueAtom($existingAtoms, $destConcept);
-  if ($dest=='src')
-    editAdd($rel, $newAtom, $otherAtom);
-  else
-    editAdd($rel, $otherAtom, $newAtom);
+
   DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$newAtom')");
+  
+  if ($dest=='src')
+    insertInRelation($rel, $newAtom, $otherAtom);
+  else
+    insertInRelation($rel, $otherAtom, $newAtom);
 }
-function editAdd($rel, $src, $tgt) {
+
+function editAdd($rel, $dest, $src, $tgt) {
+	global $dbName;
+	global $relationTables;
+	global $idRelationTables;
+  echo "editAdd($rel, $dest, $src, $tgt)";
+  	
+	insertInRelation($rel, $src, $tgt);
+	
+	$possiblyNewAtom = $dest=='src' ? $src : $tgt;
+	
+	$destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
+	$conceptTable = $idRelationTables[$destConcept]['table'];
+	$conceptColumn = $idRelationTables[$destConcept]['srcCol'];
+	$existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
+	
+	// if the destination atom was not in its concept table (either because it already existed, or the table
+	// we inserted the tuple into contained the concept table), we add it.
+	if (!in_array($possiblyNewAtom, $existingAtoms )) {
+		DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$possiblyNewAtom')");
+	}
+}
+
+function insertInRelation($rel, $src, $tgt) {
   global $dbName; 
   global $relationTables;
-  echo "editAdd($rel, $src, $tgt)";
   $table = $relationTables[$rel]['table'];
   $srcCol = $relationTables[$rel]['srcCol'];
   $tgtCol = $relationTables[$rel]['tgtCol'];
   DB_doquer($dbName, "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')");
 }
+
 // TODO use backquote for table names? 
 // TODO check escaping for table names
 function editDelete($rel, $src, $tgt) {

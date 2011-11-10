@@ -1,3 +1,24 @@
+var commandQueue = new Array();
+
+function queueCommands(commandArray) {
+  commandQueue = commandQueue.concat(commandArray);
+}
+
+function sendCommands(commandArray) {
+  window.location.href = 'Interface.php?interface='+encodeURIComponent($('body').attr('interface'))+'&atom='+encodeURIComponent($('body').attr('atom'))+
+                         '&'+'commands='+encodeURIComponent(JSON.stringify(commandArray));
+}
+
+function initialize(interfacesMap) {
+  console.log('initialize');
+  if ($('body').attr('editing') == 'true') {  
+    commandQueue = new Array();
+    initializeEditButtons();
+  }
+  else
+    initializeLinks(interfacesMap);
+}
+
 function startEditing() {
   sendCommands([{cmd: 'editstart'}]);
   /* code below is for dynamic editstart (without refreshing page from server)
@@ -8,7 +29,8 @@ function startEditing() {
 }
 
 function commitEditing() {
-  sendCommands([{cmd: 'editcommit'}]);
+  queueCommands([{cmd: 'editcommit'}]);
+  sendCommands(commandQueue);
 }
 
 function cancelEditing() {
@@ -21,23 +43,19 @@ function cancelEditing() {
   */
 }
 
-function addNewCommand(relation, destination, otherAtom) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: destination, otheratom: otherAtom}};
+function addNewCommand(relation, dest, otherAtom) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: dest, otheratom: otherAtom}};
 }
 
-function addCommand(relation, src, tgt) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'add', rel: relation, src: src, tgt: tgt}};
+// dest specifies which of the atoms in the added tuple may be new (and in that case will need to be added to a concept table)
+function addCommand(relation, dest, src, tgt) {
+  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'add', rel: relation, dest: dest, src: src, tgt: tgt}};
 }
 
 function deleteCommand(relation, src, tgt) {
   return {cmd: 'editdatabase', dbcommand: {dbcmd: 'delete', rel: relation, src: src, tgt: tgt}};
 }
 
-
-function sendCommands(commandArray) {
-  window.location.href = 'Interface.php?interface='+encodeURIComponent($('body').attr('interface'))+'&atom='+encodeURIComponent($('body').attr('atom'))+
-                         '&'+'commands='+encodeURIComponent(JSON.stringify(commandArray));
-}
 
 // navigation
 
@@ -46,13 +64,6 @@ function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
-function initialize(interfacesMap) {
-  console.log('initialize');
-  if ($('body').attr('editing') == 'true')
-    initializeEditButtons();  
-  else
-    initializeLinks(interfacesMap);
-}
 
 // undo coloring by initializeLinks. Not nice, css cannot be used now. TODO: fix this by using attr to signal presence of interfaces
 function initializeLinks(interfacesMap) {
@@ -126,30 +137,30 @@ function initializeEditButtons() {
   $('.DeleteStub').click(function() {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
-    var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
     var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     var $atomElt = $(this).next().children().first();
     var atom =$atomElt.attr('atom');
     if (relationIsFlipped) {
       //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
-      sendCommands([deleteCommand(relation,atom,srcAtom)]);
+      queueCommands([deleteCommand(relation,atom,srcAtom)]);
     } else {
         //alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
-    	sendCommands([deleteCommand(relation,srcAtom,atom)]);
+    	queueCommands([deleteCommand(relation,srcAtom,atom)]);
     }
+    getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
   });
   $('.AddStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-    alert(relationIsFlipped);
     var otherAtom =$containerElt.attr('srcAtom'); // todo: name otherAtom okay?
     if (relationIsFlipped) {
-      alert('Add: (new,'+otherAtom+ ') to ~'+relation);
-      sendCommands([addNewCommand(relation,'src',otherAtom)]);
+      //alert('Add: (new,'+otherAtom+ ') to ~'+relation);
+      queueCommands([addNewCommand(relation,'src',otherAtom)]);
     }else {
-      alert('Add: ('+otherAtom+',new) to '+relation);
-      sendCommands([addNewCommand(relation,'tgt',otherAtom)]);
+      //alert('Add: ('+otherAtom+',new) to '+relation);
+      queueCommands([addNewCommand(relation,'tgt',otherAtom)]);
     }
   });
 }
@@ -190,16 +201,16 @@ function stopAtomEditing($atom) {
   if (newAtom!=atom) {
     var $containerElt = getParentContainer($atom);
     var relation = $containerElt.attr('relation'); 
-    var relationIsFlipped = $containerElt.attr('relationIsFlipped'); 
+    var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
     var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     if (relationIsFlipped) {
       //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
-      sendCommands([ deleteCommand(relation,atom,srcAtom)
-                   , addCommand(relation,newAtom,srcAtom) ]);
+      queueCommands([ deleteCommand(relation,atom,srcAtom)
+                   , addCommand(relation,'src',newAtom,srcAtom) ]);
     } else {
       //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
-      sendCommands([ deleteCommand(relation,srcAtom,atom)
-                   , addCommand(relation,srcAtom,newAtom) ]);
+      queueCommands([ deleteCommand(relation,srcAtom,atom)
+                   , addCommand(relation,'tgt',srcAtom,newAtom) ]);
     }
   }
 }
@@ -211,6 +222,9 @@ function getParentContainer($elt) {
   return $elt.parents().filter('.Container').first();
 }
 
+function getParentTableRow($elt) {
+  return $elt.parents().filter('tr').first();
+}
 function mapInsert(map, key, value) {
   if (map[key])
     map[key].push(value);
@@ -247,7 +261,7 @@ function test() {
 i:3 j:2     both i and j have the value after bug has been executed
 i:3 j:2     ''
 i:3 j:2     ''
-i:0 j:2     i takes its valu from the loop variable
+i:0 j:2     i takes its value from the loop variable
 i:1 j:2
 i:2 j:2
 */
