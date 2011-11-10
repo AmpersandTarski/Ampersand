@@ -113,10 +113,11 @@ function generateInterface($db, $interface, $srcAtom) {
   
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
+  // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
   $isUni = $interface['isUnivalent'];  
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
-  if (!$isUni) emit($html, '<table class="AtomList Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" srcAtom='.showHtmlAttrStr($srcAtom).' concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
     if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
@@ -132,13 +133,14 @@ function generateInterfaceList($db, $parentInterface, $atom) {
   $interfaces = $parentInterface['subInterfaces'];
   // the old prototype did not show the atom when there are subinterfaces
   // for now, we always show it, for debugging purposes
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).'> '.htmlSpecialChars($atom).' </div>');
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).'>');
+  emit($html, '<div class=AtomName> '.htmlSpecialChars($atom).'</div>');
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
       emit($html, generateInterface($db, $interface, $atom));
     }
-    emit($html, '</div>');
+    emit($html, '</div></div>');
   }
   return $html;
 }

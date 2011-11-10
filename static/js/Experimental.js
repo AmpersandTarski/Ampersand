@@ -88,10 +88,11 @@ function navigateTo(interface, atom) {
 
 // undo coloring by initializeLinks. Not nice, css cannot be used now. TODO: fix this by using attr to signal presence of interfaces
 function initializeLinks(interfacesMap) {
-  $(".Atom").map(function () {
-    $containerElt = $(this).parents().filter(".Container"); 
+  $(".AtomName").map(function () {
+    $containerElt = getParentContainer($(this)); 
+    $atom=getParentAtom($(this));
     concept =$containerElt.attr('concept');
-    var atom = $(this).attr('atom');
+    var atom = $atom.attr('atom');
     var interfaces = interfacesMap[concept];
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't add a click event
       $(this).css("cursor","pointer");
@@ -106,10 +107,10 @@ function initializeLinks(interfacesMap) {
   });
 }
 
-function mkInterfaceMenu(event, $parent, interfaces, atom) {
+function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
   $('.InterfaceContextMenu').remove();
   var $menu = $('<div class=InterfaceContextMenu>');
-  $parent.append($menu);
+  $parentDiv.append($menu);
   $menu.offset({ top: event.pageY, left: event.pageX });
 
   for (var i=0; i<interfaces.length; i++) {
@@ -150,20 +151,20 @@ function initializeEditButtons() {
         $parentInterface.attr('hover', 'true');
     $(this).attr('hover', 'false');
   });
-  $('.Atom').click(function(){
+  $('.AtomName').click(function(){
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     if (relation) {
-      startAtomEditing($(this));
+      startAtomEditing(getParentAtom($(this)));
     }
   });
   $('.DeleteStub').click(function() {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-    var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
     var $atomElt = $(this).next().children().first();
     var atom =$atomElt.attr('atom');
+    var srcAtom=getParentAtom($atomElt).attr('atom');
     if (relationIsFlipped) {
       //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
       queueCommands([deleteCommand(relation,atom,srcAtom)]);
@@ -177,7 +178,9 @@ function initializeEditButtons() {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-    var otherAtom =$containerElt.attr('srcAtom'); // todo: name otherAtom okay?
+     // todo: name otherAtom okay?
+    var otherAtom=getParentAtom($(this)).attr('atom');
+    
     if (relationIsFlipped) {
       //alert('Add: (new,'+otherAtom+ ') to ~'+relation);
       queueCommands([addNewCommand(relation,'src',otherAtom)]);
@@ -227,8 +230,9 @@ function stopAtomEditing($atom) {
     var $containerElt = getParentContainer($atom);
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-    var srcAtom =$containerElt.attr('srcAtom'); // todo: name srcAtom is not okay, depends on isFlipped
-    if (relationIsFlipped) {
+    // todo: name srcAtom is not okay, depends on isFlipped
+    var srcAtom=getParentAtom($atom).attr('atom');
+if (relationIsFlipped) {
       //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
       queueCommands([ deleteCommand(relation,atom,srcAtom)
                    , addCommand(relation,'src',newAtom,srcAtom) ]);
@@ -243,6 +247,9 @@ function stopAtomEditing($atom) {
 
 // utils
 
+function getParentAtom($elt) {
+  return $elt.parents().filter('.Atom').first();
+}
 function getParentContainer($elt) {
   return $elt.parents().filter('.Container').first();
 }
