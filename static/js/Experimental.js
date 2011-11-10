@@ -50,11 +50,11 @@ function cancelEditing() {
 // only interested in database commands
 function showCommand(command) {
   switch (command.cmd) {
-    case 'editdatabase':
-      var dbCommand = command.dbcommand;
+    case 'editDatabase':
+      var dbCommand = command.dbCommand;
       switch (dbCommand.dbcmd) {
-        case 'addnew':
-          return 'AddNew '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '('+dbCommand.otheratom+',new)' : '(new,'+dbCommand.otheratom+')');
+        case 'addNew':
+          return 'AddNew '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '('+dbCommand.otherAtom+',new)' : '(new,'+dbCommand.otherAtom+')');
         case 'add':
           return 'Add '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '(>'+dbCommand.src+'<,'+dbCommand.tgt+')' : '('+dbCommand.src+',>'+dbCommand.tgt+'<)');
         case 'delete':
@@ -65,16 +65,16 @@ function showCommand(command) {
 }
 
 function addNewCommand(relation, dest, otherAtom) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'addnew', rel: relation, dest: dest, otheratom: otherAtom}};
+  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'addNew', rel: relation, dest: dest, otherAtom: otherAtom}};
 }
 
 // dest specifies which of the atoms in the added tuple may be new (and in that case will need to be added to a concept table)
 function addCommand(relation, dest, src, tgt) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'add', rel: relation, dest: dest, src: src, tgt: tgt}};
+  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'add', rel: relation, dest: dest, src: src, tgt: tgt}};
 }
 
 function deleteCommand(relation, src, tgt) {
-  return {cmd: 'editdatabase', dbcommand: {dbcmd: 'delete', rel: relation, src: src, tgt: tgt}};
+  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'delete', rel: relation, src: src, tgt: tgt}};
 }
 
 

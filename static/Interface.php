@@ -10,11 +10,11 @@ session_start();
 function showCommandQueue() {
   foreach ($_SESSION['commandQueue'] as $command) {
     switch($command['dbCmd']) {
-      case 'addnew':
+      case 'addNew':
         if ($command['dest'] == 'src')
-          echo $command['rel'].': add (NEW,'.$command['otheratom'].')<br/>';
+          echo $command['rel'].': add (NEW,'.$command['otherAtom'].')<br/>';
         else
-          echo $command['rel'].': add ('.$command['otheratom'].',NEW)<br/>';
+          echo $command['rel'].': add ('.$command['otherAtom'].',NEW)<br/>';
         break;
       case 'delete':
         echo $command['rel'].': delete ('.$command['src'].','.$command['tgt'].')<br/>';
@@ -50,7 +50,7 @@ Newly inserted Identifier atom goes wrong when we navigate to it (maybe related 
 /*
 Efficiency might be a problem after all. Solutions: no multiple edits, mimic the updates without accessing the database (tricky, and probably resulting in a far more primitive interface)
 
-addnew add new tuple in relation. Check if id[concept(new)] contains new, if not, the concept is new and the table we edited was not its concept-list table, so add
+addNew add new tuple in relation. Check if id[concept(new)] contains new, if not, the concept is new and the table we edited was not its concept-list table, so add
 delete put null in deleted target (so we need a dest here too). Check if id[concept(new)] contains new, if not, we are in the concept-list table and accidentally removed the concept, so add
 update is combination of the above
 
@@ -95,8 +95,8 @@ function processCommand($command) {
       showCommandQueue();
       dbStartTransaction($dbName);
       return true;
-    case 'editdatabase':
-      processEditDatabase($command->dbcommand);
+    case 'editDatabase':
+      processEditDatabase($command->dbCommand);
       return true;
     case 'editcommit':
       showCommandQueue();
@@ -120,9 +120,9 @@ function processEditDatabase($dbCommand) {
     error("Malformed database command, missing 'dbcmd'");
 
   switch ($dbCommand->dbcmd) {
-    case 'addnew':
-      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->otheratom)
-        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otheratom);
+    case 'addNew':
+      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->otherAtom)
+        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otherAtom);
       else 
         error("Database command $dbCommand->dbcmd is missing parameters");
       break;
