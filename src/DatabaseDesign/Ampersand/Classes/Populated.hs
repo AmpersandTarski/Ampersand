@@ -41,37 +41,42 @@ where
    instance Populated Expression where
     contents expr  
        = case expr of
-            (EEqu (l,r)) -> contents (EIsc [EImp (l,r),EImp (r,l)])
-            (EImp (l,r)) -> contents (EUni [ECpl l,r])
-            (EUni es)    -> foldr (uni . contents) [] es
-            (EIsc [])    -> fatal 60 "Cannot compute contents of EIsc []"
-            (EIsc es)    -> foldr1 isc (map contents es)
-            (EDif (l,r)) -> contents l >- contents r
-            (ELrs (l,r)) -> [(y,x) | x<-cptos' (source l), y <-cptos' (source r)
+            EEqu (l,r) -> contents (EIsc [EImp (l,r),EImp (r,l)])
+            EImp (l,r) -> contents (EUni [ECpl l,r])
+            EUni es    -> foldr (uni . contents) [] es
+            EIsc []    -> fatal 47 "Cannot compute contents of EIsc []"
+            EIsc es    -> foldr1 isc (map contents es)
+            EDif (l,r) -> contents l >- contents r
+            ELrs (l,r) -> [(y,x) | x<-cptos' (source l), y <-cptos' (source r)
                                  , null [z |z<-cptos' (target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
-            (ERrs (l,r)) -> [(x,y) | x<-cptos' (target l), y <-cptos' (target r)
+            ERrs (l,r) -> [(x,y) | x<-cptos' (target l), y <-cptos' (target r)
                                  , null [z |z<-cptos' (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
-            (ERad es)    -> if null es 
-                          then []
+            ERad es    -> if null es 
+                          then fatal 55 "Cannot compute contents of ERad []"
                           else let (dx,_,_,_)
                                     = foldr1' 59 dagg [ (ct,compl ct st tt,map fst st,map fst tt)
                                                       | t<-es, ct<-[contents t]
                                                       , st<-[contents (source t)]
                                                       , tt<-[contents (target t)] ]
                                in dx
-            (ECps es)    -> if null es 
+            EPrd es    -> if null es 
+                          then fatal 63 "Cannot compute contents of EPrd []"
+                          else [ (a,b)
+                               | (a,_)<-contents (source (head es))
+                               , (b,_)<-contents (target (last es)) ]
+            ECps es    -> if null es 
                           then []
                           else foldr1 join (map contents es)
-            (EKl0 e)     -> if source e == target e --see #166
+            EKl0 e     -> if source e == target e --see #166
                           then closPair (contents e `uni` contents (source e))
                           else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
-            (EKl1 e)     -> closPair (contents e)
-            (EFlp e)     -> [(b,a) | (a,b)<-contents e]
-            (ECpl e)     -> [apair | apair <-cartesianProduct (contents (source e)) (contents (target e))
+            EKl1 e     -> closPair (contents e)
+            EFlp e     -> [(b,a) | (a,b)<-contents e]
+            ECpl e     -> [apair | apair <-cartesianProduct (contents (source e)) (contents (target e))
                                    , apair `notElem` contents e  ]
-            (EBrk e)     -> contents e
-            (ETyp e sgn) -> if sign e==sgn then contents e else [x | x<-contents e, x `elem` contents sgn]
-            (ERel rel)   -> contents rel
+            EBrk e     -> contents e
+            ETyp e sgn -> if sign e==sgn then contents e else [x | x<-contents e, x `elem` contents sgn]
+            ERel rel   -> contents rel
 
 {- Derivation of contents (ERrs (l,r)):
 Let cartP = contents (target l, target r)

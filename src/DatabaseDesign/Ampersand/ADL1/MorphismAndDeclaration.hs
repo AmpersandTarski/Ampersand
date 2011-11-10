@@ -139,18 +139,27 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  multiplicities expr = case expr of
      ERel rel -> multiplicities rel
      EBrk f   -> multiplicities f
-     ECps []  -> fatal 289 "Illegal call to multiplicities (ECps [])"
+     ECps []  -> fatal 142 "Illegal call to multiplicities (ECps [])"
      ECps [t] -> multiplicities t
      ECps ts  -> foldr (isc . multiplicities) [Uni, Tot, Sur, Inj] ts -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
-     ERad []  -> fatal 292 "Illegal call to multiplicities (ERad [])"
+     ERad []  -> fatal 145 "Illegal call to multiplicities (ERad [])"
      ERad [t] -> multiplicities t
      ERad _   -> [] -- TODO:  many rules with ERad in it are multiplicities (TODO). Solve perhaps by defining relation a = (ERad ts)
-     EUni []  -> fatal 295 "Illegal call to multiplicities (EUni [])"
+     EPrd []  -> fatal 148 "Illegal call to multiplicities (EPrd [])"
+     EPrd [t] -> multiplicities t `uni` [Trn]
+     EPrd ts  -> [Tot | isTot (head ts)]++[Sur | isSur (last ts)]++[Rfx | isRfx (head ts)&&isRfx (last ts)]++[Trn]
+     EUni []  -> fatal 151 "Illegal call to multiplicities (EUni [])"
      EUni [t] -> multiplicities t
-     EUni _   -> [] -- TODO:  expr \/ a is Rfx if a is Rfx, is Tot if a is Tot (TODO), is Uni if both a and expr are uni
-     EIsc []  -> fatal 298 "Illegal call to multiplicities (EIsc [])"
+     EUni ts  -> [Tot | or (map isTot gts)]++[Sur | or (map isSur gts)]++[Rfx | or (map isRfx gts)]
+                 where mgs = head (sort (map sign ts))  -- the Most General Signature of expressions in ts
+                       gts = [t | t<-ts, sign t==mgs]
+     EIsc []  -> fatal 154 "Illegal call to multiplicities (EIsc [])"
      EIsc [t] -> multiplicities t
-     EIsc _   -> [] -- TODO:  expr /\ a is Asy if a is Asy, is Uni if a is Uni (TODO), is Tot if both a and expr are tot
+     EIsc ts  -> [Tot | and (map isTot gts)]++[Sur | and (map isSur gts)]++
+                 [Uni | and (map isUni gts)]++[Inj | and (map isInj gts)]++[Asy | or (map isAsy [t | t<-ts, sign t==mgs])] -- TODO:  Is this correct if the elements of ts have different types? (i.e. where generalization and specialization kick in)
+                 where mgs = head (sort (map sign ts))  -- the Most General Signature of expressions in ts
+                       gts = [t | t<-ts, sign t==mgs]
+                  -- TODO:  expr /\ a is Asy if a is Asy, is Uni if a is Uni (TODO), is Tot if both a and expr are tot
      EKl0 e'  -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      EKl1 e'  -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
      ECpl e'  -> [p |p<-multiplicities e', p==Sym]
@@ -179,6 +188,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                                                  (not.isFalse. ECps .drop 1.init) es  -- not isFalse between head and last
      ERad []      -> False
      ERad es      -> isFalse (ECps (map notCpl es))
+     EPrd []      -> fatal 185 "EPrd [] may not occur"
+     EPrd es      -> isTrue (head es)&&isTrue (last es) || isTot (head es)&&isSur (last es) || isRfx (head es)&&isRfx (last es)
      EKl0 e       -> isTrue e
      EKl1 e       -> isTrue e
      EFlp e       -> isTrue e
@@ -201,6 +212,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ERad []      -> False -- TODO: incorrect for singleton-concepts?
      ERad [e]     -> isFalse e
      ERad es      -> isTrue (ECps (map notCpl es)) --  TODO: make dual to the code of isTrue
+     EPrd []      -> False
+     EPrd [e]     -> isFalse e
+     EPrd es      -> isFalse (head es)||isFalse (last es)
      EKl0 e       -> isFalse e
      EKl1 e       -> isFalse e
      EFlp e       -> isFalse e
@@ -211,8 +225,10 @@ instance Relational Expression where        -- TODO: see if we can find more mul
 
  isProp expr = null ([Asy,Sym]>-multiplicities expr)
 
+-- The function isIdent tries to establish whether an expression is an identity relation. It does a little bit more than just test on ERel I.
+-- If it returns False, this must be interpreted as: the expression is not equal to I, as far as the computer can tell on face value. 
  isIdent expr = case expr of
-     EEqu (l,r)   -> isIdent (EIsc [EImp (l,r), EImp (r,l)])      -- TODO: maybe derive something better?
+     EEqu (l,r)   -> isIdent (EIsc [EImp (l,r), EImp (r,l)])    -- TODO: maybe derive something better?
      EImp (l,r)   -> isIdent (EUni [ECpl l, r])                 -- TODO: maybe derive something better?
      EIsc fs      -> and [isIdent f | f<-fs] && not (null fs)   -- > fout voor singletons (TODO)
      EUni fs      -> and [isIdent f | f<-fs] && not (null fs)   -- > fout voor singletons (TODO)
@@ -225,7 +241,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ETyp e sgn   -> source sgn==target sgn && isIdent e
      ERel rel     -> isIdent rel
      EBrk f       -> isIdent f
-     _          -> False  -- TODO: find richer answers for EDif, ERrs and ELrs
+     _            -> False  -- TODO: find richer answers for EDif, ERrs and ELrs
 
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
      EEqu (l,r)   -> isImin (EIsc [EImp (l,r), EImp (r,l)])       -- TODO: maybe derive something better?
@@ -239,7 +255,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ETyp e sgn   -> source sgn==target sgn && isImin e
      ERel rel     -> isImin rel
      EBrk f       -> isImin f
-     _          -> False  -- TODO: find richer answers for EDif, ERrs and ELrs
+     _           -> False  -- TODO: find richer answers for EDif, ERrs and ELrs
 
 
    

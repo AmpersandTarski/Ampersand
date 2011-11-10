@@ -462,6 +462,8 @@ showchar (ECps [])    = "I"
 showchar (ECps ts)    = intercalate texOnly_compose [showchar t | t<-ts] -- relative multiplication (semicolon)
 showchar (ERad [])    = "-I[?]"
 showchar (ERad ts)    = intercalate texOnly_relAdd [showchar t | t<-ts]  -- relative addition (dagger)
+showchar (EPrd [])    = "ONE"
+showchar (EPrd ts)    = intercalate texOnly_crtPrd [showchar t | t<-ts]  -- cartesian product (asterisk)
 showchar (EKl0 e')    = showchar e'++"^{"++texOnly_star++"}"
 showchar (EKl1 e')    = showchar e'++"^{"++texOnly_plus++"}"
 showchar (ECpl e')    = "\\cmpl{"++showchar e'++"}"
@@ -576,11 +578,14 @@ texOnly_fun = "\\rightarrow "
 texOnly_rel :: String
 texOnly_rel = "\\times "
 
+texOnly_compose :: String
+texOnly_compose = ";"
+
 texOnly_relAdd :: String
 texOnly_relAdd = "\\dagger "
 
-texOnly_compose :: String
-texOnly_compose = ";"
+texOnly_crtPrd :: String
+texOnly_crtPrd = "\\asterisk "
 
 texOnly_inter :: String
 texOnly_inter = "\\cap "

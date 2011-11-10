@@ -425,6 +425,7 @@ where
                      ERrs{} -> "+"
                      ECps{} -> ";"
                      ERad{} -> "!"
+                     EPrd{} -> "*"
                      EKl0{} -> "*"
                      EKl1{} -> "+"
                      EFlp{} -> "~"
@@ -446,27 +447,6 @@ Rewrite rules:
             [[(Expression,Expression -> Expression,[String],String)]]
      lam tOp e3 expr =
           case expr of
-             ECps [f]                        -> lam tOp e3 f
-             ECps fs  | e3==expr             -> [[(e3,id,[],"")]]
-                      | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==")
-                                                :prf
-                                                | prf<-lam tOp e3 (deMrg expr)
-                                                ] -- isNeg is nog niet helemaal correct.
-                      | or[null p|p<-fPrfs (ECps fs) ] -> []
-                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc (ECps fs))) expr],"<--"): lc (ECps fs)]        
-             EUni [f]                        -> lam tOp e3 f
-             EUni fs  | e3==expr             -> [[(e3,id,[],"")]]
-                      | length (const' (EUni fs))>0 -> [(expr,\_->expr, [derivtext tOp "mono" (inter' expr) expr],"<--") :prf
-                                                       | prf<-lam tOp e3 (inter' expr)
-                                                       ]
-                      | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==") :prf | prf<-lam tOp e3 (deMrg expr)]
-                      | or[null p |p<-fPrfs (EUni fs)] -> []
-                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc (EUni fs))) expr],"<--") : lc (EUni fs)]
-             ERad [f]                        -> lam tOp e3 f
-             ERad fs  | e3==expr             -> [[(e3,id,[],"")]]
-                      | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==") :prf | prf<-lam tOp e3 (deMrg expr)] -- isNeg is nog niet helemaal correct.
-                      | or[null p |p<-fPrfs (ERad fs)] -> []
-                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc (ERad fs))) expr],"<--"): lc (ERad fs)]
              EIsc [f]                        -> lam tOp e3 f
              EIsc fs  | e3==expr             -> [[(e3,id,[],"")]]
                       | length (const' (EIsc fs))>0 -> [(expr,\_->expr,      [derivtext tOp "mono" (inter' expr) expr],"<--") :prf
@@ -475,6 +455,27 @@ Rewrite rules:
                       | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==") :prf | prf<-lam tOp e3 (deMrg expr)]
                       | or[null p |p<-fPrfs (EIsc fs)] -> []
                       | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc expr)) expr],"<--") : lc expr]
+             EUni [f]                        -> lam tOp e3 f
+             EUni fs  | e3==expr             -> [[(e3,id,[],"")]]
+                      | length (const' (EUni fs))>0 -> [(expr,\_->expr, [derivtext tOp "mono" (inter' expr) expr],"<--") :prf
+                                                       | prf<-lam tOp e3 (inter' expr)
+                                                       ]
+                      | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==") :prf | prf<-lam tOp e3 (deMrg expr)]
+                      | or[null p |p<-fPrfs (EUni fs)] -> []
+                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc (EUni fs))) expr],"<--") : lc (EUni fs)]
+             ECps [f]                        -> lam tOp e3 f
+             ECps fs  | e3==expr             -> [[(e3,id,[],"")]]
+                      | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==")
+                                                :prf
+                                                | prf<-lam tOp e3 (deMrg expr)
+                                                ] -- isNeg is nog niet helemaal correct.
+                      | or[null p|p<-fPrfs (ECps fs) ] -> []
+                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc (ECps fs))) expr],"<--"): lc (ECps fs)]        
+             ERad [f]                        -> lam tOp e3 f
+             ERad fs  | e3==expr             -> [[(e3,id,[],"")]]
+                      | and [isNeg f |f<-fs] -> [(expr, deMrg, [derivtext tOp "equal" (deMrg expr) expr],"==") :prf | prf<-lam tOp e3 (deMrg expr)] -- isNeg is nog niet helemaal correct.
+                      | or[null p |p<-fPrfs (ERad fs)] -> []
+                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc (ERad fs))) expr],"<--"): lc (ERad fs)]
              EKl0 x                          -> [(expr,EKl0,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
              EKl1 x                          -> [(expr,EKl1,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
              ECpl x                          -> [(expr,ECpl,["invert"],"<--") :prf | prf<-lam (inv tOp) e3 x]
@@ -483,16 +484,16 @@ Rewrite rules:
   
              where
                deMrg expr'' = case expr'' of
-                                (ECps fs) -> notCpl (ERad [notCpl f | f<-fs])
-                                (EUni fs) -> notCpl (EIsc [notCpl f | f<-fs])
-                                (ERad fs) -> notCpl (ECps [notCpl f | f<-fs])
                                 (EIsc fs) -> notCpl (EUni [notCpl f | f<-fs])
+                                (EUni fs) -> notCpl (EIsc [notCpl f | f<-fs])
+                                (ECps fs) -> notCpl (ERad [notCpl f | f<-fs])
+                                (ERad fs) -> notCpl (ECps [notCpl f | f<-fs])
                                 e         -> fatal 418 ("deMrg "++showADL e++" is not defined. Consult your dealer!")
                fPrfs expr'' = case expr'' of
-                                (ECps fs) -> xs fs
-                                (EUni fs) -> xs fs
-                                (ERad fs) -> xs fs
                                 (EIsc fs) -> xs fs
+                                (EUni fs) -> xs fs
+                                (ECps fs) -> xs fs
+                                (ERad fs) -> xs fs
                                 e         -> fatal 428 ("fPrfs "++showADL e++" is not defined.Consult your dealer!")
                        where
                           xs fs = [lam tOp e3 f |f<-fs, isVar f e3]                       
