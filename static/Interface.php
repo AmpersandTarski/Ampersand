@@ -69,7 +69,7 @@ function error($msg) {
 }
 
 function processCommands() {  
-  $commandsJson =$_REQUEST['commands']; 
+  $commandsJson =$_POST['commands']; 
   if (isset($commandsJson)) {
     $commandArray = json_decode($commandsJson);
     if (!$commandArray) {
@@ -263,7 +263,8 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   $atom=$_REQUEST['atom'];
   
   // store the interface and atom as attrs of body and set editing to true or false
-  echo '<body onload="init()" interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).' editing="'.($isEditing?'true':'false').'">';
+  echo '<body onload="init()">';
+  echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).' editing="'.($isEditing?'true':'false').'">';
   // todo: maybe remember editing? (not an issue now, since during editing there is no navigation)
   
   echo '<h3>Interface \''.htmlSpecialChars($interface).'\' for atom \''.htmlSpecialChars($atom).'\'</h3>';
@@ -272,6 +273,6 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<button class="CancelButton" onclick="cancelEditing()">Cancel</button>';
   echo generateInterface($dbName, $allInterfaceObjects[$interface], $atom); 
 
-  echo '</body>';
+  echo '</div></body>';
 } ?>
 </html>

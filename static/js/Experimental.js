@@ -8,16 +8,22 @@ function queueCommands(commandArray) {
 }
 
 function sendCommands(commandArray) {
-  window.location.href = 'Interface.php?interface='+encodeURIComponent($('body').attr('interface'))+'&atom='+encodeURIComponent($('body').attr('atom'))+
-                         '&'+'commands='+encodeURIComponent(JSON.stringify(commandArray));
+  $.post(window.location.href,  
+  { commands: JSON.stringify(commandArray) },
+  function(data) {
+    $('body').html(data);
+    init(); 
+    // This is the init() defined in Interface.php. The global reference is not ideal, but saves a lot of parameter passing.
+    // note: javascripts are not replaced by the post action.
+  });
 }
 
 function initialize(interfacesMap) {
   console.log('initialize');
-  if ($('body').attr('editing') == 'true') {  
+  if ($('#AmpersandRoot').attr('editing') == 'true') {  
     commandQueue = new Array();
     setEditHandlers();
-    $('body').prepend('<div class="CommandQueue">Edit History:<br/></div>');
+    $('#AmpersandRoot').prepend('<div class="CommandQueue">Edit History:<br/></div>');
   }
   else
     setNavigationHandlers(interfacesMap);
@@ -27,7 +33,7 @@ function startEditing() {
   sendCommands([{cmd: 'editstart'}]);
   /* code below is for dynamic editstart (without refreshing page from server)
   $('.Atom').unbind('click').css("cursor","default").css("color","black"); 
-  $('body').attr('editing','True');
+  $('#AmpersandRoot').attr('editing','True');
   setEditHandlers();
 */
 }
@@ -42,7 +48,7 @@ function cancelEditing() {
   /* code below is for dynamic editrollback (without refreshing page from server)
 // maybe there's an easy way to prevent having to do setNavigationHandlers again (check for 'editing' in the click handler)
   $('.Atom').unbind('click');
-  $('body').attr('editing','False');
+  $('#AmpersandRoot').attr('editing','False');
   setNavigationHandlers(interfacesMap);
   */
 }
@@ -136,7 +142,7 @@ function addClickEvent($item, interface, atom) {
 //       explain hover
 //       clean up css, now container and AtomList are used next to each other.
 function setEditHandlers() {
-  setEditHandlersBelow($('body'));
+  setEditHandlersBelow($('#AmpersandRoot'));
 }
 
 function setEditHandlersBelow($elt) {
