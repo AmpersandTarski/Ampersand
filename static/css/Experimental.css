@@ -32,9 +32,10 @@
   }
 
 .AtomList
-  { margin:0
-  ; padding:0
-  ; cell-padding: 0
+  { margin: 0px
+  ; padding: 0px
+  ; cell-padding: 0px
+  ; border-spacing: 0px
   }
 
 [editing=true] .EditButton
@@ -100,7 +101,11 @@
 .NewAtomTemplate
   { display: none
   }
- 
+
+[editing=false] .AtomList>tbody>tr>.InsertStub /*hide row with insert atom stub*/
+  { display: none
+  }
+  
 .AtomList .InsertStub
   { visibility: hidden
   ; padding-left: 7px
