@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..))
 where
    import DatabaseDesign.Ampersand.ADL1.Concept                    (cptos')
-   import DatabaseDesign.Ampersand.ADL1.Pair                       (join,mkPair,closPair)
+   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..))
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg)   
@@ -66,7 +66,7 @@ where
                                , (b,_)<-contents (target (last es)) ]
             ECps es    -> if null es 
                           then []
-                          else foldr1 join (map contents es)
+                          else foldr1 kleenejoin (map contents es)
             EKl0 e     -> if source e == target e --see #166
                           then closPair (contents e `uni` contents (source e))
                           else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
@@ -92,7 +92,7 @@ Let cartP = contents (target l, target r)
 
 
          where
-          -- dagg is de tegenhanger van join. Hij krijgt systematisch viertallen mee: een rij tupels (a),
+          -- dagg is de tegenhanger van kleenejoin. Hij krijgt systematisch viertallen mee: een rij tupels (a),
           -- het complement van a (ca), de source van a (sa), en de target van a (ta).
           -- TODO: dagg is razend inefficient. Daar kunnen we nog last van krijgen....
           -- Aanpak: op basis van redeneren de hele expressie optimaliseren, en vervolgens een aantal varianten van dagg maken
@@ -100,7 +100,7 @@ Let cartP = contents (target l, target r)
           -- dagg (a,ca,sa,ta) (b,cb,sb,tb)
              dagg (_,ca,sa,_)  (_,cb,_ ,tb)
                = ([mkPair x y | x<-sa, y<-tb, mkPair x y `notElem` jnab], [mkPair x y | x<-sa, y<-tb, mkPair x y `elem` jnab], sa, tb)
-                 where jnab = join ca cb
+                 where jnab = kleenejoin ca cb
              compl (a) (sa) (ta) = [mkPair (fst x) (fst y) |x<-sa, y<-ta, mkPair (fst x) (fst y) `notElem` a]  -- complement van a
              cartesianProduct :: Pairs -> Pairs -> Pairs
              xs `cartesianProduct` ys = [ mkPair (fst x) (fst y) | x<-xs,y<-ys] 

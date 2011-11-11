@@ -9,10 +9,12 @@ module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStruct
                                                                    )
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
-   import DatabaseDesign.Ampersand.Basics                          (fatalMsg,Collection(..),Classification,preCl,PartialOrder(..))
+   import DatabaseDesign.Ampersand.Basics                          (fatalMsg,Collection(..),Classification,preCl)
    import Data.List
    import DatabaseDesign.Ampersand.ADL1.Expression
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration
+   import DatabaseDesign.Ampersand.Core.Poset(Ordering(..))
+   import Prelude hiding (Ordering(..))
    fatal :: Int -> String -> a
    fatal = fatalMsg "Classes.ConceptStructure"
 
@@ -22,7 +24,7 @@ where
     mors     = nub . morlist
     morlist :: a -> [Relation]        -- ^ the list of all relations used within data structure a (the difference with mors is that morlist is not unique)
     genE    :: a -> GenR
-    genE x   = if null cx then (==) else head cx where cx = [order c |c<-concs x]
+    genE cstruc = if null cs then ((\x y -> if x==y then EQ else NC),[]) else head cs where cs = [order c |c<-concs cstruc]
     
 -- class KleeneClos where
 --  closExprs    :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
@@ -47,21 +49,18 @@ where
     concs     c = concs (ctxdecls c) `uni` [ONE]
     mors      c = mors (ctxpats c) `uni` mors (ctxprocs c) `uni` mors [ifcObj s | s<-ctxifcs c]
     morlist   c = morlist (ctxpats c)++morlist (ctxprocs c)++morlist [ifcObj s | s<-ctxifcs c]
-    genE      c = po_lE (ctxpo c)
 --  closExprs c = closExprs (ctxpats c) `uni` closExprs [ifcObj s | s<-ctxifcs c]
+    genE      c = ctxpo c
    instance ConceptStructure KeyDef where
     concs     kd = [kdcpt kd] `uni` concs (kdats kd)
     mors      kd = mors (kdats kd)
     morlist   kd = morlist (kdats kd)
-    genE      kd = genE (kdats kd)
 --  closExprs kd = closExprs (kdats kd)
 
    instance ConceptStructure Expression where
     concs          = foldrMapExpression uni concs []
     mors           = foldrMapExpression uni mors  []
     morlist        = foldrMapExpression (++) morlist []
-    genE e         = if null cs then fatal 69 "not defined: 'genE e'" else order (head cs)
-                     where cs = concs e
 --  closExprs e         = closExps e
 
 
@@ -84,14 +83,12 @@ where
 --    mors      c = [I c]
     morlist   c = [I c]
 --  closExprs _ = []
-    genE _      = (==)   -- was: genE c = order c
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]
     mors      _      = []
     morlist   _      = []
 --  closExprs _ = []
-    genE (Sign s _)  = genE s
 
    instance ConceptStructure ObjectDef where
     concs     obj = [target (objctx obj)] `uni` concs (objats obj)
@@ -103,7 +100,6 @@ where
     concs     pat = concs (ptgns pat) `uni` concs (ptdcs pat) `uni` concs (ptrls pat) `uni` concs (ptkds pat)
     mors      pat = mors (ptrls pat) `uni` mors (ptkds pat) `uni` mors [makeRelation d | d<-ptdcs pat, (not.null) (multiplicities d)]
     morlist   pat = morlist (ptrls pat)++morlist (ptkds pat)
-    genE      pat = genE (ptdcs pat) 
 --  closExprs pat = closExprs (ptrls pat)
 
    instance ConceptStructure Process where
@@ -123,26 +119,20 @@ where
     concs rel   = nub [source rel,target rel]
     mors rel    = [rel]
     morlist rel = [rel]
-    genE rel    = case rel of
-                       Mp1{} -> fatal 115 "not defined: 'genE Mp1{}'"
-                       _     -> order (source rel)
 --  closExprs _ = []
    instance ConceptStructure Declaration where
     concs d   = concs (sign d)
     mors _    = []
     morlist _ = []
-    genE _    = fatal 215 "don't use genE on Declarations"
 --  closExprs _ = []
 
    instance ConceptStructure Rule where
     concs r   = concs (rrexp r)
     mors r    = mors (rrexp r)
     morlist r = morlist (rrexp r)
-    genE r    = genE (rrexp r)
 
    instance ConceptStructure A_Gen where
     concs g     = nub [gengen g,genspc g]  
 --    mors g      = []                         
     morlist _   = []
-    genE g      = order (genspc g)
 --  closExprs _ = []

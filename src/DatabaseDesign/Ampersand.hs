@@ -38,7 +38,7 @@ module DatabaseDesign.Ampersand
    , FPAble(..)
    , ShowHS(..), haskellIdentifier
    -- * Functions on concepts
-   , comparable,lub,order,glb, minima
+   , (<==>),meet,order,join
    -- * Functions on declarations
    , makeRelation
    -- * Functions on rules

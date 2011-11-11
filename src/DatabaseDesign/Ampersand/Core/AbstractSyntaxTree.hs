@@ -24,16 +24,20 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , GenR
  , Signaling(..)
  , Association(..)
- , comparable,lub,order,glb,minima
+  -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
+  -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
+ , (<==>),join,order,meet 
  , makeDeclaration
  , showExpr
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have acutally become part of the Abstract Syntax Tree.
- 
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
-import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..),PartialOrder(..),eqClass)
+import qualified Prelude
+import Prelude hiding (Ord(..), Ordering(..))
+import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
 import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat)
+import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass)
 import Text.Pandoc
 import Data.List
 
@@ -46,7 +50,7 @@ data Architecture = A_Arch { arch_Contexts :: [A_Context]}
 data A_Context
    = ACtx{ ctxnm    :: String        -- ^ The name of this context
          , ctxmarkup:: PandocFormat  -- ^ The default markup format for free text in this context
-         , ctxpo    :: PartialOrder A_Concept -- ^ A data structure containing the generalization structure of concepts
+         , ctxpo    :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
          , ctxpats  :: [Pattern]     -- ^ The patterns defined in this context
          , ctxprocs :: [Process]     -- ^ The processes defined in this context
          , ctxrs    :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
@@ -309,8 +313,6 @@ data Expression
       | ETyp Expression Sign               -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | ERel Relation                      -- ^ simple relation
       deriving Eq
-instance Ord Expression where
- e <= e' = sign e <= sign e'
 instance Show Expression where
  showsPrec _ = showString . showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
 showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
@@ -373,52 +375,52 @@ insParentheses expr = insPar 0 expr
 
 -- The following code has been reviewed by Gerard and Stef on nov 1st, 2011 (revision 290)
 instance Association Expression where
- sign (EEqu (l,r))   = if sign l `comparable` sign r
-                     then sign l `lub` sign r
+ sign (EEqu (l,r))   = if sign l <==> sign r
+                     then sign l `join` sign r
                      else fatal 233 $ "type checker failed to verify "++show (EEqu (l,r))++"."
- sign (EImp (l,r))   = if sign l `comparable` sign r
-                     then sign l `lub` sign r
+ sign (EImp (l,r))   = if sign l <==> sign r
+                     then sign l `join` sign r
                      else fatal 236 $ "type checker failed to verify "++show (EImp (l,r))++"."
  sign (EIsc [])      = fatal 237 $ "Ampersand failed to eliminate "++show (EIsc [])++"."
  sign (EIsc es)      = let ss=map sign es in
-                     if and [l `comparable` r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss `comparable` s | s<-tail ss] may be wrong, since comparable is not transitive.
-                     then minimum ss -- do not use  foldr1 lub ss, because `comparable` is not transitive.
+                     if and [l <==> r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss <==> s | s<-tail ss] may be wrong, since comparable is not transitive.
+                     then foldr1 join ss -- do not use  foldr1 join ss, because <==> is not transitive.
                      else fatal 241 $ "type checker failed to verify "++show (EIsc es)++"."
  sign (EUni [])      = fatal 242 $ "Ampersand failed to eliminate "++show (EUni [])++"."
  sign (EUni es)      = let ss=map sign es in
-                     if and [l `comparable` r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss `comparable` s | s<-tail ss] may be wrong, since comparable is not transitive.
-                     then minimum ss -- do not use  foldr1 glb ss, because `comparable` is not transitive.
+                     if and [l <==> r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss <==> s | s<-tail ss] may be wrong, since comparable is not transitive.
+                     then foldr1 join ss -- do not use  foldr1 join ss, because <==> is not transitive.
                      else fatal 246 $ "type checker failed to verify "++show (EUni es)++"."
- sign (EDif (l,r))   = if sign l `comparable` sign r
+ sign (EDif (l,r))   = if sign l <==> sign r
                      then sign l
                      else sign l -- fatal 249 $ "type checker failed to verify "++show (EDif (l,r))++"."
- sign (ELrs (l,r))   = if target l `comparable` target r
+ sign (ELrs (l,r))   = if target l <==> target r
                      then Sign (source l) (source r)
                      else fatal 252 $ "type checker failed to verify "++show (ELrs (l,r))++"."
- sign (ERrs (l,r))   = if source l `comparable` source r
+ sign (ERrs (l,r))   = if source l <==> source r
                      then Sign (target l) (target r)
                      else fatal 255 $ "type checker failed to verify "++show (ERrs (l,r))++"."
  sign (ECps [])      = fatal 256 $ "Ampersand failed to eliminate "++show (ECps [])++"."
  sign (ECps es)      = let ss=map sign es in
-                     if and [r `comparable` l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
+                     if and [r <==> l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
                      then Sign (source (head ss)) (target (last ss))
                      else fatal 260 $ "type checker failed to verify "++show (ECps es)++"."
  sign (ERad [])      = fatal 261 $ "Ampersand failed to eliminate "++show (ERad [])++"."
  sign (ERad es)      = let ss=map sign es in
-                     if and [r `comparable` l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
+                     if and [r <==> l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
                      then Sign (source (head ss)) (target (last ss))
                      else fatal 265 $ "type checker failed to verify "++show (ERad es)++"."
  sign (EPrd [])      = fatal 261 $ "Ampersand failed to eliminate "++show (EPrd [])++"."
  sign (EPrd es)      = Sign (source (head es)) (target (last es))
  sign (EKl0 e)       = --see #166 
-                     if source e `comparable` target e
-                     then Sign (source e `lub` target e)(source e `lub` target e)
+                     if source e <==> target e
+                     then Sign (source e `join` target e)(source e `join` target e)
                      else fatal 409 $ "type checker failed to verify "++show (EKl0 e)++"."
  sign (EKl1 e)       = sign e
  sign (EFlp e)       = Sign t s where Sign s t=sign e
  sign (ECpl e)       = sign e
  sign (EBrk e)       = sign e
- sign (ETyp e sgn)   = if sign e `comparable` sgn
+ sign (ETyp e sgn)   = if sign e <==> sgn
                      then sgn
                      else fatal 417 $ "type checker failed to verify "++show (ETyp e sgn)++"."
  sign (ERel rel)     = sign rel
@@ -457,8 +459,6 @@ instance Show Relation where
    I{}   -> showString (name r++"["++show (rel1typ r)++"]")
    V{}   -> showString (name r++show (sign r))
    Mp1{} -> showString ("'"++relval r++"'["++ show (rel1typ r)++"]")
-instance Ord Relation where
-  a <= b = source a <= source b && target a <= target b
 instance Identified Relation where
   name r = name (makeDeclaration r)
 instance Association Relation where
@@ -507,12 +507,6 @@ instance Eq A_Concept where
    ONE == ONE = True
    _ == _ = False
 
-{- With respect to Ord, ONE is a concept as any other. In due time, ONE represents the current session.
-So, we can expect it to represent the concept "Session".
--}
-instance Ord A_Concept where
-  a <= b   = (order a) a b
-
 instance Identified A_Concept where
   name (C {cptnm = nm}) = nm
   name ONE = "ONE"
@@ -520,12 +514,21 @@ instance Identified A_Concept where
 instance Show A_Concept where
   showsPrec _ c = showString (name c)
    
-type GenR = A_Concept -> A_Concept -> Bool
   
 data Sign = Sign A_Concept A_Concept deriving Eq
   
-instance Ord Sign where
-  Sign s t <= Sign s' t' = s<=s' && t<=t'
+instance Poset Sign where
+  Sign s t `compare` Sign s' t' 
+   | s==s' && t==t' = EQ
+   | s<=s' && t<=t' = LT
+   | s'<=s && t'<=t = GT
+   | s<==>s' && t<==>t' = CP
+   | otherwise = NC
+instance Sortable Sign where
+  meet (Sign a b) (Sign a' b') = Sign (a `meet` a') (b `meet` b')
+  join (Sign a b) (Sign a' b') = Sign (a `join` a') (b `join` b')
+  sortBy = fatal 534 "sortBy of Sign has not been implemented (yet)."
+  
    
 instance Show Sign where
   showsPrec _ (Sign s t) = 
@@ -545,37 +548,40 @@ class Association rel where
   isEndo         :: rel  -> Bool
   isEndo s        = source s == target s
   
+instance (Eq a,Association a) => Poset a where
+  a <= b = sign a <= sign b
 
 class Signaling a where
   isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
     
-{- glb,lub,comparable and order used to be a part of class SpecHierarchy which was previously called ABoolAlg -}
-  --  class SpecHierarchy supported generalisation and specialisation.
-  --  a <= b means that concept a is more generic than b and b is more specific than a. For instance 'Animal' <= 'Elephant'
-  --  The generalization relation <= between concepts is a partial order.
-  --  Partiality reflects the fact that not every pair of elements of a specification need be related.
-  --  A partial order is by definition reflexive, antisymmetric, and transitive)
-  --  For every concept a and b in Ampersand, the following rule holds: a<=b || b<=a || a\= b
-glb,lub    :: (Show c,Ord c) => c -> c -> c
-order      :: A_Concept -> GenR
-glb a b | b <= a = b
-        | a <= b = a
-        | otherwise = fatal 79 $ "glb undefined: a="++show a++", b="++show b
-lub a b | a <= b = b
-        | b <= a = a
-        | otherwise = fatal 82 $ "lub undefined: a="++show a++", b="++show b
-order (C _ gE _) = gE
-order _ = (==)
--- | minima takes the minimum of all lists of comparable concepts
-minima :: [A_Concept] -> [A_Concept]
-minima cs = map minimum (eqClass comparable cs)
 
---Do not define comparable :: Ord c => c -> c -> Bool
---sign x `comparable` sign y was used to check that source x and source y are comparable and target x and target y are comparable
---however if source x <= source y and target y <= target x, then sign x `comparable` sign y = False
-class Comparable a where
-   comparable :: a -> a -> Bool 
-instance Comparable A_Concept where
-   comparable a b = a <= b || b <= a
-instance Association a => Comparable a where
-   comparable a b = source a `comparable` source b && target a `comparable` target b
+{- 
+  --  a <= b means that concept a is more specific than b and b is more generic than a. For instance 'Elephant' <= 'Animal'
+  --  The generalization relation <= between concepts is a partial order.
+  --  Partiality reflects the fact that not every pair of concepts of a specification need be related.
+  --  Although meets, joins and sorting of all concepts may be meaningless, within classes of comparable concepts it is meaningfull.
+  --  See Core.Poset to see how these functions are defined for the meaningfull cases only.
+  --  Core.Poset is based and partly copied from http://hackage.haskell.org/package/altfloat-0.3.1 intended to sort floats and more
+  --  A partial order is by definition reflexive, antisymmetric, and transitive
+  --  For every concept a and b in Ampersand, the following rule holds: a<b || b<a || a==b || a <==> b || a<\=> b
+  --  Every concept drags around the same partial order represented by 
+  --   + a compare function (A_Concept->A_Concept->Ordering) 
+  --   + and a list of comparable classes [[A_Concept]]
+-}
+type GenR = (A_Concept -> A_Concept -> Ordering,[[A_Concept]])
+order      :: A_Concept -> GenR
+order (C _ gE _) = gE
+order _ = ((\x y -> if x==y then EQ else NC),[])
+instance Poset A_Concept where
+  a `compare` b = (fst$order a) a b
+instance Sortable A_Concept where
+  meet a b | b <= a = b
+           | a <= b = a
+           | a `compare` b == CP = fatal 561 "implement ISA" 
+           | otherwise = fatal 568 $ "meet undefined: a="++show a++", b="++show b
+  join a b | a <= b = b
+           | b <= a = a
+           | a `compare` b == CP = fatal 565 "implement ISA"
+           | otherwise = fatal 571 $ "join undefined: a="++show a++", b="++show b
+  sortBy f = Data.List.sortBy ((comparableClass .) . f)
+
