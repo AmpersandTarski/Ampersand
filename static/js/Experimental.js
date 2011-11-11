@@ -7,12 +7,16 @@ function queueCommands(commandArray) {
   commandQueue = commandQueue.concat(commandArray);
 }
 
+function showAtom(atom) {
+  return atom ? atom : "EMPTY";
+}
+
 function showDbCommand(dbCommand) {
   switch (dbCommand.dbCmd) {
     case 'insert':
-      return 'Insert into '+dbCommand.relation+(dbCommand.isFlipped?'~':'') +': ('+dbCommand.parentAtom+','+dbCommand.childAtom+')';
+      return 'Insert into '+dbCommand.relation+(dbCommand.isFlipped?'~':'') +': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
     case 'delete':
-      return 'Delete from '+dbCommand.relation+(dbCommand.isFlipped?'~':'')+': ('+dbCommand.parentAtom+','+dbCommand.childAtom+')';
+      return 'Delete from '+dbCommand.relation+(dbCommand.isFlipped?'~':'')+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
   }
   return 'Undefined command: '+dbCommand;
 }
