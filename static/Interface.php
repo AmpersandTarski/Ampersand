@@ -35,8 +35,29 @@ function showCommandQueue() {
 make example with multiple relations, all in one table
 check delete and insert on that
 
-fix enmpty line when editing=false
+put column uniqueness in info
+
+figure out how to prevent mysql from inserting '', or make a column wide insert that has null for other columns (requires more table info in php world)
+does a '' count as null for rule checking? Then the above is no problem
+
+update is delete+insert does not work, as delete removes all attributes in row, so add update edit op
+
+check for double atom names
+
+checking presence of the atom and replacing it can be combined in a single query
+
+fix univalency and atomic container/ atomlist container. is a bit messy now.
+
+maybe not insert template & stub when not editing or no relation present
+
 use better way to access/update concept table
+
+insert is not optimized at all: 
+  rows could be grouped together
+  insert into concept table may be executed repeatedly
+  
+insert atom into multiple concept tables?
+
 
 setNavigationHandlers now sets colors. We should set an attr, so the colors can be specified in css
 // use POST for db updates, now commands are in the url, preventing refresh from working
@@ -141,27 +162,6 @@ function processEditDatabase($dbCommand) {
   }
 }
 
-
-function editInsertNew($rel, $dest, $otherAtom) {
-  global $dbName; 
-  global $relationTableInfo;
-  global $conceptTableInfo;
-  echo "editInsertNew($rel, $dest, $otherAtom)";
-  
-  $destConcept = $dest=='src' ? $relationTableInfo[$rel]['srcConcept'] :  $relationTableInfo[$rel]['tgtConcept'];
-  $conceptTable = $conceptTableInfo[$destConcept]['table'];
-  $conceptColumn = $conceptTableInfo[$destConcept]['srcCol'];
-  $existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
-  $newAtom = mkUniqueAtom($existingAtoms, $destConcept);
-
-  DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$newAtom')");
-  
-  if ($dest=='src')
-    insertInRelation($rel, $newAtom, $otherAtom);
-  else
-    insertInRelation($rel, $otherAtom, $newAtom);
-}
-
 function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
 	global $dbName;
 	global $relationTableInfo;
@@ -170,27 +170,39 @@ function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
   $src = $isFlipped ? $childAtom : $parentAtom;
   $tgt = $isFlipped ? $parentAtom : $childAtom;
 
+  
   $table = $relationTableInfo[$rel]['table'];
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
-  DB_doquer($dbName, "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')");
+  $parentCol = $isFlipped ? $tgtCol : $srcCol;
+  $childCol =  $isFlipped ? $srcCol : $tgtCol;
+
+  // if parent atom exists in a unique-valued column, we replace
   
-  /*
-	insertInRelation($rel, $src, $tgt);
-	
-	$possiblyNewAtom = $dest=='src' ? $src : $tgt;
-	
-	$destConcept = $dest=='src' ? $relationTableInfo[$rel]['srcConcept'] :  $relationTableInfo[$rel]['tgtConcept'];
-	$conceptTable = $conceptTableInfo[$destConcept]['table'];
-	$conceptColumn = $conceptTableInfo[$destConcept]['srcCol'];
-	$existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
-	
-	// if the destination atom was not in its concept table (either because it already existed, or the table
-	// we inserted the tuple into contained the concept table), we insert it.
-	if (!in_array($possiblyNewAtom, $existingAtoms )) {
-		DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$possiblyNewAtom')");
-	}
-	*/
+  if (/* parent column is unique && */ in_array($parentAtom, firstCol(DB_doquer($dbName, "SELECT $parentCol FROM $table")))) {
+    $query = "UPDATE $table SET $childCol='$childAtom' WHERE $parentCol='$parentAtom'";
+    echo "update query is $query";
+    DB_doquer($dbName, $query);
+  }
+  else {
+    // otherwise, simply insert tuple
+    $query = "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')";
+    //echo "Insert query is $query";
+    DB_doquer($dbName, $query);
+  }
+  // if the new atom is not in its concept table, we add it
+  
+  $childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
+  $conceptTable = $conceptTableInfo[$childConcept]['table'];
+  $conceptColumn = $conceptTableInfo[$childConcept]['col'];
+  //echo "Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptColumn";
+  $allConceptAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
+  if (!in_array($childAtom, $allConceptAtoms)) {
+    //echo 'not present';
+    DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$childAtom')");
+  } else {
+    // echo 'already present';
+  }
 }
 
 
