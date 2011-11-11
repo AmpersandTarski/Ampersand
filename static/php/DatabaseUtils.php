@@ -113,7 +113,7 @@ function generateInterface($db, $interface, $srcAtom) {
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
-  $isUni = $interface['isUnivalent'];  
+  $isUni = false; // temporarily disabled the univalence check (so everything is a list) $interface['isUnivalent'];   
   if (!$isUni) $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
   
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
@@ -124,6 +124,7 @@ function generateInterface($db, $interface, $srcAtom) {
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));         // &nbsp; is to prevent empty strings from having height 1
     if (!$isUni) emit($html,'</td></tr>'); 
   }
+  
   if (!$isUni) emit($html, '<tr><td></td><td class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
   else         emit($html, '</div>');
   return $html;
