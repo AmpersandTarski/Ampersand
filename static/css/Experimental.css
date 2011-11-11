@@ -1,93 +1,114 @@
-.AtomName {}
+.AtomName 
+  { width: 100%
+  }
+.Atom[newatom=true]>.AtomName:after
+  { content: "<new>";
+  ; font-weight: bold
+}
+.Atom[newatom=false][atom='']>.AtomName:after
+  { content: "<empty>";
+  ; font-weight: bold
+}
 
-.Label { font-family: Arial; font-style: bold; color: #707070; background-color: #505050);
- }
+.Label 
+  { font-family: Arial
+  ; font-style: bold
+  ; color: #707070
+  ; background-color: #505050);
+  }
 
 .AtomList
- { margin:0
- ; padding:0
- ; cell-padding: 0
- }
+  { margin:0
+  ; padding:0
+  ; cell-padding: 0
+  }
 
 [editing=true] .EditButton
- { display: none
- }
+  { display: none
+  }
 .SaveButton
- { display: none
- }
+  { display: none
+  }
 [editing=true] .SaveButton
- { display: inline
- }
+  { display: inline
+  }
 .CancelButton
- { display: none
- }
+  { display: none
+  }
 [editing=true] .CancelButton
- { display: inline
- }
+  { display: inline
+  }
  
 [editing=true] .AtomList[hover=true]
- { border-color: #909090
- }
+  { border-color: #909090
+  }
 .Container
- { background-color: white
- ; margin: 2px
- ; border-color: transparent
- ; border-style: solid
- ; border-width: 2px 
- }
+  { empty-cells:show 
+  ; background-color: white
+  ; margin: 2px
+  ; border-color: transparent
+  ; border-style: solid
+  ; border-width: 2px 
+  }
 [editing=true] .Container[relation]
- { border-color: #0080ff
- ; background-color: #f0f0f0
- }
+  { border-color: #0080ff
+  ; background-color: #f0f0f0
+  }
 [editing=true] .Container[hover=true]
- { background-color: #f0f0f0
- }
+  { background-color: #f0f0f0
+  }
 [editing=true] .Container[hover=true] .AtomName:hover
- { background-color: #808080
- }
+  { background-color: #808080
+  }
 .AtomList .DeleteStub
- { width: 25px
- }
+  { width: 25px
+  }
 [editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub
- { background-image: url('../images/DeleteButton.png')
- ; background-repeat:no-repeat
- ; width: 25px
- }
+  { background-image: url('../images/DeleteButton.png')
+  ; background-repeat:no-repeat
+  ; width: 25px
+  }
 [editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub:hover
- { background-image: url('../images/DeleteButtonDown.png')
- }
+  { background-image: url('../images/DeleteButtonDown.png')
+  }
+ 
+.NewAtomTemplate
+  { display: none
+  }
  
 .AtomList .AddStub
- { visibility: hidden
- ; padding-left: 7px
- ; padding-right: 7px
- ; font-family: Arial
- ; font-style: bold
- ; font-size: 80%
- ; color: white
- ; background-color: #909090
- ; border-style: solid
- ; border-width: 1px
- ; border-color: black
- ; -moz-border-radius: 7px       /* rounded corners for Firefox */
- ; -webkit-border-radius: 7px    /* rounded corners for Safari */
- }
+  { visibility: hidden
+  ; padding-left: 7px
+  ; padding-right: 7px
+  ; font-family: Arial
+  ; font-style: bold
+  ; font-size: 80%
+  ; color: white
+  ; background-color: #909090
+  ; border-style: solid
+  ; border-width: 1px
+  ; border-color: black
+  ; -moz-border-radius: 7px       /* rounded corners for Firefox */
+  ; -webkit-border-radius: 7px    /* rounded corners for Safari */
+  }
+ 
 [editing=true] .AtomList[hover=true]>tbody>tr>.AddStub
- { visibility: visible
- }
+  { visibility: visible
+  }
+  
 [editing=true] .AtomList[hover=true]>tbody>tr>.AddStub:hover
- { background-color: #606060
- ; cursor: default
- }
+  { background-color: #606060
+  ; cursor: default
+  }
 
 .Interface 
- { border-style: solid
- ; border-width: 1px
- ; padding-left: 5px
- ; -moz-border-radius: 5px       /* rounded corners for Firefox */
- ; -webkit-border-radius: 5px    /* rounded corners for Safari */
- ; background-color: white
- }
+  { border-style: solid
+  ; border-width: 1px
+  ; padding-left: 5px
+  ; -moz-border-radius: 5px       /* rounded corners for Firefox */
+  ; -webkit-border-radius: 5px    /* rounded corners for Safari */
+  ; background-color: white
+  }
  
 .InterfaceContextMenu
   { position: absolute;

@@ -37,6 +37,8 @@ check delete and add on that
 
 check for empty string input
 use better way to access/update concept table
+
+setNavigationHandlers now sets colors. We should set an attr, so the colors can be specified in css
 // use POST for db updates, now commands are in the url, preventing refresh from working
 // rename add to insert
 // can we use this somewhere? $_SERVER['PHP_SELF']
@@ -45,6 +47,9 @@ use better way to access/update concept table
 // handle double events when clicking on a button (add, delete, cancel, commit, etc.) while editing a text field (strangely enough the blur event arrives later)
 
 Newly inserted Identifier atom goes wrong when we navigate to it (maybe related to absence in id[Thing]
+
+Later: css content can acces attributes, so we don't need to put the Add new .. string in the generator. it can be put in the css
+
 */
 
 /*

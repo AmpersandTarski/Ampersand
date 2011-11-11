@@ -110,17 +110,18 @@ function generateInterface($db, $interface, $srcAtom) {
   $html = "";
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
   $codomainAtoms = getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery']);
-  
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
   $isUni = $interface['isUnivalent'];  
+  if (!$isUni) $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
+  
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
   if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
   else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
-    if (!$isUni) emit($html, '<tr><td class=DeleteStub></td><td class=AtomListElt>');
-    emit($html, generateInterfaceList($db, $interface, $tgtAtom));
+    if (!$isUni) emit($html, '<tr '.($tgtAtom==null?' class=NewAtomTemplate':'').'><td class=DeleteStub>&nbsp;</td><td class=AtomListElt>');
+    emit($html, generateInterfaceList($db, $interface, $tgtAtom));         // &nbsp; is to prevent empty strings from having height 1
     if (!$isUni) emit($html,'</td></tr>'); 
   }
   if (!$isUni) emit($html, '<tr><td></td><td class=AddStub>Add new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
@@ -131,10 +132,14 @@ function generateInterface($db, $interface, $srcAtom) {
 function generateInterfaceList($db, $parentInterface, $atom) {
   $html = "";
   $interfaces = $parentInterface['subInterfaces'];
+
+  // if $atom is null, we are presenting a template
+
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).($atom?'':' newAtom=true').'>');
   // the old prototype did not show the atom when there are subinterfaces
   // for now, we always show it, for debugging purposes
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).'>');
-  emit($html, '<div class=AtomName> '.htmlSpecialChars($atom).'</div>');
+  
+  emit($html, '<div class=AtomName>'.htmlSpecialChars($atom).'</div>');
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
@@ -189,7 +194,7 @@ function escapeJsStr($str) {
 }
 
 function jsBool($b) {
-	return $b ? 'True' : 'false';
+	return $b ? 'true' : 'false';
 }
 // This is needed for non-javascript urls, where javascript would call encodeURIComponent
 // We only handle the &, the browser takes care of the rest.

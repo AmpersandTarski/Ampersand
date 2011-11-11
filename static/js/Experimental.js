@@ -16,11 +16,11 @@ function initialize(interfacesMap) {
   console.log('initialize');
   if ($('body').attr('editing') == 'true') {  
     commandQueue = new Array();
-    initializeEditButtons();
+    setEditHandlers();
     $('body').prepend('<div class="CommandQueue">Edit History:<br/></div>');
   }
   else
-    initializeLinks(interfacesMap);
+    setNavigationHandlers(interfacesMap);
 }
 
 function startEditing() {
@@ -28,7 +28,7 @@ function startEditing() {
   /* code below is for dynamic editstart (without refreshing page from server)
   $('.Atom').unbind('click').css("cursor","default").css("color","black"); 
   $('body').attr('editing','True');
-  initializeEditButtons();
+  setEditHandlers();
 */
 }
 
@@ -40,10 +40,10 @@ function commitEditing() {
 function cancelEditing() {
   sendCommands([{cmd: 'editrollback'}]);
   /* code below is for dynamic editrollback (without refreshing page from server)
-// maybe there's an easy way to prevent having to do initializeLinks again (check for 'editing' in the click handler)
+// maybe there's an easy way to prevent having to do setNavigationHandlers again (check for 'editing' in the click handler)
   $('.Atom').unbind('click');
   $('body').attr('editing','False');
-  initializeLinks(interfacesMap);
+  setNavigationHandlers(interfacesMap);
   */
 }
 
@@ -85,9 +85,7 @@ function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
-
-// undo coloring by initializeLinks. Not nice, css cannot be used now. TODO: fix this by using attr to signal presence of interfaces
-function initializeLinks(interfacesMap) {
+function setNavigationHandlers(interfacesMap) {
   $(".AtomName").map(function () {
     $containerElt = getParentContainer($(this)); 
     $atom=getParentAtom($(this));
@@ -137,9 +135,13 @@ function addClickEvent($item, interface, atom) {
 // todo: editing -> editingHover oid
 //       explain hover
 //       clean up css, now container and AtomList are used next to each other.
-function initializeEditButtons() {
+function setEditHandlers() {
+  setEditHandlersBelow($('body'));
+}
 
-  $('.Container').hover(function () {
+function setEditHandlersBelow($elt) {
+
+  $elt.find('.Container').hover(function () {
     var $parentInterface = getParentContainer($(this));
     
     $parentInterface.attr('hover', 'false'); // todo: move to if below?
@@ -151,14 +153,14 @@ function initializeEditButtons() {
         $parentInterface.attr('hover', 'true');
     $(this).attr('hover', 'false');
   });
-  $('.AtomName').click(function(){
+  $elt.find('.AtomName').click(function(){
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     if (relation) {
       startAtomEditing(getParentAtom($(this)));
     }
   });
-  $('.DeleteStub').click(function() {
+  $elt.find('.DeleteStub').click(function() {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
@@ -174,12 +176,23 @@ function initializeEditButtons() {
     }
     getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
   });
-  $('.AddStub').click(function (event) {
+  $elt.find('.AddStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
      // todo: name otherAtom okay?
     var otherAtom=getParentAtom($(this)).attr('atom');
+    
+    $newAtomTemplate = $containerElt.children().children().filter('.NewAtomTemplate');
+                    // <table>       <tbody>   <tr>
+    
+    $newAtomTableRow = $newAtomTemplate.clone();
+
+    $newAtomTableRow.attr('class',''); // remove the NewAtomTemplate class to make the new atom visible
+    $newAtomTemplate.before( $newAtomTableRow ); 
+    
+    setEditHandlersBelow($newAtomTableRow); // add the necessary handlers to the new element
+    // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
     if (relationIsFlipped) {
       //alert('Add: (new,'+otherAtom+ ') to ~'+relation);
@@ -193,13 +206,14 @@ function initializeEditButtons() {
 
 // Create a form that contains a text field, put it after $atom, and hide $atom.
 function startAtomEditing($atom) {
+  var $atomName = $atom.find('>.AtomName');
   var atom = $atom.attr('atom');
-  $textfield = $('<input type=text value="'+atom+'"/>');
+  $textfield = $('<input type=text size=1 style="width:100%" value="'+atom+'"/>');
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
-  $atom.after($form);
+  $atomName.after($form);
   $textfield.focus().select();
-  $atom.hide();
+  $atomName.hide();
 
   // stop editing when the textfield loses focus
   $textfield.blur(function () {
@@ -217,6 +231,7 @@ function startAtomEditing($atom) {
 // contents with the new value from the text field. Then show $atom again and
 // remove the text field.
 function stopAtomEditing($atom) {
+  var $atomName = $atom.find('>.AtomName');
   var atom = $atom.attr('atom');
   
   var $form = $('#atomEditor');
@@ -224,8 +239,10 @@ function stopAtomEditing($atom) {
   $form.remove();
 
   $atom.attr('atom',newAtom);
-  $atom.text(newAtom);
-  $atom.show();
+  $atom.attr('newAtom','false');
+  
+  $atomName.text(newAtom);
+  $atomName.show();
   if (newAtom!=atom) {
     var $containerElt = getParentContainer($atom);
     var relation = $containerElt.attr('relation'); 
