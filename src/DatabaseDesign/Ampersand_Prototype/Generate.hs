@@ -14,8 +14,8 @@ generateAll fSpec opts =
  do { verboseLn opts "Experimental Generation"
     ; writePrototypeFile "Interfaces.php" $ generateInterfaces fSpec opts
     
-    ; verboseLn opts "Generated tables\n"
-    ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
+--    ; verboseLn opts "Generated tables\n"
+--    ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
     }
   where
     writePrototypeFile fname content =
