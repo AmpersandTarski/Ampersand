@@ -8,6 +8,8 @@ module DatabaseDesign.Ampersand.ADL1.Concept ( Conceptual(..)
 where
   import DatabaseDesign.Ampersand.Basics (fatalMsg)
   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+  import DatabaseDesign.Ampersand.Core.Poset(Ordering(..))
+  import Prelude hiding (Ordering(..))
   fatal :: Int -> String -> a
   fatal = fatalMsg "ADL1.Concept"
 
@@ -25,6 +27,6 @@ where
   
 
   newAcpt :: String -> A_Concept
-  newAcpt nm = C{ cptnm=nm, cptgE = (==), cptos = []}
+  newAcpt nm = C{ cptnm=nm, cptgE = ((\x y -> if x==y then EQ else NC),[]), cptos = []}
   
 

@@ -19,7 +19,6 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      )
 where
 
-import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Data.List(nub,intercalate)
 import DatabaseDesign.Ampersand.ADL1
@@ -28,6 +27,8 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
+import DatabaseDesign.Ampersand.Core.Poset
+import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 
 fatal :: Int -> String -> a
@@ -41,7 +42,7 @@ pCtx2aCtx pctx
     actx = 
          ACtx{ ctxnm    = name pctx    -- The name of this context
              , ctxmarkup= ctx_markup pctx -- The default markup format for free text in this context
-             , ctxpo    = partOrder    -- the generalization relation between concepts
+             , ctxpo    = makePartialOrder hierarchy    -- The base hierarchy for the partial order of concepts (see makePartialOrder)
              , ctxpats  = pats         -- The patterns defined in this context
                                        -- Each pattern contains all user defined rules inside its scope
              , ctxprocs = procs        -- The processes defined in this context
@@ -60,14 +61,13 @@ pCtx2aCtx pctx
     cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk
-    (partOrder,_,_) = makePartialOrder hierarchy
     hierarchy = 
-       let ctx_gens = ctx_gs pctx `uni` concatMap pt_gns (ctx_pats pctx) `uni` concatMap procGens (ctx_PPrcs pctx)
-       in [(a (gen_gen g),a (gen_spc g)) | g<-ctx_gens]
-       where a pc = C {cptnm = p_cptnm pc
-                      ,cptgE = fatal 63 "do not refer to this concept"
-                      ,cptos = fatal 64 "do not refer to this concept"
-                      }
+        let ctx_gens = ctx_gs pctx `uni` concatMap pt_gns (ctx_pats pctx) `uni` concatMap procGens (ctx_PPrcs pctx)
+        in [(a (gen_spc g),a (gen_gen g)) | g<-ctx_gens]
+        where a pc = C {cptnm = p_cptnm pc
+                       ,cptgE = fatal 63 "do not refer to this concept"
+                       ,cptos = fatal 64 "do not refer to this concept"
+                       }
     adecs = map (pDecl2aDecl actx allpops "NoPattern") (ctx_ds pctx)
     agens = map (pGen2aGen actx "NoPattern") (ctx_gs pctx)
     (aexps,   xplcxes)   = (unzip . map (pExpl2aExpl actx)             . ctx_ps   ) pctx
@@ -101,7 +101,7 @@ pCtx2aCtx pctx
                     | d<-declarations actx, decusr d
                     , let ds=[d' | d'<-declarations actx, decusr d'
                                  , name d==name d'
-                                 , sign d `comparable` sign d']
+                                 , sign d <==> sign d']
                     , length ds>1]
 
 pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
@@ -435,14 +435,15 @@ data AutoCast = NoCast | SourceCast A_Concept | TargetCast A_Concept | Cast A_Co
 -- | AutoCast is not of class Association, but it should be flippable
 
 -- The ordering of AutoCast is from less determined to more determined.
-instance Ord AutoCast where
- Cast s t     <= Cast s' t'    = s<=s' && t<=t'
- SourceCast s <= Cast s' _     = s<=s'
- TargetCast t <= Cast _ t'     = t<=t'
- NoCast       <= _             = True
- SourceCast s <= SourceCast s' = s<=s'
- TargetCast t <= TargetCast t' = t<=t'
- _            <= _             = False
+instance Poset AutoCast where
+ Cast s t `compare` Cast s' t' = Sign s t `compare` Sign s' t'
+ SourceCast s `compare` Cast s' _     = s `compare` s'
+ SourceCast s `compare` SourceCast s' = s `compare` s'
+ TargetCast t `compare` Cast _ t'     = t `compare` t'
+ TargetCast t `compare` TargetCast t' = t `compare` t'
+ NoCast       `compare` _             = CP
+ _            `compare` NoCast        = CP
+ _            `compare` _             = NC
 
 flpcast :: AutoCast -> AutoCast
 flpcast NoCast = NoCast
@@ -528,7 +529,7 @@ pRel2aExpr P_I contxt ac
      NoCast       -> [ERel(I c) |c<-minima(concs contxt)]
      SourceCast s -> [ERel(I s)]
      TargetCast t -> [ERel(I t)]
-     Cast s t     -> [ERel(I (s `lub` t)) |s `comparable` t]
+     Cast s t     -> [ERel(I (s `join` t)) |s <==> t]
 pRel2aExpr (P_Mp1 x) contxt ac
  = (alts, ["The context has no concepts" |null alts])
    where
@@ -536,7 +537,7 @@ pRel2aExpr (P_Mp1 x) contxt ac
      NoCast       -> [ERel(Mp1 x c) |c<-minima(concs contxt)]
      SourceCast s -> [ERel(Mp1 x s)]
      TargetCast t -> [ERel(Mp1 x t)]
-     Cast s t     -> [ERel(Mp1 x (s `lub` t)) |s `comparable` t]
+     Cast s t     -> [ERel(Mp1 x (s `join` t)) |s <==> t]
 pRel2aExpr prel contxt ac
  = ( candidates2
    , case (candidates0, candidates1, candidates2) of
@@ -557,7 +558,7 @@ pRel2aExpr prel contxt ac
      TargetCast t -> Sign (source d) t
      Cast s t     -> Sign s t
     candidates2  = [ERel (arel d) |d<-candidates1, endocheck d]
-    candidates1  = [d |d<-candidates0, sign d `comparable` cast d]
+    candidates1  = [d |d<-candidates0, sign d <==> cast d]
     candidates0  = [d |d<-declarations contxt,name d==name prel]
     endocheck d = null (endomults d) || source d==target d
     endomults d = [x |x<-multiplicities d, x `elem` endoprops]
@@ -584,7 +585,7 @@ infer contxt (PPrd p_es) ac      = inferPrd    contxt p_es ac
 infer contxt (Prel rel) ac       = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
 infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
     where uc = pSign2aSign contxt psgn
-          (candidates,messages) = infer contxt p_r NoCast
+          (candidates,messages) = infer contxt p_r (Cast (source uc)(target uc))
           alts = {- Possibly useful for debugging:
                  if p_r==Prel P_I && psgn==P_Sign [PCpt "Bericht"]
                  then error (show e++
@@ -594,7 +595,7 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
                  [ case (infer contxt p_r NoCast, sign e == uc) of
                      (([_],[]), True)   -> e --  remove this redundant PTyp
                      _                  -> ETyp e uc   -- else keep it
-                 | e <- candidates, sign e `comparable` uc]
+                 | e <- candidates, sign e <==> uc]
           unknowncs = nub[c |c<-concs uc, c `notElem` concs contxt]
           msgs = ["Unknown concept: '"++name (head unknowncs)++"'." |length unknowncs == 1] ++
                  ["Unknown concepts: '"++name (head unknowncs)++"' and '"++name (last unknowncs)++"'." |length unknowncs > 1] ++
@@ -608,7 +609,7 @@ infer contxt (PKl0 r) ac      = (alts, if null deepMsgs then combMsgs else deepM
     where -- Step 1: infer contxt types of r
            (eAlts,eMsgs) = infer contxt r ac
           -- Step 2: compute the viable alternatives
-           alts = nub [EKl0 e | e<-eAlts, source e `comparable` target e] -- see #166
+           alts = nub [EKl0 e | e<-eAlts, source e <==> target e] -- see #166
           -- Step 3: compute messages
            deepMsgs = eMsgs
            combMsgs = [ "Source and target of "++showADL r++" do not match:\n"++
@@ -630,7 +631,7 @@ infer contxt (PRrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else de
            (lAlts,lMsgs)=infer contxt p_l lc
            (rAlts,rMsgs)=infer contxt p_r rc
           -- Step 2: compute the viable alternatives 
-           alts = nub [ERrs (l,r) |l<-lAlts,r<-rAlts,source l `comparable` source r]
+           alts = nub [ERrs (l,r) |l<-lAlts,r<-rAlts,source l <==> source r]
           -- Step 3: compute messages
            deepMsgs = lMsgs++rMsgs
            combMsgs = [ "Types at the left of "++showADL p_l++" and "++showADL p_l++" do not match:\n"++
@@ -652,7 +653,7 @@ infer contxt (PLrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else de
            (lAlts,lMsgs)=infer contxt p_l lc
            (rAlts,rMsgs)=infer contxt p_r rc
           -- Step 2: compute the viable alternatives 
-           alts = nub [ELrs (l,r) |l<-lAlts,r<-rAlts,target l `comparable` target r]
+           alts = nub [ELrs (l,r) |l<-lAlts,r<-rAlts,target l <==> target r]
           -- Step 3: compute messages
            deepMsgs = lMsgs++rMsgs
            combMsgs = [ "Types at the right of "++showADL p_l++" and "++showADL p_l++" do not match:\n"++
@@ -663,18 +664,20 @@ infer contxt e@(PDif (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else 
     where -- Step 1: infer contxt types of left hand side and right hand sides
            terms     = [infer contxt p_e ac | p_e<-[p_l,p_r]]
           -- Step 2: find the most general type that is determined.
-           detS   = sort [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
-           detT   = sort [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
-           uc     = case (detS,detT) of
-                     (s:_,t:_) -> Cast s t
-                     (s:_, []) -> SourceCast s
-                     ( [],t:_) -> TargetCast t
+           detS   = [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
+           detT   = [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
+           uc     = if (not.and) ([s<==>s'|s<-detS,s'<-detS] ++ [s<==>s'|s<-detT,s'<-detT]) --check whether join exists at all
+                    then NoCast
+                    else case (detS,detT) of
+                     (_:_,_:_) -> Cast (foldr1 join detS) (foldr1 join detT)
+                     (_:_, []) -> SourceCast (foldr1 join detS)
+                     ( [],_:_) -> TargetCast (foldr1 join detT)
                      ( [], []) -> NoCast
           -- Step 3: redo inference with tightened types
            (lAlts',lMsgs)=infer contxt p_l uc
            (rAlts',rMsgs)=infer contxt p_r uc
           -- Step 4: compute the viable alternatives 
-           alts = nub [EDif (l,r) |l<-lAlts',r<-rAlts',sign r `comparable` sign l]
+           alts = nub [EDif (l,r) |l<-lAlts',r<-rAlts',sign r <==> sign l]
           -- Step 5: compute messages
            deepMsgs = lMsgs++rMsgs
            combMsgs = [ "Incompatible types in: "++showADL e++"."++
@@ -700,17 +703,20 @@ inferUniIsc :: (ShowADL a,Language l, ConceptStructure l, Identified l) =>
                -> ([Expression], [TErr])
 inferUniIsc _      _            _           []    _  = fatal 610 "Type checking (PUni []) or (Pisc []) should never occur."
 inferUniIsc contxt _            _           [p_e] ac = infer contxt p_e ac
-inferUniIsc contxt pconstructor constructor p_rs  ac = (solutions,messages)
+inferUniIsc contxt pconstructor constructor p_rs  ac  
+ | null solutions && null messages = fatal 705 ("no solutions and no inferUniIsc for " ++ showADL (pconstructor p_rs))
+ | otherwise = (solutions,messages)
     where -- Step 1: do inference on all subexpressions,-- example: e = hoofdplaats[Gerecht*Plaats]~\/neven[Plaats*Rechtbank]
           terms     = [infer contxt p_e ac | p_e<-p_rs]        -- example: terms = [[hoofdplaats[Gerecht*Plaats]~],[neven[Plaats*Rechtbank]]]
           -- Step 2: find the most generic type that is determined.
-          --         by sorting the list, the most generic type comes up front.
-          detS   = sort [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
-          detT   = sort [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
-          uc     = case (detS,detT) of                                               -- example: uc  =Cast Plaats Gerecht, i.e. the most generic
-                    (s:_,t:_) -> Cast s t
-                    (s:_, []) -> SourceCast s
-                    ( [],t:_) -> TargetCast t
+          detS   = [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
+          detT   = [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
+          uc     = if (not.and) ([s<==>s'|s<-detS,s'<-detS] ++ [s<==>s'|s<-detT,s'<-detT])  --check whether join exists at all
+                   then NoCast
+                   else case (detS,detT) of                                               -- example: uc  =Cast Plaats Gerecht, i.e. the most generic
+                    (_:_,_:_) -> Cast (foldr1 join detS) (foldr1 join detT)
+                    (_:_, []) -> SourceCast (foldr1 join detS)
+                    ( [],_:_) -> TargetCast (foldr1 join detT)
                     ( [], []) -> NoCast
           -- Step 3: redo inference with tightened types
           terms'    = [infer contxt p_e uc | p_e<-p_rs]
@@ -731,7 +737,7 @@ inferUniIsc contxt pconstructor constructor p_rs  ac = (solutions,messages)
                               nub
                               [ constructor (x:cand)                            -- Assemble x with the remaining candidates
                               | x<-head altss                          -- use subexpression  x  to compare all other subexpressions with
-                              , let cands=[ [a | a<-alts, a `comparable` x] -- reduce the number of candidate combinations by ensuring that all subexpressions are comparable.
+                              , let cands=[ [a | a<-alts, a <==> x] -- reduce the number of candidate combinations by ensuring that all subexpressions are comparable.
                                           | alts<-tail altss]
                               , cand<-combinations cands               -- assemble usable combinations
                               ]
@@ -751,10 +757,10 @@ inferUniIsc contxt pconstructor constructor p_rs  ac = (solutions,messages)
                       else deepMsgs                            -- get deep messages before combination-messages.
           typeErrors
            = [ "Incomparable types in expression "++showADL (pconstructor p_rs)
-                                                               -- ++ " between\n   "++intercalate "\n   " [show (sign r)++ " (in "++show r++")" | r<-types]
+               ++ " between\n   "++intercalate "\n   " [show (sign r)++ " (in "++show r++")" | r<-types]
              | length types>1 ]                                -- if there is more than one class, not all types are comparable, so we have an error.
-             where types = [ head (sort cl)                    -- from each class, pick the expression with the most specific type.
-                           | cl<-(eqClass comparable.nub.concat) altss ]       -- make equivalence classes of subexpressions with comparable type
+             where types = [ head ({-sort-} cl)                    -- from each class, pick the expression with the most specific type.
+                           | cl<-(eqClass (<==>).nub.concat) altss ]       -- make equivalence classes of subexpressions with comparable type
 
 -- | the inference procedure for = and |-  (i.e. equivalence  and  implication/subset)
 inferEquImp :: (ShowADL a1, Eq a,Language l, ConceptStructure l, Identified l) =>
@@ -768,13 +774,14 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
     where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps [Prel beslissing,Prel van,Prel jurisdictie],Prel bevoegd)
            terms     = [infer contxt p_e ac | p_e<-[p_l,p_r]]                    -- example: [[beslissing[Zaak*Beslissing];van[Beslissing*Orgaan];jurisdictie[Orgaan*Rechtbank]],[bevoegd[Zaak*Gerecht]]]
           -- Step 2: find the most general type that is determined.
-          --         By sorting the list, the most general type will come first.
-           detS   = sort [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]  -- example: [Zaak,Zaak]
-           detT   = sort [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]  -- example: [Gerecht,Rechtbank]
-           uc     = case (detS,detT) of                                                -- example: Cast Zaak Gerecht
-                     (s:_,t:_) -> Cast s t
-                     (s:_, []) -> SourceCast s
-                     ( [],t:_) -> TargetCast t
+           detS   = [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]  -- example: [Zaak,Zaak]
+           detT   = [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]  -- example: [Gerecht,Rechtbank]
+           uc     = if (not.and) ([s<==>s'|s<-detS,s'<-detS] ++ [s<==>s'|s<-detT,s'<-detT])
+                    then NoCast
+                    else case (detS,detT) of                                                -- example: Cast Zaak Gerecht
+                     (_:_,_:_) -> Cast (foldr1 join detS) (foldr1 join detT)  --check whether join exists at all
+                     (_:_, []) -> SourceCast (foldr1 join detS)
+                     ( [],_:_) -> TargetCast (foldr1 join detT)
                      ( [], []) -> NoCast
           -- Step 3: redo inference with tightened types
            (lAlts',lMsgs)=infer contxt p_l uc
@@ -788,11 +795,11 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
                               "\nRAlts': "++show rAlts'++
                               "\ndetS, detT, uc: "++show detS++"    "++show detT++"    "++show uc++
                               "\nalts: "++show (nub [EImp (l,r) |l<-lAlts',r<-rAlts',sign r <= sign l])) else -}
-                  nub [constructor (l,r) |l<-lAlts',r<-rAlts',sign r `comparable` sign l]
+                  nub [constructor (l,r) |l<-lAlts',r<-rAlts',sign r <==> sign l]
           -- Step 5: compute messages
            deepMsgs = lMsgs++rMsgs
            combMsgs = [ "Left and right types must be equal in: "++showADL (pconstructor (p_l,p_r))++"."++
-                        "\n  Possible types of "++showADL p_l++": "++ show (map sign lAlts')++"."++
+                        "\n  Possible types of "++showADL p_l++": "++ show (map sign lAlts')++"."++show rMsgs++
                         "\n  Possible types of "++showADL p_r++": "++ show (map sign rAlts')++"."
                       | null alts]++
                       [ "expression "++showADL (pconstructor (p_l,p_r))++" cannot be typed."
@@ -808,7 +815,9 @@ inferCpsRad :: (Show a,Language l, ConceptStructure l, Identified l) =>
                -> ([Expression], [TErr])
 inferCpsRad _      _            _          []    _  = fatal 469 "Type checking (PRad []) or (PCps []) should never occur."
 inferCpsRad contxt _            _          [p_e] ac = infer contxt p_e ac
-inferCpsRad contxt pconstructor constructor p_rs ac = (solutions,messages)
+inferCpsRad contxt pconstructor constructor p_rs ac 
+ | null solutions && null messages = fatal 811 ("no solutions and no inferCpsRad for " ++ show (pconstructor p_rs))
+ | otherwise = (solutions,messages)
     where -- Step 1: do inference on all subexpressions  -- example: PCps [Prel in,Prel zaak]
           castVector= case ac of                                         -- example: castVector=[SourceCast Document,TargetCast Zaak]
                        Cast s t     -> SourceCast s : [NoCast | _<-(init.tail) p_rs] ++ [TargetCast t]
@@ -819,7 +828,7 @@ inferCpsRad contxt pconstructor constructor p_rs ac = (solutions,messages)
           -- Step 2: determine the intermediate types, if determined
           inter                                                          -- example: inter=[[Dossier]]
            = [ case (detTrg lAlts, detSrc rAlts) of
-                (TargetCast t, SourceCast s) -> [s `lub` t| s `comparable` t]
+                (TargetCast t, SourceCast s) -> [s `join` t| s <==> t]
                 (NoCast,       SourceCast s) -> [s]
                 (TargetCast t, NoCast      ) -> [t]
                 (NoCast      , NoCast      ) -> []
@@ -846,7 +855,7 @@ inferCpsRad contxt pconstructor constructor p_rs ac = (solutions,messages)
           combs     = sort' (not.null.snd)                     -- The alternatives without errors will be up front
                       [ (rs,makeMessages rs)
                       | rs<-combinations [es | (es,_)<-terms'] -- example: combinations [[1,2,3],[10,20],[4]] = [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
-                      , ac <= Cast (source (head rs)) (target (last rs))
+                      , ac <==> Cast (source (head rs)) (target (last rs))
                       ]
           -- Step 6: determine solutions                       --  example: solutions=[in[Document*Dossier];zaak[Dossier*Zaak]]
           solutions = {- Possibly useful for debugging:
@@ -875,7 +884,7 @@ inferCpsRad contxt pconstructor constructor p_rs ac = (solutions,messages)
                       else deepMsgs                            -- get deep messages before combination-messages.
           makeMessages rs
            = [ "incomparable types between "++showADL l++showCast typ++" and "++showADL r++showCast typ++":\n   "++showADL (target l)++" does not match "++showADL (source r)
-             | (l,r,typ) <- zip3 (init rs) (tail rs) castVector', not (target l `comparable` source r)]
+             | (l,r,typ) <- zip3 (init rs) (tail rs) castVector', not (target l <==> source r)]
 inferPrd _      []    _  = fatal 469 "Type checking (PPrd []) should never occur."
 inferPrd contxt [p_e] ac = infer contxt p_e ac
 inferPrd contxt p_rs  ac = (solutions,messages)
@@ -889,7 +898,7 @@ inferPrd contxt p_rs  ac = (solutions,messages)
           -- Step 2: determine the intermediate types, if determined
           inter                                                          -- example: inter=[[Dossier]]
            = [ case (detTrg lAlts, detSrc rAlts) of
-                (TargetCast t, SourceCast s) -> [s `lub` t| s `comparable` t]
+                (TargetCast t, SourceCast s) -> [s `join` t| s <==> t]
                 (NoCast,       SourceCast s) -> [s]
                 (TargetCast t, NoCast      ) -> [t]
                 (NoCast      , NoCast      ) -> []

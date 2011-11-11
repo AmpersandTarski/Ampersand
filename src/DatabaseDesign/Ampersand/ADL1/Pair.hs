@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module DatabaseDesign.Ampersand.ADL1.Pair
                     ( Paire,Pairs
-                    , join
+                    , kleenejoin
                     , srcPaire,trgPaire
                     , flipPair,mkPair
                     , closPair
@@ -26,20 +26,20 @@ where
    flipPair p = mkPair (trgPaire p) (srcPaire p)
 
    -- | Operations for representations that act as a Kleene algebra (RA without complement and with the closure operators)
-   -- | A Kleene algebra has two binary operations 'union' and 'join', and one function 'closure' (usually written as +, � and * respectively)
+   -- | A Kleene algebra has two binary operations 'union' and 'kleenejoin', and one function 'closure' (usually written as +, � and * respectively)
    class KAComputable a where
-     join :: a->a->a
+     kleenejoin :: a->a->a
      closPair :: a->a
      -- TODO: add the 'uni' operator
    
    instance (KAComputable a) => KAComputable (Maybe a) where
-     join (Just a) (Just b) = Just (join a b)
-     join _ _ = Nothing
+     kleenejoin (Just a) (Just b) = Just (kleenejoin a b)
+     kleenejoin _ _ = Nothing
      closPair (Just p) = Just (closPair p)
      closPair _ = Nothing
       
    instance KAComputable Pairs where
-     join a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
+     kleenejoin a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
                       ((sort' (srcPaire.head).eqCl srcPaire) b)
                 where merge (xs:xss) (ys:yss)
                        | trgPaire (head xs)<srcPaire (head ys) = merge xss (ys:yss)
