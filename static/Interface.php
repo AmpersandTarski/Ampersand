@@ -35,7 +35,6 @@ function showCommandQueue() {
 make example with multiple relations, all in one table
 check delete and insert on that
 
-check for empty string input
 use better way to access/update concept table
 
 setNavigationHandlers now sets colors. We should set an attr, so the colors can be specified in css
@@ -52,13 +51,11 @@ Later: css content can acces attributes, so we don't need to put the Insert new 
 */
 
 /*
-Efficiency might be a problem after all. Solutions: no multiple edits, mimic the updates without accessing the database (tricky, and probably resulting in a far more primitive interface)
 
 insertNew insert new tuple in relation. Check if id[concept(new)] contains new, if not, the concept is new and the table we edited was not its concept-list table, so insert
 delete put null in deleted target (so we need a dest here too). Check if id[concept(new)] contains new, if not, we are in the concept-list table and accidentally removed the concept, so insert
 update is combination of the above
 
-Mabye when editing, there will be some nulls in columns that are used as concept list, so maybe we need to filter. Are there any other problems possible?
 
 probably easy to support editing on I[Concept], V[ONE*Concept], and V[Concept,ONE] (maybe we don't need the latter though)
 When editing I[Concept], inserting is easy, but what about delete? First check all columns of all tables that contain Concept?
