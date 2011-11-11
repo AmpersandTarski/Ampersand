@@ -16,7 +16,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Declaration(..), flpDecl, isSgn
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..), ConceptDefs
-           , P_Concept(..), A_Concept(..), Conceptual(..), comparable,lub,order,glb,minima, P_Sign(..), Sign(..), GenR, newAcpt, cptos'
+           , P_Concept(..), A_Concept(..), Conceptual(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR, newAcpt, cptos'
            , RuleType(..)
            , Prop(..),allprops,endoprops,flipProps
            , isaRule
@@ -37,7 +37,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree         (
                                           A_Concept(..)
                                          ,Sign(..),GenR()
-                                         , comparable,lub,order,glb,minima
+                                         , (<==>),meet,order,join
                                          ,Signaling(..)
                                          ,A_Context(..),Process(..)
                                          ,Architecture(..)

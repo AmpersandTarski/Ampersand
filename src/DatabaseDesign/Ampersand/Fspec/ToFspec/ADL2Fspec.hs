@@ -3,6 +3,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
     (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+   import DatabaseDesign.Ampersand.Core.Poset
+   import Prelude hiding (Ord(..))
    import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Collection(..),Identified(..),uniqueNames,eqCl, eqClass)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
@@ -468,13 +470,13 @@ while maintaining all invariants.
        srcA
         | null antss =
           fatal 514 $ "empty antecedent in shiftL (" ++ showADL r ++ ")"
-        | length (eqClass comparable [source (head ants) | ants <- antss]) > 1 =
-          fatal 515 $ "shiftL (" ++ showADL r ++ ")\nin calculation of srcA\n" ++ show (eqClass comparable [source (head ants) | ants <- antss])
-        | otherwise = foldr1 lub [source (head ants) | ants <- antss]
+        | length (eqClass (<==>) [source (head ants) | ants <- antss]) > 1 =
+          fatal 515 $ "shiftL (" ++ showADL r ++ ")\nin calculation of srcA\n" ++ show (eqClass (<==>) [source (head ants) | ants <- antss])
+        | otherwise = foldr1 join [source (head ants) | ants <- antss]
        id' ass = [ERel (I c) ]
         where a = (source.head.head) ass
-              c = if not (a `comparable` b) then fatal 519 $ "shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b else
-                  a `lub` b
+              c = if not (a <==> b) then fatal 519 $ "shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b else
+                  a `join` b
               b = (target.last.last) ass
      -- It is imperative that both ass and css are not empty.
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
@@ -509,14 +511,14 @@ while maintaining all invariants.
        srcA 
         | null conss =
            fatal 554 $ "empty consequent in shiftR ("++showADL r++")"
-        | length (eqClass comparable [ source (head cons) | cons<-conss]) > 1 =
-           fatal 556 $ "shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass comparable [ source (head cons) | cons<-conss])
-        | otherwise = foldr1 lub [ source (head cons) | cons<-conss]
+        | length (eqClass (<==>) [ source (head cons) | cons<-conss]) > 1 =
+           fatal 556 $ "shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass (<==>) [ source (head cons) | cons<-conss])
+        | otherwise = foldr1 join [ source (head cons) | cons<-conss]
        id' css = [ERel (I c) ]
         where a = (source.head.head) css
-              c = if not (a `comparable` b)
-                  then fatal 561 $ "shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b ++ ". "
-                  else a `lub` b
+              c = if not (a <==> b)
+                  then fatal 561 $ "shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b ++ ". "
+                  else a `join` b
               b = (target.last.last) css
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
        move [] css = [([],css)]
@@ -723,7 +725,7 @@ while maintaining all invariants.
                                             , Sel c (flp(ECps rs)) fRht motiv
                                             ] motiv
                                 | (ls,rs)<-chop ts
-                                , let c = source (ECps rs) `lub` target (ECps ls)
+                                , let c = source (ECps rs) `join` target (ECps ls)
                                 , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
                                 , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
                                 ] motiv
@@ -736,7 +738,7 @@ while maintaining all invariants.
                                            , Sel c (disjNF (EIsc [ECps ls,flp(ECps rs)])) fRht motiv
                                            ] motiv
                                 | (ls,rs)<-chop ts
-                                , let c = source (ECps rs) `lub` target (ECps ls)
+                                , let c = source (ECps rs) `join` target (ECps ls)
                                 , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
                                 , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
                                 ] motiv
