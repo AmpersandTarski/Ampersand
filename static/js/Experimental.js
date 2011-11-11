@@ -173,16 +173,23 @@ function setEditHandlersBelow($elt) {
     var $atomElt = $(this).next().children().first();
     var atom =$atomElt.attr('atom');
     var srcAtom=getParentAtom($atomElt).attr('atom');
+    
     if (relationIsFlipped) {
       //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
       queueCommands([deleteCommand(relation,atom,srcAtom)]);
     } else {
         //alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
-    	queueCommands([deleteCommand(relation,srcAtom,atom)]);
+      queueCommands([deleteCommand(relation,srcAtom,atom)]);
     }
-    getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
-  });
-  $elt.find('.InsertStub').click(function (event) {
+    
+    if ($atomElt.attr('status')=='new')
+      getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
+    else {
+      $(this).attr('status','deleted');
+      getParentTableRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
+      $(this).children().remove(); // to prevent any updates on the children to be sent to the server
+    }
+  });  $elt.find('.InsertStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));

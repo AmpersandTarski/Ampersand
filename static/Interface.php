@@ -60,7 +60,7 @@ update is combination of the above
 probably easy to support editing on I[Concept], V[ONE*Concept], and V[Concept,ONE] (maybe we don't need the latter though)
 When editing I[Concept], inserting is easy, but what about delete? First check all columns of all tables that contain Concept?
 
-
+cleanup post mechanism a bit, so we don't send the whole page on a post (only need to send the AmpersandRoot div)
 
 */
 

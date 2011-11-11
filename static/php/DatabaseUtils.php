@@ -135,10 +135,9 @@ function generateInterfaceList($db, $parentInterface, $atom) {
 
   // if $atom is null, we are presenting a template
 
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).($atom?'':' newAtom=true').'>');
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).' status='.($atom?'unchanged':'new').'>');
   // the old prototype did not show the atom when there are subinterfaces
-  // for now, we always show it, for debugging purposes
-  
+    
   emit($html, '<div class=AtomName>'.htmlSpecialChars($atom).'</div>');
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
