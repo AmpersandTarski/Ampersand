@@ -231,32 +231,32 @@ function editDelete($rel, $src, $tgt) {
 
 function editUpdate($rel, $src, $tgt,$dest,$newVal) {
   echo "editUpdate($rel, $src, $tgt,$dest,$newVal)";    
+}?>
+
+<html>
+<head>
+<link href="css/Experimental.css" rel="stylesheet" type="text/css"/>
+<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+<script src="js/Experimental.js"></script>
+<script type="text/javascript">
+
+function init() {
+  initialize(getInterfacesMap());
 }
 
-// todo: get rid of these echoes by ending php here.
-echo '<html>';
-echo '<head>';
-echo '<link href="css/Experimental.css" rel="stylesheet" type="text/css"/>';
-echo '<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>';
-echo '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>';
-echo '<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>';
-echo '<script src="js/Experimental.js"></script>';
-echo '<script type="text/javascript">';
-echo 'function init() {';
-echo '  initialize(getInterfacesMap());';
-echo '}';
-echo '';
-echo generateInterfaceMap($allInterfaceObjects);
-echo '</script>';
-echo '</head>';
+<?php echo generateInterfaceMap($allInterfaceObjects); ?>
 
+</script>
+</head>
+<?php
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<body onload="init()">';
   echo '<h3>Top-level interfaces</h3>';
   echo topLevelInterfaceLinks($allInterfaceObjects);
   echo '</body>';
 } else {
-
   $isEditing = processCommands();
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
@@ -272,6 +272,5 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo generateInterface($dbName, $allInterfaceObjects[$interface], $atom); 
 
   echo '</body>';
-}
-echo '</html>';
-?>
+} ?>
+</html>
