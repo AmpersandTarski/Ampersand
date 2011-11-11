@@ -144,8 +144,9 @@ function generateInterfaceList($db, $parentInterface, $atom) {
     foreach($interfaces as $interface) {
       emit($html, generateInterface($db, $interface, $atom));
     }
-    emit($html, '</div></div>');
+    emit($html, '</div>'); // div class=Interface
   }
+  emit($html, '</div>'); // div class=Atom
   return $html;
 }
 
