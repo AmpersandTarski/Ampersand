@@ -7,6 +7,45 @@ function queueCommands(commandArray) {
   commandQueue = commandQueue.concat(commandArray);
 }
 
+function reportCommand(str) {
+  $('#CommandQueue').append('<div>'+str+'</div>');
+}
+function computeUpdates() {
+  $('#CommandQueue').children().remove();
+  
+  $('.Atom .Atom').map(function () {
+    $childAtom = $(this);
+    if (getParentTableRow($childAtom).attr('class')!='NewAtomTemplate') {
+      console.log($childAtom);
+      console.log('1');
+      var $containerElt = getParentContainer($childAtom);
+      console.log($containerElt);
+      var relation = $containerElt.attr('relation'); 
+      console.log('3');
+      var relationIsFlipped = $containerElt.attr('relationIsFlipped') ? attrBoolValue($containerElt.attr('relationIsFlipped')) : false;
+      console.log('4');
+      var parentAtom = getParentAtom($childAtom).attr('atom');
+      var childAtom = $childAtom.attr('atom');
+      console.log($childAtom);
+      switch($childAtom.attr('status')) {
+        case 'new':
+          reportCommand('insert ('+parentAtom+','+ childAtom +') into '+relation+(relationIsFlipped?'~':''));
+          break;
+        case 'deleted':
+          reportCommand('delete ('+parentAtom+','+ childAtom +') from '+relation+(relationIsFlipped?'~':''));
+          break;
+        case 'modified':
+          originalAtom = $childAtom.attr('originalAtom');
+          reportCommand('delete ('+parentAtom+','+ originalAtom +') from '+relation+(relationIsFlipped?'~':''));
+          reportCommand('insert ('+parentAtom+','+ childAtom +') into '+relation+(relationIsFlipped?'~':''));
+          break;
+      }
+      console.log('5');
+      
+    }
+  });
+}
+
 function sendCommands(commandArray) {
   $.post(window.location.href,  
   { commands: JSON.stringify(commandArray) },
@@ -23,7 +62,7 @@ function initialize(interfacesMap) {
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
     commandQueue = new Array();
     setEditHandlers();
-    $('#AmpersandRoot').prepend('<div class="CommandQueue">Edit History:<br/></div>');
+    $('#AmpersandRoot').prepend('<div id=CommandQueue></div>');
   }
   else
     setNavigationHandlers(interfacesMap);
@@ -86,11 +125,11 @@ function deleteCommand(relation, src, tgt) {
 
 // navigation
 
-// todo interfacesMap arg is annoying
 function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
+//todo interfacesMap arg is annoying
 function setNavigationHandlers(interfacesMap) {
   $(".AtomName").map(function () {
     $containerElt = getParentContainer($(this)); 
@@ -167,34 +206,20 @@ function setEditHandlersBelow($elt) {
     }
   });
   $elt.find('.DeleteStub').click(function() {
-    var $containerElt = getParentContainer($(this));
-    var relation = $containerElt.attr('relation'); 
-    var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-    var $atomElt = $(this).next().children().first();
-    var atom =$atomElt.attr('atom');
-    var srcAtom=getParentAtom($atomElt).attr('atom');
-    
-    if (relationIsFlipped) {
-      //alert('Delete: ('+atom+','+srcAtom+ ') from ~'+relation);
-      queueCommands([deleteCommand(relation,atom,srcAtom)]);
-    } else {
-        //alert('Delete: ('+srcAtom+','+atom+ ') from '+relation);
-      queueCommands([deleteCommand(relation,srcAtom,atom)]);
-    }
-    
+    var $atomElt = $(this).next().children().first(); // children is for AtomListElt
+
     if ($atomElt.attr('status')=='new')
       getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
-      $(this).attr('status','deleted');
+      $atomElt.attr('status','deleted');
       getParentTableRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
-      $(this).children().remove(); // to prevent any updates on the children to be sent to the server
+      $atomElt.find('.Interface').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
+    
+    computeUpdates();
+
   });  $elt.find('.InsertStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
-    var relation = $containerElt.attr('relation'); 
-    var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-     // todo: name otherAtom okay?
-    var otherAtom=getParentAtom($(this)).attr('atom');
     
     $newAtomTemplate = $containerElt.children().children().filter('.NewAtomTemplate');
                     // <table>       <tbody>   <tr>
@@ -207,13 +232,7 @@ function setEditHandlersBelow($elt) {
     setEditHandlersBelow($newAtomTableRow); // add the necessary handlers to the new element
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
-    if (relationIsFlipped) {
-      //alert('Insert: (new,'+otherAtom+ ') to ~'+relation);
-      queueCommands([insertNewCommand(relation,'src',otherAtom)]);
-    }else {
-      //alert('Insert: ('+otherAtom+',new) to '+relation);
-      queueCommands([insertNewCommand(relation,'tgt',otherAtom)]);
-    }
+    computeUpdates();
   });
 }
 
@@ -252,25 +271,19 @@ function stopAtomEditing($atom) {
   $form.remove();
 
   $atom.attr('atom',newAtom);
-  $atom.attr('newAtom','false');
   
   $atomName.text(newAtom);
   $atomName.show();
+  
   if (newAtom!=atom) {
-    var $containerElt = getParentContainer($atom);
-    var relation = $containerElt.attr('relation'); 
-    var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
-    // todo: name srcAtom is not okay, depends on isFlipped
-    var srcAtom=getParentAtom($atom).attr('atom');
-if (relationIsFlipped) {
-      //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nInsert: ('+newAtom+','+srcAtom+ ') to ~'+relation);
-      queueCommands([ deleteCommand(relation,atom,srcAtom)
-                   , insertCommand(relation,'src',newAtom,srcAtom) ]);
-    } else {
-      //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nInsert: ('+srcAtom+','+newAtom+ ') to '+relation);
-      queueCommands([ deleteCommand(relation,srcAtom,atom)
-                   , insertCommand(relation,'tgt',srcAtom,newAtom) ]);
+    
+    if ($atom.attr('status')!='new') {
+      $atom.attr('status','modified');
+      if (!$atom.attr('originalAtom')) // first time we edit this field, set originalAtom to the old value 
+        $atom.attr('originalAtom',atom); 
     }
+
+    computeUpdates();
   }
 }
 

@@ -1,15 +1,29 @@
 .AtomName 
   { width: 100%
   }
-.Atom[newatom=true]>.AtomName:after
-  { content: "<new>";
-  ; font-weight: bold
-}
-.Atom[newatom=false][atom='']>.AtomName:after
+
+.Atom[status=deleted]>.AtomName
+  { text-decoration: line-through
+  }
+
+.Atom[status=modified]>.AtomName 
+  { font-style: italic
+  }
+  
+.Atom[status=new]>.AtomName
+  { color: blue
+  }
+
+.Atom[atom='']>.AtomName:after
   { content: "<empty>";
   ; font-weight: bold
-}
-
+  }
+  
+.Atom[atom=''][status=new]>.AtomName:after
+  { content: "<new>";
+  ; font-weight: bold
+  }
+  
 .Label 
   { font-family: Arial
   ; font-style: bold
@@ -26,15 +40,19 @@
 [editing=true] .EditButton
   { display: none
   }
+  
 .SaveButton
   { display: none
   }
+  
 [editing=true] .SaveButton
   { display: inline
   }
+  
 .CancelButton
   { display: none
   }
+  
 [editing=true] .CancelButton
   { display: inline
   }
@@ -42,6 +60,7 @@
 [editing=true] .AtomList[hover=true]
   { border-color: #909090
   }
+  
 .Container
   { empty-cells:show 
   ; background-color: white
@@ -50,24 +69,30 @@
   ; border-style: solid
   ; border-width: 2px 
   }
+  
 [editing=true] .Container[relation]
   { border-color: #0080ff
   ; background-color: #f0f0f0
   }
+  
 [editing=true] .Container[hover=true]
   { background-color: #f0f0f0
   }
+  
 [editing=true] .Container[hover=true] .AtomName:hover
   { background-color: #808080
   }
+  
 .AtomList .DeleteStub
   { width: 25px
   }
+  
 [editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub
   { background-image: url('../images/DeleteButton.png')
   ; background-repeat:no-repeat
   ; width: 25px
   }
+  
 [editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub:hover
   { background-image: url('../images/DeleteButtonDown.png')
   }
@@ -135,9 +160,9 @@
   ; background-color: blue
   }
 
-.CommandQueue
+#CommandQueue
   { float: right
-  ; width: 300px
+  ; width: 500px
   ; padding: 10px
   ; background-color: #d0d0d0
   ; border-style: solid
