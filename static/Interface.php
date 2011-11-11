@@ -2,7 +2,7 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require "Interfaces.php"; // defines $dbName, $relationTables and $allInterfaceObjects
+require "Interfaces.php"; // defines $dbName, $relationTableInfo and $allInterfaceObjects
 require "php/DatabaseUtils.php";
 
 session_start();
@@ -35,8 +35,7 @@ function showCommandQueue() {
 make example with multiple relations, all in one table
 check delete and insert on that
 
-add check for empty atom values
-
+fix enmpty line when editing=false
 use better way to access/update concept table
 
 setNavigationHandlers now sets colors. We should set an attr, so the colors can be specified in css
@@ -145,13 +144,13 @@ function processEditDatabase($dbCommand) {
 
 function editInsertNew($rel, $dest, $otherAtom) {
   global $dbName; 
-  global $relationTables;
-  global $idRelationTables;
+  global $relationTableInfo;
+  global $conceptTableInfo;
   echo "editInsertNew($rel, $dest, $otherAtom)";
   
-  $destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
-  $conceptTable = $idRelationTables[$destConcept]['table'];
-  $conceptColumn = $idRelationTables[$destConcept]['srcCol'];
+  $destConcept = $dest=='src' ? $relationTableInfo[$rel]['srcConcept'] :  $relationTableInfo[$rel]['tgtConcept'];
+  $conceptTable = $conceptTableInfo[$destConcept]['table'];
+  $conceptColumn = $conceptTableInfo[$destConcept]['srcCol'];
   $existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
   $newAtom = mkUniqueAtom($existingAtoms, $destConcept);
 
@@ -165,15 +164,15 @@ function editInsertNew($rel, $dest, $otherAtom) {
 
 function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
 	global $dbName;
-	global $relationTables;
-	global $idRelationTables;
+	global $relationTableInfo;
+	global $conceptTableInfo;
   echo "editInsert($rel, $isFlipped, $parentAtom, $childAtom)";
   $src = $isFlipped ? $childAtom : $parentAtom;
   $tgt = $isFlipped ? $parentAtom : $childAtom;
 
-  $table = $relationTables[$rel]['table'];
-  $srcCol = $relationTables[$rel]['srcCol'];
-  $tgtCol = $relationTables[$rel]['tgtCol'];
+  $table = $relationTableInfo[$rel]['table'];
+  $srcCol = $relationTableInfo[$rel]['srcCol'];
+  $tgtCol = $relationTableInfo[$rel]['tgtCol'];
   DB_doquer($dbName, "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')");
   
   /*
@@ -181,9 +180,9 @@ function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
 	
 	$possiblyNewAtom = $dest=='src' ? $src : $tgt;
 	
-	$destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
-	$conceptTable = $idRelationTables[$destConcept]['table'];
-	$conceptColumn = $idRelationTables[$destConcept]['srcCol'];
+	$destConcept = $dest=='src' ? $relationTableInfo[$rel]['srcConcept'] :  $relationTableInfo[$rel]['tgtConcept'];
+	$conceptTable = $conceptTableInfo[$destConcept]['table'];
+	$conceptColumn = $conceptTableInfo[$destConcept]['srcCol'];
 	$existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
 	
 	// if the destination atom was not in its concept table (either because it already existed, or the table
@@ -199,14 +198,14 @@ function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
 // TODO check escaping for table names
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   global $dbName; 
-  global $relationTables;
+  global $relationTableInfo;
   echo "editDelete($rel, $isFlipped, $parentAtom, $childAtom)";
   $src = $isFlipped ? $childAtom : $parentAtom;
   $tgt = $isFlipped ? $parentAtom : $childAtom;
   
-  $table = $relationTables[$rel]['table'];
-  $srcCol = $relationTables[$rel]['srcCol'];
-  $tgtCol = $relationTables[$rel]['tgtCol'];
+  $table = $relationTableInfo[$rel]['table'];
+  $srcCol = $relationTableInfo[$rel]['srcCol'];
+  $tgtCol = $relationTableInfo[$rel]['tgtCol'];
   $query = 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';';
   echo $query;
   DB_doquer($dbName, $query);

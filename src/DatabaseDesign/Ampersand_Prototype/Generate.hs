@@ -36,18 +36,18 @@ showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if fldu
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
-  , "$relationTables ="
+  , "$relationTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [showPhpStr rnm++" => array (srcConcept => "++(showPhpStr $ name $ source rel)++", tgtConcept => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
            | rel@(Rel {relnm = rnm}) <- mors fSpec
            , (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel rel)]) ++
   [ ""     -- the nub is because sqlRelPlugNames may yield multiple results
-  , "$idRelationTables ="
+  , "$conceptTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" "," -- todo: why do we get a list of tables and src/tgtCols??
-         [ [(showPhpStr $ name c)++" => array (table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
-           | c <- concs fSpec, (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel $ I c)]) ++
+         [ [(showPhpStr $ name c)++" => array (table => "++showPhpStr table++", col => "++showPhpStr srcCol++")"] 
+           | c <- concs fSpec, (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel $ I c)]) ++
   [ ""
   , "$allInterfaceObjects ="
   , "  array" ] ++
