@@ -53,10 +53,10 @@ function showCommand(command) {
     case 'editDatabase':
       var dbCommand = command.dbCommand;
       switch (dbCommand.dbcmd) {
-        case 'addNew':
-          return 'AddNew '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '('+dbCommand.otherAtom+',new)' : '(new,'+dbCommand.otherAtom+')');
-        case 'add':
-          return 'Add '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '(>'+dbCommand.src+'<,'+dbCommand.tgt+')' : '('+dbCommand.src+',>'+dbCommand.tgt+'<)');
+        case 'insertNew':
+          return 'InsertNew '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '('+dbCommand.otherAtom+',new)' : '(new,'+dbCommand.otherAtom+')');
+        case 'insert':
+          return 'Insert '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '(>'+dbCommand.src+'<,'+dbCommand.tgt+')' : '('+dbCommand.src+',>'+dbCommand.tgt+'<)');
         case 'delete':
           return 'Delete '+dbCommand.rel+' ('+dbCommand.src+','+dbCommand.tgt+')';
       }
@@ -64,13 +64,13 @@ function showCommand(command) {
   return 'Undefined command: '+command;
 }
 
-function addNewCommand(relation, dest, otherAtom) {
-  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'addNew', rel: relation, dest: dest, otherAtom: otherAtom}};
+function insertNewCommand(relation, dest, otherAtom) {
+  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'insertNew', rel: relation, dest: dest, otherAtom: otherAtom}};
 }
 
-// dest specifies which of the atoms in the added tuple may be new (and in that case will need to be added to a concept table)
-function addCommand(relation, dest, src, tgt) {
-  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'add', rel: relation, dest: dest, src: src, tgt: tgt}};
+// dest specifies which of the atoms in the inserted tuple may be new (and in that case will need to be inserted to a concept table)
+function insertCommand(relation, dest, src, tgt) {
+  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'insert', rel: relation, dest: dest, src: src, tgt: tgt}};
 }
 
 function deleteCommand(relation, src, tgt) {
@@ -92,7 +92,7 @@ function setNavigationHandlers(interfacesMap) {
     concept =$containerElt.attr('concept');
     var atom = $atom.attr('atom');
     var interfaces = interfacesMap[concept];
-    if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't add a click event
+    if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
       $(this).css("cursor","pointer");
       $(this).css("color","blue"); // todo add an attr and use stylesheet for this
       $(this).click(function (event) {     // todo: figure out return value for click handlers
@@ -176,7 +176,7 @@ function setEditHandlersBelow($elt) {
     }
     getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
   });
-  $elt.find('.AddStub').click(function (event) {
+  $elt.find('.InsertStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     var relation = $containerElt.attr('relation'); 
     var relationIsFlipped = attrBoolValue($containerElt.attr('relationIsFlipped'));
@@ -195,11 +195,11 @@ function setEditHandlersBelow($elt) {
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
     if (relationIsFlipped) {
-      //alert('Add: (new,'+otherAtom+ ') to ~'+relation);
-      queueCommands([addNewCommand(relation,'src',otherAtom)]);
+      //alert('Insert: (new,'+otherAtom+ ') to ~'+relation);
+      queueCommands([insertNewCommand(relation,'src',otherAtom)]);
     }else {
-      //alert('Add: ('+otherAtom+',new) to '+relation);
-      queueCommands([addNewCommand(relation,'tgt',otherAtom)]);
+      //alert('Insert: ('+otherAtom+',new) to '+relation);
+      queueCommands([insertNewCommand(relation,'tgt',otherAtom)]);
     }
   });
 }
@@ -250,13 +250,13 @@ function stopAtomEditing($atom) {
     // todo: name srcAtom is not okay, depends on isFlipped
     var srcAtom=getParentAtom($atom).attr('atom');
 if (relationIsFlipped) {
-      //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nAdd: ('+newAtom+','+srcAtom+ ') to ~'+relation);
+      //alert('Remove: ('+atom+','+srcAtom+ ') from ~'+relation+'\nInsert: ('+newAtom+','+srcAtom+ ') to ~'+relation);
       queueCommands([ deleteCommand(relation,atom,srcAtom)
-                   , addCommand(relation,'src',newAtom,srcAtom) ]);
+                   , insertCommand(relation,'src',newAtom,srcAtom) ]);
     } else {
-      //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nAdd: ('+srcAtom+','+newAtom+ ') to '+relation);
+      //alert('Remove: ('+srcAtom+','+atom+ ') from '+relation+'\nInsert: ('+srcAtom+','+newAtom+ ') to '+relation);
       queueCommands([ deleteCommand(relation,srcAtom,atom)
-                   , addCommand(relation,'tgt',srcAtom,newAtom) ]);
+                   , insertCommand(relation,'tgt',srcAtom,newAtom) ]);
     }
   }
 }

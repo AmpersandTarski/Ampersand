@@ -10,11 +10,11 @@ session_start();
 function showCommandQueue() {
   foreach ($_SESSION['commandQueue'] as $command) {
     switch($command['dbCmd']) {
-      case 'addNew':
+      case 'insertNew':
         if ($command['dest'] == 'src')
-          echo $command['rel'].': add (NEW,'.$command['otherAtom'].')<br/>';
+          echo $command['rel'].': insert (NEW,'.$command['otherAtom'].')<br/>';
         else
-          echo $command['rel'].': add ('.$command['otherAtom'].',NEW)<br/>';
+          echo $command['rel'].': insert ('.$command['otherAtom'].',NEW)<br/>';
         break;
       case 'delete':
         echo $command['rel'].': delete ('.$command['src'].','.$command['tgt'].')<br/>';
@@ -33,36 +33,35 @@ function showCommandQueue() {
 // todo:
 
 make example with multiple relations, all in one table
-check delete and add on that
+check delete and insert on that
 
 check for empty string input
 use better way to access/update concept table
 
 setNavigationHandlers now sets colors. We should set an attr, so the colors can be specified in css
 // use POST for db updates, now commands are in the url, preventing refresh from working
-// rename add to insert
 // can we use this somewhere? $_SERVER['PHP_SELF']
 // relation & concept with equal name cause name clash? table names are not case sensitive (or does quoting help?)
 
-// handle double events when clicking on a button (add, delete, cancel, commit, etc.) while editing a text field (strangely enough the blur event arrives later)
+// handle double events when clicking on a button (insert, delete, cancel, commit, etc.) while editing a text field (strangely enough the blur event arrives later)
 
 Newly inserted Identifier atom goes wrong when we navigate to it (maybe related to absence in id[Thing]
 
-Later: css content can acces attributes, so we don't need to put the Add new .. string in the generator. it can be put in the css
+Later: css content can acces attributes, so we don't need to put the Insert new .. string in the generator. it can be put in the css
 
 */
 
 /*
 Efficiency might be a problem after all. Solutions: no multiple edits, mimic the updates without accessing the database (tricky, and probably resulting in a far more primitive interface)
 
-addNew add new tuple in relation. Check if id[concept(new)] contains new, if not, the concept is new and the table we edited was not its concept-list table, so add
-delete put null in deleted target (so we need a dest here too). Check if id[concept(new)] contains new, if not, we are in the concept-list table and accidentally removed the concept, so add
+insertNew insert new tuple in relation. Check if id[concept(new)] contains new, if not, the concept is new and the table we edited was not its concept-list table, so insert
+delete put null in deleted target (so we need a dest here too). Check if id[concept(new)] contains new, if not, we are in the concept-list table and accidentally removed the concept, so insert
 update is combination of the above
 
 Mabye when editing, there will be some nulls in columns that are used as concept list, so maybe we need to filter. Are there any other problems possible?
 
 probably easy to support editing on I[Concept], V[ONE*Concept], and V[Concept,ONE] (maybe we don't need the latter though)
-When editing I[Concept], adding is easy, but what about delete? First check all columns of all tables that contain Concept?
+When editing I[Concept], inserting is easy, but what about delete? First check all columns of all tables that contain Concept?
 
 
 
@@ -125,15 +124,15 @@ function processEditDatabase($dbCommand) {
     error("Malformed database command, missing 'dbcmd'");
 
   switch ($dbCommand->dbcmd) {
-    case 'addNew':
+    case 'insertinsert':
       if ($dbCommand->rel && $dbCommand->dest && $dbCommand->otherAtom)
-        editAddNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otherAtom);
+        editInsertNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otherAtom);
       else 
         error("Database command $dbCommand->dbcmd is missing parameters");
       break;
-    case 'add':
+    case 'insert':
       if ($dbCommand->rel && $dbCommand->dest && $dbCommand->src && $dbCommand->tgt)
-        editAdd($dbCommand->rel, $dbCommand->dest, $dbCommand->src, $dbCommand->tgt);
+        editInsert($dbCommand->rel, $dbCommand->dest, $dbCommand->src, $dbCommand->tgt);
       else 
         error("Database command $dbCommand->dbcmd is missing parameters");
       break;
@@ -171,11 +170,11 @@ function mkUniqueAtom($existingAtoms, $concept) {
   return $newAtomPrefix.' '.$concept.' ('.(count($newAtomNrs)+1).')';
 }
 
-function editAddNew($rel, $dest, $otherAtom) {
+function editInsertNew($rel, $dest, $otherAtom) {
   global $dbName; 
   global $relationTables;
   global $idRelationTables;
-  echo "editAddNew($rel, $dest, $otherAtom)";
+  echo "editInsertNew($rel, $dest, $otherAtom)";
   
   $destConcept = $dest=='src' ? $relationTables[$rel]['srcConcept'] :  $relationTables[$rel]['tgtConcept'];
   $conceptTable = $idRelationTables[$destConcept]['table'];
@@ -191,11 +190,11 @@ function editAddNew($rel, $dest, $otherAtom) {
     insertInRelation($rel, $otherAtom, $newAtom);
 }
 
-function editAdd($rel, $dest, $src, $tgt) {
+function editInsert($rel, $dest, $src, $tgt) {
 	global $dbName;
 	global $relationTables;
 	global $idRelationTables;
-  echo "editAdd($rel, $dest, $src, $tgt)";
+  echo "editInsert($rel, $dest, $src, $tgt)";
   	
 	insertInRelation($rel, $src, $tgt);
 	
@@ -207,7 +206,7 @@ function editAdd($rel, $dest, $src, $tgt) {
 	$existingAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
 	
 	// if the destination atom was not in its concept table (either because it already existed, or the table
-	// we inserted the tuple into contained the concept table), we add it.
+	// we inserted the tuple into contained the concept table), we insert it.
 	if (!in_array($possiblyNewAtom, $existingAtoms )) {
 		DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$possiblyNewAtom')");
 	}

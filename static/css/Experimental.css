@@ -76,7 +76,7 @@
   { display: none
   }
  
-.AtomList .AddStub
+.AtomList .InsertStub
   { visibility: hidden
   ; padding-left: 7px
   ; padding-right: 7px
@@ -92,11 +92,11 @@
   ; -webkit-border-radius: 7px    /* rounded corners for Safari */
   }
  
-[editing=true] .AtomList[hover=true]>tbody>tr>.AddStub
+[editing=true] .AtomList[hover=true]>tbody>tr>.InsertStub
   { visibility: visible
   }
   
-[editing=true] .AtomList[hover=true]>tbody>tr>.AddStub:hover
+[editing=true] .AtomList[hover=true]>tbody>tr>.InsertStub:hover
   { background-color: #606060
   ; cursor: default
   }
