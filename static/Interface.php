@@ -35,6 +35,8 @@ function showCommandQueue() {
 make example with multiple relations, all in one table
 check delete and insert on that
 
+add check for empty atom values
+
 use better way to access/update concept table
 
 setNavigationHandlers now sets colors. We should set an attr, so the colors can be specified in css
@@ -91,7 +93,7 @@ function processCommand($command) {
     error("Malformed command, missing 'cmd'");
   
   switch ($command->cmd) {
-    case 'editstart':
+    case 'editStart':
       $_SESSION['commandQueue'] = array();
       showCommandQueue();
       dbStartTransaction($dbName);
@@ -99,11 +101,11 @@ function processCommand($command) {
     case 'editDatabase':
       processEditDatabase($command->dbCommand);
       return true;
-    case 'editcommit':
+    case 'editCommit':
       showCommandQueue();
       dbCommitTransaction($dbName);
       return false;
-    case 'editrollback':
+    case 'editRollback':
       showCommandQueue();
       $_SESSION['commandQueue']= array();
       dbRollbackTransaction($dbName);
@@ -115,57 +117,31 @@ function processCommand($command) {
 
 function processEditDatabase($dbCommand) {
   if (!isset($dbCommand))
-    error("Malformed database command, missing 'dbcomand'");
+    error("Malformed database command, missing 'dbcommand'");
   
-  if (!isset($dbCommand->dbcmd))
-    error("Malformed database command, missing 'dbcmd'");
+  if (!isset($dbCommand->dbCmd))
+    error("Malformed database command, missing 'dbCmd'");
 
-  switch ($dbCommand->dbcmd) {
-    case 'insertinsert':
-      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->otherAtom)
-        editInsertNew($dbCommand->rel, $dbCommand->dest, $dbCommand->otherAtom);
-      else 
-        error("Database command $dbCommand->dbcmd is missing parameters");
-      break;
+  switch ($dbCommand->dbCmd) {
     case 'insert':
-      if ($dbCommand->rel && $dbCommand->dest && $dbCommand->src && $dbCommand->tgt)
-        editInsert($dbCommand->rel, $dbCommand->dest, $dbCommand->src, $dbCommand->tgt);
+      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) && array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand))
+        editInsert($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom);
       else 
-        error("Database command $dbCommand->dbcmd is missing parameters");
+        error("Database command $dbCommand->dbCmd is missing parameters");
       break;
     case 'delete':
-      if ($dbCommand->rel && $dbCommand->src && $dbCommand->tgt)
-        editDelete($dbCommand->rel, $dbCommand->src, $dbCommand->tgt);
-      else 
-        error("Database command $dbCommand->dbcmd is missing parameters");
+      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) && array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand))
+        editDelete($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom);
+      else {
+        print_r($dbCommand);
+        error("Database command $dbCommand->dbCmd is missing parameters");
+      }
       break;
     default:
-      error("Unknown database command '$dbCommand->dbcmd'");
+      error("Unknown database command '$dbCommand->dbCmd'");
   }
 }
 
-$newAtomPrefix = 'New';
-
-function mkUniqueAtom($existingAtoms, $concept) {
-  global $newAtomPrefix;
-  if (!in_array($newAtomPrefix.' '.$concept, $existingAtoms))
-    return $newAtomPrefix.' '.$concept;
-  
-  $newAtomNrs = array();
-  foreach ($existingAtoms as $atom) {
-    preg_match('/\A'.$newAtomPrefix.' '.$concept.' \((?P<number>[123456789]\d*)\)\z/', $atom, $matches); 
-    // don't match nrs with leading 0's since we don't generate those
-    $newAtomNrs[] = $matches['number'];
-  }
-
-  $newAtomNrs = array_unique(array_filter($newAtomNrs)); // filter out all the non-numbers and double numbers
-  sort($newAtomNrs);
-  foreach ($newAtomNrs as $i=>&$nr) {
-    if ($nr != $i+1) // as soon as $newAtomNrs[i] != i+1, we arrived at a gap in the sorted number sequence and we can use i+1
-      return $newAtomPrefix.' '.$concept.' ('.($i+1).')';
-  }
-  return $newAtomPrefix.' '.$concept.' ('.(count($newAtomNrs)+1).')';
-}
 
 function editInsertNew($rel, $dest, $otherAtom) {
   global $dbName; 
@@ -187,12 +163,20 @@ function editInsertNew($rel, $dest, $otherAtom) {
     insertInRelation($rel, $otherAtom, $newAtom);
 }
 
-function editInsert($rel, $dest, $src, $tgt) {
+function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
 	global $dbName;
 	global $relationTables;
 	global $idRelationTables;
-  echo "editInsert($rel, $dest, $src, $tgt)";
-  	
+  echo "editInsert($rel, $isFlipped, $parentAtom, $childAtom)";
+  $src = $isFlipped ? $childAtom : $parentAtom;
+  $tgt = $isFlipped ? $parentAtom : $childAtom;
+
+  $table = $relationTables[$rel]['table'];
+  $srcCol = $relationTables[$rel]['srcCol'];
+  $tgtCol = $relationTables[$rel]['tgtCol'];
+  DB_doquer($dbName, "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')");
+  
+  /*
 	insertInRelation($rel, $src, $tgt);
 	
 	$possiblyNewAtom = $dest=='src' ? $src : $tgt;
@@ -207,32 +191,28 @@ function editInsert($rel, $dest, $src, $tgt) {
 	if (!in_array($possiblyNewAtom, $existingAtoms )) {
 		DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$possiblyNewAtom')");
 	}
+	*/
 }
 
-function insertInRelation($rel, $src, $tgt) {
-  global $dbName; 
-  global $relationTables;
-  $table = $relationTables[$rel]['table'];
-  $srcCol = $relationTables[$rel]['srcCol'];
-  $tgtCol = $relationTables[$rel]['tgtCol'];
-  DB_doquer($dbName, "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')");
-}
 
 // TODO use backquote for table names? 
 // TODO check escaping for table names
-function editDelete($rel, $src, $tgt) {
+function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   global $dbName; 
   global $relationTables;
-  echo "editDelete($rel, $src, $tgt)";
+  echo "editDelete($rel, $isFlipped, $parentAtom, $childAtom)";
+  $src = $isFlipped ? $childAtom : $parentAtom;
+  $tgt = $isFlipped ? $parentAtom : $childAtom;
+  
   $table = $relationTables[$rel]['table'];
   $srcCol = $relationTables[$rel]['srcCol'];
   $tgtCol = $relationTables[$rel]['tgtCol'];
-  DB_doquer($dbName, 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';');
+  $query = 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';';
+  echo $query;
+  DB_doquer($dbName, $query);
 }
 
-function editUpdate($rel, $src, $tgt,$dest,$newVal) {
-  echo "editUpdate($rel, $src, $tgt,$dest,$newVal)";    
-}?>
+?>
 
 <html>
 <head>

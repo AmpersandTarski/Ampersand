@@ -2,48 +2,65 @@ var commandQueue = new Array();
 
 function queueCommands(commandArray) {
   jQuery.map(commandArray, function (command) {
-    $('.CommandQueue').append(showCommand(command)+'<br>');
+    $('.CommandQueue').append(showDbCommand(command)+'<br>');
   });
   commandQueue = commandQueue.concat(commandArray);
 }
 
-function reportCommand(str) {
-  $('#CommandQueue').append('<div>'+str+'</div>');
+function showDbCommand(dbCommand) {
+  switch (dbCommand.dbCmd) {
+    case 'insert':
+      return 'Insert into '+dbCommand.relation+(dbCommand.isFlipped?'~':'') +': ('+dbCommand.parentAtom+','+dbCommand.childAtom+')';
+    case 'delete':
+      return 'Delete from '+dbCommand.relation+(dbCommand.isFlipped?'~':'')+': ('+dbCommand.parentAtom+','+dbCommand.childAtom+')';
+  }
+  return 'Undefined command: '+dbCommand;
 }
-function computeUpdates() {
-  $('#CommandQueue').children().remove();
-  
+
+function traceCommand(dbCmd) {
+  $('#CommandQueue').append('<div>'+showDbCommand(dbCmd)+'</div>');
+}
+
+function traceDbCommands() {
+  $('#CommandQueue').children().remove(); 
+  computeDbCommands().map( function(dbCmd) {
+    traceCommand(dbCmd);
+  });
+}
+function mkDbCommandInsert(parentAtom,childAtom,relation,relationIsFlipped) {
+  return {dbCmd: 'insert', parentAtom:parentAtom, childAtom:childAtom, relation:relation, isFlipped:relationIsFlipped};
+}
+
+function mkDbCommandDelete(parentAtom,childAtom,relation,relationIsFlipped) {
+  return {dbCmd: 'delete', parentAtom:parentAtom, childAtom:childAtom, relation:relation, isFlipped:relationIsFlipped};
+}
+
+function computeDbCommands() {
+  dbCommands = new Array();
   $('.Atom .Atom').map(function () {
     $childAtom = $(this);
     if (getParentTableRow($childAtom).attr('class')!='NewAtomTemplate') {
-      console.log($childAtom);
-      console.log('1');
       var $containerElt = getParentContainer($childAtom);
-      console.log($containerElt);
       var relation = $containerElt.attr('relation'); 
-      console.log('3');
       var relationIsFlipped = $containerElt.attr('relationIsFlipped') ? attrBoolValue($containerElt.attr('relationIsFlipped')) : false;
-      console.log('4');
       var parentAtom = getParentAtom($childAtom).attr('atom');
       var childAtom = $childAtom.attr('atom');
-      console.log($childAtom);
       switch($childAtom.attr('status')) {
         case 'new':
-          reportCommand('insert ('+parentAtom+','+ childAtom +') into '+relation+(relationIsFlipped?'~':''));
+          dbCommands.push(mkDbCommandInsert(parentAtom, childAtom, relation, relationIsFlipped));
           break;
         case 'deleted':
-          reportCommand('delete ('+parentAtom+','+ childAtom +') from '+relation+(relationIsFlipped?'~':''));
+          dbCommands.push(mkDbCommandDelete(parentAtom, childAtom, relation, relationIsFlipped));
           break;
         case 'modified':
           originalAtom = $childAtom.attr('originalAtom');
-          reportCommand('delete ('+parentAtom+','+ originalAtom +') from '+relation+(relationIsFlipped?'~':''));
-          reportCommand('insert ('+parentAtom+','+ childAtom +') into '+relation+(relationIsFlipped?'~':''));
+          dbCommands.push(mkDbCommandDelete(parentAtom, originalAtom, relation, relationIsFlipped));
+          dbCommands.push(mkDbCommandInsert(parentAtom, childAtom, relation, relationIsFlipped));
           break;
       }
-      console.log('5');
-      
     }
   });
+  return dbCommands;
 }
 
 function sendCommands(commandArray) {
@@ -69,7 +86,7 @@ function initialize(interfacesMap) {
 }
 
 function startEditing() {
-  sendCommands([{cmd: 'editstart'}]);
+  sendCommands([{cmd: 'editStart'}]);
   /* code below is for dynamic editstart (without refreshing page from server)
   $('.Atom').unbind('click').css("cursor","default").css("color","black"); 
   $('#AmpersandRoot').attr('editing','True');
@@ -78,12 +95,31 @@ function startEditing() {
 }
 
 function commitEditing() {
-  queueCommands([{cmd: 'editcommit'}]);
-  sendCommands(commandQueue);
+  $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
+    if ($(this).parents().filter('.NewAtomTemplate').length)
+      return null;
+    else {
+      return $(this);
+    }
+  });
+  
+  if ($emptyAtomsNotInTemplates.length > 0) {
+    alert('Please fill out all <new> atoms first.');
+    return;
+  }
+  var dbCommands = computeDbCommands();
+  var commands = new Array();
+  
+  for (var i=0; i<dbCommands.length; i++) {
+    commands.push({cmd: 'editDatabase', dbCommand: dbCommands[i]});
+  }
+  commands.push({cmd: 'editCommit'});
+  console.log(commands);
+  sendCommands(commands);
 }
 
 function cancelEditing() {
-  sendCommands([{cmd: 'editrollback'}]);
+  sendCommands([{cmd: 'editRollback'}]);
   /* code below is for dynamic editrollback (without refreshing page from server)
 // maybe there's an easy way to prevent having to do setNavigationHandlers again (check for 'editing' in the click handler)
   $('.Atom').unbind('click');
@@ -91,37 +127,6 @@ function cancelEditing() {
   setNavigationHandlers(interfacesMap);
   */
 }
-
-// only interested in database commands
-function showCommand(command) {
-  switch (command.cmd) {
-    case 'editDatabase':
-      var dbCommand = command.dbCommand;
-      switch (dbCommand.dbcmd) {
-        case 'insertNew':
-          return 'InsertNew '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '('+dbCommand.otherAtom+',new)' : '(new,'+dbCommand.otherAtom+')');
-        case 'insert':
-          return 'Insert '+dbCommand.rel+' '+(dbCommand.dest=='src' ? '(>'+dbCommand.src+'<,'+dbCommand.tgt+')' : '('+dbCommand.src+',>'+dbCommand.tgt+'<)');
-        case 'delete':
-          return 'Delete '+dbCommand.rel+' ('+dbCommand.src+','+dbCommand.tgt+')';
-      }
-  }
-  return 'Undefined command: '+command;
-}
-
-function insertNewCommand(relation, dest, otherAtom) {
-  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'insertNew', rel: relation, dest: dest, otherAtom: otherAtom}};
-}
-
-// dest specifies which of the atoms in the inserted tuple may be new (and in that case will need to be inserted to a concept table)
-function insertCommand(relation, dest, src, tgt) {
-  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'insert', rel: relation, dest: dest, src: src, tgt: tgt}};
-}
-
-function deleteCommand(relation, src, tgt) {
-  return {cmd: 'editDatabase', dbCommand: {dbcmd: 'delete', rel: relation, src: src, tgt: tgt}};
-}
-
 
 // navigation
 
@@ -216,7 +221,7 @@ function setEditHandlersBelow($elt) {
       $atomElt.find('.Interface').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
     
-    computeUpdates();
+    traceDbCommands();
 
   });  $elt.find('.InsertStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
@@ -232,7 +237,7 @@ function setEditHandlersBelow($elt) {
     setEditHandlersBelow($newAtomTableRow); // add the necessary handlers to the new element
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
-    computeUpdates();
+    traceDbCommands();
   });
 }
 
@@ -283,7 +288,7 @@ function stopAtomEditing($atom) {
         $atom.attr('originalAtom',atom); 
     }
 
-    computeUpdates();
+    traceDbCommands();
   }
 }
 
