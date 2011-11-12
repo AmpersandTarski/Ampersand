@@ -18,7 +18,7 @@ where
 
    normPA :: PAclause -> PAclause
    normPA expr = expr' 
-       where (expr',_,_) = last (proofPA expr)
+       where (expr',_,_) = if null (proofPA expr) then fatal 21 "last: empty list" else last (proofPA expr)
 
    type Proof a = [(a, [String], String)]
 
@@ -98,7 +98,7 @@ where
 
    simplify :: Expression -> Expression
    simplify expr = expr' 
-       where (expr',_,_) = last (simpProof shw expr)
+       where (expr',_,_) = if null (simpProof shw expr) then fatal 101 "last: empty list" else last (simpProof shw expr)
              shw _ = ""
    
    simpProof :: (Expression -> String) -> Expression -> Proof Expression
@@ -177,7 +177,7 @@ where
      nM (EPrd (k:ks)) rs   | or [isEPrd x |x<-k:ks] = nM (EPrd [y | x<-k:ks, y<-if isEPrd x then unE x else [x]]) rs
                            | length rs/=length rs'  = (EPrd rs', ["eliminate cartesian product"], "<=>")
                            | otherwise              = (if isEPrd f then EPrd (t:unE f) else EPrd [t,f], steps++steps', fEqu [equ',equ''])
-                           where rs' = nub [head rs,last rs]
+                           where rs' = if null rs then fatal 180 "last: empty list" else nub [head rs,last rs]
                                  (t,steps, equ')  = nM k []
                                  (f,steps',equ'') = nM (EPrd ks) (k:rs)
      nM (EIsc [k]) _   = nM k []
@@ -325,7 +325,7 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
              [line | step'', line<-pr'']
             )]
       where pr            = nfPr shw True (simplify expr)
-            (expr',_,_)   = last pr
+            (expr',_,_)   = if null pr then fatal 328 "last: empty list" else last pr
             step          = simplify expr/=expr' || and [null s | (_,ss,_)<-pr, s<-ss]
             expr''        = simplify (distribute EUni EIsc isEUni isEIsc expr')   -- Distribute:    (x/\y)\/z  -->  x\/z /\ y\/z
             pr'           = if or [isEIsc f |EUni fs<-[expr'], f<-fs] 
@@ -334,13 +334,13 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
             step'         = expr'/=expr'' || and [null s | (_,ss,_)<-pr', s<-ss]
             pr''          = nfPr shw True expr''
             step''        = expr''/=expr''' || and [null s | (_,ss,_)<-pr'', s<-ss]
-            (expr''',_,_) = last pr''
+            (expr''',_,_) = if null pr'' then fatal 337 "last: empty list" else last pr''
 
    conjNF :: Expression -> Expression
-   conjNF expr = e where (e,_,_) = last (cfProof (\_->"") expr)
+   conjNF expr = e where (e,_,_) = if null (cfProof (\_->"") expr) then fatal 340 "last: empty list" else last (cfProof (\_->"") expr)
 
    disjNF :: Expression -> Expression
-   disjNF expr = e where (e,_,_) = last (dfProof (\_->"") expr)
+   disjNF expr = e where (e,_,_) = if null (dfProof (\_->"") expr) then fatal 343 "last: empty list" else last (dfProof (\_->"") expr)
 
    dfProof :: (Expression -> String) -> Expression -> Proof Expression
    dfProof shw expr
@@ -353,7 +353,7 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
              [line | step'', line<-pr'']
             )]
       where pr            = nfPr shw True expr
-            (expr',_,_)   = last pr
+            (expr',_,_)   = if null pr then fatal 356 "last: empty list" else last pr
             step          = simplify expr/=simplify expr'
             expr''        = distribute EIsc EUni isEIsc isEUni expr'   -- Distribute:    (x\/y)/\z  -->  x/\z \/ y/\z
             pr'           = if or [isEUni f|EIsc fs<-[expr'], f<-fs] 
@@ -362,7 +362,7 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
             step'         = simplify expr'/=simplify expr''
             pr''          = nfPr shw True expr''
             step''        = simplify expr''/=simplify expr'''
-            (expr''',_,_) = last pr''
+            (expr''',_,_) = if null pr'' then fatal 365 "last: empty list" else last pr''
             
    -- TODO: @Stef: Why is this needed? --Why not use isIdent ???  
    isI :: Expression -> Bool
