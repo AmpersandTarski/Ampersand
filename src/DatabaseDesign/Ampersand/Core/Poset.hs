@@ -122,16 +122,16 @@ totalOrder NC = error "Uncomparable elements in total order."
 totalOrder CP = error "Uncomparable elements in total order."
 
 -- | takes the greatest a of comparables
-greatest :: Sortable a => [a] -> a
+greatest :: (Show a,Sortable a) => [a] -> a
 greatest xs 
  | null ms = error "there is no greatest"
  | length ms==1 = head ms
- | otherwise = error "there is more than one greatest"
-   where ms = maxima xs
+ | otherwise = error ("there is more than one greatest: "++ show (List.nub xs))
+   where ms = maxima (List.nub xs)
 -- | takes all a without anything larger
 maxima :: Sortable a => [a] -> [a]
 maxima [] = error "the empty list has no maximum"
-maxima xs = [x | x<-xs,not (or [x < y | y<-xs])]
+maxima xs = [x | x<-List.nub xs,not (or [x < y | y<-List.nub xs])]
 
 -- | takes the least a of comparables if there is only one
 least :: Sortable a => [a] -> a
@@ -139,9 +139,9 @@ least xs
  | null ms = error "there is no least"
  | length ms==1 = head ms
  | otherwise = error "there is more than one least"
-   where ms = minima xs
+   where ms = minima (List.nub xs)
 -- | takes all a without anything less
 minima :: Sortable a => [a] -> [a]
 minima [] = error "the empty list has no minimum"
-minima xs = [x | x<-xs,not (or [y < x | y<-xs])]
+minima xs = [x | x<-List.nub xs,not (or [y < x | y<-List.nub xs])]
 

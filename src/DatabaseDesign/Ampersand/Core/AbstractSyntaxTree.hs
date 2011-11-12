@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Association(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
- , (<==>),join,order,meet 
+ , (<==>),join,order,meet,greatest,least,maxima,minima 
  , makeDeclaration
  , showExpr
  , insParentheses
@@ -37,7 +37,7 @@ import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
 import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat)
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass)
+import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
 import Text.Pandoc
 import Data.List
 
@@ -384,12 +384,12 @@ instance Association Expression where
  sign (EIsc [])      = fatal 237 $ "Ampersand failed to eliminate "++show (EIsc [])++"."
  sign (EIsc es)      = let ss=map sign es in
                      if and [l <==> r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss <==> s | s<-tail ss] may be wrong, since comparable is not transitive.
-                     then foldr1 join ss -- do not use  foldr1 join ss, because <==> is not transitive.
+                     then Sign (greatest$map source ss)(greatest$map target ss) -- do not use  foldr1 join ss, because <==> is not transitive.
                      else fatal 241 $ "type checker failed to verify "++show (EIsc es)++"."
  sign (EUni [])      = fatal 242 $ "Ampersand failed to eliminate "++show (EUni [])++"."
  sign (EUni es)      = let ss=map sign es in
                      if and [l <==> r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss <==> s | s<-tail ss] may be wrong, since comparable is not transitive.
-                     then foldr1 join ss -- do not use  foldr1 join ss, because <==> is not transitive.
+                     then Sign (greatest$map source ss)(greatest$map target ss) -- do not use  foldr1 join ss, because <==> is not transitive.
                      else fatal 246 $ "type checker failed to verify "++show (EUni es)++"."
  sign (EDif (l,r))   = if sign l <==> sign r
                      then sign l
