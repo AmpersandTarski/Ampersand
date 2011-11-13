@@ -7,38 +7,27 @@ require "php/DatabaseUtils.php";
 
 session_start();
 
-function showCommandQueue() {
-  foreach ($_SESSION['commandQueue'] as $command) {
-    switch($command['dbCmd']) {
-      case 'insertNew':
-        if ($command['dest'] == 'src')
-          echo $command['rel'].': insert (NEW,'.$command['otherAtom'].')<br/>';
-        else
-          echo $command['rel'].': insert ('.$command['otherAtom'].',NEW)<br/>';
-        break;
-      case 'delete':
-        echo $command['rel'].': delete ('.$command['src'].','.$command['tgt'].')<br/>';
-        break;
-      case 'update':
-        if ($command['dest'] == 'src')
-          echo $command['rel'].': ('.$command['src'].','.$command['tgt'].') ~> ('.$command['newval'].','.$command['tgt'].')<br/>';
-        else
-          echo $command['rel'].': ('.$command['src'].','.$command['tgt'].') ~> ('.$command['src'].','.$command['newval'].')<br/>'; 
-        break;
-          
-    }
-  }
-}
 /*
 // todo:
 
+insert goes wrong if we have [keyA, keyB, keyC] and insert (valA1,valB1) (valA2,valB2), since unique keyC will contain 2 nulls.
+kind of a pathological case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
+
+another problem is that if the interface leaves certain fields null, then multiple inserts (which are rare) will cause a sql error
+rather than a rule failing.
+ 
 make example with multiple relations, all in one table
 check delete and insert on that
 
 put column uniqueness in info
 
-figure out how to prevent mysql from inserting '', or make a column wide insert that has null for other columns (requires more table info in php world)
-does a '' count as null for rule checking? Then the above is no problem
+support editing on interface atom (also possible in old prototype)
+what happens when we change it? does it even make sense? what if interface is not a relation and subinterfaces are neither?
+what happens when we change an atom that has subinterfaces? explicitly update those subinterfaces? (if they have a (flip)relation)
+maybe on modification, always also update subinterfaces that are relations. If the table width already causes the update, no harm is done, but
+if table width does not cause update, unexpected behavior may occur. e.g. if rel1 is same table as parent relation, but rel2 isn't, then a [rel1: b, rel2:c] ~> aa [rel1:b, rel2:c] will cause (a,b)~>(aa,b), but not (a,c)~>(aa,c)
+
+support make new stuff. (generate unique? or ask user? both are not that hard) 
 
 update is delete+insert does not work, as delete removes all attributes in row, so add update edit op
 
@@ -114,20 +103,15 @@ function processCommand($command) {
   
   switch ($command->cmd) {
     case 'editStart':
-      $_SESSION['commandQueue'] = array();
-      showCommandQueue();
       dbStartTransaction($dbName);
       return true;
     case 'editDatabase':
       processEditDatabase($command->dbCommand);
       return true;
     case 'editCommit':
-      showCommandQueue();
       dbCommitTransaction($dbName);
       return false;
     case 'editRollback':
-      showCommandQueue();
-      $_SESSION['commandQueue']= array();
       dbRollbackTransaction($dbName);
       return false;
     default:
