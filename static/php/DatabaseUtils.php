@@ -40,18 +40,15 @@ function printBinaryTable($table) {
 }
 
 function dbStartTransaction($dbName) {
-  echo 'Start transaction';
   DB_doquer($dbName, 'START TRANSACTION');
 }
 
 function dbCommitTransaction($dbName) {
   DB_doquer($dbName, 'COMMIT');
-  echo 'Commit transaction';
 }
 
 function dbRollbackTransaction($dbName) {
   DB_doquer($dbName, 'ROLLBACK');
-  echo 'Rollback transaction';
 }
 
 function DB_debug($txt,$lvl=0){
@@ -109,7 +106,12 @@ function generateInterfaceMap($interfaces) {
 function generateInterface($db, $interface, $srcAtom) {
   $html = "";
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
-  $codomainAtoms = getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery']);
+  
+  if ($srcAtom == null)
+    $codomainAtoms = array (); // in case the table would contain (null, some atom)  
+  else
+    $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery'])); // filter, in case table contains ($srcAtom, null)
+
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something

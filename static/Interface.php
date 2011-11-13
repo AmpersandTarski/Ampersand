@@ -9,6 +9,10 @@ session_start();
 
 /*
 // todo:
+ * 
+
+todo: make clear when we are editing
+todo: modified atom values are not escaped
 
 insert goes wrong if we have [keyA, keyB, keyC] and insert (valA1,valB1) (valA2,valB2), since unique keyC will contain 2 nulls.
 kind of a pathological case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
@@ -19,7 +23,8 @@ rather than a rule failing.
 make example with multiple relations, all in one table
 check delete and insert on that
 
-put column uniqueness in info
+
+BUG: empty list has insert button to the left, or is this ok?
 
 support editing on interface atom (also possible in old prototype)
 what happens when we change it? does it even make sense? what if interface is not a relation and subinterfaces are neither?
@@ -127,14 +132,18 @@ function processEditDatabase($dbCommand) {
     error("Malformed database command, missing 'dbCmd'");
 
   switch ($dbCommand->dbCmd) {
-    case 'insert':
-      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) && array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand))
-        editInsert($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom);
+    case 'update':
+      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) &&
+          array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand) &&
+          array_key_exists('parentOrChild', $dbCommand) && array_key_exists('originalAtom', $dbCommand))
+        editUpdate($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom
+                  ,$dbCommand->parentOrChild, $dbCommand->originalAtom);
       else 
         error("Database command $dbCommand->dbCmd is missing parameters");
       break;
     case 'delete':
-      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) && array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand))
+      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) &&
+          array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand))
         editDelete($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom);
       else {
         print_r($dbCommand);
@@ -146,44 +155,57 @@ function processEditDatabase($dbCommand) {
   }
 }
 
-function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
+function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
 	global $dbName;
 	global $relationTableInfo;
 	global $conceptTableInfo;
-  echo "editInsert($rel, $isFlipped, $parentAtom, $childAtom)";
-  $src = $isFlipped ? $childAtom : $parentAtom;
-  $tgt = $isFlipped ? $parentAtom : $childAtom;
-
+	global $tableColumnInfo;
+	
+  echo "editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom).'<br/>'";
+  //$src = $isFlipped ? $childAtom : $parentAtom;
+  //$tgt = $isFlipped ? $parentAtom : $childAtom;
   
   $table = $relationTableInfo[$rel]['table'];
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
   $parentCol = $isFlipped ? $tgtCol : $srcCol;
   $childCol =  $isFlipped ? $srcCol : $tgtCol;
-
-  // if parent atom exists in a unique-valued column, we replace
   
-  if (/* parent column is unique && */ in_array($parentAtom, firstCol(DB_doquer($dbName, "SELECT $parentCol FROM $table")))) {
-    $query = "UPDATE $table SET $childCol='$childAtom' WHERE $parentCol='$parentAtom'";
+  $modifiedCol = $parentOrChild == 'parent' ? $parentCol : $childCol;
+  $modifiedAtom= $parentOrChild == 'parent' ? $parentAtom : $childAtom;
+  $stableCol   = $parentOrChild == 'parent' ? $childCol : $parentCol;
+  $stableAtom  = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
+  
+  if ($tableColumnInfo[$table][$stableCol]['unique']) {
+    $query = "UPDATE $table SET $modifiedCol='$modifiedAtom' WHERE $stableCol='$stableAtom'";
     echo "update query is $query";
     DB_doquer($dbName, $query);
   }
-  else {
-    // otherwise, simply insert tuple
-    $query = "INSERT INTO $table ($srcCol, $tgtCol) VALUES ('$src', '$tgt')";
-    //echo "Insert query is $query";
+  else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok?
+    $query = "UPDATE $table SET $stableCol='$stableAtom' WHERE $modifiedCol='$modifiedAtom'";
+    echo "update query is $query";
+    DB_doquer($dbName, $query);
+  }
+  else */ {
+    $query = 'DELETE FROM '.$table.' WHERE '.$stableCol.'=\''.$stableAtom.'\' AND '.$modifiedCol.'=\''.$originalAtom.'\';';
+    echo $query.'<br/>';
+    DB_doquer($dbName, $query);
+    $query = "INSERT INTO $table ($stableCol, $modifiedCol) VALUES ('$stableAtom', '$modifiedAtom')";
+    echo $query.'<br/>';
     DB_doquer($dbName, $query);
   }
   // if the new atom is not in its concept table, we add it
-  
   $childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
-  $conceptTable = $conceptTableInfo[$childConcept]['table'];
-  $conceptColumn = $conceptTableInfo[$childConcept]['col'];
+  $parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
+  $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
+  
+  $conceptTable = $conceptTableInfo[$modifiedConcept]['table'];
+  $conceptColumn = $conceptTableInfo[$modifiedConcept]['col'];
   //echo "Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptColumn";
   $allConceptAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
-  if (!in_array($childAtom, $allConceptAtoms)) {
+  if (!in_array($modifiedAtom, $allConceptAtoms)) {
     //echo 'not present';
-    DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$childAtom')");
+    DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$modifiedAtom')");
   } else {
     // echo 'already present';
   }
@@ -195,7 +217,7 @@ function editInsert($rel, $isFlipped, $parentAtom, $childAtom) {
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   global $dbName; 
   global $relationTableInfo;
-  echo "editDelete($rel, $isFlipped, $parentAtom, $childAtom)";
+  echo "editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom).'<br/>'";
   $src = $isFlipped ? $childAtom : $parentAtom;
   $tgt = $isFlipped ? $parentAtom : $childAtom;
   
@@ -203,7 +225,7 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
   $query = 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';';
-  echo $query;
+  echo $query.'<br/>';
   DB_doquer($dbName, $query);
 }
 
@@ -233,7 +255,10 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo topLevelInterfaceLinks($allInterfaceObjects);
   echo '</body>';
 } else {
+  echo '<div id="PhpLog">';
   $isEditing = processCommands();
+  echo '</div>';
+  
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
   

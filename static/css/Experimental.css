@@ -165,6 +165,17 @@
   ; background-color: blue
   }
 
+#PhpLog
+  { float: right
+  ; width: 500px
+  ; padding: 10px
+  ; background-color: lightblue
+  ; border-style: solid
+  ; border-width: 1px
+  ; border-color: black
+  ; clear: right
+  }
+  
 #CommandQueue
   { float: right
   ; width: 500px
@@ -173,4 +184,5 @@
   ; border-style: solid
   ; border-width: 1px
   ; border-color: black
+  ; clear: right
   }

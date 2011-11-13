@@ -13,8 +13,12 @@ function showAtom(atom) {
 
 function showDbCommand(dbCommand) {
   switch (dbCommand.dbCmd) {
-    case 'insert':
-      return 'Insert into '+dbCommand.relation+(dbCommand.isFlipped?'~':'') +': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
+    case 'update':
+      var originalPair = '('+(dbCommand.parentOrChild == 'parent' ? dbCommand.originalAtom + ',' + dbCommand.childAtom 
+                                                                  : dbCommand.parentAtom + ',' + dbCommand.originalAtom) + ')';
+      var newPair = '('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
+      return 'Update in   '+dbCommand.relation+(dbCommand.isFlipped?'~':'') +': '+
+                           (dbCommand.originalAtom =='' ? '+' : originalPair+' ~> ')+newPair;
     case 'delete':
       return 'Delete from '+dbCommand.relation+(dbCommand.isFlipped?'~':'')+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
   }
@@ -31,12 +35,15 @@ function traceDbCommands() {
     traceCommand(dbCmd);
   });
 }
-function mkDbCommandInsert(parentAtom,childAtom,relation,relationIsFlipped) {
-  return {dbCmd: 'insert', parentAtom:parentAtom, childAtom:childAtom, relation:relation, isFlipped:relationIsFlipped};
+
+// update with '' as originalAtom is insert
+function mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, parentOrChild, originalAtom) {
+  return {dbCmd: 'update', relation:relation, isFlipped:relationIsFlipped, parentAtom:parentAtom, childAtom:childAtom,
+                           parentOrChild:parentOrChild, originalAtom:originalAtom};
 }
 
-function mkDbCommandDelete(parentAtom,childAtom,relation,relationIsFlipped) {
-  return {dbCmd: 'delete', parentAtom:parentAtom, childAtom:childAtom, relation:relation, isFlipped:relationIsFlipped};
+function mkDbCommandDelete(relation, relationIsFlipped, parentAtom, childAtom) {
+  return {dbCmd: 'delete', relation:relation, isFlipped:relationIsFlipped, parentAtom:parentAtom, childAtom:childAtom};
 }
 
 function computeDbCommands() {
@@ -46,21 +53,42 @@ function computeDbCommands() {
     if (getParentTableRow($childAtom).attr('class')!='NewAtomTemplate') {
       var $containerElt = getParentContainer($childAtom);
       var relation = $containerElt.attr('relation'); 
-      var relationIsFlipped = $containerElt.attr('relationIsFlipped') ? attrBoolValue($containerElt.attr('relationIsFlipped')) : false;
-      var parentAtom = getParentAtom($childAtom).attr('atom');
-      var childAtom = $childAtom.attr('atom');
-      switch($childAtom.attr('status')) {
-        case 'new':
-          dbCommands.push(mkDbCommandInsert(parentAtom, childAtom, relation, relationIsFlipped));
-          break;
-        case 'deleted':
-          dbCommands.push(mkDbCommandDelete(parentAtom, childAtom, relation, relationIsFlipped));
-          break;
-        case 'modified':
-          originalAtom = $childAtom.attr('originalAtom');
-          dbCommands.push(mkDbCommandDelete(parentAtom, originalAtom, relation, relationIsFlipped));
-          dbCommands.push(mkDbCommandInsert(parentAtom, childAtom, relation, relationIsFlipped));
-          break;
+     
+      if (relation) {
+        var relationIsFlipped = $containerElt.attr('relationIsFlipped') ? attrBoolValue($containerElt.attr('relationIsFlipped')) : false;
+        var $parentAtom = getParentAtom($childAtom);
+        var parentAtom = $parentAtom.attr('atom');
+        var childAtom = $childAtom.attr('atom');
+
+        // parent deleted does not affect child
+        // if parent is new, then there will only be new children which are handled below. no need to do anything for parent
+        
+        if( $parentAtom.attr('status') == 'modified') {
+           if ($childAtom.attr('status') != 'new' && $childAtom.attr('status') != 'deleted' ) {
+              var originalAtom = $parentAtom.attr('originalAtom');
+              var unmodifiedChildAtom = $childAtom.attr('status')=='modified' ?  $childAtom.attr('originalAtom') : childAtom;
+              // we want to delete/update the original tuple with the original child, not a modified one
+              dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, unmodifiedChildAtom, 'parent', originalAtom));
+            }
+        }
+
+        switch($childAtom.attr('status')) {
+          case 'new':
+            dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', ''));
+            break;
+          case 'deleted':
+            dbCommands.push(mkDbCommandDelete(relation, relationIsFlipped, parentAtom, childAtom));
+            break;
+          case 'modified':
+            if ($parentAtom.attr('status') != 'new' && $childAtom.attr('status') != 'deleted' ) {
+              var originalAtom = $childAtom.attr('originalAtom');
+              // if parent is modified, the original tuple will already have been deleted (tree traversal handles parent first)
+              // so we can update the tuple with the modified parent. Hence no special case for parent with status=modified
+              dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', originalAtom));
+              
+            }
+            break;
+        }     
       }
     }
   });
@@ -80,6 +108,8 @@ function sendCommands(commandArray) {
 
 function initialize(interfacesMap) {
   console.log('initialize');
+  if($('#PhpLog').children().length==0) 
+    $('#PhpLog').remove();
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
     commandQueue = new Array();
     setEditHandlers();
