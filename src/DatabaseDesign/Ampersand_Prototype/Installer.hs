@@ -64,9 +64,9 @@ where
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
              ++ indentBlock 17
-                    ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ nul
+                    ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ "DEFAULT NULL"-- ++ nul
                       | (f,comma)<-zip (tblfields plug) ('(':repeat ',')
-                      , let nul = if fldnull f then "" else " NOT NULL"
+                      --, let nul = if fldnull f then "" else " NOT NULL"
                       , let autoIncr = if fldauto f
                                        then " AUTO_INCREMENT" else ""
                       ]
