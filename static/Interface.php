@@ -267,7 +267,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).' editing="'.($isEditing?'true':'false').'">';
   // todo: maybe remember editing? (not an issue now, since during editing there is no navigation)
   
-  echo '<h3>Interface \''.htmlSpecialChars($interface).'\' for atom \''.htmlSpecialChars($atom).'\'</h3>';
+  echo '<h3>'.($isEditing?'Editing interface':'Interface').' \''.htmlSpecialChars($interface).'\' for atom \''.htmlSpecialChars($atom).'\'</h3>';
   echo '<button class="EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="CancelButton" onclick="cancelEditing()">Cancel</button>';

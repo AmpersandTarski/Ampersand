@@ -1,5 +1,18 @@
 var commandQueue = new Array();
 
+function initialize(interfacesMap) {
+  console.log('initialize');
+  if($('#PhpLog').children().length==0) 
+    $('#PhpLog').remove();
+  if ($('#AmpersandRoot').attr('editing') == 'true') {  
+    commandQueue = new Array();
+    setEditHandlers();
+    traceDbCommands(); // to initialize
+  }
+  else
+    setNavigationHandlers(interfacesMap);
+}
+
 function queueCommands(commandArray) {
   jQuery.map(commandArray, function (command) {
     $('.CommandQueue').append(showDbCommand(command)+'<br>');
@@ -23,17 +36,6 @@ function showDbCommand(dbCommand) {
       return 'Delete from '+dbCommand.relation+(dbCommand.isFlipped?'~':'')+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
   }
   return 'Undefined command: '+dbCommand;
-}
-
-function traceCommand(dbCmd) {
-  $('#CommandQueue').append('<div>'+showDbCommand(dbCmd)+'</div>');
-}
-
-function traceDbCommands() {
-  $('#CommandQueue').children().remove(); 
-  computeDbCommands().map( function(dbCmd) {
-    traceCommand(dbCmd);
-  });
 }
 
 // update with '' as originalAtom is insert
@@ -106,17 +108,17 @@ function sendCommands(commandArray) {
   });
 }
 
-function initialize(interfacesMap) {
-  console.log('initialize');
-  if($('#PhpLog').children().length==0) 
-    $('#PhpLog').remove();
-  if ($('#AmpersandRoot').attr('editing') == 'true') {  
-    commandQueue = new Array();
-    setEditHandlers();
-    $('#AmpersandRoot').prepend('<div id=CommandQueue></div>');
-  }
-  else
-    setNavigationHandlers(interfacesMap);
+function traceCommand(dbCmd) {
+  $('#CommandQueue').append('<div>'+showDbCommand(dbCmd)+'</div>');
+}
+
+function traceDbCommands() {
+  $('#CommandQueue').remove();
+  $('#AmpersandRoot').prepend('<div id=CommandQueue></div>');
+  $('#CommandQueue').append('<div><b>Edit operations:</b></div>');
+  computeDbCommands().map( function(dbCmd) {
+    traceCommand(dbCmd);
+  });
 }
 
 function startEditing() {
