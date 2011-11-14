@@ -673,7 +673,7 @@ chpDiagnosis lev fSpec flags
      multviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-multrules fSpec, let ps=ruleviolations r, not (null ps)]
 
   violtable r ps
-      = if isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
+      = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
         then Table []
              [AlignLeft]
              [0.0]

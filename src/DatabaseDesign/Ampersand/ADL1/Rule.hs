@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.Rule    ( 
-                consequent, antecedent, rulefromProp, isaRule, ruleviolations)     
+                consequent, antecedent, rulefromProp, isaRule, ruleviolations, hasantecedent)     
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos             
@@ -18,6 +18,12 @@ where
    isaRule Ru{rrfps=FileLoc(FilePos(_,_,str))} = str == "ISA"
    isaRule _ = False
 
+   hasantecedent :: Rule -> Bool
+   hasantecedent r  
+    = case rrexp r of
+        EEqu{} -> True
+        EImp{} -> True
+        _      -> False
    antecedent :: Rule -> Expression
    antecedent r
     = case rrexp r of
