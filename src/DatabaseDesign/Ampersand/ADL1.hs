@@ -22,7 +22,7 @@ module DatabaseDesign.Ampersand.ADL1
            , isaRule
            , FilePos(..), Origin(..), Pos(..), Traced(..)
            , makeDeclaration
-           , antecedent, notCpl, isCpl
+           , antecedent,hasantecedent, notCpl, isCpl
            , Signaling(..)
            , Association(..), Relational(..)
            , Label(..)
@@ -68,4 +68,4 @@ where
    import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops,flipProps)
    import DatabaseDesign.Ampersand.ADL1.Rule                       (
                                           rulefromProp, isaRule, ruleviolations
-                                         ,consequent,antecedent)
+                                         ,consequent,antecedent,hasantecedent)
