@@ -334,12 +334,15 @@ instance Eq PlugSQL where
   x==y = name x==name y
 
 
--- In a concept lookup, you'll get the plugs that contain the relevant concept table.
-lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
-lookupCpt fSpec cpt
-   = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-     [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-     [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
+-- In a concept lookup, you'll get the plug that contains the relevant concept table.
+lookupCpt :: Fspc -> A_Concept -> Maybe (PlugSQL,SqlField)
+lookupCpt fSpec cpt = case results of
+                        []       -> Nothing
+                        [result] -> Just result
+                        _        ->  fatal 342 $ "Concept '"++name cpt++"' has multiple concept tables."
+ where results = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+                 [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+                 [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
 
 data SqlField = Fld { fldname     :: String
                     , fldexpr     :: Expression
