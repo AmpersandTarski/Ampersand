@@ -1,9 +1,12 @@
 module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
+import DatabaseDesign.Ampersand.Fspec.Fspec
+
 import DatabaseDesign.Ampersand_Prototype.CoreImporter  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 import Data.Maybe
+import Control.Monad
 import System.FilePath               
 import DatabaseDesign.Ampersand_Prototype.Version 
 
@@ -14,8 +17,10 @@ generateAll fSpec opts =
  do { verboseLn opts "Experimental Generation"
     ; writePrototypeFile "Interfaces.php" $ generateInterfaces fSpec opts
     
---    ; verboseLn opts "Generated tables\n"
---    ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
+    ; when (development opts) $ 
+       do { verboseLn opts "Generated tables\n"
+          ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
+          }
     }
   where
     writePrototypeFile fname content =
@@ -24,6 +29,7 @@ generateAll fSpec opts =
         ; writeFile (combine (dirPrototype opts) fname) content
         }
  
+-- lookupCpt
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
@@ -37,8 +43,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "$conceptTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [(showPhpStr $ name c)++" => array ('table' => "++showPhpStr table++", 'col' => "++showPhpStr srcCol++")"] 
-         | c <- concs fSpec, (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel $ I c)]) ++
+         [ [(showPhpStr $ name c)++" => array ('table' => "++showPhpStr (name plug)++", 'col' => "++showPhpStr (fldname conceptField)++")"] 
+         | c <- concs fSpec, Just (plug,conceptField) <- [lookupCpt fSpec c]]) ++
   [ ""
   , "$tableColumnInfo ="
   , "  array" ] ++
