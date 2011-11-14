@@ -20,8 +20,12 @@ function queueCommands(commandArray) {
   commandQueue = commandQueue.concat(commandArray);
 }
 
+function showRelation(relation, isFlipped) {
+  return '<span style="font-family: Arial">'+relation+(isFlipped?'~':'')+'</span>';  
+}
+
 function showAtom(atom) {
-  return atom ? atom : "EMPTY";
+  return atom ? atom : '<span style="color:red">EMPTY</span>';
 }
 
 function showDbCommand(dbCommand) {
@@ -30,10 +34,10 @@ function showDbCommand(dbCommand) {
       var originalPair = '('+(dbCommand.parentOrChild == 'parent' ? dbCommand.originalAtom + ',' + dbCommand.childAtom 
                                                                   : dbCommand.parentAtom + ',' + dbCommand.originalAtom) + ')';
       var newPair = '('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
-      return 'Update in   '+dbCommand.relation+(dbCommand.isFlipped?'~':'') +': '+
-                           (dbCommand.originalAtom =='' ? '+' : originalPair+' ~> ')+newPair;
+      return 'Update in   '+ showRelation(dbCommand.relation,dbCommand.isFlipped) +': '+
+                           (dbCommand.originalAtom =='' ? 'add ' : originalPair+' ~> ')+newPair;
     case 'delete':
-      return 'Delete from '+dbCommand.relation+(dbCommand.isFlipped?'~':'')+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
+      return 'Delete from '+showRelation(dbCommand.relation,dbCommand.isFlipped)+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
   }
   return 'Undefined command: '+dbCommand;
 }
@@ -123,14 +127,9 @@ function traceDbCommands() {
 
 function startEditing() {
   sendCommands([{cmd: 'editStart'}]);
-  /* code below is for dynamic editstart (without refreshing page from server)
-  $('.Atom').unbind('click').css("cursor","default").css("color","black"); 
-  $('#AmpersandRoot').attr('editing','True');
-  setEditHandlers();
-*/
 }
 
-function commitEditing() {
+function getEmptyAtomsNotInTemplates() {
   $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
     if ($(this).parents().filter('.NewAtomTemplate').length)
       return null;
@@ -138,6 +137,11 @@ function commitEditing() {
       return $(this);
     }
   });
+  return $emptyAtomsNotInTemplates;
+}
+
+function commitEditing() {
+  $emptyAtomsNotInTemplates = getEmptyAtomsNotInTemplates();
   
   if ($emptyAtomsNotInTemplates.length > 0) {
     alert('Please fill out all <new> atoms first.');
@@ -156,12 +160,6 @@ function commitEditing() {
 
 function cancelEditing() {
   sendCommands([{cmd: 'editRollback'}]);
-  /* code below is for dynamic editrollback (without refreshing page from server)
-// maybe there's an easy way to prevent having to do setNavigationHandlers again (check for 'editing' in the click handler)
-  $('.Atom').unbind('click');
-  $('#AmpersandRoot').attr('editing','False');
-  setNavigationHandlers(interfacesMap);
-  */
 }
 
 // navigation
