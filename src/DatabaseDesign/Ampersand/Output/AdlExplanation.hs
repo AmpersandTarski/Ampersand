@@ -83,8 +83,8 @@ instance Explainable Declaration where
        case l of
          Dutch  
              | null ([Sym,Asy]         >- multiplicities d) -> [Emph [Str (name d)]]
-                                                                ++[Str " is een eigenschap van "]
-                                                                ++[Str ((unCap.plural Dutch .name.source) d)]
+                                                                ++[Str " is een eigenschap van een "]
+                                                                ++[Str ((unCap.name.source) d)]
                                                                 ++[Str "."]
              | null ([Sym,Rfx,Trn]     >- multiplicities d) -> [Emph [Str (name d)]]
                                                                 ++[Str " is een equivalentierelatie tussen "]
@@ -192,8 +192,8 @@ instance Explainable Declaration where
 
          English 
               | null ([Sym,Asy]         >- multiplicities d) -> [Emph [Str (name d)]]
-                                                              ++[Str " is a property of "]
-                                                              ++[Str ((unCap.plural English .name.source) d)]
+                                                              ++[Str " is a property of a "]
+                                                              ++[Str ((unCap.name.source) d)]
                                                               ++[Str "."]
               | null ([Sym,Rfx,Trn]     >- multiplicities d) -> [Emph [Str (name d)]]
                                                               ++[Str " is an equivalence relation on "]
