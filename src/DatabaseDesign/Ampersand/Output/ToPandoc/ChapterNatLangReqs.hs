@@ -103,8 +103,8 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
            thisThemeRels = [r | r<-still2doRelsPre, r `eleM` mors thisThemeRules] `uni`            -- all relations used in this theme's rules
                            [ makeRelation d | d<-declarations x, (not.null) (multiplicities d)] -- all relations used in multiplicity rules
            rels2PrintLater = still2doRelsPre >- thisThemeRels
-           thisThemeCdefs = [(c,cd) |(c,cd)<- still2doCdefsPre, c `eleM` concs thisThemeRules]
-           thisThemeCpurps = [(c,ps) |(c,ps)<- still2doCpurpPre, c `eleM` concs thisThemeRules]
+           thisThemeCdefs = [(c,cd) |(c,cd)<- still2doCdefsPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
+           thisThemeCpurps = [(c,ps) |(c,ps)<- still2doCpurpPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)]
            cDefs2PrintLater = still2doCdefsPre >- thisThemeCdefs
            cPurps2PrintLater = still2doCpurpPre >- thisThemeCpurps
            stuff2PrintLater = (cDefs2PrintLater, cPurps2PrintLater, rels2PrintLater, rules2PrintLater)
@@ -154,10 +154,10 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     ccds -> case language flags of
                               Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
                                                        ([] ,_) -> []
-                                                       ([_],1) -> [ Str $ "In het volgende wordt de taal geÃ¯ntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
+                                                       ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
                                                                   commaNLPandoc (Str "en") cs++
-                                                                  [ Str ". Daarna worden de basiszinnen en regels geÃ¯ntroduceerd."]
+                                                                  [ Str ". Daarna worden de basiszinnen en regels geïntroduceerd."]
                                                        ([c],_) -> [ Str "Deze sectie introduceert het concept "
                                                                   , c]
                                                        (cs ,_) -> [ Str "Deze sectie introduceert de concepten "]++
@@ -167,7 +167,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                  (let cs = [(c,cds) | (c,cds)<-ccds, length cds>1] in
                                                   case (cs, length cs==length ccds) of
                                                    ([] ,   _  ) -> []
-                                                   ([(c,_)]  , False) -> [ Str $ "EÃ©n daarvan, "++name c++", heeft meerdere definities. " ]
+                                                   ([(c,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
                                                    (_        , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst) cs)++[Str " meerdere definities. "]
                                                    ([(_,cds)], True ) -> [ Str $ "Deze heeft "++count flags (length cds) "definitie"++". " ]
                                                    (_        , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
