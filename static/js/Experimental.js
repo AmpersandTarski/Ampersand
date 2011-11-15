@@ -250,7 +250,7 @@ function setEditHandlersBelow($elt) {
     else {
       $atomElt.attr('status','deleted');
       getParentTableRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
-      $atomElt.find('.Interface').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
+      $atomElt.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
     
     traceDbCommands();
@@ -277,6 +277,9 @@ function setEditHandlersBelow($elt) {
 function startAtomEditing($atom) {
   var $atomName = $atom.find('>.AtomName');
   var atom = $atom.attr('atom');
+  if ($atom.attr('status')=='deleted')
+    return;
+  
   $textfield = $('<input type=text size=1 style="width:100%" value="'+atom+'"/>');
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);

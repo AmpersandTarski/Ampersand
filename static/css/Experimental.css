@@ -8,12 +8,7 @@ table
   { width: 100%
   }
   
-.Atom[hasInterface=single]>.AtomName 
-  { cursor: pointer
-  ; color: blue
-  }
-  
-.Atom[hasInterface=multiple].AtomName 
+.Atom[hasInterface]>.AtomName 
   { cursor: pointer
   ; color: blue
   }

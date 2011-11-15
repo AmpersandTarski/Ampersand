@@ -17,7 +17,7 @@ button.button { border:none; font-size:80%; width: 120px; height: 30px; backgrou
 button.button:hover { background-position: 0px -30px; color: white; }
 
 
-.AtomName 
+.AtomName
   { font-family: Arial
   ; font-style: bold
   ; font-size: 13px
@@ -37,6 +37,9 @@ button.button:hover { background-position: 0px -30px; color: white; }
   }
 [editing=false] .Atom[hasInterface=multiple]>.AtomName:hover 
   { border-bottom: 1px dotted #BF1E74
+  }
+[editing=true] .Atom[hasInterface]>.AtomName 
+  { color: black
   }
 
 
