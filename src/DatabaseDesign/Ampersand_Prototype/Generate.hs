@@ -33,6 +33,8 @@ generateAll fSpec opts =
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
+  , "$isDev = "++showPhpBool (development opts)++";"
+  , ""
   , "$relationTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","

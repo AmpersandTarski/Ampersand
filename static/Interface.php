@@ -2,7 +2,7 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require "Interfaces.php"; // defines $dbName, $relationTableInfo and $allInterfaceObjects
+require "Interfaces.php"; // defines $dbName, $isDev, $relationTableInfo and $allInterfaceObjects
 require "php/DatabaseUtils.php";
 
 session_start();
@@ -259,9 +259,8 @@ function init() {
 </script>
 </head>
 <body onload="init()">
+<div id="Header"><div id="Decoration"></div></div>
 <?php
-echo '<div id="Header"><div id="Decoration"></div></div>';
-
 echo '<div id="TopLevelInterfaces">';
 echo topLevelInterfaceLinks($allInterfaceObjects);
 echo '</div>';
@@ -270,15 +269,17 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<h3>Top-level interfaces</h3>';
   echo topLevelInterfaceLinks($allInterfaceObjects);
 } else {
-  echo '<div id="PhpLog">';
-  $isEditing = processCommands();
+  
+  echo '<div id="PhpLog" dev="'.($isDev?'true':'false').'">'; // We cannot put PhpLog inside AmpersandRoot since its editing
+  $isEditing = processCommands();                            // attribute depends on result of processCommands. Hence, the duplicated dev attr.
   echo '</div>';
   
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
   
   // store the interface and atom as attrs of body and set editing to true or false
-  echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).' editing="'.($isEditing?'true':'false').'">';
+  echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
+       ' editing="'.($isEditing?'true':'false').'" dev="'.($isDev?'true':'false').'">';
   // todo: maybe remember editing? (not an issue now, since during editing there is no navigation)
   
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';

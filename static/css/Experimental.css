@@ -13,17 +13,27 @@ table
   ; color: blue
   }
 
-.Atom[status=deleted]>.AtomName
+
+
+[editing=true] tr[rowStatus=deleted]
+  { display: none
+  }
+
+[dev=true][editing=true] tr[rowStatus=deleted]
+  { display: table-row
+  }
+[dev=true][editing=true] .Atom[status=deleted]>.AtomName
   { text-decoration: line-through
   }
 
-.Atom[status=modified]>.AtomName 
+[dev=true][editing=true] .Atom[status=modified]>.AtomName 
   { font-style: italic
   }
   
-.Atom[status=new]>.AtomName
-  { color: blue
+[dev=true][editing=true] .Atom[status=new]>.AtomName 
+  { color:blue
   }
+
 
 .Atom[atom='']>.AtomName:after
   { content: "<empty>";
@@ -191,7 +201,11 @@ table
   ; background-color: blue
   }
 
-#PhpLog
+#PhpLog[dev=false]
+  { display: none
+  }
+  
+#PhpLog[dev=true]
   { float: right
   ; width: 500px
   ; padding: 10px
@@ -202,7 +216,10 @@ table
   ; clear: right
   }
   
-#CommandQueue
+[dev=false] #CommandQueue
+  { display: none
+  }
+[dev=true] #CommandQueue
   { float: right
   ; width: 500px
   ; padding: 10px
