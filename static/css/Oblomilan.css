@@ -1,0 +1,107 @@
+@CHARSET "UTF-8";
+
+body { font-family: Arial, Helvetica, sans-serif; color: #333333; line-height: 150%;}
+a { text-decoration: none; }
+
+#header { width: 100%;height: 116px; background: white; padding:0px, margin:0px }
+#decoration { float: right; height: 116px; width: 709px; background: url(../images/header_decoration.jpg) no-repeat;}
+
+#TopLevelInterfaces ul { background: #333333 url(../images/menu_bg.jpg) repeat-x bottom center; padding: 0px 0px 5px 10px
+                       ; margin: 0px}
+#TopLevelInterfaces ul li { list-style: none; display:inline}
+#TopLevelInterfaces ul li a { padding: 3px 20px 2px 20px; font-size: 15px; color: white; height:100% }
+#TopLevelInterfaces ul li a:hover { background: white; color: #BF1E74; }
+
+button.button { border:none; font-size:80%; width: 120px; height: 30px; background: url(../images/button.gif) no-repeat 0px 0px
+              ; text-align: center; font-weight: bold; color: #333; margin-right: 20px; }
+button.button:hover { background-position: 0px -30px; color: white; }
+
+
+.AtomName 
+  { font-family: Arial
+  ; font-style: bold
+  ; font-size: 13px
+  }
+
+[editing=false] .Atom[hasInterface]>.AtomName 
+  { cursor: pointer
+  ; color: #1A9AEA
+  }
+[editing=false] .Atom[hasInterface=multiple]>.AtomName 
+  { cursor: pointer
+  ; color: #1A9AEA
+  ; border-bottom: 1px dotted #1A9AEA;
+  }
+[editing=false] .Atom[hasInterface]>.AtomName:hover 
+  { color: #BF1E74
+  }
+[editing=false] .Atom[hasInterface=multiple]>.AtomName:hover 
+  { border-bottom: 1px dotted #BF1E74
+  }
+
+
+#AmpersandRoot
+  { padding-left: 20px
+  }
+  
+#AmpersandRoot > .Interface> .Label 
+  { font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px
+  } 
+
+#AmpersandRoot > .Interface> .Atomic 
+  { margin: 0px
+  ; border-width: 0px
+  } 
+
+#AmpersandRoot > .Interface> .Atomic > .Atom > .AtomName 
+  { display: none
+  } 
+
+
+#AmpersandRoot > .Interface> .Atomic > .Atom > .InterfaceList 
+  { border: none
+  ; padding: 0px
+  } 
+
+#AmpersandRoot > .Interface> .Atomic > .Atom > .InterfaceList > .Interface
+  { float: left
+  ; border-style: solid
+  ; border-color: #CDD8DE
+  ; border-width: 1px
+  ; -moz-border-radius: 5px       /* rounded corners for Firefox */
+  ; -webkit-border-radius: 5px    /* rounded corners for Safari */
+  ; padding: 10px
+  ; margin-left: 0px
+  ; margin-right: 20px
+  }
+  
+#AmpersandRoot > .Interface> .Atomic > .Atom > .InterfaceList > .Interface > .Label
+  { font-size: 18px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
+  }
+.Label
+  { font-size: 13px
+  }
+  
+
+
+/* Give deletestub width 0 when not editing. Gives cleaner interface, but causes a jump on edit start */
+[editing=false] .AtomList .DeleteStub
+  { display: none
+  }
+
+.Container
+  { margin: 0px
+  }
+  
+.AtomListElt 
+  { padding: 0px
+  } 
+
+.InterfaceList 
+  { margin-top: 10px
+  ; padding: 5px
+  } 
+  
+.Interface 
+  { margin-bottom: 4px
+  }
