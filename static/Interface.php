@@ -165,11 +165,11 @@ function processEditDatabase($dbCommand) {
 }
 
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
-	global $dbName;
-	global $relationTableInfo;
-	global $conceptTableInfo;
-	global $tableColumnInfo;
-	
+  global $dbName;
+  global $relationTableInfo;
+  global $conceptTableInfo;
+  global $tableColumnInfo;
+  
   echo "editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom).'<br/>'";
   //$src = $isFlipped ? $childAtom : $parentAtom;
   //$tgt = $isFlipped ? $parentAtom : $childAtom;
@@ -243,6 +243,7 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 <html>
 <head>
 <link href="css/Experimental.css" rel="stylesheet" type="text/css"/>
+<link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
@@ -257,12 +258,17 @@ function init() {
 
 </script>
 </head>
+<body onload="init()">
 <?php
+echo '<div id="Header"><div id="Decoration"></div></div>';
+
+echo '<div id="TopLevelInterfaces">';
+echo topLevelInterfaceLinks($allInterfaceObjects);
+echo '</div>';
+
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
-  echo '<body onload="init()">';
   echo '<h3>Top-level interfaces</h3>';
   echo topLevelInterfaceLinks($allInterfaceObjects);
-  echo '</body>';
 } else {
   echo '<div id="PhpLog">';
   $isEditing = processCommands();
@@ -272,16 +278,15 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   $atom=$_REQUEST['atom'];
   
   // store the interface and atom as attrs of body and set editing to true or false
-  echo '<body onload="init()">';
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).' editing="'.($isEditing?'true':'false').'">';
   // todo: maybe remember editing? (not an issue now, since during editing there is no navigation)
   
-  echo '<h3>'.($isEditing?'Editing interface':'Interface').' \''.htmlSpecialChars($interface).'\' for atom \''.htmlSpecialChars($atom).'\'</h3>';
-  echo '<button class="EditButton" onclick="startEditing()">Edit</button>';
-  echo '<button class="SaveButton" onclick="commitEditing()">Save</button>';
-  echo '<button class="CancelButton" onclick="cancelEditing()">Cancel</button>';
+  echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
+  echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
+  echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
   echo generateInterface($dbName, $allInterfaceObjects[$interface], $atom); 
 
-  echo '</div></body>';
+  echo '</div>';
 } ?>
+</body>
 </html>
