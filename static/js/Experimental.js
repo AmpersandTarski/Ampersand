@@ -177,8 +177,6 @@ function setNavigationHandlers(interfacesMap) {
     var atom = $atom.attr('atom');
     var interfaces = interfacesMap[concept];
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
-      $(this).css("cursor","pointer");
-      $(this).css("color","blue"); // todo add an attr and use stylesheet for this
       $(this).click(function (event) {     // todo: figure out return value for click handlers
         if (interfaces.length == 1)
           navigateTo(interfaces[0], atom);

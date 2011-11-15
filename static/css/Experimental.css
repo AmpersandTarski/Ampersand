@@ -1,5 +1,21 @@
+body 
+ { margin: 0px	
+ }
+table
+  { border: 0px
+  }
 .AtomName 
   { width: 100%
+  }
+  
+.Atom[hasInterface=single]>.AtomName 
+  { cursor: pointer
+  ; color: blue
+  }
+  
+.Atom[hasInterface=multiple].AtomName 
+  { cursor: pointer
+  ; color: blue
   }
 
 .Atom[status=deleted]>.AtomName
@@ -28,7 +44,6 @@
   { font-family: Arial
   ; font-style: bold
   ; color: #707070
-  ; background-color: #505050);
   }
 
 .AtomList
@@ -61,16 +76,19 @@
 [editing=true] .AtomList[hover=true]
   { border-color: #909090
   }
-  
+
 .Container
   { empty-cells:show 
   ; background-color: white
-  ; margin: 2px
-  ; border-color: transparent
+  ; margin: 4px
+  }
+.Container[relation]
+  { border-color: transparent
   ; border-style: solid
   ; border-width: 2px 
-  }
+  ; padding-right: 4px
   
+  }
 [editing=true] .Container[relation]
   { border-color: #0080ff
   ; background-color: #f0f0f0
@@ -87,7 +105,14 @@
 .AtomList .DeleteStub
   { width: 25px
   }
-  
+
+[editing=true] .AtomList>tbody>tr>.DeleteStub
+  { display:none
+  }
+[editing=true] .AtomList[relation]>tbody>tr>.DeleteStub
+  { display:block
+  }
+
 [editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub
   { background-image: url('../images/DeleteButton.png')
   ; background-repeat:no-repeat
@@ -102,12 +127,18 @@
   { display: none
   }
 
+
 [editing=false] .AtomList>tbody>tr>.InsertStub /*hide row with insert atom stub*/
   { display: none
   }
-  
+
+[editing=true] .AtomList[relation]>tbody>tr>.InsertStub
+  { display:block /* only show the insert stub when there is an editable relation*/
+  }
+
 .AtomList .InsertStub
   { visibility: hidden
+  ; display:none 
   ; padding-left: 7px
   ; padding-right: 7px
   ; font-family: Arial
@@ -131,7 +162,7 @@
   ; cursor: default
   }
 
-.Interface 
+.InterfaceList 
   { border-style: solid
   ; border-width: 1px
   ; padding-left: 5px
