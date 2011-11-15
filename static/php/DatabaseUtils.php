@@ -87,10 +87,12 @@ function DB_doquer($DbName, $quer,$debug=5)
 ///////// Interface stuff (does not belong here) /////////
 
 function topLevelInterfaceLinks($interfaces) {
+  echo '<ul>';
   foreach($interfaces as $interface) {
     if ($interface['concept']=='ONE')
-      echo '<a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a><br>';
+      echo '<li><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a></li>';
   }
+  echo '</ul>';
 }
 
 function generateInterfaceMap($interfaces) {
@@ -103,7 +105,9 @@ function generateInterfaceMap($interfaces) {
   echo '}';
 }
 
-function generateInterface($db, $interface, $srcAtom) {
+
+
+function generateInterface($db, $interface, $srcAtom, $depth=0) {
   $html = "";
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
   
@@ -112,27 +116,31 @@ function generateInterface($db, $interface, $srcAtom) {
   else
     $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery'])); // filter, in case table contains ($srcAtom, null)
 
+  
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
   $isUni = false; // temporarily disabled the univalence check (so everything is a list) $interface['isUnivalent'];   
-  if (!$isUni) $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
+  if ($depth>0 && !$isUni) $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
+  
+ 
+  // top level atom is never a list
   
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
-  if (!$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
+  if ($depth>0 && !$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
   else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
   foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
-    if (!$isUni) emit($html, '<tr '.($tgtAtom==null?' class=NewAtomTemplate':'').'><td class=DeleteStub>&nbsp;</td><td class=AtomListElt>');
-    emit($html, generateInterfaceList($db, $interface, $tgtAtom));         // &nbsp; is to prevent empty strings from having height 1
-    if (!$isUni) emit($html,'</td></tr>'); 
+    if ($depth>0 && !$isUni) emit($html, '<tr '.($tgtAtom==null?' class=NewAtomTemplate':'').'><td class=DeleteStub>&nbsp;</td><td class=AtomListElt>');
+    emit($html, generateInterfaceList($db, $interface, $tgtAtom, $depth));         // &nbsp; is to prevent empty strings from having height 1
+    if ($depth>0 && !$isUni) emit($html,'</td></tr>'); 
   }
   
-  if (!$isUni) emit($html, '<tr><td></td><td class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
+  if ($depth>0 && !$isUni) emit($html, '<tr><td></td><td class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
   else         emit($html, '</div>');
   return $html;
 }
 
-function generateInterfaceList($db, $parentInterface, $atom) {
+function generateInterfaceList($db, $parentInterface, $atom, $depth) {
   $html = "";
   $interfaces = $parentInterface['subInterfaces'];
 
@@ -145,7 +153,7 @@ function generateInterfaceList($db, $parentInterface, $atom) {
   if (count($interfaces) > 0) {
     emit($html, '<div class=Interface>');
     foreach($interfaces as $interface) {
-      emit($html, generateInterface($db, $interface, $atom));
+      emit($html, generateInterface($db, $interface, $atom, $depth+1));
     }
     emit($html, '</div>'); // div class=Interface
   }
