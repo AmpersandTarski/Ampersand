@@ -72,7 +72,7 @@ function computeDbCommands() {
         if( $parentAtom.attr('status') == 'modified') {
            if ($childAtom.attr('status') != 'new' && $childAtom.attr('status') != 'deleted' ) {
               var originalAtom = $parentAtom.attr('originalAtom');
-              var unmodifiedChildAtom = $childAtom.attr('status')=='modified' ?  $childAtom.attr('originalAtom') : childAtom;
+              var unmodifiedChildAtom = $childAtom.attr('originalatom') ?  $childAtom.attr('originalAtom') : childAtom;
               // we want to delete/update the original tuple with the original child, not a modified one
               dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, unmodifiedChildAtom, 'parent', originalAtom));
             }
@@ -83,7 +83,10 @@ function computeDbCommands() {
             dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', ''));
             break;
           case 'deleted':
-            dbCommands.push(mkDbCommandDelete(relation, relationIsFlipped, parentAtom, childAtom));
+            console.log('parent '+$childAtom.attr('status'));
+            var unmodifiedParentAtom = $parentAtom.attr('originalAtom') ?  $parentAtom.attr('originalAtom') : parentAtom;
+            var unmodifiedChildAtom = $childAtom.attr('originalatom') ?  $childAtom.attr('originalAtom') : childAtom;
+            dbCommands.push(mkDbCommandDelete(relation, relationIsFlipped, unmodifiedParentAtom, unmodifiedChildAtom));
             break;
           case 'modified':
             if ($parentAtom.attr('status') != 'new' && $childAtom.attr('status') != 'deleted' ) {
@@ -248,6 +251,8 @@ function setEditHandlersBelow($elt) {
     if ($atomElt.attr('status')=='new')
       getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
+      if ($atomElt.attr('status') == 'modified') // restore the original atom name on delete
+        $atomElt.find('.AtomName').text($atomElt.attr('originalAtom'));
       $atomElt.attr('status','deleted');
       getParentTableRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
       $atomElt.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
