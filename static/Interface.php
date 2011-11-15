@@ -11,15 +11,24 @@ session_start();
 // todo:
  * 
 
-todo: make clear when we are editing
+tickets 163 & 138
+
 todo: modified atom values are not escaped
+todo: don't delete if original is null
+todo: maybe don't use column unique and not null, since these might be weaker than the multiplicities (sometimes a surjective relation will allow nulls, depending on other relations in the same table, although possibly the table prop generator is wrong and will contain non-null in that case)
+
+todo: sqlRelPlugNames also returns list. Change to maybe?
 
 insert goes wrong if we have [keyA, keyB, keyC] and insert (valA1,valB1) (valA2,valB2), since unique keyC will contain 2 nulls.
 kind of a pathological case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
 
+field editable also if it has children in an editable relation
+
 another problem is that if the interface leaves certain fields null, then multiple inserts (which are rare) will cause a sql error
 rather than a rule failing.
  
+If stable atom is not unique, but modified is, do we want an update? Could be useful, but is kind of vague.
+
 make example with multiple relations, all in one table
 check delete and insert on that
 
@@ -181,7 +190,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
     echo "update query is $query";
     DB_doquer($dbName, $query);
   }
-  else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok?
+  else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
     $query = "UPDATE $table SET $stableCol='$stableAtom' WHERE $modifiedCol='$modifiedAtom'";
     echo "update query is $query";
     DB_doquer($dbName, $query);

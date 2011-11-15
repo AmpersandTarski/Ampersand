@@ -38,8 +38,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
-         , (table,srcCol,tgtCol) <- nub $ sqlRelPlugNames fSpec (ERel rel)]) ++
-  [ ""     -- the nub is because sqlRelPlugNames may yield multiple results, todo: why?
+         , (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel rel)]) ++
+  [ ""     -- sqlRelPlugNames may yield multiple results. TODO: also change to maybe? (like lookupCpt)
   , "$conceptTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
@@ -141,6 +141,7 @@ indent n lines = [ replicate n ' ' ++ line | line <- lines ]
 showPlug plug =  ["Table: '"++sqlname plug++"'"] ++ 
                     (indent 4 $ blockParenthesize "[" "]" "," $ map showField $ getPlugFields plug)
 
+-- TODO: maybe this one exists already
 getPlugFields (TblSQL  {fields = flds}) = flds
 getPlugFields BinSQL  { columns = (fld1,fld2)} = [fld1, fld2]
 getPlugFields ScalarSQL { column = fld} = [fld]
