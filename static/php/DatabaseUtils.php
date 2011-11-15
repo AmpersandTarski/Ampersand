@@ -105,10 +105,9 @@ function generateInterfaceMap($interfaces) {
   echo '}';
 }
 
-
-
 function generateInterface($db, $interface, $srcAtom, $depth=0) {
   $html = "";
+  emit($html, '<div class=Interface>');
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
   
   if ($srcAtom == null)
@@ -116,14 +115,14 @@ function generateInterface($db, $interface, $srcAtom, $depth=0) {
   else
     $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery'])); // filter, in case table contains ($srcAtom, null)
 
-  
+  // todo: concept in interface is actually the target concept of the relation
   // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
   // todo: maybe Container should be called Relation?
   // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
   $isUni = false; // temporarily disabled the univalence check (so everything is a list) $interface['isUnivalent'];   
   if ($depth>0 && !$isUni) $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
   
- 
+  
   // top level atom is never a list
   
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
@@ -137,6 +136,8 @@ function generateInterface($db, $interface, $srcAtom, $depth=0) {
   
   if ($depth>0 && !$isUni) emit($html, '<tr><td></td><td class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
   else         emit($html, '</div>');
+  
+  emit($html, '</div>'); // div class=Interface
   return $html;
 }
 
@@ -146,20 +147,23 @@ function generateInterfaceList($db, $parentInterface, $atom, $depth) {
 
   // if $atom is null, we are presenting a template
 
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).' status='.($atom?'unchanged':'new').'>');
-  // the old prototype did not show the atom when there are subinterfaces
+  $nrOfInterfaces = count(getInterfacesForConcept($parentInterface['concept']));
+  $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
+  
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom?'unchanged':'new').'>');
+  // can be hidden with css if necessary (old prototype did not show it)
     
-  emit($html, '<div class=AtomName>'.htmlSpecialChars($atom).'</div>');
+  emit($html, "<div class=AtomName>".htmlSpecialChars($atom).'</div>');
   if (count($interfaces) > 0) {
-    emit($html, '<div class=Interface>');
+    emit($html, '<div class=InterfaceList>');
     foreach($interfaces as $interface) {
       emit($html, generateInterface($db, $interface, $atom, $depth+1));
     }
-    emit($html, '</div>'); // div class=Interface
+    emit($html, '</div>'); // div class=InterfaceList
   }
   emit($html, '</div>'); // div class=Atom
   return $html;
-}
+  }
 
 function echoLn($str) {
   echo $str.'<br/>';
@@ -175,6 +179,15 @@ function selectCoDomain($atom, $selectRel) {
 
 
 // utils
+function getInterfacesForConcept($concept) {
+  global $allInterfaceObjects;
+  $interfacesForConcept = array();
+  foreach($allInterfaceObjects as $interface) {
+    if ($interface['concept']==$concept)
+      $interfacesForConcept[] = $interface;
+  }
+  return $interfacesForConcept;
+}
 
 function withClass($class, $elt) {
   return "<div class=$class>$elt</div>";
