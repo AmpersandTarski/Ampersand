@@ -11,11 +11,13 @@ session_start();
 // todo:
  * 
 
-tickets 163 & 138
-
+tickets 138
+todo: fix problem with lookupCpt
+todo: fix edit start. maybe even make start local
 todo: modified atom values are not escaped
 todo: don't delete if original is null
 todo: maybe don't use column unique and not null, since these might be weaker than the multiplicities (sometimes a surjective relation will allow nulls, depending on other relations in the same table, although possibly the table prop generator is wrong and will contain non-null in that case)
+todo: box shadow gebruiken?
 
 todo: sqlRelPlugNames also returns list. Change to maybe?
 
@@ -242,12 +244,12 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 
 <html>
 <head>
-<link href="css/Experimental.css" rel="stylesheet" type="text/css"/>
+<link href="css/Ampersand.css" rel="stylesheet" type="text/css"/>
 <link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
-<script src="js/Experimental.js"></script>
+<script src="js/Ampersand.js"></script>
 <script type="text/javascript">
 
 function init() {
@@ -270,8 +272,8 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo topLevelInterfaceLinks($allInterfaceObjects);
 } else {
   
-  echo '<div id="PhpLog" dev="'.($isDev?'true':'false').'">'; // We cannot put PhpLog inside AmpersandRoot since its editing
-  $isEditing = processCommands();                            // attribute depends on result of processCommands. Hence, the duplicated dev attr.
+  echo '<div id="PhpLog" dev="'.($isDev?'true':'false').'">'; // We cannot put PhpLog inside AmpersandRoot since its editing attribute
+  $isEditing = processCommands();                             // depends on result of processCommands. Hence, the duplicated dev attr.
   echo '</div>';
   
   $interface=$_REQUEST['interface'];
