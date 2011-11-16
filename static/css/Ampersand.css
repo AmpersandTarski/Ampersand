@@ -30,10 +30,10 @@ body
   { display: table-cell
   }
 .DeleteStub
-  { display: table-cell
+  { display: none
   }
 .InsertStub
-  { display: table-cell
+  { display: none
   }
 
   
@@ -129,20 +129,20 @@ body
   { background-color: #808080
   }
   
-.AtomList .DeleteStub
-  { width: 25px
+[editing=true] .AtomList[relation]>.AtomRow>.DeleteStub
+  { display: table-cell
+  ; visibility: hidden
+  ; background-image: url('../images/DeleteButton.png')
+  ; background-repeat:no-repeat
+  ; width: 25px
   }
 
-[editing=true] .AtomList>.AtomRow[rowType=Normal]>.DeleteStub
-  { display:none
-  }
 [editing=true] .AtomList[relation]>.AtomRow[rowType=Normal]>.DeleteStub
   { display:table-cell
   }
 
 [editing=true] .AtomList[hover=true]>.AtomRow[rowType=Normal]>.DeleteStub
-  { background-image: url('../images/DeleteButton.png')
-  ; background-repeat:no-repeat
+  { visibility: visible
   }
   
 [editing=true] .AtomList[hover=true]>.AtomRow>.DeleteStub:hover

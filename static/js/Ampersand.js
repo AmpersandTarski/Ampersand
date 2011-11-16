@@ -219,14 +219,13 @@ function addClickEvent($item, interface, atom) {
 // Editing
 // todo: editing -> editingHover oid
 //       explain hover
-//       clean up css, now container and AtomList are used next to each other.
 function setEditHandlers() {
   setEditHandlersBelow($('#AmpersandRoot'));
 }
 
 function setEditHandlersBelow($elt) {
 
-  $elt.find('.Container').hover(function () {
+  $elt.find('.AtomList').hover(function () {
     var $parentInterface = getParentContainer($(this));
     
     $parentInterface.attr('hover', 'false'); // todo: move to if below?
@@ -338,7 +337,7 @@ function getParentAtom($elt) {
   return $elt.parents().filter('.Atom').first();
 }
 function getParentContainer($elt) {
-  return $elt.parents().filter('.Container').first();
+  return $elt.parents().filter('.AtomList').first();
 }
 
 function getParentAtomRow($elt) {

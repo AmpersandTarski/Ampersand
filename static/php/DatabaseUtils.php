@@ -105,7 +105,7 @@ function generateInterfaceMap($interfaces) {
   echo '}';
 }
 
-function generateInterface($db, $interface, $srcAtom, $depth=0) {
+function generateInterface($db, $interface, $srcAtom) {
   $html = "";
   emit($html, '<div class=Interface>');
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
@@ -120,28 +120,26 @@ function generateInterface($db, $interface, $srcAtom, $depth=0) {
   // todo: maybe Container should be called Relation?
   // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
   $isUni = false; // temporarily disabled the univalence check (so everything is a list) $interface['isUnivalent'];   
-  if ($depth>0 && !$isUni) $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
+  $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
   
   
-  // top level atom is never a list
   
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
-  if ($depth>0 && !$isUni) emit($html, '<div class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>');
+  emit($html, '<div class="AtomList" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>');
   foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
-    if ($depth>0 && !$isUni) emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div><div class=AtomListElt>');
-    emit($html, generateInterfaceList($db, $interface, $tgtAtom, $depth));         // &nbsp; is to prevent empty strings from having height 1
-    if ($depth>0 && !$isUni) emit($html,'</div></div>'); 
+    emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div><div class=AtomListElt>');
+    emit($html, generateInterfaceList($db, $interface, $tgtAtom));
+    emit($html,'</div></div>'); 
   }
   
-  if ($depth>0 && !$isUni) emit($html, '<div class=AtomRow rowType=InsertAtomRow><div class=DeleteStub>&nbsp;</div><div class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</div></div></div>');
-  else         emit($html, '</div>');  // todo: deletestub?
+  emit($html, '<div class=AtomRow rowType=InsertAtomRow><div class=DeleteStub>&nbsp;</div>'.
+                                       '<div class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</div></div></div>');
   
   emit($html, '</div>'); // div class=Interface
   return $html;
 }
 
-function generateInterfaceList($db, $parentInterface, $atom, $depth) {
+function generateInterfaceList($db, $parentInterface, $atom) {
   $html = "";
   $interfaces = $parentInterface['subInterfaces'];
 
@@ -157,7 +155,7 @@ function generateInterfaceList($db, $parentInterface, $atom, $depth) {
   if (count($interfaces) > 0) {
     emit($html, '<div class=InterfaceList>');
     foreach($interfaces as $interface) {
-      emit($html, generateInterface($db, $interface, $atom, $depth+1));
+      emit($html, generateInterface($db, $interface, $atom));
     }
     emit($html, '</div>'); // div class=InterfaceList
   }
