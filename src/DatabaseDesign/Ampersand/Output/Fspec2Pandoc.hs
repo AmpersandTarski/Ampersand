@@ -86,8 +86,14 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
 
           -- | The following code controls the structure of the document.
           docContents
-           | diagnosisOnly flags = diagTxt
-           | otherwise           =
+           | diagnosisOnly flags         = diagTxt
+           | studentversion              =
+               chpIntroduction  level fSpec flags          ++
+               chpNatLangReqs   level fSpec flags          ++
+               caTxt                                       ++
+               daTxt                                       ++
+               glossary level fSpec flags
+           | otherwise                   =
                chpIntroduction  level fSpec flags          ++   -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
                chpNatLangReqs   level fSpec flags          ++   -- this chapter gives an account of this context in natural language.
                                                                 --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
@@ -98,17 +104,19 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                fpAnalysis level fSpec flags                ++   -- This chapter does a function point analysis on the specification.
                daTxt                                       ++   -- This chapter provides a data analysis together with a data model.
                                                                 --   It is meant for implementors who must build the system.
-               [b | studentversion, (blocks,_)<-acts, b<-blocks] ++ -- in the student version, document the activities
+               actsTxt                                     ++
                (if genEcaDoc flags then chpECArules level fSpec flags else [])    ++ -- This chapter reports on the ECA rules generated in this system.
                glossary level fSpec flags                        -- At the end, a glossary is generated.
                
-          acts = [interfaceChap level fSpec flags act | act <-fActivities fSpec]
-          pictures = if diagnosisOnly flags then diagPics else
-                     daPics++caPics++diagPics++paPics++[p | (_,pics)<-acts, p<-pics] 
-          (caTxt  ,caPics)   = chpConceptualAnalysis level fSpec flags
-          (diagTxt,diagPics) = chpDiagnosis          level fSpec flags
-          (paTxt  ,paPics)   = chpProcessAnalysis    level fSpec flags
-          (daTxt  ,daPics)   = chpDataAnalysis       level fSpec flags
+          pictures 
+           | diagnosisOnly flags         = diagPics
+           | studentversion              = daPics++caPics
+           | otherwise                   = daPics++caPics++diagPics++paPics++actsPics 
+          (caTxt  ,caPics)   = chpConceptualAnalysis      level fSpec flags
+          (diagTxt,diagPics) = chpDiagnosis               level fSpec flags
+          (paTxt  ,paPics)   = chpProcessAnalysis         level fSpec flags
+          (daTxt  ,daPics)   = chpDataAnalysis            level fSpec flags
+          (actsTxt,actsPics) = let acts=[interfaceChap level fSpec flags act | act <-fActivities fSpec] in (concat$map fst acts,concat$map snd acts)
           studentversion = theme flags == StudentTheme
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 
