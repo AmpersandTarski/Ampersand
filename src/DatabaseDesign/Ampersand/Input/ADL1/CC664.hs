@@ -318,7 +318,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           <*> (pConid <|> pString)   -- the concept name
                           <*> pString                -- the definition text
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
-                       where cd x nm = Cd x nm False
+                       where cd pos nm x ref = Cd pos nm False x "" ref
 
 
 -- A key definition looks like:   KEY Person(name, address),

@@ -29,7 +29,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"
-                       , "INTERFACE", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG"
+                       , "INTERFACE", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "TEST"
@@ -416,6 +416,7 @@ and the grammar must be disambiguated in order to get a performant parser...
                           <*> (pConid <|> pString)   -- the concept name
                           <*> ((True <$ pKey "BYPLUG") `opt` False)
                           <*> pString                -- the definition text
+                          <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 

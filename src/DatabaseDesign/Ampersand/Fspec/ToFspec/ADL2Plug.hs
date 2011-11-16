@@ -68,18 +68,20 @@ rel2plug  r totals
    where
 
    srcNm = (if isEndo r then "s" else "")++name (source r)
+   srcExpr = if   is_Tot
+             then ERel (I (source r)) 
+             else EIsc [ERel (I (source r)),ECps [ERel r,flp (ERel r)]]
    trgNm = (if isEndo r then "t" else "")++name (target r)
+   trgExpr = ERel r
    srcFld = Fld { fldname = srcNm                       
-                , fldexpr = if   is_Tot
-                            then ERel (I (source r)) 
-                            else EIsc [ERel (I (source r)),ECps [ERel r,flp (ERel r)]]
-                , fldtype = SQLVarchar 255
+                , fldexpr = srcExpr
+                , fldtype = makeSqlType (target srcExpr)
                 , fldnull = False
                 , flduniq = isUni r {- will be False -}
                 } 
    trgFld = Fld { fldname = trgNm                       
                 , fldexpr = ERel r 
-                , fldtype = SQLVarchar 255
+                , fldtype = makeSqlType (target trgExpr)
                 , fldnull = False
                 , flduniq = isInj r {- will be False -}
                 } 
@@ -112,7 +114,7 @@ rel2fld keyds                                       -- >
         e                                           -- > either ERel r or EFlp (ERel r), representing the relation from some kernel field k1 to f1
  = Fld fldName                                      -- fldname : 
        e                                            -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-       (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
+       (if isSQLId then SQLId else makeSqlType (target e))  -- fldtype :
        (maybenull e)                                -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
                                                     --           Error: only if source e is the I-field of this plug.
        (isInj e)                                    -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
@@ -317,18 +319,23 @@ makeSqlPlug context obj
                            then fatal 300 "null cLkptable."
                            else head [f |(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
-   sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
+   sqltp att = head $ [makeSqltype' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                       ++[SQLVarchar 255]
-   makeSqltype :: String -> SqlType
-   makeSqltype str = case str of
+
+makeSqlType :: A_Concept -> SqlType
+makeSqlType ONE = fatal 324 "ONE has no type."
+makeSqlType c = makeSqltype' (cpttp c)
+makeSqltype' :: String -> SqlType
+makeSqltype' str = case str of
        ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
-       ('P':'a':'s':'s':_) -> SQLPass
+       "Pass" -> SQLPass
        ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
-       ('B':'l':'o':'b':_) -> SQLBlob
-       ('S':'i':'n':'g':'l':'e':_) -> SQLSingle
-       ('D':'o':'u':'b':'l':'e':_) -> SQLDouble
+       "Blob" -> SQLBlob
+       "Single" -> SQLSingle
+       "Double" -> SQLDouble
        ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
        ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
-       ('I':'d':_) -> SQLId 
+       "Id" -> SQLId 
        ('B':'o':'o':'l':_) -> SQLBool
-       _ -> SQLVarchar 255 --TODO number
+       "" -> SQLVarchar 255
+       _ -> fatal 335 ("Unknown type: "++str)
