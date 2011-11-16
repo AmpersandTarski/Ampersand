@@ -1,10 +1,6 @@
 body 
  { margin: 0px	
  }
-
-.AtomName 
-  { width: 100%
-  }
   
 .Atom[hasInterface]>.AtomName 
   { cursor: pointer
@@ -37,7 +33,6 @@ body
 .InsertStub
   { display: none
   }
-
   
 [editing=true] .AtomRow[rowStatus=deleted]
   { display: none
@@ -195,8 +190,8 @@ body
 .InterfaceContextMenuItem
   { display: block 
   ; font-family: Arial
+  ; font-size: 15px
   ; color: black
-  ; text-decoration:none /* no underline */
   ; padding-left:6px
   ; padding-right:16px
   }
