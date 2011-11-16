@@ -143,7 +143,7 @@ parseImportFile adlText pv adlfn flags
                               verbose flags "writing pictures for atlas... "
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
                               verbose flags ("pictures for atlas written... "++show pv)
-                              atlas <- parseADL1 adlText PV2011 [] flags adlfn
+                              atlas <- parseADL1 adlText PV211 [] flags adlfn
                               myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
                               verboseLn flags "Generating pictures for atlas..."
                               sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fspec]
