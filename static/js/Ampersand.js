@@ -57,11 +57,11 @@ function computeDbCommands() {
   $('.Atom .Atom').map(function () {
     $childAtom = $(this);
     if (getParentAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
-      var $containerElt = getParentContainer($childAtom);
-      var relation = $containerElt.attr('relation'); 
+      var $atomListElt = getParentAtomList($childAtom);
+      var relation = $atomListElt.attr('relation'); 
      
       if (relation) {
-        var relationIsFlipped = $containerElt.attr('relationIsFlipped') ? attrBoolValue($containerElt.attr('relationIsFlipped')) : false;
+        var relationIsFlipped = $atomListElt.attr('relationIsFlipped') ? attrBoolValue($atomListElt.attr('relationIsFlipped')) : false;
         var $parentAtom = getParentAtom($childAtom);
         var parentAtom = $parentAtom.attr('atom');
         var childAtom = $childAtom.attr('atom');
@@ -174,9 +174,9 @@ function navigateTo(interface, atom) {
 //todo interfacesMap arg is annoying
 function setNavigationHandlers(interfacesMap) {
   $(".AtomName").map(function () {
-    $containerElt = getParentContainer($(this)); 
+    $atomListElt = getParentAtomList($(this)); 
     $atom=getParentAtom($(this));
-    concept =$containerElt.attr('concept');
+    concept =$atomListElt.attr('concept');
     var atom = $atom.attr('atom');
     var interfaces = interfacesMap[concept];
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
@@ -226,20 +226,20 @@ function setEditHandlers() {
 function setEditHandlersBelow($elt) {
 
   $elt.find('.AtomList').hover(function () {
-    var $parentInterface = getParentContainer($(this));
+    var $parentInterface = getParentAtomList($(this));
     
     $parentInterface.attr('hover', 'false'); // todo: move to if below?
     if ($(this).attr('relation'))
         $(this).attr('hover', 'true');
     }, function () {
-    $parentInterface = getParentContainer($(this));
+    $parentInterface = getParentAtomList($(this));
     if ($parentInterface.attr('relation'))
         $parentInterface.attr('hover', 'true');
     $(this).attr('hover', 'false');
   });
   $elt.find('.AtomName').click(function(){
-    var $containerElt = getParentContainer($(this));
-    var relation = $containerElt.attr('relation'); 
+    var $atomListElt = getParentAtomList($(this));
+    var relation = $atomListElt.attr('relation'); 
     if (relation) {
       startAtomEditing(getParentAtom($(this)));
     }
@@ -260,9 +260,9 @@ function setEditHandlersBelow($elt) {
     traceDbCommands();
 
   });  $elt.find('.InsertStub').click(function (event) {
-    var $containerElt = getParentContainer($(this));
+    var $atomListElt = getParentAtomList($(this));
     
-    $newAtomTemplate = $containerElt.children().filter('[rowType=NewAtomTemplate]');
+    $newAtomTemplate = $atomListElt.children().filter('[rowType=NewAtomTemplate]');
     
     $newAtomTableRow = $newAtomTemplate.clone();
 
@@ -336,7 +336,7 @@ function stopAtomEditing($atom) {
 function getParentAtom($elt) {
   return $elt.parents().filter('.Atom').first();
 }
-function getParentContainer($elt) {
+function getParentAtomList($elt) {
   return $elt.parents().filter('.AtomList').first();
 }
 
