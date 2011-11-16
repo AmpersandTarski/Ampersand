@@ -11,14 +11,15 @@ session_start();
 // todo:
  * 
 
-tickets 138
-
+ticket 138
+todo: implement navigation arrow from old prototype?
 todo: does Atom Atom in computeDbCommands also match descendants? (eg. .. ATOM .. atom .. ATOM ..)
 todo: fix edit start. maybe even make start local
 todo: modified atom values are not escaped
 todo: don't delete if original is null
 todo: maybe don't use column unique and not null, since these might be weaker than the multiplicities (sometimes a surjective relation will allow nulls, depending on other relations in the same table, although possibly the table prop generator is wrong and will contain non-null in that case)
 todo: box shadow gebruiken?
+todo: click anywhere should disable navigation context menu
 
 todo: sqlRelPlugNames also returns list. Change to maybe?
 
