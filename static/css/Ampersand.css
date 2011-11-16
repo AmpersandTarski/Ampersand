@@ -1,9 +1,7 @@
 body 
  { margin: 0px	
  }
-.AtomList
-  { border: 0px
-  }
+
 .AtomName 
   { width: 100%
   }
@@ -15,15 +13,19 @@ body
 
 .AtomList
   { display: table
+  ; border: 0px
+  ; margin: 0px
+  ; padding: 0px
+  ; cell-padding: 0px
+  ; border-spacing: 0px
+  ; background-color: white
+  ; margin: 4px
   }
- 
+  
 .AtomRow[rowType=NewAtomTemplate]
   { display: none
   }  
 .AtomRow
-  { display: table-row
-  }
-.AtomRow[rowType=InsertAtomRow]
   { display: table-row
   }
 .AtomListElt
@@ -73,12 +75,8 @@ body
   ; color: #707070
   }
 
-.AtomList
-  { margin: 0px
-  ; padding: 0px
-  ; cell-padding: 0px
-  ; border-spacing: 0px
-  }
+
+/* Buttons */
 
 [editing=true] .EditButton
   { display: none
@@ -99,37 +97,37 @@ body
 [editing=true] .CancelButton
   { display: inline
   }
- 
-[editing=true] .AtomList[hover=true]
-  { border-color: #909090
-  }
 
-.AtomList
-  { empty-cells:show 
+.InterfaceList 
+  { border-style: solid
+  ; border-width: 1px
+  ; padding-left: 5px
+  ; -moz-border-radius: 5px       /* rounded corners for Firefox */
+  ; -webkit-border-radius: 5px    /* rounded corners for Safari */
   ; background-color: white
-  ; margin: 4px
   }
-.AtomList[relation]
-  { border-color: transparent
+ 
+  
+/* Editing */  
+
+[editing=true] .AtomList[relation]
+  { border-color: #0000ff
   ; border-style: solid
   ; border-width: 2px 
   ; padding-right: 4px
-  
-  }
-[editing=true] .AtomList[relation]
-  { border-color: #0080ff
   ; background-color: #f0f0f0
   }
-  
-[editing=true] .AtomList[hover=true]
-  { background-color: #f0f0f0
+
+[editing=true] .AtomList[relation][hover=true]
+  { border-color: #0080ff
+  ; background-color: #e0e0e0
   }
-  
-[editing=true] .AtomList[hover=true] .AtomName:hover
+    
+[editing=true] .AtomList[relation][hover=true] > .AtomRow > .AtomListElt > .Atom > .AtomName:hover
   { background-color: #808080
   }
   
-[editing=true] .AtomList[relation]>.AtomRow>.DeleteStub
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub
   { display: table-cell
   ; visibility: hidden
   ; background-image: url('../images/DeleteButton.png')
@@ -137,28 +135,27 @@ body
   ; width: 25px
   }
 
-[editing=true] .AtomList[relation]>.AtomRow[rowType=Normal]>.DeleteStub
+[editing=true] .AtomList[relation] > .AtomRow[rowType=Normal] > .DeleteStub
   { display:table-cell
   }
 
-[editing=true] .AtomList[hover=true]>.AtomRow[rowType=Normal]>.DeleteStub
+[editing=true] .AtomList[hover=true] > .AtomRow[rowType=Normal] > .DeleteStub
   { visibility: visible
   }
   
-[editing=true] .AtomList[hover=true]>.AtomRow>.DeleteStub:hover
+[editing=true] .AtomList[hover=true] > .AtomRow > .DeleteStub:hover
   { background-image: url('../images/DeleteButtonDown.png')
   }
  
 
-[editing=true] .AtomList[relation]>.AtomRow>.InsertStub
+[editing=true] .AtomList[relation] > .AtomRow > .InsertStub
   { display:block /* only show the insert stub when there is an editable relation*/
   }
 
 .AtomList .InsertStub
   { visibility: hidden
   ; display:none 
-  ; padding-left: 7px
-  ; padding-right: 7px
+  ; padding: 1px 7px 1px 7px
   ; font-family: Arial
   ; font-style: bold
   ; font-size: 80%
@@ -180,14 +177,9 @@ body
   ; cursor: default
   }
 
-.InterfaceList 
-  { border-style: solid
-  ; border-width: 1px
-  ; padding-left: 5px
-  ; -moz-border-radius: 5px       /* rounded corners for Firefox */
-  ; -webkit-border-radius: 5px    /* rounded corners for Safari */
-  ; background-color: white
-  }
+ 
+ 
+ /* Navigation context menu */
  
 .InterfaceContextMenu
   { position: absolute;
@@ -214,6 +206,9 @@ body
   ; background-color: blue
   }
 
+
+/* Php log and Command queue */
+ 
 #PhpLog[dev=false]
   { display: none
   }
