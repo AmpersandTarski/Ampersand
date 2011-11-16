@@ -1,13 +1,15 @@
 @CHARSET "UTF-8";
 
-body { font-family: Arial, Helvetica, sans-serif; color: #333333; line-height: 150%;}
+/* Coming from Milan style sheet */
+
+body { font-family: Arial, Helvetica, sans-serif; color: #333333;}
 a { text-decoration: none; }
 
 #header { width: 100%;height: 116px; background: white; padding:0px, margin:0px }
 #decoration { float: right; height: 116px; width: 709px; background: url(../images/header_decoration.jpg) no-repeat;}
 
-#TopLevelInterfaces ul { background: #333333 url(../images/menu_bg.jpg) repeat-x bottom center; padding: 0px 0px 5px 10px
-                       ; margin: 0px}
+#TopLevelInterfaces ul { background: #333333 url(../images/menu_bg.jpg) repeat-x bottom center; padding: 3px 0px 8px 10px
+                       ; margin: 0 0 4 0}
 #TopLevelInterfaces ul li { list-style: none; display:inline}
 #TopLevelInterfaces ul li a { padding: 3px 20px 2px 20px; font-size: 15px; color: white; height:100% }
 #TopLevelInterfaces ul li a:hover { background: white; color: #BF1E74; }
@@ -17,55 +19,75 @@ button.button { border:none; font-size:80%; width: 120px; height: 30px; backgrou
 button.button:hover { background-position: 0px -30px; color: white; }
 
 
+
+/* Atom name */  
+
 .AtomName
   { font-family: Arial
   ; font-style: bold
   ; font-size: 13px
+  ; margin-bottom: 6px
   }
 
-[editing=false] .Atom[hasInterface]>.AtomName 
+[editing=false] .Atom[hasInterface] > .AtomName 
   { cursor: pointer
   ; color: #1A9AEA
   }
-[editing=false] .Atom[hasInterface=multiple]>.AtomName 
+[editing=false] .Atom[hasInterface=multiple] > .AtomName 
   { cursor: pointer
   ; color: #1A9AEA
   ; border-bottom: 1px dotted #1A9AEA;
   }
-[editing=false] .Atom[hasInterface]>.AtomName:hover 
+[editing=false] .Atom[hasInterface] > .AtomName:hover 
   { color: #BF1E74
   }
-[editing=false] .Atom[hasInterface=multiple]>.AtomName:hover 
+[editing=false] .Atom[hasInterface=multiple] > .AtomName:hover 
   { border-bottom: 1px dotted #BF1E74
   }
-[editing=true] .Atom[hasInterface]>.AtomName 
+[editing=true] .Atom[hasInterface] > .AtomName 
   { color: black
   }
+
+
+
+/* Special behavior for top level elements */
 
 #AmpersandRoot
   { padding-left: 20px
   }
-  
-#AmpersandRoot > .Interface> .Label 
-  { font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px
-  } 
 
-#AmpersandRoot > .Interface> .Atomic 
-  { margin: 0px
-  ; border-width: 0px
-  } 
-
-#AmpersandRoot > .Interface> .Atomic > .Atom > .AtomName 
+#AmpersandRoot > .Atom > .AtomName 
   { display: none
   } 
-
-
-#AmpersandRoot > .Interface> .Atomic > .Atom > .InterfaceList 
+#AmpersandRoot > .Atom > .InterfaceList 
   { border: none
   ; padding: 0px
   } 
 
-#AmpersandRoot > .Interface> .Atomic > .Atom > .InterfaceList > .Interface
+#AmpersandRoot > .Atom > .InterfaceList > .Interface> .Label 
+  { font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px
+  } 
+
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList 
+  { display: block
+  ; margin: 0px
+  ; border-width: 0px
+  } 
+
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow[rowType=Normal]
+  { display: block
+  } 
+
+#AmpersandRoot > .Atom > .InterfaceList> .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .AtomName 
+  { display: none
+  } 
+
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList 
+  { border: none
+  ; padding: 0px
+  } 
+
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface
   { float: left
   ; border-style: solid
   ; border-color: #CDD8DE
@@ -77,11 +99,8 @@ button.button:hover { background-position: 0px -30px; color: white; }
   ; margin-right: 20px
   }
   
-#AmpersandRoot > .Interface> .Atomic > .Atom > .InterfaceList > .Interface > .Label
-  { font-size: 18px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
-  }
-.Label
-  { font-size: 13px
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface > .Label
+  { font-size: 16px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
   }
   
 
@@ -91,8 +110,14 @@ button.button:hover { background-position: 0px -30px; color: white; }
   { display: none
   }
 
-.Container
+.Label
+  { font-size: 13px
+  ; margin-bottom: 3px
+  }
+
+.AtomList
   { margin: 0px
+  ; border: 0px
   }
   
 .AtomListElt 
