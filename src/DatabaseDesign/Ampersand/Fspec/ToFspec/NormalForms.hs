@@ -174,10 +174,10 @@ where
                                  (f,steps',equ'') = nM (ERad ks) (k:rs)
                                  g:ks' = ks
      nM (EPrd [k])    _    = nM k []
-     nM (EPrd (k:ks)) rs   | or [isEPrd x |x<-k:ks] = nM (EPrd [y | x<-k:ks, y<-if isEPrd x then unE x else [x]]) rs
-                           | length rs/=length rs'  = (EPrd rs', ["eliminate cartesian product"], "<=>")
-                           | otherwise              = (if isEPrd f then EPrd (t:unE f) else EPrd [t,f], steps++steps', fEqu [equ',equ''])
-                           where rs' = if null rs then fatal 180 "last: empty list" else nub [head rs,last rs]
+     nM (EPrd (k:ks)) rs   | or [isEPrd x |x<-k:ks]    = nM (EPrd [y | x<-k:ks, y<-if isEPrd x then unE x else [x]]) rs
+                           | length (k:ks)/=length ks' = (EPrd ks', ["eliminate cartesian product"], "<=>")
+                           | otherwise                 = (if isEPrd f then EPrd (t:unE f) else EPrd [t,f], steps++steps', fEqu [equ',equ''])
+                           where ks' = nub [k,last (k:ks)]
                                  (t,steps, equ')  = nM k []
                                  (f,steps',equ'') = nM (EPrd ks) (k:rs)
      nM (EIsc [k]) _   = nM k []
@@ -364,7 +364,7 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
             step''        = simplify expr''/=simplify expr'''
             (expr''',_,_) = if null pr'' then fatal 365 "last: empty list" else last pr''
             
-   -- TODO: @Stef: Why is this needed? --Why not use isIdent ???  
+   -- TODO: @Stef: Why is this needed? --Why not use isIdent ???  Deal with ticket #147
    isI :: Expression -> Bool
    isI (ERel r ) = isIdent r
    isI (EBrk e ) = isI e

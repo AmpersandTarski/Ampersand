@@ -532,16 +532,15 @@ stripSpecialChars x
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-makeDefinition :: Options -> [ConceptDef] -> [Block]
-makeDefinition flags cds
+makeDefinition :: Options -> (Int, ConceptDef) -> [Block]
+makeDefinition flags (i,cd)
  = case fspecFormat flags of
-    FLatex ->  [ Para ( take 1 [ RawInline "latex" (symDefLabel cd++"\n") | cd<-cds]++
-                        concat [ [ RawInline "latex" ("\\glossary{name={"++latexEscShw (name cd)++"}, description={"++latexEscShw (cddef cd)++"}}\n") ] ++
-                                 [Str (latexEscShw (cddef cd))] ++ [ Str (" ["++latexEscShw (cdref cd)++"]") | not (null (cdref cd)) ]
-                               | cd<-cds] )
+    FLatex ->  [ Para ( (if i==0 then [ RawInline "latex" (symDefLabel cd++"\n") ] else [])++
+                        [ RawInline "latex" ("\\glossary{name={"++latexEscShw (name cd)++"}, description={"++latexEscShw (cddef cd)++"}}\n") ] ++
+                        [Str (latexEscShw (cddef cd))] ++ [ Str (" ["++latexEscShw (cdref cd)++"]") | not (null (cdref cd)) ]
+                      )
                ]
-    _      ->  [ Para ( concat [ [Str (cddef cd)] ++ [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ]
-                               | cd<-cds] )
+    _      ->  [ Para ( [Str (cddef cd)] ++ [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ] )
                ]
 {- used to be the following code, but that is maybe too patronizing. For the time being, we'll let makeDefinition stay. It might be removed later, after the cdef appears to be useful.
   = case language flags of

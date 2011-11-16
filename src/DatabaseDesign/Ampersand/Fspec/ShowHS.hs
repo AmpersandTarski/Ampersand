@@ -275,7 +275,8 @@ where
                   ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
                   ,     ", pictPatts     = []                                    -- Pictures are not in this generated file."
                   ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
-                  ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
+                  ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
+--                  ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
                   ,     ", vctxenv       = vctxenv'"
                   ,"}" 
                   ] ++   
@@ -334,7 +335,7 @@ where
         concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns ***: "++
-        concat [indent++" "++showHSname pat++" gE"++"\n>   = "++showHS flags "\n>     " pat |pat<-vpatterns fspec]++"\n")
+        concat [indent++" "++showHSname pat++" gE"++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
@@ -419,24 +420,23 @@ where
 -- \***********************************************************************
 
    instance ShowHS Pattern where
- -- TODO: showHS flags should generate valid Haskell code for the entire pattern. Right now, it doesn't
     showHSname pat = haskellIdentifier ("pat_"++name pat)
     showHS flags indent pat
-     = intercalate (indent++"     ")
-       [ "A_Pat "++show (name pat)
-        , if null (rules pat) then " [] -- no rules"
-                              else " [" ++intercalate          "    , "  [showHSname r                     | r<-rules pat] ++            "]"
-        , if null (ptgns pat) then " [] -- no generalizations"
-                              else " [ "++intercalate (indent++"    , ") [showHS flags (indent++"     ") g | g<-ptgns pat] ++indent++"    ]"
-        , if null (ptdcs pat) then " [] -- no declarations"
-                              else " [" ++intercalate          "    , "  [showHSname d                     | d<-ptdcs pat] ++            "]"
-        , if null (ptcds pat) then " [] -- no concept definitions"
-                              else " [" ++intercalate          "    , "  [showHSname c                     | c<-ptcds pat] ++            "]"
-        , if null (ptkds pat) then " [] -- no key definitions"
-                              else " [ "++intercalate (indent++"    , ") [showHS flags (indent++"     ") k | k<-ptkds pat] ++indent++"    ]"
-        , if null (ptxps pat) then " [] -- no explanations"
-                              else " [ "++intercalate (indent++"    , ") [showHS flags (indent++"     ") e | e<-ptxps pat] ++indent++"    ]"
-        ]
+     = intercalate indentA
+        [ "A_Pat { ptnm  = "++show (name pat)
+        , ", ptpos = "++showHS flags "" (ptpos pat)
+        , if null (ptrls pat) then ", ptrls = [] -- no rules"
+                              else ", ptrls = [" ++intercalate ", " [showHSname r | r<-ptrls pat] ++"]"
+        , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
+        , if null (ptdcs pat) then ", ptdcs = [] -- no declarations"
+                              else ", ptdcs = [" ++intercalate          ", " [showHSname d | d<-ptdcs pat] ++"]"
+        , wrap ", ptcds = " indentB (showHS flags) (ptcds pat)
+        , if null (ptcds pat) then ", ptcds = [] -- no concept definitions"
+                              else ", ptcds = [" ++intercalate          ", " [showHSname c | c<-ptcds pat] ++"]"
+        , wrap ", ptkds = " indentB (showHS flags) (ptkds pat)
+        , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
+        ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
+                indentB = indentA++"          " -- adding the width of ", ptrls = "
 
    instance ShowHS FProcess where
     showHSname prc = haskellIdentifier ("fprc_"++name (proc prc))

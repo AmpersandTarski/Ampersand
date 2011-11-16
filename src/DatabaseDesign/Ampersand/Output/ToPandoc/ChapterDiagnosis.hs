@@ -189,7 +189,7 @@ chpDiagnosis lev fSpec flags
   (relsNotUsed,pics)
    = ( ( case (language flags, notUsed) of
           (Dutch,[])  -> [Para 
-                           [Str "Alle relaties in dit document worden in Ã©Ã©n of meer regels gebruikt."]
+                           [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
                          | (not.null.mors.rules) fSpec]
           (Dutch,[r]) -> [Para 
                            [ Str "De relatie ", r
@@ -404,7 +404,7 @@ chpDiagnosis lev fSpec flags
         (Dutch,  _,[])    -> Para [ Str "Voor elk proces geldt dat alle rol-regel-koppelingen gaan over regels die binnen dat proces zijn gedefinieerd." ]
         (English,_,[])    -> Para [ Str "The role-rule assignments in any of the described processes have been assigned to rules within that same process." ]
         (Dutch,  _,[(p,rol,rul)])
-                          -> Para [ Str "Er is Ã©Ã©n koppeling tussen een rol en een regel van buiten het proces: "
+                          -> Para [ Str "Er is één koppeling tussen een rol en een regel van buiten het proces: "
                                   , Str "Rol ", Quoted SingleQuote [Str rol], Str " uit proces ", Quoted SingleQuote [Str (name p)], Str " is gebonden aan regel ", Quoted SingleQuote [Str (name rul)], Str " uit ", Quoted SingleQuote [Str (r_env rul)], Str "."
                                   ]
         (English,_,[(p,rol,rul)])
