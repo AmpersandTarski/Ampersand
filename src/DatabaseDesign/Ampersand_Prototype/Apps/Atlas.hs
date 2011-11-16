@@ -87,11 +87,10 @@ creates conn (tbl:tbls) =
          createfld fld = "`"++fldname fld++"` " 
                             --TODO -> A_Concepts should be attached to a SQL type. 
                             --        A concept::SQLText cannot be stored in a KEY or INDEX field i.e. the scalar plug cannot be created for such a concept
-                            ++ if atlastxt fld then showSQL (SQLVarchar 20000) else showSQL (fldtype fld) --SQLText has decoding problems??
+                            ++ showSQL (fldtype fld) --SQLText has decoding problems??
                             ++ autoIncr fld ++ nul fld
          nul fld = if fldnull fld then "" else " NOT NULL"
          autoIncr fld = if fldauto fld then " AUTO_INCREMENT" else ""
-         atlastxt fld = not (flduniq fld) && elem ((name.target.fldexpr) fld) ["CptPurpose","RelPurpose","Explanation","RulPurpose","PatPurpose","Description","Definition"]
 
 ----------------------
 fillAtlas :: Fspc -> Options -> IO()
@@ -203,7 +202,7 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") x False y [] |(x,y)<-cptdescribes,not(null y)]
+       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") x False y [] [] |(x,y)<-cptdescribes,not(null y)]
        , ctx_ks    = []
        , ctx_gs    = []
        , ctx_ifcs  = []
