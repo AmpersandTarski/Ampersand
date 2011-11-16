@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Parsing ( parseADL
 where
 
 
-import DatabaseDesign.Ampersand.Input.ADL1.CC (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
+import DatabaseDesign.Ampersand.Input.ADL1.CCv221 (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
 import qualified DatabaseDesign.Ampersand.Input.ADL1.CC664 as CC664
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
@@ -30,7 +30,7 @@ parseADL str fn pv _ =
     steps :: Steps (Pair P_Context (Pair [Token] a)) Token  
     steps = case pv of
       PV664  -> parse CC664.pContext (scan CC664.keywordstxt CC664.keywordsops CC664.specialchars CC664.opchars fn initPos str)
-      PV2011 -> parse       pContext (scan       keywordstxt       keywordsops       specialchars       opchars fn initPos str)
+      PV211  -> parse       pContext (scan       keywordstxt       keywordsops       specialchars       opchars fn initPos str)
 
 -- | Same as passeCtx_ , however this one si for a list of populations
 parsePops :: String            -- ^ The string to be parsed

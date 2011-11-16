@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
-module DatabaseDesign.Ampersand.Input.ADL1.CC 
+module DatabaseDesign.Ampersand.Input.ADL1.CCv221 
    (pContext, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
@@ -19,7 +19,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
 --   import DatabaseDesign.Ampersand.Misc.Explain
    import Data.List (nub,sort)
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ADL1.CC"
+   fatal = fatalMsg "ADL1.CCv221"
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]
@@ -446,7 +446,7 @@ and the grammar must be disambiguated in order to get a performant parser...
                                      }
                              att attexpr = 
                                P_Obj { obj_nm   = ""
-                                     , obj_pos  = Origin "pKeyAtt CC.hs"
+                                     , obj_pos  = Origin "pKeyAtt CCv221.hs"
                                      , obj_ctx  = attexpr 
                                      , obj_ats  = []
                                      , obj_strs = []
