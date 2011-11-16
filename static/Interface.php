@@ -12,7 +12,8 @@ session_start();
  * 
 
 tickets 138
-todo: fix problem with lookupCpt
+
+todo: does Atom Atom in computeDbCommands also match descendants? (eg. .. ATOM .. atom .. ATOM ..)
 todo: fix edit start. maybe even make start local
 todo: modified atom values are not escaped
 todo: don't delete if original is null

@@ -29,7 +29,6 @@ generateAll fSpec opts =
         ; writeFile (combine (dirPrototype opts) fname) content
         }
  
--- lookupCpt
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
