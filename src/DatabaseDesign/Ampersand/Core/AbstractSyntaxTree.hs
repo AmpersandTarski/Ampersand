@@ -498,12 +498,13 @@ data A_Concept
                                    --  It is included in every concept, for the purpose of comparing concepts in the Ord class.
                                    --  As a result, you may write  c<=d  in your Haskell code for any two A_Concepts c and d that are in the same context.
          , cptos :: [String]       -- ^Atoms
+         , cpttp :: String         -- ^The type of this Concept
          }  -- ^C nm gE cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
 
 
 instance Eq A_Concept where
-   C a _ _ == C b _ _ = a==b
+   C a _ _ _ == C b _ _ _ = a==b
    ONE == ONE = True
    _ == _ = False
 
@@ -570,7 +571,7 @@ class Signaling a where
 -}
 type GenR = (A_Concept -> A_Concept -> Ordering,[[A_Concept]])
 order      :: A_Concept -> GenR
-order (C _ gE _) = gE
+order (C _ gE _ _) = gE
 order _ = ((\x y -> if x==y then EQ else NC),[])
 instance Poset A_Concept where
   a `compare` b = (fst$order a) a b

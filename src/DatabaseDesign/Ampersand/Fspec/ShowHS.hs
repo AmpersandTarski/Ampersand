@@ -773,7 +773,7 @@ where
    instance ShowHS ConceptDef where
     showHSname cd = haskellIdentifier ("cDef_"++name cd)
     showHS flags _ cd
-     = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdnm cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)
+     = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdnm cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Concept                     ***

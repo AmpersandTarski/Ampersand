@@ -67,6 +67,7 @@ pCtx2aCtx pctx
         where a pc = C {cptnm = p_cptnm pc
                        ,cptgE = fatal 63 "do not refer to this concept"
                        ,cptos = fatal 64 "do not refer to this concept"
+                       ,cpttp = fatal 65 "do not refer to this concept"
                        }
     adecs = map (pDecl2aDecl actx allpops "NoPattern") (ctx_ds pctx)
     agens = map (pGen2aGen actx "NoPattern") (ctx_gs pctx)
@@ -327,6 +328,7 @@ pCpt2aCpt contxt pc
             ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d,c <= source d]
                        ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d,c <= target d]
                        ++[v | r<-rules contxt,Mp1 v c'<-mors r,c<=c']
+            ,cpttp = head ([cdtyp cd|cd<-conceptDefs contxt,name cd==p_cptnm pc]++[""])
             }
 
 pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> Declaration

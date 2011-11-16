@@ -248,6 +248,7 @@ where
             , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
             , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
             , cddef :: String   -- ^ The textual definition of this concept.
+            , cdtyp :: String   -- ^ The type of this concept.
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
             }   deriving (Show)
 
