@@ -23,9 +23,9 @@ import Data.List
 fatal :: Int -> String -> a
 fatal = fatalMsg "Misc.Options"
 
-data ParserVersion = PV2011 | PV664
+data ParserVersion = PV211 | PV664
 instance Show ParserVersion where
-  show PV2011 = "latest syntax"
+  show PV211 = "syntax since Ampersand 2.1.1."
   show PV664 = "syntax664"
 
 -- | This data constructor is able to hold all kind of information that is useful to 
@@ -380,8 +380,9 @@ languageOpt l opts                  = opts{language = case map toUpper l of
 forceSyntaxOpt :: String -> Options -> Options
 forceSyntaxOpt s opts               = opts{forcedParserVersion = case s of
                                               "1" -> Just PV664
-                                              "2" -> Just PV2011
-                                              _   -> error $ "Unknown value for syntax version: "++s++". Known values are 1 or 2"
+                                              "2" -> Just PV211
+                                              "0" -> Just PV211 --indicates latest
+                                              _   -> error $ "Unknown value for syntax version: "++s++". Known values are 0, 1 or 2. 0 indicates latest."
                                           } 
 logOpt :: String -> Options -> Options
 logOpt nm opts                      = opts{logName       = nm}

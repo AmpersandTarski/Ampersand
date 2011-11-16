@@ -60,7 +60,7 @@ parseCtxM_ adlstring flags fn =
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion flags of
          Just pv  -> [pv]
-         Nothing  -> [PV664,PV2011]
+         Nothing  -> [PV664,PV211]
       
       try :: ParserVersion -> IO (Either P_Context [ParserError])
       try pv = do verbose flags $ "Parsing with "++show pv++"..."
@@ -86,14 +86,14 @@ parsePopsM_   :: String            -- ^ The string to be parsed
               -> IO [P_Population] -- ^ The IO monad with the populations. 
 parsePopsM_ popsstring flags fn 
                = verboseLn flags "Parsing populations."
-              >> case parsePops popsstring fn PV2011 of
+              >> case parsePops popsstring fn PV211 of
                     Left res -> return res
                     Right err -> error err
                     
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String -> String -> IO P_Expression
 parseADL1pExpr pexprstr fn 
-               = case parseExpr pexprstr fn PV2011 of
+               = case parseExpr pexprstr fn PV211 of
                     Left res -> return res
                     Right err -> error err
 
