@@ -262,7 +262,7 @@ function init() {
 </script>
 </head>
 <body onload="init()">
-<div id="Header"><div id="Decoration"></div></div>
+<div id="Header"><div id="Logo"></div><div id="Decoration"></div></div>
 <?php
 echo '<div id="TopLevelInterfaces">';
 echo topLevelInterfaceLinks($allInterfaceObjects);
