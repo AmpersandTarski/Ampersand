@@ -519,7 +519,7 @@ chpDataAnalysis lev fSpec flags
                                      then Para [ Math DisplayMath $ showMath e]
                                      else fatal 1760 ("Untypeable "++show e)
                               ]
-                       es  -> [ Para [ Str "De volgende regels definiÃ«ren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijde blijven gelden. " ]
+                       es  -> [ Para [ Str "De volgende regels definiëren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
                                 else BulletList [ if isTypeable e
