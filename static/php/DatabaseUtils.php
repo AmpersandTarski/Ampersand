@@ -106,6 +106,22 @@ function generateInterfaceMap($interfaces) {
 }
 
 function generateInterface($db, $interface, $srcAtom) {
+/*
+ *  <Interface>
+ *   <Label> interface label </Label>
+ *   <AtomList concept=.. [relation=..  relationIsFlipped=..]>
+ *     ..
+ *     for each $tgtAtom in codomain of relation of $interface
+ *     <AtomRow rowType=Normal>         <DeleteStub/> <AtomListElt> generateAtomInterfaces($interface, $tgtAtom) </AtomListElt> </AtomRow>
+ *     ..
+ *     
+ *     <AtomRow rowType=NewAtomTeplate> <DeleteStub/> <AtomListElt> generateAtomInterfaces($interface, null) </AtomListElt>     </AtomRow>
+ *     
+ *     <AtomRow rowType=InsertAtomStub> <DeleteStub/> <InsertStub>Insert new .. </InsertStub>                                  </AtomRow>
+ *   </AtomList>
+ * </Interface> 
+ */
+  
   $html = "";
   emit($html, '<div class=Interface>');
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
@@ -123,7 +139,7 @@ function generateInterface($db, $interface, $srcAtom) {
   foreach($codomainAtoms as $tgtAtom) {
     emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div>'.
                   '<div class=AtomListElt>');
-    emit($html, generateInterfaceList($db, $interface, $tgtAtom));
+    emit($html, generateAtomInterfaces($db, $interface, $tgtAtom));
     emit($html,'</div></div>');  
   }
   
@@ -134,13 +150,26 @@ function generateInterface($db, $interface, $srcAtom) {
   return $html;
 }
 
-function generateInterfaceList($db, $parentInterface, $atom) {
+function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=false) {
+/* if $interface is a top-level interface, we only generate for $interface itself
+ * otherwise, we generate for its subinterfaces 
+ * 
+ *  <Atom atom='atom name'>
+ *   <AtomName>atom name</AtomName>
+ *   <InterfaceList>
+ *     ..
+ *     for each subInterface in $interface: generateInterface($interface, $atom)        (or $interface, if $isTopLevelInterface)
+ *     ..
+ *   </InterfaceList>
+ * </Atom>
+ * 
+ * if $atom is null, we are presenting a template
+ */
   $html = "";
-  $interfaces = $parentInterface['subInterfaces'];
+  $interfaces = $isTopLevelInterface ? array ($interface) : $interface['subInterfaces'];
 
-  // if $atom is null, we are presenting a template
 
-  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($parentInterface['tgtConcept']));
+  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept']));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
   emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom?'unchanged':'new').'>');
@@ -172,7 +201,6 @@ function selectCoDomain($atom, $selectRel) {
 
 
 // utils
-// note that an interface can be used to show an atom when the concept of the atom is the 
 function getTopLevelInterfacesForConcept($concept) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();

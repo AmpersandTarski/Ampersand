@@ -288,7 +288,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
-  echo generateInterface($dbName, $allInterfaceObjects[$interface], $atom); 
+  echo generateAtomInterfaces($dbName, $allInterfaceObjects[$interface], $atom, true); 
 
   echo '</div>';
 } ?>
