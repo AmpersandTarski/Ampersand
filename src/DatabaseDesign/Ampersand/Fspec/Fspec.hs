@@ -150,19 +150,19 @@ instance ConceptStructure Finterface where
 --     explanations fServ = fsv_expls fServ
     
 type Fields = [Field]
-data Field  = Att { fld_name      :: String                 -- The name of this field
-                  , fld_sub       :: Fields                 -- all sub-fields
-                  , fld_expr      :: Expression  -- The expression by which this field is attached to the interface
-                  , fld_rel       :: Relation               -- The relation to which the database table is attached.
-                  , fld_editable  :: Bool                   -- can this field be changed by the user of this interface?
-                  , fld_list      :: Bool                   -- can there be multiple values in this field?
-                  , fld_must      :: Bool                   -- is this field obligatory?
-                  , fld_new       :: Bool                   -- can new elements be filled in? (if no, only existing elements can be selected)
-                  , fld_sLevel    :: Int                    -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
-                  , fld_insAble   :: Bool                   -- can the user insert in this field?
-                  , fld_onIns     :: ECArule        -- the PAclause to be executed after an insert on this field
-                  , fld_delAble   :: Bool                   -- can the user delete this field?
-                  , fld_onDel     :: ECArule        -- the PAclause to be executed after a delete on this field
+data Field  = Att { fld_name      :: String        -- The name of this field
+                  , fld_sub       :: Fields        -- all sub-fields
+                  , fld_expr      :: Expression    -- The expression by which this field is attached to the interface
+                  , fld_rel       :: Relation      -- The relation to which the database table is attached.
+                  , fld_editable  :: Bool          -- can this field be changed by the user of this interface?
+                  , fld_list      :: Bool          -- can there be multiple values in this field?
+                  , fld_must      :: Bool          -- is this field obligatory?
+                  , fld_new       :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
+                  , fld_sLevel    :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
+                  , fld_insAble   :: Bool          -- can the user insert in this field?
+                  , fld_onIns     :: ECArule       -- the PAclause to be executed after an insert on this field
+                  , fld_delAble   :: Bool          -- can the user delete this field?
+                  , fld_onDel     :: ECArule       -- the PAclause to be executed after a delete on this field
                   } 
    
 
@@ -257,9 +257,13 @@ data PAclause
                     , paCl    :: String->PAclause         -- to be done afteremoving the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Nop { paMotiv :: [(Expression,[Rule] )] -- tells which conjunct from whichule is being maintained
+              | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
                     }
-              | Blk { paMotiv :: [(Expression,[Rule] )] -- tells which expression from whichule has caused the blockage
+              | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
+                    }
+              | Cnd { paCond  :: Expression               -- the expression that represents a condition to be tested.
+                    , paTrue  :: PAclause
+                    , paMotiv :: [(Expression,[Rule] )]
                     }
    -- The data structure Clauses is meant for calculation purposes.
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hcs)<-cl_conjNF cl, disj<-[conj!!i]]

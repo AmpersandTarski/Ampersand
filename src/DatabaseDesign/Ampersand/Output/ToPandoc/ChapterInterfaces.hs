@@ -208,12 +208,12 @@ interfaceChap lev fSpec flags act
   switchboardIntro
    = if not graphic then [] else
      [ Para $ case language flags of                             -- tells us for who this interface exists
-        Dutch   -> [ Str "Iedere sectie in dit hoofdstuk beschrijft Ã©Ã©n activiteit. "
+        Dutch   -> [ Str "Iedere sectie in dit hoofdstuk beschrijft één activiteit. "
                    , Str "Tijdens het uitvoeren van een activiteit zal een gebruiker populatie invoegen of verwijderen in verschillende relaties. "
                    , Str "Hierdoor kunnen invarianten potentieel worden overtreden. "
                    , Str "(Een invariant is een bedrijfsregel die op ieder moment waar moet blijven.) "
                    , Str "De software die nodig is om invarianten waar te maken wordt automatisch gegenereerd. "
-                   , Str "De structuur van deze software wordt geÃ¯llustreerd door een zogenaamd schakelpaneel (switchboard-diagram), "
+                   , Str "De structuur van deze software wordt geïllustreerd door een zogenaamd schakelpaneel (switchboard-diagram), "
                    , Str "waarvan u de eerste in figuur X aantreft. "
                    , Str "Elk switchboard diagram bestaat uit drie kolommen: "
                    , Str "Invariante regels staan in het midden en relaties staan aan de (linker en rechter) zijkanten. "

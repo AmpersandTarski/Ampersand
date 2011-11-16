@@ -473,7 +473,8 @@ while maintaining all invariants.
         | length (eqClass (<==>) [source (head ants) | ants <- antss]) > 1 =
           fatal 515 $ "shiftL (" ++ showADL r ++ ")\nin calculation of srcA\n" ++ show (eqClass (<==>) [source (head ants) | ants <- antss])
         | otherwise = foldr1 join [source (head ants) | ants <- antss]
-       id' ass = [ERel (I c) ]
+       id' ass = if and (map null (take 1 ass++take 1 (reverse ass))) then fatal 474 "It is imperative that ass is not empty" else
+                 [ERel (I c) ]
         where a = (source.head.head) ass
               c = if not (a <==> b) then fatal 519 $ "shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b else
                   a `join` b
@@ -514,7 +515,8 @@ while maintaining all invariants.
         | length (eqClass (<==>) [ source (head cons) | cons<-conss]) > 1 =
            fatal 556 $ "shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass (<==>) [ source (head cons) | cons<-conss])
         | otherwise = foldr1 join [ source (head cons) | cons<-conss]
-       id' css = [ERel (I c) ]
+       id' css = if and (map null css) then fatal 518 "It is imperative that css is not empty" else
+                 [ERel (I c) ]
         where a = (source.head.head) css
               c = if not (a <==> b)
                   then fatal 561 $ "shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b ++ ". "
@@ -729,6 +731,39 @@ while maintaining all invariants.
                                 , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
                                 , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
                                 ] motiv
+{- Here is an algorithm to compute how to insert a Delta into r;s:
+LET d = EVAL (delta - r;s);             -- compute which pairs are to be inserted
+IF not (null d)
+THEN BEGIN
+     IF editable(r) THEN INS EVAL (d;s~) INTO r;
+     IF editable(s) THEN INS EVAL (r~;d) INTO s;
+     LET d' = EVAL (delta - r;s);
+     IF not (null d)                    -- get a new element to construct a bow tie
+     THEN Chc [ NEW c FROM target(r) `lub` source(s)
+              , SEL c FROM EVAL ( -cod(r) /\ -dom(s) )
+              ];
+          IF editable(r) THEN INS EVAL (d*c) INTO r;
+          IF editable(s) THEN INS EVAL (c*d) INTO s;
+     END
+END
+
+Here is the same algorithm, operationalized a bit more, to compute how to insert a Delta into (ECps es):
+LET d = doQuer (EDif (delta, ECps es))
+IN IF not (null d)
+   THEN Seq ( [ All ( [ INS (Ecps [d, flp (ECps (tail es))]) INTO head es | editable(head es) ] ++
+                      [ INS (Ecps [flp (ECps (init es)), d]) INTO last es | editable(last es) ] )
+              , LET d' = doQuer (EDif (delta, ECps es))
+                IN IF not (null d')
+                   THEN Seq ( [ Chc ([ NEW c FROM target(r) `lub` source(s) | editable(I[target(r) `lub` source(s)]) ] ++
+                                     [ SEL c FROM -cod(r) /\ -dom(s) ]
+                                    );
+                              , All ( [ INS (EPrd [d, c]) INTO (head es) | editable(head es) ] ++
+                                      [ INS (EPrd [c, d]) INTO (last es) | editable(last es) ] )
+                              ]
+                            )
+              ]
+            )
+-}
           (Del, ECps ts) -> Chc [ if ECps ls==flp (ECps rs)
                                   then Chc [ Sel c (disjNF (ECps ls)) (\_->Rmv c fLft motiv) motiv
                                            , Sel c (disjNF (ECps ls)) fLft motiv
@@ -746,7 +781,7 @@ while maintaining all invariants.
           (Del, EIsc fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
 -- Op basis van de Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
           (_  , ERad ts)   -> doCod deltaX tOp (ECpl (ECps (map ECpl ts))) motiv
-          (_  , EPrd ts)   -> fatal 745 "TODO"
+          (_  , EPrd _)    -> fatal 745 "TODO"
           (_  , EKl0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
           (_  , ERel m)   -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
