@@ -84,8 +84,8 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
                             , "      , 'relationIsFlipped' => ''" 
                             ]          
   ++     
-  [ "      , 'concept' => "++showPhpStr (show (target $ objctx object)) -- only needed for top level
-  , "      , 'isUnivalent' => " ++ (showPhpBool $ isUni (objctx object))
+  [ "      , 'srcConcept' => "++showPhpStr (show (source $ objctx object))
+  , "      , 'tgtConcept' => "++showPhpStr (show (target $ objctx object))
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"

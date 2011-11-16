@@ -89,7 +89,7 @@ function DB_doquer($DbName, $quer,$debug=5)
 function topLevelInterfaceLinks($interfaces) {
   echo '<ul>';
   foreach($interfaces as $interface) {
-    if ($interface['concept']=='ONE')
+    if ($interface['srcConcept']=='ONE')
       echo '<li><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a></li>';
   }
   echo '</ul>';
@@ -99,7 +99,7 @@ function generateInterfaceMap($interfaces) {
   echo 'function getInterfacesMap() {';
   echo '  var interfacesMap = new Array();';
   foreach($interfaces as $interface) {
-    echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['concept']).', '.showHtmlAttrStr($interface['name']).');';
+    echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['srcConcept']).', '.showHtmlAttrStr($interface['name']).');';
   }
   echo '  return interfacesMap;';
   echo '}';
@@ -115,27 +115,22 @@ function generateInterface($db, $interface, $srcAtom) {
   else
     $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery'])); // filter, in case table contains ($srcAtom, null)
 
-  // todo: concept in interface is actually the target concept of the relation
-  // todo: cleanup, rename concept/srcConcept. maybe just srcConcept and tgtConcept 
-  // todo: maybe Container should be called Relation?
-  // todo: probably don't want different classes AtomList and Atomic, but just an attr list/singleton or something
-  $isUni = false; // temporarily disabled the univalence check (so everything is a list) $interface['isUnivalent'];   
   $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
   
-  
-  
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
-  emit($html, '<div class="AtomList" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>');
-  foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
-    emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div><div class=AtomListElt>');
+  emit($html, '<div class="AtomList" concept='.showHtmlAttrStr($interface['tgtConcept']).$relationAttrs.'>');
+  
+  foreach($codomainAtoms as $tgtAtom) {
+    emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div>'.
+                  '<div class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom));
-    emit($html,'</div></div>'); 
+    emit($html,'</div></div>');  
   }
   
   emit($html, '<div class=AtomRow rowType=InsertAtomRow><div class=DeleteStub>&nbsp;</div>'.
-                                       '<div class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</div></div></div>');
+                '<div class=InsertStub>Insert new '.htmlSpecialChars($interface['tgtConcept']).'</div></div>');
   
-  emit($html, '</div>'); // div class=Interface
+  emit($html, '</div></div>'); // close .AtomList and .Interface
   return $html;
 }
 
@@ -145,7 +140,7 @@ function generateInterfaceList($db, $parentInterface, $atom) {
 
   // if $atom is null, we are presenting a template
 
-  $nrOfInterfaces = count(getInterfacesForConcept($parentInterface['concept']));
+  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($parentInterface['tgtConcept']));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
   emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom?'unchanged':'new').'>');
@@ -177,11 +172,12 @@ function selectCoDomain($atom, $selectRel) {
 
 
 // utils
-function getInterfacesForConcept($concept) {
+// note that an interface can be used to show an atom when the concept of the atom is the 
+function getTopLevelInterfacesForConcept($concept) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['concept']==$concept)
+    if ($interface['srcConcept']==$concept)
       $interfacesForConcept[] = $interface;
   }
   return $interfacesForConcept;
