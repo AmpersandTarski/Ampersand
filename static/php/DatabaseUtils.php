@@ -172,7 +172,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept']));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom?'unchanged':'new').'>');
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom?'unchanged':'new').' atomic='.jsBool(count($interfaces)==0).'>');
   // can be hidden with css if necessary (old prototype did not show it)
     
   emit($html, "<div class=AtomName>".htmlSpecialChars($atom).'</div>');
