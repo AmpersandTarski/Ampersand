@@ -338,8 +338,7 @@ instance Eq PlugSQL where
 lookupCpt :: Fspc -> A_Concept -> Maybe (PlugSQL,SqlField)
 lookupCpt fSpec cpt = case results of
                         []       -> Nothing
-                        [result] -> Just result
-                        _        ->  fatal 342 $ "Concept '"++name cpt++"' has multiple concept tables."
+                        result:_ -> Just result -- todo: when multiple tables exist, return the first. TODO: is this correct?
  where results = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
