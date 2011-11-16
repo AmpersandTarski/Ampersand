@@ -142,7 +142,7 @@ instance ShowADL Pattern where
 instance ShowADL Rule where
  showADL r
   = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
-     ++ if null phrs then [] else "\n     PHRASE "++ showstr (head phrs)
+     ++ if null phrs then [] else "\n     MEANING "++ showstr (head phrs)
      where phrs = [explainContent2String LaTeX True econt | Means _ econt<-rrxpl r]
 
 instance ShowADL A_Gen where
