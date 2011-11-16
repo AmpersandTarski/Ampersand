@@ -48,7 +48,7 @@ phpObjInterfaces fSpec flags =
       | ifc <- ifcs
       ]
     ; sequence_  [ doGenAtlas    fSpec flags | genAtlas     flags]
-    ; generateAll fSpec flags
+    ; sequence_ [generateAll fSpec flags | theme flags /= StudentTheme]
     ; verboseLn flags "\n"
     }
    where

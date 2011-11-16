@@ -59,7 +59,7 @@ PATTERN Specificatie
 PURPOSE PATTERN Specificatie 
    IN DUTCH {+
    Pattern Specificatie definieert de taal voor studenten om een Ampersand regelspecificatie op te stellen.
-   De bedrijfsregels in dit pattern zijn regels voor naamruimtes en syntaxregels, zoals geïmplementeerd in CC.hs 2.0.0.27 (de Ampersand parser).
+   De bedrijfsregels in dit pattern zijn regels voor naamruimtes en syntaxregels, zoals ge?mplementeerd in CC.hs 2.0.0.27 (de Ampersand parser).
    Middels statements in de specificatie declareert men syntactisch concepten en relaties daartussen.
    Afleidingen uit Ampersand regelspecificaties vallen buiten de scope van dit pattern.
    Regelexpressies (elementen van het concept Regels) kunnen in de specificatie geen typefouten bevatten omdat uses::Expression*Relation.
@@ -142,7 +142,7 @@ cptcontext::Concept->Context. -- (src\/trg);relpattern;context
 --  RULE "test4": (-(left;left~ /\ right;right~))
 --TODO ->
 --  RULE "key pair": I  = left;left~ /\ right;right~
---       PHRASE "a left and right identify a pair."
+--       MEANING "a left and right identify a pair."
 
   ------------
   --RELATION--
@@ -171,9 +171,9 @@ cptcontext::Concept->Context. -- (src\/trg);relpattern;context
   pragma3::Relation*Pragma3[UNI].
   content::Relation*Pair. -- [TOT]. --total, because students must populate relations
   RULE "typed domain": content;left  |- src;atomof~
-       PHRASE "The type of the elements in the domain of a relation is the source of that relation."
+       MEANING "The type of the elements in the domain of a relation is the source of that relation."
   RULE "typed codomain": content;right |- trg;atomof~
-       PHRASE "The type of the elements in the codomain of a relation is the target of that relation."
+       MEANING "The type of the elements in the codomain of a relation is the target of that relation."
 
   ------------
   --USERRULE--
@@ -224,13 +224,18 @@ next::UserRule->UserRule[INJ,SUR]. --irreflexive except in case there is only on
 -- I[Rule] |- next+ to be able to loop over all rules in the context
 ENDPATTERN
 
-POPULATION context CONTAINS
-   [("Pat","Ctx")]
-POPULATION cptcontext CONTAINS
-   [("A","Ctx");("B","Ctx");("B","Csdtx");("C","Ctx")]
+POPULATION newcontext CONTAINS   [("Ctx","Ctx")]
+POPULATION report CONTAINS   [("Ctx","Ctx")]
+POPULATION funcspec CONTAINS   [("Ctx","Ctx")]
+POPULATION showadl CONTAINS   [("Ctx","Ctx")]
+POPULATION loadcontext CONTAINS   [("Ctx","Ctx")]
+POPULATION fileof CONTAINS   [("Ctx","gmi")]
+POPULATION loadedfile CONTAINS   [("gmi","Ctx")]
+--POPULATION cptcontext CONTAINS
+--   [("A","Ctx");("B","Ctx");("B","Csdtx");("C","Ctx")]
 
-POPULATION next CONTAINS
-   [("x1","x2")]
+--POPULATION next CONTAINS
+--   [("x1","x2")]
 
 PROCESS Specificatie
 --all services containing a (label: rel) where rel is one of the EDITS or the converse will get a visible Edit button
@@ -364,8 +369,8 @@ INTERFACE Concept : I[Concept]
   --   , "uitleg" : purpose
      , "Conceptueel diagram"{"PICTURE"}: picture
      ]
-POPULATION purpose[Concept*CptPurpose] CONTAINS
-   [("A","A's zijn heel belangrijk");("B","B's zijn heel belangrijk");("C","C's zijn heel belangrijk")]
+--POPULATION purpose[Concept*CptPurpose] CONTAINS
+--   [("A","A's zijn heel belangrijk");("B","B's zijn heel belangrijk");("C","C's zijn heel belangrijk")]
 --TODO -> NO INTERFACE FOR I[UAtom], automatisch via INTERFACE Concept / Relatie
 --TODO -> NO INTERFACE FOR I[Atom], automatisch via INTERFACE Concept / Relatie
 INTERFACE Termen : I[ONE]
