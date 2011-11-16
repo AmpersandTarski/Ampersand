@@ -126,16 +126,16 @@ function generateInterface($db, $interface, $srcAtom, $depth=0) {
   // top level atom is never a list
   
   $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
-  if ($depth>0 && !$isUni) emit($html, '<table class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'><tbody>'); // todo: change name, these things are not necessarily atoms
-  else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // tbody is inserted automatically, but we do it explicitly to make the structure more clear
+  if ($depth>0 && !$isUni) emit($html, '<div class="AtomList Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>'); // todo: change name, these things are not necessarily atoms
+  else         emit($html, '<div class="Atomic Container" concept='.showHtmlAttrStr($interface['concept']).$relationAttrs.'>');
   foreach($codomainAtoms as $tgtAtom) {  // srcColumn needs to be in div because its is used by js code
-    if ($depth>0 && !$isUni) emit($html, '<tr '.($tgtAtom==null?' class=NewAtomTemplate':'').'><td class=DeleteStub>&nbsp;</td><td class=AtomListElt>');
+    if ($depth>0 && !$isUni) emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div><div class=AtomListElt>');
     emit($html, generateInterfaceList($db, $interface, $tgtAtom, $depth));         // &nbsp; is to prevent empty strings from having height 1
-    if ($depth>0 && !$isUni) emit($html,'</td></tr>'); 
+    if ($depth>0 && !$isUni) emit($html,'</div></div>'); 
   }
   
-  if ($depth>0 && !$isUni) emit($html, '<tr><td></td><td class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</td></tr><tbody></table>');
-  else         emit($html, '</div>');
+  if ($depth>0 && !$isUni) emit($html, '<div class=AtomRow rowType=InsertAtomRow><div class=DeleteStub>&nbsp;</div><div class=InsertStub>Insert new '.htmlSpecialChars($interface['concept']).'</div></div></div>');
+  else         emit($html, '</div>');  // todo: deletestub?
   
   emit($html, '</div>'); // div class=Interface
   return $html;

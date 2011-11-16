@@ -1,7 +1,7 @@
 body 
  { margin: 0px	
  }
-table
+.AtomList
   { border: 0px
   }
 .AtomName 
@@ -13,13 +13,35 @@ table
   ; color: blue
   }
 
+.AtomList
+  { display: table
+  }
+ 
+.AtomRow[rowType=NewAtomTemplate]
+  { display: none
+  }  
+.AtomRow
+  { display: table-row
+  }
+.AtomRow[rowType=InsertAtomRow]
+  { display: table-row
+  }
+.AtomListElt
+  { display: table-cell
+  }
+.DeleteStub
+  { display: table-cell
+  }
+.InsertStub
+  { display: table-cell
+  }
 
-
-[editing=true] tr[rowStatus=deleted]
+  
+[editing=true] .AtomRow[rowStatus=deleted]
   { display: none
   }
 
-[dev=true][editing=true] tr[rowStatus=deleted]
+[dev=true][editing=true] .AtomRow[rowStatus=deleted]
   { display: table-row
   }
 [dev=true][editing=true] .Atom[status=deleted]>.AtomName
@@ -82,28 +104,28 @@ table
   { border-color: #909090
   }
 
-.Container
+.AtomList
   { empty-cells:show 
   ; background-color: white
   ; margin: 4px
   }
-.Container[relation]
+.AtomList[relation]
   { border-color: transparent
   ; border-style: solid
   ; border-width: 2px 
   ; padding-right: 4px
   
   }
-[editing=true] .Container[relation]
+[editing=true] .AtomList[relation]
   { border-color: #0080ff
   ; background-color: #f0f0f0
   }
   
-[editing=true] .Container[hover=true]
+[editing=true] .AtomList[hover=true]
   { background-color: #f0f0f0
   }
   
-[editing=true] .Container[hover=true] .AtomName:hover
+[editing=true] .AtomList[hover=true] .AtomName:hover
   { background-color: #808080
   }
   
@@ -111,33 +133,24 @@ table
   { width: 25px
   }
 
-[editing=true] .AtomList>tbody>tr>.DeleteStub
+[editing=true] .AtomList>.AtomRow[rowType=Normal]>.DeleteStub
   { display:none
   }
-[editing=true] .AtomList[relation]>tbody>tr>.DeleteStub
-  { display:block
+[editing=true] .AtomList[relation]>.AtomRow[rowType=Normal]>.DeleteStub
+  { display:table-cell
   }
 
-[editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub
+[editing=true] .AtomList[hover=true]>.AtomRow[rowType=Normal]>.DeleteStub
   { background-image: url('../images/DeleteButton.png')
   ; background-repeat:no-repeat
-  ; width: 25px
   }
   
-[editing=true] .AtomList[hover=true]>tbody>tr>.DeleteStub:hover
+[editing=true] .AtomList[hover=true]>.AtomRow>.DeleteStub:hover
   { background-image: url('../images/DeleteButtonDown.png')
   }
  
-.NewAtomTemplate
-  { display: none
-  }
 
-
-[editing=false] .AtomList>tbody>tr>.InsertStub /*hide row with insert atom stub*/
-  { display: none
-  }
-
-[editing=true] .AtomList[relation]>tbody>tr>.InsertStub
+[editing=true] .AtomList[relation]>.AtomRow>.InsertStub
   { display:block /* only show the insert stub when there is an editable relation*/
   }
 
@@ -158,11 +171,11 @@ table
   ; -webkit-border-radius: 7px    /* rounded corners for Safari */
   }
  
-[editing=true] .AtomList[hover=true]>tbody>tr>.InsertStub
+[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub
   { visibility: visible
   }
   
-[editing=true] .AtomList[hover=true]>tbody>tr>.InsertStub:hover
+[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub:hover
   { background-color: #606060
   ; cursor: default
   }

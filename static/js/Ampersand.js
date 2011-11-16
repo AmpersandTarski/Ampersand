@@ -56,7 +56,7 @@ function computeDbCommands() {
   dbCommands = new Array();
   $('.Atom .Atom').map(function () {
     $childAtom = $(this);
-    if (getParentTableRow($childAtom).attr('class')!='NewAtomTemplate') {
+    if (getParentAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
       var $containerElt = getParentContainer($childAtom);
       var relation = $containerElt.attr('relation'); 
      
@@ -249,12 +249,12 @@ function setEditHandlersBelow($elt) {
     var $atomElt = $(this).next().children().first(); // children is for AtomListElt
 
     if ($atomElt.attr('status')=='new')
-      getParentTableRow($(this)).remove(); // remove the row of the table containing delete stub and atom
+      getParentAtomRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
       if ($atomElt.attr('status') == 'modified') // restore the original atom name on delete
         $atomElt.find('.AtomName').text($atomElt.attr('originalAtom'));
       $atomElt.attr('status','deleted');
-      getParentTableRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
+      getParentAtomRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
       $atomElt.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
     
@@ -263,12 +263,11 @@ function setEditHandlersBelow($elt) {
   });  $elt.find('.InsertStub').click(function (event) {
     var $containerElt = getParentContainer($(this));
     
-    $newAtomTemplate = $containerElt.children().children().filter('.NewAtomTemplate');
-                    // <table>       <tbody>   <tr>
+    $newAtomTemplate = $containerElt.children().filter('[rowType=NewAtomTemplate]');
     
     $newAtomTableRow = $newAtomTemplate.clone();
 
-    $newAtomTableRow.attr('class',''); // remove the NewAtomTemplate class to make the new atom visible
+    $newAtomTableRow.attr('rowType','Normal'); // remove the NewAtomTemplate class to make the new atom visible
     $newAtomTemplate.before( $newAtomTableRow ); 
     
     setEditHandlersBelow($newAtomTableRow); // add the necessary handlers to the new element
@@ -342,8 +341,8 @@ function getParentContainer($elt) {
   return $elt.parents().filter('.Container').first();
 }
 
-function getParentTableRow($elt) {
-  return $elt.parents().filter('tr').first();
+function getParentAtomRow($elt) {
+  return $elt.parents().filter('.AtomRow').first();
 }
 function mapInsert(map, key, value) {
   if (map[key])
