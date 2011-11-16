@@ -134,7 +134,7 @@ function startEditing() {
 
 function getEmptyAtomsNotInTemplates() {
   $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
-    if ($(this).parents().filter('.NewAtomTemplate').length)
+    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
       return null;
     else {
       return $(this);
