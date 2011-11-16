@@ -105,9 +105,8 @@ button.button:hover { background-position: 0px -30px; color: white; }
   
 
 
-/* Give deletestub width 0 when not editing. Gives cleaner interface, but causes a jump on edit start */
-[editing=false] .AtomList .DeleteStub
-  { display: none
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub
+  { background-position: 6px 3px
   }
 
 .Label
@@ -117,6 +116,7 @@ button.button:hover { background-position: 0px -30px; color: white; }
 
 .AtomList
   { margin: 0px
+  ; padding-bottom: 5px
   ; border: 0px
   }
   
