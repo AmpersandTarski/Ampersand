@@ -23,10 +23,10 @@ button.button:hover { background-position: 0px -30px; color: white; }
 /* Atom name */  
 
 .AtomName
-  { font-family: Arial
+  { display: inline
+  ; font-family: Arial
   ; font-style: bold
   ; font-size: 13px
-  ; margin-bottom: 6px
   }
 
 [editing=false] .Atom[hasInterface] > .AtomName 
@@ -48,6 +48,11 @@ button.button:hover { background-position: 0px -30px; color: white; }
   { color: black
   }
 
+
+/* DeleteStub */
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub
+  { background-position: 6px 3px     /* because font-size is different from default */
+  }
 
 
 /* Special behavior for top level elements */
@@ -104,11 +109,7 @@ button.button:hover { background-position: 0px -30px; color: white; }
   }
   
 
-
-[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub
-  { background-position: 6px 3px
-  }
-
+/* Spacing */
 .Label
   { font-size: 13px
   ; margin-bottom: 3px
@@ -119,9 +120,9 @@ button.button:hover { background-position: 0px -30px; color: white; }
   ; padding-bottom: 5px
   ; border: 0px
   }
-  
 .AtomListElt 
   { padding: 0px
+  ; padding-bottom: 6px
   } 
 
 .InterfaceList 
