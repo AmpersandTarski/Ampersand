@@ -1,23 +1,13 @@
-var commandQueue = new Array();
-
 function initialize(interfacesMap) {
   console.log('initialize');
   if($('#PhpLog').children().length==0) 
     $('#PhpLog').remove();
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
-    commandQueue = new Array();
     setEditHandlers();
-    traceDbCommands(); // to initialize
+    traceDbCommands(); // to initialize command list
   }
   else
     setNavigationHandlers(interfacesMap);
-}
-
-function queueCommands(commandArray) {
-  jQuery.map(commandArray, function (command) {
-    $('.CommandQueue').append(showDbCommand(command)+'<br>');
-  });
-  commandQueue = commandQueue.concat(commandArray);
 }
 
 function showRelation(relation, isFlipped) {
@@ -165,78 +155,32 @@ function cancelEditing() {
   sendCommands([{cmd: 'editRollback'}]);
 }
 
-// navigation
 
-function navigateTo(interface, atom) {
-  window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
-}
 
-//todo interfacesMap arg is annoying
-function setNavigationHandlers(interfacesMap) {
-  $(".AtomName").map(function () {
-    $atomListElt = getParentAtomList($(this)); 
-    $atom=getParentAtom($(this));
-    concept =$atomListElt.attr('concept');
-    var atom = $atom.attr('atom');
-    var interfaces = interfacesMap[concept];
-    if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
-      $(this).click(function (event) {     // todo: figure out return value for click handlers
-        if (interfaces.length == 1)
-          navigateTo(interfaces[0], atom);
-        else
-          mkInterfaceMenu(event, $(this), interfaces, atom);
-      });
-    }     
-  });
-}
+// Editing UI
 
-function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
-  $('.InterfaceContextMenu').remove();
-  var $menu = $('<div class=InterfaceContextMenu>');
-  $parentDiv.append($menu);
-  $menu.offset({ top: event.pageY, left: event.pageX });
-
-  for (var i=0; i<interfaces.length; i++) {
-    var $item = $('<div class=InterfaceContextMenuItem interface='+
-                interfaces[i]+'>'+interfaces[i]+'</div>');   
-
-    $menu = $menu.append($item);
-    
-    addClickEvent($item,interfaces[i],atom);
-    // We need this separate function here to get a reference to i's value rather than the variable i.
-    // (otherwise we encounter the 'infamous loop problem': all i's have the value of i after the loop)
-  }
-}
-
-function addClickEvent($item, interface, atom) { 
-  $item.click(function () {
-    navigateTo(interface, atom);
-    $('.InterfaceContextMenu').remove(); // so the menu is gone when we press back
-    return false;
-  });
-}
-
-// Editing
-// todo: editing -> editingHover oid
-//       explain hover
 function setEditHandlers() {
   setEditHandlersBelow($('#AmpersandRoot'));
 }
 
 function setEditHandlersBelow($elt) {
 
-  $elt.find('.AtomList').hover(function () {
-    var $parentInterface = getParentAtomList($(this));
+  //on hover over an AtomList, set the attribute hover to true for that AtomList, but not for any child AtomLists
+  // (this is not possible with normal css hover pseudo elements)
+  $elt.find('.AtomList').hover(function () { 
+    // mouse enter handler
     
-    $parentInterface.attr('hover', 'false'); // todo: move to if below?
-    if ($(this).attr('relation'))
-        $(this).attr('hover', 'true');
-    }, function () {
+    var $parentInterface = getParentAtomList($(this));
+    $parentInterface.attr('hover', 'false');
+    $(this).attr('hover', 'true');
+  }, function () {
+    // mouse exit handler
+      
     $parentInterface = getParentAtomList($(this));
-    if ($parentInterface.attr('relation'))
-        $parentInterface.attr('hover', 'true');
+    $parentInterface.attr('hover', 'true');
     $(this).attr('hover', 'false');
   });
+  
   $elt.find('.AtomName').click(function(){
     var $atomListElt = getParentAtomList($(this));
     var relation = $atomListElt.attr('relation'); 
@@ -244,6 +188,7 @@ function setEditHandlersBelow($elt) {
       startAtomEditing(getParentAtom($(this)));
     }
   });
+  
   $elt.find('.DeleteStub').click(function() {
     var $atomElt = $(this).next().children().first(); // children is for AtomListElt
 
@@ -258,8 +203,9 @@ function setEditHandlersBelow($elt) {
     }
     
     traceDbCommands();
-
-  });  $elt.find('.InsertStub').click(function (event) {
+  });
+  
+  $elt.find('.InsertStub').click(function (event) {
     var $atomListElt = getParentAtomList($(this));
     
     $newAtomTemplate = $atomListElt.children().filter('[rowType=NewAtomTemplate]');
@@ -329,6 +275,60 @@ function stopAtomEditing($atom) {
     traceDbCommands();
   }
 }
+
+
+
+//navigation
+
+function navigateTo(interface, atom) {
+  window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
+}
+
+//todo interfacesMap arg is annoying
+function setNavigationHandlers(interfacesMap) {
+  $(".AtomName").map(function () {
+    $atomListElt = getParentAtomList($(this)); 
+    $atom=getParentAtom($(this));
+    concept =$atomListElt.attr('concept');
+    var atom = $atom.attr('atom');
+    var interfaces = interfacesMap[concept];
+    if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
+      $(this).click(function (event) {     // todo: figure out return value for click handlers
+        if (interfaces.length == 1)
+          navigateTo(interfaces[0], atom);
+        else
+          mkInterfaceMenu(event, $(this), interfaces, atom);
+      });
+    }     
+  });
+}
+
+function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
+  $('.InterfaceContextMenu').remove();
+  var $menu = $('<div class=InterfaceContextMenu>');
+  $parentDiv.append($menu);
+  $menu.offset({ top: event.pageY, left: event.pageX });
+
+  for (var i=0; i<interfaces.length; i++) {
+    var $item = $('<div class=InterfaceContextMenuItem interface='+
+                interfaces[i]+'>'+interfaces[i]+'</div>');   
+
+    $menu = $menu.append($item);
+    
+    addClickEvent($item,interfaces[i],atom);
+    // We need this separate function here to get a reference to i's value rather than the variable i.
+    // (otherwise we encounter the 'infamous loop problem': all i's have the value of i after the loop)
+  }
+}
+
+function addClickEvent($item, interface, atom) { 
+  $item.click(function () {
+    navigateTo(interface, atom);
+    $('.InterfaceContextMenu').remove(); // so the menu is gone when we press back
+    return false;
+  });
+}
+
 
 
 // utils
