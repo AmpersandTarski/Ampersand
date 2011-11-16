@@ -35,7 +35,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "RULE", "TEST"
                        , "RELATION", "MEANING", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V"
-                       , "PRAGMA", "PHRASE", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
+                       , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
                        , "BYPLUG"
                        , "ROLE", "EDITS", "MAINTAINS"
@@ -233,8 +233,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        PrE <$> pExplain      <|>
                        PrP <$> pPopulation
 
-   pPhrase          :: Parser Token (Lang,String)
-   pPhrase           = f <$ pKey "PHRASE" <*> pLanguageID <*> pString
+   pMeaning         :: Parser Token (Lang,String)
+   pMeaning          = f <$ pKey "MEANING" <*> pLanguageID <*> pString
                        where f lang str = (lang,str)
                         
    pGen             :: Parser Token P_Gen
@@ -242,8 +242,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    pRule            :: Parser Token P_Rule
-   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> (pPhrase `opt` (defaultLang,"")) <|>
-                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> (pPhrase `opt` (defaultLang,""))
+   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> (pMeaning `opt` (defaultLang,"")) <|>
+                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> (pMeaning `opt` (defaultLang,""))
                        where
                         --rnn -> rnm with generated name (rulid po)
                         rnn po rexp (lang,expl) = rnm po (rulid po) rexp (lang,expl)
@@ -523,13 +523,13 @@ and the grammar must be disambiguated in order to get a performant parser...
                          <*> (pProps `opt` [])
                          <*> ((True <$ pKey "BYPLUG") `opt` False)
                          <*> (pPragma `opt` [])
-                         <*> ((pKey "MEANING" *> pString) `opt` "")
+                         <*> (pMeaning `opt` (defaultLang,""))
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                        where rebuild nm pos' s fun' t bp1 props
                                = rbd pos' nm (P_Sign [s,t]) bp1 props'
                                  where props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
-                             rbd pos' nm sgn bp1 props bp2 pragma meaning content
+                             rbd pos' nm sgn bp1 props bp2 pragma (_,meaning) content
                                = P_Sgn { dec_nm   = nm
                                        , dec_sign = sgn
                                        , dec_prps = props
