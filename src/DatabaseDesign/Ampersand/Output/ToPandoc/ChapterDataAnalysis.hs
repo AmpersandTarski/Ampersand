@@ -22,7 +22,11 @@ fatal = fatalMsg "ChapterDataAnalysis.hs"
 --         the class diagram and multiplicity rules are printed
 chpDataAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 chpDataAnalysis lev fSpec flags
- = ( header ++ 
+ | theme flags == StudentTheme =
+   ( header ++ daPicsOnly
+   , [classificationPicture, classDiagramPicture] )
+ | otherwise = 
+   ( header ++ 
      daContents ++
      daAssociations remainingDecls ++
      [b | InternalPlug p<-plugInfos fSpec, b<-daPlug p] ++
@@ -31,7 +35,6 @@ chpDataAnalysis lev fSpec flags
                               English ->  "Switchboard"
                      ]] ++
      txtSwitchboard
-
    , [classificationPicture, classDiagramPicture, picSwitchboard] )
  where 
   remainingDecls = mors fSpec >- [r | p<-plugInfos fSpec, r<-mors p]
@@ -64,7 +67,7 @@ chpDataAnalysis lev fSpec flags
                   )++
                   [ Str (case length (classes classDiagram) of
                             0 -> "Er zijn"
-                            1 -> "Er is Ã©Ã©n gegevensverzameling,"
+                            1 -> "Er is één gegevensverzameling,"
                             _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
                         )
                   , Str $ " "++count flags (length (assocs classDiagram)) "associatie"++","
@@ -99,6 +102,44 @@ chpDataAnalysis lev fSpec flags
                   , Str $ " "++name fSpec++" has a total of "++count flags (length (concs fSpec)) "concept"++"."
                   ]] --TODO
    ) ++ [ Plain $ xrefFigure1 classificationPicture, Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
+
+  daPicsOnly :: [Block]
+  daPicsOnly = 
+   (case language flags of
+     Dutch   -> [Para $
+                  ( if genGraphics flags 
+                    then 
+                     ( if null (gens fSpec) then [] else
+                       [ Str "Een aantal concepten uit hoofdstuk "
+                       , xrefReference FunctionalRequirements
+                       , Str " zit in een classificatiestructuur. Deze is in figuur "
+                       , xrefReference classificationPicture
+                       , Str " weergegeven. " ] 
+                     ) ++
+                       [ Str "De eisen, die in hoofdstuk "
+                       , xrefReference FunctionalRequirements
+                       , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
+                       , xrefReference classDiagramPicture
+                       , Str ". " ]
+                    else []
+                  )]
+     English -> [Para $
+                  ( if genGraphics flags 
+                    then 
+                     ( if null (gens fSpec) then [] else
+                       [ Str "A number of concepts from chapter "
+                       , xrefReference FunctionalRequirements
+                       , Str " are organized in a classification structure. This is represented in figure "
+                       , xrefReference classificationPicture
+                       , Str ". " ] ) ++
+                       [ Str "The requirements, which are listed in chapter "
+                       , xrefReference FunctionalRequirements
+                       , Str ", have been translated into the data model in figure "
+                       , xrefReference classDiagramPicture
+                       , Str ". " ]
+                    else []
+                  )]
+   ) ++ [ Plain $ xrefFigure1 classificationPicture, Plain $ xrefFigure1 classDiagramPicture ]
 
   classDiagram :: ClassDiag
   classDiagram = cdAnalysis fSpec flags
@@ -154,7 +195,7 @@ chpDataAnalysis lev fSpec flags
         []  -> []
         [r] -> [ case language flags of
                    Dutch   ->
-                      Para [ Str $ upCap (name fSpec)++" heeft Ã©Ã©n associatie: "++showADL r++". Deze associatie "++ 
+                      Para [ Str $ upCap (name fSpec)++" heeft één associatie: "++showADL r++". Deze associatie "++ 
                                    case (isTot r, isSur r) of
                                     (False, False) -> "heeft geen beperkingen ten aanzien van multipliciteit."
                                     (True,  False) -> "is totaal."
@@ -211,7 +252,7 @@ chpDataAnalysis lev fSpec flags
        then []
        else [ Para [ case language flags of
                           Dutch   ->
-                            Str $ "Er is Ã©Ã©n endorelatie, "++texOnly_Id(name d)++" met de volgende eigenschappen: "
+                            Str $ "Er is één endorelatie, "++texOnly_Id(name d)++" met de volgende eigenschappen: "
                           English   ->
                             Str $ "There is one endorelation, "++texOnly_Id(name d)++" with the following properties: "]
             | length hMults==1, d<-hMults ]++
