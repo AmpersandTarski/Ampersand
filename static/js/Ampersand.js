@@ -10,6 +10,55 @@ function initialize() {
     setNavigationHandlers();
 }
 
+/* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
+ * on #AmpersandRoot. This is a feasible solution since the interfaces will be of a manageable size */
+function startEditing() {
+  $('#Rollback').append($('#AmpersandRoot > .Atom').clone());
+  $('#AmpersandRoot').attr('editing','true');
+  clearNavigationHandlers();
+  setEditHandlers();
+  traceDbCommands(); // to initialize command list
+}
+
+function cancelEditing() {
+  $('#AmpersandRoot > .Atom').remove();  
+  $('#AmpersandRoot').append($('#RollBack > .Atom'));
+  $('#AmpersandRoot').attr('editing','false');
+}
+
+function commitEditing() {
+  $emptyAtomsNotInTemplates = getEmptyAtomsNotInTemplates();
+  
+  if ($emptyAtomsNotInTemplates.length > 0) {
+    alert('Please fill out all <new> atoms first.');
+    return;
+  }
+  var dbCommands = computeDbCommands();
+  var commands = new Array();
+  
+  for (var i=0; i<dbCommands.length; i++) {
+    commands.push({cmd: 'editDatabase', dbCommand: dbCommands[i]});
+  }
+  commands.push({cmd: 'editCommit'});
+  console.log(commands);
+  sendCommands(commands);
+}
+
+function getEmptyAtomsNotInTemplates() {
+  $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
+    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
+      return null;
+    else {
+      return $(this);
+    }
+  });
+  return $emptyAtomsNotInTemplates;
+}
+
+
+
+// Edit commands
+
 function showRelation(relation, isFlipped) {
   return '<span style="font-family: Arial">'+relation+(isFlipped?'~':'')+'</span>';  
 }
@@ -105,7 +154,7 @@ function sendCommands(commandArray) {
   });
 }
 
-function traceCommand(dbCmd) {
+function traceDbCommand(dbCmd) {
   $('#DbCommandList').append('<div class=Command>'+showDbCommand(dbCmd)+'</div>');
 }
 
@@ -114,51 +163,8 @@ function traceDbCommands() {
   $('#DbCommandListRoot').prepend('<div id=DbCommandList></div>');
   $('#DbCommandList').append('<div class=Title>Edit commands:</div>');
   computeDbCommands().map( function(dbCmd) {
-    traceCommand(dbCmd);
+    traceDbCommand(dbCmd);
   });
-}
-
-function startEditing() {
-  $('#Rollback').append($('#AmpersandRoot > .Atom').clone());
-  $('#AmpersandRoot').attr('editing','true');
-  clearNavigationHandlers();
-  setEditHandlers();
-  traceDbCommands(); // to initialize command list
-}
-
-function cancelEditing() {
-  $('#AmpersandRoot > .Atom').remove();  
-  $('#AmpersandRoot').append($('#RollBack > .Atom'));
-  $('#AmpersandRoot').attr('editing','false');
-}
-
-function getEmptyAtomsNotInTemplates() {
-  $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
-    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
-      return null;
-    else {
-      return $(this);
-    }
-  });
-  return $emptyAtomsNotInTemplates;
-}
-
-function commitEditing() {
-  $emptyAtomsNotInTemplates = getEmptyAtomsNotInTemplates();
-  
-  if ($emptyAtomsNotInTemplates.length > 0) {
-    alert('Please fill out all <new> atoms first.');
-    return;
-  }
-  var dbCommands = computeDbCommands();
-  var commands = new Array();
-  
-  for (var i=0; i<dbCommands.length; i++) {
-    commands.push({cmd: 'editDatabase', dbCommand: dbCommands[i]});
-  }
-  commands.push({cmd: 'editCommit'});
-  console.log(commands);
-  sendCommands(commands);
 }
 
 
@@ -288,7 +294,7 @@ function stopAtomEditing($atom) {
 
 
 
-//navigation
+//Navigation
 
 function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
@@ -346,7 +352,7 @@ function addClickEvent($item, interface, atom) {
 
 
 
-// utils
+// Utils
 
 function getParentAtom($elt) {
   return $elt.parents().filter('.Atom').first();
