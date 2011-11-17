@@ -221,16 +221,17 @@ body
   }
 
 #DbCommandListRoot
-  { position: absolute
+  { display: none
+  }
+   
+[editing=true][dev=true] #DbCommandListRoot
+  { display: block
+  ; position: absolute
   ; width: 100%
   ; pointer-events: none
   }
 
-[dev=false] #DbCommandList
-  { display: none
-  }
-  
-[dev=true] #DbCommandList
+[editing=true][dev=true] #DbCommandList
   { float: right
   ; width: 500px
   ; padding: 10px
@@ -243,11 +244,17 @@ body
   ; clear: right
   }
   
-[dev=true] #DbCommandList > .Title
+[editing=true][dev=true] #DbCommandList > .Title
   { font-weight: bold 
   ; margin-bottom: 6px
   }
   
-[dev=true] #DbCommandList > .Command
+[editing=true][dev=true] #DbCommandList > .Command
   { font-size: 90%
+  }
+  
+/* Misc */
+
+#RollBack
+  { display: none
   }

@@ -292,6 +292,8 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo generateAtomInterfaces($dbName, $allInterfaceObjects[$interface], $atom, true); 
 
   echo '</div>';
+  echo '<div id=Rollback></div>';
+  
 } ?>
 </body>
 </html>

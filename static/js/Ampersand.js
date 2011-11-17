@@ -119,10 +119,17 @@ function traceDbCommands() {
 }
 
 function startEditing() {
+  $('#Rollback').append($('#AmpersandRoot > .Atom').clone());
   $('#AmpersandRoot').attr('editing','true');
   clearNavigationHandlers();
   setEditHandlers();
   traceDbCommands(); // to initialize command list
+}
+
+function cancelEditing() {
+  $('#AmpersandRoot > .Atom').remove();  
+  $('#AmpersandRoot').append($('#RollBack > .Atom'));
+  $('#AmpersandRoot').attr('editing','false');
 }
 
 function getEmptyAtomsNotInTemplates() {
@@ -154,9 +161,6 @@ function commitEditing() {
   sendCommands(commands);
 }
 
-function cancelEditing() {
-  sendCommands([{cmd: 'editRollback'}]);
-}
 
 
 // Editing UI
