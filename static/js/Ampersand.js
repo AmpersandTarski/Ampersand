@@ -1,7 +1,5 @@
 function initialize() {
   console.log('initialize');
-  if($('#PhpLog').children().length==0) 
-    $('#PhpLog').remove();
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
     setEditHandlers();
     traceDbCommands(); // to initialize command list
@@ -38,6 +36,37 @@ function commitEditing() {
   console.log(dbCommands);
   sendCommands(dbCommands);
 }
+
+function sendCommands(commandArray) {
+  $.post('Database.php',  
+  { commands: JSON.stringify(commandArray) },
+  function(data) {
+    $results = $('<div>');
+    $results.html(data);
+    
+    $('#PhpLog').empty();
+    $('#PhpLog').append($results.children());
+    console.log($('#PhpLog').children().children());
+    if ($('#PhpLog').children().children().length > 0)
+      $('#PhpLog').css('display','block');
+    
+    // Database cannot give errors yet, so we assume it was ok and reload the page
+    // TODO: refine this as soon as the communication with Database.php is determined
+    $.get(window.location.href,
+      function(data) {
+        $newPage = $('<div>');
+        $newPage.html(data);
+        
+        $('#AmpersandRoot > .Atom').remove();  
+        $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
+
+        $('#AmpersandRoot').attr('editing','false');
+
+        initialize();
+    });
+  });
+}
+
 
 function getEmptyAtomsNotInTemplates() {
   $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
@@ -138,24 +167,12 @@ function computeDbCommands() {
   return dbCommands;
 }
 
-function sendCommands(commandArray) {
-  $.post(window.location.href,  
-  { commands: JSON.stringify(commandArray) },
-  function(data) {
-    $('body').html(data);
-    init(); 
-    // This is the init() defined in Interface.php. The global reference is not ideal, but saves a lot of parameter passing.
-    // note: javascripts are not replaced by the post action.
-  });
-}
-
 function traceDbCommand(dbCmd) {
   $('#DbCommandList').append('<div class=Command>'+showDbCommand(dbCmd)+'</div>');
 }
 
 function traceDbCommands() {
-  $('#DbCommandList').remove();
-  $('#DbCommandListRoot').prepend('<div id=DbCommandList></div>');
+  $('#DbCommandList').empty();
   $('#DbCommandList').append('<div class=Title>Edit commands:</div>');
   computeDbCommands().map( function(dbCmd) {
     traceDbCommand(dbCmd);

@@ -205,12 +205,14 @@ body
 
 /* Php log and Command queue */
 
-#PhpLog[dev=false]
-  { display: none
+#PhpLog
+  { display: none /* display is set to block by javascript, when necessary */
   }
-  
-#PhpLog[dev=true]
-  { float: right
+   
+[editing=false][dev=true] #PhpLog
+  { position: absolute
+  ; bottom: 0px
+  ; right: 5px
   ; width: 500px
   ; padding: 10px
   ; background-color: lightblue
@@ -219,37 +221,30 @@ body
   ; border-color: black
   ; clear: right
   }
-
-#DbCommandListRoot
+  
+#DbCommandList
   { display: none
-  }
-   
-[editing=true][dev=true] #DbCommandListRoot
-  { display: block
-  ; position: absolute
-  ; width: 100%
-  ; pointer-events: none
   }
 
 [editing=true][dev=true] #DbCommandList
-  { float: right
+  { display: block
+  ; position: absolute
+  ; right: 5px
   ; width: 500px
   ; padding: 10px
-  ; margin-right: 25px /* +20 from the padding-left of AmpersandRoot */
   ; background-color: #d0d0d0
   ; border-style: solid
   ; border-width: 1px
   ; border-color: black
   ; border-collapse: none
-  ; clear: right
   }
   
-[editing=true][dev=true] #DbCommandList > .Title
+#DbCommandList > .Title
   { font-weight: bold 
   ; margin-bottom: 6px
   }
   
-[editing=true][dev=true] #DbCommandList > .Command
+#DbCommandList > .Command
   { font-size: 90%
   }
   
