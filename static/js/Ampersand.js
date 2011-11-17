@@ -11,7 +11,7 @@ function initialize() {
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
  * on #AmpersandRoot. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
-  $('#Rollback').append($('#AmpersandRoot > .Atom').clone());
+  $('#Rollback').append($('#AmpersandRoot > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
   $('#AmpersandRoot').attr('editing','true');
   clearNavigationHandlers();
   setEditHandlers();
@@ -21,6 +21,7 @@ function startEditing() {
 function cancelEditing() {
   $('#AmpersandRoot > .Atom').remove();  
   $('#AmpersandRoot').append($('#RollBack > .Atom'));
+  //setNavigationHandlers();
   $('#AmpersandRoot').attr('editing','false');
 }
 
@@ -184,7 +185,7 @@ function traceDbCommands() {
 // Editing UI
 
 function clearEditHandlers() {
-  $('.Atom').unbind('click');
+  $('#AmpersandRoot .Atom').unbind('click');
 }
 
 function setEditHandlers() {
@@ -313,11 +314,11 @@ function navigateTo(interface, atom) {
 }
 
 function clearNavigationHandlers() {
-  $('.AtomName').unbind('click'); 
+  $('#AmpersandRoot .AtomName').unbind('click'); 
 }
 
 function setNavigationHandlers() {
-  $(".AtomName").map(function () {
+  $("#AmpersandRoot .AtomName").map(function () {
     $atomListElt = getParentAtomList($(this)); 
     $atom=getParentAtom($(this));
     concept =$atomListElt.attr('concept');
