@@ -39,7 +39,6 @@ function commitEditing() {
   for (var i=0; i<dbCommands.length; i++) {
     commands.push({cmd: 'editDatabase', dbCommand: dbCommands[i]});
   }
-  commands.push({cmd: 'editCommit'});
   console.log(commands);
   sendCommands(commands);
 }

@@ -106,9 +106,13 @@ function processCommands() {
     } else {
       $isEditing = false;
 
+      dbStartTransaction($dbName);
+      
       foreach ($commandArray as $command)
         $isEditing = processCommand($command);
-        
+      
+      dbCommitTransaction($dbName);
+      
       return $isEditing;
     }
   }
@@ -120,15 +124,9 @@ function processCommand($command) {
     error("Malformed command, missing 'cmd'");
   
   switch ($command->cmd) {
-    case 'editStart':
-      dbStartTransaction($dbName);
-      return true;
     case 'editDatabase':
       processEditDatabase($command->dbCommand);
       return true;
-    case 'editCommit':
-      dbCommitTransaction($dbName);
-      return false;
     default:
       error("Unknown command '$command->cmd'");
   }
@@ -278,10 +276,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
   
-  // store the interface and atom as attrs of body and set editing to true or false
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
-       ' editing="'.($isEditing?'true':'false').'" dev="'.($isDev?'true':'false').'">';
-  // todo: maybe remember editing? (not an issue now, since during editing there is no navigation)
+       ' editing=false dev="'.($isDev?'true':'false').'">';
+
   echo '<div id=DbCommandListRoot></div>';
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
