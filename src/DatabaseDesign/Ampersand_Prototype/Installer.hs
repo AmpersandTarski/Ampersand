@@ -71,11 +71,17 @@ where
                                        then " AUTO_INCREMENT" else ""
                       ]
                      ++
-                      [", UNIQUE KEY (`"++fldname key++"`)"
-                      | key <- tblfields plug, flduniq key, not (fldnull key)] --TODO151210 -> Add KeyDefs as UNIQUE KEY
+                      [", UNIQUE KEY (`"++fldname key++"`)" --TODO151210 -> Add KeyDefs as UNIQUE KEY
+                      | key <- tblfields plug
+                      , flduniq key
+                      , not (fldnull key)
+                      , fldtype key /= SQLBlob] --Blob cannot be a KEY or INDEX 
                      ++
                       [", UNIQUE INDEX (`"++fldname kernelfld++"`)" --kernelfields are unique indexes (they are already unique keys if not fldnull)
-                      | kernelfld <- tblfields plug, flduniq kernelfld, fldnull kernelfld]
+                      | kernelfld <- tblfields plug
+                      , flduniq kernelfld
+                      , fldnull kernelfld
+                      , fldtype kernelfld /= SQLBlob]
                     )
              ++ ["                  ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]

@@ -80,9 +80,15 @@ creates conn (tbl:tbls) =
                ++"("++intercalate "," 
                       ([createfld f |f<-tblfields tbl]
                      ++[" UNIQUE KEY (`"++fldname key++"`)"
-                       | key <- tblfields tbl, flduniq key, not (fldnull key)]
+                       | key <- tblfields tbl
+                       , flduniq key
+                       , not (fldnull key)
+                       , fldtype key /= SQLBlob] --Blob cannot be a KEY or INDEX
                      ++[" UNIQUE INDEX (`"++fldname kernelfld++"`)" 
-                       | kernelfld <- tblfields tbl, flduniq kernelfld, fldnull kernelfld])
+                       | kernelfld <- tblfields tbl
+                       , flduniq kernelfld
+                       , fldnull kernelfld
+                       , fldtype kernelfld /= SQLBlob])
                ++") TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin ")
          createfld fld = "`"++fldname fld++"` " 
                             --TODO -> A_Concepts should be attached to a SQL type. 
@@ -91,6 +97,7 @@ creates conn (tbl:tbls) =
                             ++ autoIncr fld ++ nul fld
          nul fld = if fldnull fld then "" else " NOT NULL"
          autoIncr fld = if fldauto fld then " AUTO_INCREMENT" else ""
+         --atlastxt fld = not (flduniq fld) && elem ((name.target.fldexpr) fld) ["CptPurpose","RelPurpose","Explanation","RulPurpose","PatPurpose","Description","Definition"]
 
 ----------------------
 fillAtlas :: Fspc -> Options -> IO()
