@@ -255,7 +255,7 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 <script type="text/javascript">
 
 function init() {
-  initialize(getInterfacesMap());
+  initialize();
 }
 
 <?php echo generateInterfaceMap($allInterfaceObjects); ?>

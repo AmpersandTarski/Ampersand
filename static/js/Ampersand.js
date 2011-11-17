@@ -304,9 +304,8 @@ function setNavigationHandlers() {
     $atom=getParentAtom($(this));
     concept =$atomListElt.attr('concept');
     var atom = $atom.attr('atom');
-    var interfaces = interfacesMap[concept]; 
-    // NOTE: interfacesMap is global variable. (since js has no import mechanism and we don't want to pass this variable
-    //                                          around all the time, a more elegant solution is not possible)
+    var interfaces = getInterfacesMap()[concept];  // NOTE: getInterfacesMap is assumed to be declared 
+    // (since js has no import mechanism and we don't want to pass variables around all the time, a more elegant solution is not possible)
     
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
       $(this).click(function (event) {     // todo: figure out return value for click handlers
