@@ -123,8 +123,9 @@ function generateInterface($db, $interface, $srcAtom) {
  */
   
   $html = "";
-  emit($html, '<div class=Interface>');
+  emit($html, '<div class=Interface label='.showHtmlAttrStr($interface['name']).'>');
   emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
+  
   
   if ($srcAtom == null)
     $codomainAtoms = array (); // in case the table would contain (null, some atom)  
