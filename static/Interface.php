@@ -5,8 +5,6 @@ ini_set("display_errors", 1);
 require "Interfaces.php"; // defines $dbName, $isDev, $relationTableInfo and $allInterfaceObjects
 require "php/DatabaseUtils.php";
 
-session_start();
-
 /*
 // todo:
  * 
