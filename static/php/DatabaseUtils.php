@@ -107,8 +107,8 @@ function generateInterfaceMap($interfaces) {
 
 function generateInterface($db, $interface, $srcAtom) {
 /*
- *  <Interface>
- *   <Label> interface label </Label>
+ *  <Interface label='interface label'>
+ *   <Label>interface label</Label>
  *   <AtomList concept=.. [relation=..  relationIsFlipped=..]>
  *     ..
  *     for each $tgtAtom in codomain of relation of $interface
@@ -124,8 +124,7 @@ function generateInterface($db, $interface, $srcAtom) {
   
   $html = "";
   emit($html, '<div class=Interface label='.showHtmlAttrStr($interface['name']).'>');
-  emit($html, withClass('Label', htmlSpecialChars($interface['name'])));
-  
+  emit($html, "<div class=Label>".htmlSpecialChars($interface['name']).'</div>');
   
   if ($srcAtom == null)
     $codomainAtoms = array (); // in case the table would contain (null, some atom)  
@@ -201,7 +200,8 @@ function selectCoDomain($atom, $selectRel) {
 }
 
 
-// utils
+// Utils
+
 function getTopLevelInterfacesForConcept($concept) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();
@@ -212,15 +212,9 @@ function getTopLevelInterfacesForConcept($concept) {
   return $interfacesForConcept;
 }
 
-function withClass($class, $elt) {
-  return "<div class=$class>$elt</div>";
-}
-
 function emit(&$lines,$line) {
   $lines.=$line."\n";
 }
-
-
 
 // for use in specifiying values for attributes to html elements (eg. <div attr=VALUE>)
 // " -> &quot,  
