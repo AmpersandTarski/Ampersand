@@ -106,13 +106,13 @@ function sendCommands(commandArray) {
 }
 
 function traceCommand(dbCmd) {
-  $('#CommandQueue').append('<div>'+showDbCommand(dbCmd)+'</div>');
+  $('#DbCommandList').append('<div class=Command>'+showDbCommand(dbCmd)+'</div>');
 }
 
 function traceDbCommands() {
-  $('#CommandQueue').remove();
-  $('#AmpersandRoot').prepend('<div id=CommandQueue></div>');
-  $('#CommandQueue').append('<div><b>Edit operations:</b></div>');
+  $('#DbCommandList').remove();
+  $('#DbCommandListRoot').prepend('<div id=DbCommandList></div>');
+  $('#DbCommandList').append('<div class=Title>Edit commands:</div>');
   computeDbCommands().map( function(dbCmd) {
     traceCommand(dbCmd);
   });

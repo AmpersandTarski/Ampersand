@@ -285,7 +285,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
        ' editing="'.($isEditing?'true':'false').'" dev="'.($isDev?'true':'false').'">';
   // todo: maybe remember editing? (not an issue now, since during editing there is no navigation)
-  
+  echo '<div id=DbCommandListRoot></div>';
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
