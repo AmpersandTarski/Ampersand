@@ -206,11 +206,12 @@ body
 /* Php log and Command queue */
 
 #PhpLog
-  { display: none /* display is set to block by javascript, when necessary */
+  { display: none
   }
    
-[editing=false][dev=true] #PhpLog
-  { position: absolute
+[editing=false][dev=true] #PhpLog[nonEmpty=true]
+  { display: block
+  ; position: absolute
   ; bottom: 0px
   ; right: 5px
   ; width: 500px

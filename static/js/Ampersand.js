@@ -21,7 +21,9 @@ function startEditing() {
 function cancelEditing() {
   $('#AmpersandRoot > .Atom').remove();  
   $('#AmpersandRoot').append($('#RollBack > .Atom'));
-  //setNavigationHandlers();
+  
+  $('#PhpLog').attr('nonEmpty','false'); // if non-empty, these would show again after setting editing to false
+  
   $('#AmpersandRoot').attr('editing','false');
 }
 
@@ -46,10 +48,11 @@ function sendCommands(commandArray) {
     $results.html(data);
     
     $('#PhpLog').empty();
-    $('#PhpLog').append($results.children());
+    $('#PhpLog').append($results.children()); //children .children is because result contains div .PhpResults
     console.log($('#PhpLog').children().children());
-    if ($('#PhpLog').children().children().length > 0)
-      $('#PhpLog').css('display','block');
+
+    
+    $('#PhpLog').attr('nonEmpty', $('#PhpLog').children().children().length > 0 ? 'true' : 'false' );
     
     // Database cannot give errors yet, so we assume it was ok and reload the page
     // TODO: refine this as soon as the communication with Database.php is determined
@@ -62,6 +65,7 @@ function sendCommands(commandArray) {
         $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
 
         $('#AmpersandRoot').attr('editing','false');
+        
 
         initialize();
     });
