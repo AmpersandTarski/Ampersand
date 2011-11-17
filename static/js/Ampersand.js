@@ -1,4 +1,4 @@
-function initialize(interfacesMap) {
+function initialize() {
   console.log('initialize');
   if($('#PhpLog').children().length==0) 
     $('#PhpLog').remove();
@@ -7,7 +7,7 @@ function initialize(interfacesMap) {
     traceDbCommands(); // to initialize command list
   }
   else
-    setNavigationHandlers(interfacesMap);
+    setNavigationHandlers();
 }
 
 function showRelation(relation, isFlipped) {
@@ -159,7 +159,6 @@ function cancelEditing() {
 }
 
 
-
 // Editing UI
 
 function clearEditHandlers() {
@@ -291,18 +290,20 @@ function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
 }
 
-function clearNavigationHandlers(interfacesMap) {
+function clearNavigationHandlers() {
   $('.AtomName').unbind('click'); 
 }
 
-//todo interfacesMap arg is annoying
-function setNavigationHandlers(interfacesMap) {
+function setNavigationHandlers() {
   $(".AtomName").map(function () {
     $atomListElt = getParentAtomList($(this)); 
     $atom=getParentAtom($(this));
     concept =$atomListElt.attr('concept');
     var atom = $atom.attr('atom');
-    var interfaces = interfacesMap[concept];
+    var interfaces = interfacesMap[concept]; 
+    // NOTE: interfacesMap is global variable. (since js has no import mechanism and we don't want to pass this variable
+    //                                          around all the time, a more elegant solution is not possible)
+    
     if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
       $(this).click(function (event) {     // todo: figure out return value for click handlers
         if (interfaces.length == 1)
