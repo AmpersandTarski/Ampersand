@@ -129,9 +129,6 @@ function processCommand($command) {
     case 'editCommit':
       dbCommitTransaction($dbName);
       return false;
-    case 'editRollback':
-      dbRollbackTransaction($dbName);
-      return false;
     default:
       error("Unknown command '$command->cmd'");
   }
