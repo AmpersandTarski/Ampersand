@@ -48,9 +48,9 @@ function sendCommands(commandArray) {
     $results.html(data);
     
     $('#PhpLog').empty();
-    $('#PhpLog').append($results.children()); //children .children is because result contains div .PhpResults
-    console.log($('#PhpLog').children().children());
-
+    $('#PhpLog').append($results.children());        // children .children is because result contains div .PhpResults
+    console.log($('#PhpLog').children().children()); // selecting the text and br children is awkward in jQuery, but this is only
+                                                     // temporary anyway
     
     $('#PhpLog').attr('nonEmpty', $('#PhpLog').children().children().length > 0 ? 'true' : 'false' );
     
@@ -65,7 +65,6 @@ function sendCommands(commandArray) {
         $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
 
         $('#AmpersandRoot').attr('editing','false');
-        
 
         initialize();
     });
