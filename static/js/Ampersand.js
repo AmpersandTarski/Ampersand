@@ -119,7 +119,10 @@ function traceDbCommands() {
 }
 
 function startEditing() {
-  sendCommands([{cmd: 'editStart'}]);
+  $('#AmpersandRoot').attr('editing','true');
+  clearNavigationHandlers();
+  setEditHandlers();
+  traceDbCommands(); // to initialize command list
 }
 
 function getEmptyAtomsNotInTemplates() {
@@ -158,6 +161,10 @@ function cancelEditing() {
 
 
 // Editing UI
+
+function clearEditHandlers() {
+  $('.Atom').unbind('click');
+}
 
 function setEditHandlers() {
   setEditHandlersBelow($('#AmpersandRoot'));
@@ -282,6 +289,10 @@ function stopAtomEditing($atom) {
 
 function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom);     
+}
+
+function clearNavigationHandlers(interfacesMap) {
+  $('.AtomName').unbind('click'); 
 }
 
 //todo interfacesMap arg is annoying
