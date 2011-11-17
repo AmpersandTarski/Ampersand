@@ -98,68 +98,48 @@ function error($msg) {
 }
 
 function processCommands() {  
+  global $dbName; 
+  
   $commandsJson =$_POST['commands']; 
   if (isset($commandsJson)) {
     $commandArray = json_decode($commandsJson);
-    if (!$commandArray) {
-        error('Malformed commands');
-    } else {
-      $isEditing = false;
-
-      dbStartTransaction($dbName);
+    
+    dbStartTransaction($dbName);
       
-      foreach ($commandArray as $command)
-        $isEditing = processCommand($command);
+    foreach ($commandArray as $command)
+      $isEditing = processCommand($command);
       
-      dbCommitTransaction($dbName);
+    dbCommitTransaction($dbName);
       
-      return $isEditing;
-    }
+    return $isEditing;
   }
 }
 
 function processCommand($command) {
-  global $dbName; 
-  if (!isset($command->cmd))
-    error("Malformed command, missing 'cmd'");
-  
-  switch ($command->cmd) {
-    case 'editDatabase':
-      processEditDatabase($command->dbCommand);
-      return true;
-    default:
-      error("Unknown command '$command->cmd'");
-  }
-}
+  if (!isset($command->dbCmd))
+    error("Malformed command, missing 'dbCmd'");
 
-function processEditDatabase($dbCommand) {
-  if (!isset($dbCommand))
-    error("Malformed database command, missing 'dbcommand'");
-  
-  if (!isset($dbCommand->dbCmd))
-    error("Malformed database command, missing 'dbCmd'");
-
-  switch ($dbCommand->dbCmd) {
+  switch ($command->dbCmd) {
     case 'update':
-      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) &&
-          array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand) &&
-          array_key_exists('parentOrChild', $dbCommand) && array_key_exists('originalAtom', $dbCommand))
-        editUpdate($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom
-                  ,$dbCommand->parentOrChild, $dbCommand->originalAtom);
+      if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
+          array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
+          array_key_exists('parentOrChild', $command) && array_key_exists('originalAtom', $command))
+        editUpdate($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom
+                  ,$command->parentOrChild, $command->originalAtom);
       else 
-        error("Database command $dbCommand->dbCmd is missing parameters");
+        error("Command $command->dbCmd is missing parameters");
       break;
     case 'delete':
-      if (array_key_exists('relation', $dbCommand) && array_key_exists('isFlipped', $dbCommand) &&
-          array_key_exists('parentAtom', $dbCommand) && array_key_exists('childAtom', $dbCommand))
-        editDelete($dbCommand->relation, $dbCommand->isFlipped, $dbCommand->parentAtom, $dbCommand->childAtom);
+      if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
+          array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command))
+        editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
       else {
-        print_r($dbCommand);
-        error("Database command $dbCommand->dbCmd is missing parameters");
+        print_r($command);
+        error("Command $command->dbCmd is missing parameters");
       }
       break;
     default:
-      error("Unknown database command '$dbCommand->dbCmd'");
+      error("Unknown command '$command->dbCmd'");
   }
 }
 

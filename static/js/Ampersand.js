@@ -33,14 +33,10 @@ function commitEditing() {
     alert('Please fill out all <new> atoms first.');
     return;
   }
-  var dbCommands = computeDbCommands();
-  var commands = new Array();
   
-  for (var i=0; i<dbCommands.length; i++) {
-    commands.push({cmd: 'editDatabase', dbCommand: dbCommands[i]});
-  }
-  console.log(commands);
-  sendCommands(commands);
+  var dbCommands = computeDbCommands();
+  console.log(dbCommands);
+  sendCommands(dbCommands);
 }
 
 function getEmptyAtomsNotInTemplates() {
