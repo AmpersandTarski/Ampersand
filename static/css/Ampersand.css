@@ -11,7 +11,7 @@ body
   { display: table
   ; border: 0px
   ; margin: 0px
-  ; padding: 0px
+  ; padding-left: 10px
   ; cell-padding: 0px
   ; border-spacing: 0px
   ; background-color: white
@@ -212,7 +212,7 @@ body
 [dev=true] #PhpLog[nonEmpty=true]
   { display: block
   ; position: absolute
-  ; bottom: 0px
+  ; bottom: 5px
   ; right: 5px
   ; width: 500px
   ; padding: 10px
@@ -262,6 +262,7 @@ body
 [editing=true] #IssueList[nonEmpty=true]
   { display: block
   ; position: absolute
+  ; left: 5px
   ; bottom: 5px
   ; width: 600px
   ; padding: 10px
