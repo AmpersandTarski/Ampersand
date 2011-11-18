@@ -125,16 +125,4 @@ function jsBool($b) {
 function escapeURI($str) {
     return str_replace(array('&'), array('%26'), $str); // replace & by %26
 }
-function emitAmpersandErr($err) {
-  echo "<div class=AmpersandErr>$err</div>";
-}
-
-function emitLog($msg) {
-  echo "<div class=LogMsg>$msg</div>";
-}
-
-function error($msg) {
-  die("<div class=Error>Error in Database.php: $msg</div>");
-} // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
-
 ?>
