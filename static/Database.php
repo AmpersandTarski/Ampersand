@@ -30,6 +30,8 @@ todo: modified atom values are not escaped
 todo: don't delete if original is null
 todo: maybe don't use column unique and not null, since these might be weaker than the multiplicities (sometimes a surjective relation will allow nulls, depending on other relations in the same table, although possibly the table prop generator is wrong and will contain non-null in that case)
 todo: box shadow gebruiken?
+todo: header always at top? probably makes it easier to float error windows
+
 todo: click anywhere should disable navigation context menu
 todo: figure out how to do editing when interfaces are floating horizontally at some level (e.g. in Viro)
 todo: sqlRelPlugNames also returns list. Change to maybe?
@@ -150,6 +152,7 @@ function processCommand($command) {
 }
 
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
+  if ($childAtom=='x') error('Don\'t update to \'x\'!');
   global $dbName;
   global $relationTableInfo;
   global $conceptTableInfo;
@@ -209,6 +212,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
 // TODO use backquote for table names? 
 // TODO check escaping for table names
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
+  if ($childAtom=='Pino') emitAmpersandErr('Don\'t delete Pino!');
   global $dbName; 
   global $relationTableInfo;
   emitLog ("editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom)");
