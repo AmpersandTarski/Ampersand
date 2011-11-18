@@ -60,8 +60,23 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   [ ""
   , "$allInterfaceObjects ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $ map (generateInterface fSpec opts) allInterfaces)
+       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $ 
+         map (generateInterface fSpec opts) allInterfaces) ++
+  [ ""
+  , "$rulesSql ="
+  , "  array" ] ++
+       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
+         [ [ "array ( 'name' => "++showPhpStr (rrnm rule)
+           , "      , 'origin' => "++showPhpStr (show $ rrfps rule)
+           , "      , 'meaning' => "++showPhpStr (showMeaning rule)
+           , "      , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . ECpl . rrexp $ rule)++"'" 
+           , "      )" ]
+         | (i,rule) <- zip [0..] $ vrules fSpec ])
+       
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
+       showMeaning rule = case [explainContent2String ReST False xs | Means _ xs<-rrxpl rule] of
+                            meaning:_ -> meaning
+                            _         -> "No meaning"
 
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
@@ -89,7 +104,7 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
-  ] ++ (indent 10 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
+  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
   [ "      )"
   ]
  
