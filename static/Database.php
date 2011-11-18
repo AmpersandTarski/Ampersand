@@ -22,6 +22,7 @@ echo '</div>';
  * 
 
 ticket 138
+todo: remove test errors for update to x and delete Pino
 todo: a php error should also cause rollback, so perhaps we do need to collect php results, rather than echoing them.
 todo: implement navigation arrow from old prototype?
 todo: does Atom Atom in computeDbCommands also match descendants? (eg. .. ATOM .. atom .. ATOM ..)
