@@ -425,14 +425,12 @@ where
      = intercalate indentA
         [ "A_Pat { ptnm  = "++show (name pat)
         , ", ptpos = "++showHS flags "" (ptpos pat)
+        , ", ptend = "++showHS flags "" (ptend pat)
         , if null (ptrls pat) then ", ptrls = [] -- no rules"
                               else ", ptrls = [" ++intercalate ", " [showHSname r | r<-ptrls pat] ++"]"
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
         , if null (ptdcs pat) then ", ptdcs = [] -- no declarations"
                               else ", ptdcs = [" ++intercalate          ", " [showHSname d | d<-ptdcs pat] ++"]"
-        , wrap ", ptcds = " indentB (showHS flags) (ptcds pat)
-        , if null (ptcds pat) then ", ptcds = [] -- no concept definitions"
-                              else ", ptcds = [" ++intercalate          ", " [showHSname c | c<-ptcds pat] ++"]"
         , wrap ", ptkds = " indentB (showHS flags) (ptkds pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
@@ -475,10 +473,6 @@ where
            []          -> "     , prcRRels = [] {- no role-relation assignments -}"
            [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
            rs          -> "     , prcRRels = [ "++intercalate (indent'++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indent'++"]"
-        , case prcCds prc of
-           []          -> "     , prcCds   = [] {- no concept definitions -}"
-           [c]         -> "     , prcCds   = [ "++showHSname c++" ]"
-           cs          -> "     , prcCds   = [ "++intercalate (indent'++", ") [showHSname c | c<-cs] ++indent'++"]"
         , case prcKds prc of
            []          -> "     , prcKds   = [] {- no key definitions -}"
            [k]         -> "     , prcKds   = [ "++showHS flags "" k++" ]"
@@ -771,9 +765,9 @@ where
 -- \***********************************************************************
 
    instance ShowHS ConceptDef where
-    showHSname cd = haskellIdentifier ("cDef_"++name cd)
+    showHSname cd = haskellIdentifier ("cDef_"++cdcpt cd)
     showHS flags _ cd
-     = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdnm cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
+     = " Cd ("++showHS flags "" (cdpos cd)++") "++cdcpt cd++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Concept                     ***

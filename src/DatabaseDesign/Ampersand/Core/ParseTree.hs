@@ -87,7 +87,8 @@ where
     origin = rr_Pos
 
    data P_Process = P_Prc { procNm    :: String
-                          , procPos   :: Origin
+                          , procPos   :: Origin           -- ^ the start position in the file
+                          , procEnd   :: Origin           -- ^ the end position in the file
                           , procRules :: [P_Rule]
                           , procGens  :: [P_Gen]
                           , procDcls  :: [P_Declaration]
@@ -118,7 +119,8 @@ where
 
    data P_Pattern
       = P_Pat { pt_nm  :: String          -- ^ Name of this pattern
-              , pt_pos :: Origin          -- ^ the position in the file in which this pattern was declared.
+              , pt_pos :: Origin          -- ^ the starting position in the file in which this pattern was declared.
+              , pt_end :: Origin          -- ^ the end position in the file in which this pattern was declared.
               , pt_rls :: [P_Rule]        -- ^ The user defined rules in this pattern
               , pt_gns :: [P_Gen]         -- ^ The generalizations defined in this pattern
               , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
@@ -242,24 +244,21 @@ where
 
 ----------------------End of  Classes -----
    type ConceptDefs = [ConceptDef]
--- | SJ: TODO: In the definition of ConceptDef, we ought to substitute cdnm::String with cdcpt::Concept. That would produce slightly less code duplication elsewhere.
    data ConceptDef 
       = Cd  { cdpos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
-            , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
+            , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
             , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
             , cddef :: String   -- ^ The textual definition of this concept.
             , cdtyp :: String   -- ^ The type of this concept.
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
-            }   deriving (Show)
+            }   deriving (Show,Eq)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
 -- \***********************************************************************
-   instance Eq ConceptDef where
-    cd == cd' = cdnm cd == cdnm cd'
  --  instance Show ConceptDef
-   instance Identified ConceptDef where
-    name = cdnm
+   instance Traced ConceptDef where
+    origin = cdpos
    
    data P_Declaration = 
          P_Sgn { dec_nm   :: String    -- ^ the name of the declaration

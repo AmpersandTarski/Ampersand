@@ -5,10 +5,10 @@ module DatabaseDesign.Ampersand.Output.PandocAux
     --  , xrefReference
       , symDefLabel, symDefRef
       , symReqLabel, symReqRef, symReqPageRef
-      , makeDefinition
     --  , xrefFigure1
       , pandocEqnArray
       , pandocEquation
+      , makeDefinition, uniquecds
       , count
       , ShowMath(..)
       , latexEscShw
@@ -41,8 +41,8 @@ fatal = fatalMsg "Basics"
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
-writepandoc :: Options -> Pandoc -> (String,IO(),IO())
-writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
+writepandoc :: Options -> [GlossaryItem] -> Pandoc -> (String,IO(),IO())
+writepandoc flags gis thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
          outputFile = addExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
@@ -58,10 +58,10 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                             writeFile outputFile (writeNative defaultWriterOptions  thePandoc)
                             verboseLn flags "... done."
               FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
-                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
+                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags gis} thePandoc)
                             verboseLn flags "... done."
               FLatex  -> do verboseLn flags ("Generating to LaTeX: "++outputFile)
-                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
+                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags gis} thePandoc)
                             verboseLn flags "... done."
               FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
                             writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
@@ -111,11 +111,12 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                    do result <- if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
                                                 then system ( pdfLatexCommand++
                                                               if verboseP flags then "" else "> "++combine (dirOutput flags) "pdflog" ) >>
-                                                     system  makeIndexCommand 
+                                                     system  makeIndexCommand
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                                else system $ "cd "++dirOutput flags++
+                                                else system ( "cd "++dirOutput flags++
                                                               " && pdflatex "++commonFlags++
-                                                              texFilename ++ if verboseP flags then "" else "> pdflog"
+                                                              texFilename ++ if verboseP flags then "" else "> pdflog" ) >>
+                                                     system makeIndexCommand
                                       case result of 
                                          ExitSuccess   -> verboseLn flags "PDF file created."
                                          ExitFailure _ -> hPutStrLn stderr $  if verboseP flags 
@@ -124,8 +125,9 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                                                     " or rerun ampersand with the --verbose option"
                                       where
                                       pdfLatexCommand = "pdflatex "++commonFlags++pdfflags++ outputFile
-                                      -- the following command line has been taken directly from the documentation of "glossary.sty"
-                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo"
+                                      --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
+                                      --makeindex uses the error stream for verbose stuff...
+                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput flags) "glossaries.log"
                                       pdfflags = (if verboseP flags then "" else " --disable-installer") ++
                                                  " -include-directory="++dirOutput flags++ " -output-directory="++dirOutput flags++" "
                                       texFilename = addExtension (baseName flags) ".tex"
@@ -134,14 +136,17 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       -- on windows, we also do --disable-installer, since otherwise a missing package may cause interaction,
                                       -- even with --interaction=nonstopmode.
                _  -> return()            
-               
+
+-- | The definitions of concepts will be written in the glossary
+type GlossaryItem = A_Concept --change to a data type if you want more types of glossary items
+  
 -- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
 -- De onderstaande code is een vrij rauwe combinatie van de oude LaTeX header en het
 -- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
 -- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
 -- Wellicht wordt e.e.a. daardoor simpeler.
-theTemplate :: Options -> String
-theTemplate flags 
+theTemplate :: Options -> [GlossaryItem] -> String
+theTemplate flags gis 
   = case fspecFormat flags of
     FLatex ->  concat $
                [ "% This header is the default LaTeX template for generating documents with Ampersand.\n"
@@ -156,8 +161,6 @@ theTemplate flags
                , "% -- packages used for several purposes:\n"
                , "\\usepackage{float}\n"
                , "\\usepackage{ctable}\n"
-               , "\\usepackage{glossary}\n"
-               , "\\makeglossary\n"
                , "\\usepackage{theorem}\n"
                , "\\usepackage{amssymb}\n"
                , "\\usepackage{amsmath}         % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output.\n"
@@ -286,7 +289,17 @@ theTemplate flags
                , "\\date{$date$}\n"
                , "$endif$\n"
                , "\n"
-               , "\\begin{document}\n"
+                 {- "Note that the glossaries package must be loaded after the hyperref package (contrary
+                  -  to the general advice that hyperref should be loaded last). The glossaries
+                  -  package should also be loaded after html, inputenc, babel and ngerman."
+                  - http://ftp.snt.utwente.nl/pub/software/tex/macros/latex/contrib/glossaries/glossariesbegin.pdf -}
+               , "\\usepackage{glossaries}\n"
+               , "\\makeglossaries\n"
+               ] ++
+               [ "\\newglossaryentry{"++latexEscShw cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
+               | c<-gis, (cdnm,cd)<-uniquecds c]
+               ++
+               [ "\\begin{document}\n"
                , "$if(title)$\n"
                , "\\maketitle\n"
                , "$endif$\n"
@@ -379,7 +392,7 @@ class SymRef a where
   symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
 
 instance SymRef ConceptDef where
-  symLabel cd = "Concept:"++stripSpecialChars (name cd)
+  symLabel cd = "Concept:"++stripSpecialChars (cdcpt cd)
 
 instance SymRef A_Concept where
   symLabel c = "Concept:"++stripSpecialChars (name c)
@@ -532,11 +545,13 @@ stripSpecialChars x
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-makeDefinition :: Options -> (Int, ConceptDef) -> [Block]
-makeDefinition flags (i,cd)
+uniquecds :: A_Concept -> [(String,ConceptDef)]
+uniquecds c = [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
+makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
+makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
     FLatex ->  [ Para ( (if i==0 then [ RawInline "latex" (symDefLabel cd++"\n") ] else [])++
-                        [ RawInline "latex" ("\\glossary{name={"++latexEscShw (name cd)++"}, description={"++latexEscShw (cddef cd)++"}}\n") ] ++
+                        [ RawInline "latex" ("\\gls{"++latexEscShw cdnm++"}\n") ] ++
                         [Str (latexEscShw (cddef cd))] ++ [ Str (" ["++latexEscShw (cdref cd)++"]") | not (null (cdref cd)) ]
                       )
                ]

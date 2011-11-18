@@ -13,7 +13,7 @@ import DatabaseDesign.Ampersand.Misc
 glossary :: Int -> Fspc -> Options ->  [Block]
 glossary _ fSpec flags
  = if fspecFormat flags==FLatex
-   then [ Para [RawInline "latex" "\\printglossary"] ]
+   then [ Para [RawInline "latex" "\\printglossaries"] ]
    else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
           ( case language flags of
                Dutch   ->
@@ -21,6 +21,6 @@ glossary _ fSpec flags
                English ->
                  [ [Plain [Str "term"]] , [Plain [Str "definition"]], [Plain [Str "source"]]]
           )
-          [ [ [Plain [(Str . name)  cd]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
-          | cd<-conceptDefs fSpec, name cd `elem` map name (concs fSpec)
+          [ [ [Plain [(Str . name)  c]], [Plain [(Str . cddef) cd]], [Plain [(Str . cdref) cd]]]
+          | c<-concs fSpec, cd<-cptdf c
           ]]

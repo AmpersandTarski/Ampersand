@@ -125,7 +125,7 @@ where
              [ Elem (simpleTag "Rules")        (map mkXmlTree (ptrls pat)) |not (null (ptrls pat))] 
           ++ [ Elem (simpleTag "Gens")         (map mkXmlTree (ptgns pat)) |not (null (ptgns pat))] 
           ++ [ Elem (simpleTag "Declarations") (map mkXmlTree (ptdcs pat)) |not (null (ptdcs pat))] 
-          ++ [ Elem (simpleTag "Concepts")     (map mkXmlTree (ptcds pat)) |not (null (ptcds pat))] 
+          ++ [ Elem (simpleTag "Concepts")     (map mkXmlTree (conceptDefs pat)) |not (null (conceptDefs pat))] 
           ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptkds pat)) |not (null (ptkds pat))] 
           ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (ptxps pat)) |not (null (ptxps pat))] 
            )
@@ -320,7 +320,7 @@ where
      mkXmlTree p = Elem (mkTag p) []
                         
    instance XML ConceptDef where
-     mkTag f = Tag "ConceptDef" ( nameToAttr f
+     mkTag f = Tag "ConceptDef" ( (mkAttr "name" (cdcpt f))
                                   : [mkAttr "Trace" (cdref f) |not (null (cdref f))])
      mkXmlTree f = Elem (mkTag f) (explainTree (cddef f))
    
