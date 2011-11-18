@@ -551,7 +551,7 @@ makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
 makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
     FLatex ->  [ Para ( (if i==0 then [ RawInline "latex" (symDefLabel cd++"\n") ] else [])++
-                        [ RawInline "latex" ("\\gls{"++latexEscShw cdnm++"}\n") ] ++
+                        [ RawInline "latex" ("\\marge{\\gls{"++latexEscShw cdnm++"}}\n") ] ++
                         [Str (latexEscShw (cddef cd))] ++ [ Str (" ["++latexEscShw (cdref cd)++"]") | not (null (cdref cd)) ]
                       )
                ]

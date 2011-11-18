@@ -62,18 +62,17 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                            , [r | r<-vrules fSpec, r_usr r ] )  -- All user declared rules
          where
            conceptsWith     -- All concepts that have at least one definition or one purpose. 
-              = [(c, cds, pps)
+              = [(c, pps)
                 | c <-concs fSpec
-                , let cds = cptdf c
                 , let pps = [p | let ps=purpose fSpec (language flags) c, p<-ps]
-                , not (null cds) || not (null pps)]           
+                , not (null (cptdf c)) || not (null pps)]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
                                           -- and only those declarations that have at least one purpose.
               = [r | r@Rel{}<-mors fSpec
                   , not (null ( purpose fSpec (language flags) r))
                 ]
                  
-      aThemeAtATime :: ( [(A_Concept,[ConceptDef],[Explanation])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
+      aThemeAtATime :: ( [(A_Concept,[Explanation])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
                        , [Relation]                                 -- all relations to be processed into this section and the sections to come
                        , [Rule])                                    -- all rules to be processed into this section and the sections to come
                     -> [Pattern]         -- the patterns that must be processed into this specification
@@ -93,7 +92,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
            thisThemeRels     = [r | r<-still2doRelsPre, r `eleM` mors thisThemeRules] `uni`            -- all relations used in this theme's rules
                                [ makeRelation d | d<-declarations x, (not.null) (multiplicities d)] -- all relations used in multiplicity rules
            rels2PrintLater   = still2doRelsPre >- thisThemeRels
-           thisThemeCs       = [(c,cd,ps) |(c,cd,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
+           thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
            stuff2PrintLater  = (concs2PrintLater, rels2PrintLater, rules2PrintLater)
 --           (blocksOfThemes,iPost)     = aThemeAtATime stuff2PrintLater xs iPostFirst
@@ -113,7 +112,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
       -- For this purpose, Ampersand authors should take care in composing explanations.
       -- Each explanation should state the purpose (and nothing else).
       printOneTheme :: Maybe Pattern -- name of the theme to process (if any)
-                    -> ( [(A_Concept,[ConceptDef],[Explanation])]    -- all concepts that have one or more definitions, to be printed in this section
+                    -> ( [(A_Concept,[Explanation])]    -- all concepts that have one or more definitions, to be printed in this section
                        , [Relation]          -- Relations to print in this section
                        , [Rule])             -- Rules to print in this section
                     -> Counter      -- first free number to use for numbered items
@@ -147,12 +146,11 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                       )]
                          Just pat -> explains2Blocks (purpose fSpec (language flags) pat)
 
-              sctcsIntro :: [(A_Concept, [ConceptDef], [Explanation])] -> [Block]
-              sctcsIntro xs
-                = case xs of
-                    []   -> []
-                    ccds -> case language flags of
-                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
+              sctcsIntro :: [(A_Concept, [Explanation])] -> [Block]
+              sctcsIntro [] = []
+              sctcsIntro ccds 
+                = case language flags of
+                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | (c,_)<-ccds], length [p |p <- vpatterns fSpec , name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
@@ -164,7 +162,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                   commaNLPandoc (Str "en") cs++
                                                                   [ Str ". "]
                                                  )++
-                                                 (let cs = [(c,cds,cps) | (c,cds,cps)<-ccds, length cds>1] in
+                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = cptdf c,length cds>1] in
                                                   case (cs, length cs==length ccds) of
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
@@ -173,7 +171,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                    (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
-                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_,_)<-xs], length [p |p <- vpatterns fSpec , name p == themeName]) of
+                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-ccds], length [p |p <- vpatterns fSpec , name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "At this point, the definitions of "]++
@@ -185,7 +183,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                   commaEngPandoc (Str "and") cs++
                                                                   [ Str ". "]
                                                  )++
-                                                 (let cs = [(c,cds,cps) | (c,cds,cps)<-ccds, length cds>1] in
+                                                 (let cs = [(c,cds,cps) | (c,cps)<-ccds, let cds = cptdf c, length cds>1] in
                                                   case (cs, length cs==length ccds) of
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
@@ -196,9 +194,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                           ]
                   where fst3 (a,_,_) = a
 
-              sctcs :: [(A_Concept, [ConceptDef], [Explanation])] -> Counter -> ([Block],Counter)
+              sctcs :: [(A_Concept, [Explanation])] -> Counter -> ([Block],Counter)
               sctcs xs (Counter c0) 
-                = gl [] (concat [ [Left (c,e) | e<-exps] ++ [Right (ci,d) | (ci,d)<-zip [0..] defs] | (c,defs,exps)<-xs ]) c0
+                = gl [] (concat [ [Left (c,e) | e<-exps] ++ [Right (ci,d) | (ci,d)<-zip [0..] (uniquecds c)] | (c ,exps)<-xs ]) c0
                   where
                       gl result [] i = (result, Counter i)
                       gl result xs' i = gr (result++explist) (dropWhile isLeft xs') i
@@ -207,7 +205,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                          explist :: [Block]
                          explist = concat
                                    [ explCont e -- explains2Blocks (purpose fSpec (language flags) c)
-                                   | (c,e)<-exps]
+                                   | (_,e)<-exps]
                       gr result [] i = (result, Counter i)
                       gr result xs' i = gl (result++deflist) (dropWhile isRight xs') (i+length defs)
                        where
@@ -218,9 +216,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                 English -> "Definition ")
                                                        , Str (show (i+ci))
                                                        , Str ":"]
-                                                     , [ makeDefinition flags (ci,cdcpt d,d) ]
+                                                     , [ makeDefinition flags (ci,cdnm,cd) ]
                                                      )
-                                                   | (ci,d)<-defs]
+                                                   | (ci,(cdnm,cd))<-defs]
                                    ]
                       isRight (Right _) = True
                       isRight _         = False
