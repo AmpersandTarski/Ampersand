@@ -26,12 +26,14 @@ function init() {
 </head>
 <body onload="init()">
 <div id="Header"><div id="Logo"></div><div id="Decoration"></div></div>
+
 <?php
 echo '<div id="TopLevelInterfaces">';
 echo topLevelInterfaceLinks($allInterfaceObjects);
 echo '</div>';
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
+  echo '<a href="Installer.php">Reset database</a>';
   echo '<h3>Top-level interfaces</h3>';
   echo topLevelInterfaceLinks($allInterfaceObjects);
 } else {
