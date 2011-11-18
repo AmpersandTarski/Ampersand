@@ -209,7 +209,7 @@ body
   { display: none
   }
    
-[editing=false][dev=true] #PhpLog[nonEmpty=true]
+[dev=true] #PhpLog[nonEmpty=true]
   { display: block
   ; position: absolute
   ; bottom: 0px

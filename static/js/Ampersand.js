@@ -12,17 +12,22 @@ function initialize() {
  * on #AmpersandRoot. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
   $('#Rollback').append($('#AmpersandRoot > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
+  
   $('#AmpersandRoot').attr('editing','true');
   clearNavigationHandlers();
   setEditHandlers();
   traceDbCommands(); // to initialize command list
+  
+  $('#PhpLog').empty();
+  $('#PhpLog').attr('nonEmpty','false');
 }
 
 function cancelEditing() {
   $('#AmpersandRoot > .Atom').remove();  
   $('#AmpersandRoot').append($('#RollBack > .Atom'));
   
-  $('#PhpLog').attr('nonEmpty','false'); // if non-empty, these would show again after setting editing to false
+  $('#IssueList').empty();
+  $('#IssueList').attr('nonEmpty','false');
   
   $('#AmpersandRoot').attr('editing','false');
 }
@@ -49,7 +54,7 @@ function sendCommands(commandArray) {
     $logMessages = $(data).find('.LogMsg');
     $ampersandErrors = $(data).find('.AmpersandErr');
 
-    $('#PhpLog').empty();
+    $('#PhpLog').empty(); 
     $('#PhpLog').append('<div class=Title>Php log messages:</div>');
     $('#PhpLog').append($logMessages);
     $('#PhpLog').attr('nonEmpty', $logMessages.length > 0 ? 'true' : 'false' );
