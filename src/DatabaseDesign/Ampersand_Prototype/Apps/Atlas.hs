@@ -235,6 +235,7 @@ atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Lang -> RelTbl 
 atlas2pattern p rulpattern rls lang ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
  = P_Pat { pt_nm  = p
          , pt_pos = DBLoc "Atlas(Pattern)"
+         , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rulstr rls lang ruldescribes|(rulstr,p')<-rulpattern,p==p']
          , pt_gns = []
          , pt_dcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |(i,(relstr,p'))<-zip [1..] relpattern,p==p']

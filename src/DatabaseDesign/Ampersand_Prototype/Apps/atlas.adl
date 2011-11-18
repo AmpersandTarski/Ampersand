@@ -19,9 +19,9 @@ INTERFACE Atlas: I[Context]
 --     , "exporteer naar script"
 --        {"URL=../../index.php?operation=2&file='.reset($Atlas->get_versie()).'"}
 --        : showadl
-     , "exporteer naar script en herlaad"
-        {"URL=../../index.php?operation=3&file='.reset($Atlas->get_versie()).'"}
-        : showadl
+--     , "exporteer naar script en herlaad"
+--        {"URL=../../index.php?operation=3&file='.reset($Atlas->get_versie()).'"}
+--        : showadl
      ]
 INTERFACE Meterkast: I[User] --user login at index.php which redirects to Meterkast of user
  BOX [ "nieuw bestand"{"URL=../../index.php"} : loadedfile;loadcontext;newcontext --EDIT mode = popup, SAVE = upload file to server (and new loadedfile)
@@ -132,6 +132,7 @@ cptcontext::Concept->Context. -- (src\/trg);relpattern;context
   CONCEPT Pair "(Atom,Atom)"
   left::Pair->Atom.
   right::Pair->Atom.
+  pairsyntax::Pair->UPair.
   --pairsyntax::Pair*UPair = ( left;displayatom , right;displayatom )
 --  RULE "test1": left;left~
 --  RULE "testa": (-(left;left~))
@@ -206,7 +207,7 @@ describes::UserRule->Description. --total, because there is an auto explanation
 purpose::UserRule*RulPurpose.
 describes::Relation->Explanation. --total, because there is an auto explanation
 purpose::Relation*RelPurpose.
-describes::Concept*Definition[UNI]. --ConceptDefs. univalent, because multiple defs are parsed but rejected
+describes::Concept*Definition.
 purpose::Concept*CptPurpose.
 ENDPATTERN
 
@@ -265,7 +266,7 @@ PROCESS Specificatie
 ENDPROCESS
 
 INTERFACE Pattern : I[Pattern]
-   BOX [ "uitleg" : purpose
+   BOX [ "bedoeling" : purpose
      , "context"{"URL=ctxAtlas.php?content=Contextoverzicht"} : context
      , "regels" : rulpattern~
      , "relaties" : relpattern~
@@ -300,8 +301,7 @@ INTERFACE Regels : I[ONE]
      ]
 INTERFACE Regel : I[UserRule]
    BOX [ "expressie" : ruleexpr
-     , "beschrijving" : describes
- --    , "uitleg" : purpose
+     , "betekenis" : describes
      , "source" : ruleexpr;source
      , "target" : ruleexpr;target
      , "overtredingen" : ruleexpr;violates~
@@ -310,6 +310,7 @@ INTERFACE Regel : I[UserRule]
      , "pattern" : rulpattern
      , "ga naar vorige regel" : next~ 
      , "ga naar volgende regel" : next 
+     , "bedoeling" : purpose
      , "Conceptueel diagram"{"PICTURE"}: picture]
 INTERFACE Regelexpressies : I[ONE]
    BOX [ "Expressielijst" : V[ONE*Expression];ruleexpr~;ruleexpr
@@ -330,7 +331,7 @@ INTERFACE Relaties : I[ONE]
 --TODO (automatische regelhandhaving) 
 --     -> bij wijzigingen in content wil ik automatisch de populaties van concepten bijwerken (left,right, atomof en atomsyntax)
 INTERFACE Relatie{"AUTOMATIC(label:name,::,label:source,*,label:target)"}   : I[Relation] --automatic input (zie expressionbuilder e.d.)
-   BOX [ "beschrijving" : describes
+   BOX [ "betekenis" : describes
      , "naam" : rel
      , "source" : src
      , "target" : trg
@@ -338,16 +339,16 @@ INTERFACE Relatie{"AUTOMATIC(label:name,::,label:source,*,label:target)"}   : I[
      , "relatie-eigenschapsovertredingen"  : propertyof~;propexpr;violates~
      , "toepassing in regels" : uses~;ruleexpr~
      , "pattern" : relpattern
-     , "populatie"  : content
+     , "populatie"  : content;pairsyntax
 --TODO -> Error 1048 in query "INSERT INTO `nsgmiPragma1` (`Pragma1`) VALUES (NULL)": Column 'Pragma1' cannot be null
   --   , "pragma1" : pragma1
   --   , "pragma2" : pragma2
   --   , "pragma3" : pragma3
-  --   , "uitleg" : purpose
+     , "bedoeling" : purpose
      ]
 --TODO -> NO INTERFACE FOR I[Pair], automatisch via INTERFACE Relatie
-INTERFACE Paren : I[ONE]
-   BOX [ "Parenlijst" : V[ONE*Pair]]
+--INTERFACE Paren : I[ONE]
+--   BOX [ "Parenlijst" : V[ONE*Pair]]
 INTERFACE Paar : I[Pair]
    BOX [ "in populatie van relatie" : content~
      , "term uit source" : left
@@ -368,27 +369,27 @@ INTERFACE Concepten : I[ONE]
 --TODO (automatische regelhandhaving) -> Bij een new uatom wil ik automatisch ook een new atom opgemaakt uit I[Concept] en atomsyntax
 INTERFACE Concept : I[Concept]
    BOX [ "definitie" : describes
-     , "populatie"{"SMARTINPUT"} : atomof~ -- ;atomsyntax --smart text input (zie expressionbuilder e.d.)
+     , "populatie"{"SMARTINPUT"} : atomof~;atomsyntax --smart text input (zie expressionbuilder e.d.)
      , "toepassing in regels" {"Action=Select"}: (src~ \/ trg~);uses~;ruleexpr~
      , "toepassing in relaties" {"Action=Select"}: (src~ \/ trg~)
        BOX ["met eigenschappen":propertyof~;propsyntax]
      , "context"{"URL=ctxAtlas.php?content=Contextoverzicht"} : cptcontext
-  --   , "uitleg" : purpose
+     , "bedoeling" : purpose
      , "Conceptueel diagram"{"PICTURE"}: picture
      ]
 --POPULATION purpose[Concept*CptPurpose] CONTAINS
 --   [("A","A's zijn heel belangrijk");("B","B's zijn heel belangrijk");("C","C's zijn heel belangrijk")]
 --TODO -> NO INTERFACE FOR I[UAtom], automatisch via INTERFACE Concept / Relatie
 --TODO -> NO INTERFACE FOR I[Atom], automatisch via INTERFACE Concept / Relatie
-INTERFACE Termen : I[ONE]
-   BOX [ "Termenlijst" : V[ONE*Atom]]
+--INTERFACE Termen : I[ONE]
+--   BOX [ "Termenlijst" : V[ONE*Atom]]
 INTERFACE Term : I[Atom]
    BOX [ "concept" : atomof
      , "waarde" : atomsyntax
      ]
-INTERFACE Value : I[UAtom]
-   BOX [ "term" : atomsyntax~
-     ]
+--INTERFACE Value : I[UAtom]
+--   BOX [ "term" : atomsyntax~
+--     ]
 
 
 ENDCONTEXT

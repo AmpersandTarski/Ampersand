@@ -77,7 +77,7 @@ instance ADL1Importable A_Concept where
 instance ADL1Importable ConceptDef where
  makeADL1Populations atlasds cds 
    = let cptxpl = [setRelats(makeRelation d) |d<-atlasds,name d=="describes",name(source d)=="Concept"] 
-     in  (makepopu cds cdnm cptxpl cddef)
+     in  (makepopu cds cdcpt cptxpl cddef)
         :[]
 
 instance ADL1Importable Declaration where
@@ -101,9 +101,11 @@ instance ADL1Importable Declaration where
          dclprp = [makeRelation d |d<-atlasds,name d=="propsyntax"]
          --for every relation::relate to its content
          dcs = concat(map dcontentof ds)
+         dprs = [(mkPair (source d#>x) (target d#>y),(x,y)) |d<-ds,(x,y)<-contents d]
          dclcnt = [makeRelation d |d<-atlasds,name d=="content"]
          dcldom = [makeRelation d |d<-atlasds,name d=="left"]
          dclrng = [makeRelation d |d<-atlasds,name d=="right"]
+         dclupr = [makeRelation d |d<-atlasds,name d=="pairsyntax"]
          --description
          dcldcr = [setRelats(makeRelation d) |d<-atlasds,name d=="describes",name(source d)=="Relation"]
      in  (makepopu ds declarationid dclvar name)
@@ -123,8 +125,9 @@ instance ADL1Importable Declaration where
         :(makepopu dcs (declarationid.fst) dclcnt (show.snd))
         :(makepopu dcs (show.snd) dcldom (fst.snd))
         :(makepopu dcs (show.snd) dclrng (snd.snd))
+        :(makepopu dprs (show.fst) dclupr (show.snd))
         --description
-        :(makepopu ds declarationid dcldcr (\x -> explainContent2String LaTeX False$meaning Dutch x))
+        :(makepopu ds declarationid dcldcr (\x -> explainContent2String ReST False$meaning Dutch x))
         :[]
 dpragma :: Integer -> Declaration -> String
 dpragma i (Sgn{decprL=x1,decprM=x2,decprR=x3})
@@ -151,7 +154,7 @@ instance ADL1Importable Rule where
         :(makepopu rs (showADL.rrexp) rulsrc (name.source))
         :(makepopu rs (showADL.rrexp) rultrg (name.target))
         :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.rrexp.fst) ruluss (relationid.snd))
-        :(makepopu rs name ruldcr (\x -> explainContent2String LaTeX False$meaning Dutch x))
+        :(makepopu rs name ruldcr (\x -> explainContent2String ReST False$meaning Dutch x))
         :[]
 
 instance ADL1Importable Pattern where
@@ -177,10 +180,12 @@ instance ADL1Importable (Rule,Paire) where
          violpr = [makeRelation d |d<-atlasds,name d=="violationpair"]
          viodom = [makeRelation d |d<-atlasds,name d=="left"]
          viorng = [makeRelation d |d<-atlasds,name d=="right"]
+         vioupr = [makeRelation d |d<-atlasds,name d=="pairsyntax"]
      in  (makepopu viols violationid rulvio (showADL.rrexp.fst))
         :(makepopu viols violationid violpr violationpair)
         :(makepopu viols violationpair viodom (\(r,(x,_))->source r#>x))
         :(makepopu viols violationpair viorng (\(r,(_,y))->target r#>y))
+        :(makepopu viols violationpair vioupr (show.snd))
         :[]
 violationid :: (Rule,Paire) -> String
 violationid (r,p) = r #> show p 
@@ -193,14 +198,14 @@ instance ADL1Importable Explanation where
          purrul = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="UserRule"]  
          purpat = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Pattern"] 
          purrel = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Relation"]  
-     in  (makepopu [(explCont e,name cdef) |e<-es, case explObj e of (ExplConceptDef _)->True;_ -> False,let ExplConceptDef cdef = explObj e]
-                  snd purcpt ((explainContent2String LaTeX False).fst))
+     in  (makepopu [(explCont e,cdcpt cd) |e<-es, case explObj e of (ExplConceptDef _)->True;_ -> False,let ExplConceptDef cd = explObj e]
+                  snd purcpt ((explainContent2String ReST False).fst))
         :(makepopu [(explCont e,r) |e<-es, case explObj e of (ExplRule _)->True;_ -> False,let ExplRule r = explObj e]
-                  (name.snd) purrul ((explainContent2String LaTeX False).fst))
+                  (name.snd) purrul ((explainContent2String ReST False).fst))
         :(makepopu [(explCont e,pstr) |e<-es, case explObj e of (ExplPattern _)->True;_ -> False,let ExplPattern pstr = explObj e]
-                  snd purpat ((explainContent2String LaTeX False).fst))
+                  snd purpat ((explainContent2String ReST False).fst))
         :(makepopu [(explCont e,d) |e<-es, case explObj e of (ExplDeclaration _)->True;_ -> False,let ExplDeclaration d = explObj e]
-                  (declarationid.snd) purrel ((explainContent2String LaTeX False).fst))
+                  (declarationid.snd) purrel ((explainContent2String ReST False).fst))
         :[]
 
 instance ADL1Importable Picture where
@@ -224,7 +229,7 @@ instance ADL1Importable Fspc where
          --   ++ makeADL1Populations atlasds (gens fs) --the details of gens
             ++ contextelements (patterns fs) ctxpts fs --the patterns
             ++ makeADL1Populations atlasds (patterns fs) --the rules + relations + gens of patterns
-            ++ makeADL1Populations atlasds (fSexpls fs) --the purposes
+            ++ makeADL1Populations atlasds (explanations fs) --the purposes
             ++ makeADL1Populations atlasds (violations fs) --the violations
             --REMARK -> the pictures are not part of fspec, but derived from them (see Main.hs of prototype.exe)
             |fs<-fss --REMARK -> probably there will be only one fs
