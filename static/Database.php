@@ -2,9 +2,10 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require "Interfaces.php"; // defines $dbName, $isDev, $relationTableInfo and $allInterfaceObjects
-require "php/DatabaseUtils.php";
+require "Interfaces.php"; 
+// defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, and $rulesSql
 
+require "php/DatabaseUtils.php";
 
 echo '<div id="UpdateResults">';
 //emitLog('ja');
@@ -12,7 +13,18 @@ echo '<div id="UpdateResults">';
 //emitAmpersandErr('Rule was broken!');
 //error('zaza');
 
+dbStartTransaction($dbName);
+emitLog('BEGIN');
 processCommands();
+
+if (checkRules()) {
+  emitLog('COMMIT');
+  dbCommitTransaction($dbName);
+} else {
+  emitLog('ROLLBACK');
+  dbRollbackTransaction($dbName);
+}
+
 echo '</div>';
 
 
@@ -115,15 +127,10 @@ function processCommands() {
   $commandsJson =$_POST['commands']; 
   if (isset($commandsJson)) {
     $commandArray = json_decode($commandsJson);
-    
-    dbStartTransaction($dbName);
-      
+          
     foreach ($commandArray as $command)
-      $isEditing = processCommand($command);
-      
-    dbCommitTransaction($dbName);
-      
-    return $isEditing;
+      processCommand($command);
+       
   }
 }
 
@@ -229,7 +236,26 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   $query = 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';';
   emitLog ($query);
   DB_doquer($dbName, $query);
-}  
+}
+
+function checkRules() {
+  global $rulesSql;
+  
+  $allRulesHold = true;
+  
+  foreach ($rulesSql as $ruleSql) {
+    $rows = DB_doquer($dbName, $ruleSql['sql']);
+    if (count($rows) > 0) {
+      emitAmpersandErr("Rule '$ruleSql[name]' broken: $ruleSql[meaning]");
+      $allRulesHold = false;
+    }
+    else
+      emitLog('Rule '.$ruleSql['name'].' holds');
+  } 
+  return $allRulesHold;
+}
+
+
 
 function emitAmpersandErr($err) {
   echo "<div class=AmpersandErr>$err</div>";
