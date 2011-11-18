@@ -11,13 +11,16 @@ function initialize() {
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
  * on #AmpersandRoot. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
+  $('#RollBack').empty(); // in case we start twice for some reason
   $('#Rollback').append($('#AmpersandRoot > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
   
   $('#AmpersandRoot').attr('editing','true');
   clearNavigationHandlers();
   setEditHandlers();
   traceDbCommands(); // to initialize command list
-  
+
+  $('#IssueList').empty(); // lists are cleared here and in cancel editing, in case back button causes multiple start or cancel actions
+  $('#IssueList').attr('nonEmpty','false');  
   $('#PhpLog').empty();
   $('#PhpLog').attr('nonEmpty','false');
 }
@@ -27,7 +30,9 @@ function cancelEditing() {
   $('#AmpersandRoot').append($('#RollBack > .Atom'));
   
   $('#IssueList').empty();
-  $('#IssueList').attr('nonEmpty','false');
+  $('#IssueList').attr('nonEmpty','false');  
+  $('#PhpLog').empty();
+  $('#PhpLog').attr('nonEmpty','false');
   
   $('#AmpersandRoot').attr('editing','false');
 }
