@@ -6,6 +6,17 @@ require "Interfaces.php"; // defines $dbName, $isDev, $relationTableInfo and $al
 require "php/DatabaseUtils.php";
 
 
+echo '<div id="UpdateResults">';
+//emitLog('ja');
+//emitLog('ja');
+//emitAmpersandErr('Rule was broken!');
+//error('zaza');
+
+processCommands();
+echo '</div>';
+
+
+
 /*
 // todo:
  * 
@@ -23,7 +34,7 @@ todo: figure out how to do editing when interfaces are floating horizontally at 
 todo: sqlRelPlugNames also returns list. Change to maybe?
 
 insert goes wrong if we have [keyA, keyB, keyC] and insert (valA1,valB1) (valA2,valB2), since unique keyC will contain 2 nulls.
-kind of a pathological case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
+kind of a pathoemitLogical case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
 
 field editable also if it has children in an editable relation
 
@@ -92,13 +103,8 @@ cleanup post mechanism a bit, so we don't send the whole page on a post (only ne
 
 */
 
-function error($msg) {
-  die("<h3 style=\"color: red\">Error: $msg</h3>");
-}
-
 function processCommands() {  
   global $dbName; 
-  
   $commandsJson =$_POST['commands']; 
   if (isset($commandsJson)) {
     $commandArray = json_decode($commandsJson);
@@ -148,7 +154,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   global $conceptTableInfo;
   global $tableColumnInfo;
   
-  echo "editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom).'<br/>'";
+  emitLog("editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
   //$src = $isFlipped ? $childAtom : $parentAtom;
   //$tgt = $isFlipped ? $parentAtom : $childAtom;
   
@@ -165,20 +171,20 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   
   if ($tableColumnInfo[$table][$stableCol]['unique']) {
     $query = "UPDATE $table SET $modifiedCol='$modifiedAtom' WHERE $stableCol='$stableAtom'";
-    echo "update query is $query";
+    emitLog ($query);
     DB_doquer($dbName, $query);
   }
   else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
     $query = "UPDATE $table SET $stableCol='$stableAtom' WHERE $modifiedCol='$modifiedAtom'";
-    echo "update query is $query";
+    emitLog ($query);
     DB_doquer($dbName, $query);
   }
   else */ {
     $query = 'DELETE FROM '.$table.' WHERE '.$stableCol.'=\''.$stableAtom.'\' AND '.$modifiedCol.'=\''.$originalAtom.'\';';
-    echo $query.'<br/>';
+    emitLog ($query);
     DB_doquer($dbName, $query);
     $query = "INSERT INTO $table ($stableCol, $modifiedCol) VALUES ('$stableAtom', '$modifiedAtom')";
-    echo $query.'<br/>';
+    emitLog ($query);
     DB_doquer($dbName, $query);
   }
   // if the new atom is not in its concept table, we add it
@@ -188,13 +194,13 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   
   $conceptTable = $conceptTableInfo[$modifiedConcept]['table'];
   $conceptColumn = $conceptTableInfo[$modifiedConcept]['col'];
-  //echo "Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptColumn";
+  //emitLog("Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptColumn";)
   $allConceptAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
   if (!in_array($modifiedAtom, $allConceptAtoms)) {
-    //echo 'not present';
+    //emitLog( 'not present');
     DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$modifiedAtom')");
   } else {
-    // echo 'already present';
+    // emitLog('already present');
   }
 }
 
@@ -204,7 +210,7 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   global $dbName; 
   global $relationTableInfo;
-  echo "editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom).'<br/>'";
+  emitLog ("editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom)");
   $src = $isFlipped ? $childAtom : $parentAtom;
   $tgt = $isFlipped ? $parentAtom : $childAtom;
   
@@ -212,14 +218,20 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
   $query = 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';';
-  echo $query.'<br/>';
+  emitLog ($query);
   DB_doquer($dbName, $query);
+}  
+
+function emitAmpersandErr($err) {
+  echo "<div class=AmpersandErr>$err</div>";
 }
 
+function emitLog($msg) {
+  echo "<div class=LogMsg>$msg</div>";
+}
 
+function error($msg) {
+  die("<div class=Error>Error in Database.php: $msg</div>");
+} // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
 
-  echo '<div id="PhpResults">';
-  processCommands();
-  echo '</div>';
-  
 ?>

@@ -44,30 +44,38 @@ function sendCommands(commandArray) {
   $.post('Database.php',  
   { commands: JSON.stringify(commandArray) },
   function(data) {
-    $results = $('<div>');
-    $results.html(data);
-    
+    $results = $(data);
+    $errors = $(data).find('.Error');
+    $logMessages = $(data).find('.LogMsg');
+    $ampersandErrors = $(data).find('.AmpersandErr');
+
     $('#PhpLog').empty();
-    $('#PhpLog').append($results.children());        // children .children is because result contains div .PhpResults
-    console.log($('#PhpLog').children().children()); // selecting the text and br children is awkward in jQuery, but this is only
-                                                     // temporary anyway
-    
-    $('#PhpLog').attr('nonEmpty', $('#PhpLog').children().children().length > 0 ? 'true' : 'false' );
-    
-    // Database cannot give errors yet, so we assume it was ok and reload the page
-    // TODO: refine this as soon as the communication with Database.php is determined
-    $.get(window.location.href,
-      function(data) {
-        $newPage = $('<div>');
-        $newPage.html(data);
+    $('#PhpLog').append('<div class=Title>Php log messages:</div>');
+    $('#PhpLog').append($logMessages);
+    $('#PhpLog').attr('nonEmpty', $logMessages.length > 0 ? 'true' : 'false' );
+    console.log($errors.length);
+    console.log($ampersandErrors.length);
+
+    if ($errors.length + $ampersandErrors.length > 0) {
+      $('#IssueList').empty();
+      $('#IssueList').append('<div class=Title>Errors:</div>');
+      $('#IssueList').append($ampersandErrors);
+      $('#IssueList').append($errors);
+      $('#IssueList').attr('nonEmpty', $ampersandErrors.length + $errors.length > 0 ? 'true' : 'false' );
+    }
+    else
+      $.get(window.location.href,
+        function(data) {
+          $newPage = $('<div>');
+          $newPage.html(data);
         
-        $('#AmpersandRoot > .Atom').remove();  
-        $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
+          $('#AmpersandRoot > .Atom').remove();  
+          $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
 
-        $('#AmpersandRoot').attr('editing','false');
+          $('#AmpersandRoot').attr('editing','false');
 
-        initialize();
-    });
+          initialize();
+      });
   });
 }
 

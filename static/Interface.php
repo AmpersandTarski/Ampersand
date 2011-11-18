@@ -45,6 +45,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 
   echo '<div id=DbCommandList></div>';
   echo '<div id=PhpLog></div>';
+  echo '<div id=IssueList></div>';
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';

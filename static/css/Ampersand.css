@@ -222,6 +222,13 @@ body
   ; border-color: black
   ; clear: right
   }
+#PhpLog > .Title
+  { font-weight: bold 
+  ; margin-bottom: 6px
+  }
+#PhpLog > .LogMsg
+  { font-size: 80%
+  }
   
 #DbCommandList
   { display: none
@@ -237,7 +244,6 @@ body
   ; border-style: solid
   ; border-width: 1px
   ; border-color: black
-  ; border-collapse: none
   }
   
 #DbCommandList > .Title
@@ -248,9 +254,41 @@ body
 #DbCommandList > .Command
   { font-size: 90%
   }
+
+#IssueList
+  { display: none
+  }
   
+[editing=true] #IssueList[nonEmpty=true]
+  { display: block
+  ; position: absolute
+  ; bottom: 5px
+  ; width: 600px
+  ; padding: 10px
+  ; color: red
+  ; background-color: #f0f0f0
+  ; border-style: solid
+  ; border-width: 2px
+  ; border-color: red
+  }
+
+#IssueList > .Title
+  { color: black
+  ; font-weight: bold
+  ; margin-bottom: 3px
+  }
+  
+#IssueList > .AmpersandErr
+  { font-size: 90%
+  }
+  
+#IssueList > .Error
+  { font-size: 90%
+  ; color: darkred
+  }
+
 /* Misc */
 
-#RollBack
+#RollBack /* used for parking a clone of the root atom during editing */
   { display: none
   }
