@@ -49,7 +49,7 @@ pCtx2aCtx pctx
              , ctxrs    = ctxrules
              , ctxds    = adecs        -- The declarations defined in this context, outside the scope of patterns
              , ctxdecls = uniteRels (concatMap declarations pats ++ concatMap declarations procs ++ adecs)   -- All declarations
-             , ctxcs    = ctx_cs pctx  -- The concept definitions defined in this context, outside the scope of patterns
+             , ctxcds   = acds         -- All concept definitions
              , ctxks    = keys         -- The key definitions defined in this context, outside the scope of patterns
              , ctxgs    = agens        -- The gen definitions defined in this context, outside the scope of patterns
              , ctxifcs  = ifcs         -- The interfaces defined in this context, outside the scope of patterns
@@ -68,7 +68,9 @@ pCtx2aCtx pctx
                        ,cptgE = fatal 63 "do not refer to this concept"
                        ,cptos = fatal 64 "do not refer to this concept"
                        ,cpttp = fatal 65 "do not refer to this concept"
+                       ,cptdf = fatal 66 "do not refer to this concept"
                        }
+    acds = ctx_cs pctx++concatMap pt_cds (ctx_pats pctx)++concatMap procCds (ctx_PPrcs pctx)
     adecs = map (pDecl2aDecl actx allpops "NoPattern") (ctx_ds pctx)
     agens = map (pGen2aGen actx "NoPattern") (ctx_gs pctx)
     (aexps,   xplcxes)   = (unzip . map (pExpl2aExpl actx)             . ctx_ps   ) pctx
@@ -109,10 +111,10 @@ pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
 pPat2aPat actx pops ppat 
  = (A_Pat { ptnm  = name ppat    -- Name of this pattern
           , ptpos = pt_pos ppat  -- the position in the file in which this pattern was declared.
+          , ptend = pt_end ppat  -- the position in the file in which this pattern was declared.
           , ptrls = prules       -- The user defined rules in this pattern
           , ptgns = agens        -- The generalizations defined in this pattern
           , ptdcs = adecs        -- The declarations declared in this pattern
-          , ptcds = pt_cds ppat  -- The concept definitions defined in this pattern
           , ptkds = keys         -- The key definitions defined in this pattern
           , ptxps = xpls         -- The explanations of elements defined in this pattern
           }
@@ -130,12 +132,12 @@ pProc2aProc :: A_Context -> [Population] -> P_Process -> (Process,CtxError)
 pProc2aProc actx pops pproc
  = (Proc { prcNm    = procNm pproc
          , prcPos   = procPos pproc
+         , prcEnd   = procEnd pproc
          , prcRules = prules
          , prcGens  = agens          -- The generalizations defined in this pattern
          , prcDcls  = adecs          -- The declarations declared in this pattern
          , prcRRuls = arruls         -- The assignment of roles to rules.
          , prcRRels = arrels         -- The assignment of roles to Relations.
-         , prcCds   = procCds pproc  -- The concept definitions defined in this process
          , prcKds   = keys           -- The key definitions defined in this process
          , prcXps   = expls          -- The pre-explanations of elements defined in this process
          }
@@ -283,7 +285,7 @@ pExpl2aExpl actx pexpl
 
 pExOb2aExOb :: A_Context -> PExplObj -> (ExplObj, CtxError)
 pExOb2aExOb actx (PExplConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
-                                            where cds = [cd | cd<-conceptDefs actx, name cd==str ]
+                                            where cds = [cd | cd<-conceptDefs actx, cdcpt cd==str ]
 pExOb2aExOb actx (PExplDeclaration pr t) = (ExplDeclaration (makeDeclaration rel), relcxe)
                                             where (rel,relcxe) = pRel2aRel actx (psign t) pr
 pExOb2aExOb actx (PExplRule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
@@ -328,7 +330,8 @@ pCpt2aCpt contxt pc
             ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d,c <= source d]
                        ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d,c <= target d]
                        ++[v | r<-rules contxt,Mp1 v c'<-mors r,c<=c']
-            ,cpttp = head ([cdtyp cd|cd<-conceptDefs contxt,name cd==p_cptnm pc]++[""])
+            ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
+            ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
             }
 
 pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> Declaration

@@ -132,12 +132,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
    pPattern         :: Parser Token P_Pattern
    pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
                        <*> pList pPatElem
-                       <*  pKey "ENDPATTERN"
+                       <*> pKey_pos "ENDPATTERN"
                        where
-                         rebuild :: Origin -> String -> [PatElem] -> P_Pattern
-                         rebuild pos' nm pes
+                         rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
+                         rebuild pos' nm pes end
                           = P_Pat { pt_nm      = nm
                                   , pt_pos       = pos'
+                                  , pt_end       = end
                                   , pt_rls       = [r | Pr r<-pes] --was ooit: [r{r_env=nm} |Pr r<-pes]
                                   , pt_gns       = [g | Pg g<-pes]
                                   , pt_dcs       = [d | Pm d<-pes] --was ooit: [mph{decpat=nm} | Pm mph@(Sgn{})<-pes]
@@ -318,7 +319,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           <*> (pConid <|> pString)   -- the concept name
                           <*> pString                -- the definition text
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
-                       where cd pos nm x ref = Cd pos nm False x "" ref
+                       where cd po nm x ref = Cd po nm False x "" ref
 
 
 -- A key definition looks like:   KEY Person(name, address),
