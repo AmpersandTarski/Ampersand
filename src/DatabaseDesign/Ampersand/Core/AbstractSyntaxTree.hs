@@ -56,7 +56,7 @@ data A_Context
          , ctxrs    :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds    :: [Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
          , ctxdecls :: [Declaration] -- ^ The declarations defined in this context, including those from patterns and processes
-         , ctxcs    :: ConceptDefs   -- ^ The concept definitions defined in this context, outside the scope of patterns
+         , ctxcds   :: [ConceptDef]  -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks    :: [KeyDef]       -- ^ The key definitions defined in this context, outside the scope of patterns
          , ctxgs    :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
          , ctxifcs  :: [Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
@@ -76,12 +76,12 @@ instance Identified A_Context where
 
 data Process = Proc { prcNm    :: String
                     , prcPos   :: Origin
+                    , prcEnd   :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
                     , prcRules :: [Rule]
                     , prcGens  :: [A_Gen]
                     , prcDcls  :: [Declaration]
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
                     , prcRRels :: [(String,Relation)] -- ^ The assignment of roles to Relations.
-                    , prcCds   :: ConceptDefs        -- ^ The concept definitions defined in this process
                     , prcKds   :: [KeyDef]            -- ^ The key definitions defined in this process
                     , prcXps   :: [Explanation]      -- ^ The pre-explanations of elements defined in this process
                     }
@@ -104,10 +104,10 @@ instance Traced RoleRelation where
 data Pattern
    = A_Pat { ptnm  :: String        -- ^ Name of this pattern
            , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
+           , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
-           , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
            , ptkds :: [KeyDef]      -- ^ The key definitions defined in this pattern
            , ptxps :: [Explanation] -- ^ The explanations of elements defined in this pattern
            }   --deriving (Show)    -- for debugging purposes
@@ -499,12 +499,13 @@ data A_Concept
                                    --  As a result, you may write  c<=d  in your Haskell code for any two A_Concepts c and d that are in the same context.
          , cptos :: [String]       -- ^Atoms
          , cpttp :: String         -- ^The type of this Concept
+         , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
          }  -- ^C nm gE cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
 
 
 instance Eq A_Concept where
-   C a _ _ _ == C b _ _ _ = a==b
+   a@(C{}) == b@(C{}) = name a==name b
    ONE == ONE = True
    _ == _ = False
 
@@ -571,7 +572,7 @@ class Signaling a where
 -}
 type GenR = (A_Concept -> A_Concept -> Ordering,[[A_Concept]])
 order      :: A_Concept -> GenR
-order (C _ gE _ _) = gE
+order c@(C{}) = cptgE c
 order _ = ((\x y -> if x==y then EQ else NC),[])
 instance Poset A_Concept where
   a `compare` b = (fst$order a) a b

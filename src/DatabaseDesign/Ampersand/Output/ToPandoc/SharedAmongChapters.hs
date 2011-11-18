@@ -59,6 +59,7 @@ xrefFigure1 pict =
 
 
   
+--GMI: What's the meaning of the Int?
 dpRule :: Fspc -> Options -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([([Inline], [[Block]])], Int, [A_Concept], [Declaration])
 dpRule fSpec flags = dpR
@@ -139,7 +140,7 @@ dpRule fSpec flags = dpR
                                 , Quoted  SingleQuote [Str (name r)]
                                 , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]
         ncs = concs r >- seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]    -- ... and their definitions
+        cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = map makeDeclaration (mors r)
         nds = [d | d@(Sgn{})<-ds >- seenDeclarations]     -- newly seen declarations
         rds = [d | d@(Sgn{})<-ds `isc` seenDeclarations]  -- previously seen declarations

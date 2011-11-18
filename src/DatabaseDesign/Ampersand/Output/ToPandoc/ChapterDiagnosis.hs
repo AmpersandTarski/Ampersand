@@ -146,12 +146,11 @@ chpDiagnosis lev fSpec flags
                        [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " remain without a purpose."]
                      ]
    where missing = [c | c <-concs (declarations fSpec)
-                     , cd <- vConceptDefs fSpec
-                     , name c == name cd
-                     , null (purpose fSpec (language flags) cd)
+                      , cd <- cptdf c
+                      , null (purpose fSpec (language flags) cd)
                    ]++
                    [c | c <-concs fSpec
-                     , null [cd | cd <- vConceptDefs fSpec, name c == name cd]
+                      , null (cptdf c)
                    ]
 
   missingRels :: [Block]
@@ -263,7 +262,7 @@ chpDiagnosis lev fSpec flags
                                      , Str " wordt niet uitgelegd. "
                                      ]
                               rls -> (upC . commaNLPandoc (Str "en")  )
-                                        [let nrs = [(Str . show . lineNumber) l | l<-cl] in
+                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaNLPandoc (Str "en") nrs++
                                                     [Str " van bestand "]++[(Str . locnm . head) cl])
@@ -277,7 +276,7 @@ chpDiagnosis lev fSpec flags
                                      , Str " wordt uitgelegd in taal die door de computer is gegenereerd. "
                                      ]
                               rls -> (upC . commaNLPandoc (Str "en")  )
-                                        [let nrs = [(Str . show . lineNumber) l | l<-cl] in
+                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaNLPandoc (Str "en") nrs++
                                                     [Str " van bestand "]++[(Str . locnm . head) cl])
@@ -290,7 +289,7 @@ chpDiagnosis lev fSpec flags
                                      , Str (" op regelnummer "++ln r++" van bestand "++fn r++" wordt niet uitgelegd. ")
                                      ]
                               rls -> (upC . commaNLPandoc (Str "en")  )
-                                        [let nrs = [(Str . show . lineNumber) l | l<-cl] in
+                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaNLPandoc (Str "en") nrs++
                                                     [Str " van bestand "]++[(Str . locnm . head) cl])
@@ -308,7 +307,7 @@ chpDiagnosis lev fSpec flags
                                      , Str " is not documented. "
                                      ]
                               rls -> (upC . commaEngPandoc (Str "and") )
-                                        [let nrs = [(Str . show . lineNumber) l | l<-cl] in
+                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaEngPandoc (Str "and") nrs ++
                                                     [Str " of file "]++[(Str . locnm . head) cl])
@@ -322,7 +321,7 @@ chpDiagnosis lev fSpec flags
                                      , Str " is documented by means of computer generated language. "
                                      ]
                               rls -> (upC . commaEngPandoc (Str "and") )
-                                        [let nrs = [(Str . show . lineNumber) l | l<-cl] in
+                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaEngPandoc (Str "and") nrs ++
                                                     [Str " of file "]++[(Str . locnm . head) cl])
@@ -335,7 +334,7 @@ chpDiagnosis lev fSpec flags
                                      , Str (" on line "++ln r++" of file "++fn r++" is not documented. ")
                                      ]
                               rls -> (upC . commaEngPandoc (Str "and") )
-                                        [let nrs = [(Str . show . lineNumber) l | l<-cl] in
+                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
                                          strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
                                                     commaEngPandoc (Str "and") nrs ++
                                                     [Str " of file "]++[(Str . locnm . head) cl])

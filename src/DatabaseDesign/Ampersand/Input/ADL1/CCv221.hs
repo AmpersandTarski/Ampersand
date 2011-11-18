@@ -160,12 +160,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pPattern         :: Parser Token P_Pattern
    pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
                        <*> pList pPatElem
-                       <*  pKey "ENDPATTERN"
+                       <*> pKey_pos "ENDPATTERN"
                        where
-                         rebuild :: Origin -> String -> [PatElem] -> P_Pattern
-                         rebuild pos' nm pes
+                         rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
+                         rebuild pos' nm pes end
                           = P_Pat { pt_nm  = nm
                                   , pt_pos = pos'
+                                  , pt_end = end
                                   , pt_rls = [r | Pr r<-pes]
                                   , pt_gns = [g | Pg g<-pes]
                                   , pt_dcs = [d | Pd d<-pes]
@@ -195,12 +196,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pProcess         :: Parser Token P_Process
    pProcess  = rebuild <$> pKey_pos "PROCESS" <*> (pConid <|> pString)
                        <*> pList pProcElem
-                       <*  pKey "ENDPROCESS"
+                       <*> pKey_pos "ENDPROCESS"
                        where
-                         rebuild :: Origin -> String -> [ProcElem] -> P_Process
-                         rebuild pos' nm pes
+                         rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Process
+                         rebuild pos' nm pes end
                           = P_Prc { procNm    = nm
                                   , procPos   = pos'
+                                  , procEnd   = end
                                   , procRules = [rr | PrR rr<-pes]
                                   , procGens  = [g  | PrG g <-pes]
                                   , procDcls  = [d  | PrD d <-pes]

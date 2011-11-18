@@ -24,6 +24,7 @@ import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Input
 import Text.Pandoc 
 import Text.Pandoc.Builder
@@ -165,5 +166,6 @@ doGenDocument fSpec flags
  --                (ProofTheme, FLatex ) -> (texOnly_proofdoc fSpec,[])     --generate a proof document
                  (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
                  (_         , _      ) -> fSpec2Pandoc fSpec flags
-       (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
+       (outputFile,makeOutput,postProcessor) = writepandoc flags gis thePandoc
+       gis = concs fSpec -- the glossary items
 

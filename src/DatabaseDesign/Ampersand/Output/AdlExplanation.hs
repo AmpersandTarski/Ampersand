@@ -47,14 +47,14 @@ class Explainable a where
   autoMeaning _ _ = []
   
 instance Explainable ConceptDef where
-  meaning _ cd = fatal 49 ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++name cd++"')")
+  meaning _ cd = fatal 49 ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
   explForObj x (ExplConceptDef x') = x == x'
   explForObj _ _ = False
   explanations _ = []
   
 instance Explainable A_Concept where
   meaning _ c = fatal 54 ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
-  explForObj x (ExplConceptDef cd) = name x == name cd
+  explForObj x (ExplConceptDef cd) = name x == cdcpt cd
   explForObj _ _ = False
   explanations _ = []
 

@@ -27,6 +27,6 @@ where
   
 
   newAcpt :: String -> A_Concept
-  newAcpt nm = C{ cptnm=nm, cptgE = ((\x y -> if x==y then EQ else NC),[]), cptos = [], cpttp=[]}
+  newAcpt nm = C{ cptnm=nm, cptgE = ((\x y -> if x==y then EQ else NC),[]), cptos = [], cpttp=[], cptdf=[]}
   
 

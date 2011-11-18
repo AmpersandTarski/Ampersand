@@ -29,6 +29,7 @@ where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics           --      (fatalMsg,Identified(..))
+import Data.List(nub)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
@@ -55,7 +56,7 @@ data Fspc = Fspc { fsName       :: String                -- ^ The name of the sp
                                                          --   one declaration for each signal.
                  , fsisa        :: [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                  , vpatterns    :: [Pattern]             -- ^ All patterns taken from the Ampersand script
-                 , vConceptDefs :: [ConceptDef]          -- ^ All conceptDefs defined in the Ampersand script
+                 , vConceptDefs :: [ConceptDef]          -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
                  , fSexpls      :: [Explanation]         -- ^ All explanations that have been declared within the current specification.
                  , vctxenv :: ( Expression
                               , [(Declaration,String)])   -- an expression on the context with unbound relations, to be bound in this environment
@@ -73,7 +74,7 @@ instance Language Fspc where
                            , objats  = map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
-  conceptDefs  = vConceptDefs
+  conceptDefs fSpec = nub (concatMap cptdf (concs fSpec)) --use vConceptDefs to get CDs of concepts not in concs too
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
   rules        = vrules -- only user defined rules

@@ -64,9 +64,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
            conceptsWith     -- All concepts that have at least one definition or one purpose. 
               = [(c, cds, pps)
                 | c <-concs fSpec
-                , let cds = [cd | cd <- vConceptDefs fSpec
-                               , name c == name cd
-                               , not (null (cddef cd))]
+                , let cds = cptdf c
                 , let pps = [p | let ps=purpose fSpec (language flags) c, p<-ps]
                 , not (null cds) || not (null pps)]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
@@ -220,7 +218,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                 English -> "Definition ")
                                                        , Str (show (i+ci))
                                                        , Str ":"]
-                                                     , [ makeDefinition flags (ci,d) ]
+                                                     , [ makeDefinition flags (ci,cdcpt d,d) ]
                                                      )
                                                    | (ci,d)<-defs]
                                    ]
@@ -228,7 +226,6 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       isRight _         = False
                       isLeft  (Left _)  = True
                       isLeft  _         = False
-
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               sctds :: [Relation] -> Counter -> ([Block],Counter)
