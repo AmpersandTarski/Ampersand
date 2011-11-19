@@ -196,7 +196,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
 
               sctcs :: [(A_Concept, [Explanation])] -> Counter -> ([Block],Counter)
               sctcs xs (Counter c0) 
-                = gl [] (concat [ [Left (c,e) | e<-exps] ++ [Right (ci,d) | (ci,d)<-zip [0..] (uniquecds c)] | (c ,exps)<-xs ]) c0
+                = gl [] (concat [ [Left (c,e) | e<-exps] ++ [Right d | d<-uniquecds c] | (c ,exps)<-xs ]) c0
                   where
                       gl result [] i = (result, Counter i)
                       gl result xs' i = gr (result++explist) (dropWhile isLeft xs') i
@@ -209,7 +209,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       gr result [] i = (result, Counter i)
                       gr result xs' i = gl (result++deflist) (dropWhile isRight xs') (i+length defs)
                        where
-                         defs    = [ x | Right x<-takeWhile isRight xs' ]
+                         defs    = [ d | Right d<-takeWhile isRight xs' ]
                          deflist :: [Block]
                          deflist = [DefinitionList [ ( [ Str (case language flags of
                                                                 Dutch   -> "Definitie "
@@ -218,7 +218,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                        , Str ":"]
                                                      , [ makeDefinition flags (ci,cdnm,cd) ]
                                                      )
-                                                   | (ci,(cdnm,cd))<-defs]
+                                                   | (ci,(cdnm,cd))<-zip [0..] defs]
                                    ]
                       isRight (Right _) = True
                       isRight _         = False

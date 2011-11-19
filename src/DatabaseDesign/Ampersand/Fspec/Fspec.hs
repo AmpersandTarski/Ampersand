@@ -262,9 +262,11 @@ data PAclause
                     }
               | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
                     }
-              | Cnd { paCond  :: Expression               -- the expression that represents a condition to be tested.
-                    , paTrue  :: PAclause
+              | Let { paExpr  :: PAclause               -- the expression that represents a condition to be tested.
+                    , paBody  :: (PAclause -> PAclause)
                     , paMotiv :: [(Expression,[Rule] )]
+                    }
+              | Ref { paVar   :: String
                     }
    -- The data structure Clauses is meant for calculation purposes.
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hcs)<-cl_conjNF cl, disj<-[conj!!i]]
