@@ -21,7 +21,7 @@ Therefore, the Expression data structure also exists in a PHP-variant.
 (Critical question, why is this necessary? It has the same structure, so WHY?)
 For every Expression there is a corresponding PHPExpression,
 for instance ECps has a corresponding PHPECps, and so on for every constructor in Expression.
-The functions php2conc and conc2php define the correspondence betwee Expression PHPExpression.
+The functions php2conc and conc2php define the correspondence between Expression and PHPExpression.
 -}
 
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
@@ -173,8 +173,6 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
    deriving (Eq, Show)
 
 
-
-
 -------------------------------------------------
  data PHPExpression 
       = PHPEEqu (PHPExpression,PHPExpression)   
@@ -201,13 +199,19 @@ The functions php2conc and conc2php define the correspondence betwee Expression 
          , phpsgn  :: (PHPconcept,PHPconcept)            
          , phpdcl  :: Declaration     
          } |
-  PHPI    { php1typ :: PHPconcept       
-          } |
-  PHPV    { phptyp  :: (PHPconcept,PHPconcept)            
-          } |
-  PHPMp1  { phpval  :: String       
-          , php1typ :: PHPconcept       
-          } deriving (Show)
+  PHPI   { php1typ :: PHPconcept       
+         } |
+  PHPV   { phptyp  :: (PHPconcept,PHPconcept)            
+         } |
+  PHPMp1 { phpval  :: String       
+         , php1typ :: PHPconcept       
+         } |
+  PHPVar { phpvar  :: String    -- the name of a PHP variable. This variable contains the population of a relation, i.e. a set of links.   
+         , phptyp  :: (PHPconcept,PHPconcept)       
+         } |
+  PHPqry { phpQry  :: Expression    -- an SQL query. This relation yields the population of a query, i.e. a set of links.   
+         , phptyp  :: (PHPconcept,PHPconcept)       
+         } deriving (Show)
 
  instance Eq PHPRelation where
   PHPRel nm _ sgn _ == PHPRel nm' _ sgn' _ = nm==nm' && sgn==sgn'

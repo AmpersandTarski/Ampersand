@@ -89,7 +89,7 @@ creates conn (tbl:tbls) =
                        , flduniq kernelfld
                        , fldnull kernelfld
                        , fldtype kernelfld /= SQLBlob])
-               ++") TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin ")
+               ++") ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin ")
          createfld fld = "`"++fldname fld++"` " 
                             --TODO -> A_Concepts should be attached to a SQL type. 
                             --        A concept::SQLText cannot be stored in a KEY or INDEX field i.e. the scalar plug cannot be created for such a concept

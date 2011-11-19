@@ -83,7 +83,7 @@ where
                       , fldnull kernelfld
                       , fldtype kernelfld /= SQLBlob]
                     )
-             ++ ["                  ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
+             ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
