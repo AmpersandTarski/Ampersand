@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
-    (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
+    (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, genPAclause, editable, editMph)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
@@ -566,7 +566,7 @@ while maintaining all invariants.
           , let act = All [ Chc [ (if isTrue  clause' || isTrue step then Nop else
                                    if isFalse clause'                then Blk else
 --                                 if not (visible rel) then Blk else
-                                   let visible _ = True in doCode visible ev toExpr viols
+                                   let visible _ = True in genPAclause visible ev toExpr viols
                                   ) [(conj,causes)]  -- the motivation for these actions
                                 | clause@(EUni fus) <- shifts
                                 , let clause' = conjNF (subst (rel, actSem ev rel (delta (sign rel))) clause)
@@ -675,40 +675,40 @@ while maintaining all invariants.
                              , decplug = True
                              }) 
 
-   -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
+   -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
-   doCode :: (Relation->Bool)           -- the relations that may be changed
+   genPAclause :: (Relation->Bool)           -- the relations that may be changed
              -> InsDel                  -- the type of action: Insert or Delete
              -> Expression              -- the expression in which a delete or insert takes place
              -> Expression              -- the delta to be inserted or deleted
              -> [(Expression,[Rule])]   -- the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
              -> PAclause
-   doCode editAble tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
+   genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1 motive
     where
-      doCod deltaX tOp exprX motiv =
+      genPAcl deltaX tOp exprX motiv =
         case (tOp, exprX) of
-          (_ ,  EFlp x)   -> doCod (flp deltaX) tOp x motiv
-          (_ ,  EBrk x)   -> doCod deltaX tOp x motiv
-          (_ ,  ETyp x t) -> if sign x==sign t then doCod deltaX tOp x motiv else
+          (_ ,  EFlp x)   -> genPAcl (flp deltaX) tOp x motiv
+          (_ ,  EBrk x)   -> genPAcl deltaX tOp x motiv
+          (_ ,  ETyp x t) -> if sign x==sign t then genPAcl deltaX tOp x motiv else
                              fatal 691 "TODO: implement narrowing."
           (_ ,  EUni [])  -> Blk motiv
           (_ ,  EIsc [])  -> Nop motiv
-          (_ ,  ECps [])  -> fatal 681 $ "doCod ("++showADL deltaX++") "++show tOp++" ECps [],\n"++
-                                        "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
-          (_ ,  ERad [])  -> fatal 683 $ "doCod ("++showADL deltaX++") "++show tOp++" ERad [],\n"++
-                                        "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
-          (_ ,  EPrd [])  -> fatal 697 $ "doCod ("++showADL deltaX++") "++show tOp++" EPrd [],\n"++
-                                        "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
-          (_ ,  EUni [t]) -> doCod deltaX tOp t motiv
-          (_ ,  EIsc [t]) -> doCod deltaX tOp t motiv
-          (_ ,  ECps [t]) -> doCod deltaX tOp t motiv
-          (_ ,  ERad [t]) -> doCod deltaX tOp t motiv
-          (_ ,  EPrd [t]) -> doCod deltaX tOp t motiv
-          (Ins, ECpl x)   -> doCod deltaX Del x motiv
-          (Del, ECpl x)   -> doCod deltaX Ins x motiv
-          (Ins, EUni fs)  -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Ins, EIsc fs)  -> All [ doCod deltaX Ins f []    | f<-fs ] motiv
+          (_ ,  ECps [])  -> fatal 681 $ "genPAcl ("++showADL deltaX++") "++show tOp++" ECps [],\n"++
+                                        "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
+          (_ ,  ERad [])  -> fatal 683 $ "genPAcl ("++showADL deltaX++") "++show tOp++" ERad [],\n"++
+                                        "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
+          (_ ,  EPrd [])  -> fatal 697 $ "genPAcl ("++showADL deltaX++") "++show tOp++" EPrd [],\n"++
+                                        "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
+          (_ ,  EUni [t]) -> genPAcl deltaX tOp t motiv
+          (_ ,  EIsc [t]) -> genPAcl deltaX tOp t motiv
+          (_ ,  ECps [t]) -> genPAcl deltaX tOp t motiv
+          (_ ,  ERad [t]) -> genPAcl deltaX tOp t motiv
+          (_ ,  EPrd [t]) -> genPAcl deltaX tOp t motiv
+          (Ins, ECpl x)   -> genPAcl deltaX Del x motiv
+          (Del, ECpl x)   -> genPAcl deltaX Ins x motiv
+          (Ins, EUni fs)  -> Chc [ genPAcl deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Ins, EIsc fs)  -> All [ genPAcl deltaX Ins f []    | f<-fs ] motiv
           (Ins, ECps ts)  -> Chc [ {- the following might be useful for diagnostics:
                                    if showADL exprX=="project;partof~"
                                    then fatal 702 ( "Diagnostic error\n"++
@@ -728,42 +728,158 @@ while maintaining all invariants.
                                             ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (ECps rs) `join` target (ECps ls)
-                                , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
-                                , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
+                                , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
+                                , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
                                 ] motiv
-{- Here is an algorithm to compute how to insert a Delta into r;s:
+{- Problem: how to insert Delta into r;s
+This corresponds with:  genPAclause editAble Ins (ECps [r,s]) Delta motive
+Let us solve it mathematically,  and gradually transform via pseudo-code into Haskell code.
+The problem is how to find dr and ds such that 
+   Delta \/ r;s  |-  (dr\/r) ; (ds\/s)
+Since r;s  |-  (dr\/r) ; (ds\/s) is true by definition, we simplify:
+   Delta  |-  (dr\/r) ; (ds\/s)
+One way of doing this is the "bow tie" solution, which uses one element, c, and chooses dr = Delta*c  and ds = c*Delta.
+There is a fair chance, however, that this solution breaks existing rules.
+For example, if Delta< has multiple elements and r is injective, we have a violation. (Similarly, if Delta> has multiple elements and s is univalent)
+Since we make no assumptions on the rules that r and s must satisfy, let us look for more subtle solutions.
+For instance, we might choose dr = d;s~  and ds = r~;d, for that part of Delta that is not in r;s (let d = Delta-r;s)
+The approach is to do this first, then see which links are left and connect these last ones with a bow tie approach.
+
+Here is an algorithm in pseudocode to do just that:  compute the insertion of a Delta into r;s:
 LET d = EVAL (delta - r;s);             -- compute which pairs are to be inserted
-IF not (null d)
+IF not (null d)                         -- if there is nothing to insert, we're done
 THEN BEGIN
-     IF editable(r) THEN INS EVAL (d;s~) INTO r;
-     IF editable(s) THEN INS EVAL (r~;d) INTO s;
-     LET d' = EVAL (delta - r;s);
-     IF not (null d)                    -- get a new element to construct a bow tie
-     THEN Chc [ NEW c FROM target(r) `lub` source(s)
-              , SEL c FROM EVAL ( -cod(r) /\ -dom(s) )
+     IF editable(r) THEN INS (d;s~) INTO r;
+     IF editable(s) THEN INS (r~;d) INTO s;
+     LET d' = (delta - r;s);            -- see what is left to evaluate
+     IF not (null d')
+     THEN                               -- get a new element to construct a bow tie
+          Chc [ NEW c FROM target(r) `lub` source(s)
+              , SEL c FROM ( -cod(r) /\ -dom(s) )
               ];
           IF editable(r) THEN INS EVAL (d*c) INTO r;
           IF editable(s) THEN INS EVAL (c*d) INTO s;
      END
 END
 
-Here is the same algorithm, operationalized a bit more, to compute how to insert a Delta into (ECps es):
-LET d = doQuer (EDif (delta, ECps es))
+In practice, we do not have r;s, but ECps es.
+Besides, we must take into account which expressions are evaluated by the SQL server and which by the PHP server.
+Here is the same algorithm, operationalized a bit more yet still in pseudocode. It computes how to insert a Delta into (ECps es):
+let d = EVAL (EDif (delta, ECps es))
+let newAtoms = [ newAtom (target(r) `lub` source(s)) | (r,s)<-zip (init es) (tail es)]
 IN IF not (null d)
-   THEN Seq ( [ All ( [ INS (Ecps [d, flp (ECps (tail es))]) INTO head es | editable(head es) ] ++
-                      [ INS (Ecps [flp (ECps (init es)), d]) INTO last es | editable(last es) ] )
-              , LET d' = doQuer (EDif (delta, ECps es))
-                IN IF not (null d')
-                   THEN Seq ( [ Chc ([ NEW c FROM target(r) `lub` source(s) | editable(I[target(r) `lub` source(s)]) ] ++
-                                     [ SEL c FROM -cod(r) /\ -dom(s) ]
-                                    );
-                              , All ( [ INS (EPrd [d, c]) INTO (head es) | editable(head es) ] ++
-                                      [ INS (EPrd [c, d]) INTO (last es) | editable(last es) ] )
-                              ]
-                            )
+   THEN Seq ( [ All ( (if editable(head es) then [ INS (Ecps [d, flp (ECps (tail es))]) INTO head es ] else []) ++
+                      (if editable(last es) then [ INS (Ecps [flp (ECps (init es)), d]) INTO last es ] else [])  )
+              , IF and [editable e | e<-es] && and [ editable (I c) | c<-cs ]
+                THEN let d' = EVAL (EDif (d, ECps es))
+                     in IF not (null d')
+                        THEN All ( map INS newAtoms ++
+                                   [ INS (EPrd [d, head newAtoms]) INTO (head es) ]++
+                                   [ INS (Eprd [cl, cr]) INTO e | (cl,cr,e)<-zip (init newAtoms) (tail newAtoms) tail (init es))] ++
+                                   [ INS (EPrd [last newAtoms, d]) INTO (last es) ] )
               ]
             )
+            
+We can use an "Algebra of Imperative Programs" to move towards real code. Suppose we have the following data structure of imperative programs:
+data Program = Sequence [Program]          -- execute programs in sequence
+             | Select Cond Program         -- evaluate the computation (Cond), which yields a boolean result, and execute the program if it is true
+             | Sequence [Program]          -- execute programs in sequence
+             | Choice [Program]            -- execute precisely one program from the list
+             | All [Program]               -- execute all programs in arbitrary order (may even be parallel)
+             | New String Concept Program  -- create a named variable (the String) of type C (the concept) and execute the program, which may use this concept.
+             | NewAtom PHPRel Concept      -- assign a brand new atom of type Concept to the PHPRel, which must be a PHPvar (i.e. a variable).
+             | Assign PHPRel PHPExpression -- execute a relation expression in PHP and assign its result to the PHPRel, which must be a PHPvar (i.e. a variable).
+             | Insert PHPExpression DBrel  -- execute the computation and insert its result into the database
+             | Delete PHPExpression DBrel  -- execute the computation and delete its result from the database
+             | Comment String              -- ignore this. This is part of the algebra, so we can generate commented code.
+             | Nop                         -- do nothing
+             | Blk [(Expression,[Rule])]   -- abort, leaving an error message that motivates this. The motivation consists of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+data Cond    = NotNull PHPRel  -- a condition on a PHPRel
+
+In order to proceed to the next refinement, we have enriched the PHPExpression data structure with variables (PHPvar) and queries (PHPqry) 
+We need a variable in PHP that represents a relation, which gets the label PHPvar.
+We also need to query an Expression on the SQL server. The result of that query is relation contents in PHP, which gets the label PHPqry.
+The 'almost Haskell' program fragment for generating an insertion of Delta into r;s is now:
+let delta = PHPvar{ phpVar = "delta"       -- this is the input
+                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  } in
+let d     = PHPvar{ phpVar = "d"           -- this is the input, from which everything already in  Ecps es  is removed.
+                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  } in
+let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `lub` source(s)] in
+Sequence [ Assign d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))    -- let d = Delta - e0;e1;e2;...
+         , Comment "d contains all links to be inserted in r;s"
+         , Select (NotNull d)
+                  (Sequence([ All ( (if editable(head es)    
+                                     then [ Insert (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) (mkDBrel (head es)) ]
+                                     else []) ++
+                                    (if editable(last es)
+                                     then [ Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (mkDBrel (last es)) ]
+                                     else []) )
+                            , Comment "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
+                            if or [not (editable e) | e<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
+                            [ -- let us see which links are left to be inserted
+                              Assign d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
+                            , Comment "d contains the remaining links to be inserted in r;s"
+                            , Select (NotNull d)
+                                     (Seq ( newAtoms ++
+                                            All ( let vs = [ v | NewAtom v _ <- newAtoms ] in
+                                                  [ Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (mkDBrel (head es)) ]++
+                                                  [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel e) | (cl,cr,e)<-zip (init vs) (tail vs) tail (init es))] ++
+                                                  [ Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (mkDBrel (last es)) ])
+                                     )    )
+                            ])
+                  )
+         ]
+
+In order to proceed to the real code, we must realize that mkDBrel is not defined yet.
+The argument of mkDBrel is an Expression. This can be an ERel{} or something different.
+In case it is an ERel{}, the insert can be translated directly to a database action.
+If it is not, the insert can be treated as a recursive call to genPAcl, which breaks down the expression further until it reaches a relation.
+let delta = PHPvar{ phpVar = "delta"       -- this is the input
+                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  } in
+let d     = PHPvar{ phpVar = "d"           -- this is the input, from which everything already in  Ecps es  is removed.
+                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  } in
+let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `lub` source(s)] in
+Sequence [ Assign d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
+         , Comment "d contains all links to be inserted in r;s"
+         , Select (NotNull d)
+                  (Sequence([ All ( (if editable(head es)
+                                     then [ if isRel (head es)
+                                            then Insert (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) (let PHPRel r = head es in r)
+                                            else genPAclause editAble Ins (head es) (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) motive
+                                          ]
+                                     else []) ++
+                                    (if editable(last es)
+                                     then [ if isRel (last es)
+                                            then Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (let PHPRel r = last es in r)
+                                            else genPAclause editAble Ins (last es) (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) motive
+                                          ]
+                                     else []) )
+                            , Comment "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
+                            if or [not (editable e) | e<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
+                            [ -- let us see which links are left to be inserted
+                              Assign d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
+                            , Comment "d contains the remaining links to be inserted in r;s"
+                            , Select (NotNull d)
+                                     (Seq ( newAtoms ++
+                                            All ( let vs = [ v | NewAtom v _ <- newAtoms ] in
+                                                  [ if isRel (head es)
+                                                    then Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (let PHPRel r = head es in r)
+                                                    else genPAclause editAble Ins (head es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive]++
+                                                  [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel e) | (cl,cr,e)<-zip (init vs) (tail vs) tail (init es))] ++
+                                                  [ if isRel (last es)
+                                                    then Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (let PHPRel r = last es in r)
+                                                    else genPAclause editAble Ins (last es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive ])
+                                     )    )
+                            ])
+                  )
+         ]
+
 -}
+
           (Del, ECps ts) -> Chc [ if ECps ls==flp (ECps rs)
                                   then Chc [ Sel c (disjNF (ECps ls)) (\_->Rmv c fLft motiv) motiv
                                            , Sel c (disjNF (ECps ls)) fLft motiv
@@ -774,16 +890,46 @@ IN IF not (null d)
                                            ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (ECps rs) `join` target (ECps ls)
-                                , let fLft atom = doCod (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
-                                , let fRht atom = doCod (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
+                                , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
+                                , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
                                 ] motiv
-          (Del, EUni fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Del, EIsc fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
+{- Problem: how to delete Delta from ECps es
+This corresponds with:  genPAclause editAble Del (ECps es) Delta motive
+One way of doing this is to select from es one subexpression, e, that is editable.
+By removing the proper links from that particular e, all chains are broken.
+
+Splitting the terms on one particular subexpression can be done as follows:
+  triples = [ (take i es, es!!i, drop (i+1) es) | i<-[0..length es-1]  ]
+This gives us triples, (left,e,right), each of which is a candidate for deletion.
+There is no point in having two candidates, (left,e,right) and (left',e',right'), with e==e'.
+Since e and e' are aliases of the underlying database relation, deletion from e need not be repeated by deletion from e'.
+That is why double candidates may be excluded. Here is how:
+  triples = [ (take i es, es!!i, drop (i+1) es) | i<-[0..length es-1], es!!i `notElem` (take i es)  ]
+If e is a relation and editable as well, this relation can be used for deletion.
+The elements from e to be deleted are those, that establish a link between cod(left) and dom(right).
+In order to eliminate these, no link from the expression  left~;e;right~  may survive.
+If we sum up the alternatives in pseudocode, we get:
+Chc [ DELETE ((ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) FROM e
+    | (left,ERel e,right)<-triples
+    , editable e ]
+In order to refine further to real code, we must realize that deletion can be done in relations only. Not in expressions.
+So if e is a relation, the DELETE can be executed.
+If it is an expression, the function genPAclause can be called recursively.
+We now get the following code fragment:
+Chc [ if isRel e
+      then DELETE (ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) FROM  (let PHPRel r = e in r)
+      else genPAclause editAble Del e (ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) motive
+    | (left,ERel e,right)<-triples
+    , editable e ]
+
+-}
+          (Del, EUni fs)   -> All [ genPAcl deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Del, EIsc fs)   -> Chc [ genPAcl deltaX Del f motiv | f<-fs ] motiv
 -- Op basis van de Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , ERad ts)   -> doCod deltaX tOp (ECpl (ECps (map ECpl ts))) motiv
+          (_  , ERad ts)   -> genPAcl deltaX tOp (ECpl (ECps (map ECpl ts))) motiv
           (_  , EPrd _)    -> fatal 745 "TODO"
-          (_  , EKl0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
-          (_  , EKl1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
+          (_  , EKl0 x)    -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
+          (_  , EKl1 x)    -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
           (_  , ERel m)   -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                              if editAble m then Do tOp exprX deltaX motiv else Blk [(ERel m ,nub [r |(_,rs)<-motiv, r<-rs])]

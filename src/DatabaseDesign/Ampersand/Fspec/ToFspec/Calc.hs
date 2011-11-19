@@ -200,7 +200,7 @@ where
 --          , let act = All [ Chc [ (if isTrue  clause' || isTrue  step   then Nop else
 --                                   if isFalse clause'   then Blk else
 ----                                 if not (visible rel) then Blk else
---                                   let visible _ = True in doCode visible ev toExpr viols)
+--                                   let visible _ = True in genPAclause visible ev toExpr viols)
 --                                   [(conj,causes)]  -- the motivation for these actions
 --                                | clause@(EUni fus) <- shifts
 --                                , let clause' = conjNF (subst (rel, actSem Ins rel (delta (sign rel))) clause)
@@ -295,7 +295,7 @@ where
                                            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) rel-}++"NIET TYPECORRECT: (showPr.derivMono r ev) rel"++"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ = delta (sign rel) in
                                                 "An appropriate reaction on this event is required."
-                                           --     showECA fSpec "\n  " (ECA (On ev rel) delt (doCode visible Ins r viols conj [rule]) 0)
+                                           --     showECA fSpec "\n  " (ECA (On ev rel) delt (genPAclause visible Ins r viols conj [rule]) 0)
                                      )
                                    | rel<-nub [x |x<-mors r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]

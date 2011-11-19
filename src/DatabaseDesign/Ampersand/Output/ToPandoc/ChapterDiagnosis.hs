@@ -420,7 +420,7 @@ chpDiagnosis lev fSpec flags
                                   , Str "De volgende tabel toont welke regels in welke patterns aan een rol gekoppeld zijn. "
                                   , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) in de bijbehorende processen zal handhaven."
                                   ]
-        (English,_,_)     -> Para [ Str "There are roles assigne to rules outside the bounds of the process. "
+        (English,_,_)     -> Para [ Str "There are roles assigned to rules outside the bounds of the process. "
                                   , Str "The following table shows which rules that are defined in a pattern are linked to a role within a process."
                                   , Str "This has as consequence that these rule(s) will be maintained in the corresponding process(es)."
                                   ]
