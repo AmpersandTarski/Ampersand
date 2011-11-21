@@ -15,6 +15,7 @@ echo '<div id="UpdateResults">';
 
 dbStartTransaction($dbName);
 emitLog('BEGIN');
+
 processCommands();
 
 if (checkRules()) {
@@ -37,6 +38,7 @@ TODO: CHECK EDIT BEHAVIOR AND SQL PROPERTIES ON ROWS (see 'Bespreken met Stef.tx
 
  
 ticket 138
+todo: move to php dir
 todo: remove test errors for update to x and delete Pino
 todo: a php error should also cause rollback, so perhaps we do need to collect php results, rather than echoing them.
 todo: implement navigation arrow from old prototype?
