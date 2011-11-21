@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Misc.Options 
-        (Options(..),getOptions,usageInfo'
+        (Options(..),getOptions,defaultFlags,usageInfo'
         ,ParserVersion(..)
         ,verboseLn,verbose,FspecFormat(..),ImportFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
