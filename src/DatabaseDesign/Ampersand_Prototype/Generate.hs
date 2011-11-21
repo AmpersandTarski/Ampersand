@@ -71,7 +71,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
            , "      , 'meaning' => "++showPhpStr (showMeaning rule)
            , "      , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . ECpl . rrexp $ rule)++"'" 
            , "      )" ]
-         | (i,rule) <- zip [0..] $ vrules fSpec ])
+         | (i,rule) <- zip [0..] $ vrules fSpec ++ grules fSpec ])
        
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
        showMeaning rule = case [explainContent2String ReST False xs | Means _ xs<-rrxpl rule] of
