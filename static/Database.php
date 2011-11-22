@@ -43,9 +43,7 @@ todo: remove test errors for update to x and delete Pino
 todo: a php error should also cause rollback, so perhaps we do need to collect php results, rather than echoing them.
 todo: implement navigation arrow from old prototype?
 todo: does Atom Atom in computeDbCommands also match descendants? (eg. .. ATOM .. atom .. ATOM ..)
-todo: fix edit start. maybe even make start local
 todo: modified atom values are not escaped
-todo: don't delete if original is null
 todo: maybe don't use column unique and not null, since these might be weaker than the multiplicities (sometimes a surjective relation will allow nulls, depending on other relations in the same table, although possibly the table prop generator is wrong and will contain non-null in that case)
 todo: box shadow gebruiken?
 todo: header always at top? probably makes it easier to float error windows
@@ -172,8 +170,6 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   global $tableColumnInfo;
   
   emitLog("editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
-  //$src = $isFlipped ? $childAtom : $parentAtom;
-  //$tgt = $isFlipped ? $parentAtom : $childAtom;
   
   $table = $relationTableInfo[$rel]['table'];
   $srcCol = $relationTableInfo[$rel]['srcCol'];
@@ -186,21 +182,28 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   $stableCol   = $parentOrChild == 'parent' ? $childCol : $parentCol;
   $stableAtom  = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
   
-  if ($tableColumnInfo[$table][$stableCol]['unique']) {
-    $query = "UPDATE $table SET $modifiedCol='$modifiedAtom' WHERE $stableCol='$stableAtom'";
+  $tableEsc = addSlashes($table);
+  $modifiedColEsc = addSlashes($modifiedCol);
+  $stableColEsc = addSlashes($stableCol);
+  $modifiedAtomEsc = addSlashes($modifiedAtom);
+  $stableAtomEsc = addSlashes($stableAtom);
+  $originalAtomEsc = addSlashes($originalAtom);
+  
+  if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
+    $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog ($query);
     DB_doquer($dbName, $query);
   }
   else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
-    $query = "UPDATE $table SET $stableCol='$stableAtom' WHERE $modifiedCol='$modifiedAtom'";
+    $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
     emitLog ($query);
     DB_doquer($dbName, $query);
   }
   else */ {
-    $query = 'DELETE FROM '.$table.' WHERE '.$stableCol.'=\''.$stableAtom.'\' AND '.$modifiedCol.'=\''.$originalAtom.'\';';
+    $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
     emitLog ($query);
     DB_doquer($dbName, $query);
-    $query = "INSERT INTO $table ($stableCol, $modifiedCol) VALUES ('$stableAtom', '$modifiedAtom')";
+    $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
     emitLog ($query);
     DB_doquer($dbName, $query);
   }
@@ -210,12 +213,16 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
   
   $conceptTable = $conceptTableInfo[$modifiedConcept]['table'];
-  $conceptColumn = $conceptTableInfo[$modifiedConcept]['col'];
-  //emitLog("Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptColumn";)
-  $allConceptAtoms = firstCol(DB_doquer($dbName, "SELECT $conceptColumn FROM $conceptTable"));
+  $conceptCol = $conceptTableInfo[$modifiedConcept]['col'];
+  
+  $conceptTableEsc = addSlashes($conceptTable);
+  $conceptColEsc = addSlashes($conceptCol);
+  
+  //emitLog("Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptCol";)
+  $allConceptAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
   if (!in_array($modifiedAtom, $allConceptAtoms)) {
     //emitLog( 'not present');
-    DB_doquer($dbName, "INSERT INTO $conceptTable ($conceptColumn) VALUES ('$modifiedAtom')");
+    DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$modifiedAtomEsc')");
   } else {
     // emitLog('already present');
   }
@@ -229,13 +236,17 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   global $dbName; 
   global $relationTableInfo;
   emitLog ("editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom)");
-  $src = $isFlipped ? $childAtom : $parentAtom;
-  $tgt = $isFlipped ? $parentAtom : $childAtom;
+  $srcAtom = $isFlipped ? $childAtom : $parentAtom;
+  $tgtAtom = $isFlipped ? $parentAtom : $childAtom;
   
   $table = $relationTableInfo[$rel]['table'];
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
-  $query = 'DELETE FROM '.$table.' WHERE '.$srcCol.'=\''.$src.'\' AND '.$tgtCol.'=\''.$tgt.'\';';
+  
+  $tableEsc = addSlashes($table);
+  $srcAtomEsc = addSlashes($srcAtom);
+  $tgtAtomEsc = addSlashes($tgtAtom);
+  $query = "DELETE FROM `$tableEsc` WHERE `$srcCol`='$srcAtomEsc' AND `$tgtCol`='$tgtAtomEsc';";
   emitLog ($query);
   DB_doquer($dbName, $query);
 }
