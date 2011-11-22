@@ -1,5 +1,4 @@
 function initialize() {
-  console.log('initialize');
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
     setEditHandlers();
     traceDbCommands(); // to initialize command list
@@ -46,7 +45,6 @@ function commitEditing() {
   }
   
   var dbCommands = computeDbCommands();
-  console.log(dbCommands);
   sendCommands(dbCommands);
 }
 
@@ -63,9 +61,7 @@ function sendCommands(commandArray) {
     $('#PhpLog').append('<div class=Title>Php log messages:</div>');
     $('#PhpLog').append($logMessages);
     $('#PhpLog').attr('nonEmpty', $logMessages.length > 0 ? 'true' : 'false' );
-    console.log($errors.length);
-    console.log($ampersandErrors.length);
-
+    
     if ($errors.length + $ampersandErrors.length > 0) {
       $('#IssueList').empty();
       $('#IssueList').append('<div class=Title>Errors:</div>');
@@ -139,9 +135,11 @@ function mkDbCommandDelete(relation, relationIsFlipped, parentAtom, childAtom) {
 
 function computeDbCommands() {
   dbCommands = new Array();
-  $('.Atom .Atom').map(function () {
+  $('.Atom .Atom').map(function () { // for every parent child pair of atoms (only immediate, so no <parent> .. <atom>  .. <child>)
     $childAtom = $(this);
     if (getParentAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
+      //console.log(getParentAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
+      
       var $atomListElt = getParentAtomList($childAtom);
       var relation = $atomListElt.attr('relation'); 
      
@@ -168,7 +166,6 @@ function computeDbCommands() {
             dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', ''));
             break;
           case 'deleted':
-            console.log('parent '+$childAtom.attr('status'));
             var unmodifiedParentAtom = $parentAtom.attr('originalAtom') ?  $parentAtom.attr('originalAtom') : parentAtom;
             var unmodifiedChildAtom = $childAtom.attr('originalatom') ?  $childAtom.attr('originalAtom') : childAtom;
             dbCommands.push(mkDbCommandDelete(relation, relationIsFlipped, unmodifiedParentAtom, unmodifiedChildAtom));

@@ -42,18 +42,14 @@ todo: move to php dir
 todo: remove test errors for update to x and delete Pino
 todo: a php error should also cause rollback, so perhaps we do need to collect php results, rather than echoing them.
 todo: implement navigation arrow from old prototype?
-todo: does Atom Atom in computeDbCommands also match descendants? (eg. .. ATOM .. atom .. ATOM ..)
-todo: modified atom values are not escaped
-todo: maybe don't use column unique and not null, since these might be weaker than the multiplicities (sometimes a surjective relation will allow nulls, depending on other relations in the same table, although possibly the table prop generator is wrong and will contain non-null in that case)
 todo: box shadow gebruiken?
 todo: header always at top? probably makes it easier to float error windows
 
 todo: click anywhere should disable navigation context menu
-todo: figure out how to do editing when interfaces are floating horizontally at some level (e.g. in Viro)
 todo: sqlRelPlugNames also returns list. Change to maybe?
 
 insert goes wrong if we have [keyA, keyB, keyC] and insert (valA1,valB1) (valA2,valB2), since unique keyC will contain 2 nulls.
-kind of a pathoemitLogical case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
+kind of a pathological case, since tuples for valA1 will most likely be inserted before any valA2 tuples.
 
 field editable also if it has children in an editable relation
 
