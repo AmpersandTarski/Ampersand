@@ -2,7 +2,7 @@ body
  { margin: 0px	
  }
   
-[editing=false] .Atom[hasInterface]>.AtomName 
+#AmpersandRoot[editing] .AtomName 
   { cursor: pointer
   ; color: blue
   }
@@ -290,6 +290,6 @@ body
 
 /* Misc */
 
-#RollBack /* used for parking a clone of the root atom during editing */
+#Rollback /* used for parking a clone of the root atom during editing */
   { display: none
   }
