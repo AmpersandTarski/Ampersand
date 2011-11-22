@@ -13,8 +13,6 @@ body
   ; margin: 0px
   ; padding-left: 10px
   ; cell-padding: 0px
-  ; border-spacing: 0px
-  ; background-color: white
   ; margin: 4px
   }
   
@@ -150,7 +148,6 @@ body
 
 .AtomList .InsertStub
   { visibility: hidden
-  ; display:none 
   ; padding: 1px 7px 1px 7px
   ; font-family: Arial
   ; font-style: bold
