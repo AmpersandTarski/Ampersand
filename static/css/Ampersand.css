@@ -2,7 +2,7 @@ body
  { margin: 0px	
  }
   
-#AmpersandRoot[editing] .AtomName 
+[editing=false] .Atom[hasInterface]>.AtomName 
   { cursor: pointer
   ; color: blue
   }

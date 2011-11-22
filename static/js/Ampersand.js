@@ -11,7 +11,7 @@ function initialize() {
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
  * on #AmpersandRoot. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
-  $('#RollBack').empty(); // in case we start twice for some reason
+  $('#Rollback').empty(); // in case we start twice for some reason
   $('#Rollback').append($('#AmpersandRoot > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
   
   $('#AmpersandRoot').attr('editing','true');
@@ -27,7 +27,7 @@ function startEditing() {
 
 function cancelEditing() {
   $('#AmpersandRoot > .Atom').remove();  
-  $('#AmpersandRoot').append($('#RollBack > .Atom'));
+  $('#AmpersandRoot').append($('#Rollback > .Atom'));
   
   $('#IssueList').empty();
   $('#IssueList').attr('nonEmpty','false');  
@@ -51,7 +51,7 @@ function commitEditing() {
 }
 
 function sendCommands(commandArray) {
-  $.post('Database.php',  
+  $.post('php/Database.php',  
   { commands: JSON.stringify(commandArray) },
   function(data) {
     $results = $(data);
