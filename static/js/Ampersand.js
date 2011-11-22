@@ -49,7 +49,7 @@ function commitEditing() {
 }
 
 function sendCommands(commandArray) {
-  $.post('Database.php',  
+  $.post('php/Database.php',  
   { commands: JSON.stringify(commandArray) },
   function(data) {
     $results = $(data);

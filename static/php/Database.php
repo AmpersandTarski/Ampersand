@@ -2,10 +2,10 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require "Interfaces.php"; 
+require "../Interfaces.php"; 
 // defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, and $rulesSql
 
-require "php/DatabaseUtils.php";
+require "DatabaseUtils.php";
 
 echo '<div id="UpdateResults">';
 //emitLog('ja');

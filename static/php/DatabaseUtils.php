@@ -1,4 +1,9 @@
 <?php
+require __DIR__.'/../dbSettings.php';
+// We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
+// Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
+// by php/Database.php, we would need '../dbSettings.php'.
+
 
 /* TODO
 - errsors are in nasty global $DB_errss
@@ -8,7 +13,6 @@
 - use an array for getAllAtomsFor
 */
 
-require "dbsettings.php";
   
 $DB_errs = array();
     
