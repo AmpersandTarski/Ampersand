@@ -59,7 +59,6 @@ function processCommand($command) {
           array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command))
         editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
       else {
-        print_r($command);
         error("Command $command->dbCmd is missing parameters");
       }
       break;
@@ -98,20 +97,20 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
     $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog ($query);
-    DB_doquer($dbName, $query);
+    queryDb($dbName, $query);
   }
   else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
     $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
     emitLog ($query);
-    DB_doquer($dbName, $query);
+    queryDb($dbName, $query);
   }
   else */ {
     $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
     emitLog ($query);
-    DB_doquer($dbName, $query);
+    queryDb($dbName, $query);
     $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
     emitLog ($query);
-    DB_doquer($dbName, $query);
+    queryDb($dbName, $query);
   }
   // if the new atom is not in its concept table, we add it
   $childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
@@ -125,15 +124,14 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   $conceptColEsc = addSlashes($conceptCol);
   
   //emitLog("Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptCol";)
-  $allConceptAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
+  $allConceptAtoms = firstCol(queryDb($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
   if (!in_array($modifiedAtom, $allConceptAtoms)) {
     //emitLog( 'not present');
-    DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$modifiedAtomEsc')");
+    queryDb($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$modifiedAtomEsc')");
   } else {
     // emitLog('already present');
   }
 }
-
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   if ($childAtom=='Pino') emitAmpersandErr('Don\'t delete Pino!');
@@ -152,7 +150,7 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   $tgtAtomEsc = addSlashes($tgtAtom);
   $query = "DELETE FROM `$tableEsc` WHERE `$srcCol`='$srcAtomEsc' AND `$tgtCol`='$tgtAtomEsc';";
   emitLog ($query);
-  DB_doquer($dbName, $query);
+  queryDb($dbName, $query);
 }
 
 function checkRules() {
@@ -161,7 +159,9 @@ function checkRules() {
   $allRulesHold = true;
   
   foreach ($rulesSql as $ruleSql) {
-    $rows = DB_doquer($dbName, $ruleSql['sql']);
+    $rows = queryDb($dbName, $ruleSql['sql'], $error);
+    if ($error) error($error);
+    
     if (count($rows) > 0) {
       emitAmpersandErr("Rule '$ruleSql[name]' broken: $ruleSql[meaning]");
       $allRulesHold = false;
@@ -172,7 +172,25 @@ function checkRules() {
   return $allRulesHold;
 }
 
+function dbStartTransaction($dbName) {
+  queryDb($dbName, 'START TRANSACTION');
+}
 
+function dbCommitTransaction($dbName) {
+  queryDb($dbName, 'COMMIT');
+}
+
+function dbRollbackTransaction($dbName) {
+  queryDb($dbName, 'ROLLBACK');
+}
+
+function queryDb($dbName, $querySql) {
+  $result = DB_doquerErr($dbName, $querySql, $error);
+  if ($error)
+    error($error);
+  
+  return $result;
+}
 
 function emitAmpersandErr($err) {
   echo "<div class=AmpersandErr>$err</div>";
@@ -185,5 +203,8 @@ function emitLog($msg) {
 function error($msg) {
   die("<div class=Error>Error in Database.php: $msg</div>");
 } // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
+  // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
+  // since it may trigger an error again, causing a loop)
+
 
 ?>

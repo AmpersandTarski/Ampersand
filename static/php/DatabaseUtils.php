@@ -3,31 +3,24 @@ require __DIR__.'/../dbSettings.php';
 // We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
 // by php/Database.php, we would need '../dbSettings.php'.
-
   
-$DB_errs = array();
-    
-function dbStartTransaction($dbName) {
-  DB_doquer($dbName, 'START TRANSACTION');
-}
 
-function dbCommitTransaction($dbName) {
-  DB_doquer($dbName, 'COMMIT');
-}
-
-function dbRollbackTransaction($dbName) {
-  DB_doquer($dbName, 'ROLLBACK');
-}
+function DB_doquer($DbName, $quer) {
+  $result = DB_doquerErr($DbName, $quer, $error);
   
-function DB_doquer($DbName, $quer)
+  if ($error)
+    die("<div class=InternalError>$error</div>");
+  return $result;
+}
+
+function DB_doquerErr($DbName, $quer, &$error)
 {
   global $DB_link,$DB_errs;
   $DB_slct = mysql_select_db($DbName,$DB_link);
     
   $result=mysql_query($quer,$DB_link);
   if(!$result){
-    error('Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'": '.mysql_error(),2);
-    $DB_errs[]='Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'"';
+    $error = 'Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'": '.mysql_error();
     return false;
   }
   if($result===true) return true; // succes.. but no contents..

@@ -287,6 +287,11 @@ body
 
 /* Misc */
 
+.InternalError /* for unhandled errors, should not appear */
+  { background-color: red
+  ; color: white
+  }
+
 #Rollback /* used for parking a clone of the root atom during editing */
   { display: none
   }
