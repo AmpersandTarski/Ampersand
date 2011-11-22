@@ -51,7 +51,7 @@ function commitEditing() {
 }
 
 function sendCommands(commandArray) {
-  $.post('php/Database.php',  
+  $.post('Database.php',  
   { commands: JSON.stringify(commandArray) },
   function(data) {
     $results = $(data);
@@ -238,7 +238,7 @@ function setEditHandlersBelow($elt) {
       startAtomEditing(getParentAtom($(this)));
     }
   });
-  
+ 
   $elt.find('.DeleteStub').click(function() {
     var $atomElt = $(this).next().children().first(); // children is for AtomListElt
 
