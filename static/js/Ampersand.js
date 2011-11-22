@@ -196,9 +196,9 @@ function traceDbCommand(dbCmd) {
 function traceDbCommands() {
   $('#DbCommandList').empty();
   $('#DbCommandList').append('<div class=Title>Edit commands:</div>');
-  computeDbCommands().map( function(dbCmd) {
-    traceDbCommand(dbCmd);
-  });
+  var dbCmds = computeDbCommands();
+  for (var i=0; i<dbCmds.length; i++)
+    traceDbCommand(dbCmds[i]);
 }
 
 
