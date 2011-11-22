@@ -4,15 +4,6 @@ require __DIR__.'/../dbSettings.php';
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
 // by php/Database.php, we would need '../dbSettings.php'.
 
-
-/* TODO
-- errsors are in nasty global $DB_errss
-- fix require "dbsettings.php". just declare a constant that returns the settings, and do the connection somewhere else
-- rewrite DB_doquer
-- escape correctly (also need to use htmlSpecialChars?)
-- use an array for getAllAtomsFor
-*/
-
   
 $DB_errs = array();
     
