@@ -51,22 +51,23 @@ where
    -- | Architecture of Ampersand consists of a set of contexts
    data P_Architecture = P_Arch { p_arch_Contexts :: [P_Context]}
    data P_Context
-      = PCtx{ ctx_nm    :: String                     -- ^ The name of this context
-            , ctx_lang  :: Lang                       -- ^ The default language in this context
-            , ctx_markup:: PandocFormat               -- ^ The default markup format for free text in this context
-            , ctx_pats  :: [P_Pattern]                -- ^ The patterns defined in this context
-            , ctx_PPrcs :: [P_Process]                -- ^ The processes as defined by the parser
-            , ctx_rs    :: [P_Rule]                   -- ^ All user defined rules in this context, but outside patterns and outside processes
-            , ctx_ds    :: [P_Declaration]            -- ^ The declarations defined in this context, outside the scope of patterns
-            , ctx_cs    :: ConceptDefs                -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks    :: P_KeyDefs                  -- ^ The key definitions defined in this context, outside the scope of patterns
-            , ctx_gs    :: [P_Gen]                    -- ^ The gen definitions defined in this context, outside the scope of patterns
-            , ctx_ifcs  :: [P_Interface]              -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps    :: PExplanations              -- ^ The pre-explanations defined in this context, outside the scope of patterns
-            , ctx_pops  :: [P_Population]             -- ^ The populations defined in this context
-            , ctx_sql   :: P_ObjectDefs               -- ^ user defined sqlplugs, taken from the Ampersand script
-            , ctx_php   :: P_ObjectDefs               -- ^ user defined phpplugs, taken from the Ampersand script
-            , ctx_env   :: Maybe (P_Expression , [(P_Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
+      = PCtx{ ctx_nm     :: String          -- ^ The name of this context
+            , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
+            , ctx_markup :: PandocFormat    -- ^ The default markup format for free text in this context
+            , ctx_printThemes :: [String]   -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+            , ctx_pats   :: [P_Pattern]     -- ^ The patterns defined in this context
+            , ctx_PPrcs  :: [P_Process]     -- ^ The processes as defined by the parser
+            , ctx_rs     :: [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
+            , ctx_ds     :: [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
+            , ctx_cs     :: ConceptDefs     -- ^ The concept definitions defined in this context, outside the scope of patterns
+            , ctx_ks     :: P_KeyDefs       -- ^ The key definitions defined in this context, outside the scope of patterns
+            , ctx_gs     :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
+            , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
+            , ctx_ps     :: PExplanations   -- ^ The pre-explanations defined in this context, outside the scope of patterns
+            , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
+            , ctx_sql    :: P_ObjectDefs    -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctx_php    :: P_ObjectDefs    -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_env    :: Maybe (P_Expression , [(P_Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
             }
 
    instance Show P_Context where
@@ -329,7 +330,7 @@ where
       P_Ru { rr_nm    :: String                  -- ^ Name of this rule
            , rr_exp   :: P_Expression            -- ^ The rule expression 
            , rr_fps   :: Origin                  -- ^ Position in the Ampersand file
-           , rr_mean  :: (Lang,String)           -- ^ User specified meaning (language specific)
+           , rr_mean  :: (Maybe Lang,String)     -- ^ User specified meaning (language specific)
            }
    instance Traced P_Rule where
     origin = rr_fps
@@ -407,11 +408,11 @@ where
         PExplFspc str -> str
 
    type PExplanations = [PExplanation]
-   data PExplanation = PExpl { pexPos   :: Origin    -- the position in the Ampersand script of this purpose definition
-                             , pexObj   :: PExplObj  -- the object whose purpose is explained
-                             , pexLang  :: Lang      -- the natural language in which the text is stated
-                             , pexRefID :: String    -- the reference (for traceability)
-                             , pexExpl  :: String    -- the text of this purpose definition
+   data PExplanation = PExpl { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
+                             , pexObj   :: PExplObj   -- the object whose purpose is explained
+                             , pexLang  :: Maybe Lang -- the natural language in which the text is stated, if specified
+                             , pexRefID :: String     -- the reference (for traceability)
+                             , pexExpl  :: String     -- the text of this purpose definition
                              }
 
    instance Identified PExplanation where

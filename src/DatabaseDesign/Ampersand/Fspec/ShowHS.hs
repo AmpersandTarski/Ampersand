@@ -245,7 +245,8 @@ where
     showHSname fspec = haskellIdentifier ("fSpc_"++name fspec)
     showHS flags indent fspec
      = intercalate (indent ++"    ") 
-            ["Fspc{ fsName = " ++ show (name fspec)
+           [ "Fspc{ fsName = " ++ show (name fspec)
+                  ,     ", fsLang        = " ++ show (fsLang fspec)
                   ,wrap ", vprocesses    = " indentA (\_->showHSname) (vprocesses fspec)
                   ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
                   ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
@@ -546,9 +547,9 @@ where
     showHSname _ = fatal 522 "a Explanation is anonymous with respect to showHS flags"
     showHS flags _ expla = 
        "Expl "++showHS flags "" (explObj expla)++" "
-               ++show (explLang  expla)++" "
-               ++show (explRefId expla)++" "
-               ++show (explCont  expla)
+              ++show (explLang  expla)++" "
+              ++show (explRefId expla)++" "
+              ++show (explCont  expla)
 
    instance ShowHS ExplObj where
     showHSname _ = fatal 530 "a ExplObj is anonymous with respect to showHS flags"
@@ -593,7 +594,8 @@ where
 -- \***********************************************************************
    instance ShowHS RuleMeaning where
      showHSname _ = fatal 576 "showHSname undefined for Type 'RuleMeaning'"
-     showHS flags ind (Means lang blocks) = "Means "++show lang++" "++showHS flags ind blocks
+     showHS flags ind (Means  Nothing    blocks) = "Means Nothing "++showHS flags ind blocks
+     showHS flags ind (Means (Just lang) blocks) = "Means (Just "++show lang++") "++showHS flags ind blocks
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***

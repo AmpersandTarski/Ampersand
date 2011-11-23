@@ -265,7 +265,7 @@ options = map pp
           , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicat logic." , Public)
           , (Option []        ["noDiagnosis"] (NoArg noDiagnosisOpt)      "omit the diagnosis chapter from the functional specification document." , Public)
           , (Option []        ["diagnosis"]   (NoArg diagnosisOpt)        "diagnose your Ampersand script (generates a .pdf file).", Public)
-          , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK').", Public)
+          , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'EN').", Public)
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
 
           , (Option []        ["pango"]       (OptArg pangoOpt "fontname") "specify font name for Pango in graphics.", Hidden)

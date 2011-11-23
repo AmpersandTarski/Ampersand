@@ -296,7 +296,7 @@ theTemplate flags gis
                , "\\usepackage{glossaries}\n"
                , "\\makeglossaries\n"
                ] ++
-               [ "\\newglossaryentry{"++latexEscShw cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
+               [ "\\newglossaryentry{"++stripSpecialChars cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
                | c<-gis, (cdnm,cd)<-uniquecds c]
                ++
                [ "\\begin{document}\n"
@@ -511,22 +511,89 @@ instance ShowMath Declaration where
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
 latexEscShw :: String -> String
-latexEscShw "" = ""
-latexEscShw ('$': str)  = "\\$"++latexEscShw str
-latexEscShw ('^': str)  = "\\^{}"++latexEscShw str
-latexEscShw ('~': str)  = "\\~{}"++latexEscShw str
-latexEscShw ('%': str)  = "\\%"++latexEscShw str
-latexEscShw ('_': str)  = "\\_"++latexEscShw str
-latexEscShw ('{': str)  = "\\{"++latexEscShw str
-latexEscShw ('}': str)  = "\\}"++latexEscShw str
-latexEscShw ('&': str)  = "\\&"++latexEscShw str
-latexEscShw ('#': str)  = "\\#"++latexEscShw str
-latexEscShw ('\\': str) = "\\textbackslash "++latexEscShw str
-latexEscShw ('|': str)  = "\\textbar "      ++latexEscShw str
-latexEscShw ('>': str)  = "\\textgreater "  ++latexEscShw str
-latexEscShw ('<': str)  = "\\textless "     ++latexEscShw str
-latexEscShw ('\"': str) = "\\textquotedbl " ++latexEscShw str
-latexEscShw (c:str)     = c:latexEscShw str
+latexEscShw ""           = ""
+latexEscShw ('\"':c:str) | isAlphaNum c = "``"++latexEscShw (c:str)
+                         | otherwise    = "''"++latexEscShw (c:str)
+latexEscShw "\""         = "''"
+latexEscShw (c:str)      | isAlphaNum c = [c]++latexEscShw str
+                         | otherwise    = f c++latexEscShw str
+ where
+  f '$' = "\\$"
+  f '^' = "\\^{}"
+  f '~' = "\\~{}"
+  f '%' = "\\%"
+  f '_' = "\\_"
+  f '{' = "\\{"
+  f '}' = "\\}"
+  f '&' = "\\&"
+  f '#' = "\\#"
+  f '\\'= "\\textbackslash "
+  f '|' = "\\textbar "
+  f '>' = "\\textgreater "
+  f '<' = "\\textless "
+  f 'à' = "\\`{a}"         --  grave accent
+  f 'è' = "\\`{e}"         --  grave accent
+  f 'ì' = "\\`{\\i}"       --  grave accent
+  f 'ò' = "\\`{o}"         --  grave accent
+  f 'ù' = "\\`{u}"         --  grave accent
+  f 'á' = "\\'{a}"         --  acute accent
+  f 'é' = "\\'{e}"         --  acute accent
+  f 'í' = "\\'{\\i}"       --  acute accent
+  f 'ó' = "\\'{o}"         --  acute accent
+  f 'ú' = "\\'{u}"         --  acute accent
+  f 'â' = "\\^{a}"         --  circumflex
+  f 'ê' = "\\^{e}"         --  circumflex
+  f 'î' = "\\^{\\i}"       --  circumflex
+  f 'ô' = "\\^{o}"         --  circumflex
+  f 'û' = "\\^{u}"         --  circumflex
+  f 'ä' = "\\\"{a}"        --  umlaut or dieresis
+  f 'ë' = "\\\"{e}"        --  umlaut or dieresis
+  f 'ï' = "\\\"{\\i}"      --  umlaut or dieresis
+  f 'ö' = "\\\"{o}"        --  umlaut or dieresis
+  f 'ü' = "\\\"{u}"        --  umlaut or dieresis
+  f 'ő' = "\\H{o}"         --  long Hungarian umlaut double acute)
+  f 'ã' = "\\~{a}"         --  tilde
+  f 'õ' = "\\~{o}"         --  tilde
+  f 'ç' = "\\c{c}"         --  cedilla
+  f 'ą' = "\\k{a}"         --  ogonek
+  f 'ł' = "\\l "           --  l with stroke
+  f 'ō' = "\\={o}"         --  macron accent a bar over the letter)
+  f 'ȯ' = "\\.{o}"         --  dot over the letter 
+  f 'å' = "\\r{a}"         --  ring over the letter
+  f 'ŏ' = "\\u{o}"         --  breve over the letter
+  f 'š' = "\\v{s}"         --  caron/hacek "v") over the letter
+  f 'À' = "\\`{A}"         --  grave accent
+  f 'È' = "\\`{E}"         --  grave accent
+  f 'Ì' = "\\`{I}"         --  grave accent
+  f 'Ò' = "\\`{O}"         --  grave accent
+  f 'Ù' = "\\`{U}"         --  grave accent
+  f 'Á' = "\\'{A}"         --  acute accent
+  f 'É' = "\\'{E}"         --  acute accent
+  f 'Í' = "\\'{I}"         --  acute accent
+  f 'Ó' = "\\'{O}"         --  acute accent
+  f 'Ú' = "\\'{U}"         --  acute accent
+  f 'Â' = "\\^{A}"         --  circumflex
+  f 'Ê' = "\\^{E}"         --  circumflex
+  f 'Î' = "\\^{I}"         --  circumflex
+  f 'Ô' = "\\^{O}"         --  circumflex
+  f 'Û' = "\\^{U}"         --  circumflex
+  f 'Ä' = "\\\"{A}"        --  umlaut or dieresis
+  f 'Ë' = "\\\"{E}"        --  umlaut or dieresis
+  f 'Ï' = "\\\"{I}"        --  umlaut or dieresis
+  f 'Ö' = "\\\"{O}"        --  umlaut or dieresis
+  f 'Ü' = "\\\"{U}"        --  umlaut or dieresis
+  f 'Ő' = "\\H{O}"         --  long Hungarian umlaut double acute)
+  f 'Ã' = "\\~{A}"         --  tilde
+  f 'Õ' = "\\~{O}"         --  tilde
+  f 'Ç' = "\\c{C}"         --  cedilla
+  f 'Ą' = "\\k{A}"         --  ogonek
+  f 'Ł' = "\\L "           --  l with stroke
+  f 'Ō' = "\\={O}"         --  macron accent a bar over the letter)
+  f 'Ȯ' = "\\.{O}"         --  dot over the letter
+  f 'Å' = "\\r{A}"         --  ring over the letter
+  f 'Ŏ' = "\\u{O}"         --  breve over the letter
+  f 'Š' = "\\v{S}"         --  caron/hacek "v") over the letter
+  f c   = [c]
 
 -- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
 stripSpecialChars :: String -> String
@@ -551,20 +618,13 @@ makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
 makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
     FLatex ->  [ Para ( (if i==0 then [ RawInline "latex" (symDefLabel cd++"\n") ] else [])++
-                        [ RawInline "latex" ("\\marge{\\gls{"++latexEscShw cdnm++"}}\n") ] ++
-                        [Str (latexEscShw (cddef cd))] ++ [ Str (" ["++latexEscShw (cdref cd)++"]") | not (null (cdref cd)) ]
+                        [ RawInline "latex" ("\\marge{\\gls{"++stripSpecialChars cdnm++"}}\n") ] ++
+                        [ RawInline "latex" (latexEscShw (cddef cd))] ++
+                        [ RawInline "latex" (latexEscShw (" ["++cdref cd++"]")) | not (null (cdref cd)) ]
                       )
                ]
     _      ->  [ Para ( [Str (cddef cd)] ++ [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ] )
                ]
-{- used to be the following code, but that is maybe too patronizing. For the time being, we'll let makeDefinition stay. It might be removed later, after the cdef appears to be useful.
-  = case language flags of
-     English -> [Str ("A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" ")]++str++[Str (" is "++cdef)]
-     Dutch   -> [Str "Een "]++str++[Str (" is "++cdef)]
-    where
-     str = [Emph [Str (latexEscShw (unCap c))]
-           ,RawInline "latex" ("\\index{"++latexEscShw (unCap c)++"}\\marge{"++latexEscShw (unCap c)++"}") ]
--}
 
 commaEngPandoc :: Inline -> [Inline] -> [Inline]
 commaEngPandoc str [a,b,c]= [a,Str ", ",b,Str ", ",str, Str " ", c]
