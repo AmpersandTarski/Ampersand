@@ -55,7 +55,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRequirements :: [Block]
   dpRequirements = theBlocks
     where
-      (theBlocks,_) = aThemeAtATime toBeProcessedStuff (patterns fSpec) newCounter 
+      (theBlocks,_) = if null (themes fSpec)
+                      then aThemeAtATime toBeProcessedStuff (patterns fSpec) newCounter
+                      else aThemeAtATime toBeProcessedStuff [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] newCounter
       toBeProcessedStuff = ( conceptsWith
                            , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
@@ -118,9 +120,11 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
       printOneTheme mPat (concs2print, rels2print, rules2print) counters1
-              = ( header' ++ explainsPat ++ sctcsIntro concs2print ++ concBlocks ++ relBlocks ++ ruleBlocks
-                , counters4
-                )
+              = case (mPat, themes fSpec) of
+                 (Nothing, _:_) -> ( [], counters1 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
+                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ concBlocks ++ relBlocks ++ ruleBlocks
+                                   , counters4
+                                   )
            where 
               (concBlocks,counters2) = sctcs concs2print counters1
               (relBlocks, counters3) = sctds rels2print  counters2

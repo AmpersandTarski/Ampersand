@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
 --   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
 
    keywordstxt :: [String]
-   keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP"
+   keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP", "THEMES"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"
                        , "INTERFACE", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
@@ -71,6 +71,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                           PCtx{ ctx_nm    = nm
                               , ctx_lang  = mlang
                               , ctx_markup= defaultmarkup
+                              , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
                               , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
                               , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
                               , ctx_rs    = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
@@ -98,6 +99,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        | CSqlPlug P_ObjectDef
                        | CPhpPlug P_ObjectDef
                        | CXpl PExplanation
+                       | CThm [String]           -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
 
    pPandocFormatID    :: Parser Token PandocFormat
    pPandocFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid) `opt` ReST
@@ -108,6 +110,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                                       "LATEX"    -> LaTeX
                                       "MARKDOWN" -> Markdown
                                       _ -> fatal 113 (if null str then "must specify a markup format" else "markup format "++str++" is not supported")
+
+   pPrintThemes       :: Parser Token [String]
+   pPrintThemes        = pKey "THEMES" *> pList1Sep (pSpec ',') (pConid <|> pString)
 
    pLanguageID        :: Parser Token (Maybe Lang)
    pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Nothing
@@ -147,7 +152,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                          CSqlPlug <$> pSqlplug      <|>
                          CPhpPlug <$> pPhpplug      <|>
                          CXpl     <$> pExplain      <|>
-                         CPop     <$> pPopulation  
+                         CPop     <$> pPopulation   <|>
+                         CThm     <$> pPrintThemes
 
    pPopulation         :: Parser Token P_Population
    pPopulation = ppop <$ pKey "POPULATION" <*> pRelation <*> optional pSign <* pKey "CONTAINS" <*> pContent

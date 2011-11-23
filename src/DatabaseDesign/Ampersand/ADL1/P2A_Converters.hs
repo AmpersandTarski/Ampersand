@@ -40,26 +40,27 @@ pCtx2aCtx pctx
    ,cxelist ( cxerrs++if nocxe(cxelist cxerrs) then postchks else []))
    where
     actx = 
-         ACtx{ ctxnm    = name pctx    -- The name of this context
-             , ctxlang  = ctx_lang pctx
-             , ctxmarkup= ctx_markup pctx -- The default markup format for free text in this context
-             , ctxpo    = makePartialOrder hierarchy    -- The base hierarchy for the partial order of concepts (see makePartialOrder)
-             , ctxpats  = pats         -- The patterns defined in this context
-                                       -- Each pattern contains all user defined rules inside its scope
-             , ctxprocs = procs        -- The processes defined in this context
-             , ctxrs    = ctxrules
-             , ctxds    = adecs        -- The declarations defined in this context, outside the scope of patterns
-             , ctxdecls = uniteRels (concatMap declarations pats ++ concatMap declarations procs ++ adecs)   -- All declarations
-             , ctxcds   = acds         -- All concept definitions
-             , ctxks    = keys         -- The key definitions defined in this context, outside the scope of patterns
-             , ctxgs    = agens        -- The gen definitions defined in this context, outside the scope of patterns
-             , ctxifcs  = ifcs         -- The interfaces defined in this context, outside the scope of patterns
-             , ctxps    = aexps        -- The pre-explanations defined in this context, outside the scope of patterns
-             , ctxsql   = sqlPlugs     -- user defined sqlplugs, taken from the Ampersand script
-             , ctxphp   = phpPlugs     -- user defined phpplugs, taken from the Ampersand script
-             , ctxenv   = (ERel(V (Sign ONE ONE)) ,[])
+         ACtx{ ctxnm     = name pctx     -- The name of this context
+             , ctxlang   = ctx_lang pctx
+             , ctxmarkup = ctx_markup pctx -- The default markup format for free text in this context
+             , ctxpo     = makePartialOrder hierarchy    -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+             , ctxthms   = ctx_thms pctx -- The patterns/processes to be printed in the functional specification. (for making partial documentation)
+             , ctxpats   = pats          -- The patterns defined in this context
+                                         -- Each pattern contains all user defined rules inside its scope
+             , ctxprocs  = procs         -- The processes defined in this context
+             , ctxrs     = ctxrules
+             , ctxds     = adecs         -- The declarations defined in this context, outside the scope of patterns
+             , ctxdecls  = uniteRels (concatMap declarations pats ++ concatMap declarations procs ++ adecs)   -- All declarations
+             , ctxcds    = acds          -- All concept definitions
+             , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
+             , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
+             , ctxifcs   = ifcs          -- The interfaces defined in this context, outside the scope of patterns
+             , ctxps     = aexps         -- The pre-explanations defined in this context, outside the scope of patterns
+             , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
+             , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
+             , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              }
-    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk
+    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk
     hierarchy = 
@@ -93,6 +94,12 @@ pCtx2aCtx pctx
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
+    themeschk = case orphans of
+                 []   -> []
+                 [nm] -> [newcxe ("Theme '"++nm++"' is selected for output, but is not defined.")]
+                 nms  -> [newcxe ("The following themes are selected for output, but are not defined:\n   "++intercalate ", " orphans)]
+                where orphans = ctxthms actx>-themenames
+                      themenames=[name p |p<-pats]++[name p |p<-procs]
     rulenmchk = nub [newcxe ("Rules with identical names at positions "++show(map origin rs))
                     |r<-rules actx, let rs=[r' |r'<-rules actx,name r==name r'],length rs>1]
     ifcnmchk  = nub [newcxe ("Interfaces with identical names at positions "++show(map origin xs))

@@ -35,6 +35,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
 
 data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the Ampersand script
+                 , themes       :: [String]              -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                  , fsLang       :: Maybe Lang            -- ^ The default language for this specification, if specified at all.
                  , vprocesses   :: [FProcess]            -- ^ All processes defined in the Ampersand script
                  , vplugInfos   :: [PlugInfo]            -- ^ All plugs defined in the Ampersand script

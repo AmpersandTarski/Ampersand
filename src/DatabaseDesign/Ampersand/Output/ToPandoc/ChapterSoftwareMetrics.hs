@@ -17,7 +17,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
 fpAnalysis :: Int -> Fspc -> Options ->  [Block]
-fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
+fpAnalysis lev fSpec flags = if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
   header :: [Block]
   header = labeledHeader lev (xLabel SoftwareMetrics)
