@@ -45,7 +45,7 @@ chpDiagnosis lev fSpec flags
     case language flags of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analysis van het Ampersand-script van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                  , Str "Deze analysis is bedoeld voor de auteurs van dit script. "
+                  , Str "Deze analyse is bedoeld voor de auteurs van dit script. "
                   , Str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren. "
                   ]]
       English -> [Para
@@ -145,13 +145,14 @@ chpDiagnosis lev fSpec flags
       (English,xs)  -> [Para $
                        [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " remain without a purpose."]
                      ]
-   where missing = [c | c <-concs (declarations fSpec)
+   where missing = [c | c <-ccs
                       , cd <- cptdf c
                       , null (purpose fSpec (language flags) cd)
                    ]++
-                   [c | c <-concs fSpec
+                   [c | c <-ccs
                       , null (cptdf c)
                    ]
+         ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
 
   missingRels :: [Block]
   missingRels
@@ -179,7 +180,11 @@ chpDiagnosis lev fSpec flags
                          [ Str " is not documented."
                        ] ]
      where missing = [(Math InlineMath . showMath . ERel) r  -- ERel is always typeable, so showMathDamb may be used.
-                     | r@(Rel{}) <-mors fSpec, not (isIdent r)
+                     | r@(Rel{}) <-if null (themes fSpec)
+                                   then mors fSpec
+                                   else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                                        mors [proc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                     , not (isIdent r)
                      , null (purpose fSpec (language flags) r)
                      ]
 
@@ -243,10 +248,14 @@ chpDiagnosis lev fSpec flags
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
      where notUsed = nub [(Math InlineMath . showMath . ERel . makeRelation) d  -- makeRelation d is always typeable, so showMathDamb may be used.
-                         | d@(Sgn{}) <- declarations fSpec, decusr d
+                         | d@(Sgn{}) <- declarations fSpec
+                         , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
+                         , decusr d
                          , d `notElem` (nub . map makeDeclaration . mors . rules) fSpec
                          ]
-           pats = [ pat | pat<-patterns fSpec, (not.null) (declarations pat>-map makeDeclaration (mors pat)) ]
+           pats  = [ pat | pat<-patterns fSpec
+                         , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
+                         , (not.null) (declarations pat>-map makeDeclaration (mors pat)) ]
            pictsWithUnusedRels = [makePicture flags fSpec Rel_CG pat | pat<-pats ]
 
   missingRules :: [Block]
@@ -344,14 +353,18 @@ chpDiagnosis lev fSpec flags
                           ]
      where missingPurp
             = nub [ r
-                  | r<-rules fSpec
+                  | r<-ruls
                   , null (purpose fSpec (language flags) r)
                   ]
            missingExpl
             = nub [ r
-                  | r<-rules fSpec
+                  | r<-ruls
                   , null [block | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, block<-econt]
                   ]
+           ruls = if null (themes fSpec)
+                  then rules fSpec
+                  else concat [rules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                       concat [rules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
            upC (Str str:strs) = Str (upCap str):strs
            upC str = str
            fn r = locnm (origin r)
@@ -393,11 +406,12 @@ chpDiagnosis lev fSpec flags
        | (p,rs)<-prs
        ]
      | not (null prs)]
-     where prs = [(fp,rs) | fp<-vprocesses fSpec, let rs=invariants (proc fp), not (null rs) ]
+     where prs = [(fp,rs) | fp<-vprocesses fSpec
+                          , let rs=invariants (proc fp), not (null rs) ]
 
   processrulesInPatterns :: [Block]
   processrulesInPatterns
-   = [ case (language flags, vprocesses fSpec,prs) of
+   = [ case (language flags, procs,prs) of
         (Dutch,  [p],[])  -> Para [ Str "Alle rol-regel-koppelingen gaan over regels die binnen proces ", Quoted SingleQuote [Str (name p)], Str " gedefinieerd zijn. " ]
         (English,[p],[])  -> Para [ Str "All role-rule assigments involve rules that are defined in process ", Quoted SingleQuote [Str (name p)], Str ". " ]
         (Dutch,  _,[])    -> Para [ Str "Voor elk proces geldt dat alle rol-regel-koppelingen gaan over regels die binnen dat proces zijn gedefinieerd." ]
@@ -441,7 +455,9 @@ chpDiagnosis lev fSpec flags
        ] 
      | length prs>1]
      where prs = [(p,rol,rul) | p<-map proc (vprocesses fSpec), (rol,rul)<-maintains p, name rul `notElem` map name (rules p) ]
-           multProcs = length (vprocesses fSpec)>1
+           multProcs = length procs>1
+           procs = [proc fp | fp<-vprocesses fSpec
+                            , null (themes fSpec) || name fp `elem` themes fSpec]  -- restrict if this is partial documentation.
 
   populationReport :: [Block]
   populationReport
@@ -480,8 +496,11 @@ chpDiagnosis lev fSpec flags
         ]
      | length ds>1 ]
      where
-      ds = [d | d<-declarations fSpec, (not.null.decpopu) d]
-      cs = [c | c@C{}<-concs fSpec, (not.null.cptos) c]
+      ds  = [d | d<-declarations fSpec
+               , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
+               , (not.null.decpopu) d]
+      cs  = [c | c@C{}<-ccs, (not.null.cptos) c]
+      ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
 
   wipReport :: [Block]
   wipReport
@@ -558,7 +577,11 @@ chpDiagnosis lev fSpec flags
          else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
       popwork :: [[(Rule,[(String, String)])]]
-      popwork  = eqCl (locnm.origin.fst) [(r,ps) | r<-[r | r<-vrules fSpec, isSignal r ], let ps=ruleviolations r, not (null ps)]
+      popwork  = eqCl (locnm.origin.fst) [(r,ps) | r<-[r | r<-ruls, isSignal r ], let ps=ruleviolations r, not (null ps)]
+      ruls = if null (themes fSpec)
+             then rules fSpec
+             else concat [rules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                  concat [rules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
   violationReport :: [Block]
   violationReport
@@ -662,14 +685,26 @@ chpDiagnosis lev fSpec flags
         then [Quoted  SingleQuote [Str (name (source r)),Space,Str a]]
         else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
      oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
-     popviols = [(r,ps) | r<-invariants fSpec++keyrules fSpec
+     popviols = [(r,ps) | r<-invs++keyrs
                         , let ps=ruleviolations r, not (null ps)]
-     multviols = [(r,ps) | r<-multrules fSpec
+     multviols = [(r,ps) | r<-mults
                          , let ps=ruleviolations r, not (null ps)]
      popviol :: [[(Rule,[(String, String)])]]
-     popviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-invariants fSpec, let ps=ruleviolations r, not (null ps)]
+     popviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-invs, let ps=ruleviolations r, not (null ps)]
      multviol :: [[(Rule,[(String, String)])]]
-     multviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-multrules fSpec, let ps=ruleviolations r, not (null ps)]
+     multviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-mults, let ps=ruleviolations r, not (null ps)]
+     invs  = if null (themes fSpec)
+             then invariants fSpec
+             else concat [invariants pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                  concat [invariants (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+     mults = if null (themes fSpec)
+             then multrules fSpec
+             else concat [multrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                  concat [multrules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+     keyrs = if null (themes fSpec)
+             then keyrules fSpec
+             else concat [keyrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                  concat [keyrules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.

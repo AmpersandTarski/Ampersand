@@ -51,7 +51,7 @@ data A_Context
    = ACtx{ ctxnm     :: String        -- ^ The name of this context
          , ctxlang   :: Maybe Lang    -- ^ The default language specified by this context, if specified at all.
          , ctxmarkup :: PandocFormat  -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxprintThemes :: [String] -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctxthms   :: [String]      -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctxpo     :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
          , ctxpats   :: [Pattern]     -- ^ The patterns defined in this context
          , ctxprocs  :: [Process]     -- ^ The processes defined in this context

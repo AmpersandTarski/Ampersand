@@ -63,6 +63,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           PCtx{ ctx_nm    = nm                            -- The name of this context
                               , ctx_lang  = Just Dutch
                               , ctx_markup= ReST
+                              , ctx_thms  = []                            -- Names of patterns/processes to be printed in the functional specification. (not applicable in this version.)
                               , ctx_pats  = ps                            -- The patterns defined in this context
                               , ctx_PPrcs = []                            -- The processes as defined by the parser
                               , ctx_rs    = []                            -- All user defined rules in this context, but outside patterns and outside processes

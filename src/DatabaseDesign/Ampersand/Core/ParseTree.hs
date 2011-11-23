@@ -54,7 +54,7 @@ where
       = PCtx{ ctx_nm     :: String          -- ^ The name of this context
             , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
             , ctx_markup :: PandocFormat    -- ^ The default markup format for free text in this context
-            , ctx_printThemes :: [String]   -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+            , ctx_thms   :: [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
             , ctx_pats   :: [P_Pattern]     -- ^ The patterns defined in this context
             , ctx_PPrcs  :: [P_Process]     -- ^ The processes as defined by the parser
             , ctx_rs     :: [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes

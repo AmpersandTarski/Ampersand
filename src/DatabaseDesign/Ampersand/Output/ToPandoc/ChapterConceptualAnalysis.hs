@@ -41,7 +41,9 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
                   ]]
    )
   (caBlocks,pictures) = ( [b | (blocks,_)<-ca, b<-blocks], [picture | (_,picture)<-ca] )
-                        where ca=caSections (patterns fSpec)
+                        where ca=if null (themes fSpec)
+                                 then caSections (patterns fSpec)
+                                 else caSections [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ]
 
   caSections :: [Pattern] -> [([Block],Picture)]
   caSections pats = iterat pats 1 [] []
