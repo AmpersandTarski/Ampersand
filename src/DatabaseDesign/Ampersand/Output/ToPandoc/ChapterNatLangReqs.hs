@@ -267,7 +267,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                ,Str (show(getEisnr cnt))
                                                                ,if name r2=="" then Str ":" else Str (" ("++name r2++"):")]
                                                              , [ Plain [RawInline "latex" $ symReqLabel r2] :
-                                                                 (let expls = [block | Means l econt<-rrxpl r2, l==language flags, block<-econt] in
+                                                                 (let expls = [block | Means l econt<-rrxpl r2, l==Just (language flags) || l==Nothing, block<-econt] in
                                                                   if null expls
                                                                   then explains2Blocks (autoMeaning (language flags) r2) 
                                                                   else expls 

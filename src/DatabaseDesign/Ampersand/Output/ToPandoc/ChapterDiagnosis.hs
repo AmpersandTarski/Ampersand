@@ -350,7 +350,7 @@ chpDiagnosis lev fSpec flags
            missingExpl
             = nub [ r
                   | r<-rules fSpec
-                  , null [block | Means l econt<-rrxpl r, l==language flags, block<-econt]
+                  , null [block | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, block<-econt]
                   ]
            upC (Str str:strs) = Str (upCap str):strs
            upC str = str
@@ -545,7 +545,7 @@ chpDiagnosis lev fSpec flags
        = if null expls
          then explains2Blocks (autoMeaning (language flags) r) 
          else expls 
-         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==language flags, Para block<-econt]
+         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
       quoterule r
        = if name r==""
          then case language flags of
@@ -648,12 +648,12 @@ chpDiagnosis lev fSpec flags
      text r = if null expls
               then explains2Blocks (autoMeaning (language flags) r) 
               else expls 
-              where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==language flags, Para block<-econt]
+              where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
      textMult r
             = if null expls
               then explains2Blocks (autoMeaning (language flags) r) 
               else expls 
-              where expls = [Plain ([Str "De relatie ",Space]++block++[Str ".",Space]) | Means l econt<-rrxpl r, l==language flags, Para block<-econt]
+              where expls = [Plain ([Str "De relatie ",Space]++block++[Str ".",Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
      quoterule r = if name r==""
                    then Str ("on "++show (origin r))
                    else Quoted SingleQuote [Str (name r)]

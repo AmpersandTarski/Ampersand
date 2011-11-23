@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-       (newcxe,newcxeif,cxelist,cxenest,cxenone,nocxe,cxes,CtxError(..)) --constructors of CtxError are not exported, use constructor functions
+       (newcxe,newcxeif,cxelist,cxenone,nocxe,cxes,CtxError(..)) --constructors of CtxError are not exported, use constructor functions
 where
 import DatabaseDesign.Ampersand.Input.ADL1.FilePos
 import DatabaseDesign.Ampersand.Parsing 
@@ -16,7 +16,7 @@ data CtxError = Cxes    {cxesibls::[CtxError]} -- ^ any number of errors
                         ,cxename::String       -- ^ its name
                         ,cxeorigin::Origin}    -- ^ the origin of the context e.g. a file position
               | Cxe     {cxechild::CtxError    -- ^ lower level errors
-                        ,cxemsg::String}       -- ^ a description of the error
+                        ,cxemsg::String}       -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
               | CxeNone                        -- ^ indicates the absence of an error
               | PE      {cxeMsgs :: [ParserError]} -- ^ list of parse-time messages 
           --    deriving (Eq)
@@ -26,7 +26,7 @@ instance Eq CtxError where
   Cxe e s == Cxe e' s'   = e == e' && s == s'
   CxeNone == CxeNone = True
   _ == _ = False
-  
+
 instance Show CtxError where
   showsPrec _ (Cxes xs) = showString( intercalate "\n" (map show xs))
   showsPrec _ (CxeOrig cxe t nm o)
@@ -45,11 +45,16 @@ newcxeif True cxe = newcxe cxe
 newcxeif False _ = CxeNone
 cxelist :: [CtxError] -> CtxError
 cxelist = Cxes
-cxenest :: CtxError -> String -> CtxError
-cxenest = Cxe
+--cxenest :: CtxError -> String -> CtxError
+--cxenest = Cxe
 cxenone :: CtxError
 cxenone = CxeNone
- 
+--filterCtxErr :: (CtxError -> Bool) -> CtxError -> CtxError
+--filterCtxErr f (err@Cxes{})    = Cxes [ filterCtxErr f sibl | sibl<-cxesibls err, f sibl]
+--filterCtxErr f (err@CxeOrig{}) = if f err then err{cxechild=filterCtxErr f (cxechild err)} else filterCtxErr f (cxechild err)
+--filterCtxErr f (err@Cxe{})     = if f err then err{cxechild=filterCtxErr f (cxechild err)} else filterCtxErr f (cxechild err)
+--filterCtxErr f errs            = errs
+
 -- | nocxe checks whether there are no errors
 nocxe :: CtxError -> Bool
 nocxe cxe = cxes cxe==CxeNone

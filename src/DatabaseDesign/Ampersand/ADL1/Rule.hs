@@ -71,7 +71,7 @@ where
                         Rfx-> EImp (i$sign r ,           r                   )
                         Irf-> EIsc [i$sign r, EDif (ERel (V (sign r)), r) ]
            , rrfps = origin d
-           , rrxpl = Means English (string2Blocks ReST (
+           , rrxpl = Means (Just English) (string2Blocks ReST (
                       case prp of
                         Sym-> name d++"["++s++"] is symmetric"    
                         Asy-> name d++"["++s++"] is antisymmetric"
@@ -83,7 +83,7 @@ where
                         Inj-> name d++"["++s++"*"++t++"] is injective"
                         Tot-> name d++"["++s++"*"++t++"] is total"
                         )) :
-                     [Means Dutch (string2Blocks ReST (
+                     [Means (Just Dutch) (string2Blocks ReST (
                       case prp of
                         Sym-> name d++"["++s++"] is symmetrisch."    
                         Asy-> name d++"["++s++"] is antisymmetrisch."

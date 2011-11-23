@@ -61,7 +61,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
 --                       universe = (ERel(V (Anything,Anything)) ,[]) --default: the universe
                        rebuild nm ces = 
                           PCtx{ ctx_nm    = nm                            -- The name of this context
-                              , ctx_lang  = Dutch
+                              , ctx_lang  = Just Dutch
                               , ctx_markup= ReST
                               , ctx_pats  = ps                            -- The patterns defined in this context
                               , ctx_PPrcs = []                            -- The processes as defined by the parser
@@ -114,12 +114,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                     --       PExplProcess     <$ pKey "PROCESS"  <*> pADLid               <|>
                                            PExplInterface   <$ pKey "SERVICE"  <*> pADLid               <|>
                                            PExplContext     <$ pKey "CONTEXT"  <*> pADLid 
-                                pLanguageID :: Parser Token Lang
-                                pLanguageID = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Dutch
+                                pLanguageID :: Parser Token (Maybe Lang)
+                                pLanguageID = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Nothing
                                                where
                                                 lang str = case str of
-                                                            "DUTCH"      -> Dutch
-                                                            "ENGLISH"    -> English
+                                                            "DUTCH"      -> Just Dutch
+                                                            "ENGLISH"    -> Just English
                                                             _ -> fatal 122 (if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
 
 
@@ -185,20 +185,20 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
                                  , rr_exp  = Pimp(antc,cons)
                                  , rr_fps  = rulepos (lbl,po) po'
-                                 , rr_mean = (Dutch, expl)
+                                 , rr_mean = (Just Dutch, expl)
                                  }      
                         kc isSg (lbl,po) cons po' antc = hc isSg (lbl,po) antc po' cons
                         dc _ (lbl,po) defd po' expr expl
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
                                  , rr_exp  = Pequ (defd,expr)
                                  , rr_fps  = rulepos (lbl,po) po'
-                                 , rr_mean = (Dutch, expl)
+                                 , rr_mean = (Just Dutch, expl)
                                }
                         ac _ (lbl,po) expr expl
                           = P_Ru { rr_nm  = if null lbl then rulid po else lbl
                                  , rr_exp = expr
                                  , rr_fps = po
-                                 , rr_mean = (Dutch, expl)
+                                 , rr_mean = (Just Dutch, expl)
                                  }
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
                         pSignal          :: Parser Token (String, Origin)

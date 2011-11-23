@@ -73,13 +73,18 @@ instance ShowADL ObjectDef where
            ind++"     ]"
 
 instance ShowADL Explanation where
- showADL expl = "PURPOSE "++showADL (explObj expl)++" IN "++showADL (explLang expl)
+ showADL expl = "PURPOSE "++showADL (explObj expl)++showADL (explLang expl)
                 ++(if null (explRefId expl) then "" else " REF "++explRefId expl)
                 ++ "{+"++explainContent2String LaTeX True (explCont expl)++"-}"
 
 instance ShowADL Lang where
  showADL Dutch   = "DUTCH"
  showADL English = "ENGLISH"
+   
+instance ShowADL (Maybe Lang) where
+ showADL  Nothing       = "IN DUTCH"
+ showADL (Just Dutch  ) = "IN DUTCH"
+ showADL (Just English) = "IN ENGLISH"
    
 instance ShowADL ExplObj where
  showADL e = case e of
