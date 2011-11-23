@@ -124,7 +124,8 @@ where
                     if length cls /= length assRels
                     then fatal 125 (show [map show cl | cl<-cls, length cl>1])
                     else [ OOClass (name c) (attrs cl) []
-                    | cl<-eqCl source attRels, let c=source (head cl) ]
+                         | cl<-eqCl source attRels, let c=source (head cl)
+                         , c `elem` (map source assRels `uni` map target assRels)]
        assocs'    = [ OOAssoc (name (source r)) (multiplicity (EFlp r)) "" (name (target r)) (multiplicity r) ((name.head.morlist) r)
                     | r<-assRels]
                     where
@@ -136,12 +137,16 @@ where
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
        rels       = [ERel (makeRelation rel) | rel@Sgn{} <- declarations fSpec, decusr rel, not (isIdent rel)]
+       relsLim    = [ERel (makeRelation rel)           -- The set of relations that is defined in patterns to be printed.
+                    | rel@Sgn{} <- declarations fSpec
+                    , null (themes fSpec) || decpat rel `elem` themes fSpec   -- restrict to those themes that must be printed.
+                    , decusr rel, not (isIdent rel)]
 -- In order to make classes, all relations that are univalent and injective are flipped
 -- attRels contains all relations that occur as attributes in classes.
        attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[EFlp r |r<-rels, not (isUni r), isInj r] ++
                     [r |r<-rels, isUni r,      isInj r, isSur r]++[EFlp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 -- assRels contains all relations that do not occur as attributes in classes
-       assRels    = [r |r<-rels, not (isUni r), not (isInj r)]
+       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
        attrs rs   = [ OOAttr ((name.head.morlist) r) (name (target r)) (not(isTot r))
                     | r<-rs, not (isPropty r)]
        isPropty r = null([Sym,Asy]>-multiplicities r)

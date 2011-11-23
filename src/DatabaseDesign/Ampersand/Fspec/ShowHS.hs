@@ -246,41 +246,42 @@ where
     showHS flags indent fspec
      = intercalate (indent ++"    ") 
            [ "Fspc{ fsName = " ++ show (name fspec)
-                  ,     ", fsLang        = " ++ show (fsLang fspec)
-                  ,wrap ", vprocesses    = " indentA (\_->showHSname) (vprocesses fspec)
-                  ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
-                  ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
-                  ,     ", interfaceS    = interfaceS'"
-                  ,     ", interfaceG    = interfaceG'"
-                  ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
-                  ,     ", fActivities   = interfaceS'++interfaceG'"
-                  ,     ", fRoleRels     = " ++
-                        case fRoleRels fspec of
-                          []        -> "[]"
-                          [(r,rel)] -> "[ ("++show r++", "++showHS flags "" rel++") ]"
-                          _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags "" rel++")" | (r,rel)<-fRoleRels fspec]++indentA++"]"
-                  ,     ", fRoleRuls     = " ++
-                        case fRoleRuls fspec of
-                          []        -> "[]"
-                          [(r,rul)] -> "[ ("++show r++", "++showHSname rul++") ]"
-                          _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSname rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
-                  ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
-                  ,wrap ", grules        = " indentA (\_->showHSname) (grules fspec)
-                  ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
-                  ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
-                  ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
-                  ,wrap ", vquads        = " indentA (\_->showHSname) (vquads fspec)
-                  ,wrap ", vEcas         = " indentA (\_->showHSname) (vEcas fspec)
-                  ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
-                  ,     ", fsisa         = isa'"
-                  ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
-                  ,     ", pictPatts     = []                                    -- Pictures are not in this generated file."
-                  ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
-                  ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
---                  ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
-                  ,     ", vctxenv       = vctxenv'"
-                  ,"}" 
-                  ] ++   
+           ,     ", fsLang        = " ++ show (fsLang fspec) ++ "  -- the default language for this specification"
+           ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
+           ,wrap ", vprocesses    = " indentA (\_->showHSname) (vprocesses fspec)
+           ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
+           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
+           ,     ", interfaceS    = interfaceS'"
+           ,     ", interfaceG    = interfaceG'"
+           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
+           ,     ", fActivities   = interfaceS'++interfaceG'"
+           ,     ", fRoleRels     = " ++
+                 case fRoleRels fspec of
+                   []        -> "[]"
+                   [(r,rel)] -> "[ ("++show r++", "++showHS flags "" rel++") ]"
+                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags "" rel++")" | (r,rel)<-fRoleRels fspec]++indentA++"]"
+           ,     ", fRoleRuls     = " ++
+                 case fRoleRuls fspec of
+                   []        -> "[]"
+                   [(r,rul)] -> "[ ("++show r++", "++showHSname rul++") ]"
+                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSname rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
+           ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
+           ,wrap ", grules        = " indentA (\_->showHSname) (grules fspec)
+           ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
+           ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
+           ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
+           ,wrap ", vquads        = " indentA (\_->showHSname) (vquads fspec)
+           ,wrap ", vEcas         = " indentA (\_->showHSname) (vEcas fspec)
+           ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
+           ,     ", fsisa         = isa'"
+           ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
+           ,     ", pictPatts     = []                                    -- Pictures are not in this generated file."
+           ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
+           ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
+--           ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
+           ,     ", vctxenv       = vctxenv'"
+           ,"}" 
+           ] ++   
        indent++"where"++
        indent++" isa' = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
        indent++" vctxenv'  = ("++showHS flags (indent ++ "         ") envExpr ++ ", bindings)"++

@@ -12,11 +12,11 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression              (flp)
    import DatabaseDesign.Ampersand.ADL1.Concept                 (cptos')
    import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
-   import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Collection(..), Identified(..))
+   import DatabaseDesign.Ampersand.Basics                       ({- fatalMsg, -}Collection(..), Identified(..))
    import Data.List
    
-   fatal :: Int -> String -> a
-   fatal = fatalMsg "Classes.ViewPoint"
+--   fatal :: Int -> String -> a
+--   fatal = fatalMsg "Classes.ViewPoint"
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
@@ -46,15 +46,15 @@ where
      violations x = [(r,viol) |r<-invariants x++multrules x++keyrules x, viol<-ruleviolations r]
 
    class ProcessStructure a where
-     processes    :: a -> [Process]      -- ^ all roles that are used in this ProcessStructure
-     roles        :: a -> [String]      -- ^ all roles that are used in this ProcessStructure
+     processes    :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
+     roles        :: a -> [String]        -- ^ all roles that are used in this ProcessStructure
      interfaces   :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
      objDefs      :: a -> [ObjectDef]
-     processRules :: a -> [Rule] -- ^ all process rules that are visible within this viewpoint
-                                        -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-     maintains    :: a -> [(String,Rule)]  -- ^ the string represents a Role
+     processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
+                                          -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
+     maintains    :: a -> [(String,Rule)] -- ^ the string represents a Role
      mayEdit      :: a -> [(String,Relation)] -- ^ the string represents a Role
-     workTBD      :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
+     workTBD      :: a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
      workTBD    x = [(r,viol) |r<-processRules x, viol<-ruleviolations r]
      
    rulefromKey :: KeyDef -> Rule
@@ -169,7 +169,12 @@ where
     mayEdit      context = mayEdit (ctxprocs context)
 
    instance Language Process where
-    objectdef     _   = fatal 144 "objectdef undefined for processes"
+    objectdef    prc = Obj { objnm   = name prc
+                           , objpos  = origin prc
+                           , objctx  = ERel (I ONE) 
+                           , objats  = []
+                           , objstrs = []
+                           }
     conceptDefs proc  = nub [cd | c<-concs proc,cd<-cptdf c,posIn (prcPos proc) cd (prcEnd proc)]
     declarations      = prcDcls
     rules             = prcRules -- all user defined rules in this process
@@ -178,6 +183,16 @@ where
     gens              = prcGens
     patterns      _   = []
 
+   instance ProcessStructure Process where
+    processes    proc = [proc]
+    roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
+                              [r | (r,_) <- prcRRels proc] )
+    interfaces    _   = []
+    objDefs       _   = []
+    processRules proc = [r |r<-prcRules proc, isSignal r]
+    maintains         = prcRRuls  -- says which roles maintain which rules.
+    mayEdit           = prcRRels  -- says which roles may change the population of which relation.
+    
 --   instance Language P_Process where
 --    objectdef     _   = fatal 155 "objectdef undefined for processes"
 --    conceptDefs  proc = procCds proc
@@ -215,16 +230,6 @@ where
 --    maintains    proc = fatal 175 $ "process "++name proc++" not yet enriched."
 --    mayEdit      proc = fatal 175 $ "process "++name proc++" not yet enriched."
 
-   instance ProcessStructure Process where
-    processes    proc = [proc]
-    roles        proc = nub ( [r | (r,_) <- prcRRuls proc]++
-                              [r | (r,_) <- prcRRels proc] )
-    interfaces    _   = []
-    objDefs       _   = []
-    processRules proc = [r |r<-prcRules proc, isSignal r]
-    maintains         = prcRRuls  -- says which roles maintain which rules.
-    mayEdit           = prcRRels  -- says which roles may change the population of which relation.
-    
    instance Language Pattern where
     objectdef    pat = Obj { objnm   = name pat
                            , objpos  = origin pat

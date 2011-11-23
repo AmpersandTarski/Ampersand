@@ -24,10 +24,13 @@ chpProcessAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 chpProcessAnalysis lev fSpec flags
  = (header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
  where
-  pictures = [pict | (_,picts)<-procSections (vprocesses fSpec),pict<-picts]
+  pictures = [pict | (_,picts)<-procSections procs,pict<-picts]
+  procs = if null (themes fSpec)
+          then vprocesses fSpec
+          else [ prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
   processSections :: [Block]
   processSections
-   = if null (vprocesses fSpec) then [] else [block | (bs,_)<-procSections (vprocesses fSpec), block<-bs]
+   = if null procs then [] else [block | (bs,_)<-procSections procs, block<-bs]
 
   header :: [Block]
   header
