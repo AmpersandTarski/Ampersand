@@ -203,9 +203,9 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
    rawctx 
     = PCtx {
          ctx_nm    = thehead cxs "no context found in Atlas DB"
-       , ctx_lang  = lang
+       , ctx_lang  = Just lang
        , ctx_markup= LaTeX --ADLImportable writes LaTeX
-       , ctx_pats  = [atlas2pattern p rulpattern rls lang ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |p<-pats]
+       , ctx_pats  = [atlas2pattern p rulpattern rls (Just lang) ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |p<-pats]
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
@@ -220,23 +220,23 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
        , ctx_env   = Nothing
       }
 
-atlas2rule :: String -> [(String,P_Expression)] -> Lang -> RelTbl -> P_Rule
-atlas2rule rulstr rls lang ruldescribes
+atlas2rule :: String -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> P_Rule
+atlas2rule rulstr rls mlang ruldescribes
  = P_Ru { rr_nm   = rulstr
         , rr_exp  = geta rls rulstr  (error "while geta rls.")
         , rr_fps  = DBLoc "Atlas(Rule)"
-        , rr_mean = (lang,geta ruldescribes rulstr "")
+        , rr_mean = (mlang,geta ruldescribes rulstr "")
         }
 
-atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Lang -> RelTbl -> RelTbl -> RelTbl
+atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl
                          -> RelTbl -> RelTbl -> P_Pattern
-atlas2pattern p rulpattern rls lang ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
+atlas2pattern p rulpattern rls mlang ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
  = P_Pat { pt_nm  = p
          , pt_pos = DBLoc "Atlas(Pattern)"
          , pt_end = DBLoc "Atlas(Pattern)"
-         , pt_rls = [atlas2rule rulstr rls lang ruldescribes|(rulstr,p')<-rulpattern,p==p']
+         , pt_rls = [atlas2rule rulstr rls mlang ruldescribes|(rulstr,p')<-rulpattern,p==p']
          , pt_gns = []
          , pt_dcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |(i,(relstr,p'))<-zip [1..] relpattern,p==p']
          , pt_cds = []
@@ -290,14 +290,14 @@ atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [
                                   -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PExplanation]
 atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
  = --error(show (patpurpose, rulpurpose, relpurpose, cptpurpose)) ++
-     [PExpl (DBLoc "Atlas(PatPurpose)") (PExplPattern x) Dutch [] y
+     [PExpl (DBLoc "Atlas(PatPurpose)") (PExplPattern x) Nothing [] y
      |(x,y)<-patpurpose]
-  ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) Dutch [] y
+  ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) Nothing [] y
      |(x,y)<-rulpurpose]
   ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r (P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
-                                                                    ,PCpt(geta reltg x (error "while geta reltg3."))])) Dutch [] y
+                                                                    ,PCpt(geta reltg x (error "while geta reltg3."))])) Nothing [] y
      |(x,y)<-relpurpose, let r=makerel x relname]
-  ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) Dutch [] y
+  ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) Nothing [] y
      |(x,y)<-cptpurpose]
 
 makerel :: String -> [(String, String)] -> P_Relation
