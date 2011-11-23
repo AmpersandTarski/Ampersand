@@ -66,10 +66,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        where
                        rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
                        rebexpr x y = (x,y)
-                       rebuild :: String -> Lang -> PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
-                       rebuild nm lang defaultmarkup env ces =   -- TODO: use the second argument as the default language for this context.
+                       rebuild :: String -> Maybe Lang -> PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
+                       rebuild nm mlang defaultmarkup env ces =   -- TODO: use the second argument as the default language for this context.
                           PCtx{ ctx_nm    = nm
-                              , ctx_lang  = lang
+                              , ctx_lang  = mlang
                               , ctx_markup= defaultmarkup
                               , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
                               , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
@@ -99,9 +99,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        | CPhpPlug P_ObjectDef
                        | CXpl PExplanation
 
-   defaultLang :: Lang
-   defaultLang = Dutch
-
    pPandocFormatID    :: Parser Token PandocFormat
    pPandocFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid) `opt` ReST
                          where
@@ -112,12 +109,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                                       "MARKDOWN" -> Markdown
                                       _ -> fatal 113 (if null str then "must specify a markup format" else "markup format "++str++" is not supported")
 
-   pLanguageID        :: Parser Token Lang
-   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` defaultLang
+   pLanguageID        :: Parser Token (Maybe Lang)
+   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Nothing
                          where
                           lang str = case str of
-                                      "DUTCH"      -> Dutch
-                                      "ENGLISH"    -> English
+                                      "DUTCH"      -> Just Dutch
+                                      "ENGLISH"    -> Just English
                                       _ -> fatal 141 (if null str then "must specify a language" else "language "++str++" is not supported")
 
    pRefID             :: Parser Token String
@@ -235,27 +232,27 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        PrE <$> pExplain      <|>
                        PrP <$> pPopulation
 
-   pMeaning         :: Parser Token (Lang,String)
+   pMeaning         :: Parser Token (Maybe Lang,String)
    pMeaning          = f <$ pKey "MEANING" <*> pLanguageID <*> pString
-                       where f lang str = (lang,str)
+                       where f mlang str = (mlang,str)
                         
    pGen             :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    pRule            :: Parser Token P_Rule
-   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> (pMeaning `opt` (defaultLang,"")) <|>
-                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> (pMeaning `opt` (defaultLang,""))
+   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> (pMeaning `opt` (Nothing,"")) <|>
+                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> (pMeaning `opt` (Nothing,""))
                        where
                         --rnn -> rnm with generated name (rulid po)
-                        rnn po rexp (lang,expl) = rnm po (rulid po) rexp (lang,expl)
+                        rnn po rexp (mlang,expl) = rnm po (rulid po) rexp (mlang,expl)
                         rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
                         rulid _ = fatal 226 "rulid is expecting a file location."
-                        rnm po lbl rexp (lang,expl)
+                        rnm po lbl rexp (mlang,expl)
                           = P_Ru { rr_nm  = lbl
                                  , rr_exp = rexp
                                  , rr_fps = po
-                                 , rr_mean = (lang,expl)
+                                 , rr_mean = (mlang,expl)
                                  }
 
 {-  Basically we would have the following expression syntax:
@@ -526,7 +523,7 @@ and the grammar must be disambiguated in order to get a performant parser...
                          <*> (pProps `opt` [])
                          <*> ((True <$ pKey "BYPLUG") `opt` False)
                          <*> (pPragma `opt` [])
-                         <*> (pMeaning `opt` (defaultLang,""))
+                         <*> (pMeaning `opt` (Nothing,""))
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                        where rebuild nm pos' s fun' t bp1 props

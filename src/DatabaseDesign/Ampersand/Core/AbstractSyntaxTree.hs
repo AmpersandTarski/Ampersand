@@ -48,22 +48,24 @@ fatal = fatalMsg "AbstractSyntaxTree.hs"
 data Architecture = A_Arch { arch_Contexts :: [A_Context]}
 
 data A_Context
-   = ACtx{ ctxnm    :: String        -- ^ The name of this context
-         , ctxmarkup:: PandocFormat  -- ^ The default markup format for free text in this context
-         , ctxpo    :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
-         , ctxpats  :: [Pattern]     -- ^ The patterns defined in this context
-         , ctxprocs :: [Process]     -- ^ The processes defined in this context
-         , ctxrs    :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds    :: [Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-         , ctxdecls :: [Declaration] -- ^ The declarations defined in this context, including those from patterns and processes
-         , ctxcds   :: [ConceptDef]  -- ^ The concept definitions defined in this context, including those from patterns and processes
-         , ctxks    :: [KeyDef]       -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxgs    :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxifcs  :: [Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-         , ctxps    :: [Explanation]  -- ^ The pre-explanations defined in this context, outside the scope of patterns
-         , ctxsql   :: [ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
-         , ctxphp   :: [ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
-         , ctxenv   :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
+   = ACtx{ ctxnm     :: String        -- ^ The name of this context
+         , ctxlang   :: Maybe Lang    -- ^ The default language specified by this context, if specified at all.
+         , ctxmarkup :: PandocFormat  -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
+         , ctxprintThemes :: [String] -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctxpo     :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
+         , ctxpats   :: [Pattern]     -- ^ The patterns defined in this context
+         , ctxprocs  :: [Process]     -- ^ The processes defined in this context
+         , ctxrs     :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctxds     :: [Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
+         , ctxdecls  :: [Declaration] -- ^ The declarations defined in this context, including those from patterns and processes
+         , ctxcds    :: [ConceptDef]  -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxks     :: [KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
+         , ctxgs     :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
+         , ctxifcs   :: [Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
+         , ctxps     :: [Explanation] -- ^ The pre-explanations defined in this context, outside the scope of patterns
+         , ctxsql    :: [ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
+         , ctxphp    :: [ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
+         , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
@@ -144,7 +146,7 @@ instance Signaling Rule where
   isSignal = r_sgl
 
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
-data RuleMeaning = Means Lang [Block] deriving (Eq,Show)
+data RuleMeaning = Means (Maybe Lang) [Block] deriving (Eq,Show)
 
 
 
@@ -263,11 +265,11 @@ instance Traced ObjectDef where
 
 -- | Explanation is the intended constructor. It contains the object it explains.
 --   The enrichment process of the parser must map the names (from PExplanation) to the actual objects
-data Explanation  = Expl { explPos   :: Origin   -- ^ The position in the Ampersand script of this purpose definition
-                         , explObj   :: ExplObj  -- ^ The object that is explained.
-                         , explLang  :: Lang     -- ^ The language of the explaination
-                         , explRefId :: String   -- ^ The reference of the explaination
-                         , explCont  :: [Block]  -- ^ The actual explanation.
+data Explanation  = Expl { explPos   :: Origin     -- ^ The position in the Ampersand script of this purpose definition
+                         , explObj   :: ExplObj    -- ^ The object that is explained.
+                         , explLang  :: Maybe Lang -- ^ The language of the explaination
+                         , explRefId :: String     -- ^ The reference of the explaination
+                         , explCont  :: [Block]    -- ^ The actual explanation.
                          } deriving Show  --handy for XML creation
 
 instance Eq Explanation where
