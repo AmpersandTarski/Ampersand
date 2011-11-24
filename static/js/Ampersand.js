@@ -137,15 +137,15 @@ function computeDbCommands() {
   dbCommands = new Array();
   $('.Atom .Atom').map(function () { // for every parent child pair of atoms (only immediate, so no <parent> .. <atom>  .. <child>)
     $childAtom = $(this);
-    if (getParentAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
-      //console.log(getParentAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
+    if (getEnclosingAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
+      //console.log(getEnclosingAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
       
-      var $atomList = getParentAtomList($childAtom);
+      var $atomList = getEnclosingAtomList($childAtom);
       var relation = $atomList.attr('relation'); 
      
       if (relation) {
         var relationIsFlipped = $atomList.attr('relationIsFlipped') ? attrBoolValue($atomList.attr('relationIsFlipped')) : false;
-        var $parentAtom = getParentAtom($childAtom);
+        var $parentAtom = getEnclosingAtom($childAtom);
         var parentAtom = $parentAtom.attr('atom');
         var childAtom = $childAtom.attr('atom');
 
@@ -217,22 +217,27 @@ function setEditHandlersBelow($elt) {
   $elt.find('.AtomList').hover(function () { 
     // mouse enter handler
     
-    var $parentInterface = getParentAtomList($(this));
+    var $parentInterface = getEnclosingAtomList($(this));
     $parentInterface.attr('hover', 'false');
     $(this).attr('hover', 'true');
   }, function () {
     // mouse exit handler
       
-    $parentInterface = getParentAtomList($(this));
+    $parentInterface = getEnclosingAtomList($(this));
     $parentInterface.attr('hover', 'true');
     $(this).attr('hover', 'false');
   });
   
   $elt.find('.AtomName').click(function(){
-    var $atomList = getParentAtomList($(this));
-    var relation = $atomList.attr('relation'); 
-    if (relation) {
-      startAtomEditing(getParentAtom($(this)));
+    var $atomList = getEnclosingAtomList($(this));
+    var relationToParent = $atomList.attr('relation');
+    
+    var $atom = getEnclosingAtom($(this)); 
+    
+    // this code also allows editing if there is a child atom in an editable relation
+    //var childrenWithRelation = $atom.find('>.InterfaceList>.Interface>.AtomList[relation]');
+    if (relationToParent /* || childrenWithRelation.length != 0 */) {
+      startAtomEditing($atom);
     }
   });
  
@@ -240,12 +245,12 @@ function setEditHandlersBelow($elt) {
     var $atom = $(this).next().children().first(); // children is for AtomListElt
 
     if ($atom.attr('status')=='new')
-      getParentAtomRow($(this)).remove(); // remove the row of the table containing delete stub and atom
+      getEnclosingAtomRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
       if ($atom.attr('status') == 'modified') // restore the original atom name on delete
         $atom.find('.AtomName').text($atom.attr('originalAtom'));
       $atom.attr('status','deleted');
-      getParentAtomRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
+      getEnclosingAtomRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
       $atom.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
     
@@ -253,7 +258,7 @@ function setEditHandlersBelow($elt) {
   });
   
   $elt.find('.InsertStub').click(function (event) {
-    var $atomList = getParentAtomList($(this));
+    var $atomList = getEnclosingAtomList($(this));
     
     $newAtomTemplate = $atomList.children().filter('[rowType=NewAtomTemplate]');
     
@@ -337,8 +342,8 @@ function clearNavigationHandlers() {
 
 function setNavigationHandlers() {
   $("#AmpersandRoot .AtomName").map(function () {
-    $atomList = getParentAtomList($(this)); 
-    $atom=getParentAtom($(this));
+    $atomList = getEnclosingAtomList($(this)); 
+    $atom=getEnclosingAtom($(this));
     concept =$atomList.attr('concept');
     var atom = $atom.attr('atom');
     var interfaces = getInterfacesMap()[concept];  // NOTE: getInterfacesMap is assumed to be declared 
@@ -385,14 +390,14 @@ function addClickEvent($item, interface, atom) {
 
 // Utils
 
-function getParentAtom($elt) {
+function getEnclosingAtom($elt) {
   return $elt.parents().filter('.Atom').first();
 }
-function getParentAtomList($elt) {
+function getEnclosingAtomList($elt) {
   return $elt.parents().filter('.AtomList').first();
 }
 
-function getParentAtomRow($elt) {
+function getEnclosingAtomRow($elt) {
   return $elt.parents().filter('.AtomRow').first();
 }
 function mapInsert(map, key, value) {
