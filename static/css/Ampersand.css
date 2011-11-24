@@ -138,7 +138,7 @@ body
   }
   
 [editing=true] .AtomList[hover=true] > .AtomRow > .DeleteStub:hover
-  { background-image: url('../images/DeleteButtonDown.png')
+  { background-image: url('../images/DeleteButtonHover.png')
   }
  
 
