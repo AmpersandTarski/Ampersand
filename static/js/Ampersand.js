@@ -140,11 +140,11 @@ function computeDbCommands() {
     if (getParentAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
       //console.log(getParentAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
       
-      var $atomListElt = getParentAtomList($childAtom);
-      var relation = $atomListElt.attr('relation'); 
+      var $atomList = getParentAtomList($childAtom);
+      var relation = $atomList.attr('relation'); 
      
       if (relation) {
-        var relationIsFlipped = $atomListElt.attr('relationIsFlipped') ? attrBoolValue($atomListElt.attr('relationIsFlipped')) : false;
+        var relationIsFlipped = $atomList.attr('relationIsFlipped') ? attrBoolValue($atomList.attr('relationIsFlipped')) : false;
         var $parentAtom = getParentAtom($childAtom);
         var parentAtom = $parentAtom.attr('atom');
         var childAtom = $childAtom.attr('atom');
@@ -229,33 +229,33 @@ function setEditHandlersBelow($elt) {
   });
   
   $elt.find('.AtomName').click(function(){
-    var $atomListElt = getParentAtomList($(this));
-    var relation = $atomListElt.attr('relation'); 
+    var $atomList = getParentAtomList($(this));
+    var relation = $atomList.attr('relation'); 
     if (relation) {
       startAtomEditing(getParentAtom($(this)));
     }
   });
  
   $elt.find('.DeleteStub').click(function() {
-    var $atomElt = $(this).next().children().first(); // children is for AtomListElt
+    var $atom = $(this).next().children().first(); // children is for AtomListElt
 
-    if ($atomElt.attr('status')=='new')
+    if ($atom.attr('status')=='new')
       getParentAtomRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
-      if ($atomElt.attr('status') == 'modified') // restore the original atom name on delete
-        $atomElt.find('.AtomName').text($atomElt.attr('originalAtom'));
-      $atomElt.attr('status','deleted');
+      if ($atom.attr('status') == 'modified') // restore the original atom name on delete
+        $atom.find('.AtomName').text($atom.attr('originalAtom'));
+      $atom.attr('status','deleted');
       getParentAtomRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
-      $atomElt.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
+      $atom.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
     
     traceDbCommands();
   });
   
   $elt.find('.InsertStub').click(function (event) {
-    var $atomListElt = getParentAtomList($(this));
+    var $atomList = getParentAtomList($(this));
     
-    $newAtomTemplate = $atomListElt.children().filter('[rowType=NewAtomTemplate]');
+    $newAtomTemplate = $atomList.children().filter('[rowType=NewAtomTemplate]');
     
     $newAtomTableRow = $newAtomTemplate.clone();
 
@@ -337,9 +337,9 @@ function clearNavigationHandlers() {
 
 function setNavigationHandlers() {
   $("#AmpersandRoot .AtomName").map(function () {
-    $atomListElt = getParentAtomList($(this)); 
+    $atomList = getParentAtomList($(this)); 
     $atom=getParentAtom($(this));
-    concept =$atomListElt.attr('concept');
+    concept =$atomList.attr('concept');
     var atom = $atom.attr('atom');
     var interfaces = getInterfacesMap()[concept];  // NOTE: getInterfacesMap is assumed to be declared 
     // (since js has no import mechanism and we don't want to pass variables around all the time, a more elegant solution is not possible)
