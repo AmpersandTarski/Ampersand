@@ -282,6 +282,8 @@ function setEditHandlersBelow($elt) {
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
     traceDbCommands();
+
+    startAtomEditing($newAtomTableRow.find('.Atom'));
   });
 }
 
