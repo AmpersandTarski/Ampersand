@@ -8,10 +8,6 @@ require "../Interfaces.php";
 require "DatabaseUtils.php";
 
 echo '<div id="UpdateResults">';
-//emitLog('ja');
-//emitLog('ja');
-//emitAmpersandErr('Rule was broken!');
-//error('zaza');
 
 dbStartTransaction($dbName);
 emitLog('BEGIN');
@@ -68,7 +64,6 @@ function processCommand($command) {
 }
 
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
-  if ($childAtom=='x') error('Don\'t update to \'x\'!');
   global $dbName;
   global $relationTableInfo;
   global $conceptTableInfo;
@@ -134,7 +129,6 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
 }
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
-  if ($childAtom=='Pino') emitAmpersandErr('Don\'t delete Pino!');
   global $dbName; 
   global $relationTableInfo;
   emitLog ("editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom)");
