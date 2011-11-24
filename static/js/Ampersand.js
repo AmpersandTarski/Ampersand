@@ -37,10 +37,12 @@ function cancelEditing() {
 }
 
 function commitEditing() {
-  $emptyAtomsNotInTemplates = getEmptyAtomsNotInTemplates();
-  
-  if ($emptyAtomsNotInTemplates.length > 0) {
+  if (getEmptyAtomsNotInTemplates().length > 0) {
     alert('Please fill out all <new> atoms first.');
+    return;
+  }
+  if (getNonUniqueAtomLists().length > 0) {
+    alert('Please resolve duplicate atom names.');
     return;
   }
   
@@ -90,14 +92,23 @@ function getEmptyAtomsNotInTemplates() {
   $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
     if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
       return null;
-    else {
+    else 
       return $(this);
-    }
   });
   return $emptyAtomsNotInTemplates;
 }
 
-
+function getNonUniqueAtomLists() {
+  $nonUniqueAtomLists =$('.AtomList').map( function() { // called also on lists in templates, but that's not a big deal
+    $atoms = $(this).find('>.AtomRow[rowType=Normal]>.AtomListElt>.Atom');
+    for (var i=0; i<$atoms.length; i++)
+      for (var j=i+1; j<$atoms.length; j++)
+        if ($($atoms[i]).attr('atom') == $($atoms[j]).attr('atom'))
+          return $(this); 
+    return null;
+  });
+  return $nonUniqueAtomLists;
+}
 
 // Edit commands
 
