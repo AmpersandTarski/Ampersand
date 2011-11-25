@@ -157,7 +157,10 @@ function checkRules() {
     if ($error) error($error);
     
     if (count($rows) > 0) {
-      emitAmpersandErr("Rule '$ruleSql[name]' broken: $ruleSql[meaning]");
+      emitAmpersandErr("Rule '$ruleSql[name]' is broken: $ruleSql[meaning]");
+      foreach($rows as $violation){
+        emitAmpersandErr("- ('$violation[src]', '$violation[tgt]')");
+      }
       $allRulesHold = false;
     }
     else
