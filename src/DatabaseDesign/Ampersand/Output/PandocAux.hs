@@ -438,7 +438,7 @@ pandocEqnArray xs
    
 pandocEquation :: String -> [Block]
 pandocEquation x
- = [ Para [ RawInline "latex" ("\\begin{dmath}[compact]\n   "++ x ++"\n\\end{dmath}") ]
+ = [ Para [ RawInline "latex" ("\\begin{dmath}\n   "++ x ++"\n\\end{dmath}") ]
    | not (null x)]
 
 --DESCR -> pandoc print functions for Ampersand data structures

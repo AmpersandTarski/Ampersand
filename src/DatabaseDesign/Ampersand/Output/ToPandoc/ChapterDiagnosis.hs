@@ -56,7 +56,8 @@ chpDiagnosis lev fSpec flags
    
 
   roleRuleTable :: [Block]
-  roleRuleTable 
+  roleRuleTable
+    | null ruls = []
     | null (fRoleRuls fSpec) && null(fRoleRels fSpec) = 
         case language flags of
           Dutch    -> [Para [ Str $ upCap (name fSpec)++" specificeert geen rollen. " ]]
@@ -85,7 +86,10 @@ chpDiagnosis lev fSpec flags
      where
       rs = nub ( [r | (r,_) <- fRoleRuls fSpec]++
                  [r | (r,_) <- fRoleRels fSpec] )
-      ruls = [r | r<-vrules fSpec, isSignal r ]
+      ruls = if null (themes fSpec)
+             then [r | r<-vrules fSpec, isSignal r ]
+             else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-rules pat,         isSignal r ] ++
+                  [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r<-rules (proc prc) , isSignal r ]
       f r rul | (r,rul) `elem` maintained      = [Plain [Math InlineMath "\\surd"]]
               | (r,rul) `elem` dead            = [Plain [Math InlineMath "\\times"]]
               | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
@@ -103,27 +107,29 @@ chpDiagnosis lev fSpec flags
 
   roleomissions :: [Block]
   roleomissions
-   = [ case language flags of
-         Dutch   ->
-           Plain [ Str $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
-                  , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
-                  ]
-         English ->
-           Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
-                  , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
-                  ]
-     | (null.fRoleRuls) fSpec && (not.null.rules) fSpec] ++
-     [ case language flags of
-         Dutch   ->
-           Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
-                  , Str ""
-                  ]
-         English ->
-           Plain [ Str $ upCap (name fSpec)++" does not specify which roles may change the contents of which relations. "
-                  , Str ""
-                  ]
-     | null (fRoleRels fSpec), (not.null.fRoleRuls) fSpec ||(not.null.fRoleRels) fSpec]
-
+   = if      null  (themes fSpec) && (not.null) (vprocesses fSpec) ||
+        (not.null) (themes fSpec) && (not.null) (themes fSpec `isc` [name prc | prc<-vprocesses fSpec])
+     then [ case language flags of
+              Dutch   ->
+                Plain [ Str $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
+                       , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
+                       ]
+              English ->
+                Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
+                       , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
+                       ]
+          | (null.fRoleRuls) fSpec && (not.null.rules) fSpec] ++
+          [ case language flags of
+              Dutch   ->
+                Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
+                       , Str ""
+                       ]
+              English ->
+                Plain [ Str $ upCap (name fSpec)++" does not specify which roles may change the contents of which relations. "
+                       , Str ""
+                       ]
+          | null (fRoleRels fSpec), (not.null.fRoleRuls) fSpec ||(not.null.fRoleRels) fSpec]
+     else []
   missingConceptDefs :: [Block]
   missingConceptDefs
    = case (language flags, missing) of
@@ -382,9 +388,8 @@ chpDiagnosis lev fSpec flags
 -- TODO: give richer feedback...
   invariantsInProcesses :: [Block]
   invariantsInProcesses
-   = (case (language flags, prs, vprocesses fSpec) of
-      (Dutch,  [],[] )  -> []
-      (English,[],[] )  -> []
+   = (case (language flags, prs, procs) of
+      (_,      [],[] )  -> []
       (Dutch,  [],[p])  -> [ Para [ Str $ "Alle regels in proces "++name p++" zijn gekoppeld aan rollen." ]]
       (English,[],[p])  -> [ Para [ Str $ "All rules in process "++name p++" are linked to roles." ]]
       (Dutch,  [], _ )  -> [ Para [ Str "Alle regels in alle processen zijn gekoppeld aan rollen." ]]
@@ -406,8 +411,9 @@ chpDiagnosis lev fSpec flags
        | (p,rs)<-prs
        ]
      | not (null prs)]
-     where prs = [(fp,rs) | fp<-vprocesses fSpec
+     where prs = [(fp,rs) | fp<-procs
                           , let rs=invariants (proc fp), not (null rs) ]
+           procs = if null (themes fSpec) then vprocesses fSpec else [prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
 
   processrulesInPatterns :: [Block]
   processrulesInPatterns
@@ -438,7 +444,7 @@ chpDiagnosis lev fSpec flags
                                   , Str "The following table shows which rules that are defined in a pattern are linked to a role within a process."
                                   , Str "This has as consequence that these rule(s) will be maintained in the corresponding process(es)."
                                   ]
-     | (not.null.vprocesses) fSpec && (not.null) [rra | fp<-vprocesses fSpec, rra<-maintains (proc fp)]
+     | (not.null.vprocesses) fSpec && (not.null) [rra | prc<-procs, rra<-maintains prc]
      ]        ++          
 -- the table containing the role-rule assignments
      [ Table []
@@ -454,7 +460,7 @@ chpDiagnosis lev fSpec flags
        | (p,rol,rul)<-prs
        ] 
      | length prs>1]
-     where prs = [(p,rol,rul) | p<-map proc (vprocesses fSpec), (rol,rul)<-maintains p, name rul `notElem` map name (rules p) ]
+     where prs = [(p,rol,rul) | p<-procs, (rol,rul)<-maintains p, name rul `notElem` map name (rules p) ]
            multProcs = length procs>1
            procs = [proc fp | fp<-vprocesses fSpec
                             , null (themes fSpec) || name fp `elem` themes fSpec]  -- restrict if this is partial documentation.
@@ -464,8 +470,8 @@ chpDiagnosis lev fSpec flags
    = [ Para (case (language flags, ds, declarations fSpec) of
         (Dutch,  [], [] ) -> [ Str "Dit script is leeg. " ]
         (English,[], [] ) -> [ Str "This script is empty. " ]
-        (Dutch,  [],  _ ) -> [ Str "Dit script bevat geen populatie. " ]
-        (English,[],  _ ) -> [ Str "This script contains no population. " ]
+        (Dutch,  [],  _ ) -> [ Str "Geen relatie bevat enige populatie. " ]
+        (English,[],  _ ) -> [ Str "No relation contains any population. " ]
         (Dutch,  [d],[_]) -> [ Str "Relatie ", Math InlineMath (showMath d), Str " heeft een populatie van ", Str (count flags (length (decpopu d)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
         (English,[d],[_]) -> [ Str "Relation ", Math InlineMath (showMath d), Str " has ", Str (count flags (length (decpopu d)) "pair"), Str " in its population. " ]
         (Dutch,  [d], _ ) -> [ Str "Alleen relatie ", Math InlineMath (showMath d), Str " heeft een populatie. Deze bevat ", Str (count flags (length (decpopu d)) "paar"), Str ". " ]
