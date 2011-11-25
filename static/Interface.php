@@ -10,9 +10,11 @@ require "php/DatabaseUtils.php";
 <head>
 <link href="css/Ampersand.css" rel="stylesheet" type="text/css"/>
 <link href="css/Custom.css" rel="stylesheet" type="text/css"/>
-<link href="css/jquery-ui-1.8.css" rel="stylesheet" type="text/css"/>
-<script src="js/jquery-1.5.min.js"></script>
-<script src="js/jquery-ui-1.8.min.js"></script>
+
+<link href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+<script src="js/jquery-1.6.2.min.js"></script>
+<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
+
 <script src="js/Ampersand.js"></script>
 <script type="text/javascript">
 
@@ -39,8 +41,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<h3>Create</h3>';
   echo newAtomLinks($allInterfaceObjects);
 } else {
-  
-  
+    
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
   $isNew = $atom==''; // if the atom is '', we create a unique new atom in the concept and set editing to true
