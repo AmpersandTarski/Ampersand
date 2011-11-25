@@ -34,8 +34,10 @@ echo '</div>';
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<a href="Installer.php">Reset database</a>';
-  echo '<h3>Top-level interfaces</h3>';
+  echo '<h3>Interfaces</h3>';
   echo topLevelInterfaceLinks($allInterfaceObjects);
+  echo '<h3>Create</h3>';
+  echo newAtomLinks($allInterfaceObjects);
 } else {
   
   
@@ -70,6 +72,15 @@ function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']=='ONE')
       echo '<li><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a></li>';
+  }
+  echo '</ul>';
+}
+
+function newAtomLinks($interfaces) {
+  echo '<ul>';
+  foreach($interfaces as $interface) {
+    if ($interface['srcConcept']!='ONE')
+      echo '<li><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=">Create new '.htmlSpecialChars($interface['srcConcept']).' ('.htmlSpecialChars($interface['name']).')</a></li>';
   }
   echo '</ul>';
 }
