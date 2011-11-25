@@ -218,14 +218,14 @@ where
            where
             atts ::  [XAtt]
             atts = [mkAttr "Explains" (name expl)
-                   ,mkAttr "Lang" (show(pexLang expl))
+                   ,mkAttr "Markup" (show(pexMarkup expl))
                    ,mkAttr "Ref" (pexRefID expl)]
      mkXmlTree expl 
-         = Elem (mkTag expl) [PlainText (show (pexExpl expl))]
+         = Elem (mkTag expl) [PlainText (show (pexMarkup expl))]
 
    instance XML Explanation where
      mkTag expl = Tag "Expl" [mkAttr "Explains" (show expl)
-                             ,mkAttr "Lang" (show (explLang expl))
+                             ,mkAttr "Markup" (show (explMarkup expl))
                              ,mkAttr "Ref" (explRefId expl)]
 
 --        = case expl of
@@ -244,7 +244,7 @@ where
 --                                ,mkAttr "Lang" (show lang)
 --                                ,mkAttr "Ref" ref]
      mkXmlTree expl 
-         = Elem (mkTag expl) [PlainText (show (explCont expl))]
+         = Elem (mkTag expl) [PlainText (show (explMarkup expl))]
 
 
    instance XML A_Gen where
@@ -289,8 +289,8 @@ where
                   ++[Elem (simpleTag "Pragma") 
                              [PlainText (show (prL++"%f"++prM++"%t"++prR))] 
                                 | not (null (prL++prM++prR))]
-                  ++[Elem (simpleTag "Meaning") 
-                             [PlainText (explainContent2String LaTeX True (decMean d))]
+                  ++[Elem (simpleTag "Meaning") [PlainText "Still 2 be done"]
+                    --         [PlainText (explainContent2String LaTeX True (decMean d))]
                                 | not (null (decMean d))]
                   ++[Elem (simpleTag "Population") 
                              (map mkXmlTree (decpopu d)) 

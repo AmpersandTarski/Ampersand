@@ -7,7 +7,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Pattern(..)
  , Rule(..)
  , RuleType(..)
- , RuleMeaning(..)
  , Declaration(..)
  , KeyDef(..)
  , A_Gen(..)
@@ -18,6 +17,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Expression(..)
  , Relation(..)
  , A_Concept(..)
+ , A_Markup(..)
  , RoleRelation(..)
  , Sign(..)
  , Population(..)
@@ -29,6 +29,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , (<==>),join,order,meet,greatest,least,maxima,minima 
  , makeDeclaration
  , showExpr
+ , aMarkup2String
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have acutally become part of the Abstract Syntax Tree.
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
@@ -36,8 +37,9 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
-import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat)
+import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
+import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc
 import Data.List
 
@@ -49,7 +51,7 @@ data Architecture = A_Arch { arch_Contexts :: [A_Context]}
 
 data A_Context
    = ACtx{ ctxnm     :: String        -- ^ The name of this context
-         , ctxlang   :: Maybe Lang    -- ^ The default language specified by this context, if specified at all.
+         , ctxlang   :: Lang          -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat  -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxthms   :: [String]      -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctxpo     :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
@@ -118,12 +120,16 @@ instance Identified Pattern where
 instance Traced Pattern where
  origin = ptpos
 
-
+data A_Markup =
+    A_Markup { amLang   :: Lang
+             , amFormat :: PandocFormat
+             , amPandoc :: [Block]
+             } deriving Show
 data Rule =
      Ru { rrnm     :: String                  -- ^ Name of this rule
         , rrexp    :: Expression              -- ^ The rule expression
         , rrfps    :: Origin                  -- ^ Position in the Ampersand file
-        , rrxpl    :: [RuleMeaning]           -- ^ Ampersand generated explanations (for all known languages)
+        , rrmean   :: [A_Markup]              -- ^ Ampersand generated explanations (MEANINGs) (for all known languages)
         , rrtyp    :: Sign                    -- ^ Allocated type
         , rrdcl    :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
         , r_env    :: String                  -- ^ Name of pattern in which it was defined.
@@ -146,9 +152,6 @@ instance Signaling Rule where
   isSignal = r_sgl
 
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
-data RuleMeaning = Means (Maybe Lang) [Block] deriving (Eq,Show)
-
-
 
 data Declaration = 
   Sgn { decnm   :: String     -- ^ the name of the declaration
@@ -159,7 +162,7 @@ data Declaration =
       , decprL  :: String     -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM  :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR  :: String
-      , decMean :: [Block]    -- ^ the meaning of a declaration, as supplied in the script. If empty, the meaning is generated automatically.
+      , decMean :: [A_Markup] -- ^ the meaning of a declaration, for each language supported by Ampersand.
       , decpopu :: Pairs      -- ^ the list of tuples, of which the relation consists.
       , decfpos :: Origin     -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
       , deciss  :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
@@ -186,7 +189,18 @@ instance Show Declaration where
   showsPrec _ d
     = showString (unwords (["RELATION",decnm d,show (decsgn d),show (decprps_calc d)
                            ,"PRAGMA",show (decprL d),show (decprM d),show (decprR d)]
-                            ++if null (decMean d) then [] else ["MEANING",show (decMean d)] ))
+                            ++concatMap showMeaning (decMean d)
+                 )        )
+           where 
+              showMeaning m = "MEANING"
+                             : ["IN", show (amLang m)]
+                            ++ ["TEXTMARKUP",show (amFormat m)]
+                            ++ ["{+",aMarkup2String m,"-}"]                
+                            -- then [] else ["MEANING",show (decMean d)] ))
+
+aMarkup2String :: A_Markup -> String
+aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
+
 instance Identified Declaration where
   name d@Sgn{}   = decnm d
   name Isn{}     = "I"
@@ -267,11 +281,11 @@ instance Traced ObjectDef where
 --   The enrichment process of the parser must map the names (from PExplanation) to the actual objects
 data Explanation  = Expl { explPos   :: Origin     -- ^ The position in the Ampersand script of this purpose definition
                          , explObj   :: ExplObj    -- ^ The object that is explained.
-                         , explLang  :: Maybe Lang -- ^ The language of the explaination
+                         , explMarkup :: A_Markup  -- ^ The markup of the explaination
+                         , explUserdefd :: Bool    -- ^ Is this purpose defined in the script?
                          , explRefId :: String     -- ^ The reference of the explaination
-                         , explCont  :: [Block]    -- ^ The actual explanation.
+                     --    , explCont  :: [Block]    -- ^ The actual explanation.
                          } deriving Show  --handy for XML creation
-
 instance Eq Explanation where
   x0 == x1  =  explObj x0 == explObj x1
 instance Traced Explanation where

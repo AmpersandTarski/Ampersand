@@ -10,7 +10,7 @@ import Data.List
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,Explainable(..))
+import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 --DESCR -> the process analysis contains a section for each process in the fspec
@@ -41,7 +41,7 @@ chpProcessAnalysis lev fSpec flags
                                               Dutch   ->  "Procesanalyse"   
                                               English ->  "Process Analysis"
                                         ) ++
-     explains2Blocks (purpose fSpec (language flags) fSpec) ++ -- This explains the purpose of this context.
+     purpose2Blocks (purpose fSpec (language flags) fSpec) ++ -- This explains the purpose of this context.
      [ case language flags of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
@@ -144,7 +144,7 @@ chpProcessAnalysis lev fSpec flags
        , [picProcessModel fproc, picLangModel fproc]):  iterat fps i' seenCrs seenDrs
        where
          sctMotivation
-          = explains2Blocks (purpose fSpec (language flags) fproc)
+          = purpose2Blocks (purpose fSpec (language flags) fproc)
          sctRules  :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (proc fproc)) i seenConcepts seenDeclarations
 

@@ -36,7 +36,7 @@ fatal = fatalMsg "Fspec.Fspec"
 
 data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the Ampersand script
                  , themes       :: [String]              -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                 , fsLang       :: Maybe Lang            -- ^ The default language for this specification, if specified at all.
+                 , fsLang       :: Lang                  -- ^ The default language for this specification, if specified at all.
                  , vprocesses   :: [FProcess]            -- ^ All processes defined in the Ampersand script
                  , vplugInfos   :: [PlugInfo]            -- ^ All plugs defined in the Ampersand script
                  , plugInfos    :: [PlugInfo]            -- ^ All plugs (defined and derived)
@@ -207,6 +207,7 @@ instance Identified Activity where
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
 --   whenever qMorph is affected (i.e. tuples in qMorph are inserted or deleted), qRule may have to be restored using functionality from qClauses.
 --   The rule is taken along for traceability.
+       
 instance ConceptStructure Activity where
  concs     act = concs (actRule act) `uni` concs (actAffect act)  -- The set of all concepts used in this Activity
  mors      act = mors (actRule act) `uni` actAffect act           -- The set of all relations used in this Activity

@@ -526,10 +526,9 @@ where
     showHS flags _ expla = 
        "PExpl ("++showHS flags "" (pexPos expla)++") "++
              "("++showHS flags "" (pexObj expla)++") "
-                ++show (pexLang  expla)++" "
+                ++showHS flags "" (pexMarkup  expla)++" "
                 ++show (pexRefID expla)++" "
-                ++show (pexExpl  expla)
-
+                
    instance ShowHS PExplObj where
     showHSname _ = fatal 508 "a PExplObj is anonymous with respect to showHS flags"
     showHS _ _ peObj
@@ -548,9 +547,8 @@ where
     showHSname _ = fatal 522 "a Explanation is anonymous with respect to showHS flags"
     showHS flags _ expla = 
        "Expl "++showHS flags "" (explObj expla)++" "
-              ++show (explLang  expla)++" "
+              ++showHS flags "" (explMarkup  expla)++" "
               ++show (explRefId expla)++" "
-              ++show (explCont  expla)
 
    instance ShowHS ExplObj where
     showHSname _ = fatal 530 "a ExplObj is anonymous with respect to showHS flags"
@@ -565,7 +563,25 @@ where
              ExplContext str    -> "ExplContext "    ++show str
              ExplFspc str       -> "ExplFspc "       ++show str
            
+   instance ShowHS P_Markup where
+    showHSname _ = fatal 567 "showHSname undefined for Type 'P_Markup'"
+    showHS _ indent m
+      = intercalate indent 
+        ["P_Markup{ mLang   = "++ show (mLang m)
+        ,"        , mFormat = "++ show (mFormat m)
+        ,"        , mString = "++ show (mString m)
+        ,"        }"
+        ]
 
+   instance ShowHS A_Markup where
+    showHSname _ = fatal 577 "showHSname undefined for Type 'A_Markup'"
+    showHS _ indent m
+      = intercalate indent 
+        ["A_Markup{ amLang   = "++ show (amLang m)
+        ,"        , amFormat = "++ show (amFormat m)
+        ,"        , amPandoc = "++ show (amPandoc m)
+        ,"        }"
+        ]
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
@@ -577,7 +593,7 @@ where
         ["Ru{ rrnm  = " ++ show (rrnm r)
         ,"  , rrexp = ("++ showHS flags "" (rrexp r)++")"
         ,"  , rrfps = ("++ showHS flags "" (rrfps r)++")"
-        ,"  , rrxpl = " ++ showHS flags "" (rrxpl r)
+        ,"  , rrxpl = " ++ showHS flags "" (rrmean r)
         ,"  , rrtyp = " ++ showHS flags "" (rrtyp r)
         ,"  , rrtyp_proof = Nothing -- TBD generate a function for the proof."
         ,"  , rrdcl = " ++ case rrdcl r of
@@ -589,14 +605,6 @@ where
         ,"  , srrel = " ++ showHSname (srrel r)
         ,"  }"
         ]
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: RuleMeaning                   ***
--- \***********************************************************************
-   instance ShowHS RuleMeaning where
-     showHSname _ = fatal 576 "showHSname undefined for Type 'RuleMeaning'"
-     showHS flags ind (Means  Nothing    blocks) = "Means Nothing "++showHS flags ind blocks
-     showHS flags ind (Means (Just lang) blocks) = "Means (Just "++show lang++") "++showHS flags ind blocks
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***

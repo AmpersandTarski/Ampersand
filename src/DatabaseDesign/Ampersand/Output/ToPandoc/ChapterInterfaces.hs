@@ -28,13 +28,8 @@ interfaceChap lev fSpec flags act
   header = labeledHeader lev ("chpIfc"++name act) (name act)
   ifcIntro :: [Block]
   ifcIntro
-   = ( let expls = [expl |expl<-actXpls act, explLang expl==Just (language flags) || explLang expl==Nothing] in  -- tells us why this interface exists
-       if not (null expls) then explains2Blocks expls else
-       [ Plain $ case language flags of
-        Dutch   -> [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name act)], Str" bestaat is niet gedocumenteerd." ]
-        English -> [Str "For what purpose activity ", Quoted SingleQuote [Str (name act)], Str" exists remains undocumented." ]
-       ]
-     )++
+   = purpose2Blocks (purpose fSpec (language flags) act)
+     ++
      ifcAutoRules++
      (if genEcaDoc flags then ifcEcaRules else [])
 

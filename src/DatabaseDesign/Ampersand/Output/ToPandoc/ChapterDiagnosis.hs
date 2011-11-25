@@ -11,7 +11,7 @@ import Data.List
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,Explainable(..))
+import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -153,7 +153,7 @@ chpDiagnosis lev fSpec flags
                      ]
    where missing = [c | c <-ccs
                       , cd <- cptdf c
-                      , null (purpose fSpec (language flags) cd)
+                      , (not . explUserdefd) (purpose fSpec (language flags) cd)
                    ]++
                    [c | c <-ccs
                       , null (cptdf c)
@@ -191,7 +191,7 @@ chpDiagnosis lev fSpec flags
                                    else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                                         mors [proc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
-                     , null (purpose fSpec (language flags) r)
+                     , (not . explUserdefd) (purpose fSpec (language flags) r)
                      ]
 
   relsNotUsed :: [Block]
@@ -266,7 +266,7 @@ chpDiagnosis lev fSpec flags
 
   missingRules :: [Block]
   missingRules
-   = case (language flags, missingPurp, missingExpl) of
+   = case (language flags, missingPurp, missingMeaning) of
       (Dutch,[],[])    -> [ Para [Str "Alle regels in dit document zijn voorzien van een uitleg."]
                           | (length.rules) fSpec>1]
       (Dutch,rs,rs')   -> [Para 
@@ -360,12 +360,12 @@ chpDiagnosis lev fSpec flags
      where missingPurp
             = nub [ r
                   | r<-ruls
-                  , null (purpose fSpec (language flags) r)
+                  , (not . explUserdefd) (purpose fSpec (language flags) r)
                   ]
-           missingExpl
+           missingMeaning
             = nub [ r
                   | r<-ruls
-                  , null [block | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, block<-econt]
+                  , null [m | m <- rrmean r, amLang m == language flags]
                   ]
            ruls = if null (themes fSpec)
                   then rules fSpec
@@ -548,7 +548,7 @@ chpDiagnosis lev fSpec flags
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]
                 )  
-              )]  ++text r++
+              )]  ++meaning2Blocks (language flags) r++
        [Plain ( case language flags of
                   Dutch  ->
                      [ Str "Deze regel bevat nog werk (voor "]++
@@ -566,11 +566,11 @@ chpDiagnosis lev fSpec flags
        [ violtable r ps | length ps>1]
      | (r,ps)<-concat popwork ]
      where
-      text r
-       = if null expls
-         then explains2Blocks (autoMeaning (language flags) r) 
-         else expls 
-         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
+--      text r
+--       = if null expls
+--         then explains2Blocks (autoMeaning (language flags) r) 
+--         else expls 
+--         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
       quoterule r
        = if name r==""
          then case language flags of
@@ -643,7 +643,7 @@ chpDiagnosis lev fSpec flags
                 (case language flags of
                     Dutch   -> [ Str "luidt: " ]
                     English -> [ Str "says: "])
-              )]  ++text r++
+              )]  ++meaning2Blocks (language flags) r++
        [Plain ( case language flags of
                   Dutch   ->
                      Str "Deze regel wordt overtreden":
@@ -674,15 +674,16 @@ chpDiagnosis lev fSpec flags
        [ violtable r ps | length ps>1]
      | (r,ps)<-multviols ]
      where
-     text r = if null expls
-              then explains2Blocks (autoMeaning (language flags) r) 
-              else expls 
-              where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
-     textMult r
-            = if null expls
-              then explains2Blocks (autoMeaning (language flags) r) 
-              else expls 
-              where expls = [Plain ([Str "De relatie ",Space]++block++[Str ".",Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
+--     text r = if null expls
+--              then explains2Blocks (autoMeaning (language flags) r) 
+--              else expls 
+--              where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
+     textMult r = [Plain [Str "<< TODO: textMult >>"]]
+--     textMult r
+--            = if null expls
+--              then explains2Blocks (autoMeaning (language flags) r) 
+--              else expls 
+--              where expls = [Plain ([Str "De relatie ",Space]++block++[Str ".",Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
      quoterule r = if name r==""
                    then Str ("on "++show (origin r))
                    else Quoted SingleQuote [Str (name r)]
