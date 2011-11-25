@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
    , P_Context(..), P_Relation(..), P_Population(..), P_Rule(..), P_Expression(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..)
-   , PExplObj(..), PExplanation(..)
+   , P_Markup(..), PExplObj(..), PExplanation(..)
    , Architecture(..)
    , A_Concept(..), newAcpt
    , Sign(..), ConceptDef(..), ConceptStructure(..)
@@ -76,8 +76,8 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.writeFile
    , DatabaseDesign.Ampersand.Basics.trim
    -- * Stuff that should not be in the prototype
-   , explainContent2String, PandocFormat(..), RuleMeaning(..)
-   , Explainable(..), cptos', rulefromProp, allprops, endoprops
+   , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
+   , purpose, cptos', rulefromProp, allprops, endoprops
    , Populated(..), Paire, Explanation(..), ExplObj(..), PictType(..)
    )
 where
@@ -92,5 +92,5 @@ import DatabaseDesign.Ampersand.Input
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Components 
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
-import DatabaseDesign.Ampersand.Output.AdlExplanation(Explainable(..))
+import DatabaseDesign.Ampersand.Output.AdlExplanation
 

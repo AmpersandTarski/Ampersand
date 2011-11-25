@@ -7,4 +7,4 @@ import DatabaseDesign.Ampersand.Misc.Options as X
         verboseLn, verbose, DocTheme(..), FspecFormat(..),
         ImportFormat(..), helpNVersionTexts)
 import DatabaseDesign.Ampersand.Misc.Explain as X
-       (string2Blocks, explainContent2String, PandocFormat(..))
+       (string2Blocks, blocks2String, PandocFormat(..))

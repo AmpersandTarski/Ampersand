@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,meaning,Explainable(..))
+import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,meaning)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -63,15 +63,15 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
                            , [r | r<-vrules fSpec, r_usr r ] )  -- All user declared rules
          where
-           conceptsWith     -- All concepts that have at least one definition or one purpose. 
+           conceptsWith     -- All concepts that have at least one definition or one userdefined purpose. 
               = [(c, pps)
                 | c <-concs fSpec
-                , let pps = [p | let ps=purpose fSpec (language flags) c, p<-ps]
+                , let pps = [p | p <- [purpose fSpec (language flags) c], explUserdefd p]
                 , not (null (cptdf c)) || not (null pps)]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
-                                          -- and only those declarations that have at least one purpose.
+                                          -- and only those declarations that have at least one userdefined purpose.
               = [r | r@Rel{}<-mors fSpec
-                  , not (null ( purpose fSpec (language flags) r))
+                   , explUserdefd ( purpose fSpec (language flags) r)
                 ]
                  
       aThemeAtATime :: ( [(A_Concept,[Explanation])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
@@ -148,7 +148,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                         English -> [Str "This paragraph shows remaining fact types and concepts "
                                                    ,Str "that have not been described in previous paragraphs."]
                                       )]
-                         Just pat -> explains2Blocks (purpose fSpec (language flags) pat)
+                         Just pat -> purpose2Blocks (purpose fSpec (language flags) pat)
 
               sctcsIntro :: [(A_Concept, [Explanation])] -> [Block]
               sctcsIntro [] = []
@@ -208,7 +208,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                          exps    = [ x | Left x<-takeWhile isLeft xs']
                          explist :: [Block]
                          explist = concat
-                                   [ explCont e -- explains2Blocks (purpose fSpec (language flags) c)
+                                   [ amPandoc (explMarkup e) -- explains2Blocks (purpose fSpec (language flags) c)
                                    | (_,e)<-exps]
                       gr result [] i = (result, Counter i)
                       gr result xs' i = gl (result++deflist) (dropWhile isRight xs') (i+length defs)
@@ -240,14 +240,14 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = relBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       relBlock :: Relation -> Counter -> ([Block],Counter)
-                      relBlock rel cnt = ( explains2Blocks (purpose fSpec (language flags) rel) ++
+                      relBlock rel cnt = ( purpose2Blocks (purpose fSpec (language flags) rel) ++
                                            [DefinitionList [ ( [ Str (case language flags of
                                                                         Dutch   -> "Eis "
                                                                         English -> "Requirement ")
                                                                , Str (show(getEisnr cnt))
                                                                , Str ":"]
                                                              , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
-                                                                 meaning (language flags) rel]
+                                                                 meaning2Blocks (language flags) (makeDeclaration rel)]
                                                              )
                                                            ]
                                            ]
@@ -263,7 +263,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ( explains2Blocks (purpose fSpec (language flags) r2) ++
+                      ruleBlock r2 cnt = ( purpose2Blocks (purpose fSpec (language flags) r2) ++
                                            [DefinitionList [ ( [Str (case language flags of
                                                                        Dutch   -> "Eis"
                                                                        English -> "Requirement")
@@ -271,11 +271,8 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                ,Str (show(getEisnr cnt))
                                                                ,if name r2=="" then Str ":" else Str (" ("++name r2++"):")]
                                                              , [ Plain [RawInline "latex" $ symReqLabel r2] :
-                                                                 (let expls = [block | Means l econt<-rrxpl r2, l==Just (language flags) || l==Nothing, block<-econt] in
-                                                                  if null expls
-                                                                  then explains2Blocks (autoMeaning (language flags) r2) 
-                                                                  else expls 
-                                                                 )]
+                                                                 meaning2Blocks (language flags) r2
+                                                              ]
                                                              )
                                                            ]
                                            ]

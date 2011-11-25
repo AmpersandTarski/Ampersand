@@ -59,18 +59,20 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pBindings = (pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` []
    
    pContext         :: Parser Token P_Context
-   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*> pLanguageID <*> pPandocFormatID <*>
-                               optional (rebexpr <$ pKey ":" <*> pExpr <*> pBindings ) <*>
+   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid 
+                            <*> optional pLanguageID 
+                            <*> optional pFormatID 
+                            <*> optional (rebexpr <$ pKey ":" <*> pExpr <*> pBindings ) <*>
                               --    ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
                                pList pContextElement <* pKey "ENDCONTEXT"
                        where
                        rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
                        rebexpr x y = (x,y)
-                       rebuild :: String -> Maybe Lang -> PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
-                       rebuild nm mlang defaultmarkup env ces =   -- TODO: use the second argument as the default language for this context.
+                       rebuild :: String -> Maybe Lang -> Maybe PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
+                       rebuild nm lang fmt env ces =   -- TODO: use the second argument as the default language for this context.
                           PCtx{ ctx_nm    = nm
-                              , ctx_lang  = mlang
-                              , ctx_markup= defaultmarkup
+                              , ctx_lang  = lang
+                              , ctx_markup= fmt
                               , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
                               , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
                               , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
@@ -101,8 +103,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        | CXpl PExplanation
                        | CThm [String]           -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
 
-   pPandocFormatID    :: Parser Token PandocFormat
-   pPandocFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid) `opt` ReST
+   pFormatID    :: Parser Token PandocFormat
+   pFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid)
                          where
                           f str = case map toUpper str of
                                       "REST"     -> ReST
@@ -114,23 +116,25 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pPrintThemes       :: Parser Token [String]
    pPrintThemes        = pKey "THEMES" *> pList1Sep (pSpec ',') (pConid <|> pString)
 
-   pLanguageID        :: Parser Token (Maybe Lang)
-   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Nothing
+   pLanguageID        :: Parser Token Lang
+   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH"))
                          where
                           lang str = case str of
-                                      "DUTCH"      -> Just Dutch
-                                      "ENGLISH"    -> Just English
+                                      "DUTCH"      -> Dutch
+                                      "ENGLISH"    -> English
                                       _ -> fatal 141 (if null str then "must specify a language" else "language "++str++" is not supported")
 
    pRefID             :: Parser Token String
    pRefID              = (pKey "REF" *> pString) `opt` []
 
-   pExplain           :: Parser Token PExplanation
-   pExplain            = PExpl <$> pKey_pos "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
-                         PExpl <$> pKey_pos "PURPOSE" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl
-
-   pExplObj           :: Parser Token PExplObj
-   pExplObj            = PExplConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString)          <|>
+   pPurpose           :: Parser Token PExplanation
+   pPurpose            = rebuild <$> pKey_pos "EXPLAIN" <*> pRef2Obj <*> optional pLanguageID <*> optional pFormatID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
+                         rebuild <$> pKey_pos "PURPOSE" <*> pRef2Obj <*> optional pLanguageID <*> optional pFormatID <*> pRefID <*> pExpl
+                         where
+                           rebuild orig obj lang fmt ref str
+                             = PExpl orig obj (P_Markup lang fmt str) ref
+   pRef2Obj           :: Parser Token PExplObj
+   pRef2Obj            = PExplConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString)          <|>
                          pExplDeclaration <$ pKey "RELATION"  <*> pRelation <*> optional pSign  <|>
                          PExplRule        <$ pKey "RULE"      <*> pADLid                        <|>
                          PExplKeyDef      <$ pKey "KEY"       <*> pADLid                        <|>  
@@ -151,7 +155,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                          Cifc     <$> pInterface    <|>
                          CSqlPlug <$> pSqlplug      <|>
                          CPhpPlug <$> pPhpplug      <|>
-                         CXpl     <$> pExplain      <|>
+                         CXpl     <$> pPurpose      <|>
                          CPop     <$> pPopulation   <|>
                          CThm     <$> pPrintThemes
 
@@ -193,7 +197,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        Pd <$> pDeclaration  <|>
                        Pc <$> pConceptDef   <|>
                        Pk <$> pKeyDef       <|>
-                       Pe <$> pExplain      <|>
+                       Pe <$> pPurpose      <|>
                        Pp <$> pPopulation
 
    pProcess         :: Parser Token P_Process
@@ -235,30 +239,29 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        PrL <$> pRoleRelation <|>
                        PrC <$> pConceptDef   <|>
                        PrK <$> pKeyDef       <|>
-                       PrE <$> pExplain      <|>
+                       PrE <$> pPurpose      <|>
                        PrP <$> pPopulation
 
-   pMeaning         :: Parser Token (Maybe Lang,String)
-   pMeaning          = f <$ pKey "MEANING" <*> pLanguageID <*> pString
-                       where f mlang str = (mlang,str)
+   pMeaning         :: Parser Token P_Markup
+   pMeaning          = P_Markup <$ pKey "MEANING" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
                         
    pGen             :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    pRule            :: Parser Token P_Rule
-   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> (pMeaning `opt` (Nothing,"")) <|>
-                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> (pMeaning `opt` (Nothing,""))
+   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pList pMeaning <|>
+                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> pList pMeaning
                        where
                         --rnn -> rnm with generated name (rulid po)
-                        rnn po rexp (mlang,expl) = rnm po (rulid po) rexp (mlang,expl)
+                        rnn po = rnm po (rulid po)
                         rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
                         rulid _ = fatal 226 "rulid is expecting a file location."
-                        rnm po lbl rexp (mlang,expl)
+                        rnm po lbl rexp mean
                           = P_Ru { rr_nm  = lbl
                                  , rr_exp = rexp
                                  , rr_fps = po
-                                 , rr_mean = (mlang,expl)
+                                 , rr_mean = mean
                                  }
 
 {-  Basically we would have the following expression syntax:
@@ -529,20 +532,20 @@ and the grammar must be disambiguated in order to get a performant parser...
                          <*> (pProps `opt` [])
                          <*> ((True <$ pKey "BYPLUG") `opt` False)
                          <*> (pPragma `opt` [])
-                         <*> (pMeaning `opt` (Nothing,""))
+                         <*> pList pMeaning
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                        where rebuild nm pos' s fun' t bp1 props
                                = rbd pos' nm (P_Sign [s,t]) bp1 props'
                                  where props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
-                             rbd pos' nm sgn bp1 props bp2 pragma (_,meaning) content
+                             rbd pos' nm sgn bp1 props bp2 pragma meanings content
                                = P_Sgn { dec_nm   = nm
                                        , dec_sign = sgn
                                        , dec_prps = props
                                        , dec_prL  = head pr
                                        , dec_prM  = pr!!1
                                        , dec_prR  = pr!!2
-                                       , dec_Mean = meaning
+                                       , dec_Mean = meanings
                                        , dec_popu = content
                                        , dec_fpos = pos'
                                        , dec_plug = bp1 || bp2

@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,Explainable(..))
+import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -25,7 +25,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
                                         )
   caIntro :: [Block]
   caIntro =
-   explains2Blocks (purpose fSpec (language flags) fSpec) ++ -- This explains the purpose of this context.
+   purpose2Blocks (purpose fSpec (language flags) fSpec) ++ -- This explains the purpose of this context.
    (case language flags of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van de regels uit hoofdstuk "
@@ -71,7 +71,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
-          = explains2Blocks (purpose fSpec (language flags) pat)
+          = purpose2Blocks (purpose fSpec (language flags) pat)
          (sctRules,   i',  seenCrs, seenDrs) = dpRule fSpec flags (invariants pat) i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule fSpec flags (processRules pat) i' seenCrs seenDrs
 

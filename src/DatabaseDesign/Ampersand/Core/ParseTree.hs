@@ -29,7 +29,8 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Gen(..),P_Gens
    
    , Lang(..)
-
+   , P_Markup(..)
+   
    , PandocFormat(..)
    
    , Label(..)
@@ -53,7 +54,7 @@ where
    data P_Context
       = PCtx{ ctx_nm     :: String          -- ^ The name of this context
             , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
-            , ctx_markup :: PandocFormat    -- ^ The default markup format for free text in this context
+            , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
             , ctx_thms   :: [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
             , ctx_pats   :: [P_Pattern]     -- ^ The patterns defined in this context
             , ctx_PPrcs  :: [P_Process]     -- ^ The processes as defined by the parser
@@ -168,7 +169,7 @@ where
                                            , dec_prL  = ""
                                            , dec_prM  = "is a"
                                            , dec_prR  = ""
-                                           , dec_Mean = ""
+                                           , dec_Mean = []
                                            , dec_popu = []
                                            , dec_fpos = Origin "generated isa by declarations (P_Language P_Pattern)"
                                            , dec_plug = True
@@ -260,7 +261,9 @@ where
  --  instance Show ConceptDef
    instance Traced ConceptDef where
     origin = cdpos
-   
+   instance Identified ConceptDef where
+    name = cdcpt
+       
    data P_Declaration = 
          P_Sgn { dec_nm   :: String    -- ^ the name of the declaration
                , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
@@ -268,7 +271,7 @@ where
                , dec_prL  :: String    -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                , dec_prM  :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , dec_prR  :: String
-               , dec_Mean :: String    -- ^ the meaning of a declaration, as supplied in the script. If empty, the meaning is generated automatically.
+               , dec_Mean :: [P_Markup]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
                , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
                , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
@@ -327,15 +330,20 @@ where
       deriving (Eq, Show) -- deriving only for debugging purposes
 
    data P_Rule  =
-      P_Ru { rr_nm    :: String                  -- ^ Name of this rule
-           , rr_exp   :: P_Expression            -- ^ The rule expression 
-           , rr_fps   :: Origin                  -- ^ Position in the Ampersand file
-           , rr_mean  :: (Maybe Lang,String)     -- ^ User specified meaning (language specific)
+      P_Ru { rr_nm    :: String             -- ^ Name of this rule
+           , rr_exp   :: P_Expression       -- ^ The rule expression 
+           , rr_fps   :: Origin             -- ^ Position in the Ampersand file
+           , rr_mean  :: [P_Markup]         -- ^ User specified meanings, possibly more than one, for multiple languages.
            }
    instance Traced P_Rule where
     origin = rr_fps
     
-
+   data P_Markup = 
+       P_Markup  { mLang   :: Maybe Lang
+                 , mFormat :: Maybe PandocFormat
+                 , mString :: String
+                 } deriving Show -- for debugging only     
+               
    data P_Population
      = P_Popu { p_popm   :: P_Relation
               , p_type   :: [P_Concept]
@@ -409,10 +417,9 @@ where
 
    type PExplanations = [PExplanation]
    data PExplanation = PExpl { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
-                             , pexObj   :: PExplObj   -- the object whose purpose is explained
-                             , pexLang  :: Maybe Lang -- the natural language in which the text is stated, if specified
+                             , pexObj   :: PExplObj   -- the reference to the object whose purpose is explained
+                             , pexMarkup:: P_Markup   -- the piece of text, including markup and language info
                              , pexRefID :: String     -- the reference (for traceability)
-                             , pexExpl  :: String     -- the text of this purpose definition
                              }
 
    instance Identified PExplanation where
