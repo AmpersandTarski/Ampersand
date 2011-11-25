@@ -214,7 +214,10 @@ function traceDbCommands() {
 // Editing UI
 
 function clearEditHandlers() {
-  $('#AmpersandRoot .Atom').unbind('click');
+  $('#AmpersandRoot .AtomList').unbind('mouseenter mouseleave');
+  $('#AmpersandRoot .AtomName').unbind('click');
+  $('#AmpersandRoot .DeleteStub').unbind('click');
+  $('#AmpersandRoot .InsertStub').unbind('click');
 }
 
 function setEditHandlers() {
@@ -298,7 +301,7 @@ function startAtomEditing($atom) {
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
   $atomName.after($form);
-  initializeAutocomplete($textfield);
+  initializeAutocomplete($textfield, $atom);
   $textfield.focus().select();
   $atomName.hide();
 
@@ -345,8 +348,8 @@ function stopAtomEditing($atom) {
 //The values are retrieved from the server with an getAtomsForConcept=<concept> request, so there is a slight
 //delay before they are shown.
 // For documentation, make sure to read docs.jquery.com/UI/Autocomplete and not docs.jquery.com/Plugins/autocomplete (which is incorrect)
-function initializeAutocomplete($textfield, concept) {
-  var $atomList = getEnclosingAtomList($textfield);
+function initializeAutocomplete($textfield, $atom) {
+  var $atomList = getEnclosingAtomList($atom);
   var concept = $atomList.attr('concept'); 
   // Note: if we need autocomplete on top-level atom, concept needs to be stored as an attribute in 
   // each atom, since top-level atom is not in an AtomList.
@@ -355,7 +358,10 @@ function initializeAutocomplete($textfield, concept) {
     $.post("php/Database.php",{ getAtomsForConcept: concept },function receiveDataOnPost(data){
     var resultOrError = JSON.parse(data); // contains .res or .err
     if (typeof resultOrError.res !== 'undefined')
-        $textfield.autocomplete({ source:resultOrError.res }, { minLength: 0});
+        $textfield.autocomplete({ source:resultOrError.res
+                                , minLength: 0
+                                , select: function(event, ui) { stopAtomEditing($atom); return true; }
+                                });
     else
         console.error("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
     });
