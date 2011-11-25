@@ -367,9 +367,8 @@ function stopAtomEditing($atom) {
 // For documentation, make sure to read docs.jquery.com/UI/Autocomplete and not docs.jquery.com/Plugins/autocomplete (which is incorrect)
 function initializeAutocomplete($textfield, $atom) {
   var $atomList = getEnclosingAtomList($atom);
-  var concept = $atomList.attr('concept'); 
-  // Note: if we need autocomplete on top-level atom, concept needs to be stored as an attribute in 
-  // each atom, since top-level atom is not in an AtomList.
+  var concept = $atomList.length ? $atomList.attr('concept') : $('#AmpersandRoot').attr('concept'); 
+  // If there is no enclosing list, we are at the top-level atom and take the concept from AmpersandRoot 
 
   if (concept) {
     $.post("php/Database.php",{ getAtomsForConcept: concept },function receiveDataOnPost(data){
