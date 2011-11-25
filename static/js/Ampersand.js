@@ -228,14 +228,14 @@ function setEditHandlersBelow($elt) {
   $elt.find('.AtomList').hover(function () { 
     // mouse enter handler
     
-    var $parentInterface = getEnclosingAtomList($(this));
-    $parentInterface.attr('hover', 'false');
+    var $atomList = getEnclosingAtomList($(this));
+    $atomList.attr('hover', 'false');
     $(this).attr('hover', 'true');
   }, function () {
     // mouse exit handler
       
-    $parentInterface = getEnclosingAtomList($(this));
-    $parentInterface.attr('hover', 'true');
+    $atomList = getEnclosingAtomList($(this));
+    $atomList.attr('hover', 'true');
     $(this).attr('hover', 'false');
   });
   
@@ -293,11 +293,12 @@ function startAtomEditing($atom) {
   var atom = $atom.attr('atom');
   if ($atom.attr('status')=='deleted')
     return;
-  
+      
   $textfield = $('<input type=text size=1 style="width:100%" value="'+atom+'"/>');
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
   $atomName.after($form);
+  initializeAutocomplete($textfield);
   $textfield.focus().select();
   $atomName.hide();
 
@@ -339,6 +340,27 @@ function stopAtomEditing($atom) {
 
     traceDbCommands();
   }
+}
+
+//The values are retrieved from the server with an getAtomsForConcept=<concept> request, so there is a slight
+//delay before they are shown.
+// For documentation, make sure to read docs.jquery.com/UI/Autocomplete and not docs.jquery.com/Plugins/autocomplete (which is incorrect)
+function initializeAutocomplete($textfield, concept) {
+  var $atomList = getEnclosingAtomList($textfield);
+  var concept = $atomList.attr('concept'); 
+  // Note: if we need autocomplete on top-level atom, concept needs to be stored as an attribute in 
+  // each atom, since top-level atom is not in an AtomList.
+
+  if (concept) {
+    $.post("php/Database.php",{ getAtomsForConcept: concept },function receiveDataOnPost(data){
+    var resultOrError = JSON.parse(data); // contains .res or .err
+    if (typeof resultOrError.res !== 'undefined')
+        $textfield.autocomplete({ source:resultOrError.res }, { minLength: 0});
+    else
+        console.error("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
+    });
+   } else
+    console.error("Ampersand: Missing 'concept' html attribute for auto-complete");
 }
 
 

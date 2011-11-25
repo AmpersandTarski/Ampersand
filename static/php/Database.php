@@ -7,22 +7,30 @@ require "../Interfaces.php";
 
 require "DatabaseUtils.php";
 
-echo '<div id="UpdateResults">';
+// This module handles two requests: 
+//     Database.php?getAllAtomsForConcept=..
+// and Database.php?commands=..
 
-dbStartTransaction($dbName);
-emitLog('BEGIN');
-
-processCommands();
-
-if (checkRules()) {
-  emitLog('COMMIT');
-  dbCommitTransaction($dbName);
+if (isset($_REQUEST['getAtomsForConcept']) ) {
+  listAtomsForConcept($_REQUEST['getAtomsForConcept']);
 } else {
-  emitLog('ROLLBACK');
-  dbRollbackTransaction($dbName);
-}
+  echo '<div id="UpdateResults">';
 
-echo '</div>';
+  dbStartTransaction($dbName);
+  emitLog('BEGIN');
+
+  processCommands();
+
+  if (checkRules()) {
+    emitLog('COMMIT');
+    dbCommitTransaction($dbName);
+  } else {
+    emitLog('ROLLBACK');
+    dbRollbackTransaction($dbName);
+  }
+
+  echo '</div>';
+}
 
 function processCommands() {  
   global $dbName; 
@@ -203,5 +211,7 @@ function error($msg) {
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
 
-
+function listAtomsForConcept($concept) {
+  echo json_encode (array ( 'res' => getAllConceptAtoms($concept) ));
+}
 ?>
