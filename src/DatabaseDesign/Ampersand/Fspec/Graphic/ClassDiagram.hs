@@ -56,22 +56,34 @@ where
 
 -- The following function, clAnalysis, makes a classification diagram.
 -- It focuses on generalizations and specializations.
-   clAnalysis :: Fspc -> Options -> ClassDiag
-   clAnalysis fSpec _ = OOclassdiagram classes' [] [] geners' ("classification"++name fSpec, concs fSpec)
+   clAnalysis :: Fspc -> Options -> Maybe ClassDiag
+   clAnalysis fSpec _ = if null classes' then Nothing else Just (OOclassdiagram classes' [] [] geners' ("classification"++name fSpec, concs fSpec))
     where
-       geners'    = nub [ OOGener ((name.fst.head) gs) (map (name.snd) gs) | let pcs = fsisa fSpec, gs<-eqCl fst pcs]
-       classes'   = [ OOClass (name c) [ OOAttr a atype fNull | (a,atype,fNull)<-attrs c ] []
-                    | c<-concs (gens fSpec)
-                    ]
-       attrs c    = [ (fldname fld,if isPropty fld
-                                   then "Bool"
-                                   else  name (target (fldexpr fld)), fldnull fld)
+-- The following code was inspired on ADL2Plug
+-- The first step is to determine which entities to generate.
+-- All concepts and relations mentioned in exclusions are excluded from the process.
+       rels       = [ERel (makeRelation rel) | rel@Sgn{} <- declarations fSpec, decusr rel, not (isIdent rel)]
+       relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
+       cpts       = nub [ c
+                        | gs<-fsisa fSpec
+                        , let c=fst gs -- select only those generalisations whose specific concept is part of the themes to be printed.
+                        , null (themes fSpec) || c `elem` (concs [mors pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] `uni`  -- restrict to those themes that must be printed.
+                                                           concs [mors (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec ])
+                        , (not.null) [ r | r<-relsAtts, source r==c ] ||  -- c is either a concept that has attributes or
+                               null  [ r | r<-relsAtts, target r==c ]     --      it does not occur as an attribute.
+                        ]
+       geners'    = nub [ OOGener (name c) (map (name.snd) gs)
+                        | gs<-eqCl fst (fsisa fSpec)
+                        , let c=fst (head gs), c `elem` cpts -- select only those generalisations whose specific concept is part of the themes to be printed.
+                        ]
+       classes'   = [ OOClass (name c) (attrs c) []
+                    | c<-cpts]
+       attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  name (target (fldexpr fld))) (fldnull fld)
                     | plug<-lookup' c, fld<-tail (tblfields plug), not (inKernel fld), source (fldexpr fld)==c]
-                    where isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
-                    -- TODO: (SJ) I'm not sure if inKernel is correct. Check with Bas.
-                          inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
+                    where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
        lookup' c = [p |InternalPlug p@(TblSQL{})<-plugInfos fSpec , (c',_)<-cLkpTbl p, c'==c]
-
+       isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
+        
 -- The following function, plugs2classdiagram, is useful to make a technical data model.
 -- It draws on the plugs, which are meant to implement database tables for OLTP purposes.
 -- Plugs come in three flavours: TblSQL, which is an entity (class),
