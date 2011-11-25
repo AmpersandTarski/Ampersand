@@ -127,7 +127,7 @@ instance ADL1Importable Declaration where
         :(makepopu dcs (show.snd) dclrng (snd.snd))
         :(makepopu dprs (show.fst) dclupr (show.snd))
         --description
-        :(makepopu ds declarationid dcldcr (\x -> explainContent2String ReST False$meaning Dutch x))
+        :(makepopu ds declarationid dcldcr (\x -> aMarkup2String (meaning Dutch x)))
         :[]
 dpragma :: Integer -> Declaration -> String
 dpragma i (Sgn{decprL=x1,decprM=x2,decprR=x3})
@@ -154,7 +154,7 @@ instance ADL1Importable Rule where
         :(makepopu rs (showADL.rrexp) rulsrc (name.source))
         :(makepopu rs (showADL.rrexp) rultrg (name.target))
         :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.rrexp.fst) ruluss (relationid.snd))
-        :(makepopu rs name ruldcr (\x -> explainContent2String ReST False$meaning Dutch x))
+        :(makepopu rs name ruldcr (\x -> aMarkup2String (meaning Dutch x)))
         :[]
 
 instance ADL1Importable Pattern where
@@ -198,14 +198,14 @@ instance ADL1Importable Explanation where
          purrul = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="UserRule"]  
          purpat = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Pattern"] 
          purrel = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Relation"]  
-     in  (makepopu [(explCont e,cdcpt cd) |e<-es, case explObj e of (ExplConceptDef _)->True;_ -> False,let ExplConceptDef cd = explObj e]
-                  snd purcpt ((explainContent2String ReST False).fst))
-        :(makepopu [(explCont e,r) |e<-es, case explObj e of (ExplRule _)->True;_ -> False,let ExplRule r = explObj e]
-                  (name.snd) purrul ((explainContent2String ReST False).fst))
-        :(makepopu [(explCont e,pstr) |e<-es, case explObj e of (ExplPattern _)->True;_ -> False,let ExplPattern pstr = explObj e]
-                  snd purpat ((explainContent2String ReST False).fst))
-        :(makepopu [(explCont e,d) |e<-es, case explObj e of (ExplDeclaration _)->True;_ -> False,let ExplDeclaration d = explObj e]
-                  (declarationid.snd) purrel ((explainContent2String ReST False).fst))
+     in  (makepopu [((amPandoc . explMarkup) e,cdcpt cd) |e<-es, case explObj e of (ExplConceptDef _)->True;_ -> False,let ExplConceptDef cd = explObj e]
+                  snd purcpt ((blocks2String ReST False).fst))
+        :(makepopu [((amPandoc . explMarkup) e,r) |e<-es, case explObj e of (ExplRule _)->True;_ -> False,let ExplRule r = explObj e]
+                  (name.snd) purrul ((blocks2String ReST False).fst))
+        :(makepopu [((amPandoc . explMarkup) e,pstr) |e<-es, case explObj e of (ExplPattern _)->True;_ -> False,let ExplPattern pstr = explObj e]
+                  snd purpat ((blocks2String ReST False).fst))
+        :(makepopu [((amPandoc . explMarkup) e,d) |e<-es, case explObj e of (ExplDeclaration _)->True;_ -> False,let ExplDeclaration d = explObj e]
+                  (declarationid.snd) purrel ((blocks2String ReST False).fst))
         :[]
 
 instance ADL1Importable Picture where
@@ -229,7 +229,7 @@ instance ADL1Importable Fspc where
          --   ++ makeADL1Populations atlasds (gens fs) --the details of gens
             ++ contextelements (patterns fs) ctxpts fs --the patterns
             ++ makeADL1Populations atlasds (patterns fs) --the rules + relations + gens of patterns
-            ++ makeADL1Populations atlasds (explanations fs) --the purposes
+            ++ makeADL1Populations atlasds (fSexpls fs) --the purposes
             ++ makeADL1Populations atlasds (violations fs) --the violations
             --REMARK -> the pictures are not part of fspec, but derived from them (see Main.hs of prototype.exe)
             |fs<-fss --REMARK -> probably there will be only one fs

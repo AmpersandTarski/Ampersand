@@ -74,9 +74,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
          | (i,rule) <- zip [0..] $ vrules fSpec ++ grules fSpec ])
        
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
-       showMeaning rule = case [explainContent2String ReST False xs | Means _ xs<-rrxpl rule] of
-                            meaning:_ -> meaning
-                            _         -> "No meaning"
+       showMeaning rule = aMarkup2String (meaning (language opts) rule)
 
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
