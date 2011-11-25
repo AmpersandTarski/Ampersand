@@ -22,7 +22,9 @@ noProcesses fSpec = null (fRoleRels fSpec) && null (fRoleRuls fSpec)
 
 chpProcessAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 chpProcessAnalysis lev fSpec flags
- = (header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
+ = if null procs
+   then ([],[])
+   else (header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
  where
   pictures = [pict | (_,picts)<-procSections procs,pict<-picts]
   procs = if null (themes fSpec)
@@ -30,7 +32,7 @@ chpProcessAnalysis lev fSpec flags
           else [ prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
   processSections :: [Block]
   processSections
-   = if null procs then [] else [block | (bs,_)<-procSections procs, block<-bs]
+   = [block | (bs,_)<-procSections procs, block<-bs]
 
   header :: [Block]
   header
