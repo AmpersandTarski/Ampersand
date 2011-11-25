@@ -295,3 +295,8 @@ body
 #Rollback /* used for parking a clone of the root atom during editing */
   { display: none
   }
+
+.ui-autocomplete > .ui-menu-item /* jQuery autocomplete menu items */
+  { font-size: 13px
+  }
+  
