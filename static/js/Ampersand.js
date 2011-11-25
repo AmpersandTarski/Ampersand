@@ -283,7 +283,7 @@ function setEditHandlersBelow($elt) {
     
     traceDbCommands();
 
-    startAtomEditing($newAtomTableRow.find('.Atom'));
+    startAtomEditing($newAtomTableRow.find('>.AtomListElt>.Atom'));
   });
 }
 
