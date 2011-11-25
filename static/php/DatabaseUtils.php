@@ -54,18 +54,31 @@ function createNewAtom($concept) {
   global $dbName;
   global $conceptTableInfo;
 
+  $existingAtoms = getAllConceptAtoms($concept);
+  
   $conceptTable = $conceptTableInfo[$concept]['table'];
   $conceptCol = $conceptTableInfo[$concept]['col'];
-
+  $newAtom = mkUniqueAtom($existingAtoms, $concept);
+  
   $conceptTableEsc = addSlashes($conceptTable);
   $conceptColEsc = addSlashes($conceptCol);
-  
-  $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
-  $newAtom = mkUniqueAtom($existingAtoms, $concept);
   $newAtomEsc = addSlashes($newAtom);
   
   DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtom')");
   return $newAtom;
+}
+
+function getAllConceptAtoms($concept) {
+  global $dbName;
+  global $conceptTableInfo;
+  
+  $conceptTable = $conceptTableInfo[$concept]['table'];
+  $conceptCol = $conceptTableInfo[$concept]['col'];
+  
+  $conceptTableEsc = addSlashes($conceptTable);
+  $conceptColEsc = addSlashes($conceptCol);
+  
+  return firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));  
 }
 
 function getTopLevelInterfacesForConcept($concept) {
