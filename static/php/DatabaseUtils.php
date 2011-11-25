@@ -32,6 +32,42 @@ function DB_doquerErr($DbName, $quer, &$error)
   return $rows;
 }
 
+// return an atom "Concept_<n>" that is not in $existingAtoms
+function mkUniqueAtom($existingAtoms, $concept) {
+  $generatedAtomNrs = array();
+  foreach (array_unique($existingAtoms) as $atom) {
+    preg_match('/\A'.$concept.'\_(?P<number>[123456789]\d*)\z/', $atom, $matches);
+    // don't match nrs with leading 0's since we don't generate those
+    $generatedAtomNrs[] = $matches['number'];
+  }
+
+  $generatedAtomNrs = array_filter($generatedAtomNrs); // filter out all the non-numbers (which are null)
+  sort($generatedAtomNrs);
+  foreach ($generatedAtomNrs as $i=>&$nr) {
+    if ($nr != $i+1) // as soon as $generatedAtomNrs[i] != i+1, we arrived at a gap in the sorted number sequence and we can use i+1
+    return $concept.'_'.($i+1);
+  }
+  return $concept.'_'.(count($generatedAtomNrs)+1);
+}
+
+function createNewAtom($concept) {
+  global $dbName;
+  global $conceptTableInfo;
+
+  $conceptTable = $conceptTableInfo[$concept]['table'];
+  $conceptCol = $conceptTableInfo[$concept]['col'];
+
+  $conceptTableEsc = addSlashes($conceptTable);
+  $conceptColEsc = addSlashes($conceptCol);
+  
+  $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
+  $newAtom = mkUniqueAtom($existingAtoms, $concept);
+  $newAtomEsc = addSlashes($newAtom);
+  
+  DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtom')");
+  return $newAtom;
+}
+
 function getTopLevelInterfacesForConcept($concept) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();

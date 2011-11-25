@@ -41,9 +41,12 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
-  
+  $isNew = $atom==''; // if the atom is '', we create a unique new atom in the concept and set editing to true
+  if ($isNew) {
+    $atom = createNewAtom($allInterfaceObjects[$interface]['srcConcept']);
+  }
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
-       ' editing=false dev="'.($isDev?'true':'false').'">';
+       ' editing='.($isNew?'true':'false').' dev="'.($isDev?'true':'false').'">';
 
   echo '<div id=DbCommandList></div>';
   echo '<div id=PhpLog></div>';
