@@ -30,6 +30,7 @@ import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "P2A_Converter"
@@ -41,8 +42,8 @@ pCtx2aCtx pctx
    where
     actx = 
          ACtx{ ctxnm     = name pctx     -- The name of this context
-             , ctxlang   = ctx_lang pctx
-             , ctxmarkup = ctx_markup pctx -- The default markup format for free text in this context
+             , ctxlang   = fromMaybe Dutch (ctx_lang pctx)
+             , ctxmarkup = fromMaybe ReST  (ctx_markup pctx) -- The default markup format for free text in this context
              , ctxpo     = makePartialOrder hierarchy    -- The base hierarchy for the partial order of concepts (see makePartialOrder)
              , ctxthms   = ctx_thms pctx -- The patterns/processes to be printed in the functional specification. (for making partial documentation)
              , ctxpats   = pats          -- The patterns defined in this context
@@ -183,7 +184,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
  = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
        , rrexp = aexpr                      -- The rule expression
        , rrfps = rr_fps prul                -- Position in the Ampersand file
-       , rrxpl = meanings (rr_mean prul)    -- Ampersand generated explanations (for all known languages)
+       , rrmean = meanings (rr_mean prul)   -- Ampersand generated explanations (for all known languages)
        , rrtyp = sign aexpr                 -- Allocated type
        , rrdcl = Nothing                    -- The property, if this rule originates from a property on a Declaration
        , r_env = patname                    -- Name of pattern in which it was defined.
@@ -210,9 +211,19 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
    , CxeOrig exprcxe "rule" "" (origin prul)
    )
    where (aexpr,exprcxe) = pExpr2aExpr actx NoCast (rr_exp prul)
-         meanings (mlang,expl) = [ Means mlang (string2Blocks (ctxmarkup actx) expl) | not (null expl)] --  TODO: Fix with meaning/ explanation. (related to #106)
+         meanings = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) 
    
-
+pMarkup2aMarkup :: Lang  -- The default language
+                -> PandocFormat  -- The default format
+                -> P_Markup
+                -> A_Markup
+pMarkup2aMarkup defLang defFormat pm
+   = A_Markup { amLang   = fromMaybe defLang (mLang pm)
+              , amFormat = fmt
+              , amPandoc = string2Blocks fmt (mString pm)
+              }
+           where fmt = fromMaybe defFormat (mFormat pm)
+           
 -- | pKDef2aKDef checks compatibility of composition with key concept on equality
 pKDef2aKDef :: (Language l, ConceptStructure l, Identified l) => l -> P_KeyDef -> (KeyDef, CtxError)
 pKDef2aKDef actx pkdef
@@ -284,12 +295,13 @@ pExpl2aExpl :: A_Context -> PExplanation -> (Explanation, CtxError)
 pExpl2aExpl actx pexpl
  = ( Expl { explPos   = pexPos   pexpl
           , explObj   = explobs
-          , explLang  = pexLang  pexpl
+          , explMarkup  = meaning (pexMarkup pexpl)
           , explRefId = pexRefID pexpl
-          , explCont  = string2Blocks (ctxmarkup actx) (pexExpl  pexpl)
+         -- , explCont  = string2Blocks (ctxmarkup actx) (pexExpl  pexpl)
           }
    , CxeOrig xplcxe "explanation" "" (origin pexpl))
    where (explobs,xplcxe) = pExOb2aExOb actx (pexObj   pexpl)
+         meaning = pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx) 
 
 pExOb2aExOb :: A_Context -> PExplObj -> (ExplObj, CtxError)
 pExOb2aExOb actx (PExplConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
@@ -344,20 +356,20 @@ pCpt2aCpt contxt pc
             }
 
 pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> Declaration
-pDecl2aDecl contxt pops patname pd
+pDecl2aDecl actx pops patname pd
  = Sgn { decnm   = dec_nm pd
-       , decsgn  = pSign2aSign contxt (dec_sign pd)
+       , decsgn  = pSign2aSign actx (dec_sign pd)
        , decprps = dec_prps pd
        , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
        , decprL  = dec_prL pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
-       , decMean = string2Blocks (ctxmarkup contxt) (dec_Mean pd)
+       , decMean = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) (dec_Mean pd)
        , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
                    dec_popu pd ++ 
                    concat [popps pop | pop<-pops, let ad=popm pop
                                      , name ad==name pd
-                                     , relsgn ad==pSign2aSign contxt (dec_sign pd)
+                                     , relsgn ad==pSign2aSign actx (dec_sign pd)
                                      ]
        , decfpos = dec_fpos pd 
        , deciss  = True

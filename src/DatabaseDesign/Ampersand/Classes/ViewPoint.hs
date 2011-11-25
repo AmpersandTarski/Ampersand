@@ -62,7 +62,7 @@ where
      = Ru { rrnm        = name key
           , rrexp       = EImp (EIsc [ECps [attexpr,flp attexpr] | attexpr<-[objctx att |att<-kdats key]], ERel (I c))           -- the antecedent
           , rrfps       = origin key     -- position in source file
-          , rrxpl       = []             -- explanation
+          , rrmean      = []             -- Meanings of the rule
           , rrtyp       = Sign c c       -- The type
           , rrdcl       = Nothing        -- This rule was not generated from a property of some declaration.
           , r_env       = ""             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.

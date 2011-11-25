@@ -73,18 +73,32 @@ instance ShowADL ObjectDef where
            ind++"     ]"
 
 instance ShowADL Explanation where
- showADL expl = "PURPOSE "++showADL (explObj expl)++showADL (explLang expl)
+ showADL expl = "PURPOSE "++showADL (explObj expl)
+                ++showADL (amLang (explMarkup expl))
+                ++showADL (amFormat (explMarkup expl))
                 ++(if null (explRefId expl) then "" else " REF "++explRefId expl)
-                ++ "{+"++explainContent2String LaTeX True (explCont expl)++"-}"
+                ++ "{+"++aMarkup2String (explMarkup expl)++"-}"
 
+instance ShowADL PandocFormat where
+ showADL LaTeX = "LATEX"
+ showADL HTML  = "HTML"
+ showADL ReST  = "REST"
+ showADL Markdown = "MARKDOWN"
+ 
+instance ShowADL A_Markup where
+ showADL m 
+     = "IN " ++showADL (amLang m) 
+    ++ " TEXTMARKUP "++showADL (amFormat m) 
+    ++ "{+"++aMarkup2String m++"-}"
+    
 instance ShowADL Lang where
  showADL Dutch   = "DUTCH"
  showADL English = "ENGLISH"
    
-instance ShowADL (Maybe Lang) where
- showADL  Nothing       = "IN DUTCH"
- showADL (Just Dutch  ) = "IN DUTCH"
- showADL (Just English) = "IN ENGLISH"
+--instance ShowADL (Maybe Lang) where
+-- showADL  Nothing       = "IN DUTCH"
+-- showADL (Just Dutch  ) = "IN DUTCH"
+-- showADL (Just English) = "IN ENGLISH"
    
 instance ShowADL ExplObj where
  showADL e = case e of
@@ -147,9 +161,11 @@ instance ShowADL Pattern where
 instance ShowADL Rule where
  showADL r
   = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
-     ++ if null phrs then [] else "\n     MEANING "++ showstr (head phrs)
-     where phrs = [explainContent2String LaTeX True econt | Means _ econt<-rrxpl r]
-
+     ++ concatMap meaning (rrmean r)
+   where
+     meaning m =
+       "\n     MEANING "++ showADL m
+       
 instance ShowADL A_Gen where
  showADL (Gen _ g s _) = "GEN "++showADL s++" ISA "++showADL g
 
@@ -191,11 +207,25 @@ instance ShowADL Declaration where
                if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++
               (if null(decprL decl++decprM decl++decprR decl) then "" else
                " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
-               ++ (if null (decMean decl) then [] else " MEANING \""++explainContent2String LaTeX True (decMean decl)++"\"")
+               ++ concatMap meaning (decMean decl) 
      Isn{}     -> fatal 330 "Illegal call to ShowADL (Isn{}). Isn{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
      Iscompl{} -> fatal 331 "Illegal call to ShowADL (Iscompl{}). Iscompl{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
      Vs{}      -> fatal 332 "Illegal call to ShowADL (Vs{}). Vs{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
+   where
+     meaning :: A_Markup -> String
+     meaning pmkup = " MEANING "++showADL pmkup
 
+instance ShowADL P_Markup where
+ showADL (P_Markup lng fmt str) = case lng of
+                                     Nothing -> ""
+                                     Just l  -> "IN "++show l++" "
+                                 ++
+                                  case fmt of
+                                     Nothing -> ""
+                                     Just f  -> " "++show f++" "
+                                 ++
+                                  "{+"++str++"-} "
+ 
 instance ShowADL Prop where
  showADL = show
 

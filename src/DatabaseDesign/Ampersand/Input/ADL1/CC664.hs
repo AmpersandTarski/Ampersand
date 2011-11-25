@@ -62,7 +62,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                        rebuild nm ces = 
                           PCtx{ ctx_nm    = nm                            -- The name of this context
                               , ctx_lang  = Just Dutch
-                              , ctx_markup= ReST
+                              , ctx_markup= Just ReST
                               , ctx_thms  = []                            -- Names of patterns/processes to be printed in the functional specification. (not applicable in this version.)
                               , ctx_pats  = ps                            -- The patterns defined in this context
                               , ctx_PPrcs = []                            -- The processes as defined by the parser
@@ -103,8 +103,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                        | CXpl PExplanation
 
    pExplain           :: Parser Token PExplanation
-   pExplain            = PExpl <$> pKey_pos "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl 
-                          where pRefID :: Parser Token String
+   pExplain            = rebuild <$> pKey_pos "EXPLAIN" <*> pExplObj <*> optional pLanguageID <*> pRefID <*> pExpl 
+                          where rebuild orig obj lang ref str =
+                                  PExpl orig obj (P_Markup lang Nothing str) ref
+                                pRefID :: Parser Token String
                                 pRefID = (pKey "REF" *> pString) `opt` []
                                 pExplObj :: Parser Token PExplObj
                                 pExplObj = PExplConceptDef  <$ pKey "CONCEPT"  <*> (pConid <|> pString) <|>
@@ -115,12 +117,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                     --       PExplProcess     <$ pKey "PROCESS"  <*> pADLid               <|>
                                            PExplInterface   <$ pKey "SERVICE"  <*> pADLid               <|>
                                            PExplContext     <$ pKey "CONTEXT"  <*> pADLid 
-                                pLanguageID :: Parser Token (Maybe Lang)
-                                pLanguageID = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Nothing
+                                pLanguageID :: Parser Token Lang
+                                pLanguageID = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH"))
                                                where
                                                 lang str = case str of
-                                                            "DUTCH"      -> Just Dutch
-                                                            "ENGLISH"    -> Just English
+                                                            "DUTCH"      -> Dutch
+                                                            "ENGLISH"    -> English
                                                             _ -> fatal 122 (if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
 
 
@@ -186,29 +188,31 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
                                  , rr_exp  = Pimp(antc,cons)
                                  , rr_fps  = rulepos (lbl,po) po'
-                                 , rr_mean = (Just Dutch, expl)
+                                 , rr_mean = meanings expl
                                  }      
                         kc isSg (lbl,po) cons po' antc = hc isSg (lbl,po) antc po' cons
                         dc _ (lbl,po) defd po' expr expl
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
                                  , rr_exp  = Pequ (defd,expr)
                                  , rr_fps  = rulepos (lbl,po) po'
-                                 , rr_mean = (Just Dutch, expl)
+                                 , rr_mean = meanings expl
                                }
                         ac _ (lbl,po) expr expl
                           = P_Ru { rr_nm  = if null lbl then rulid po else lbl
                                  , rr_exp = expr
                                  , rr_fps = po
-                                 , rr_mean = (Just Dutch, expl)
+                                 , rr_mean = meanings expl
                                  }
+                        meanings str = [P_Markup Nothing Nothing str]
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
                         pSignal          :: Parser Token (String, Origin)
                         pSignal           = pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|>
                                               pKey "RULE" *> pADLid_val_pos <* pKey "SIGNALS"
                         pAlways          :: Parser Token (String, Origin)
                         pAlways           = ( pKey "RULE" *> pADLid_val_pos <* pKey "MAINTAINS" ) `opt` ("",fatal 160 "no location")
-
-
+                        expl2meanings expl = if expl == ""
+                                             then []
+                                             else [P_Markup Nothing Nothing expl]
    pGen             :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen ) (PCpt spc )
@@ -320,7 +324,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           <*> (pConid <|> pString)   -- the concept name
                           <*> pString                -- the definition text
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
-                       where cd po nm x ref = Cd po nm False x "" ref
+                       where cd po nm x = Cd po nm False x ""
 
 
 -- A key definition looks like:   KEY Person(name, address),
@@ -441,14 +445,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                      -> String
                                      -> Pairs
                                      -> P_Declaration
-                             rebuild nm pos' s fun' t props pragma meaning content
+                             rebuild nm pos' s fun' t props pragma expl content
                                = P_Sgn { dec_nm = nm
                                        , dec_sign = P_Sign [s,t]
                                        , dec_prps = props'
                                        , dec_prL = head pr
                                        , dec_prM = pr!!1
                                        , dec_prR = pr!!2
-                                       , dec_Mean = meaning
+                                       , dec_Mean = if expl == ""
+                                                    then []
+                                                    else [P_Markup Nothing Nothing expl]
                                        , dec_popu = content
                                        , dec_fpos = pos'
                                        , dec_plug = False

@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Misc.Explain
     ( string2Blocks
-    , explainContent2String
+    , blocks2String
     , PandocFormat(..)
     )
 where
@@ -9,7 +9,8 @@ where
 import Text.Pandoc
 import Data.List (isPrefixOf)
 import DatabaseDesign.Ampersand.Core.ParseTree      (PandocFormat(..))
-  
+
+
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
 -- | defaultPandocReader flags should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]
@@ -41,8 +42,8 @@ makePrefix :: PandocFormat -> String
 makePrefix format = ":"++show format++":"
 
 -- | write [Block] as String in a certain format using defaultWriterOptions
-explainContent2String :: PandocFormat -> Bool -> [Block] -> String
-explainContent2String format writeprefix ec 
+blocks2String :: PandocFormat -> Bool -> [Block] -> String
+blocks2String format writeprefix ec 
  = [c | c<-makePrefix format,writeprefix]
    ++ unwords ( lines $ writer defaultWriterOptions (Pandoc (Meta [][][]) ec))
    where writer = case format of

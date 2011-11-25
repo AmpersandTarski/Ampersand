@@ -6,7 +6,9 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , Chapter(..)
     , Xreferencable(..)
     , xrefFigure1
-    , explains2Blocks
+    , purpose
+    , purpose2Blocks
+    , meaning2Blocks
     , dpRule
     , Counter(..),newCounter,incEis)
 where
@@ -19,9 +21,11 @@ import Text.Pandoc
 import Text.Pandoc.Builder  (toList, codeBlock)
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,Explainable(..))
+import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "SharedAmongChapters.hs"
 
 data Chapter = Intro 
              | NatLangReqs
@@ -67,8 +71,8 @@ dpRule fSpec flags = dpR
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( [Str (name r)]
-         , [ explains2Blocks (purpose fSpec (language flags) r) ++                   -- Als eerste de uitleg van de betreffende regel..
-             concat [explains2Blocks (purpose fSpec (language flags) d) |d<-nds] ++  -- Dan de uitleg van de betreffende relaties
+         , [ purpose2Blocks (purpose fSpec (language flags) r) ++             -- Als eerste de uitleg van de betreffende regel..
+             concat [purpose2Blocks (purpose fSpec (language flags) d) |d<-nds] ++  -- Dan de uitleg van de betreffende relaties
              [ Plain text1 | not (null nds)] ++
              pandocEqnArray [ ( texOnly_Id(name d)
                               , ":"
@@ -147,13 +151,6 @@ dpRule fSpec flags = dpR
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)
 
 
-
-
-
-
-
-
-
 data Counter = Counter { --getConc :: Int
                     --     getDecl :: Int
                     --   , getRule :: Int
@@ -166,6 +163,7 @@ incEis :: Counter -> Counter
 --incDecl x = x{getDecl = getDecl x + 1}
 --incRule x = x{getRule = getRule x + 1}
 incEis x = x{getEisnr = getEisnr x + 1}
-explains2Blocks :: [Explanation] -> [Block]
-explains2Blocks = concatMap explCont
+
+purpose2Blocks :: Explanation -> [Block]
+purpose2Blocks = amPandoc . explMarkup
 

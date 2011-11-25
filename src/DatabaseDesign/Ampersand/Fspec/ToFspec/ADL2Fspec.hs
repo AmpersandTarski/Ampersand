@@ -9,13 +9,14 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Misc                         (Options(..),DocTheme(..),plural)
+   import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify,isI)
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug       (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS
 --   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..))
+   import Text.Pandoc
    import Data.List (nub,intercalate)
    
    fatal :: Int -> String -> a
@@ -381,7 +382,25 @@ while maintaining all invariants.
                  , actQuads  = invQs
                  , actEcas   = [eca | eca<-vEcas fSpec, eRel (ecaTriggr eca) `elem` rels]
                  , actFPA    = NO   -- TODO: this is erroneous. check with IFPUG standard
-                 , actXpls   = []   -- TODO: this is erroneous. Should contain an explanation.
+                 , actXpls   = [Expl { explPos = OriginUnknown
+                                     , explObj = ExplRule rul  -- TODO: check if this is correct?
+                                     , explMarkup = A_Markup { amLang = Dutch
+                                                             , amFormat = ReST
+                                                             , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
+                                                             }
+                                     , explUserdefd = False
+                                     , explRefId = "Regel "++name rul
+                                     }
+                               ,Expl { explPos = OriginUnknown
+                                     , explObj = ExplRule rul  -- TODO: check if this is correct?
+                                     , explMarkup = A_Markup { amLang = English
+                                                             , amFormat = ReST
+                                                             , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
+                                                             }
+                                     , explUserdefd = False
+                                     , explRefId = "Regel "++name rul
+                                     }
+                               ]
                  } in s
     where
 -- relations that may be affected by an edit action within the transaction
