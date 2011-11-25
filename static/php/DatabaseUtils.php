@@ -64,7 +64,7 @@ function createNewAtom($concept) {
   $conceptColEsc = addSlashes($conceptCol);
   $newAtomEsc = addSlashes($newAtom);
   
-  DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtom')");
+  DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtomEsc')");
   return $newAtom;
 }
 
@@ -79,6 +79,20 @@ function getAllConceptAtoms($concept) {
   $conceptColEsc = addSlashes($conceptCol);
   
   return firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));  
+}
+
+function removeAtomFromConceptTable($atom, $concept) {
+  global $dbName;
+  global $conceptTableInfo;
+
+  $conceptTable = $conceptTableInfo[$concept]['table'];
+  $conceptCol = $conceptTableInfo[$concept]['col'];
+
+  $conceptTableEsc = addSlashes($conceptTable);
+  $conceptColEsc = addSlashes($conceptCol);
+  $atomEsc = addSlashes($atom);
+  
+  return DB_doquer($dbName, "DELETE FROM `$conceptTableEsc` WHERE  `$conceptColEsc`='$atomEsc' ");
 }
 
 function getTopLevelInterfacesForConcept($concept) {
@@ -115,7 +129,7 @@ function getCoDomainAtoms($db, $atom, $selectRel) {
 }
 
 function selectCoDomain($atom, $selectRel) {
-  return 'SELECT DISTINCT `tgt` FROM ('.addSlashes($selectRel).') as results where src=\''.addSlashes($atom).'\'';
+  return 'SELECT DISTINCT `tgt` FROM ('.addSlashes($selectRel).') AS results WHERE src=\''.addSlashes($atom).'\'';
 }
 
 
