@@ -307,7 +307,10 @@ function startAtomEditing($atom) {
 
   // stop editing when the textfield loses focus
   $textfield.blur(function () {
-    stopAtomEditing($atom);
+    // a click in the autocomplete menu triggers blur, so we ignore when the menu is visible
+    if ($('.ui-autocomplete:visible').length == 0)
+      stopAtomEditing($atom);
+    return true;
   });
   // and when the user presses the return key
   $form.submit(function () {
@@ -360,8 +363,15 @@ function initializeAutocomplete($textfield, $atom) {
     if (typeof resultOrError.res !== 'undefined')
         $textfield.autocomplete({ source:resultOrError.res
                                 , minLength: 0
-                                , select: function(event, ui) { stopAtomEditing($atom); return true; }
-                                });
+                                , select: function(event, ui) { 
+                                    if (event.originalEvent && event.originalEvent.originalEvent &&
+                                        event.originalEvent.originalEvent.type == "click")
+                                      $textfield.attr('value', ui.item.value);
+                                    // On a mouse click, stopAtomEditing here does not update the textfield,
+                                    // so we do it explicitly. For return key events there is no problem.
+                                    stopAtomEditing($atom); 
+                                    return true;
+                                 }});
     else
         console.error("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
     });
