@@ -7,12 +7,18 @@ require "../Interfaces.php";
 
 require "DatabaseUtils.php";
 
-// This module handles two requests: 
+// This module handles three requests: 
+//
 //     Database.php?getAllAtomsForConcept=..
-// and Database.php?commands=..
+//     Database.php?destroyAtom=..&concept=..    note: unlike delete, this removes the atom from its concept table
+//                                                     it is assumed that the atom does not occur in any other tables
+                                                        
+//     Database.php?commands=..
 
 if (isset($_REQUEST['getAtomsForConcept']) ) {
   listAtomsForConcept($_REQUEST['getAtomsForConcept']);
+} else if (isset($_REQUEST['destroyAtom']) ) {
+  removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
 } else {
   echo '<div id="UpdateResults">';
 
@@ -211,7 +217,14 @@ function error($msg) {
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
 
+
 function listAtomsForConcept($concept) {
   echo json_encode (array ( 'res' => getAllConceptAtoms($concept) ));
+  // todo: pass errors back to javascript
+}
+
+function removeAtomFromConcept($atom, $concept) {
+  removeAtomFromConceptTable($atom, $concept);
+  // todo: pass errors back to javascript
 }
 ?>

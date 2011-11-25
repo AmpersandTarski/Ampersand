@@ -25,15 +25,29 @@ function startEditing() {
 }
 
 function cancelEditing() {
-  $('#AmpersandRoot > .Atom').remove();  
-  $('#AmpersandRoot').append($('#Rollback > .Atom'));
-  
-  $('#IssueList').empty();
-  $('#IssueList').attr('nonEmpty','false');  
-  $('#PhpLog').empty();
-  $('#PhpLog').attr('nonEmpty','false');
-  
-  $('#AmpersandRoot').attr('editing','false');
+  if ($('#AmpersandRoot').attr('isNew')) {
+    // If we cancel the creation of a new atom, the new atom is removed from the concept table
+    // and we navigate back to the previous page. (We do need to create an atom on new, because then we 
+    // can simply use Interface.php to edit it)
+    
+    var atom = $('#AmpersandRoot').attr('atom');
+    var concept = $('#AmpersandRoot').attr('concept');
+    $.post("php/Database.php",{ destroyAtom: atom, concept:concept },function receiveDataOnPost(data){
+      console.log(data);
+      history.go(-1);
+    }) ;
+    
+  } else {
+    $('#AmpersandRoot > .Atom').remove();  
+    $('#AmpersandRoot').append($('#Rollback > .Atom'));
+    
+    $('#IssueList').empty();
+    $('#IssueList').attr('nonEmpty','false');  
+    $('#PhpLog').empty();
+    $('#PhpLog').attr('nonEmpty','false');
+    
+    $('#AmpersandRoot').attr('editing','false');
+  }
 }
 
 function commitEditing() {
