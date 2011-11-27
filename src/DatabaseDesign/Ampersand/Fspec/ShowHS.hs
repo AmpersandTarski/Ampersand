@@ -513,38 +513,38 @@ where
            [e] -> "      , actEcas   = [ "++showHSname e++" ]"
            es  -> "      , actEcas   = [ "++intercalate (indent'++", ") [showHSname e | e<-es] ++indent'++"]"
         , "      , actFPA    = "++showHS flags "" (actFPA act)
-        , case actXpls act of
-           []  -> "      , actXpls   = [] {- no explanations in this activity -}"
-           [e] -> "      , actXpls   = [ "++showHSname e++" ]"
-           es  -> "      , actXpls   = [ "++intercalate (indent'++", ") [showHSname e | e<-es] ++indent'++"]"
+        , case actPurp act of
+           []  -> "      , actPurp   = [] {- no explanations in this activity -}"
+           [e] -> "      , actPurp   = [ "++showHSname e++" ]"
+           es  -> "      , actPurp   = [ "++intercalate (indent'++", ") [showHSname e | e<-es] ++indent'++"]"
         , "      }"
         ]
        where indent' = indent++"                    "
 
-   instance ShowHS PExplanation where
-    showHSname _ = fatal 499 "a PExplanation is anonymous with respect to showHS flags"
+   instance ShowHS PPurpose where
+    showHSname _ = fatal 499 "a PPurpose is anonymous with respect to showHS flags"
     showHS flags _ expla = 
-       "PExpl ("++showHS flags "" (pexPos expla)++") "++
+       "PRef2 ("++showHS flags "" (pexPos expla)++") "++
              "("++showHS flags "" (pexObj expla)++") "
                 ++showHS flags "" (pexMarkup  expla)++" "
                 ++show (pexRefID expla)++" "
                 
-   instance ShowHS PExplObj where
-    showHSname _ = fatal 508 "a PExplObj is anonymous with respect to showHS flags"
+   instance ShowHS PRef2Obj where
+    showHSname _ = fatal 508 "a PRef2Obj is anonymous with respect to showHS flags"
     showHS _ _ peObj
      = case peObj of 
-            PExplConceptDef str     -> "PExplConceptDef " ++show str
-            PExplDeclaration rel ps -> "PExplDeclaration "++show rel++if null (psign ps) then "" else show (psign ps)
-            PExplRule str           -> "PExplRule "       ++show str
-            PExplKeyDef str         -> "PExplKeyDef "     ++show str
-            PExplPattern str        -> "PExplPattern "    ++show str
-            PExplProcess str        -> "PExplProcess "    ++show str
-            PExplInterface str      -> "PExplInterface "  ++show str
-            PExplContext str        -> "PExplContext "    ++show str
-            PExplFspc str           -> "PExplFspc "       ++show str
+            PRef2ConceptDef str     -> "PRef2ConceptDef " ++show str
+            PRef2Declaration rel ps -> "PRef2Declaration "++show rel++if null (psign ps) then "" else show (psign ps)
+            PRef2Rule str           -> "PRef2Rule "       ++show str
+            PRef2KeyDef str         -> "PRef2KeyDef "     ++show str
+            PRef2Pattern str        -> "PRef2Pattern "    ++show str
+            PRef2Process str        -> "PRef2Process "    ++show str
+            PRef2Interface str      -> "PRef2Interface "  ++show str
+            PRef2Context str        -> "PRef2Context "    ++show str
+            PRef2Fspc str           -> "PRef2Fspc "       ++show str
                            
-   instance ShowHS Explanation where
-    showHSname _ = fatal 522 "a Explanation is anonymous with respect to showHS flags"
+   instance ShowHS Purpose where
+    showHSname _ = fatal 522 "a Purpose is anonymous with respect to showHS flags"
     showHS flags _ expla = 
        "Expl "++showHS flags "" (explObj expla)++" "
               ++showHS flags "" (explMarkup  expla)++" "
@@ -605,6 +605,10 @@ where
         ,"  , srrel = " ++ showHSname (srrel r)
         ,"  }"
         ]
+
+   instance ShowHS AMeaning where
+     showHSname _ = fatal 610 "showHSname undefined for type 'AMeaning'"
+     showHS flags indent (AMeaning x) = "AMeaning " ++ showHS flags indent x 
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***

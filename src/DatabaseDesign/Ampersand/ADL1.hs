@@ -28,8 +28,8 @@ module DatabaseDesign.Ampersand.ADL1
            , Label(..)
            , Paire, Pairs, srcPaire, trgPaire, mkPair, clos1
            , isAll, isChc, isBlk, isNop, isDo, dos
-           , PExplanation(..), PExplObj(..), ExplObj(..)
-           , Explanation(..)
+           , PPurpose(..), PRef2Obj(..), ExplObj(..)
+           , Purpose(..)
            
            )
 where
@@ -51,7 +51,7 @@ where
                                          ,RuleType(..)
                                          ,RoleRelation(..)
                                          ,Population(..)
-                                         ,Explanation(..), ExplObj(..)
+                                         ,Purpose(..), ExplObj(..)
                                          ,showExpr,insParentheses
                                          ,makeDeclaration
                                          )

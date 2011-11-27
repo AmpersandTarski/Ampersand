@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
    , P_Context(..), P_Relation(..), P_Population(..), P_Rule(..), P_Expression(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..)
-   , P_Markup(..), PExplObj(..), PExplanation(..)
+   , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
    , Architecture(..)
    , A_Concept(..), newAcpt
    , Sign(..), ConceptDef(..), ConceptStructure(..)
@@ -32,6 +32,7 @@ module DatabaseDesign.Ampersand
    , Interface(..)
    , Object(..)
    , Plugable(..)
+   , Explainable(..)
    , Traced(..)
    , Language(..)
    , Dotable(..)
@@ -75,10 +76,10 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.readFile
    , DatabaseDesign.Ampersand.Basics.writeFile
    , DatabaseDesign.Ampersand.Basics.trim
-   -- * Stuff that should not be in the prototype
+   -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
-   , purpose, cptos', rulefromProp, allprops, endoprops
-   , Populated(..), Paire, Explanation(..), ExplObj(..), PictType(..)
+   , cptos', rulefromProp, allprops, endoprops
+   , Populated(..), Paire, Purpose(..), ExplObj(..), PictType(..)
    )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree

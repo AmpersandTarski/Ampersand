@@ -100,23 +100,23 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                        | CPop P_Population
                        | CSqlPlug P_ObjectDef
                        | CPhpPlug P_ObjectDef
-                       | CXpl PExplanation
+                       | CXpl PPurpose
 
-   pExplain           :: Parser Token PExplanation
+   pExplain           :: Parser Token PPurpose
    pExplain            = rebuild <$> pKey_pos "EXPLAIN" <*> pExplObj <*> optional pLanguageID <*> pRefID <*> pExpl 
                           where rebuild orig obj lang ref str =
-                                  PExpl orig obj (P_Markup lang Nothing str) ref
+                                  PRef2 orig obj (P_Markup lang Nothing str) ref
                                 pRefID :: Parser Token String
                                 pRefID = (pKey "REF" *> pString) `opt` []
-                                pExplObj :: Parser Token PExplObj
-                                pExplObj = PExplConceptDef  <$ pKey "CONCEPT"  <*> (pConid <|> pString) <|>
-                                           PExplDeclaration <$ pKey "RELATION" <*> pRelation <*> pSign  <|>
-                                           PExplRule        <$ pKey "RULE"     <*> pADLid               <|>
-                                           PExplKeyDef      <$ pKey "KEY"      <*> pADLid               <|>  
-                                           PExplPattern     <$ pKey "PATTERN"  <*> pADLid               <|>
-                                    --       PExplProcess     <$ pKey "PROCESS"  <*> pADLid               <|>
-                                           PExplInterface   <$ pKey "SERVICE"  <*> pADLid               <|>
-                                           PExplContext     <$ pKey "CONTEXT"  <*> pADLid 
+                                pExplObj :: Parser Token PRef2Obj
+                                pExplObj = PRef2ConceptDef  <$ pKey "CONCEPT"  <*> (pConid <|> pString) <|>
+                                           PRef2Declaration <$ pKey "RELATION" <*> pRelation <*> pSign  <|>
+                                           PRef2Rule        <$ pKey "RULE"     <*> pADLid               <|>
+                                           PRef2KeyDef      <$ pKey "KEY"      <*> pADLid               <|>  
+                                           PRef2Pattern     <$ pKey "PATTERN"  <*> pADLid               <|>
+                                    --       PRef2Process     <$ pKey "PROCESS"  <*> pADLid               <|>
+                                           PRef2Interface   <$ pKey "SERVICE"  <*> pADLid               <|>
+                                           PRef2Context     <$ pKey "CONTEXT"  <*> pADLid 
                                 pLanguageID :: Parser Token Lang
                                 pLanguageID = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH"))
                                                where
@@ -164,7 +164,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                      | Pm P_Declaration
                      | Pc ConceptDef
                      | Pk P_KeyDef
-                     | Pe PExplanation
+                     | Pe PPurpose
 
    pRule            :: Parser Token P_Rule
    pRule             = hc True            <$>   -- This boolean tells whether this rule will be a signal rule or a maintaining rule.
@@ -188,22 +188,22 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
                                  , rr_exp  = Pimp(antc,cons)
                                  , rr_fps  = rulepos (lbl,po) po'
-                                 , rr_mean = meanings expl
+                                 , rr_mean = meaning expl
                                  }      
                         kc isSg (lbl,po) cons po' antc = hc isSg (lbl,po) antc po' cons
                         dc _ (lbl,po) defd po' expr expl
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
                                  , rr_exp  = Pequ (defd,expr)
                                  , rr_fps  = rulepos (lbl,po) po'
-                                 , rr_mean = meanings expl
+                                 , rr_mean = meaning expl
                                }
                         ac _ (lbl,po) expr expl
                           = P_Ru { rr_nm  = if null lbl then rulid po else lbl
                                  , rr_exp = expr
                                  , rr_fps = po
-                                 , rr_mean = meanings expl
+                                 , rr_mean = meaning expl
                                  }
-                        meanings str = [P_Markup Nothing Nothing str]
+                        meaning str = [PMeaning (P_Markup Nothing Nothing str)]
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
                         pSignal          :: Parser Token (String, Origin)
                         pSignal           = pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|>
@@ -445,16 +445,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                      -> String
                                      -> Pairs
                                      -> P_Declaration
-                             rebuild nm pos' s fun' t props pragma expl content
+                             rebuild nm pos' s fun' t props pragma mean content
                                = P_Sgn { dec_nm = nm
                                        , dec_sign = P_Sign [s,t]
                                        , dec_prps = props'
                                        , dec_prL = head pr
                                        , dec_prM = pr!!1
                                        , dec_prR = pr!!2
-                                       , dec_Mean = if expl == ""
+                                       , dec_Mean = if mean == ""
                                                     then []
-                                                    else [P_Markup Nothing Nothing expl]
+                                                    else [PMeaning (P_Markup Nothing Nothing mean)]
                                        , dec_popu = content
                                        , dec_fpos = pos'
                                        , dec_plug = False

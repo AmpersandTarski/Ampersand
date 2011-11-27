@@ -96,7 +96,7 @@ where
           ++ [ Elem (simpleTag "Affected Quads")     []] -- TODO
           ++ [ Elem (simpleTag "ECArules")           (map mkXmlTree (actEcas   act)) |not (null (actEcas   act))] 
           ++ [ Elem (simpleTag "FPA")                [mkXmlTree (actFPA act)]]
-          ++ [ Elem (simpleTag "Explanations")       (map mkXmlTree (actXpls   act)) |not (null (actXpls   act))] 
+          ++ [ Elem (simpleTag "Explanations")       (map mkXmlTree (actPurp   act)) |not (null (actPurp   act))] 
            )
 
    instance XML FPA where
@@ -201,20 +201,20 @@ where
 
 
 
-   instance XML PExplanation where
+   instance XML PPurpose where
      mkTag expl =
-       Tag "PExpl" atts
+       Tag "PRef2" atts
         
 --        = case expl of
---                PExplConceptDef{}  -> Tag "ExplConceptDef"  atts
---                PExplDeclaration{} -> Tag "ExplDeclaration" atts
---                PExplRule{}        -> Tag "ExplRule"        atts
---                PExplKeyDef{}      -> Tag "ExplKeyDef"      atts
---                PExplPattern{}     -> Tag "ExplPattern"     atts
---                PExplProcess{}     -> Tag "ExplProcess"     atts
---                PExplInterface{}   -> Tag "ExplInterface"   atts
---                PExplContext{}     -> Tag "ExplContext"     atts
---                PExplFspc{}        -> Tag "ExplFspc"        atts
+--                PRef2ConceptDef{}  -> Tag "ExplConceptDef"  atts
+--                PRef2Declaration{} -> Tag "ExplDeclaration" atts
+--                PRef2Rule{}        -> Tag "ExplRule"        atts
+--                PRef2KeyDef{}      -> Tag "ExplKeyDef"      atts
+--                PRef2Pattern{}     -> Tag "ExplPattern"     atts
+--                PRef2Process{}     -> Tag "ExplProcess"     atts
+--                PRef2Interface{}   -> Tag "ExplInterface"   atts
+--                PRef2Context{}     -> Tag "ExplContext"     atts
+--                PRef2Fspc{}        -> Tag "ExplFspc"        atts
            where
             atts ::  [XAtt]
             atts = [mkAttr "Explains" (name expl)
@@ -223,8 +223,8 @@ where
      mkXmlTree expl 
          = Elem (mkTag expl) [PlainText (show (pexMarkup expl))]
 
-   instance XML Explanation where
-     mkTag expl = Tag "Expl" [mkAttr "Explains" (show expl)
+   instance XML Purpose where
+     mkTag expl = Tag "Expl" [mkAttr "Purpose" (show expl)
                              ,mkAttr "Markup" (show (explMarkup expl))
                              ,mkAttr "Ref" (explRefId expl)]
 
@@ -291,7 +291,7 @@ where
                                 | not (null (prL++prM++prR))]
                   ++[Elem (simpleTag "Meaning") [PlainText "Still 2 be done"]
                     --         [PlainText (explainContent2String LaTeX True (decMean d))]
-                                | not (null (decMean d))]
+                    ]
                   ++[Elem (simpleTag "Population") 
                              (map mkXmlTree (decpopu d)) 
                                 | not (null (decpopu d))]                 
