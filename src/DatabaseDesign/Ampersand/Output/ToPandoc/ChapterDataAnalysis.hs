@@ -11,9 +11,9 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), sbDiagram)
+--import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), sbDiagram)
 import DatabaseDesign.Ampersand.Output.PandocAux
-import Data.List (nub)
+import Data.List (nub, intercalate)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ChapterDataAnalysis.hs"
@@ -28,7 +28,8 @@ chpDataAnalysis lev fSpec flags
    , [ classificationPicture | Just _<-[classification]] ++[ classDiagramPicture] )
  | otherwise = 
    ( header ++ 
-     daContents ++
+     daIntro ++
+     daBasics [d | d<-declarations fSpec, decusr d]++
      daAssociations remainingRels ++
      [b | p<-entities, b<-daPlug p]
 {- The switchboard should probably not be in the chapter "Data analysis" 
@@ -52,9 +53,9 @@ chpDataAnalysis lev fSpec flags
                                               Dutch   ->  "Gegevensstructuur"   
                                               English ->  "Data structure"
                                         )
-  -- | a short introduction
-  daContents :: [Block]
-  daContents = 
+  -- | a short summary of the statistics. This text also serves as an introduction
+  daIntro :: [Block]
+  daIntro = 
    (case language flags of
      Dutch   -> [Para $
                   ( if genGraphics flags 
@@ -91,7 +92,7 @@ chpDataAnalysis lev fSpec flags
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
                        [ Str "A number of concepts from chapter "
                        , xrefReference FunctionalRequirements
-                       , Str " are organized in a classification structure. This is represented in figure "
+                       , Str " is organized in a classification structure. This is represented in figure "
                        , xrefReference classificationPicture
                        , Str ". " ] ) ++
                      [ Str "The requirements, which are listed in chapter "
@@ -199,7 +200,29 @@ chpDataAnalysis lev fSpec flags
      ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
 -}
 
--- The properties of various declations are documented in different tables.
+-- | The function daBasics lists the basic sentences that have been used in assembling the data model.
+  daBasics :: [Declaration] -> [Block]
+  daBasics rs
+    = [ Table [] [AlignLeft,AlignCenter,AlignCenter] [0.0,0.0,0.0]
+              ( case language flags of
+                Dutch   ->
+                     [ [Plain [Str "Relatie"]]
+                     , [Plain [Str "Beschrijving"]]
+                     , [Plain [Str "Eigenschappen"]]]
+                English   ->
+                     [ [Plain [Str "Relation"]]
+                     , [Plain [Str "Description"]]
+                     , [Plain [Str "Properties"]]]
+              )
+              [[[Plain [Math InlineMath (showMath r)]] -- r is a relation, and therefore isTypeable r. So  showMath r  exists.
+               ,meaning2Blocks (language flags) r
+               ,[Plain (intercalate [Str ", "] [[Str (showADL m)] | m<-multiplicities r])]
+               ]
+              | r<-rs
+              ]
+      ]
+
+-- The properties of various declarations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally
 -- the signals are documented.
@@ -266,11 +289,11 @@ chpDataAnalysis lev fSpec flags
     endoProperties
      = if null [ m | r<-hMults, m<-multiplicities r, m `elem` [Rfx,Irf,Trn,Sym,Asy]]
        then []
-       else [ Para [ case language flags of
+       else [ Para (case language flags of
                           Dutch   ->
-                            Str $ "Er is één endorelatie, "++texOnly_Id(name d)++" met de volgende eigenschappen: "
+                            [Str "Er is één endorelatie, ", Math InlineMath (showMath d), Str " met de volgende eigenschappen: "]
                           English   ->
-                            Str $ "There is one endorelation, "++texOnly_Id(name d)++" with the following properties: "]
+                            [Str "There is one endorelation, ", Math InlineMath (showMath d), Str " with the following properties: "] )
             | length hMults==1, d<-hMults ]++
             [ Para [ case language flags of
                           Dutch   ->
@@ -305,15 +328,15 @@ chpDataAnalysis lev fSpec flags
        then []
        else [ case language flags of
                Dutch   ->
-                 Para  [Str "Er is ",Str preciesEen,Str " key: ",Str (texOnly_Id(name k)),Str "."]
+                 Para  [Str "Er is ",Str preciesEen,Str " key: ",Str (name k),Str "."]
                English ->
-                 Para  [Str "There is but one key: ",Str (texOnly_Id(name k)),Str "." ]
+                 Para  [Str "There is but one key: ",Str (name k),Str "." ]
             | length keyds==1, k<-keyds ]++
             [ case language flags of
                Dutch   ->
-                 Para $ Str "De volgende keys bestaan: ": commaNLPandoc (Str "en") [Str $ texOnly_Id(name k) | k<-keyds]
+                 Para $ Str "De volgende keys bestaan: ": commaNLPandoc (Str "en") [Str (name k) | k<-keyds]
                English ->
-                 Para $ Str "The following keys exist: ": commaEngPandoc (Str "and") [Str $ texOnly_Id(name k) | k<-keyds]
+                 Para $ Str "The following keys exist: ": commaEngPandoc (Str "and") [Str (name k) | k<-keyds]
             | length keyds>1 ]
        where
         keyds   = keyDefs fSpec -- all key definitions
@@ -400,7 +423,7 @@ chpDataAnalysis lev fSpec flags
   daPlug p
    = if null content then [] else plugHeader ++ content
      where
-       plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
+       plugHeader = labeledHeader (lev+1) ("sct:Plug "++stripSpecialChars (name p)) (name p)
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of

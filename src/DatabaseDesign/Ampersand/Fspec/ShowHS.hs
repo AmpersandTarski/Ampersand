@@ -80,7 +80,7 @@ where
 -- \***********************************************************************
    instance ShowHS PlugSQL where
     showHSname plug = haskellIdentifier ("plug_"++name plug)
-    showHS flags indent plug   
+    showHS flags indent plug
       = case plug of
           TblSQL{} -> intercalate indent 
                       ["let " ++ intercalate (indent++"    ")

@@ -28,10 +28,10 @@ interfaceChap lev fSpec flags act
   header = labeledHeader lev ("chpIfc"++name act) (name act)
   ifcIntro :: [Block]
   ifcIntro
-   = purpose2Blocks (purpose fSpec (language flags) act)
-     ++
-     ifcAutoRules++
+   = purposes2Blocks purps
+     ++ifcAutoRules++
      (if genEcaDoc flags then ifcEcaRules else [])
+     where purps = purposes fSpec (language flags) fSpec
 
 {-
   ifcInsDelConcepts :: [Block]

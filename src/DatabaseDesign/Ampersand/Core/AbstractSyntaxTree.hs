@@ -31,12 +31,14 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , makeDeclaration
  , showExpr
  , aMarkup2String
+ , concatMarkup
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have acutally become part of the Abstract Syntax Tree.
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
+import DatabaseDesign.Ampersand.Basics.Auxiliaries (eqCl)
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
 import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
@@ -126,6 +128,18 @@ data A_Markup =
              , amFormat :: PandocFormat
              , amPandoc :: [Block]
              } deriving Show
+concatMarkup :: [A_Markup] -> Maybe A_Markup
+concatMarkup es
+ = case eqCl f es of
+    []   -> Nothing
+    [cl] -> Just (A_Markup { amLang   = amLang (head cl)
+                           , amFormat = amFormat (head cl)
+                           , amPandoc = concat (map amPandoc es)
+                           })
+    cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
+                      intercalate "\n   " [(show.f.head) cl | cl<-cls])
+   where f e = (amLang e, amFormat e)
+
 data Rule =
      Ru { rrnm     :: String                  -- ^ Name of this rule
         , rrexp    :: Expression              -- ^ The rule expression
@@ -269,9 +283,9 @@ instance Traced Interface where
   origin = ifcPos
 
 data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                     , objpos  :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objctx  :: Expression -- ^ this expression describes the instances of this object, related to their context. 
-                     , objats  :: [ObjectDef]     -- ^ the attributes, which are object definitions themselves.
+                     , objpos  :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+                     , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+                     , objats  :: [ObjectDef]    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Identified ObjectDef where
@@ -282,12 +296,11 @@ instance Traced ObjectDef where
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
-data Purpose  = Expl { explPos   :: Origin     -- ^ The position in the Ampersand script of this purpose definition
-                     , explObj   :: ExplObj    -- ^ The object that is explained.
-                     , explMarkup :: A_Markup  -- ^ The markup of the explaination
-                     , explUserdefd :: Bool    -- ^ Is this purpose defined in the script?
-                     , explRefId :: String     -- ^ The reference of the explaination
-                 --    , explCont  :: [Block]    -- ^ The actual explanation.
+data Purpose  = Expl { explPos      :: Origin     -- ^ The position in the Ampersand script of this purpose definition
+                     , explObj      :: ExplObj    -- ^ The object that is explained.
+                     , explMarkup   :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
+                     , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
+                     , explRefId    :: String     -- ^ The reference of the explaination
                      } deriving Show  --handy for XML creation
 instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 && 

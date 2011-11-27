@@ -7,7 +7,8 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , Xreferencable(..)
     , xrefFigure1
     , purpose
-    , purpose2Blocks
+    , purposes
+    , purposes2Blocks
     , meaning2Blocks
     , isMissing
     , dpRule
@@ -25,8 +26,8 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "SharedAmongChapters.hs"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "SharedAmongChapters.hs"
 
 data Chapter = Intro 
              | NatLangReqs
@@ -72,8 +73,9 @@ dpRule fSpec flags = dpR
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( [Str (name r)]
-         , [ purpose2Blocks (purpose fSpec (language flags) r) ++             -- Als eerste de uitleg van de betreffende regel..
-             concat [purpose2Blocks (purpose fSpec (language flags) d) |d<-nds] ++  -- Dan de uitleg van de betreffende relaties
+         , [ let purps = purposes fSpec (language flags) r in            -- Als eerste de uitleg van de betreffende regel..
+             purposes2Blocks purps ++
+             purposes2Blocks [p | d<-nds, p<-purposes fSpec (language flags) d] ++  -- Dan de uitleg van de betreffende relaties
              [ Plain text1 | not (null nds)] ++
              pandocEqnArray [ ( texOnly_Id(name d)
                               , ":"
@@ -165,10 +167,13 @@ incEis :: Counter -> Counter
 --incRule x = x{getRule = getRule x + 1}
 incEis x = x{getEisnr = getEisnr x + 1}
 
-purpose2Blocks :: Maybe Purpose -> [Block]
-purpose2Blocks mp = case mp of
-    Just p ->  (amPandoc . explMarkup) p
-    Nothing -> []
+purposes2Blocks :: [Purpose] -> [Block]
+purposes2Blocks ps
+ = case ps of
+    [] -> []
+    ps -> case concatMarkup (map explMarkup ps) of
+           Nothing -> []
+           Just p  -> amPandoc p
 
 isMissing :: Maybe Purpose -> Bool
 isMissing mp =

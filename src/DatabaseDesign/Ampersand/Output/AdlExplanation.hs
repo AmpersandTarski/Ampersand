@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module DatabaseDesign.Ampersand.Output.AdlExplanation (Explainable(purpose,explanations), Meaning(..))
+module DatabaseDesign.Ampersand.Output.AdlExplanation (Explainable(purpose,purposes,explanations), Meaning(..))
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
@@ -12,6 +12,7 @@ import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc
 import DatabaseDesign.Ampersand.Output.PredLogic
 import Data.Char             (toLower)
+import Data.List             (intercalate)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.AdlExplanation"
@@ -47,7 +48,12 @@ class  Identified a => Explainable a where
          markupMatchesLang m = amLang m == l
   explForObj     :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
   explanations   :: a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
-  
+  purposes :: Fspc -> Lang -> a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
+  purposes fSpec l x
+   = [e | e<-explanations fSpec
+        , amLang (explMarkup e) == l
+        , explForObj x (explObj e)                  -- informally: "if x and e are the same"
+     ]
 instance Explainable ConceptDef where
 --  meaning _ cd = fatal 49 ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
   explForObj x (ExplConceptDef x') = x == x'
@@ -358,14 +364,22 @@ instance Explainable FProcess where
   explForObj fp = explForObj (proc fp)
   explanations fp = explanations (proc fp)
 
+-- Ampersand allows multiple purposes for everything.
+-- The diagnosis report must make mention of this (so the user will notice if (s)he reads the diagnosis).
+-- Multiple purposes are simply concatenated, so the user sees them all.
 instance Explainable Activity where
-  purpose _ l x = case expls of
-                    []   -> Nothing  --fatal 212 "No purpose is generated! (should be automatically generated and available in Fspc.)"
-                    [e]  -> Just e
-                    _    -> fatal 214 ("Too many purposes given for " ++show (name x))
-      where
-       expls = [ e | e <- actPurp x, amLang (explMarkup e) == l ]
-  
+  purpose _ l x = case [ e | e <- actPurp x, amLang (explMarkup e) == l ] of
+                    []    -> Nothing
+                    [p]   -> Just p
+                    purps -> case concatMarkup (map explMarkup purps) of
+                              Nothing -> Nothing
+                              Just p  -> Just (Expl { explPos      = explPos (head purps) -- ^ The position in the Ampersand script of this purpose definition
+                                                    , explObj      = ExplRule (actRule x) -- ^ The object that is explained.
+                                                    , explMarkup   = p                    -- ^ This field contains the text of the explanation including language and markup info.
+                                                    , explUserdefd = False                -- ^ Is this purpose defined in the script?
+                                                    , explRefId    = intercalate ", " (map explRefId purps) -- ^ The reference of the explaination
+                                                    })
+
 class Meaning a where 
   meaning :: Lang -> a -> A_Markup
   meaning2Blocks :: Lang -> a -> [Block]

@@ -8,7 +8,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -25,7 +24,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
                                         )
   caIntro :: [Block]
   caIntro =
-   purpose2Blocks (purpose fSpec (language flags) fSpec) ++ -- This explains the purpose of this context.
+   purposes2Blocks purps ++ -- This explains the purpose of this context.
    (case language flags of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van de regels uit hoofdstuk "
@@ -39,7 +38,9 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
                   , Str ". Each section in that chapter is analysed in terms of relations "
                   , Str "and each principle is then translated in a rule. "
                   ]]
-   )
+   ) where
+      purps = purposes fSpec (language flags) fSpec
+
   (caBlocks,pictures) = ( [b | (blocks,_)<-ca, b<-blocks], [picture | (_,picture)<-ca] )
                         where ca=if null (themes fSpec)
                                  then caSections (patterns fSpec)
@@ -71,7 +72,8 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
-          = purpose2Blocks (purpose fSpec (language flags) pat)
+          = purposes2Blocks purps
+            where purps = purposes fSpec (language flags) pat
          (sctRules,   i',  seenCrs, seenDrs) = dpRule fSpec flags (invariants pat) i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule fSpec flags (processRules pat) i' seenCrs seenDrs
 
