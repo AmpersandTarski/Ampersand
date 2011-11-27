@@ -12,12 +12,13 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , A_Gen(..)
  , Interface(..)
  , ObjectDef(..)
- , Explanation(..)
+ , Purpose(..)
  , ExplObj(..)
  , Expression(..)
  , Relation(..)
  , A_Concept(..)
  , A_Markup(..)
+ , AMeaning(..)
  , RoleRelation(..)
  , Sign(..)
  , Population(..)
@@ -37,7 +38,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
-import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..))
+import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc
@@ -64,7 +65,7 @@ data A_Context
          , ctxks     :: [KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
          , ctxgs     :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
          , ctxifcs   :: [Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-         , ctxps     :: [Explanation] -- ^ The pre-explanations defined in this context, outside the scope of patterns
+         , ctxps     :: [Purpose]     -- ^ The purposes of objects defined in this context, outside the scope of patterns
          , ctxsql    :: [ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp    :: [ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
@@ -87,7 +88,7 @@ data Process = Proc { prcNm    :: String
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
                     , prcRRels :: [(String,Relation)] -- ^ The assignment of roles to Relations.
                     , prcKds   :: [KeyDef]            -- ^ The key definitions defined in this process
-                    , prcXps   :: [Explanation]      -- ^ The pre-explanations of elements defined in this process
+                    , prcXps   :: [Purpose]           -- ^ The pre-explanations of elements defined in this process
                     }
 instance Identified Process where
   name = prcNm
@@ -113,7 +114,7 @@ data Pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
            , ptkds :: [KeyDef]      -- ^ The key definitions defined in this pattern
-           , ptxps :: [Explanation] -- ^ The explanations of elements defined in this pattern
+           , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
            }   --deriving (Show)    -- for debugging purposes
 instance Identified Pattern where
  name = ptnm
@@ -129,7 +130,7 @@ data Rule =
      Ru { rrnm     :: String                  -- ^ Name of this rule
         , rrexp    :: Expression              -- ^ The rule expression
         , rrfps    :: Origin                  -- ^ Position in the Ampersand file
-        , rrmean   :: [A_Markup]              -- ^ Ampersand generated explanations (MEANINGs) (for all known languages)
+        , rrmean   :: AMeaning                -- ^ Ampersand generated explanations (MEANINGs) (for all known languages)
         , rrtyp    :: Sign                    -- ^ Allocated type
         , rrdcl    :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
         , r_env    :: String                  -- ^ Name of pattern in which it was defined.
@@ -162,7 +163,7 @@ data Declaration =
       , decprL  :: String     -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM  :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR  :: String
-      , decMean :: [A_Markup] -- ^ the meaning of a declaration, for each language supported by Ampersand.
+      , decMean :: AMeaning   -- ^ the meaning of a declaration, for each language supported by Ampersand.
       , decpopu :: Pairs      -- ^ the list of tuples, of which the relation consists.
       , decfpos :: Origin     -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
       , deciss  :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
@@ -189,7 +190,7 @@ instance Show Declaration where
   showsPrec _ d
     = showString (unwords (["RELATION",decnm d,show (decsgn d),show (decprps_calc d)
                            ,"PRAGMA",show (decprL d),show (decprM d),show (decprR d)]
-                            ++concatMap showMeaning (decMean d)
+                            ++concatMap showMeaning (ameaMrk (decMean d))
                  )        )
            where 
               showMeaning m = "MEANING"
@@ -200,6 +201,8 @@ instance Show Declaration where
 
 aMarkup2String :: A_Markup -> String
 aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
+
+data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving Show
 
 instance Identified Declaration where
   name d@Sgn{}   = decnm d
@@ -277,18 +280,19 @@ instance Traced ObjectDef where
   origin = objpos
 
 
--- | Explanation is the intended constructor. It contains the object it explains.
---   The enrichment process of the parser must map the names (from PExplanation) to the actual objects
-data Explanation  = Expl { explPos   :: Origin     -- ^ The position in the Ampersand script of this purpose definition
-                         , explObj   :: ExplObj    -- ^ The object that is explained.
-                         , explMarkup :: A_Markup  -- ^ The markup of the explaination
-                         , explUserdefd :: Bool    -- ^ Is this purpose defined in the script?
-                         , explRefId :: String     -- ^ The reference of the explaination
-                     --    , explCont  :: [Block]    -- ^ The actual explanation.
-                         } deriving Show  --handy for XML creation
-instance Eq Explanation where
-  x0 == x1  =  explObj x0 == explObj x1
-instance Traced Explanation where
+-- | Explanation is the intended constructor. It explains the purpose of the object it references.
+--   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
+data Purpose  = Expl { explPos   :: Origin     -- ^ The position in the Ampersand script of this purpose definition
+                     , explObj   :: ExplObj    -- ^ The object that is explained.
+                     , explMarkup :: A_Markup  -- ^ The markup of the explaination
+                     , explUserdefd :: Bool    -- ^ Is this purpose defined in the script?
+                     , explRefId :: String     -- ^ The reference of the explaination
+                 --    , explCont  :: [Block]    -- ^ The actual explanation.
+                     } deriving Show  --handy for XML creation
+instance Eq Purpose where
+  x0 == x1  =  explObj x0 == explObj x1 && 
+               (amLang . explMarkup) x0 == (amLang . explMarkup) x1
+instance Traced Purpose where
   origin = explPos
 
 data Population
@@ -302,11 +306,11 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
              | ExplRule Rule
              | ExplKeyDef KeyDef
-             | ExplPattern String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
-             | ExplProcess String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the process is used rather than the entire process. Hence, for patterns the PExplProcess is identical to the ExplProcess
-             | ExplInterface String -- SJ: (now obsolete...) To avoid a compile time loop, the name of the interface is used rather than the entire interface. Hence, for interfaces the PExplInterface is identical to the ExplInterface
-             | ExplContext String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PExplContext is identical to the ExplContext
-             | ExplFspc String      -- SJ: (now obsolete...) To avoid a compile time loop, the name of the fSpec is used rather than the entire fSpec. Hence, for contexts the PExplFspc is identical to the ExplFspc
+             | ExplPattern String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PRef2Pattern is identical to the ExplPattern
+             | ExplProcess String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the process is used rather than the entire process. Hence, for patterns the PRef2Process is identical to the ExplProcess
+             | ExplInterface String -- SJ: (now obsolete...) To avoid a compile time loop, the name of the interface is used rather than the entire interface. Hence, for interfaces the PRef2Interface is identical to the ExplInterface
+             | ExplContext String   -- SJ: (now obsolete...) To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PRef2Context is identical to the ExplContext
+             | ExplFspc String      -- SJ: (now obsolete...) To avoid a compile time loop, the name of the fSpec is used rather than the entire fSpec. Hence, for contexts the PRef2Fspc is identical to the ExplFspc
           deriving (Show ,Eq)
                   
 

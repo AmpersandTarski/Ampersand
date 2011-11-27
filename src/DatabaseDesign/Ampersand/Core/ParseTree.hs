@@ -22,7 +22,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_KeyDef(..),P_KeyDefs
    
-   , PExplanation(..),PExplObj(..),PExplanations
+   , PPurpose(..),PRef2Obj(..),PPurposes,PMeaning(..)
    
    , P_Concept(..), P_Sign(..)
    
@@ -64,7 +64,7 @@ where
             , ctx_ks     :: P_KeyDefs       -- ^ The key definitions defined in this context, outside the scope of patterns
             , ctx_gs     :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps     :: PExplanations   -- ^ The pre-explanations defined in this context, outside the scope of patterns
+            , ctx_ps     :: PPurposes   -- ^ The pre-explanations defined in this context, outside the scope of patterns
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
             , ctx_sql    :: P_ObjectDefs    -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php    :: P_ObjectDefs    -- ^ user defined phpplugs, taken from the Ampersand script
@@ -98,7 +98,7 @@ where
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
                           , procCds   :: ConceptDefs      -- ^ The concept definitions defined in this process
                           , procKds   :: P_KeyDefs        -- ^ The key definitions defined in this process
-                          , procXps   :: PExplanations    -- ^ The pre-explanations of elements defined in this process
+                          , procXps   :: PPurposes    -- ^ The pre-explanations of elements defined in this process
                           , procPop   :: [P_Population]   -- ^ The populations that are local to this process
                           } 
 
@@ -128,7 +128,7 @@ where
               , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
               , pt_cds :: ConceptDefs     -- ^ The concept definitions defined in this pattern
               , pt_kds :: P_KeyDefs       -- ^ The key definitions defined in this pattern
-              , pt_xps :: PExplanations   -- ^ The explanations of elements defined in this pattern
+              , pt_xps :: PPurposes   -- ^ The explanations of elements defined in this pattern
               , pt_pop :: [P_Population]  -- ^ The populations that are local to this pattern
               }   --deriving (Show)       -- for debugging purposes
 
@@ -271,7 +271,7 @@ where
                , dec_prL  :: String    -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                , dec_prM  :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , dec_prR  :: String
-               , dec_Mean :: [P_Markup]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
+               , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
                , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
                , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
@@ -333,11 +333,14 @@ where
       P_Ru { rr_nm    :: String             -- ^ Name of this rule
            , rr_exp   :: P_Expression       -- ^ The rule expression 
            , rr_fps   :: Origin             -- ^ Position in the Ampersand file
-           , rr_mean  :: [P_Markup]         -- ^ User specified meanings, possibly more than one, for multiple languages.
+           , rr_mean  :: [PMeaning]         -- ^ User specified meanings, possibly more than one, for multiple languages.
            }
    instance Traced P_Rule where
     origin = rr_fps
-    
+
+   data PMeaning = PMeaning P_Markup 
+            deriving Show
+            
    data P_Markup = 
        P_Markup  { mLang   :: Maybe Lang
                  , mFormat :: Maybe PandocFormat
@@ -389,43 +392,43 @@ where
    instance Traced P_KeyDef where
     origin = kd_pos
    
--- PExplanation is a parse-time constructor. It contains the name of the object it explains.
+-- PPurpose is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
-   data PExplObj = PExplConceptDef String
-                 | PExplDeclaration P_Relation P_Sign
-                 | PExplRule String
-                 | PExplKeyDef String
-                 | PExplPattern String
-                 | PExplProcess String
-                 | PExplInterface String
-                 | PExplContext String
-                 | PExplFspc String
+   data PRef2Obj = PRef2ConceptDef String
+                 | PRef2Declaration P_Relation P_Sign
+                 | PRef2Rule String
+                 | PRef2KeyDef String
+                 | PRef2Pattern String
+                 | PRef2Process String
+                 | PRef2Interface String
+                 | PRef2Context String
+                 | PRef2Fspc String
                  deriving Show -- only for fatal error messages
    
-   instance Identified PExplObj where
+   instance Identified PRef2Obj where
      name pe = case pe of 
-        PExplConceptDef str -> str
-        PExplDeclaration rel _ -> name rel
-        PExplRule str -> str
-        PExplKeyDef str -> str
-        PExplPattern str -> str
-        PExplProcess str -> str
-        PExplInterface str -> str
-        PExplContext str -> str
-        PExplFspc str -> str
+        PRef2ConceptDef str -> str
+        PRef2Declaration rel _ -> name rel
+        PRef2Rule str -> str
+        PRef2KeyDef str -> str
+        PRef2Pattern str -> str
+        PRef2Process str -> str
+        PRef2Interface str -> str
+        PRef2Context str -> str
+        PRef2Fspc str -> str
 
-   type PExplanations = [PExplanation]
-   data PExplanation = PExpl { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
-                             , pexObj   :: PExplObj   -- the reference to the object whose purpose is explained
+   type PPurposes = [PPurpose]
+   data PPurpose = PRef2 { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
+                             , pexObj   :: PRef2Obj   -- the reference to the object whose purpose is explained
                              , pexMarkup:: P_Markup   -- the piece of text, including markup and language info
                              , pexRefID :: String     -- the reference (for traceability)
                              }
 
-   instance Identified PExplanation where
+   instance Identified PPurpose where
     name pe = name (pexObj pe)
 
-   instance Traced PExplanation where
+   instance Traced PPurpose where
     origin = pexPos
 
    data P_Concept

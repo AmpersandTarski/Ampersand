@@ -153,13 +153,12 @@ chpDiagnosis lev fSpec flags
                      ]
    where missing = [c | c <-ccs
                       , cd <- cptdf c
-                      , (not . explUserdefd) (purpose fSpec (language flags) cd)
+                      , isMissing (purpose fSpec (language flags) cd)
                    ]++
                    [c | c <-ccs
                       , null (cptdf c)
                    ]
          ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
-
   missingRels :: [Block]
   missingRels
    = case (language flags, missing) of
@@ -191,7 +190,7 @@ chpDiagnosis lev fSpec flags
                                    else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                                         mors [proc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
-                     , (not . explUserdefd) (purpose fSpec (language flags) r)
+                     , isMissing (purpose fSpec (language flags) r)
                      ]
 
   relsNotUsed :: [Block]
@@ -360,12 +359,12 @@ chpDiagnosis lev fSpec flags
      where missingPurp
             = nub [ r
                   | r<-ruls
-                  , (not . explUserdefd) (purpose fSpec (language flags) r)
+                  , isMissing (purpose fSpec (language flags) r)
                   ]
            missingMeaning
             = nub [ r
                   | r<-ruls
-                  , null [m | m <- rrmean r, amLang m == language flags]
+                  , null [m | m <- ameaMrk (rrmean r), amLang m == language flags]
                   ]
            ruls = if null (themes fSpec)
                   then rules fSpec

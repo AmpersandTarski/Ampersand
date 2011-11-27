@@ -66,15 +66,15 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
            conceptsWith     -- All concepts that have at least one definition or one userdefined purpose. 
               = [(c, pps)
                 | c <-concs fSpec
-                , let pps = [p | p <- [purpose fSpec (language flags) c], explUserdefd p]
+                , let pps = [p | Just p <- [purpose fSpec (language flags) c], explUserdefd p]
                 , not (null (cptdf c)) || not (null pps)]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
                                           -- and only those declarations that have at least one userdefined purpose.
               = [r | r@Rel{}<-mors fSpec
-                   , explUserdefd ( purpose fSpec (language flags) r)
+                   , (not . isMissing) ( purpose fSpec (language flags) r)
                 ]
                  
-      aThemeAtATime :: ( [(A_Concept,[Explanation])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
+      aThemeAtATime :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
                        , [Relation]                                 -- all relations to be processed into this section and the sections to come
                        , [Rule])                                    -- all rules to be processed into this section and the sections to come
                     -> [Pattern]         -- the patterns that must be processed into this specification
@@ -114,7 +114,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
       -- For this purpose, Ampersand authors should take care in composing explanations.
       -- Each explanation should state the purpose (and nothing else).
       printOneTheme :: Maybe Pattern -- name of the theme to process (if any)
-                    -> ( [(A_Concept,[Explanation])]    -- all concepts that have one or more definitions, to be printed in this section
+                    -> ( [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
                        , [Relation]          -- Relations to print in this section
                        , [Rule])             -- Rules to print in this section
                     -> Counter      -- first free number to use for numbered items
@@ -150,7 +150,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                       )]
                          Just pat -> purpose2Blocks (purpose fSpec (language flags) pat)
 
-              sctcsIntro :: [(A_Concept, [Explanation])] -> [Block]
+              sctcsIntro :: [(A_Concept, [Purpose])] -> [Block]
               sctcsIntro [] = []
               sctcsIntro ccds 
                 = case language flags of
@@ -198,7 +198,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                           ]
                   where fst3 (a,_,_) = a
 
-              sctcs :: [(A_Concept, [Explanation])] -> Counter -> ([Block],Counter)
+              sctcs :: [(A_Concept, [Purpose])] -> Counter -> ([Block],Counter)
               sctcs xs (Counter c0) 
                 = gl [] (concat [ [Left (c,e) | e<-exps] ++ [Right d | d<-uniquecds c] | (c ,exps)<-xs ]) c0
                   where
