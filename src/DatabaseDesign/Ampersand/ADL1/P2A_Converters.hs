@@ -14,7 +14,6 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      , pIFC2aIFC
      , pProc2aProc
      , pODef2aODef
-     , pExpl2aExpl
      , disambiguate
      )
 where
@@ -56,7 +55,7 @@ pCtx2aCtx pctx
              , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
              , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
              , ctxifcs   = ifcs          -- The interfaces defined in this context, outside the scope of patterns
-             , ctxps     = aexps         -- The pre-explanations defined in this context, outside the scope of patterns
+             , ctxps     = apurp         -- The purposespre-explanations defined in this context, outside the scope of patterns
              , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
@@ -76,7 +75,7 @@ pCtx2aCtx pctx
     acds = ctx_cs pctx++concatMap pt_cds (ctx_pats pctx)++concatMap procCds (ctx_PPrcs pctx)
     adecs = map (pDecl2aDecl actx allpops "NoPattern") (ctx_ds pctx)
     agens = map (pGen2aGen actx "NoPattern") (ctx_gs pctx)
-    (aexps,   xplcxes)   = (unzip . map (pExpl2aExpl actx)             . ctx_ps   ) pctx
+    (apurp,   xplcxes)   = (unzip . map (pPurp2aPurp actx)             . ctx_ps   ) pctx
     (pats,    patcxes)   = (unzip . map (pPat2aPat   actx allpops)     . ctx_pats ) pctx
     (procs,   proccxes)  = (unzip . map (pProc2aProc actx allpops)     . ctx_PPrcs) pctx
     (ctxrules,rulecxes)  = (unzip . map (pRul2aRul   actx "NoPattern") . ctx_rs   ) pctx
@@ -135,7 +134,7 @@ pPat2aPat actx pops ppat
     adecs = map (pDecl2aDecl actx pops (name ppat)) (pt_dcs ppat)
     (keys,keycxes) = unzip akds
     akds  = map (pKDef2aKDef actx) (pt_kds ppat)
-    (xpls,xplcxes) = (unzip . map (pExpl2aExpl actx) . pt_xps) ppat
+    (xpls,xplcxes) = (unzip . map (pPurp2aPurp actx) . pt_xps) ppat
 
 pProc2aProc :: A_Context -> [Population] -> P_Process -> (Process,CtxError)
 pProc2aProc actx pops pproc
@@ -160,7 +159,7 @@ pProc2aProc actx pops pproc
     arruls = [(rol,rul) |rul<-rules actx, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
     (rruls,rrcxes)    = (unzip . map (pRRul2aRRul actx)            . procRRuls) pproc
     (keys,keycxes)    = (unzip . map (pKDef2aKDef actx)            . procKds) pproc
-    (expls,explcxes)  = (unzip . map (pExpl2aExpl actx)            . procXps) pproc
+    (expls,explcxes)  = (unzip . map (pPurp2aPurp actx)            . procXps) pproc
 
 pRRul2aRRul :: (Language l, ConceptStructure l, Identified l) => l -> RoleRule -> (RoleRule,CtxError)
 pRRul2aRRul actx prrul
@@ -199,7 +198,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
                      , decprL = ""
                      , decprM = ""
                      , decprR = ""
-                     , decMean = []
+                     , decMean = meanings (rr_mean prul)
                      , decpopu = []
                      , decfpos = rr_fps prul
                      , deciss = True
@@ -211,9 +210,18 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
    , CxeOrig exprcxe "rule" "" (origin prul)
    )
    where (aexpr,exprcxe) = pExpr2aExpr actx NoCast (rr_exp prul)
-         meanings = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) 
+         meanings = pMeanings2aMeaning (ctxlang actx) (ctxmarkup actx) 
    
-pMarkup2aMarkup :: Lang  -- The default language
+pMeanings2aMeaning :: Lang          -- The default language
+                  -> PandocFormat  -- The default format
+                  -> [PMeaning]
+                  -> AMeaning
+pMeanings2aMeaning ldefLang defFormat pms
+   = AMeaning (map (pMeaning2Amarkup ldefLang defFormat) pms)
+     where  pMeaning2Amarkup l f (PMeaning pm)
+             = pMarkup2aMarkup l f pm
+               
+pMarkup2aMarkup :: Lang          -- The default language
                 -> PandocFormat  -- The default format
                 -> P_Markup
                 -> A_Markup
@@ -291,32 +299,33 @@ pODef2aODef actx cast podef
                                         ++ showADL expr       ++" ("++showADL (target expr) ++ ")."
                                        |x<-ats,source (objctx x)/=target expr])
 
-pExpl2aExpl :: A_Context -> PExplanation -> (Explanation, CtxError)
-pExpl2aExpl actx pexpl
+pPurp2aPurp :: A_Context -> PPurpose -> (Purpose, CtxError)
+pPurp2aPurp actx pexpl
  = ( Expl { explPos   = pexPos   pexpl
           , explObj   = explobs
-          , explMarkup  = meaning (pexMarkup pexpl)
+          , explMarkup  = pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx) (pexMarkup pexpl)
           , explRefId = pexRefID pexpl
+          , explUserdefd = True
          -- , explCont  = string2Blocks (ctxmarkup actx) (pexExpl  pexpl)
           }
    , CxeOrig xplcxe "explanation" "" (origin pexpl))
    where (explobs,xplcxe) = pExOb2aExOb actx (pexObj   pexpl)
-         meaning = pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx) 
+         
 
-pExOb2aExOb :: A_Context -> PExplObj -> (ExplObj, CtxError)
-pExOb2aExOb actx (PExplConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
+pExOb2aExOb :: A_Context -> PRef2Obj -> (ExplObj, CtxError)
+pExOb2aExOb actx (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
                                             where cds = [cd | cd<-conceptDefs actx, cdcpt cd==str ]
-pExOb2aExOb actx (PExplDeclaration pr t) = (ExplDeclaration (makeDeclaration rel), relcxe)
+pExOb2aExOb actx (PRef2Declaration pr t) = (ExplDeclaration (makeDeclaration rel), relcxe)
                                             where (rel,relcxe) = pRel2aRel actx (psign t) pr
-pExOb2aExOb actx (PExplRule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
+pExOb2aExOb actx (PRef2Rule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
                                             where ruls = [rul | rul<-rules actx, name rul==str ]
-pExOb2aExOb actx (PExplKeyDef str      ) = (ExplKeyDef (head kds), newcxeif(null kds)("No key definition named '"++str++"'") )
+pExOb2aExOb actx (PRef2KeyDef str      ) = (ExplKeyDef (head kds), newcxeif(null kds)("No key definition named '"++str++"'") )
                                             where kds = [kd | kd<-keyDefs actx, name kd==str]
-pExOb2aExOb actx (PExplPattern str     ) = (ExplPattern str,   newcxeif(null[pat |pat<-patterns   actx,   name pat==str])("No pattern named '"++str++"'") )
-pExOb2aExOb actx (PExplProcess str     ) = (ExplProcess str,   newcxeif(null[prc |prc<-processes  actx,  name prc==str]) ("No process named '"++str++"'") )
-pExOb2aExOb actx (PExplInterface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-interfaces actx, name ifc==str])  ("No interface named '"++str++"'") )
-pExOb2aExOb actx (PExplContext str     ) = (ExplContext str,   newcxeif(name actx/=str) ("No context named '"++str++"'") )  
-pExOb2aExOb actx (PExplFspc str        ) = (ExplFspc str,      newcxeif( name actx/=str)("No specification named '"++str++"'") )
+pExOb2aExOb actx (PRef2Pattern str     ) = (ExplPattern str,   newcxeif(null[pat |pat<-patterns   actx,   name pat==str])("No pattern named '"++str++"'") )
+pExOb2aExOb actx (PRef2Process str     ) = (ExplProcess str,   newcxeif(null[prc |prc<-processes  actx,  name prc==str]) ("No process named '"++str++"'") )
+pExOb2aExOb actx (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-interfaces actx, name ifc==str])  ("No interface named '"++str++"'") )
+pExOb2aExOb actx (PRef2Context str     ) = (ExplContext str,   newcxeif(name actx/=str) ("No context named '"++str++"'") )  
+pExOb2aExOb actx (PRef2Fspc str        ) = (ExplFspc str,      newcxeif( name actx/=str)("No specification named '"++str++"'") )
 
 
 pPop2aPop :: (Language l, ConceptStructure l, Identified l) => l -> P_Population -> (Population,CtxError)
@@ -364,7 +373,7 @@ pDecl2aDecl actx pops patname pd
        , decprL  = dec_prL pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
-       , decMean = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) (dec_Mean pd)
+       , decMean = pMeanings2aMeaning (ctxlang actx) (ctxmarkup actx) (dec_Mean pd)
        , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
                    dec_popu pd ++ 
                    concat [popps pop | pop<-pops, let ad=popm pop

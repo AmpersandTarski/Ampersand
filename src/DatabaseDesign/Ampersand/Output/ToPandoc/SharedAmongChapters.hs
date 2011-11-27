@@ -9,6 +9,7 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , purpose
     , purpose2Blocks
     , meaning2Blocks
+    , isMissing
     , dpRule
     , Counter(..),newCounter,incEis)
 where
@@ -164,6 +165,14 @@ incEis :: Counter -> Counter
 --incRule x = x{getRule = getRule x + 1}
 incEis x = x{getEisnr = getEisnr x + 1}
 
-purpose2Blocks :: Explanation -> [Block]
-purpose2Blocks = amPandoc . explMarkup
+purpose2Blocks :: Maybe Purpose -> [Block]
+purpose2Blocks mp = case mp of
+    Just p ->  (amPandoc . explMarkup) p
+    Nothing -> []
+
+isMissing :: Maybe Purpose -> Bool
+isMissing mp =
+  case mp of 
+    Nothing -> True
+    Just p  -> (not . explUserdefd) p
 

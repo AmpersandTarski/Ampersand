@@ -394,7 +394,8 @@ where
      rule neg' pos' | isTrue neg' = Ru { rrnm  = ""
                                        , rrfps = Origin "rule generated for isTrue neg' by Calc"
                                        , rrexp = pos'
-                                       , rrmean = [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 317)")
+                                       , rrmean = AMeaning
+                                                  [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 317)")
                                                   ,A_Markup English ReST (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 318)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
@@ -406,7 +407,8 @@ where
                     | otherwise   = Ru { rrnm  = ""
                                        , rrfps = Origin "rule generated for not(isTrue neg') by Calc"
                                        , rrexp = EImp (neg',pos')
-                                       , rrmean = [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
+                                       , rrmean = AMeaning
+                                                  [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
                                                   ,A_Markup English ReST (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 333)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing

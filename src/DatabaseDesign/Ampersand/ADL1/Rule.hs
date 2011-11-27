@@ -71,7 +71,8 @@ where
                         Rfx-> EImp (i$sign r ,           r                   )
                         Irf-> EIsc [i$sign r, EDif (ERel (V (sign r)), r) ]
            , rrfps = origin d
-           , rrmean = [A_Markup English ReST (string2Blocks ReST (
+           , rrmean = AMeaning 
+                      [A_Markup English ReST (string2Blocks ReST (
                       case prp of
                         Sym-> name d++"["++s++"] is symmetric"    
                         Asy-> name d++"["++s++"] is antisymmetric"

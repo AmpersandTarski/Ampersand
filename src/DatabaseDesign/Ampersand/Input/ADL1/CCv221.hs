@@ -69,7 +69,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
                        rebexpr x y = (x,y)
                        rebuild :: String -> Maybe Lang -> Maybe PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
-                       rebuild nm lang fmt env ces =   -- TODO: use the second argument as the default language for this context.
+                       rebuild nm lang fmt env ces = 
                           PCtx{ ctx_nm    = nm
                               , ctx_lang  = lang
                               , ctx_markup= fmt
@@ -82,7 +82,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                               , ctx_ks    = [k | CKey k<-ces]       -- The key definitions defined in this context, outside the scope of patterns
                               , ctx_gs    = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
                               , ctx_ifcs  = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns
-                              , ctx_ps    = [e | CXpl e<-ces]       -- The pre-explanations defined in this context, outside the scope of patterns
+                              , ctx_ps    = [e | CPrp e<-ces]       -- The pre-explanations defined in this context, outside the scope of patterns
                               , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
                               , ctx_sql   = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
                               , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
@@ -100,7 +100,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        | CPop P_Population
                        | CSqlPlug P_ObjectDef
                        | CPhpPlug P_ObjectDef
-                       | CXpl PExplanation
+                       | CPrp PPurpose
                        | CThm [String]           -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
 
    pFormatID    :: Parser Token PandocFormat
@@ -127,23 +127,23 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pRefID             :: Parser Token String
    pRefID              = (pKey "REF" *> pString) `opt` []
 
-   pPurpose           :: Parser Token PExplanation
+   pPurpose           :: Parser Token PPurpose
    pPurpose            = rebuild <$> pKey_pos "EXPLAIN" <*> pRef2Obj <*> optional pLanguageID <*> optional pFormatID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
                          rebuild <$> pKey_pos "PURPOSE" <*> pRef2Obj <*> optional pLanguageID <*> optional pFormatID <*> pRefID <*> pExpl
                          where
                            rebuild orig obj lang fmt ref str
-                             = PExpl orig obj (P_Markup lang fmt str) ref
-   pRef2Obj           :: Parser Token PExplObj
-   pRef2Obj            = PExplConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString)          <|>
-                         pExplDeclaration <$ pKey "RELATION"  <*> pRelation <*> optional pSign  <|>
-                         PExplRule        <$ pKey "RULE"      <*> pADLid                        <|>
-                         PExplKeyDef      <$ pKey "KEY"       <*> pADLid                        <|>  
-                         PExplPattern     <$ pKey "PATTERN"   <*> pADLid                        <|>
-                         PExplProcess     <$ pKey "PROCESS"   <*> pADLid                        <|>
-                         PExplInterface   <$ pKey "INTERFACE" <*> pADLid                        <|>
-                         PExplContext     <$ pKey "CONTEXT"   <*> pADLid
-                         where pExplDeclaration nm Nothing   = PExplDeclaration nm P_Sign {psign=[] }
-                               pExplDeclaration nm (Just psgn) = PExplDeclaration nm psgn
+                             = PRef2 orig obj (P_Markup lang fmt str) ref
+   pRef2Obj           :: Parser Token PRef2Obj
+   pRef2Obj            = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString)          <|>
+                         pRef2Declaration <$ pKey "RELATION"  <*> pRelation <*> optional pSign  <|>
+                         PRef2Rule        <$ pKey "RULE"      <*> pADLid                        <|>
+                         PRef2KeyDef      <$ pKey "KEY"       <*> pADLid                        <|>  
+                         PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid                        <|>
+                         PRef2Process     <$ pKey "PROCESS"   <*> pADLid                        <|>
+                         PRef2Interface   <$ pKey "INTERFACE" <*> pADLid                        <|>
+                         PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
+                         where pRef2Declaration nm Nothing    = PRef2Declaration nm P_Sign {psign=[] }
+                               pRef2Declaration nm (Just psgn)= PRef2Declaration nm psgn
 
    pContextElement    :: Parser Token ContextElement
    pContextElement     = CPat     <$> pPattern      <|>
@@ -155,7 +155,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                          Cifc     <$> pInterface    <|>
                          CSqlPlug <$> pSqlplug      <|>
                          CPhpPlug <$> pPhpplug      <|>
-                         CXpl     <$> pPurpose      <|>
+                         CPrp     <$> pPurpose      <|>
                          CPop     <$> pPopulation   <|>
                          CThm     <$> pPrintThemes
 
@@ -188,7 +188,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                      | Pd P_Declaration 
                      | Pc ConceptDef
                      | Pk P_KeyDef
-                     | Pe PExplanation
+                     | Pe PPurpose
                      | Pp P_Population
                               
    pPatElem         :: Parser Token PatElem
@@ -228,7 +228,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                      | PrL P_RoleRelation
                      | PrC ConceptDef
                      | PrK P_KeyDef
-                     | PrE PExplanation
+                     | PrE PPurpose
                      | PrP P_Population
 
    pProcElem        :: Parser Token ProcElem
@@ -242,9 +242,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        PrE <$> pPurpose      <|>
                        PrP <$> pPopulation
 
-   pMeaning         :: Parser Token P_Markup
-   pMeaning          = P_Markup <$ pKey "MEANING" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
-                        
+   pMeaning         :: Parser Token PMeaning
+   pMeaning          = rebuild <$ pKey "MEANING" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
+                        where rebuild lang fmt mkup =
+                                 PMeaning (P_Markup lang fmt mkup)
    pGen             :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)

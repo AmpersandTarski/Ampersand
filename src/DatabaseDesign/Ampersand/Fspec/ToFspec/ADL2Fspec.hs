@@ -382,7 +382,7 @@ while maintaining all invariants.
                  , actQuads  = invQs
                  , actEcas   = [eca | eca<-vEcas fSpec, eRel (ecaTriggr eca) `elem` rels]
                  , actFPA    = NO   -- TODO: this is erroneous. check with IFPUG standard
-                 , actXpls   = [Expl { explPos = OriginUnknown
+                 , actPurp   = [Expl { explPos = OriginUnknown
                                      , explObj = ExplRule rul  -- TODO: check if this is correct?
                                      , explMarkup = A_Markup { amLang = Dutch
                                                              , amFormat = ReST
@@ -687,7 +687,7 @@ while maintaining all invariants.
                              , decprL  = ""
                              , decprM  = ""
                              , decprR  = ""
-                             , decMean = []
+                             , decMean = fatal 690 "Ampersand generated a Relation without meaning!. Why?"
                              , decpopu = []
                              , decfpos = Origin "generated relation (Delta)"
                              , deciss  = True
