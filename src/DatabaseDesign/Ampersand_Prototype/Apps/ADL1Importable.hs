@@ -192,7 +192,7 @@ violationid (r,p) = r #> show p
 violationpair :: (Rule,Paire) -> String
 violationpair (r,(x,y)) = show(mkPair (source r#>x) (target r#>y))
 
-instance ADL1Importable Explanation where
+instance ADL1Importable Purpose where
  makeADL1Populations atlasds es 
    = let purcpt = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="Concept"] 
          purrul = [setRelats(makeRelation d) |d<-atlasds,name d=="purpose",name(source d)=="UserRule"]  
@@ -229,7 +229,7 @@ instance ADL1Importable Fspc where
          --   ++ makeADL1Populations atlasds (gens fs) --the details of gens
             ++ contextelements (patterns fs) ctxpts fs --the patterns
             ++ makeADL1Populations atlasds (patterns fs) --the rules + relations + gens of patterns
-            ++ makeADL1Populations atlasds (fSexpls fs) --the purposes
+            ++ makeADL1Populations atlasds (explanations fs) --the purposes
             ++ makeADL1Populations atlasds (violations fs) --the violations
             --REMARK -> the pictures are not part of fspec, but derived from them (see Main.hs of prototype.exe)
             |fs<-fss --REMARK -> probably there will be only one fs

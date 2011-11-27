@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand
 --   ( -- Data Constructors:
 --     A_Context
 --   , P_Context(..)
---   , PExplObj(..), PExplanation(..)
+--   , PRef2Obj(..), PPurpose(..)
 --   , Architecture(..)
 --   , A_Concept(..), newAcpt
 --   , ConceptDef(..), ConceptStructure(..)

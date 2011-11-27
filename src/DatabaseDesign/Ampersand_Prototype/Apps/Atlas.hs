@@ -175,7 +175,7 @@ atlas2context fSpec flags =
       --Pattern--
       rulpattern <- selectdecl conn fSpec (therel fSpec "rulpattern" [] [])
       relpattern <- selectdecl conn fSpec (therel fSpec "relpattern" [] [])
-      --PExplainable--
+      --PReferencable--
       patpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Pattern" [])
       rulpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "UserRule" [])
       relpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Relation" [])
@@ -225,7 +225,7 @@ atlas2rule rulstr rls mlang ruldescribes
  = P_Ru { rr_nm   = rulstr
         , rr_exp  = geta rls rulstr  (error "while geta rls.")
         , rr_fps  = DBLoc "Atlas(Rule)"
-        , rr_mean = [P_Markup mlang Nothing (geta ruldescribes rulstr "")]
+        , rr_mean = [PMeaning $ P_Markup mlang Nothing (geta ruldescribes rulstr "")]
         }
 
 atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> RelTbl -> RelTbl
@@ -287,17 +287,17 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
          }
 
 atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)]
-                                  -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PExplanation]
+                                  -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PPurpose]
 atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
  = --error(show (patpurpose, rulpurpose, relpurpose, cptpurpose)) ++
-     [PExpl (DBLoc "Atlas(PatPurpose)") (PExplPattern x) (P_Markup Nothing Nothing y) []
+     [PRef2 (DBLoc "Atlas(PatPurpose)") (PRef2Pattern x) (P_Markup Nothing Nothing y) []
      |(x,y)<-patpurpose]
-  ++ [PExpl (DBLoc "Atlas(RulPurpose)") (PExplRule x) (P_Markup Nothing Nothing y) []
+  ++ [PRef2 (DBLoc "Atlas(RulPurpose)") (PRef2Rule x) (P_Markup Nothing Nothing y) []
      |(x,y)<-rulpurpose]
-  ++ [PExpl (DBLoc "Atlas(RelPurpose)") (PExplDeclaration r (P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
+  ++ [PRef2 (DBLoc "Atlas(RelPurpose)") (PRef2Declaration r (P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
                                                                     ,PCpt(geta reltg x (error "while geta reltg3."))])) (P_Markup Nothing Nothing y) []
      |(x,y)<-relpurpose, let r=makerel x relname]
-  ++ [PExpl (DBLoc "Atlas(CptPurpose)") (PExplConceptDef x) (P_Markup Nothing Nothing y) []
+  ++ [PRef2 (DBLoc "Atlas(CptPurpose)") (PRef2ConceptDef x) (P_Markup Nothing Nothing y) []
      |(x,y)<-cptpurpose]
 
 makerel :: String -> [(String, String)] -> P_Relation
