@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       , makeDefinition, uniquecds
       , count
       , ShowMath(..)
-      , latexEscShw
+      , latexEscShw, stripSpecialChars
       , xrefCitation
       , texOnly_Id
       , texOnly_fun
@@ -20,6 +20,7 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       )
 where
 import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.Fspec
 import Data.Char hiding (Space)
 import Text.Pandoc
 import DatabaseDesign.Ampersand.Basics
@@ -403,6 +404,9 @@ instance SymRef Declaration where
 instance SymRef Rule where
   symLabel r = "Rule:"++stripSpecialChars (name r)
 
+instance SymRef PlugInfo where
+  symLabel p = "PlugInfo "++stripSpecialChars (name p)
+
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [RawInline "latex" ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
 ---   xrefTableReference :: String -> [Inline]
@@ -457,6 +461,9 @@ instance ShowMath A_Gen where
 
 instance ShowMath Rule where
  showMath r = showMath (rrexp r)
+
+instance ShowMath Sign where
+ showMath (Sign s t) = showMath s++"\\rel"++showMath t
 
 instance ShowMath Expression where
  showMath             = showchar.insParentheses
@@ -593,7 +600,7 @@ latexEscShw (c:str)      | isAlphaNum c = [c]++latexEscShw str
   f 'Å' = "\\r{A}"         --  ring over the letter
   f 'Ŏ' = "\\u{O}"         --  breve over the letter
   f 'Š' = "\\v{S}"         --  caron/hacek "v") over the letter
-  f c   = [c]
+  f x   = [x]
 
 -- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
 stripSpecialChars :: String -> String

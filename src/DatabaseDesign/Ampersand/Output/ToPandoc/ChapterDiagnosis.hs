@@ -11,7 +11,6 @@ import Data.List
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -153,7 +152,7 @@ chpDiagnosis lev fSpec flags
                      ]
    where missing = [c | c <-ccs
                       , cd <- cptdf c
-                      , isMissing (purpose fSpec (language flags) cd)
+                      , null (purposes fSpec (language flags) cd)
                    ]++
                    [c | c <-ccs
                       , null (cptdf c)
@@ -190,7 +189,7 @@ chpDiagnosis lev fSpec flags
                                    else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                                         mors [proc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
-                     , isMissing (purpose fSpec (language flags) r)
+                     , null (purposes fSpec (language flags) r)
                      ]
 
   relsNotUsed :: [Block]
@@ -359,7 +358,7 @@ chpDiagnosis lev fSpec flags
      where missingPurp
             = nub [ r
                   | r<-ruls
-                  , isMissing (purpose fSpec (language flags) r)
+                  , null (purposes fSpec (language flags) r)
                   ]
            missingMeaning
             = nub [ r

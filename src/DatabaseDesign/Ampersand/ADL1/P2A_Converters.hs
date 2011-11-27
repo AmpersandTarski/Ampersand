@@ -211,7 +211,6 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
    )
    where (aexpr,exprcxe) = pExpr2aExpr actx NoCast (rr_exp prul)
          meanings = pMeanings2aMeaning (ctxlang actx) (ctxmarkup actx) 
-   
 pMeanings2aMeaning :: Lang          -- The default language
                   -> PandocFormat  -- The default format
                   -> [PMeaning]
