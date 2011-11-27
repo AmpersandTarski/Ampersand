@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation (purpose,meaning)
+import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -66,12 +66,12 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
            conceptsWith     -- All concepts that have at least one definition or one userdefined purpose. 
               = [(c, pps)
                 | c <-concs fSpec
-                , let pps = [p | Just p <- [purpose fSpec (language flags) c], explUserdefd p]
+                , let pps = [p | p <- purposes fSpec (language flags) c, explUserdefd p]
                 , not (null (cptdf c)) || not (null pps)]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
                                           -- and only those declarations that have at least one userdefined purpose.
               = [r | r@Rel{}<-mors fSpec
-                   , (not . isMissing) ( purpose fSpec (language flags) r)
+                   , (not . null) ( purposes fSpec (language flags) r)
                 ]
                  
       aThemeAtATime :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
@@ -148,7 +148,8 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                         English -> [Str "This paragraph shows remaining fact types and concepts "
                                                    ,Str "that have not been described in previous paragraphs."]
                                       )]
-                         Just pat -> purpose2Blocks (purpose fSpec (language flags) pat)
+                         Just pat -> purposes2Blocks purps
+                                     where purps = purposes fSpec (language flags) pat
 
               sctcsIntro :: [(A_Concept, [Purpose])] -> [Block]
               sctcsIntro [] = []
@@ -208,7 +209,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                          exps    = [ x | Left x<-takeWhile isLeft xs']
                          explist :: [Block]
                          explist = concat
-                                   [ amPandoc (explMarkup e) -- explains2Blocks (purpose fSpec (language flags) c)
+                                   [ amPandoc (explMarkup e)
                                    | (_,e)<-exps]
                       gr result [] i = (result, Counter i)
                       gr result xs' i = gl (result++deflist) (dropWhile isRight xs') (i+length defs)
@@ -240,7 +241,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = relBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       relBlock :: Relation -> Counter -> ([Block],Counter)
-                      relBlock rel cnt = ( purpose2Blocks (purpose fSpec (language flags) rel) ++
+                      relBlock rel cnt = ( purposes2Blocks purps ++
                                            [DefinitionList [ ( [ Str (case language flags of
                                                                         Dutch   -> "Eis "
                                                                         English -> "Requirement ")
@@ -252,7 +253,8 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                            ]
                                            ]
                                          , incEis cnt)
-                                                       
+                                         where purps = purposes fSpec (language flags) rel
+
               sctrs :: [Rule] -> Counter -> ([Block],Counter)
               sctrs xs c0 
                 = case xs of
@@ -263,7 +265,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ( purpose2Blocks (purpose fSpec (language flags) r2) ++
+                      ruleBlock r2 cnt = ( purposes2Blocks purps ++
                                            [DefinitionList [ ( [Str (case language flags of
                                                                        Dutch   -> "Eis"
                                                                        English -> "Requirement")
@@ -277,5 +279,6 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                            ]
                                            ]
                                          , incEis cnt)
+                                         where purps = purposes fSpec (language flags) r2
                       
 
