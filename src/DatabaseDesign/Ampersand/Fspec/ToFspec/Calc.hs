@@ -13,7 +13,7 @@ where
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Event(..),Quad(..),ECArule(..),InsDel(..),PAclause(..))
+   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Quad(..),ECArule(..),InsDel(..),PAclause(..))
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
 --   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)

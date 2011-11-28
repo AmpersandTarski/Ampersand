@@ -97,7 +97,7 @@ pCtx2aCtx pctx
     themeschk = case orphans of
                  []   -> []
                  [nm] -> [newcxe ("Theme '"++nm++"' is selected for output, but is not defined.")]
-                 nms  -> [newcxe ("The following themes are selected for output, but are not defined:\n   "++intercalate ", " orphans)]
+                 _    -> [newcxe ("The following themes are selected for output, but are not defined:\n   "++intercalate ", " orphans)]
                 where orphans = ctxthms actx>-themenames
                       themenames=[name p |p<-pats]++[name p |p<-procs]
     rulenmchk = nub [newcxe ("Rules with identical names at positions "++show(map origin rs))

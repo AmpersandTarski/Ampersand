@@ -381,21 +381,23 @@ instance Explainable Activity where
                                                     })
 
 class Meaning a where 
-  meaning :: Lang -> a -> A_Markup
+  meaning :: Lang -> a -> Maybe A_Markup
   meaning2Blocks :: Lang -> a -> [Block]
-  meaning2Blocks l = amPandoc . meaning l 
+  meaning2Blocks l a = case meaning l a of
+                         Nothing -> []
+                         Just m  -> amPandoc m 
   
 instance Meaning Rule where
   meaning l r = case filter isLang (ameaMrk (rrmean r)) of
-                  []   -> fatal 379 ("The meaning of rule "++name r ++" should be generated when not specified by the user!")
-                  [m]  -> m
+                  []   -> Nothing 
+                  [m]  -> Just m
                   _    -> fatal 381 ("Too many meanings given for rule "++name r ++".")
                   where isLang m = l == amLang m
   
 instance Meaning Declaration where
   meaning l d = case filter isLang (ameaMrk (decMean d)) of
-                  []   -> fatal 386 ("The meaning of declaration "++name d ++" should be generated when not specified by the user!")
-                  [m]  -> m
+                  []   -> Nothing 
+                  [m]  -> Just m
                   _    -> fatal 388 ("Too many meanings given for declaration "++name d ++".")
                   where isLang m = l == amLang m
    

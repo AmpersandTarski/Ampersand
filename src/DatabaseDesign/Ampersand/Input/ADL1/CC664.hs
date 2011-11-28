@@ -210,9 +210,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                               pKey "RULE" *> pADLid_val_pos <* pKey "SIGNALS"
                         pAlways          :: Parser Token (String, Origin)
                         pAlways           = ( pKey "RULE" *> pADLid_val_pos <* pKey "MAINTAINS" ) `opt` ("",fatal 160 "no location")
-                        expl2meanings expl = if expl == ""
-                                             then []
-                                             else [P_Markup Nothing Nothing expl]
    pGen             :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen ) (PCpt spc )
