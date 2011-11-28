@@ -104,7 +104,7 @@ function sendCommands(commandArray) {
 
 function getEmptyAtomsNotInTemplates() {
   $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
-    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
+    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length || $(this).attr("status") == "deleted")
       return null;
     else 
       return $(this);
