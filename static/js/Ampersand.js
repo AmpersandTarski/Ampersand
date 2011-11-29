@@ -25,7 +25,7 @@ function startEditing() {
 }
 
 function cancelEditing() {
-  if ($('#AmpersandRoot').attr('isNew')) {
+  if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we cancel the creation of a new atom, the new atom is removed from the concept table
     // and we navigate back to the previous page. (We do need to create an atom on new, because then we 
     // can simply use Interface.php to edit it)
