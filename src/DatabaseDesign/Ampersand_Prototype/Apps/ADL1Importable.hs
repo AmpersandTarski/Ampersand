@@ -127,7 +127,7 @@ instance ADL1Importable Declaration where
         :(makepopu dcs (show.snd) dclrng (snd.snd))
         :(makepopu dprs (show.fst) dclupr (show.snd))
         --description
-        :(makepopu ds declarationid dcldcr (\x -> aMarkup2String (meaning Dutch x)))
+        :(makepopu ds declarationid dcldcr (\x -> maybe "" aMarkup2String (meaning Dutch x)))
         :[]
 dpragma :: Integer -> Declaration -> String
 dpragma i (Sgn{decprL=x1,decprM=x2,decprR=x3})
@@ -154,7 +154,7 @@ instance ADL1Importable Rule where
         :(makepopu rs (showADL.rrexp) rulsrc (name.source))
         :(makepopu rs (showADL.rrexp) rultrg (name.target))
         :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.rrexp.fst) ruluss (relationid.snd))
-        :(makepopu rs name ruldcr (\x -> aMarkup2String (meaning Dutch x)))
+        :(makepopu rs name ruldcr (\x -> maybe "" aMarkup2String (meaning Dutch x)))
         :[]
 
 instance ADL1Importable Pattern where
