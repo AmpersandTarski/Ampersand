@@ -317,15 +317,19 @@ function startAtomEditing($atom) {
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
   $atomName.after($form);
-  initializeAutocomplete($textfield, $atom);
-  $textfield.focus().select();
-  $atomName.hide();
 
   // stop editing when the textfield loses focus
-  $textfield.blur(function () {
-    // a click in the autocomplete menu triggers blur, so we ignore when the menu is visible
+  
+  $textfield.focusout(function (obj) {
+    // jQuery bug (or really bad feature): a select in the autocomplete menu triggers a blur event on the textfield.
+    // If we stopEditing on this blur, the select action is not registered.
+    // As a workaround, we don't stopEditing if the menu is visible. In that case, stopEditing is called in the 
+    // autocomplete close event handler below. A consequence of this approach is that whenever the autocomplete menu is
+    // closed, atom editing is also ended. However, this is not a big deal and also seems to be the only solution, as
+    // there is no way to detect whether the blur was a genuine blur, or caused by select.
     if ($('.ui-autocomplete:visible').length == 0)
       stopAtomEditing($atom);
+    
     return true;
   });
   // and when the user presses the return key
@@ -333,6 +337,10 @@ function startAtomEditing($atom) {
     stopAtomEditing($atom);
     return false; // this prevents the browser from actually submitting the form
   });
+
+  initializeAutocomplete($textfield, $atom);
+  $textfield.focus().select();
+  $atomName.hide();
 
 }
 
@@ -378,12 +386,18 @@ function initializeAutocomplete($textfield, $atom) {
     if (typeof resultOrError.res !== 'undefined')
         $textfield.autocomplete({ source:resultOrError.res
                                 , minLength: 0
+                                , close: function(event, ui) { 
+                                  stopAtomEditing($atom);
+                                }
                                 , select: function(event, ui) { 
+                                    // Another jQuery problem: on a mouse click, the textfield has not been updated
+                                    // at this point, so stopAtomEditing does not register the selected value.
+                                    // As a workaround, we explicitly set the value to the menu selection.
+                                    // Strangely enough, there is no problem for the Return key event.
                                     if (event.originalEvent && event.originalEvent.originalEvent &&
                                         event.originalEvent.originalEvent.type == "click")
                                       $textfield.attr('value', ui.item.value);
-                                    // On a mouse click, stopAtomEditing here does not update the textfield,
-                                    // so we do it explicitly. For return key events there is no problem.
+
                                     stopAtomEditing($atom); 
                                     return true;
                                  }});
