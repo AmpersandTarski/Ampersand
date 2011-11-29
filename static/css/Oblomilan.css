@@ -11,7 +11,7 @@ a { text-decoration: none; }
 #TopLevelInterfaces ul { background: #333333 url(../images/menu_bg.jpg) repeat-x bottom center; padding: 3px 0px 8px 10px
                        ; margin: 0 0 4 0}
 #TopLevelInterfaces ul li { list-style: none; display:inline}
-#TopLevelInterfaces ul li a { padding: 3px 20px 2px 20px; font-size: 15px; color: white; height:100% }
+#TopLevelInterfaces ul li a { padding: 4px 20px 3px 20px; font-size: 15px; color: white; height:100% }
 #TopLevelInterfaces ul li a:hover { background: white; color: #BF1E74; }
 
 button.button { border:none; font-size:80%; width: 120px; height: 30px; background: url(../images/button.gif) no-repeat 0px 0px
@@ -23,10 +23,14 @@ button.button:hover { background-position: 0px -30px; color: white; }
 /* Atom name */  
 
 .AtomName {
-    display: inline;  /* so the dotted underline for multiple interfaces doesn't stretch */
+    display: block;  /* so the dotted underline for multiple interfaces doesn't stretch */
+    float: left;
     font-family: Arial;
     font-style: bold;
     font-size: 13px;
+    border-bottom-width: 1px;
+    border-bottom-style: dotted; /* only specifying the width does not reserve space for the border */
+    border-bottom-color: transparent; /* so we switch it on and off with the color */
 }
 
 /* AtomName for atoms without subinterfaces (atomic=true) */
@@ -37,7 +41,7 @@ button.button:hover { background-position: 0px -30px; color: white; }
 [editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName {
     cursor: pointer;
     color: #1A9AEA;
-    border-bottom: 1px dotted #1A9AEA;
+    border-bottom-color: #1A9AEA;
 }
 [editing=false] .Atom[atomic=true][hasInterface] > .AtomName:hover {
     color: #BF1E74;
