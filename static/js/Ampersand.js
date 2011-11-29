@@ -375,9 +375,13 @@ function stopAtomEditing($atom) {
   if (newAtom!=atom) {
     
     if ($atom.attr('status')!='new') {
-      $atom.attr('status','modified');
-      if (!$atom.attr('originalAtom')) // first time we edit this field, set originalAtom to the old value 
-        $atom.attr('originalAtom',atom); 
+      
+      if (!$atom.attr('originalAtom')) { // first time we edit this field, set originalAtom to the old value 
+        $atom.attr('originalAtom',atom);
+        $atom.attr('status','modified');
+      } else                            // the atom was edited before
+          if ($atom.attr('originalAtom')==newAtom)
+            $atom.attr('status','unchanged'); // apparently, it was changed back to its original value
     }
 
     traceDbCommands();
