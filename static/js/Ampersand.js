@@ -427,8 +427,15 @@ function setNavigationHandlers() {
 }
 
 function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
-  $('.InterfaceContextMenu').remove();
-  var $menu = $('<div class=InterfaceContextMenu>');
+  $('#InterfaceContextMenu').remove();
+  var $fullScreenMask = $("<div id=FullScreenMask/>");  /* the mask is for hiding the menu if we click anywhere outside it */
+  var $menu = $('<div id=InterfaceContextMenu>');
+
+  $fullScreenMask.click(function () {
+    $menu.remove();
+    $fullScreenMask.remove();
+  });
+  $('body').append($fullScreenMask);
   $parentDiv.append($menu);
   $menu.offset({ top: event.pageY, left: event.pageX });
 
@@ -447,7 +454,8 @@ function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
 function addClickEvent($item, interface, atom) { 
   $item.click(function () {
     navigateTo(interface, atom);
-    $('.InterfaceContextMenu').remove(); // so the menu is gone when we press back
+    $('#InterfaceContextMenu').remove(); // so the menu + mask are gone when we press back
+    $('#FullScreenMask').remove();
     return false;
   });
 }
