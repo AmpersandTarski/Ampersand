@@ -104,7 +104,7 @@ function sendCommands(commandArray) {
 
 function getEmptyAtomsNotInTemplates() {
   $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
-    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length || $(this).attr("status") == "deleted")
+    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
       return null;
     else 
       return $(this);
@@ -275,8 +275,10 @@ function setEditHandlersBelow($elt) {
     if ($atom.attr('status')=='new')
       getEnclosingAtomRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
-      if ($atom.attr('status') == 'modified') // restore the original atom name on delete
-        $atom.find('.AtomName').text($atom.attr('originalAtom'));
+      if ($atom.attr('status') == 'modified') { // restore the original atom name on delete
+        $atom.attr('atom', $atom.attr('originalAtom'));
+        $atom.find('.AtomName').text($atom.attr('originalAtom')); // text() automatically escapes text
+      }
       $atom.attr('status','deleted');
       getEnclosingAtomRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
       $atom.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
