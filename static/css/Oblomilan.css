@@ -23,8 +23,8 @@ button.button:hover { background-position: 0px -30px; color: white; }
 /* Atom name */  
 
 .AtomName {
-    display: block;  /* so the dotted underline for multiple interfaces doesn't stretch */
-    float: left;
+    display: block;  
+    float: left; /* so the dotted underline for multiple interfaces doesn't stretch */
     font-family: Arial;
     font-style: bold;
     font-size: 13px;
@@ -51,7 +51,7 @@ button.button:hover { background-position: 0px -30px; color: white; }
 }
 [editing=true] .Atom[atomic=true][hasInterface] > .AtomName {
     color: black;
-    display: block;  /* so the background that signifies editability does stretch */
+    float: none;  /* so the background that signifies editability does stretch */
 }
 
 /* AtomName for atoms with subinterfaces (atomic=false)
@@ -85,8 +85,13 @@ button.button:hover { background-position: 0px -30px; color: white; }
 
 /* DeleteStub */
 [editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
-    background-position: 6px 3px;  /* because font-size is different from default */
+  	background-position: 0px 4px;
+  	width: 22px;
 }
+[editing=true] .AtomList[relation] { /* in this case, the delete stub will serve as the padding */
+    padding-left: 0px;
+}
+
 
 
 /* Special behavior for top level elements */
