@@ -1,312 +1,312 @@
-body 
- { margin: 0px	
- }
-  
-[editing=false] .Atom[hasInterface]>.AtomName 
-  { cursor: pointer
-  ; color: blue
-  }
+body {
+    margin: 0px	
+}
+    
+[editing=false] .Atom[hasInterface]>.AtomName {
+    cursor: pointer;
+    color: blue
+}
 
-.AtomList
-  { display: table
-  ; border: 0px
-  ; margin: 0px
-  ; padding-left: 10px
-  ; cell-padding: 0px
-  ; margin: 4px
-  }
-  
-.AtomRow[rowType=NewAtomTemplate]
-  { display: none
-  }  
-.AtomRow
-  { display: table-row
-  }
-.AtomListElt
-  { display: table-cell
-  }
-.DeleteStub
-  { display: none
-  }
-.InsertStub
-  { display: none
-  }
-  
-[editing=true] .AtomRow[rowStatus=deleted]
-  { display: none
-  }
+.AtomList {
+    display: table;
+    border: 0px;
+    margin: 0px;
+    padding-left: 10px;
+    cell-padding: 0px;
+    margin: 4px;
+}
+    
+.AtomRow[rowType=NewAtomTemplate] {
+    display: none;
+}  
+.AtomRow {
+    display: table-row;
+}
+.AtomListElt {
+    display: table-cell;
+}
+.DeleteStub {
+    display: none;
+}
+.InsertStub {
+    display: none;
+}
+    
+[editing=true] .AtomRow[rowStatus=deleted] {
+    display: none;
+}
 
-[dev=true][editing=true] .AtomRow[rowStatus=deleted]
-  { display: table-row
-  }
-[dev=true][editing=true] .Atom[status=deleted]>.AtomName
-  { text-decoration: line-through
-  }
+[dev=true][editing=true] .AtomRow[rowStatus=deleted] {
+    display: table-row;
+}
+[dev=true][editing=true] .Atom[status=deleted]>.AtomName {
+    text-decoration: line-through;
+}
 
-[dev=true][editing=true] .Atom[status=modified]>.AtomName 
-  { font-style: italic
-  }
-  
-[dev=true][editing=true] .Atom[status=new]>.AtomName 
-  { color:blue
-  }
+[dev=true][editing=true] .Atom[status=modified]>.AtomName {
+    font-style: italic;
+}
+    
+[dev=true][editing=true] .Atom[status=new]>.AtomName {
+    color:blue;
+}
 
 
-.Atom[atom='']>.AtomName:after
-  { content: "<empty>";
-  ; font-weight: bold
-  }
-  
-.Atom[atom=''][status=new]>.AtomName:after
-  { content: "<new>";
-  ; font-weight: bold
-  }
-  
-.Label 
-  { font-family: Arial
-  ; font-style: bold
-  ; color: #707070
-  }
+.Atom[atom='']>.AtomName:after {
+    content: "<empty>";
+    font-weight: bold;
+}
+    
+.Atom[atom=''][status=new]>.AtomName:after {
+    content: "<new>";
+    font-weight: bold;
+}
+    
+.Label {
+    font-family: Arial;
+    font-style: bold;
+    color: #707070;
+}
 
 
 /* Buttons */
 
-[editing=true] .EditButton
-  { display: none
-  }
-  
-.SaveButton
-  { display: none
-  }
-  
-[editing=true] .SaveButton
-  { display: inline
-  }
-  
-.CancelButton
-  { display: none
-  }
-  
-[editing=true] .CancelButton
-  { display: inline
-  }
-  
-.InterfaceList 
-  { border-style: solid
-  ; border-width: 1px
-  ; padding-left: 5px
-  ; -moz-border-radius: 5px       /* rounded corners for Firefox */
-  ; -webkit-border-radius: 5px    /* rounded corners for Safari */
-  ; background-color: white
-  }
+[editing=true] .EditButton {
+    display: none;
+}
+    
+.SaveButton {
+    display: none;
+}
+    
+[editing=true] .SaveButton {
+    display: inline;
+}
+    
+.CancelButton {
+    display: none;
+}
+    
+[editing=true] .CancelButton {
+    display: inline;
+}
+    
+.InterfaceList {
+    border-style: solid;
+    border-width: 1px;
+    padding-left: 5px;
+    -moz-border-radius: 5px;  /* rounded corners for Firefox */
+    -webkit-border-radius: 5px;  /* rounded corners for Safari */
+    background-color: white;
+}
  
-  
+    
 /* Editing */  
 
-[editing=true] .AtomList[relation]
-  { border-color: #0000ff
-  ; border-style: solid
-  ; border-width: 2px 
-  ; padding-right: 4px
-  ; background-color: #f0f0f0
-  }
+[editing=true] .AtomList[relation] {
+    border-color: #0000ff;
+    border-style: solid;
+    border-width: 2px ;
+    padding-right: 4px;
+    background-color: #f0f0f0;
+}
 
-[editing=true] .AtomList[relation][hover=true]
-  { border-color: #0080ff
-  ; background-color: #e0e0e0
-  }
+[editing=true] .AtomList[relation][hover=true] {
+    border-color: #0080ff;
+    background-color: #e0e0e0;
+}
+      
+[editing=true] .AtomList[relation][hover=true] > .AtomRow > .AtomListElt > .Atom > .AtomName:hover {
+    background-color: #808080;
+}
     
-[editing=true] .AtomList[relation][hover=true] > .AtomRow > .AtomListElt > .Atom > .AtomName:hover
-  { background-color: #808080
-  }
-  
-[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub
-  { display: table-cell
-  ; visibility: hidden
-  ; background-image: url('../images/DeleteButton.png')
-  ; background-repeat:no-repeat
-  ; background-position: 6px 1px
-  ; width: 25px
-  }
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
+    display: table-cell;
+    visibility: hidden;
+    background-image: url('../images/DeleteButton.png');
+    background-repeat:no-repeat;
+    background-position: 6px 1px;
+    width: 25px;
+}
 
-[editing=true] .AtomList[relation] > .AtomRow[rowType=Normal] > .DeleteStub
-  { display:table-cell
-  }
+[editing=true] .AtomList[relation] > .AtomRow[rowType=Normal] > .DeleteStub {
+    display:table-cell;
+}
 
-[editing=true] .AtomList[hover=true] > .AtomRow[rowType=Normal] > .DeleteStub
-  { visibility: visible
-  }
-  
-[editing=true] .AtomList[hover=true] > .AtomRow > .DeleteStub:hover
-  { background-image: url('../images/DeleteButtonHover.png')
-  }
+[editing=true] .AtomList[hover=true] > .AtomRow[rowType=Normal] > .DeleteStub {
+    visibility: visible;
+}
+    
+[editing=true] .AtomList[hover=true] > .AtomRow > .DeleteStub:hover {
+    background-image: url('../images/DeleteButtonHover.png');
+}
  
 
-[editing=true] .AtomList[relation] > .AtomRow > .InsertStub
-  { display:block /* only show the insert stub when there is an editable relation*/
-  }
+[editing=true] .AtomList[relation] > .AtomRow > .InsertStub {
+    display:block;  /* only show the insert stub when there is an editable relation*/
+}
 
-.AtomList .InsertStub
-  { visibility: hidden
-  ; padding: 1px 7px 1px 7px
-  ; font-family: Arial
-  ; font-style: bold
-  ; font-size: 80%
-  ; color: white
-  ; background-color: #909090
-  ; border-style: solid
-  ; border-width: 1px
-  ; border-color: black
-  ; -moz-border-radius: 7px       /* rounded corners for Firefox */
-  ; -webkit-border-radius: 7px    /* rounded corners for Safari */
-  }
+.AtomList .InsertStub {
+    visibility: hidden;
+    padding: 1px 7px 1px 7px;
+    font-family: Arial;
+    font-style: bold;
+    font-size: 80%;
+    color: white;
+    background-color: #909090;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    -moz-border-radius: 7px;  /* rounded corners for Firefox */
+    -webkit-border-radius: 7px;  /* rounded corners for Safari */
+}
  
-[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub
-  { visibility: visible
-  }
-  
-[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub:hover
-  { background-color: #606060
-  ; cursor: default
-  }
+[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub {
+    visibility: visible;
+}
+    
+[editing=true] .AtomList[hover=true]>.AtomRow>.InsertStub:hover {
+    background-color: #606060;
+    cursor: default;
+}
 
  
  /* Navigation context menu */
 
-#FullScreenMask
-  { display: block
-  ; position: fixed
-  ; z-index: 50;
-  ; top: 0px
-  ; left: 0px
-  ; width: 100%
-  ; height: 100%
-  }
+#FullScreenMask {
+    display: block;
+    position: fixed;
+    z-index: 50;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
 
-#InterfaceContextMenu
-  { position: absolute;
-  ; z-index: 51;
-  ; border-style: solid
-  ; color: black
-  ; background-color: #f8f8f8
-  ; border-width: 1px
-  ; padding-top: 4px
-  ; padding-bottom: 4px
-  }
-  
-.InterfaceContextMenuItem
-  { display: block 
-  ; font-family: Arial
-  ; font-size: 15px
-  ; color: black
-  ; padding-left:6px
-  ; padding-right:16px
-  }
+#InterfaceContextMenu {
+    position: absolute;
+    z-index: 51;
+    border-style: solid;
+    color: black;
+    background-color: #f8f8f8;
+    border-width: 1px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+    
+.InterfaceContextMenuItem {
+    display: block ;
+    font-family: Arial;
+    font-size: 15px;
+    color: black;
+    padding-left:6px;
+    padding-right:16px;
+}
 
-.InterfaceContextMenuItem:hover 
-  { font-family: Arial
-  ; color: white
-  ; background-color: blue
-  }
+.InterfaceContextMenuItem:hover {
+    font-family: Arial;
+    color: white;
+    background-color: blue;
+}
 
 
 /* Php log and Command queue */
 
-#PhpLog
-  { display: none
-  }
-   
-[dev=true] #PhpLog[nonEmpty=true]
-  { display: block
-  ; position: absolute
-  ; bottom: 5px
-  ; right: 5px
-  ; width: 500px
-  ; padding: 10px
-  ; background-color: lightblue
-  ; border-style: solid
-  ; border-width: 1px
-  ; border-color: black
-  ; clear: right
-  }
-#PhpLog > .Title
-  { font-weight: bold 
-  ; margin-bottom: 6px
-  }
-#PhpLog > .LogMsg
-  { font-size: 80%
-  }
-  
-#DbCommandList
-  { display: none
-  }
+#PhpLog {
+    display: none;
+}
+     
+[dev=true] #PhpLog[nonEmpty=true] {
+    display: block;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 500px;
+    padding: 10px;
+    background-color: lightblue;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    clear: right;
+}
+#PhpLog > .Title {
+    font-weight: bold ;
+    margin-bottom: 6px;
+}
+#PhpLog > .LogMsg {
+    font-size: 80%;
+}
+    
+#DbCommandList {
+    display: none;
+}
 
-[editing=true][dev=true] #DbCommandList
-  { display: block
-  ; position: absolute
-  ; right: 5px
-  ; width: 500px
-  ; padding: 10px
-  ; background-color: #d0d0d0
-  ; border-style: solid
-  ; border-width: 1px
-  ; border-color: black
-  }
-  
-#DbCommandList > .Title
-  { font-weight: bold 
-  ; margin-bottom: 6px
-  }
-  
-#DbCommandList > .Command
-  { font-size: 90%
-  }
+[editing=true][dev=true] #DbCommandList {
+    display: block;
+    position: absolute;
+    right: 5px;
+    width: 500px;
+    padding: 10px;
+    background-color: #d0d0d0;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+}
+    
+#DbCommandList > .Title {
+    font-weight: bold ;
+    margin-bottom: 6px;
+}
+    
+#DbCommandList > .Command {
+    font-size: 90%;
+}
 
-#IssueList
-  { display: none
-  }
-  
-[editing=true] #IssueList[nonEmpty=true]
-  { display: block
-  ; position: absolute
-  ; left: 5px
-  ; bottom: 5px
-  ; width: 600px
-  ; padding: 10px
-  ; color: red
-  ; background-color: #f0f0f0
-  ; border-style: solid
-  ; border-width: 2px
-  ; border-color: red
-  }
+#IssueList {
+    display: none;
+}
+    
+[editing=true] #IssueList[nonEmpty=true] {
+    display: block;
+    position: absolute;
+    left: 5px;
+    bottom: 5px;
+    width: 600px;
+    padding: 10px;
+    color: red;
+    background-color: #f0f0f0;
+    border-style: solid;
+    border-width: 2px;
+    border-color: red;
+}
 
-#IssueList > .Title
-  { color: black
-  ; font-weight: bold
-  ; margin-bottom: 3px
-  }
-  
-#IssueList > .AmpersandErr
-  { font-size: 90%
-  }
-  
-#IssueList > .Error
-  { font-size: 90%
-  ; color: darkred
-  }
+#IssueList > .Title {
+    color: black;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+    
+#IssueList > .AmpersandErr {
+    font-size: 90%;
+}
+    
+#IssueList > .Error {
+    font-size: 90%;
+    color: darkred;
+}
 
 /* Misc */
 
-.InternalError /* for unhandled errors, should not appear */
-  { background-color: red
-  ; color: white
-  }
+.InternalError { /* for unhandled errors, should not appear */
+    background-color: red;
+    color: white;
+}
 
-#Rollback /* used for parking a clone of the root atom during editing */
-  { display: none
-  }
+#Rollback { /* used for parking a clone of the root atom during editing */
+    display: none;
+}
 
-.ui-autocomplete > .ui-menu-item /* jQuery autocomplete menu items */
-  { font-size: 13px
-  }
-  
+.ui-autocomplete > .ui-menu-item /{ * jQuery autocomplete menu items */
+    font-size: 13px;
+}
+    

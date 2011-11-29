@@ -22,146 +22,144 @@ button.button:hover { background-position: 0px -30px; color: white; }
 
 /* Atom name */  
 
-.AtomName
-  { display: inline    /* so the dotted underline for multiple interfaces doesn't stretch */
-  ; font-family: Arial
-  ; font-style: bold
-  ; font-size: 13px
-  }
+.AtomName {
+    display: inline;  /* so the dotted underline for multiple interfaces doesn't stretch */
+    font-family: Arial;
+    font-style: bold;
+    font-size: 13px;
+}
 
 /* AtomName for atoms without subinterfaces (atomic=true) */
-[editing=false] .Atom[atomic=true][hasInterface] > .AtomName 
-  { cursor: pointer
-  ; color: #1A9AEA
-  }
-[editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName 
-  { cursor: pointer
-  ; color: #1A9AEA
-  ; border-bottom: 1px dotted #1A9AEA;
-  }
-[editing=false] .Atom[atomic=true][hasInterface] > .AtomName:hover 
-  { color: #BF1E74
-  }
-[editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName:hover 
-  { border-bottom: 1px dotted #BF1E74
-  }
-[editing=true] .Atom[atomic=true][hasInterface] > .AtomName 
-  { color: black
-  ; display: block     /* so the background that signifies editability does stretch */
-  }
+[editing=false] .Atom[atomic=true][hasInterface] > .AtomName {
+    cursor: pointer;
+    color: #1A9AEA;
+}
+[editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName {
+    cursor: pointer;
+    color: #1A9AEA;
+    border-bottom: 1px dotted #1A9AEA;
+}
+[editing=false] .Atom[atomic=true][hasInterface] > .AtomName:hover {
+    color: #BF1E74;
+}
+[editing=false] .Atom[atomic=true][hasInterface=multiple] > .AtomName:hover {
+    border-bottom: 1px dotted #BF1E74;
+}
+[editing=true] .Atom[atomic=true][hasInterface] > .AtomName {
+    color: black;
+    display: block;  /* so the background that signifies editability does stretch */
+}
 
-/* AtomName for atoms with subinterfaces (atomic=false) */
-/* These get a button for navigation and are not displayed while editing */
-[editing=false] .Atom[atomic=false] > .AtomName
-  { color: transparent
-  ; white-space: nowrap; 
-  ; float: right
-  ; margin-right: 2px
-  ; margin-top: -7px
-  ; width: 20px
-  ; background-repeat:no-repeat
-  ; background-position: 0px 0px
-  }
-[editing=false] .Atom[atomic=false][hasInterface] > .AtomName
-  { background-image: url('../images/NavigationButton.png')
-  }
-[editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName 
-  {  background-image: url('../images/NavigationButtonMulti.png')
-  }
-[editing=false] .Atom[atomic=false][hasInterface] > .AtomName:hover
-  { background-image: url('../images/NavigationButtonHover.png')
-  } 
-[editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName:hover 
-  {  background-image: url('../images/NavigationButtonMultiHover.png')
-  }
-[editing=true] .Atom[atomic=false] > .AtomName
-  { display: none
-  }
-
-
+/* AtomName for atoms with subinterfaces (atomic=false)
+      These get a button for navigation and are not displayed while editing */
+[editing=false] .Atom[atomic=false] > .AtomName {
+    color: transparent;
+    white-space: nowrap;
+    float: right;
+    margin-right: 2px;
+    margin-top: -7px;
+    width: 20px;
+    background-repeat:no-repeat;
+    background-position: 0px 0px;
+}
+[editing=false] .Atom[atomic=false][hasInterface] > .AtomName {
+    background-image: url('../images/NavigationButton.png');
+}
+[editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName {
+     background-image: url('../images/NavigationButtonMulti.png');
+}
+[editing=false] .Atom[atomic=false][hasInterface] > .AtomName:hover {
+    background-image: url('../images/NavigationButtonHover.png');
+} 
+[editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName:hover {
+     background-image: url('../images/NavigationButtonMultiHover.png');
+}
+[editing=true] .Atom[atomic=false] > .AtomName {
+    display: none;
+}
 
 
 /* DeleteStub */
-[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub
-  { background-position: 6px 3px     /* because font-size is different from default */
-  }
+[editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
+    background-position: 6px 3px;  /* because font-size is different from default */
+}
 
 
 /* Special behavior for top level elements */
 
-#AmpersandRoot
-  { padding-left: 20px
-  }
+#AmpersandRoot {
+    padding-left: 20px;
+}
 
-#AmpersandRoot > .Atom > .AtomName 
-  { display: none
-  } 
-#AmpersandRoot > .Atom > .InterfaceList 
-  { border: none
-  ; padding: 0px
-  } 
+#AmpersandRoot > .Atom > .AtomName {
+    display: none;
+} 
+#AmpersandRoot > .Atom > .InterfaceList {
+    border: none;
+    padding: 0px;
+} 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface> .Label 
-  { font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px
-  } 
+#AmpersandRoot > .Atom > .InterfaceList > .Interface> .Label {
+    font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px;
+} 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList 
-  { display: block
-  ; margin: 0px
-  ; border-width: 0px
-  } 
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList {
+    display: block;
+    margin: 0px;
+    border-width: 0px;
+} 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow[rowType=Normal]
-  { display: block
-  } 
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow[rowType=Normal] {
+    display: block;
+} 
 
-#AmpersandRoot > .Atom > .InterfaceList> .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .AtomName 
-  { display: none
-  } 
+#AmpersandRoot > .Atom > .InterfaceList> .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .AtomName {
+    display: none;
+} 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList 
-  { border: none
-  ; padding: 0px
-  } 
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList {
+    border: none;
+    padding: 0px;
+} 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface
-  { float: left
-  ; border-style: solid
-  ; border-color: #CDD8DE
-  ; border-width: 1px
-  ; -moz-border-radius: 5px       /* rounded corners for Firefox */
-  ; -webkit-border-radius: 5px    /* rounded corners for Safari */
-  ; padding: 10px
-  ; margin-left: 0px
-  ; margin-right: 20px
-  }
-  
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface > .Label
-  { font-size: 16px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
-  }
-  
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface {
+    float: left;
+    border-style: solid;
+    border-color: #CDD8DE;
+    border-width: 1px;
+    -moz-border-radius: 5px;  /* rounded corners for Firefox */
+    -webkit-border-radius: 5px;  /* rounded corners for Safari */
+    padding: 10px;
+    margin-left: 0px;
+    margin-right: 20px;
+}
+    
+#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface > .Label {
+    font-size: 16px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
+}
+    
 
 /* Spacing */
-.Label
-  { font-size: 13px
-  ; margin-bottom: 3px
-  }
+.Label {
+    font-size: 13px;
+    margin-bottom: 3px;
+}
 
-.AtomList
-  { margin: 0px
-  ; padding-bottom: 2px
-  ; border: 0px
-  }
-.AtomListElt 
-  { padding: 0px
-  ; padding-bottom: 6px
-  } 
+.AtomList {
+    margin: 0px;
+    padding-bottom: 2px;
+    border: 0px;
+}
+.AtomListElt {
+    padding: 0px;
+    padding-bottom: 6px;
+} 
 
-.InterfaceList 
-  { margin-top: 10px
-  ; padding: 5px
-  } 
-  
-.Interface 
-  { margin-bottom: 0px
-  }
+.InterfaceList {
+    margin-top: 10px;
+    padding: 5px;
+} 
+    
+.Interface {
+    margin-bottom: 0px;
+}
