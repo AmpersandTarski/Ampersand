@@ -55,6 +55,12 @@ function processCommand($command) {
     error("Malformed command, missing 'dbCmd'");
 
   switch ($command->dbCmd) {
+    case 'addToConcept':
+      if (array_key_exists('atom', $command) && array_key_exists('concept', $command))
+        editAddToConcept($command->atom, $command->concept);
+      else 
+        error("Command $command->dbCmd is missing parameters");
+      break;
     case 'update':
       if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
           array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command) &&
@@ -75,6 +81,11 @@ function processCommand($command) {
     default:
       error("Unknown command '$command->dbCmd'");
   }
+}
+
+function editAddToConcept($atom, $concept) {
+  emitLog("editAddToConcept($atom, $concept)");
+  addAtomToConcept($atom, $concept);  
 }
 
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {

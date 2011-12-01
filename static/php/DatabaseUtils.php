@@ -50,21 +50,36 @@ function mkUniqueAtom($existingAtoms, $concept) {
   return $concept.'_'.(count($generatedAtomNrs)+1);
 }
 
-function createNewAtom($concept) {
+/* Precondition: $newAtom is not already in $concept */
+function addNewAtomToConcept($newAtom, $concept) {
   global $dbName;
   global $conceptTableInfo;
 
-  $existingAtoms = getAllConceptAtoms($concept);
-  
   $conceptTable = $conceptTableInfo[$concept]['table'];
   $conceptCol = $conceptTableInfo[$concept]['col'];
-  $newAtom = mkUniqueAtom($existingAtoms, $concept);
-  
+
   $conceptTableEsc = addSlashes($conceptTable);
   $conceptColEsc = addSlashes($conceptCol);
   $newAtomEsc = addSlashes($newAtom);
-  
+
   DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtomEsc')");
+}
+
+/* If $newAtom is already in $concept, nothing happens */
+function addAtomToConcept($newAtom, $concept) {
+  $existingAtoms = getAllConceptAtoms($concept);
+  
+  if (!in_array($newAtom, $existingAtoms))
+    addNewAtomToConcept($newAtom, $concept);
+}
+
+
+function createNewAtom($concept) {
+  $existingAtoms = getAllConceptAtoms($concept);
+  
+  $newAtom = mkUniqueAtom($existingAtoms, $concept);
+  
+  addNewAtomToConcept($newAtom, $concept);
   return $newAtom;
 }
 
