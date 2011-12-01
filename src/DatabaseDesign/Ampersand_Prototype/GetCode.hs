@@ -94,8 +94,10 @@ where
            [ fatal 90 $ "TODO: create complex objects for getAllTarget "++show cv
            | CodeVar{cvContent=Right cv}<-[obj]
            ]
-        getAllTarget _
-         = fatal 94 "missing code for getAllTarget"
+        getAllTarget (PHPI1 cptvar)  --cptvar :: Named { nName :: String, nObject :: UseVar}  
+                                     --data UseVar = UseVar {uvList::[Either String (Named UseVar)]}
+--for debugging         = [[CommentLine ("missing code for getAllTarget"++show(nName cptvar,(length.uvList.nObject) cptvar))]]
+         = fatal 94 ("missing code for getAllTarget"++show(nName cptvar,(length.uvList.nObject) cptvar))
 
 
  -- | Create code to fill a single variable with some expression.
