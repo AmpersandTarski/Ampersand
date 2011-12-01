@@ -27,7 +27,7 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
 
   processCommands();
 
-  if (checkRules()) {
+  if (true /*checkRules()*/) {
     emitLog('COMMIT');
     dbCommitTransaction($dbName);
   } else {
@@ -132,25 +132,14 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
     emitLog ($query);
     queryDb($dbName, $query);
   }
-  // if the new atom is not in its concept table, we add it
+  
+  // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
   $childConcept = $isFlipped ? $relationTableInfo[$rel]['srcConcept'] : $relationTableInfo[$rel]['tgtConcept'];
   $parentConcept =  $isFlipped ? $relationTableInfo[$rel]['tgtConcept'] : $relationTableInfo[$rel]['srcConcept'];
   $modifiedConcept = $parentOrChild == 'parent' ? $parentConcept : $childConcept;
-  
-  $conceptTable = $conceptTableInfo[$modifiedConcept]['table'];
-  $conceptCol = $conceptTableInfo[$modifiedConcept]['col'];
-  
-  $conceptTableEsc = addSlashes($conceptTable);
-  $conceptColEsc = addSlashes($conceptCol);
-  
-  //emitLog("Checking existence of $childAtom : $childConcept in table $conceptTable, column $conceptCol";)
-  $allConceptAtoms = firstCol(queryDb($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
-  if (!in_array($modifiedAtom, $allConceptAtoms)) {
-    //emitLog( 'not present');
-    queryDb($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$modifiedAtomEsc')");
-  } else {
-    // emitLog('already present');
-  }
+  emitLog ("adding to concept tables: $modifiedAtom : $modifiedConcept");
+  addAtomToConcept($modifiedAtom, $modifiedConcept);
+  // TODO: errors here are not reported correctly
 }
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {

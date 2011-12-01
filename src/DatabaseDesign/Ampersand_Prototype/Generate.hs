@@ -44,8 +44,11 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "$conceptTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [(showPhpStr $ name c)++" => array ('table' => "++showPhpStr (name plug)++", 'col' => "++showPhpStr (fldname conceptField)++")"] 
-         | c <- concs fSpec, Just (plug,conceptField) <- [lookupCpt fSpec c]]) ++
+         [ [ (showPhpStr $ name c)++" => array "] ++
+             (indent 4 $ blockParenthesize "(" ")" ","
+               [ ["array ('table' => "++showPhpStr (name plug)++", 'col' => "++showPhpStr (fldname conceptField)++")"]
+               | (plug,conceptField) <- lookupCpt fSpec c ])
+         | c <- concs fSpec]) ++
   [ ""
   , "$tableColumnInfo ="
   , "  array" ] ++

@@ -32,7 +32,7 @@ function DB_doquerErr($DbName, $quer, &$error)
   return $rows;
 }
 
-// return an atom "Concept_<n>" that is not in $existingAtoms
+// return an atom "Concept_<n>" that is not in $existingAtoms (make sure that $existingAtoms covers all concept tables)
 function mkUniqueAtom($existingAtoms, $concept) {
   $generatedAtomNrs = array();
   foreach (array_unique($existingAtoms) as $atom) {
@@ -50,50 +50,44 @@ function mkUniqueAtom($existingAtoms, $concept) {
   return $concept.'_'.(count($generatedAtomNrs)+1);
 }
 
-function mkUniqueAtomByTime($existingAtoms, $concept) {
+function mkUniqueAtomByTime($concept) {
   $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
   return $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
 }
 
-/* Precondition: $newAtom is not already in $concept */
-function addNewAtomToConcept($newAtom, $concept) {
+function addAtomToConcept($newAtom, $concept) {
   global $dbName;
   global $conceptTableInfo;
 
-  $conceptTable = $conceptTableInfo[$concept]['table'];
-  $conceptCol = $conceptTableInfo[$concept]['col'];
+  foreach ($conceptTableInfo[$concept] as $conceptTableCol) { // $conceptTableInfo[$concept] is an array of tables&columns 
+    $conceptTable = $conceptTableCol['table'];                // maintaining $concept.
+    $conceptCol = $conceptTableCol['col'];                    // We insert the new atom in each of them
 
-  $conceptTableEsc = addSlashes($conceptTable);
-  $conceptColEsc = addSlashes($conceptCol);
-  $newAtomEsc = addSlashes($newAtom);
+    $conceptTableEsc = addSlashes($conceptTable);
+    $conceptColEsc = addSlashes($conceptCol);
+    $newAtomEsc = addSlashes($newAtom);
 
-  DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtomEsc')");
+    $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
+    
+    if (!in_array($newAtom, $existingAtoms))
+      DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtomEsc')");
+  }
 }
-
-/* If $newAtom is already in $concept, nothing happens */
-function addAtomToConcept($newAtom, $concept) {
-  $existingAtoms = getAllConceptAtoms($concept);
-  
-  if (!in_array($newAtom, $existingAtoms))
-    addNewAtomToConcept($newAtom, $concept);
-}
-
 
 function createNewAtom($concept) {
-  $existingAtoms = getAllConceptAtoms($concept);
-  
-  $newAtom = mkUniqueAtomByTime($existingAtoms, $concept);
+  $newAtom = mkUniqueAtomByTime($concept);
   
   addNewAtomToConcept($newAtom, $concept);
   return $newAtom;
 }
 
+/* NOTE: this only  a single concept table, so it assumes that all concept tables for $concept are up to date (or at least the first one) */
 function getAllConceptAtoms($concept) {
   global $dbName;
   global $conceptTableInfo;
   
-  $conceptTable = $conceptTableInfo[$concept]['table'];
-  $conceptCol = $conceptTableInfo[$concept]['col'];
+  $conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables&columns maintaining $concept
+  $conceptCol = $conceptTableInfo[$concept][0]['col'];     // for lookup, we just take the first
   
   $conceptTableEsc = addSlashes($conceptTable);
   $conceptColEsc = addSlashes($conceptCol);
