@@ -88,20 +88,28 @@ function sendCommands(commandArray) {
       $('#IssueList').append($ampersandErrors);
       $('#IssueList').append($errors);
       $('#IssueList').attr('nonEmpty', $ampersandErrors.length + $errors.length > 0 ? 'true' : 'false' );
-    }
+    } 
     else
-      $.get(window.location.href,
-        function(data) {
-          $newPage = $('<div>');
-          $newPage.html(data);
+      // after saving a new atom, we go back to the previous page
+      // Staying on the page is awkward as the url has atom='' which causes creation of a new atom when reloaded.
+      // This url also should not stay in the history, since back will then create a new atom. The problem can be solved
+      // by using a more complicated way to create new atoms (using post instead of a simple link with atom='').
+      if ($('#AmpersandRoot').attr('isNew')=='true')
+        history.go(-1);
+      else
+        $.get(window.location.href, 
+          function(data) {
+            $newPage = $('<div>');
+            $newPage.html(data);
         
-          $('#AmpersandRoot > .Atom').remove();  
-          $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
+            $('#AmpersandRoot > .Atom').remove();  
+            $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
 
-          $('#AmpersandRoot').attr('editing','false');
+            $('#AmpersandRoot').attr('editing','false');
 
-          initialize();
-      });
+            initialize();
+          
+        });
   });
 }
 
