@@ -26,6 +26,7 @@ function startEditing() {
 
 function cancelEditing() {
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
+  //console.log("clearing warning");
 
   if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we cancel the creation of a new atom, the new atom is removed from the concept table
@@ -53,8 +54,6 @@ function cancelEditing() {
 }
 
 function commitEditing() {
-  window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
-
   if (getEmptyAtomsNotInTemplates().length > 0) {
     alert('Please fill out all <new> atoms first.');
     return;
@@ -65,6 +64,9 @@ function commitEditing() {
   }
   
   var dbCommands = computeDbCommands();
+  //console.log("clearing warning");
+  window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
+
   if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we commit a newly created atom, we also need to add the atom to the concept table.
     var atom = $('#AmpersandRoot').attr('atom');
@@ -231,12 +233,13 @@ function computeDbCommands() {
     }
   });
   
-  if (dbCommands.length > 0) 
-    window.onbeforeunload = function() {
-      return "The page has been modified, are you sure you wish to navigate away?"; 
-    };
-  else
+  if (dbCommands.length > 0) { 
+    //console.log("setting warning");
+    window.onbeforeunload = function() { return "The page has been modified, are you sure you wish to navigate away?"; };
+  } else {
+    //console.log("clearing warning");
     window.onbeforeunload = null;
+  }
 
   return dbCommands;
 }
