@@ -57,7 +57,7 @@ rel2plug  r totals
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
   | not is_Tot && is_Sur 
-    = rel2plug (r{reldcl = flpDecl (reldcl r)}) totals
+    = rel2plug (r{reldcl = flpDecl (reldcl r), relsgn=(\(Sign s t) -> Sign t s) (sign r)}) totals
   | otherwise
     = BinSQL { sqlname = name r
              , columns = (srcFld,trgFld)
