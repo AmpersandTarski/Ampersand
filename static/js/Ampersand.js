@@ -378,7 +378,8 @@ function stopAtomEditing($atom) {
   $atom.attr('atom',newAtom);
   
   $atomName.text(newAtom);
-  $atomName.show();
+  $atomName.attr('style',''); // Undo the hide() action from above. We don't use show, because that sets a style attribute on the div,
+                              // which overrides all stylesheets
   
   if (newAtom!=atom) {
     
