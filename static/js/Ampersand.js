@@ -65,6 +65,12 @@ function commitEditing() {
   }
   
   var dbCommands = computeDbCommands();
+  if ($('#AmpersandRoot').attr('isNew')=='true') {
+    // If we commit a newly created atom, we also need to add the atom to the concept table.
+    var atom = $('#AmpersandRoot').attr('atom');
+    var concept = $('#AmpersandRoot').attr('concept');
+    dbCommands.unshift( mkDbCommandAddToConcept(atom,concept) ); // put addToConcept command in front
+  }
   sendCommands(dbCommands);
 }
 
@@ -107,8 +113,7 @@ function sendCommands(commandArray) {
 
             $('#AmpersandRoot').attr('editing','false');
 
-            initialize();
-          
+            initialize();   
         });
   });
 }
@@ -158,6 +163,11 @@ function showDbCommand(dbCommand) {
       return 'Delete from '+showRelation(dbCommand.relation,dbCommand.isFlipped)+': ('+showAtom(dbCommand.parentAtom)+','+showAtom(dbCommand.childAtom)+')';
   }
   return 'Undefined command: '+dbCommand;
+}
+
+
+function mkDbCommandAddToConcept(atom, concept) {
+  return {dbCmd: 'addToConcept', atom:atom, concept:concept};
 }
 
 // update with '' as originalAtom is insert

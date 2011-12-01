@@ -45,8 +45,13 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   $interface=$_REQUEST['interface'];
   $atom=$_REQUEST['atom'];
   $isNew = $atom==''; 
-  // if the atom is '', we create a unique new atom in the concept table, and set editing and isNew to true
+  // if the atom is '', this means that a new atom should be created. We create a unique new atom in a temporary transaction,
+  // so we can generate the interface in the normal way (by querying the database). When the interface is done, the transaction
+  // is rolled back. On save, the atom is added to the concept table again.
+  // TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we enocode a session number
+  //       in the unique atom name.
   if ($isNew) {
+    DB_doquer($dbName, 'START TRANSACTION');
     $atom = createNewAtom($allInterfaceObjects[$interface]['srcConcept']);
   }
 
@@ -66,6 +71,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '</div>';
   echo '<div id=Rollback></div>';
   
+  if ($isNew) {
+    DB_doquer($dbName, 'ROLLBACK');
+  }
 } ?>
 </body>
 </html>
