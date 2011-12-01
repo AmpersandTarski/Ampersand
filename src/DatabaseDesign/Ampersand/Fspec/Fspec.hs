@@ -318,7 +318,7 @@ data PlugSQL
  = TblSQL  { sqlname   :: String
            , fields    :: [SqlField]
            , cLkpTbl   :: [(A_Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
-           , mLkpTbl   :: [(Relation,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
+           , mLkpTbl   :: [(Expression,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
            , sqlfpa    :: FPA -- ^ function point analysis
            }
  | BinSQL  { --see rel2plug in ADL2Fspec.hs
@@ -327,7 +327,7 @@ data PlugSQL
            , cLkpTbl   :: [(A_Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
                                                 --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                 --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
-           , mLkp      :: Relation -- the morphism links concepts implemented by this plug
+           , mLkp      :: Expression -- the morphism links concepts implemented by this plug
            , sqlfpa    :: FPA -- ^ function point analysis
            }
  | ScalarSQL
