@@ -267,7 +267,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    ++
                    [Obj { objnm   = "bin"++ name bp
                         , objpos  = Origin "generated object bin"
-                        , objctx  = if source(mLkp bp)==c then ERel (mLkp bp)  else flp (ERel (mLkp bp))
+                        , objctx  = if source(mLkp bp)==c then mLkp bp else flp (mLkp bp)
                         , objats  = []
                         , objstrs = [] }
                    | bp<-binplugs, source(mLkp bp)==c || target(mLkp bp)==c]

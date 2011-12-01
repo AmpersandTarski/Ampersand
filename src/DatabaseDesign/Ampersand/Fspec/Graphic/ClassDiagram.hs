@@ -100,9 +100,14 @@ where
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs'    = [ OOAssoc (nm source s) (multiplicity (ERel rel)) "" (nm target t) (multiplicity (EFlp (ERel rel))) (name rel)
-                    | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec, not (isSignal plug)
+       assocs'    = [ OOAssoc (nm source s) (multiplicity rel) "" (nm target t) (multiplicity (EFlp rel)) relname
+                    | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec
                     , let rel=mLkp plug
+                    , not ((isSignal.head.mors) rel)
+                    , let relname=case rel of
+                           ERel r -> name r
+                           EFlp (ERel r) -> name r
+                           _ -> fatal 109 (show rel ++ " has no name.")
                     , let (s,t)=columns plug
                     ]
                     where
