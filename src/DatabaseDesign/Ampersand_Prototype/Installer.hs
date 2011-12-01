@@ -64,25 +64,11 @@ where
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
              ++ indentBlock 17
-                    ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ " " ++ autoIncr ++ "DEFAULT NULL"-- ++ nul
-                      | (f,comma)<-zip (tblfields plug) ('(':repeat ',')
-                      --, let nul = if fldnull f then "" else " NOT NULL"
-                      , let autoIncr = if fldauto f
-                                       then " AUTO_INCREMENT" else ""
-                      ]
-                     ++
-                      [", UNIQUE KEY (`"++fldname key++"`)" --TODO151210 -> Add KeyDefs as UNIQUE KEY
-                      | key <- tblfields plug
-                      , flduniq key
-                      , not (fldnull key)
-                      , fldtype key /= SQLBlob] --Blob cannot be a KEY or INDEX 
-                     ++
-                      [", UNIQUE INDEX (`"++fldname kernelfld++"`)" --kernelfields are unique indexes (they are already unique keys if not fldnull)
-                      | kernelfld <- tblfields plug
-                      , flduniq kernelfld
-                      , fldnull kernelfld
-                      , fldtype kernelfld /= SQLBlob]
-                    )
+                    [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ " " ++ autoIncr ++ "DEFAULT NULL"
+                    | (f,comma)<-zip (tblfields plug) ('(':repeat ',')
+                    , let autoIncr = if fldauto f
+                                     then " AUTO_INCREMENT" else ""
+                    ]
              ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
