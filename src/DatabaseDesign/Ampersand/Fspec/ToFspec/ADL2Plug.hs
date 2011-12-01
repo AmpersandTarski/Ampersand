@@ -56,37 +56,65 @@ rel2plug :: Relation -> [Expression] -> PlugSQL
 rel2plug  r totals
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
-  | not is_Tot && is_Sur 
-    = rel2plug (r{reldcl = flpDecl (reldcl r), relsgn=(\(Sign s t) -> Sign t s) (sign r)}) totals
+  | not is_Tot && is_Sur
+    = BinSQL { sqlname = name r
+             , columns = (trgFld,srcFld)
+             , cLkpTbl = [(target r,trgFld)| is_Sur]
+             , mLkp    = srcExpr
+             , sqlfpa  = NO
+             }
   | otherwise
     = BinSQL { sqlname = name r
              , columns = (srcFld,trgFld)
              , cLkpTbl = [(source r,srcFld)| is_Tot]++[(target r,trgFld)| is_Sur]
-             , mLkp    = r
+             , mLkp    = trgExpr
              , sqlfpa  = NO
              }
    where
-
+   is_Tot = Tot `elem` multiplicities r || ERel r `elem` totals
+   is_Sur = Sur `elem` multiplicities r || EFlp (ERel r) `elem` totals
    srcNm = (if isEndo r then "s" else "")++name (source r)
+   trgNm = (if isEndo r then "t" else "")++name (target r)
+   --the expr for the source of r
    srcExpr = if   is_Tot
              then ERel (I (source r)) 
-             else EIsc [ERel (I (source r)),ECps [ERel r,flp (ERel r)]]
-   trgNm = (if isEndo r then "t" else "")++name (target r)
-   trgExpr = ERel r
-   srcFld = Fld { fldname = srcNm                       
+             else if is_Sur
+                  then EFlp (ERel r)
+                  else EIsc [ERel (I (source r)),ECps [ERel r,flp (ERel r)]]
+   --the expr for the target of r
+   trgExpr 
+    | not is_Tot && is_Sur = ERel (I (target r))
+    | otherwise            = ERel r 
+   srcFld
+    | not is_Tot && is_Sur = 
+            Fld { fldname = trgNm                       
+                , fldexpr = trgExpr
+                , fldtype = makeSqlType (target trgExpr)
+                , fldnull = False
+                , flduniq = isInj r {- will be False -}
+                }
+    | otherwise = 
+            Fld { fldname = srcNm                       
                 , fldexpr = srcExpr
                 , fldtype = makeSqlType (target srcExpr)
                 , fldnull = False
                 , flduniq = isUni r {- will be False -}
                 } 
-   trgFld = Fld { fldname = trgNm                       
-                , fldexpr = ERel r 
+   trgFld
+    | not is_Tot && is_Sur =
+            Fld { fldname = srcNm                       
+                , fldexpr = srcExpr 
+                , fldtype = makeSqlType (target srcExpr)
+                , fldnull = False
+                , flduniq = isUni r {- will be False -}
+                } 
+    | otherwise  =
+            Fld { fldname = trgNm                       
+                , fldexpr = trgExpr
                 , fldtype = makeSqlType (target trgExpr)
                 , fldnull = False
                 , flduniq = isInj r {- will be False -}
                 } 
-   is_Tot = Tot `elem` multiplicities r || ERel r `elem` totals
-   is_Sur = Sur `elem` multiplicities r || EFlp (ERel r) `elem` totals
 
 -----------------------------------------
 --rel2fld
@@ -216,9 +244,9 @@ makeEntities context allRels exclusions
           plugFields            = [fld a | a<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable   :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r) |r<-mainkernel]
-          attributeLookuptable :: [(Relation,SqlField,SqlField)]
+          attributeLookuptable :: [(Expression,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
-                                  [((head.mors) e,lookupC (source e),fld e) | e<-plugMors] 
+                                  [(e,lookupC (source e),fld e) | e<-plugMors] 
           lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                                   then fatal 209 "null cLkptable."
                                   else head [f |(c',f)<-conceptLookuptable, cpt==c']
@@ -313,8 +341,8 @@ makeSqlPlug context obj
    plugFields            = [fld r tp | (r,tp)<-plugMors] 
    fld r tp              = (rel2fld (keyDefs context) (map fst kernel) (map fst attRels) r){fldtype=tp} --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
-   attributeLookuptable  = [(r,lookupC (source r),fld (ERel r) tp) | (ERel r,tp)<-plugMors] ++
-                           [(r,lookupC (target r),fld (EFlp (ERel r)) tp) | (EFlp (ERel r),tp)<-plugMors]
+   attributeLookuptable  = [(ERel r,lookupC (source r),fld (ERel r) tp) | (ERel r,tp)<-plugMors] ++
+                           [(EFlp (ERel r),lookupC (target r),fld (EFlp (ERel r)) tp) | (EFlp (ERel r),tp)<-plugMors]
    lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                            then fatal 300 "null cLkptable."
                            else head [f |(c',f)<-conceptLookuptable, cpt==c']
