@@ -116,7 +116,7 @@ writepandoc flags gis thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                                 else system ( "cd "++dirOutput flags++
                                                               " && pdflatex "++commonFlags++
-                                                              texFilename ++ if verboseP flags then "" else "> pdflog" ) >>
+                                                              texFilename ++ if verboseP flags then "" else "> "++addExtension(baseName flags) ".pdflog" ) >>
                                                      system makeIndexCommand
                                       case result of 
                                          ExitSuccess   -> verboseLn flags "PDF file created."
