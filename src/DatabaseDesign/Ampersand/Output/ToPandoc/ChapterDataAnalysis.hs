@@ -47,7 +47,7 @@ chpDataAnalysis lev fSpec flags
                   else [rel | rel<-mors fSpec, d@Sgn{}<-[makeDeclaration rel], decpat d `elem` themes fSpec] >- [r | p<-plugInfos fSpec, r<-mors p]
   entities = if null (themes fSpec)
              then [p | InternalPlug p<-plugInfos fSpec]
-             else nub [p | c<-concs remainingRels, Just (p,_)<-[lookupCpt fSpec c] ]
+             else nub [p | c<-concs remainingRels, (p,_)<-lookupCpt fSpec c ]
   header :: [Block]
   header = labeledHeader lev (xLabel DataAnalisys) (case language flags of
                                               Dutch   ->  "Gegevensstructuur"   
