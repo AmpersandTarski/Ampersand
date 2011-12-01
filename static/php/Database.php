@@ -88,6 +88,7 @@ function editAddToConcept($atom, $concept) {
   addAtomToConcept($atom, $concept);  
 }
 
+// NOTE: if $originalAtom == '', editUpdate means insert
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
   global $dbName;
   global $relationTableInfo;
@@ -114,7 +115,10 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   $stableAtomEsc = addSlashes($stableAtom);
   $originalAtomEsc = addSlashes($originalAtom);
   
-  if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
+  // only if the stable column is unique and we have an $originalAtom, we do an update
+  // TODO: maybe we can do updates also in non-unique columns
+  if ($tableColumnInfo[$table][$stableCol]['unique'] && $originalAtom!='') { // note: this uniqueness is not set as an SQL table attribute
+    emitLog("update");
     $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog ($query);
     queryDb($dbName, $query);
@@ -125,9 +129,12 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
     queryDb($dbName, $query);
   }
   else */ {
-    $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
-    emitLog ($query);
-    queryDb($dbName, $query);
+    // delete only if there was an $originalAtom
+    if ($originalAtom!='') {
+      $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
+      emitLog ($query);
+      queryDb($dbName, $query);
+    }
     $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
     emitLog ($query);
     queryDb($dbName, $query);
