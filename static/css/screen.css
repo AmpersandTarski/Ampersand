@@ -1,24 +1,58 @@
 /* Standard Elements */
 
-body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #333333; line-height: 150%; }
+body { font: Verdana; font-size: 13px; color: #333333; line-height: 150%; }
 a, a:link { color: #1A9AEA; }
 a, a:link, a:hover, a:visited { text-decoration: none; }
 a:hover { color: #BF1E74; }
 
-h1 { font-size: 24px; color: #BF1E74; font-weight: bold; line-height: 120%; padding-bottom: 10px; }
-h2, .FloaterHeader { font-size: 18px; color: #253E8A; font-weight: bold; line-height: 120%; }
+h1 { font-size: 18px; color: #BF1E74; font-weight: bold; line-height: 120%; padding-bottom: 10px; }
+h2, .FloaterHeader { font-size: 16px; color: #253E8A; font-weight: bold; line-height: 120%; }
 
 /* Lay-out */
 
-#container { width: 100%; margin: 0 auto; }
-#container #header { float: left; width: 100%; height: 116px; background: white; }
-#container #header #logo { float: left; display: block; padding: 30px 0 0 20px; }
-#container #header #decoration { float: right; display: block; height: 116px; width: 709px; background: url(../images/header_decoration.jpg) no-repeat; }
+#container {
+clear: left;
+width:95%; /*width of 2nd level sub menus*/
+height:1.5em; /*height of 2nd level sub menus. Set to largest's sub menu's height to avoid jittering.*/
+}
+/*#container #header { float: left; width: 95%; height: 120px;  }*/
+#container #header #decoration { height: 116px; width: 95%; background: url(../images/header_decoration.jpg) no-repeat; }
 
-#container #menu .primary { float: left; width: 100%; height: 100%; background: #333333 url(../images/menu_bg.jpg) repeat-x bottom center; }
-#container #menu .primary ul li a { float: left; display: block; height: 22px; padding: 8px 20px 0 20px; font-size: 16px; color: white; font-weight: bold; }
-#container #menu .primary ul li a:hover { background: white; color: #BF1E74; }
-#container #menu .primary ul li a.right { float: right; }
+
+#container #menu .primary ul{
+margin: 4px;
+padding: 3px 0;
+margin-left: 0;
+font: bold 16px Verdana;
+border-bottom: 1px solid #CDD8DE;
+list-style-type: none;
+text-align: left; /*set to left, center, or right to align the menu as desired*/
+}
+
+#container #menu .primary li{
+display: inline;
+margin: 0;
+}
+
+#container #menu .primary li a{
+text-decoration: none;
+padding: 3px 7px;
+margin-right: 3px;
+border: 1px solid gray;
+border-bottom: none;
+background-color: black;
+color: white;
+}
+
+#container #menu .primary li a:hover, #container #menu .primary li a.current{
+background-color: white;
+color: #BF1E74;
+}
+
+#container #menu .primary li a:active{
+color: black;
+}
+
 
 #container #content { clear: both; float: left; padding: 20px; }
 #container #content .Floater { float: left; margin-right: 20px; margin-bottom: 20px; padding: 20px; -moz-border-radius: 5px; border: 1px solid #CDD8DE; }

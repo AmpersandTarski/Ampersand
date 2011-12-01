@@ -124,10 +124,18 @@ if (isset($url)){
 <p><div style="width:100%;background-color:#ffffff;margin:0px;padding:0px;top:0px"> <img style="margin:0px;padding:0px" src="ou.jpg">
 </div></p>
 <?php
-if (isset($notarget)) echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
+if (isset($notarget)){
+   echo '<H2>Pagina '.$url.' bestaat niet. Waarschuw de systeembeheerder.</H2>';
+   $pdflog = COMPILATIONS_PATH.$_REQUEST['output'].'log';
+   echo $pdflog;
+   if (file_exists($pdflog)){
+       foreach( file ( escapeshellcmd($pdflog)) as $line)
+              {echo '<p>'.$line.'</p>'; }
+   }
+}
 if (REQ_OPERATION==3) echo '<H2>Het script wordt geladen. Wacht tot de browser aangeeft klaar te zijn.</H2>';
 if (isset($operation)){
-   if ($compileurl[$operation]!='' && $errorlns=='')
+   if ($compileurl[$operation]!='' && $errorlns=='' && !isset($notarget))
       echo '<A HREF="'.$compileurl[$operation].'">klik hier om naar de output te gaan.</A>';
    echo $verboselns;
    echo $errorlns;
@@ -160,7 +168,7 @@ if (isset($operation)){
        echo 'onmouseout="return nd();">';
        echo '<IMG SRC="warning.png" /></a>';
        echo '<a href="javascript:void(0);"';
-       echo 'onmouseover="return overlib(\'<p>De laadoptie &quot;uit onderstaand tekstveld (save)&quot; creëert een nieuwe contextversie in een nieuw serverbestand<p/><p>Als u geen wijzigingen in het tekstveld heeft gemaakt, of deze niet wil opslaan, gebruik dan deze laadoptie</p><p>De contextversie uit serverbestand '.$fullfile.' zal worden geladen.</p>\',WIDTH, 350);"';
+       echo 'onmouseover="return overlib(\'<p>De laadoptie &quot;uit onderstaand tekstveld (save)&quot; cre?ert een nieuwe contextversie in een nieuw serverbestand<p/><p>Als u geen wijzigingen in het tekstveld heeft gemaakt, of deze niet wil opslaan, gebruik dan deze laadoptie</p><p>De contextversie uit serverbestand '.$fullfile.' zal worden geladen.</p>\',WIDTH, 350);"';
        echo 'onmouseout="return nd();">';
        echo '<IMG SRC="info.png" /></a></p>';
      }
