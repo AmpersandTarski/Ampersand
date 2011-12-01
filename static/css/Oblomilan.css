@@ -55,7 +55,7 @@ button.button:hover { background-position: 0px -30px; color: white; }
 }
 
 /* AtomName for atoms with subinterfaces (atomic=false)
-      These get a button for navigation and are not displayed while editing */
+   These get a button for navigation and are not displayed while editing */
 [editing=false] .Atom[atomic=false] > .AtomName {
     color: transparent;
     white-space: nowrap;
@@ -78,8 +78,13 @@ button.button:hover { background-position: 0px -30px; color: white; }
 [editing=false] .Atom[atomic=false][hasInterface=multiple] > .AtomName:hover {
      background-image: url('../images/NavigationButtonMultiHover.png');
 }
+
+/* when we are editing, we do show the atom name, otherwise new atoms will have empty names */
 [editing=true] .Atom[atomic=false] > .AtomName {
-    display: none;
+    float: none;
+}
+[editing=true] .InterfaceList {
+    margin-top: 3px;  /* with the name displayed we don't need as much space here */
 }
 
 
