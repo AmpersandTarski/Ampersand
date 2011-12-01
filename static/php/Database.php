@@ -233,9 +233,4 @@ function listAtomsForConcept($concept) {
   echo json_encode (array ( 'res' => getAllConceptAtoms($concept) ));
   // todo: pass errors back to javascript
 }
-
-function removeAtomFromConcept($atom, $concept) {
-  removeAtomFromConceptTable($atom, $concept);
-  // todo: pass errors back to javascript
-}
 ?>
