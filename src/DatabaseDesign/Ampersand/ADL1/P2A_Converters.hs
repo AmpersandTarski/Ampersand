@@ -557,7 +557,8 @@ pRel2aExpr P_V contxt ac
      TargetCast t -> [ERel(V (Sign a t)) |a<-minima(concs contxt)]
      Cast s t     -> [ERel(V (Sign s t)) ]
 pRel2aExpr P_I contxt ac
- = (alts, ["The context has no concepts" |null alts])
+ = (alts, ["The context has no concepts" |null (minima(concs contxt))]
+        ++["The type of the identity relation should be homogeneous. "++ show s ++ " does not match " ++ show t ++"." | case ac of Cast s t -> s </=> t ; _ -> False, let Cast s t = ac])
    where
    alts = case ac of
      NoCast       -> [ERel(I c) |c<-minima(concs contxt)]
@@ -565,7 +566,8 @@ pRel2aExpr P_I contxt ac
      TargetCast t -> [ERel(I t)]
      Cast s t     -> [ERel(I (s `join` t)) |s <==> t]
 pRel2aExpr (P_Mp1 x) contxt ac
- = (alts, ["The context has no concepts" |null alts])
+ = (alts, ["The context has no concepts" |null (minima(concs contxt))]
+        ++["The type of value "++ x ++ " should be homogeneous. "++ show s ++ " does not match " ++ show t ++"." | case ac of Cast s t -> s </=> t ; _ -> False, let Cast s t = ac])
    where
    alts = case ac of
      NoCast       -> [ERel(Mp1 x c) |c<-minima(concs contxt)]
@@ -576,7 +578,7 @@ pRel2aExpr prel contxt ac
  = ( candidates2
    , case (candidates0, candidates1, candidates2) of
           ([] , _  , _ ) -> ["Relation not declared: " ++ showADL prel]
-          ([d], [] , _ ) -> ["Relation " ++ showADL prel ++" does not match " ++ showADL d]
+          ([d], [] , _ ) -> ["Relation " ++ showADL prel ++ show (cast d) ++" does not match " ++ showADL d]
           (ds , [] , _ ) -> ["The type of relation " ++ showADL prel ++" does not match any of the following types:\n   " ++ show [cast d| d<-ds]]
           ( _ , [d], []) -> if source d==target d
                             then ["Relation declaration " ++ show (name d) ++ " cannot be cast to "++show (cast d)++", because it has properties " ++ show (endomults d) ++ ", which are defined on endorelations only."]
@@ -631,8 +633,8 @@ infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
                      _                  -> ETyp e uc   -- else keep it
                  | e <- candidates, sign e <==> uc]
           unknowncs = nub[c |c<-concs uc, c `notElem` concs contxt]
-          msgs = ["Unkknown concept: '"++name (head unknowncs)++"'." |length unknowncs == 1] ++
-                 ["Unkknown concepts: '"++name (head unknowncs)++"' and '"++name (last unknowncs)++"'." |length unknowncs > 1] ++
+          msgs = ["Unknown concept: '"++name (head unknowncs)++"'." |length unknowncs == 1] ++
+                 ["Unknown concepts: '"++name (head unknowncs)++"' and '"++name (last unknowncs)++"'." |length unknowncs > 1] ++
                  messages++
                  ["Ambiguous types of "++showADL p_r++" : "++(show.map sign) alts++"." | length alts>1]++
                  ["No types of "++showADL p_r++" match "++show uc++".\n Possibilities: "++(show.map sign) alts++"." | null alts]
@@ -906,7 +908,9 @@ inferCpsRad contxt pconstructor constructor p_rs ac
                                   "\nsolutions="++show [ECps rs | (rs,ms)<-combs, null ms])
                        _ -> -} nub [constructor rs | (rs,ms)<-combs, null ms]        -- a combination without error messages is a potential solution
           -- Step 7: compute messages
-          deepMsgs  = [m | (_,msgs)<-terms, m<-msgs]           -- messages from within the terms
+          deepMsgs  = let ms1 = [m | (_,msgs)<-terms , m<-msgs]   -- messages from within the terms
+                          ms2 = [m | (_,msgs)<-terms', m<-msgs]  -- messages from within the terms'
+                      in if null ms1 then ms2 else ms1
           combMsgs  = [ms | (_,ms)<-combs, not (null ms)]      -- messages from combinations that are wrong (i.e. that have messages)
           interMsgs = [ "The type between "++show (pconstructor lft)++" and "++show (pconstructor rht)++"is ambiguous,\nbecause it may be one of "++show is
                       | (is,(lft,rht))<-zip inter (splits p_rs), length is>1]   -- example: splits [1,2,3,4] = [([1],[2,3,4]),([1,2],[3,4]),([1,2,3],[4])]
