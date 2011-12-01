@@ -27,7 +27,7 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
 
   processCommands();
 
-  if (true /*checkRules()*/) {
+  if (checkRules()) {
     emitLog('COMMIT');
     dbCommitTransaction($dbName);
   } else {
