@@ -50,6 +50,11 @@ function mkUniqueAtom($existingAtoms, $concept) {
   return $concept.'_'.(count($generatedAtomNrs)+1);
 }
 
+function mkUniqueAtomByTime($existingAtoms, $concept) {
+  $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+  return $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
+}
+
 /* Precondition: $newAtom is not already in $concept */
 function addNewAtomToConcept($newAtom, $concept) {
   global $dbName;
@@ -77,7 +82,7 @@ function addAtomToConcept($newAtom, $concept) {
 function createNewAtom($concept) {
   $existingAtoms = getAllConceptAtoms($concept);
   
-  $newAtom = mkUniqueAtom($existingAtoms, $concept);
+  $newAtom = mkUniqueAtomByTime($existingAtoms, $concept);
   
   addNewAtomToConcept($newAtom, $concept);
   return $newAtom;

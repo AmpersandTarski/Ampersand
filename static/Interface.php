@@ -51,7 +51,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   // so we can generate the interface in the normal way (by querying the database). When the interface is done, the transaction
   // is rolled back. On save, the atom is added to the concept table again.
   // TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we enocode a session number
-  //       in the unique atom name.
+  //       in the unique atom name. But since the atom names are based on microseconds, the chances of a problem are pretty slim.
   if ($isNew) {
     DB_doquer($dbName, 'START TRANSACTION');
     $atom = createNewAtom($allInterfaceObjects[$interface]['srcConcept']);
