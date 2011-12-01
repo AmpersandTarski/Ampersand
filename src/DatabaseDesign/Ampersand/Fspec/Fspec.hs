@@ -344,12 +344,10 @@ instance Eq PlugSQL where
   x==y = name x==name y
 
 
--- In a concept lookup, you'll get the plug that contains the relevant concept table.
-lookupCpt :: Fspc -> A_Concept -> Maybe (PlugSQL,SqlField)
-lookupCpt fSpec cpt = case results of
-                        []       -> Nothing
-                        result:_ -> Just result -- todo: when multiple tables exist, return the first. TODO: is this correct?
- where results = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+-- This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
+-- columns need to be updated 
+lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
+lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
 
