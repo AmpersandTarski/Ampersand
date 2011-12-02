@@ -19,7 +19,7 @@ button.button { border:none; font-size:80%; width: 120px; height: 30px; backgrou
 button.button:hover { background-position: 0px -30px; color: white; }
 
 
-#AmpersandRoot {
+#ScrollPane {
     top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more diffs */
     padding-top: 10px;
     padding-left: 10px;    
@@ -106,38 +106,38 @@ button.button:hover { background-position: 0px -30px; color: white; }
 
 /* Special behavior for top level elements */
 
-#AmpersandRoot > .Atom > .AtomName {
+#ScrollPane > .Atom > .AtomName {
     display: none;
 } 
-#AmpersandRoot > .Atom > .InterfaceList {
+#ScrollPane > .Atom > .InterfaceList {
     border: none;
     padding: 0px;
 } 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface> .Label {
+#ScrollPane > .Atom > .InterfaceList > .Interface> .Label {
     font-size: 24px; color: #BF1E74; font-weight: bold; margin-top:20px; margin-bottom:10px;
 } 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList {
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList {
     display: block;
     margin: 0px;
     border-width: 0px;
 } 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow[rowType=Normal] {
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow[rowType=Normal] {
     display: block;
 } 
 
-#AmpersandRoot > .Atom > .InterfaceList> .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .AtomName {
+#ScrollPane > .Atom > .InterfaceList> .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .AtomName {
     display: none;
 } 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList {
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList {
     border: none;
     padding: 0px;
 } 
 
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface {
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface {
     float: left;
     border-style: solid;
     border-color: #CDD8DE;
@@ -149,7 +149,7 @@ button.button:hover { background-position: 0px -30px; color: white; }
     margin-right: 20px;
 }
     
-#AmpersandRoot > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface > .Label {
+#ScrollPane > .Atom > .InterfaceList > .Interface > .AtomList > .AtomRow > .AtomListElt > .Atom > .InterfaceList > .Interface > .Label {
     font-size: 16px; color: #253E8A; font-weight: bold; margin-bottom: 10px;
 }
     

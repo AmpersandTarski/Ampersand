@@ -2,13 +2,13 @@ body {
 	margin: 0px;
 }
 
-#AmpersandRoot {
-	  overflow:auto; 
-	  position:absolute;
-	  top: 50px;
-	  left:0px;
-	  right:0px;
-	  bottom:0px;
+#ScrollPane {
+    overflow:auto; 
+    position:absolute;
+    top: 50px;
+    left:0px;
+    right:0px;
+    bottom:0px;
 }
 
 [editing=false] .Atom[hasInterface]>.AtomName {
@@ -228,6 +228,8 @@ body {
     border-width: 1px;
     border-color: black;
     padding: 10px;
+    z-index: 25;
+    width: 200px; /* each log window sets its own maximized width */
 }
 .LogWindow>.MinMaxButton { /* not a button but an icon */
   float: right;
@@ -271,9 +273,11 @@ body {
     display: none;
     bottom: 5px;
     right: 5px;
-    width: 500px;
     background-color: lightblue;
-}    
+}
+#PhpLog[minimized=false] {
+    width: 500px;
+} 
 [dev=true] #PhpLog[nonEmpty=true] {
     display: block;
 }
@@ -287,9 +291,11 @@ body {
 #DbCommandList {
     display: none;
     right: 5px;
-    width: 500px;
     background-color: #d0d0d0;
 }
+#DbCommandList[minimized=false] {
+    width: 500px;
+} 
 [editing=true][dev=true] #DbCommandList {
     display: block;
 }
@@ -308,12 +314,14 @@ body {
     display: none;
     left: 5px;
     bottom: 5px;
-    width: 600px;
     color: red;
     background-color: #f0f0f0;
     border-width: 2px;
     border-color: red;
 }
+#IssueList[minimized=false] {
+    width: 600px;
+} 
 [editing=true] #IssueList[nonEmpty=true] {
     display: block;
 }    
