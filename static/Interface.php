@@ -76,7 +76,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '</div>';
   
   echo '</div>';
-  echo '<div id=Rollback></div>';
+  echo '<div id=Rollback></div>'; // needs to be outside AmpersandRoot
   
   if ($isNew) {
     DB_doquer($dbName, 'ROLLBACK');
