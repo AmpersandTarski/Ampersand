@@ -38,13 +38,13 @@ if(isset($_POST['adllaad'])){
         $fullfile = FILEPATH.$_POST['filename'];
 }
 if(isset($_POST['adltekst']) || REQ_OPERATION==3 || REQ_OPERATION==2){
-   $dtstr = '.'.strftime('%Y%m%d%H%M%S').'.';
+   $dtstr = '.'.strftime('%Y-%m-%d.%T').'.';
    $oldfile = basename(REQ_FILE);
    if (isset($_POST['filename'])) {$oldfile = $_POST['filename'];} 
-   if (preg_match("/\.\d{14}\./", $oldfile)==0)
+   if (preg_match("/\.\d{4}\-\d{2}\-\d{2}\.\d{2}:\d{2}:\d{2}\./", $oldfile)==0)
        {$fullfile = FILEPATH.str_replace(".adl","",$oldfile).$dtstr."adl";}
    else
-       $fullfile = FILEPATH.preg_replace("/\.\d{14}\./",$dtstr, $oldfile);
+       $fullfile = FILEPATH.preg_replace("/\.\d{4}\-\d{2}\-\d{2}\.\d{2}:\d{2}:\d{2}\./",$dtstr, $oldfile);
 }
 $file = basename($fullfile);
 
@@ -114,6 +114,7 @@ if (isset($url)){
 }
 
 ?>
+<meta charset="UTF-8"> 
 <TITLE>Ampersand</TITLE>
 <SCRIPT type="text/javascript" src="overlib421/overlib.js"><!-- overLIB (c) Erik Bosrup --></SCRIPT>
 <link rel="stylesheet" type="text/css" href="style.css" />
@@ -155,6 +156,10 @@ if (isset($operation)){
    echo 'onmouseover="return overlib(\'<p>Let op! Eventuele wijzigingen in het tekstveld gaan verloren!</p>\',WIDTH, 350);"';
    echo 'onmouseout="return nd();">';
    echo '<IMG SRC="warning.png" /></a>';
+   echo '<a href="javascript:void(0);"';
+   echo 'onmouseover="return overlib(\'<p>Verondersteld wordt dat een bestand in UTF-8 gecodeerd is.</p>\',WIDTH, 350);"';
+   echo 'onmouseout="return nd();">';
+   echo '<IMG SRC="info.png" /></a>';
    echo '<input type="file" name="uploadfile" /></p>';
 
    if (!isset($_REQUEST['browse'])){     
