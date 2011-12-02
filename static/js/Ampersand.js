@@ -24,9 +24,7 @@ function startEditing() {
   traceDbCommands(); // to initialize command list
 
   clearLogItems($('#IssueList')); // lists are cleared here and in cancelEditing, in case back button causes multiple start or cancel actions
-  $('#IssueList').attr('nonEmpty','false');  
   clearLogItems($('#PhpLog'));
-  $('#PhpLog').attr('nonEmpty','false');
 }
 
 function cancelEditing() {
@@ -50,9 +48,7 @@ function cancelEditing() {
     $('#AmpersandRoot').append($('#Rollback > .Atom'));
     
     clearLogItems($('#IssueList')); // lists are cleared here and in startEditing, in case back button causes multiple start or cancel actions
-    $('#IssueList').attr('nonEmpty','false');  
     clearLogItems($('#PhpLog'));
-    $('#PhpLog').attr('nonEmpty','false');
     
     $('#AmpersandRoot').attr('editing','false');
   }
@@ -91,13 +87,11 @@ function sendCommands(commandArray) {
     $ampersandErrors = $(data).find('.AmpersandErr');
 
     setLogItems($('#PhpLog'), $logMessages);
-    $('#PhpLog').attr('nonEmpty', $logMessages.length > 0 ? 'true' : 'false' );
     
     if ($errors.length + $ampersandErrors.length > 0) {
       setLogItems($('#IssueList'), $ampersandErrors);
       addLogItems($('#IssueList'), $errors);
       $('#IssueList').attr('minimized','false'); // always maximize window
-      $('#IssueList').attr('nonEmpty', $ampersandErrors.length + $errors.length > 0 ? 'true' : 'false' );
     } 
     else
       // after saving a new atom, we go back to the previous page
@@ -527,12 +521,15 @@ function minimaximizeLogWindow(event) {
 
 function clearLogItems($logWindow) {
   $logWindow.find('.LogItem').remove();
+  $logWindow.attr('nonEmpty','false');
 }
 
 // $logItems is a jQuery set of divs (LogItem class is added here)
 function addLogItems($logWindow, $logItems) {
   $logItems.addClass('LogItem');
   $logWindow.append($logItems);
+  if ($logItems.length > 0)
+    $logWindow.attr('nonEmpty','true');
 }
 
 function setLogItems($logWindow, $logItems) {
