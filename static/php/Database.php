@@ -3,7 +3,7 @@ error_reporting(E_ALL^E_NOTICE);
 ini_set("display_errors", 1);
 
 require "../Interfaces.php"; 
-// defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRules, and $allRoles
+// defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
 
 require "DatabaseUtils.php";
 
@@ -170,10 +170,13 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 
 function checkRules() {
   global $allRulesSql;
+  global $invariantRuleNames;
   
   $allRulesHold = true;
   
-  foreach ($allRulesSql as $ruleSql) {
+  foreach ($invariantRuleNames as $invariantRuleName) {
+    $ruleSql = $allRulesSql[$invariantRuleName];
+    emitLog("Checking $invariantRuleName");
     $rows = queryDb($dbName, $ruleSql['sql'], $error);
     if ($error) error($error);
     
