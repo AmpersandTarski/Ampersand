@@ -247,16 +247,11 @@ function computeDbCommands() {
   return dbCommands;
 }
 
-function traceDbCommand(dbCmd) {
-  $('#DbCommandList').append('<div class=Command>'+showDbCommand(dbCmd)+'</div>');
-}
-
 function traceDbCommands() {
-  $('#DbCommandList').empty();
-  $('#DbCommandList').append('<div class=Title>Edit commands:</div>');
+  clearLogItems($('#DbCommandList'));
   var dbCmds = computeDbCommands();
   for (var i=0; i<dbCmds.length; i++)
-    traceDbCommand(dbCmds[i]);
+    addLogItems($('#DbCommandList'), $('<div class=Command>'+showDbCommand(dbCmds[i])+'</div>'));
 }
 
 

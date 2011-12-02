@@ -62,9 +62,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        ' dev="'.($isDev?'true':'false').'">';
 
-  echo '<div id=DbCommandList></div>';
-  echo '<div id=PhpLog class=LogWindow minimized=false nonempty=true><div class=MinMaxButton></div><div class=Title>Php log messages</div></div>';
-  echo '<div id=IssueList></div>';
+  echo '<div id=DbCommandList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
+  echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
+  echo '<div id=IssueList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';

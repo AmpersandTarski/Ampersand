@@ -266,31 +266,27 @@ body {
 [dev=true] #PhpLog[nonEmpty=true] {
     display: block;
 }
+
 #PhpLog > .LogMsg {
     font-size: 80%;
 }
     
 #DbCommandList {
     display: none;
-}
-
-[editing=true][dev=true] #DbCommandList {
-    display: block;
-    position: absolute;
     right: 5px;
     width: 500px;
-    padding: 10px;
     background-color: #d0d0d0;
-    border-style: solid;
-    border-width: 1px;
-    border-color: black;
 }
-    
-#DbCommandList > .Title {
-    font-weight: bold ;
-    margin-bottom: 6px;
+[editing=true][dev=true] #DbCommandList {
+    display: block;
 }
-    
+#DbCommandList[minimized=false]>.MinMaxButton {
+    background-image: url('../images/MaximizeButton.png');
+}
+#DbCommandList[minimized=true]>.MinMaxButton {
+    background-image: url('../images/MinimizeButton.png');
+	  margin-top: 5px;
+}
 #DbCommandList > .Command {
     font-size: 90%;
 }
