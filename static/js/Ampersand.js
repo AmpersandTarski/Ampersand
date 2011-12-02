@@ -13,10 +13,10 @@ function initializeAtoms() {
 }
 
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
- * on #AmpersandRoot. This is a feasible solution since the interfaces will be of a manageable size */
+ * on #ScrollPane. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
   $('#Rollback').empty(); // in case we start twice for some reason
-  $('#Rollback').append($('#AmpersandRoot > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
+  $('#Rollback').append($('#ScrollPane > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
   
   $('#AmpersandRoot').attr('editing','true');
   clearNavigationHandlers();
@@ -44,8 +44,8 @@ function cancelEditing() {
     }) ;
     
   } else {
-    $('#AmpersandRoot > .Atom').remove();  
-    $('#AmpersandRoot').append($('#Rollback > .Atom'));
+    $('#ScrollPane > .Atom').remove();  
+    $('#ScrollPane').append($('#Rollback > .Atom')); // this constitutes a move
     
     clearLogItems($('#IssueList')); // lists are cleared here and in startEditing, in case back button causes multiple start or cancel actions
     clearLogItems($('#PhpLog'));
@@ -106,8 +106,8 @@ function sendCommands(commandArray) {
             $newPage = $('<div>');
             $newPage.html(data);
         
-            $('#AmpersandRoot > .Atom').remove();  
-            $('#AmpersandRoot').append($newPage.find('#AmpersandRoot > .Atom'));
+            $('#ScrollPane > .Atom').remove();  
+            $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
             $('#AmpersandRoot').attr('editing','false');
 
