@@ -2,7 +2,9 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require "Interfaces.php"; // defines $dbName, $isDev, $relationTableInfo and $allInterfaceObjects
+require "Interfaces.php"; 
+// defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
+
 require "php/DatabaseUtils.php";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
