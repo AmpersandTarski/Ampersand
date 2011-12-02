@@ -33,7 +33,17 @@ function init() {
 
 <?php
 echo '<div id="TopLevelInterfaces">';
+echo '<ul>';
 echo topLevelInterfaceLinks($allInterfaceObjects);
+
+// TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
+echo '<select id=RoleSelector onchange="changeRole()">';
+for ($i=0; $i<count($allRoles); $i++) {
+  $roleName = $allRoles[$i]['name'];
+  echo "<option value=\"$i\">$roleName</option>";
+}
+echo '</select>';
+echo '</ul>';
 echo '</div>';
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
@@ -68,17 +78,18 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
   echo '<div id=IssueList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
 
-  // we need an extra scrollPane div, because the log windows need to be inside ampersand root (they depend on editing attr),
-  // but outside scroll area 
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
+
+  // we need an extra ScrollPane div because the log windows need to be outside scroll area but inside ampersand root
+  // (since their css depends on the 'editing' attribute)
   echo '<div id=ScrollPane>';
   echo generateAtomInterfaces($dbName, $allInterfaceObjects[$interface], $atom, true); 
   echo '</div>';
   
   echo '</div>';
-  echo '<div id=Rollback></div>'; // needs to be outside AmpersandRoot
+  echo '<div id=Rollback></div>'; // needs to be outside AmpersandRoot, so it's easy to address all interface elements not in the Rollback
   
   if ($isNew) {
     DB_doquer($dbName, 'ROLLBACK');
@@ -90,12 +101,10 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 <?php 
 
 function topLevelInterfaceLinks($interfaces) {
-  echo '<ul>';
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']=='ONE')
       echo '<li><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1">'.htmlSpecialChars($interface['name']).'</a></li>';
   }
-  echo '</ul>';
 }
 
 function newAtomLinks($interfaces) {

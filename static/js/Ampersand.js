@@ -538,6 +538,12 @@ function setLogItems($logWindow, $logItems) {
 }
 
 
+// Roles
+
+function changeRole() {
+  console.log('Role changed to '+$('#RoleSelector').val());
+}
+
 
 // Utils
 
