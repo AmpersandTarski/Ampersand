@@ -14,9 +14,9 @@ a { text-decoration: none; }
 #TopLevelInterfaces ul li a { padding: 4px 20px 3px 20px; font-size: 15px; color: white; height:100% }
 #TopLevelInterfaces ul li a:hover { background: white; color: #BF1E74; }
 
-button.button { border:none; font-size:80%; width: 120px; height: 30px; background: url(../images/button.gif) no-repeat 0px 0px
+button.Button { border:none; font-size:80%; width: 120px; height: 30px; background: url(../images/button.gif) no-repeat 0px 0px
               ; text-align: center; font-weight: bold; color: #333; margin-right: 20px; }
-button.button:hover { background-position: 0px -30px; color: white; }
+button.Button:hover { background-position: 0px -30px; color: white; }
 
 
 #ScrollPane {
