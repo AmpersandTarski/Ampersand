@@ -236,9 +236,11 @@ body {
     background-repeat:no-repeat;
     width: 10px;
     height: 6px;
+    font-family: courier;
+    font-weight: bold;
 }
-.LogWindow[minimized=false]>.MinMaxButton {
-    background-image: url('../images/MinimizeButton.png');
+.LogWindow[minimized=false]>.MinMaxButton:after {
+    content: "\2228";  /* unicode logical or (v) */ 
 }
 .LogWindow[minimized=true] {
     padding: 4px 10px 2px 10px;
@@ -247,8 +249,10 @@ body {
     margin-bottom: 0px;
 }
 .LogWindow[minimized=true]>.MinMaxButton {
-    background-image: url('../images/MaximizeButton.png');
-    margin-top: 5px;
+	  margin-top: 1px;
+}
+.LogWindow[minimized=true]>.MinMaxButton:after {
+    content: "\2227";  /* unicode logical and (^) */
 }
 .LogWindow[minimized=true]>.LogItem {
     display:none
@@ -260,13 +264,14 @@ body {
     right: 5px;
     width: 500px;
     background-color: lightblue;
-}
-     
+}    
 [dev=true] #PhpLog[nonEmpty=true] {
     display: block;
 }
-
-#PhpLog > .LogMsg {
+#PhpLog>.MinMaxButton {
+    color: white;
+}
+#PhpLog>.LogMsg {
     font-size: 80%;
 }
     
@@ -279,14 +284,16 @@ body {
 [editing=true][dev=true] #DbCommandList {
     display: block;
 }
-#DbCommandList[minimized=false]>.MinMaxButton { /* switch buttons, since this log window is positioned at the top */
-    background-image: url('../images/MaximizeButton.png');
+#DbCommandList>.MinMaxButton {
+	  color: white;
 }
-#DbCommandList[minimized=true]>.MinMaxButton {
-    background-image: url('../images/MinimizeButton.png');
+#DbCommandList[minimized=false]>.MinMaxButton:after { /* switch buttons, since this log window is positioned at the top */
+    content: "\2228";  /* unicode logical or (v) */ 
+}
+#DbCommandList[minimized=true]>.MinMaxButton:after {
+    content: "\2227";  /* unicode logical and (^) */
     margin-top: 5px;
 }
-
 
 #IssueList {
     display: none;
@@ -301,10 +308,14 @@ body {
 [editing=true] #IssueList[nonEmpty=true] {
     display: block;
 }    
+#IssueList>.MinMaxButton {
+    color: black;
+}
 #IssueList>.Error {
     font-size: 90%;
     color: darkred;
 }
+
 
 /* Misc */
 
