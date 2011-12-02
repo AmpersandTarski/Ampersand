@@ -68,10 +68,10 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 
   // we need an extra scrollPane div, because the log windows need to be inside ampersand root (they depend on editing attr),
   // but outside scroll area 
-  echo '<div id=ScrollPane>';
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
+  echo '<div id=ScrollPane>';
   echo generateAtomInterfaces($dbName, $allInterfaceObjects[$interface], $atom, true); 
   echo '</div>';
   

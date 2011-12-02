@@ -15,13 +15,13 @@ a { text-decoration: none; }
 #TopLevelInterfaces ul li a:hover { background: white; color: #BF1E74; }
 
 button.Button { border:none; font-size:80%; width: 120px; height: 30px; background: url(../images/button.gif) no-repeat 0px 0px
-              ; text-align: center; font-weight: bold; color: #333; margin-right: 20px; }
+              ; text-align: center; font-weight: bold; color: #333; margin: 5px 10px 0 10px }
 button.Button:hover { background-position: 0px -30px; color: white; }
 
 
 #ScrollPane {
     top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more diffs */
-    padding-top: 10px;
+    padding-top: 30px;
     padding-left: 10px;    
 }
 

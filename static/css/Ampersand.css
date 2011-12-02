@@ -9,6 +9,7 @@ body {
     left:0px;
     right:0px;
     bottom:0px;
+    padding-top: 26px;
 }
 
 [editing=false] .Atom[hasInterface]>.AtomName {
@@ -80,6 +81,12 @@ body {
 
 /* Buttons */
 
+.Button {
+    position: relative;
+    float: left;
+    z-index: 50;
+}
+
 [editing=true] .EditButton {
     display: none;
 }
@@ -89,7 +96,7 @@ body {
 }
     
 [editing=true] .SaveButton {
-    display: inline;
+    display: block;
 }
     
 .CancelButton {
@@ -97,7 +104,7 @@ body {
 }
     
 [editing=true] .CancelButton {
-    display: inline;
+    display: block;
 }
     
 .InterfaceList {
