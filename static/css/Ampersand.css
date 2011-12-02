@@ -210,28 +210,61 @@ body {
 }
 
 
-/* Php log and Command queue */
+/* Log windows */
+
+.LogWindow {
+    font-family: arial;
+	  position: absolute;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    padding: 10px;
+}
+.LogWindow>.MinMaxButton { /* not a button but an icon */
+  float: right;
+}
+.LogWindow>.Title {
+    color: black;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+.LogWindow>.LogItem {
+    display: block;
+    float: bottom;
+    font-size: 80%;
+}
+.LogWindow>.MinMaxButton {
+    background-repeat:no-repeat;
+    width: 10px;
+    height: 6px;
+}
+.LogWindow[minimized=false]>.MinMaxButton {
+    background-image: url('../images/MinimizeButton.png');
+}
+.LogWindow[minimized=true] {
+    padding: 4px 10px 2px 10px;
+}
+.LogWindow[minimized=true]>.Title {
+    margin-bottom: 0px;
+}
+.LogWindow[minimized=true]>.MinMaxButton {
+    background-image: url('../images/MaximizeButton.png');
+    margin-top: 5px;
+}
+.LogWindow[minimized=true]>.LogItem {
+    display:none
+}
 
 #PhpLog {
     display: none;
+    bottom: 5px;
+    right: 5px;
+    width: 500px;
+    background-color: lightblue;
 }
      
 [dev=true] #PhpLog[nonEmpty=true] {
     display: block;
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    width: 500px;
-    padding: 10px;
-    background-color: lightblue;
-    border-style: solid;
-    border-width: 1px;
-    border-color: black;
-    clear: right;
-}
-#PhpLog > .Title {
-    font-weight: bold ;
-    margin-bottom: 6px;
 }
 #PhpLog > .LogMsg {
     font-size: 80%;
@@ -261,6 +294,8 @@ body {
 #DbCommandList > .Command {
     font-size: 90%;
 }
+
+
 
 #IssueList {
     display: none;

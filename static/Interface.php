@@ -63,7 +63,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' dev="'.($isDev?'true':'false').'">';
 
   echo '<div id=DbCommandList></div>';
-  echo '<div id=PhpLog></div>';
+  echo '<div id=PhpLog class=LogWindow minimized=false nonempty=true><div class=MinMaxButton></div><div class=Title>Php log messages</div></div>';
   echo '<div id=IssueList></div>';
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';

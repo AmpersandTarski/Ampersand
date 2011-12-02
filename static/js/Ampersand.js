@@ -1,4 +1,9 @@
 function initialize() {
+  initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
+  initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
+}                    // initialize and initializeAtoms (the latter also being called from sendCommands).
+
+function initializeAtoms() {
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
     setEditHandlers();
     traceDbCommands(); // to initialize command list
@@ -20,7 +25,7 @@ function startEditing() {
 
   $('#IssueList').empty(); // lists are cleared here and in cancel editing, in case back button causes multiple start or cancel actions
   $('#IssueList').attr('nonEmpty','false');  
-  $('#PhpLog').empty();
+  clearLogItems($('#PhpLog'));
   $('#PhpLog').attr('nonEmpty','false');
 }
 
@@ -46,7 +51,7 @@ function cancelEditing() {
     
     $('#IssueList').empty();
     $('#IssueList').attr('nonEmpty','false');  
-    $('#PhpLog').empty();
+    clearLogItems($('#PhpLog'));
     $('#PhpLog').attr('nonEmpty','false');
     
     $('#AmpersandRoot').attr('editing','false');
@@ -85,9 +90,7 @@ function sendCommands(commandArray) {
     $logMessages = $(data).find('.LogMsg');
     $ampersandErrors = $(data).find('.AmpersandErr');
 
-    $('#PhpLog').empty(); 
-    $('#PhpLog').append('<div class=Title>Php log messages:</div>');
-    $('#PhpLog').append($logMessages);
+    setLogItems($('#PhpLog'), $logMessages);
     $('#PhpLog').attr('nonEmpty', $logMessages.length > 0 ? 'true' : 'false' );
     
     if ($errors.length + $ampersandErrors.length > 0) {
@@ -115,7 +118,7 @@ function sendCommands(commandArray) {
 
             $('#AmpersandRoot').attr('editing','false');
 
-            initialize();   
+            initializeAtoms();   
         });
   });
 }
@@ -510,6 +513,37 @@ function addClickEvent($item, interface, atom) {
     $('#FullScreenMask').remove();
     return false;
   });
+}
+
+
+
+// LogWindows
+
+function initLogWindows() {
+  $('.LogWindow').click(function (event) {
+    $(this).attr('minimized', $(this).attr('minimized')=='true' ? 'false' : 'true');
+    return false;
+  });  
+}
+function minimaximizeLogWindow(event) {
+  console.log('Setting minimized to '+$(this).attr('minimized'));
+  $(this).attr('minimized', $(this).attr('minimized')=='true' ? 'false' : 'true');
+  return false;
+}
+
+function clearLogItems($logWindow) {
+  $logWindow.find('.LogItem').remove();
+}
+
+// $logItems is a jQuery set of divs (LogItem class is added here)
+function addLogItems($logWindow, $logItems) {
+  $logItems.addClass('LogItem');
+  $logWindow.append($logItems);
+}
+
+function setLogItems($logWindow, $logItems) {
+  clearLogItems($logWindow);
+  addLogItems($logWindow, $logItems);
 }
 
 
