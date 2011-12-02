@@ -69,16 +69,25 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "$rulesSql ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ "array ( 'name' => "++showPhpStr (rrnm rule)
-           , "      , 'origin' => "++showPhpStr (show $ rrfps rule)
-           , "      , 'meaning' => "++showPhpStr (showMeaning rule)
-           , "      , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . ECpl . rrexp $ rule)++"'" 
+         [ [ showPhpStr (rrnm rule) ++ " =>"
+           , "  array ( 'name' => "++showPhpStr (rrnm rule)
+           , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
+           , "        , 'meaning' => "++showPhpStr (showMeaning rule)
+           , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . ECpl . rrexp $ rule)++"'" 
+           , "        )" ]
+         | rule <- vrules fSpec ++ grules fSpec ]) ++
+  [ ""
+  , "$allRoles ="
+  , "  array" ] ++
+       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
+         [ [ "array ( 'name' => "++showPhpStr role
+           , "      , 'rules' => array ("++ intercalate ", " (map (showPhpStr . name) rules) ++")"
            , "      )" ]
-         | (i,rule) <- zip [0..] $ vrules fSpec ++ grules fSpec ])
+         | (role,rules) <- rulesPerRole ])
        
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
        showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
-
+       rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
   , showPhpStr (name interface) ++" => " ] ++
