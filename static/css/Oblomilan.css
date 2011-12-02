@@ -5,9 +5,9 @@
 body { font-family: Arial, Helvetica, sans-serif; color: #333333;}
 a { text-decoration: none; }
 
-#Header { width: 100%;height: 116px; background: white; padding:0px, margin:0px }
+#Header { width: 100%; height: 116px; background: white; padding:0px, margin:0px }
 #Decoration { float: right; height: 116px; width: 529px; background: url(../images/header_decoration.jpg) no-repeat;}
-
+#TopLevelInterfaces { width: 100%; }
 #TopLevelInterfaces ul { background: #333333 url(../images/menu_bg.jpg) repeat-x bottom center; padding: 3px 0px 8px 10px
                        ; margin: 0 0 0 0}
 #TopLevelInterfaces ul li { list-style: none; display:inline}
@@ -19,6 +19,11 @@ button.button { border:none; font-size:80%; width: 120px; height: 30px; backgrou
 button.button:hover { background-position: 0px -30px; color: white; }
 
 
+#AmpersandRoot {
+    top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more diffs */
+    padding-top: 10px;
+    padding-left: 10px;    
+}
 
 /* Atom name */  
 
@@ -100,10 +105,6 @@ button.button:hover { background-position: 0px -30px; color: white; }
 
 
 /* Special behavior for top level elements */
-
-#AmpersandRoot {
-    padding-left: 20px;
-}
 
 #AmpersandRoot > .Atom > .AtomName {
     display: none;

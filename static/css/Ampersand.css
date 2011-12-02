@@ -1,7 +1,16 @@
 body {
-    margin: 0px	
+	margin: 0px;
 }
-    
+
+#AmpersandRoot {
+	  overflow:auto; 
+	  position:absolute;
+	  top: 50px;
+	  left:0px;
+	  right:0px;
+	  bottom:0px;
+}
+
 [editing=false] .Atom[hasInterface]>.AtomName {
     cursor: pointer;
     color: blue
