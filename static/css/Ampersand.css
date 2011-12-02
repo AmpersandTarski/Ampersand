@@ -230,8 +230,7 @@ body {
 }
 .LogWindow>.LogItem {
     display: block;
-    float: bottom;
-    font-size: 80%;
+    font-size: 90%;
 }
 .LogWindow>.MinMaxButton {
     background-repeat:no-repeat;
@@ -280,48 +279,29 @@ body {
 [editing=true][dev=true] #DbCommandList {
     display: block;
 }
-#DbCommandList[minimized=false]>.MinMaxButton {
+#DbCommandList[minimized=false]>.MinMaxButton { /* switch buttons, since this log window is positioned at the top */
     background-image: url('../images/MaximizeButton.png');
 }
 #DbCommandList[minimized=true]>.MinMaxButton {
     background-image: url('../images/MinimizeButton.png');
-	  margin-top: 5px;
+    margin-top: 5px;
 }
-#DbCommandList > .Command {
-    font-size: 90%;
-}
-
 
 
 #IssueList {
     display: none;
-}
-    
-[editing=true] #IssueList[nonEmpty=true] {
-    display: block;
-    position: absolute;
     left: 5px;
     bottom: 5px;
     width: 600px;
-    padding: 10px;
     color: red;
     background-color: #f0f0f0;
-    border-style: solid;
     border-width: 2px;
     border-color: red;
 }
-
-#IssueList > .Title {
-    color: black;
-    font-weight: bold;
-    margin-bottom: 3px;
-}
-    
-#IssueList > .AmpersandErr {
-    font-size: 90%;
-}
-    
-#IssueList > .Error {
+[editing=true] #IssueList[nonEmpty=true] {
+    display: block;
+}    
+#IssueList>.Error {
     font-size: 90%;
     color: darkred;
 }

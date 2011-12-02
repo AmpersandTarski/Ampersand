@@ -23,7 +23,7 @@ function startEditing() {
   setEditHandlers();
   traceDbCommands(); // to initialize command list
 
-  $('#IssueList').empty(); // lists are cleared here and in cancel editing, in case back button causes multiple start or cancel actions
+  clearLogItems($('#IssueList')); // lists are cleared here and in cancelEditing, in case back button causes multiple start or cancel actions
   $('#IssueList').attr('nonEmpty','false');  
   clearLogItems($('#PhpLog'));
   $('#PhpLog').attr('nonEmpty','false');
@@ -49,7 +49,7 @@ function cancelEditing() {
     $('#AmpersandRoot > .Atom').remove();  
     $('#AmpersandRoot').append($('#Rollback > .Atom'));
     
-    $('#IssueList').empty();
+    clearLogItems($('#IssueList')); // lists are cleared here and in startEditing, in case back button causes multiple start or cancel actions
     $('#IssueList').attr('nonEmpty','false');  
     clearLogItems($('#PhpLog'));
     $('#PhpLog').attr('nonEmpty','false');
@@ -94,10 +94,9 @@ function sendCommands(commandArray) {
     $('#PhpLog').attr('nonEmpty', $logMessages.length > 0 ? 'true' : 'false' );
     
     if ($errors.length + $ampersandErrors.length > 0) {
-      $('#IssueList').empty();
-      $('#IssueList').append('<div class=Title>Errors:</div>');
-      $('#IssueList').append($ampersandErrors);
-      $('#IssueList').append($errors);
+      setLogItems($('#IssueList'), $ampersandErrors);
+      addLogItems($('#IssueList'), $errors);
+      $('#IssueList').attr('minimized','false'); // always maximize window
       $('#IssueList').attr('nonEmpty', $ampersandErrors.length + $errors.length > 0 ? 'true' : 'false' );
     } 
     else
