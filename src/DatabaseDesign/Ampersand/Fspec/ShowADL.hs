@@ -168,7 +168,7 @@ instance ShowADL Rule where
        "\n     MEANING "++ showADL m
        
 instance ShowADL A_Gen where
- showADL (Gen _ g s _) = "GEN "++showADL s++" ISA "++showADL g
+ showADL (Gen _ g s _) = "SPEC "++showADL s++" ISA "++showADL g
 
 instance ShowADL RoleRelation where
  showADL r

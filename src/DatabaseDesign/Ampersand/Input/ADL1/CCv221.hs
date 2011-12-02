@@ -34,7 +34,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "TEST"
                        , "RELATION", "MEANING", "CONCEPT", "KEY"
-                       , "IMPORT", "GEN", "ISA", "I", "V"
+                       , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
                        , "BYPLUG"
@@ -247,7 +247,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                         where rebuild lang fmt mkup =
                                  PMeaning (P_Markup lang fmt mkup)
    pGen             :: Parser Token P_Gen
-   pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
+   pGen              = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    pRule            :: Parser Token P_Rule

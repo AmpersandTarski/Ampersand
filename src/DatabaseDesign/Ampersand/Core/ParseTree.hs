@@ -469,7 +469,7 @@ where
 
    instance Show P_Gen where
     -- This show is used in error messages. It should therefore not display the term's type
-    showsPrec _ g = showString ("GEN "++show (gen_spc g)++" ISA "++show (gen_gen g))
+    showsPrec _ g = showString ("SPEC "++show (gen_spc g)++" ISA "++show (gen_gen g))
 
    instance Traced P_Gen where
     origin = gen_fp

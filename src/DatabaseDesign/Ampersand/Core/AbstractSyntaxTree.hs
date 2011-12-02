@@ -260,7 +260,7 @@ instance Eq A_Gen where
   g == g' = gengen g == gengen g' && genspc g == genspc g'
 instance Show A_Gen where
   -- This show is used in error messages. It should therefore not display the term's type
-  showsPrec _ g = showString ("GEN "++show (genspc g)++" ISA "++show (gengen g))
+  showsPrec _ g = showString ("SPEC "++show (genspc g)++" ISA "++show (gengen g))
 instance Traced A_Gen where
   origin = genfp
 instance Association A_Gen where
