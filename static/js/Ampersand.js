@@ -109,6 +109,10 @@ function sendCommands(commandArray) {
             $('#ScrollPane > .Atom').remove();  
             $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
+            $newPage.find('#SignalLog > .LogItem.LogMsg').remove(); // remove the logs
+            $signals = $newPage.find('#SignalLog > .LogItem');
+            setLogItems($('#SignalLog'), $signals);
+
             $('#AmpersandRoot').attr('editing','false');
 
             initializeAtoms();   
@@ -512,7 +516,10 @@ function initLogWindows() {
   $('.LogWindow').click(function (event) {
     $(this).attr('minimized', $(this).attr('minimized')=='true' ? 'false' : 'true');
     return false;
-  });  
+  });
+  $('#SignalLog>.LogMsg').remove();  // don't show logs here
+  if ($('#SignalLog>.LogItem').length>0)
+    $('#SignalLog').attr('nonEmpty','true');
 }
 function minimaximizeLogWindow(event) {
   console.log('Setting minimized to '+$(this).attr('minimized'));

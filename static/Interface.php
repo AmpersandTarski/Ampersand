@@ -6,6 +6,7 @@ require "Interfaces.php";
 // defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
 
 require "php/DatabaseUtils.php";
+require "php/Database.php";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html>
@@ -81,9 +82,12 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<div id=IssueList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   
   echo '<div id=SignalAndPhpLogs>';
-  echo '<div id=PhpLog class=LogWindow minimized=false nonEmpty=true><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
-  if ($roleNr > 0)
-    echo "<div id=SignalLog class=LogWindow minimized=false nonEmpty=true><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div></div>";
+  echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
+  if ($roleNr > 0) {
+    echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
+    checkRoleRules($roleNr);
+    echo "</div>";
+  }
   echo '</div>';
   
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';

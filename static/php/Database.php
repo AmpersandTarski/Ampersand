@@ -2,10 +2,10 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require "../Interfaces.php"; 
+require __DIR__.'/../Interfaces.php'; 
 // defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
 
-require "DatabaseUtils.php";
+require_once __DIR__.'/DatabaseUtils.php';
 
 // This module handles three requests: 
 //
@@ -19,7 +19,7 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
   listAtomsForConcept($_REQUEST['getAtomsForConcept']);
 } else if (isset($_REQUEST['destroyAtom']) ) {
   removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
-} else {
+} else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
   dbStartTransaction($dbName);
@@ -27,7 +27,7 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
 
   processCommands();
 
-  if (checkRules()) {
+  if (checkInvariantRules()) {
     emitLog('COMMIT');
     dbCommitTransaction($dbName);
   } else {
@@ -168,15 +168,33 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   queryDb($dbName, $query);
 }
 
-function checkRules() {
-  global $allRulesSql;
+// NOTE: log messages emited here are only shown on a commit, not during normal navigation.
+function checkRoleRules($roleNr) {
+  global $allRoles;  
+  
+  if ($roleNr > 0) {
+    $role = $allRoles[$roleNr-1];
+    emitLog("Checking rules for role $role[name]");
+    return checkRules($role['ruleNames']);
+  }
+  else
+    return true;
+}
+
+function checkInvariantRules() {
   global $invariantRuleNames;
+  return checkRules($invariantRuleNames);
+}
+
+function checkRules($ruleNames) {
+  global $dbName;
+  global $allRulesSql;
   
   $allRulesHold = true;
   
-  foreach ($invariantRuleNames as $invariantRuleName) {
-    $ruleSql = $allRulesSql[$invariantRuleName];
-    emitLog("Checking $invariantRuleName");
+  foreach ($ruleNames as $ruleName) {
+    $ruleSql = $allRulesSql[$ruleName];
+    emitLog("Checking $ruleName");
     $rows = queryDb($dbName, $ruleSql['sql'], $error);
     if ($error) error($error);
     
@@ -214,15 +232,15 @@ function queryDb($dbName, $querySql) {
 }
 
 function emitAmpersandErr($err) {
-  echo "<div class=AmpersandErr>$err</div>";
+  echo "<div class=\"LogItem AmpersandErr\">$err</div>";
 }
 
 function emitLog($msg) {
-  echo "<div class=LogMsg>$msg</div>";
+  echo "<div class=\"LogItem LogMsg\">$msg</div>";
 }
 
 function error($msg) {
-  die("<div class=Error>Error in Database.php: $msg</div>");
+  die("<div class=\"LogItem Error\">Error in Database.php: $msg</div>");
 } // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
