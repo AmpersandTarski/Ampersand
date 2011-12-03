@@ -116,12 +116,12 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   $stableCol   = $parentOrChild == 'parent' ? $childCol : $parentCol;
   $stableAtom  = $parentOrChild == 'parent' ? $childAtom: $parentAtom;
   
-  $tableEsc = addSlashes($table);
-  $modifiedColEsc = addSlashes($modifiedCol);
-  $stableColEsc = addSlashes($stableCol);
-  $modifiedAtomEsc = addSlashes($modifiedAtom);
-  $stableAtomEsc = addSlashes($stableAtom);
-  $originalAtomEsc = addSlashes($originalAtom);
+  $tableEsc = escapeSQL($table);
+  $modifiedColEsc = escapeSQL($modifiedCol);
+  $stableColEsc = escapeSQL($stableCol);
+  $modifiedAtomEsc = escapeSQL($modifiedAtom);
+  $stableAtomEsc = escapeSQL($stableAtom);
+  $originalAtomEsc = escapeSQL($originalAtom);
   
   // only if the stable column is unique and we have an $originalAtom, we do an update
   // TODO: maybe we can do updates also in non-unique columns
@@ -168,9 +168,9 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
   
-  $tableEsc = addSlashes($table);
-  $srcAtomEsc = addSlashes($srcAtom);
-  $tgtAtomEsc = addSlashes($tgtAtom);
+  $tableEsc = escapeSQL($table);
+  $srcAtomEsc = escapeSQL($srcAtom);
+  $tgtAtomEsc = escapeSQL($tgtAtom);
   $query = "DELETE FROM `$tableEsc` WHERE `$srcCol`='$srcAtomEsc' AND `$tgtCol`='$tgtAtomEsc';";
   emitLog ($query);
   queryDb($dbName, $query);

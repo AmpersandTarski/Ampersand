@@ -63,9 +63,9 @@ function addAtomToConcept($newAtom, $concept) {
     $conceptTable = $conceptTableCol['table'];                // maintaining $concept.
     $conceptCol = $conceptTableCol['col'];                    // We insert the new atom in each of them
 
-    $conceptTableEsc = addSlashes($conceptTable);
-    $conceptColEsc = addSlashes($conceptCol);
-    $newAtomEsc = addSlashes($newAtom);
+    $conceptTableEsc = escapeSQL($conceptTable);
+    $conceptColEsc = escapeSQL($conceptCol);
+    $newAtomEsc = escapeSQL($newAtom);
 
     $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
     
@@ -89,8 +89,8 @@ function getAllConceptAtoms($concept) {
   $conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables&columns maintaining $concept
   $conceptCol = $conceptTableInfo[$concept][0]['col'];     // for lookup, we just take the first
   
-  $conceptTableEsc = addSlashes($conceptTable);
-  $conceptColEsc = addSlashes($conceptCol);
+  $conceptTableEsc = escapeSQL($conceptTable);
+  $conceptColEsc = escapeSQL($conceptCol);
   
   return firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));  
 }
@@ -129,7 +129,7 @@ function getCoDomainAtoms($db, $atom, $selectRel) {
 }
 
 function selectCoDomain($atom, $selectRel) {
-  return 'SELECT DISTINCT `tgt` FROM ('.addSlashes($selectRel).') AS results WHERE src=\''.addSlashes($atom).'\'';
+  return 'SELECT DISTINCT `tgt` FROM ('.escapeSQL($selectRel).') AS results WHERE src=\''.escapeSQL($atom).'\'';
 }
 
 
@@ -157,7 +157,7 @@ function showHtmlAttrStr($str) {
 }
 
 function escapeHtmlAttrStr($str) {
-  return str_replace(array('"'), array('&quot;'), $str); // we do addSlashes and replace \" by &quot; and \' by '
+  return str_replace(array('"'), array('&quot;'), $str); // we do escapeSQL and replace \" by &quot; and \' by '
 }
 
 function showJsStr($str) {
@@ -165,7 +165,7 @@ function showJsStr($str) {
 }
 
 function escapeJsStr($str) {
-  return addSlashes($str);
+  return escapeSQL($str);
 }
 
 function jsBool($b) {
@@ -175,5 +175,9 @@ function jsBool($b) {
 // We only handle the &, the browser takes care of the rest.
 function escapeURI($str) {
     return str_replace(array('&'), array('%26'), $str); // replace & by %26
+}
+
+function escapeSQL($str) {
+    return addslashes($str);
 }
 ?>
