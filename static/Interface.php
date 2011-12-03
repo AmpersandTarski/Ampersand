@@ -66,7 +66,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 } else {
     
   $interface=$_REQUEST['interface'];
-  $atom=$_REQUEST['atom'];
+  $atom=utf8_decode($_REQUEST['atom']);
   $isNew = $atom==''; 
   // if the atom is '', this means that a new atom should be created. We create a unique new atom in a temporary transaction,
   // so we can generate the interface in the normal way (by querying the database). When the interface is done, the transaction

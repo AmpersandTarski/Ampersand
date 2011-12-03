@@ -69,17 +69,17 @@ where
                     , let autoIncr = if fldauto f
                                      then " AUTO_INCREMENT" else ""
                     ]
-             ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
+             ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
-                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
+                                 , "mysql_query(utf8_decode(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
                                  ]++ indentBlock 12
                                                  ( [ comma++ " (" ++valuechain md++ ")"
                                                    | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")
                                                    ]
                                                  )
-                                 ++ ["            \");"
+                                 ++ ["            \"));"
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              )
           valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld |fld<-record]
