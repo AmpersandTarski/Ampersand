@@ -79,7 +79,7 @@ function commitEditing() {
 
 function sendCommands(commandArray) {
   $.post('php/Database.php',  
-  { commands: JSON.stringify(commandArray) },
+  { commands: JSON.stringify(commandArray), role: getSelectedRole() },
   function(data) {
     $results = $(data);
     $errors = $(data).find('.Error');
@@ -443,7 +443,7 @@ function initializeAutocomplete($textfield, $atom) {
 
 function navigateTo(interface, atom) {
   window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom)
-                                     +"&role="+$('#RoleSelector').val();     
+                                     +"&role="+getSelectedRole();     
 }
 
 function clearNavigationHandlers() {
@@ -542,7 +542,7 @@ function setLogItems($logWindow, $logItems) {
 // Roles
 
 function changeRole() {
-  console.log('Role changed to '+$('#RoleSelector').val());
+  console.log('Role changed to '+getSelectedRole());
   var interface = $('#AmpersandRoot').attr('interface');
   var atom = $('#AmpersandRoot').attr('atom');
   navigateTo(interface, atom); // navigate to takes the role from the updated selector
@@ -554,6 +554,7 @@ function changeRole() {
 function getEnclosingAtom($elt) {
   return $elt.parents().filter('.Atom').first();
 }
+
 function getEnclosingAtomList($elt) {
   return $elt.parents().filter('.AtomList').first();
 }
@@ -561,6 +562,7 @@ function getEnclosingAtomList($elt) {
 function getEnclosingAtomRow($elt) {
   return $elt.parents().filter('.AtomRow').first();
 }
+
 function mapInsert(map, key, value) {
   if (map[key])
     map[key].push(value);
@@ -571,3 +573,8 @@ function mapInsert(map, key, value) {
 function attrBoolValue(attrStr) {
   return attrStr.toLowerCase()=="true" ? true : false;
 }
+
+function getSelectedRole() {
+  return $('#RoleSelector').val();
+}
+
