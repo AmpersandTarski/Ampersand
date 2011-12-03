@@ -60,6 +60,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '</ul>';
   echo '<h3>Create</h3>';
   echo newAtomLinks($allInterfaceObjects);
+  echo '<div id=SignalAndPhpLogs>';
+  genSignalLogWindow($roleNr, $roleName);
+  echo '</div>';
 } else {
     
   $interface=$_REQUEST['interface'];
@@ -85,11 +88,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   
   echo '<div id=SignalAndPhpLogs>';
   echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
-  if ($roleNr > 0) {
-    echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
-    checkRoleRules($roleNr);
-    echo "</div>";
-  }
+  genSignalLogWindow($roleNr, $roleName);
   echo '</div>';
   
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
@@ -220,5 +219,12 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   }
   emit($html, '</div>'); // div class=Atom
   return $html;
+}
+function genSignalLogWindow($roleNr, $roleName) {
+  if ($roleNr > 0) {
+    echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
+    checkRoleRules($roleNr);
+    echo "</div>";
+  }
 }
 ?>
