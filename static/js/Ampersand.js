@@ -84,12 +84,14 @@ function sendCommands(commandArray) {
     $results = $(data);
     $errors = $(data).find('.Error');
     $logMessages = $(data).find('.LogMsg');
-    $ampersandErrors = $(data).find('.AmpersandErr');
+    $invariantViolations = $(data).find('#InvariantRuleResults > .AmpersandErr');
+    $signals = $(data).find('#ProcessRuleResults > .AmpersandErr');
+    setLogItems($('#SignalLog'), $signals);
 
     setLogItems($('#PhpLog'), $logMessages);
     
-    if ($errors.length + $ampersandErrors.length > 0) {
-      setLogItems($('#IssueList'), $ampersandErrors);
+    if ($errors.length + $invariantViolations.length > 0) {
+      setLogItems($('#IssueList'), $invariantViolations);
       addLogItems($('#IssueList'), $errors);
       $('#IssueList').attr('minimized','false'); // always maximize window
     } 
@@ -109,9 +111,10 @@ function sendCommands(commandArray) {
             $('#ScrollPane > .Atom').remove();  
             $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
-            $newPage.find('#SignalLog > .LogItem.LogMsg').remove(); // remove the logs
-            $signals = $newPage.find('#SignalLog > .LogItem');
-            setLogItems($('#SignalLog'), $signals);
+            // a bit double, we just did this
+            //$newPage.find('#SignalLog > .LogItem.LogMsg').remove(); // remove the logs
+            //$signals = $newPage.find('#SignalLog > .LogItem');
+            //setLogItems($('#SignalLog'), $signals);
 
             $('#AmpersandRoot').attr('editing','false');
 

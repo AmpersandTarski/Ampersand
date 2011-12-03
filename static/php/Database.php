@@ -22,19 +22,27 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
 } else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
+  
   dbStartTransaction($dbName);
   emitLog('BEGIN');
 
-  processCommands();
+  processCommands(); // update database according to edit commands
 
-  if (checkInvariantRules()) {
+  echo '<div id="InvariantRuleResults">';
+  $invariantRulesHold = checkInvariantRules();
+  echo '</div>';
+  
+  echo '<div id="ProcessRuleResults">';
+  checkRoleRules($_REQUEST['role']);
+  echo '</div>';
+  
+  if ($invariantRulesHold) {
     emitLog('COMMIT');
     dbCommitTransaction($dbName);
   } else {
     emitLog('ROLLBACK');
     dbRollbackTransaction($dbName);
   }
-
   echo '</div>';
 }
 
@@ -194,7 +202,6 @@ function checkRules($ruleNames) {
   
   foreach ($ruleNames as $ruleName) {
     $ruleSql = $allRulesSql[$ruleName];
-    emitLog("Checking $ruleName");
     $rows = queryDb($dbName, $ruleSql['sql'], $error);
     if ($error) error($error);
     
@@ -203,6 +210,7 @@ function checkRules($ruleNames) {
       foreach($rows as $violation){
         emitAmpersandErr("- ('$violation[src]', '$violation[tgt]')");
       }
+      emitLog('Rule '.$ruleSql['name'].' is broken');
       $allRulesHold = false;
     }
     else
