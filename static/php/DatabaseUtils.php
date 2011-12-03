@@ -77,7 +77,7 @@ function addAtomToConcept($newAtom, $concept) {
 function createNewAtom($concept) {
   $newAtom = mkUniqueAtomByTime($concept);
   
-  addNewAtomToConcept($newAtom, $concept);
+  addAtomToConcept($newAtom, $concept);
   return $newAtom;
 }
 
