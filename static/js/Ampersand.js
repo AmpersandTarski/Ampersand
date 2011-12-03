@@ -423,7 +423,11 @@ function initializeAutocomplete($textfield, $atom) {
         $textfield.autocomplete({ source:resultOrError.res
                                 , minLength: 0
                                 , close: function(event, ui) { 
-                                  stopAtomEditing($atom);
+                                  if (typeof event.originalEvent != 'undefined')
+                                    stopAtomEditing($atom);
+                                  // We only stop editing here if the close was caused by an explicit event.
+                                  // If the menu disappears because the user is typing (when the text does not match any autocomplete string) 
+                                  // the originalEvent is not defined and we don't stop editing.
                                 }
                                 , select: function(event, ui) { 
                                     // Another jQuery problem: on a mouse click, the textfield has not been updated
