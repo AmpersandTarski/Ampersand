@@ -36,11 +36,14 @@ echo '<div id="TopLevelInterfaces">';
 echo '<ul>';
 echo topLevelInterfaceLinks($allInterfaceObjects);
 
+$role = $_REQUEST['role']; // 0 (or not specified) means no role is selected
+
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
 echo '<select id=RoleSelector onchange="changeRole()">';
+echo '<option value="0"'.($role==0 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
 for ($i=0; $i<count($allRoles); $i++) {
   $roleName = $allRoles[$i]['name'];
-  echo "<option value=\"$i\">$roleName</option>";
+  echo '<option value="'.($i+1).'"'.($role==($i+1) ? ' selected=yes' : '').'>'.$roleName.'</option>';
 }
 echo '</select>';
 echo '</ul>';
