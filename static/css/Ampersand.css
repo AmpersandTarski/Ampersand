@@ -276,26 +276,6 @@ body {
     display:none
 }
 
-#PhpLog {
-    display: none;
-    position: relative;
-    float:right;
-    clear:right;
-    background-color: lightblue;
-}
-#PhpLog[minimized=false] {
-    width: 500px;
-} 
-[dev=true] #PhpLog[nonEmpty=true] {
-    display: block;
-}
-#PhpLog>.MinMaxButton {
-    color: white;
-}
-#PhpLog>.LogMsg {
-    font-size: 80%;
-}
-    
 #DbCommandList {
     display: none;
     right: 5px;
@@ -316,6 +296,56 @@ body {
 #DbCommandList[minimized=true]>.MinMaxButton:after {
     content: "\2227";  /* unicode logical and (^) */
     margin-top: 5px;
+}
+
+#SignalAndPhpLogs { /* these two share a corner, so we have the logs float and use extra div for the absolute positioning */
+    position:absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+#PhpLog {
+    display: none;
+    position: relative;
+    float:right;
+    clear:right;
+    background-color: lightblue;
+}
+#PhpLog[minimized=false] {
+    width: 500px;
+} 
+[dev=true] #PhpLog[nonEmpty=true] {
+    display: block;
+}
+#PhpLog>.MinMaxButton {
+    color: white;
+}
+#PhpLog>.LogMsg {
+    font-size: 80%;
+}
+    
+#SignalLog {
+    display: none;
+    position: relative;
+    float:right;
+    clear:right;
+    margin-top: 5px;
+    color: black;
+    background-color: #f0f080;
+    border-width: 2px;
+}
+#SignalLog[minimized=false] {
+    width: 600px;
+} 
+#SignalLog[nonEmpty=true] {
+    display: block;
+}    
+#SignalLog>.MinMaxButton {
+    color: black;
+}
+#SignalLog>.Error { /* signal log may also show internal php errors */
+    font-size: 90%;
+    color: darkred;
 }
 
 #IssueList {
@@ -341,35 +371,6 @@ body {
     color: darkred;
 }
 
-#SignalLog {
-    display: none;
-    position: relative;
-    float:right;
-    clear:right;
-    margin-top: 5px;
-    color: black;
-    background-color: #f0f080;
-    border-width: 2px;
-}
-#SignalLog[minimized=false] {
-    width: 600px;
-} 
-#SignalLog[nonEmpty=true] {
-    display: block;
-}    
-#SignalLog>.MinMaxButton {
-    color: black;
-}
-#IssueList>.Error {
-    font-size: 90%;
-    color: darkred;
-}
-
-#SignalAndPhpLogs {
-    position:absolute;
-    bottom: 5px;
-    right: 5px;
-}
 
 /* Misc */
 
