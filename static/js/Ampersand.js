@@ -449,8 +449,9 @@ function initializeAutocomplete($textfield, $atom) {
 //Navigation
 
 function navigateTo(interface, atom) {
-  window.location.href = "Interface.php?interface="+encodeURIComponent(interface)+"&atom="+encodeURIComponent(atom)
-                                     +"&role="+getSelectedRole();     
+  window.location.href = 'Interface.php?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
+                                            'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '')
+                                         +'&role='+getSelectedRole();     
 }
 
 function clearNavigationHandlers() {
@@ -552,7 +553,6 @@ function setLogItems($logWindow, $logItems) {
 // Roles
 
 function changeRole() {
-  console.log('Role changed to '+getSelectedRole());
   var interface = $('#AmpersandRoot').attr('interface');
   var atom = $('#AmpersandRoot').attr('atom');
   navigateTo(interface, atom); // navigate to takes the role from the updated selector
