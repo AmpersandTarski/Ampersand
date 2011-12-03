@@ -340,6 +340,27 @@ body {
     color: darkred;
 }
 
+#SignalLog {
+    display: none;
+    right: 5px;
+    bottom: 5px;
+    color: black;
+    background-color: #f0f080;
+    border-width: 2px;
+}
+#SignalLog[minimized=false] {
+    width: 600px;
+} 
+#SignalLog[nonEmpty=true] {
+    display: block;
+}    
+#SignalLog>.MinMaxButton {
+    color: black;
+}
+#IssueList>.Error {
+    font-size: 90%;
+    color: darkred;
+}
 
 /* Misc */
 

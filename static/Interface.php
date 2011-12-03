@@ -37,13 +37,13 @@ echo '<ul>';
 echo topLevelInterfaceLinks($allInterfaceObjects);
 
 $role = $_REQUEST['role']; // 0 (or not specified) means no role is selected
-
+$roleName = $role ? $allRoles[$role-1]['name'] : '';
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
 echo '<select id=RoleSelector onchange="changeRole()">';
 echo '<option value="0"'.($role==0 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
 for ($i=0; $i<count($allRoles); $i++) {
-  $roleName = $allRoles[$i]['name'];
-  echo '<option value="'.($i+1).'"'.($role==($i+1) ? ' selected=yes' : '').'>'.$roleName.'</option>';
+  $roleNm = $allRoles[$i]['name'];
+  echo '<option value="'.($i+1).'"'.($role==($i+1) ? ' selected=yes' : '').'>'.$roleNm.'</option>';
 }
 echo '</select>';
 echo '</ul>';
@@ -80,7 +80,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<div id=DbCommandList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
   echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
   echo '<div id=IssueList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
-
+  if ($role > 0)
+    echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div></div>";
+  
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
   echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
