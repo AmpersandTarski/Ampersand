@@ -78,10 +78,13 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' dev="'.($isDev?'true':'false').'">';
 
   echo '<div id=DbCommandList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
-  echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
   echo '<div id=IssueList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
+  
+  echo '<div id=SignalAndPhpLogs>';
+  echo '<div id=PhpLog class=LogWindow minimized=false nonEmpty=true><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
   if ($role > 0)
-    echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div></div>";
+    echo "<div id=SignalLog class=LogWindow minimized=false nonEmpty=true><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div></div>";
+  echo '</div>';
   
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
   echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';

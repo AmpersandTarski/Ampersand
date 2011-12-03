@@ -278,8 +278,9 @@ body {
 
 #PhpLog {
     display: none;
-    bottom: 5px;
-    right: 5px;
+    position: relative;
+    float:right;
+    clear:right;
     background-color: lightblue;
 }
 #PhpLog[minimized=false] {
@@ -342,8 +343,10 @@ body {
 
 #SignalLog {
     display: none;
-    right: 5px;
-    bottom: 5px;
+    position: relative;
+    float:right;
+    clear:right;
+    margin-top: 5px;
     color: black;
     background-color: #f0f080;
     border-width: 2px;
@@ -360,6 +363,12 @@ body {
 #IssueList>.Error {
     font-size: 90%;
     color: darkred;
+}
+
+#SignalAndPhpLogs {
+    position:absolute;
+    bottom: 5px;
+    right: 5px;
 }
 
 /* Misc */
