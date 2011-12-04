@@ -1,0 +1,208 @@
+CONTEXT Deliveries
+
+INTERFACE Leveranciers : I[Provider]
+BOX[ besteller : issuedTo~;from
+   , opdracht:accepted
+   , leverantie: provider~
+      BOX [ Leverantie: I[Delivery]
+          , order: of
+            BOX [ Ordernummer:I[Order]
+                , klant:from
+                ]
+          , klant:deliveredto
+          ]
+   , "betaalde rekeningen":   sentBy~;(sent; paid/\I) BOX [klant:sent,leverantie: delivery]
+   , "uitstaande rekeningen": sentBy~;(sent;-paid/\I) BOX [klant:sent,leverantie: delivery]
+   ]
+
+INTERFACE Klanten : I[Client]
+BOX[ opdracht: from~ BOX [opdrachtnummer:I[Order], leverancier:issuedTo]
+   , rekening: sent~ BOX [rekeningnummer:I[Invoice],betaalddoor:paid~, betaald:paid~;paid]
+   ]
+
+INTERFACE Bestellingen : I[Order]
+BOX[ van : from
+   , aan : issuedTo
+   , betaaldeOrders : from;paid;delivery;of;V[Order*ONE]
+   , "nog te accepteren" : -(issuedTo;accepted) /\ I
+   , "nog te leveren" : accepted~ /\ -(of~;provider)
+   ]
+
+INTERFACE Rekeningen : I[Invoice]
+BOX[ leverancier : sentBy
+   , leverantie : delivery
+   , klant : sent
+   , betaaldeOrders : paid~;paid
+   ]
+
+INTERFACE Levering : I[Delivery]
+BOX[ leverancier : provider
+   , klant : deliveredto
+   , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
+   ]
+
+INTERFACE Bestellijst : I[ONE]
+BOX[ LijstItem : V[ONE*Delivery]
+     BOX[ leverancier : provider
+        , klant : deliveredto
+        , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
+   ]    ]
+
+PROCESS Deliveries
+
+
+-- Upon creation of a new order, the provider must be known. Therefore every order always has precisely one provider.
+
+ issuedTo :: Order -> Provider PRAGMA "" " has been issued to "
+  = [ ("Order 22/09/2006 Cookies", "Candy's candy")
+    ; ("C45666"                  , "Carter"       )
+    ; ("C45683"                  , "Carter"       )
+    ].
+
+-- Since there can be orders, which have not (yet) been delivered, the relation of must not be surjective.
+-- However, for every delivery, there is always precisely one order.
+
+ of :: Delivery -> Order [] PRAGMA "" " was made upon order "
+  = [ ("Cookies #0382"      , "Order 22/09/2006 Cookies")
+    ; ("Jelly beans #4921"  , "C45666"                  )
+    ; ("Peanut butter #1993", "C45683"                  )
+    ].
+
+-- To allow that deliveries exist, which have not yet been delivered, the relation provider cannot be total.
+
+ provider :: Delivery * Provider [UNI,TOT] PRAGMA "" " has been delivered by "
+  = [ ("Cookies #0382"      , "Candy's candy")
+    ; ("Jelly beans #4921"  , "Carter"       )
+    ; ("Peanut butter #1993", "Carter"       )
+    ].
+
+-- To allow that orders exist, which are not yet accepted, the relation accepted may not be surjective.
+
+ accepted :: Provider * Order [INJ] PRAGMA "Provider " " has accepted order "
+  = [ ("Candy's candy", "Order 22/09/2006 Cookies")
+    ; ("Carter"       , "C45666"                  )
+    ; ("Carter"       , "C45683"                  )
+    ]
+
+ RULE accepted |- issuedTo~ 
+ MEANING "not allowed to accept this order"
+
+ RULE order: issuedTo~ |- accepted
+ MEANING "orders received."
+
+PURPOSE RULE deliver
+{+To ensure that the provider agrees to deliver an order,
+acceptance of the order is a condition for delivery.
+-}
+  RULE deliver: accepted |- provider~;of
+  MEANING "deliverable orders"
+
+  RULE  of;accepted~ |- provider
+
+PURPOSE RULE "orders must be accepted"
+{+To ensure that the provider agrees to deliver an order,
+acceptance of the order is a condition for delivery.
+-}
+  RULE "orders must be accepted": provider |- of;accepted~
+  MEANING "A delivery is made to a client only if the corresponding order accepted by the producer."
+
+ deliveredto :: Delivery -> Client
+  = [ ("Jelly beans #4921"  , "Applegate")
+    ; ("Cookies #0382"      , "Brown")
+    ; ("Peanut butter #1993", "Conway")
+    ].
+ from :: Order -> Client
+  = [ ("C45666"                  , "Applegate")
+    ; ("Order 22/09/2006 Cookies", "Brown"    )
+    ; ("C45683"                  , "Conway"   )
+    ].
+    
+PURPOSE RULE "orders must be delivered"
+{+Once an order has been made, it must be delivered.
+-}
+  RULE "orders must be delivered": of;from |- deliveredto
+  MEANING "Deliveries must be made to the client who ordered the delivery."
+  ROLE Customer, Provider MAINTAINS "orders must be delivered"
+
+ sent :: Invoice -> Client PRAGMA "Invoice " " was sent to "
+  = [ ("5362a", "Applegate")
+    ; ("721i" , "Brown"    )
+    ; ("9443a", "Conway"   )
+    ].
+ delivery :: Invoice -> Delivery [] PRAGMA "Invoice " " covers delivery "
+  = [ ("5362a", "Jelly beans #4921"  )
+    ; ("721i" , "Cookies #0382"      )
+    ; ("9443a", "Peanut butter #1993")
+    ].
+PURPOSE RULE "monitor delivery"
+{+In order to ensure correct billing, bills may only be sent for orders delivered.
+-}
+  RULE "monitor delivery": delivery~;sent |- deliveredto
+  MEANING "Every invoice sent to a client must correspond to an actual delivery"
+ sentBy :: Invoice -> Provider PRAGMA "Invoice " " has been sent by "
+  = [ ("721i" , "Candy's candy")
+    ; ("5362a", "Carter"       )
+    ; ("9443a", "Carter"       )
+    ].
+
+PURPOSE RULE "correct billing"
+{+In order to ensure correct billing, bills may only be sent for orders delivered.
+-}
+  RULE "correct billing": sentBy = delivery;of;issuedTo
+  MEANING "An invoice must sent by the provider to whom an order was issued."
+
+PURPOSE RULE "right to bill"
+{+The following rule ensures that providers send out their own bills, and no more.
+-}
+ RULE "right to bill" : delivery~;sentBy |- provider
+ MEANING "The order for which any invoice is sent must be an order that has been delivered by that provider."
+
+-- Since invoices can exist that are not (yet) paid, the relation paid cannot be surjective.
+-- Since clients can exist that have not (yet) paid their invoice, the relation paid cannot be total.
+
+ paid :: Client * Invoice [INJ] PRAGMA "Client " " has paid invoice "
+  = [ ("Applegate", "5362a")
+    ; ("Brown",     "721i")
+    ; ("Conway",    "9443a")
+    ].
+    
+PURPOSE RULE "correct client"
+{+To ensure that correct payments are made by the right client,
+we check each payment for correspondce to an order.
+-}
+ RULE "correct client" : from;paid;delivery |- of~
+ MEANING "Accept payments must by made by the client who issued the order."
+
+PURPOSE RULE "correct payment"
+{+To ensure that payments can be related to the right order and the correct invoice,
+the system must signal any payment for which there is no invoice or no order.
+-}
+ RULE "correct payment" : paid~ |- delivery;of;from
+ MEANING "Accept payments only if there is a corresponding delivery and a corresponding  invoice has been sent."
+ROLE Provider MAINTAINS "correct payment"
+
+PURPOSE RULE payable
+{+Bills are there to be paid.
+For that purpose, we need a rule to monitor payment.
+Only deliveries that are based on an order by a client must be paid by that client.
+-}
+ RULE payable : delivery;of;from |- paid~
+ MEANING "Deliveries ordered by a client must be paid by that client."
+ROLE Client MAINTAINS payable
+
+PURPOSE RULE "invoice deliveries only"
+{+For the purpose of correct customer treatment,
+invoices may only be sent to a client for deliveries ordered by that client.
+So there must be a delivery for every invoice sent.
+-}
+ RULE "invoice deliveries only" : sent |- delivery;of;from
+ MEANING "Every invoice charges the client only for deliveries that were ordered by that client."
+
+PURPOSE RULE "ensure billing"
+{+To ensure that deliveries made to a client are billed to that client,
+an invoice must be sent for every delivery.
+-}
+ RULE "ensure billing" : of;from |- delivery~;sent
+ ROLE Provider MAINTAINS "ensure billing"
+ENDPROCESS
+ENDCONTEXT
