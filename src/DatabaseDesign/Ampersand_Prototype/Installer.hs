@@ -69,7 +69,7 @@ where
                     , let autoIncr = if fldauto f
                                      then " AUTO_INCREMENT" else ""
                     ]
-             ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
+             ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET  latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
