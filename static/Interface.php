@@ -36,6 +36,7 @@ function init() {
 <?php
 echo '<div id="TopLevelInterfaces">';
 echo '<ul>';
+echo '<li><a href="Interface.php">Home</a></li>';
 echo topLevelInterfaceLinks($allInterfaceObjects);
 
 $roleNr = $_REQUEST['role']; // 0 (or not specified) means no role is selected
