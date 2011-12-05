@@ -247,7 +247,7 @@ selectExpr fSpec i src trg (ERel (V (Sign s t))   )
                , (t',trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
                , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                ]
- where concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (ERel (I c))]
+ where concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (ERel (I c))]
 
 selectExpr fSpec i src trg (ERel (I ONE)) = sqlcomment "I[ONE]"$ selectExpr fSpec i src trg (ERel (V (Sign ONE ONE)))
 
