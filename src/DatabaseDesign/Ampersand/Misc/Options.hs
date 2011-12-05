@@ -400,15 +400,17 @@ sqlPwdOpt (Just nm) opts            = opts{sqlPwd        = nm, sqlLogPwdDefd=Tru
 sqlPwdOpt Nothing  opts             = opts
 testOpt :: Options -> Options
 testOpt opts                        = opts{test          = True}
+
 verbose :: Options -> String -> IO ()
 verbose flags x
-                   | verboseP flags = putStr x
-                   | otherwise      = return ()
+   | verboseP flags = putStr x
+   | otherwise      = return ()
    
 verboseLn :: Options -> String -> IO ()
 verboseLn flags x
-                   | verboseP flags = putStrLn x
-                   | otherwise      = return ()
+   | verboseP flags = -- each line is handled separately, so the buffer will be flushed in time. (see ticket #179)
+                      sequence_ (map putStrLn (lines x))
+   | otherwise      = return ()
 helpNVersionTexts :: String -> Options -> [String]
 helpNVersionTexts vs flags          = [preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++
                                       [usageInfo' flags                              | showHelp    flags]
