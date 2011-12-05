@@ -11,6 +11,7 @@ require "php/Database.php";
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html>
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
 <link href="css/Ampersand.css" rel="stylesheet" type="text/css"/>
 <link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 
@@ -66,7 +67,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 } else {
     
   $interface=$_REQUEST['interface'];
-  $atom=utf8_decode($_REQUEST['atom']);
+  $atom = $_REQUEST['atom'];
   $isNew = $atom==''; 
   // if the atom is '', this means that a new atom should be created. We create a unique new atom in a temporary transaction,
   // so we can generate the interface in the normal way (by querying the database). When the interface is done, the transaction
