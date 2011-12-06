@@ -45,12 +45,12 @@ fatal = fatalMsg "Components"
 parseCtxM_  :: String        -- ^ The string to be parsed
             -> Options       -- ^ flags to be taken into account
             -> String        -- ^ The name of the .adl file (used for error messages)
-            -> IO (Either P_Context [ParserError]) -- ^ The IO monad with the parse tree. 
+            -> IO (Either [ParserError] P_Context) -- ^ The IO monad with the parse tree. 
 parseCtxM_ adlstring flags fn =
       do res <- tryAll versions2try 
          verboseLn flags (case res of 
-                            Left _  -> ""
-                            Right xs -> showErr xs
+                            Right _  -> ""
+                            Left xs -> showErr xs
                          )
          return res                   
     where 
@@ -63,17 +63,17 @@ parseCtxM_ adlstring flags fn =
          Just pv  -> [pv]
          Nothing  -> [PV664,PV211]
       
-      try :: ParserVersion -> IO (Either P_Context [ParserError])
+      try :: ParserVersion -> IO (Either [ParserError] P_Context)
       try pv = do { verbose flags $ "Parsing with "++show pv++"..."
                   ; eRes <- parseADLAndIncludes adlstring fn pv flags
                   ; case eRes of 
                       Right ctx  -> verboseLn flags " successful"
-                                >> return (Left ctx)
+                                >> return (Right ctx)
                       Left err -> verboseLn flags "...failed"
-                                 >> return (Right err)
+                                 >> return (Left err)
                   }
                   
-      tryAll :: [ParserVersion] -> IO (Either P_Context [ParserError])
+      tryAll :: [ParserVersion] -> IO (Either [ParserError] P_Context)
       tryAll [] = fatal 76 "tryAll must not be called with an empty list. Consult your dealer."
       tryAll [pv] = try pv 
       tryAll (pv:pvs) = do mCtx <- try pv 
@@ -90,15 +90,15 @@ parsePopsM_   :: String            -- ^ The string to be parsed
 parsePopsM_ popsstring flags fn 
                = verboseLn flags "Parsing populations."
               >> case parsePops popsstring fn PV211 of
-                    Left res -> return res
-                    Right err -> error err
+                    Right res -> return res
+                    Left err -> error err
                     
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String -> String -> IO P_Expression
 parseADL1pExpr pexprstr fn 
                = case parseExpr pexprstr fn PV211 of
-                    Left res -> return res
-                    Right err -> error err
+                    Right res -> return res
+                    Left err -> error err
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   Apply nocxe on the error object to determine whether there are errors.
