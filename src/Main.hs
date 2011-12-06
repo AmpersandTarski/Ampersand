@@ -30,9 +30,9 @@ main
   parseAndTypeCheck flags 
    = let scriptName = fileName flags
          fn = importfile flags
-         thepCtx (Left pCtx) = pCtx
-         thepCtx (Right [])  = fatal 34 "There should be parse errors."
-         thepCtx (Right err) = error ("Parsing interrupted due to parse error:\n"++show(head err))
+         thepCtx (Right pCtx) = pCtx
+         thepCtx (Left [])  = fatal 34 "There should be parse errors."
+         thepCtx (Left err) = error ("Parsing interrupted due to parse error:\n"++show(head err))
      in
      do scriptText <- readFile scriptName
         ePCtxErr <- parseCtxM_ scriptText flags scriptName
