@@ -39,14 +39,17 @@ parseADL :: String        -- ^ The string to be parsed
 
 parseADL str fn pv =
   case pv of
-      PV664  -> runParser (addEmptyIncludes <$> CC664.pContext) fn (scan CC664.keywordstxt CC664.keywordsops CC664.specialchars CC664.opchars fn initPos str)
-      PV211  -> runParser pContext                              fn (scan       keywordstxt       keywordsops       specialchars       opchars fn initPos str)
+      PV211  -> runParser pv pContext                              fn str
+      PV664  -> runParser pv (addEmptyIncludes <$> CC664.pContext) fn str
  where addEmptyIncludes parsedContext = (parsedContext, []) -- the old parsed does not return include filenames, so we add an empty list
     
-runParser :: forall res . Parser Token res -> String -> [Token] -> Either [ParserError] res
-runParser parser filename input = 
-  let steps :: Steps (Pair res (Pair [Token] a)) Token 
-      steps = parse parser input
+runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either [ParserError] res
+runParser parserVersion parser filename input = 
+  let scanner = case parserVersion of 
+                  PV664  -> scan CC664.keywordstxt CC664.keywordsops CC664.specialchars CC664.opchars filename initPos
+                  PV211  -> scan       keywordstxt       keywordsops       specialchars       opchars filename initPos
+      steps :: Steps (Pair res (Pair [Token] a)) Token
+      steps = parse parser $ scanner input
   in  case  getMsgs steps of
         []  -> Right $ let Pair result _ = evalSteps steps in result
         msgs -> Left msgs
@@ -66,24 +69,18 @@ readAndParseIncludeFiles filenames =
 readAndParseIncludeFile :: String -> IO (Either [ParserError] (P_Context -> P_Context))
 readAndParseIncludeFile fn = 
  do { fileContents <- readFile fn `catch` (\exc -> do { error $ "\n\nError: cannot read include file "++show fn})
-    ; return $ runParser pIncludeFile fn (scan keywordstxt keywordsops specialchars opchars fn initPos fileContents)
+    ; return $ runParser PV211 pIncludeFile fn fileContents
     }
 
-
-
--- | Same as passeCtx_ , however this one si for a list of populations
+-- | Same as passeCtx_ , however this one is for a list of populations
 parsePops :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
           -> Either String [P_Population] -- ^ The result: Either a list of populations, or some errors. 
-parsePops str fn pv =
-    case  getMsgs steps of
-      []  -> Right presult
-      msg -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
-  where
-    Pair presult _ = evalSteps steps 
-    steps :: Steps (Pair [P_Population] (Pair [Token] a)) Token  
-    steps = parse pPopulations (scan keywordstxt keywordsops specialchars opchars fn initPos str)
+parsePops str fn pv = 
+    case  runParser pv pPopulations fn str of
+      Right result -> Right result
+      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
 
 -- | Parse isolated ADL1 expression strings
 parseExpr :: String            -- ^ The string to be parsed
@@ -91,13 +88,6 @@ parseExpr :: String            -- ^ The string to be parsed
           -> ParserVersion     -- ^ The specific version of the parser to be used
           -> Either String P_Expression -- ^ The result: Either a list of populations, or some errors. 
 parseExpr str fn pv =
-    case  getMsgs steps of
-      []  -> Right presult
-      msg -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
-  where
-    Pair presult _ = evalSteps steps 
-    steps :: Steps (Pair P_Expression (Pair [Token] a)) Token  
-    steps = parse pExpr (scan keywordstxt keywordsops specialchars opchars fn initPos str)
-
-
-
+    case runParser pv pExpr fn str of
+      Right result -> Right result
+      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
