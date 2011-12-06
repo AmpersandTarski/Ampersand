@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CCv221 
-   (pContext, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
+   (pContext, pIncludeFile, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger)
@@ -26,7 +26,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
 --   scanner fn str = scan keywordstxt keywordsops specialchars opchars fn initPos str
 
    keywordstxt :: [String]
-   keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP", "THEMES"
+   keywordstxt       = [ "INCLUDE"
+                       , "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP", "THEMES"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"
                        , "INTERFACE", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
@@ -58,8 +59,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pBindings :: Parser Token [(P_Declaration,String)]
    pBindings = (pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` []
    
-   pContext         :: Parser Token P_Context
-   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid 
+   pContext         :: Parser Token (P_Context, [String]) -- the result is the parsed context and a list of include filenames
+   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid
+                            <*> pList pIncludeStatement 
                             <*> optional pLanguageID 
                             <*> optional pFormatID 
                             <*> optional (rebexpr <$ pKey ":" <*> pExpr <*> pBindings ) <*>
@@ -68,9 +70,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        where
                        rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
                        rebexpr x y = (x,y)
-                       rebuild :: String -> Maybe Lang -> Maybe PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> P_Context
-                       rebuild nm lang fmt env ces = 
-                          PCtx{ ctx_nm    = nm
+                       rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> (P_Context, [String])
+                       rebuild nm includeFileNames lang fmt env ces = 
+                         (PCtx{ ctx_nm    = nm
                               , ctx_lang  = lang
                               , ctx_markup= fmt
                               , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
@@ -88,6 +90,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                               , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
                               , ctx_env   = env                     -- an expression on the context with unbound relations, to be bound in this environment
                               }
+                          , includeFileNames)
 
    data ContextElement = CPat P_Pattern
                        | CPrc P_Process
@@ -103,6 +106,33 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        | CPrp PPurpose
                        | CThm [String]           -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
 
+   pIncludeStatement :: Parser Token String
+   pIncludeStatement = pKey "INCLUDE" *> pString
+
+   -- this parser returns a function which, when applied to a P_Context, adds all context elements from the parsed include file
+   -- in front of the context elements in that P_Context.
+   --
+   -- The included file is surrounded with CONTEXT <name> and ENDCONTEXT to allow included files to be compiled standalone.
+   -- However, the body may consist only of context elements, so no include statements, language ids, etc. 
+   pIncludeFile         :: Parser Token (P_Context -> P_Context)
+   pIncludeFile  = addElementsToContext <$ pKey "CONTEXT" <* pConid <*> pList pContextElement <* pKey "ENDCONTEXT"
+    where addElementsToContext includedCtxtElts = \originalContext ->
+            originalContext { ctx_thms  = nub $ concat [xs | CThm xs<-includedCtxtElts] ++ ctx_thms originalContext  
+                            , ctx_pats  = [p | CPat p<-includedCtxtElts] ++ ctx_pats originalContext
+                            , ctx_PPrcs = [p | CPrc p<-includedCtxtElts] ++ ctx_PPrcs originalContext
+                            , ctx_rs    = [p | CRul p<-includedCtxtElts] ++ ctx_rs originalContext
+                            , ctx_ds    = [p | CDcl p<-includedCtxtElts] ++ ctx_ds originalContext
+                            , ctx_cs    = [c | CCon c<-includedCtxtElts] ++ ctx_cs originalContext
+                            , ctx_ks    = [k | CKey k<-includedCtxtElts] ++ ctx_ks originalContext
+                            , ctx_gs    = [g | CGen g<-includedCtxtElts] ++ ctx_gs originalContext
+                            , ctx_ifcs  = [s | Cifc s<-includedCtxtElts] ++ ctx_ifcs originalContext
+                            , ctx_ps    = [e | CPrp e<-includedCtxtElts] ++ ctx_ps originalContext
+                            , ctx_pops  = [p | CPop p<-includedCtxtElts] ++ ctx_pops originalContext
+                            , ctx_sql   = [p | CSqlPlug p<-includedCtxtElts] ++ ctx_sql originalContext
+                            , ctx_php   = [p | CPhpPlug p<-includedCtxtElts] ++ ctx_php originalContext
+                            } 
+
+   
    pFormatID    :: Parser Token PandocFormat
    pFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid)
                          where

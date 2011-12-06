@@ -64,13 +64,15 @@ parseCtxM_ adlstring flags fn =
          Nothing  -> [PV664,PV211]
       
       try :: ParserVersion -> IO (Either P_Context [ParserError])
-      try pv = do verbose flags $ "Parsing with "++show pv++"..."
-                  case parseADL adlstring fn pv flags of 
-                   Left ctx  -> verboseLn flags " successful"
-                             >> return (Left ctx)
-                   Right err -> verboseLn flags "...failed"
-                             >> return (Right err)
-    
+      try pv = do { verbose flags $ "Parsing with "++show pv++"..."
+                  ; eRes <- parseADLAndIncludes adlstring fn pv flags
+                  ; case eRes of 
+                      Right ctx  -> verboseLn flags " successful"
+                                >> return (Left ctx)
+                      Left err -> verboseLn flags "...failed"
+                                 >> return (Right err)
+                  }
+                  
       tryAll :: [ParserVersion] -> IO (Either P_Context [ParserError])
       tryAll [] = fatal 76 "tryAll must not be called with an empty list. Consult your dealer."
       tryAll [pv] = try pv 
