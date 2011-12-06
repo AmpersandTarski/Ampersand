@@ -75,11 +75,11 @@ readAndParseIncludeFile fn =
 parsePops :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
-          -> Either [P_Population] String -- ^ The result: Either a list of populations, or some errors. 
+          -> Either String [P_Population] -- ^ The result: Either a list of populations, or some errors. 
 parsePops str fn pv =
     case  getMsgs steps of
-      []  -> Left presult
-      msg -> Right $ "Parse errors for "++show pv++":\n"++show (head msg)
+      []  -> Right presult
+      msg -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
   where
     Pair presult _ = evalSteps steps 
     steps :: Steps (Pair [P_Population] (Pair [Token] a)) Token  
@@ -89,11 +89,11 @@ parsePops str fn pv =
 parseExpr :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
-          -> Either P_Expression String -- ^ The result: Either a list of populations, or some errors. 
+          -> Either String P_Expression -- ^ The result: Either a list of populations, or some errors. 
 parseExpr str fn pv =
     case  getMsgs steps of
-      []  -> Left presult
-      msg -> Right $ "Parse errors for "++show pv++":\n"++show (head msg)
+      []  -> Right presult
+      msg -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
   where
     Pair presult _ = evalSteps steps 
     steps :: Steps (Pair P_Expression (Pair [Token] a)) Token  
