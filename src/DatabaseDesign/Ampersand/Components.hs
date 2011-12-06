@@ -78,8 +78,8 @@ parseCtxM_ adlstring flags fn =
       tryAll [pv] = try pv 
       tryAll (pv:pvs) = do mCtx <- try pv 
                            case mCtx of
-                            Left ctx  -> return (Left ctx)
-                            Right _   -> tryAll pvs
+                            Right ctx  -> return (Right ctx)
+                            Left _   -> tryAll pvs
 
                          
 -- | Same as parseCtxM_ , however this one is for a list of populations
