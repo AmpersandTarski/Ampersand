@@ -92,7 +92,8 @@ function getAllConceptAtoms($concept) {
   $conceptTableEsc = escapeSQL($conceptTable);
   $conceptColEsc = escapeSQL($conceptCol);
   
-  return firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));  
+  // need to do array_unique, since concept table may contain duplicates
+  return array_unique(firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`")));  
 }
 
 function getTopLevelInterfacesForConcept($concept) {
