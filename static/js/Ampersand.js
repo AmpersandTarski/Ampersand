@@ -55,6 +55,9 @@ function cancelEditing() {
 }
 
 function commitEditing() {
+  $editedAtom = getEnclosingAtom( $('#atomEditor') );
+  if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
+    stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
   if (getEmptyAtomsNotInTemplates().length > 0) {
     alert('Please fill out all <new> atoms first.');
     return;
