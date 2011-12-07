@@ -123,10 +123,9 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   $stableAtomEsc = escapeSQL($stableAtom);
   $originalAtomEsc = escapeSQL($originalAtom);
   
-  // only if the stable column is unique and we have an $originalAtom, we do an update
+  // only if the stable column is unique, we do an update
   // TODO: maybe we can do updates also in non-unique columns
-  if ($tableColumnInfo[$table][$stableCol]['unique'] && $originalAtom!='') { // note: this uniqueness is not set as an SQL table attribute
-    emitLog("update");
+  if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
     $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog ($query);
     queryDb($dbName, $query);
