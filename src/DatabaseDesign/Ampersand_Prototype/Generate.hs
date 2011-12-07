@@ -80,13 +80,14 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
   , "$allRulesSql ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ showPhpStr (rrnm rule) ++ " =>"
+         [ [ showPhpStr (rrnm rule) ++ " => // rule: "++ show (rrexp $ rule)
            , "  array ( 'name' => "++showPhpStr (rrnm rule)
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
-           , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . ECpl . rrexp $ rule)++"'" 
+           , "          // normalized complement (violations): "++ show violationsExpr
+           , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ violationsExpr)++"'" 
            , "        )" ]
-         | rule <- vrules fSpec ++ grules fSpec ]) ++
+         | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
   [ ""
   , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");"
   , ""
