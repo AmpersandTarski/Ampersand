@@ -22,32 +22,6 @@ a {
     width: 529px;
     background: url(../images/header_decoration.jpg) no-repeat;
 }
-#TopLevelInterfaces {
-    width: 100%;
-    position: relative;
-    z-index: 20;
-    padding-bottom:6px;
-    background: transparent url(../images/menu_bg.png) repeat-x bottom center;
-}
-#TopLevelInterfaces ul {
-    background-color: #333333;
-    padding: 3px 0px 2px 10px;
-    margin: 0 0 0 0;
-}
-#TopLevelInterfaces ul li {
-    list-style: none;
-    display:inline
-}
-#TopLevelInterfaces ul li a {
-    padding: 4px 20px 3px 20px;
-    font-size: 15px;
-    color: white;
-    height:100%;
-}
-#TopLevelInterfaces ul li a:hover {
-    background: white;
-    color: #BF1E74;
-}
 
 button.Button {
     border:none;
@@ -67,11 +41,6 @@ button.Button:hover {
 
 
 /* General */
-
-#RoleSelector {
-    float: right;
-    margin: 1px 4px 0 0;
-}
 
 #ScrollPane {
     top: 141px; /* there's probably a way to get this lenght automatically, but it might involve adding some more diffs */
