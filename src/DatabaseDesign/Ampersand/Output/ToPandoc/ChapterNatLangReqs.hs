@@ -56,8 +56,8 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRequirements = theBlocks
     where
       (theBlocks,_) = if null (themes fSpec)
-                      then aThemeAtATime toBeProcessedStuff (patterns fSpec) newCounter
-                      else aThemeAtATime toBeProcessedStuff [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] newCounter
+                      then aThemeAtATime toBeProcessedStuff (patterns fSpec) (newCounter,Counter 0)
+                      else aThemeAtATime toBeProcessedStuff [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] (newCounter,Counter 0)
       toBeProcessedStuff = ( conceptsWith
                            , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
@@ -78,9 +78,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                        , [Relation]                                 -- all relations to be processed into this section and the sections to come
                        , [Rule])                                    -- all rules to be processed into this section and the sections to come
                     -> [Pattern]         -- the patterns that must be processed into this specification
-                    -> Counter           -- unique definition counters
-                    -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
-      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) pats iPre
+                    -> (Counter,Counter)           -- unique definition counters
+                    -> ([Block],(Counter,Counter)) -- The blocks that define the resulting document and the last used unique definition number
+      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) pats iPre 
            = case pats of
               []  -> printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
@@ -117,18 +117,37 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     -> ( [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
                        , [Relation]          -- Relations to print in this section
                        , [Rule])             -- Rules to print in this section
-                    -> Counter      -- first free number to use for numbered items
-                    -> ([Block],Counter)-- the resulting blocks and the last used number.
-      printOneTheme mPat (concs2print, rels2print, rules2print) counters1
+                    -> (Counter,Counter)      -- first free number to use for numbered items
+                    -> ([Block],(Counter,Counter))-- the resulting blocks and the last used number.
+      printOneTheme mPat (concs2print, rels2print, rules2print) (reqcnt,defcnt)
               = case (mPat, themes fSpec) of
-                 (Nothing, _:_) -> ( [], counters1 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ concBlocks ++ relBlocks ++ ruleBlocks
-                                   , counters4
+                 (Nothing, _:_) -> ( [], (reqcnt,defcnt) )         -- The document is partial (because themes have been defined), so we don't print loose ends.
+                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ reqdefblocks
+                                   , ( Counter (getEisnr reqcnt + length reqs)
+                                     , Counter (snd(last cntss)) )
                                    )
-           where 
-              (concBlocks,counters2) = sctcs concs2print counters1
-              (relBlocks, counters3) = sctds rels2print  counters2
-              (ruleBlocks,counters4) = sctrs rules2print counters3
+           where
+              -- sort the requirements by file position
+              reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ]
+              -- make blocks for requirements
+              reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr reqcnt)..] reqs]
+              -- sort the definitions by file position
+              defs = sort' fst [((linenr a,colnr a), (i, def)) | (a, i, def)<-sctcs concs2print]
+              -- cntss is a list of pairs which should be interpreted as counters [fst..snd] for concept definitions of A_Concept c
+              -- for example: + fst==snd for c with only one concept def i.e. [fst..snd]==[fst]
+              --              + fst-1==snd for c without concept defs i.e. [fst..snd]==[]
+              --              + fst+1==snd for c with two concept defs i.e. [fst..snd]==[fst,fst+1]
+              cntss :: [(Int,Int)]
+              cntss = tail $ foldl (\x y -> x ++ [(snd(last x)+1,snd(last x) + head y)]) 
+                                   [(fatal 133 "",getEisnr defcnt)] 
+                                   [[i] | (_,(i,_))<-defs]
+              -- make blocks for concepts
+              defblocks = [(pos,def cnts) | (cnts, (pos,(_,def)))<-zip [ map Counter [i..j] | (i,j) <- cntss] defs ]
+              -- sort the requirements and concept definitions
+              reqsdefs = sort' fst (reqblocks ++ defblocks)
+              -- make one [block] of requirements and concept definitions
+              reqdefblocks = concat (map snd reqsdefs)
+
               themeName = case mPat of
                            Nothing  -> ""
                            Just pat -> name pat
@@ -199,86 +218,59 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                           ]
                   where fst3 (a,_,_) = a
 
-              sctcs :: [(A_Concept, [Purpose])] -> Counter -> ([Block],Counter)
-              sctcs xs (Counter c0) 
-                = gl [] (concat [ [Left (c,e) | e<-exps] ++ [Right d | d<-uniquecds c] | (c ,exps)<-xs ]) c0
-                  where
-                      gl result [] i = (result, Counter i)
-                      gl result xs' i = gr (result++explist) (dropWhile isLeft xs') i
-                       where
-                         exps    = [ x | Left x<-takeWhile isLeft xs']
-                         explist :: [Block]
-                         explist = concat
-                                   [ amPandoc (explMarkup e)
-                                   | (_,e)<-exps]
-                      gr result [] i = (result, Counter i)
-                      gr result xs' i = gl (result++deflist) (dropWhile isRight xs') (i+length defs)
-                       where
-                         defs    = [ d | Right d<-takeWhile isRight xs' ]
-                         deflist :: [Block]
-                         deflist = [DefinitionList [ ( [ Str (case language flags of
-                                                                Dutch   -> "Definitie "
-                                                                English -> "Definition ")
-                                                       , Str (show (i+ci))
-                                                       , Str ":"]
-                                                     , [ makeDefinition flags (ci,cdnm,cd) ]
-                                                     )
-                                                   | (ci,(cdnm,cd))<-zip [0..] defs]
-                                   ]
-                      isRight (Right _) = True
-                      isRight _         = False
-                      isLeft  (Left _)  = True
-                      isLeft  _         = False
+              -- | the origin of c is the origin of the head of uniquecds c
+              --   the integer defines the number of concept defs for c
+              --   after sorting by origin the counters will be applied
+              sctcs :: [(A_Concept, [Purpose])] -> [(Origin, Int, [Counter] -> [Block])]
+              sctcs = let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
+                      in map (\(c,exps) -> (mborigin c, length (uniquecds c), cptBlock (c,exps)))
+              -- | make a block for a c with all its purposes and definitions
+              cptBlock :: (A_Concept, [Purpose]) -> [Counter] -> [Block]
+              cptBlock (c,exps) cnts = concat [amPandoc (explMarkup e) | e<-exps] ++ map cdBlock (zip cnts (uniquecds c))
+              -- | make a block for a concept definition
+              cdBlock :: (Counter,(String,ConceptDef)) -> Block
+              cdBlock (cnt,(cdnm,cd)) = DefinitionList 
+                                        [( [ Str (case language flags of
+                                                                 Dutch   -> "Definitie "
+                                                                 English -> "Definition ")
+                                           , Str (show (getEisnr cnt))
+                                           , Str ":"]
+                                         , [ makeDefinition flags (getEisnr cnt,cdnm,cd) ])]
+
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
-              sctds :: [Relation] -> Counter -> ([Block],Counter)
-              sctds xs c0 
-                = case xs of
-                    []  -> ([],c0)
-                    _   -> (fstBlocks ++ restBlocks,c2)
-                  where
-                      d':ds' = xs
-                      (fstBlocks,c1) = relBlock d' c0
-                      (restBlocks,c2) = sctds ds' c1
-                      relBlock :: Relation -> Counter -> ([Block],Counter)
-                      relBlock rel cnt = ( purposes2Blocks purps ++
-                                           [DefinitionList [ ( [ Str (case language flags of
-                                                                        Dutch   -> "Eis "
-                                                                        English -> "Requirement ")
-                                                               , Str (show(getEisnr cnt))
-                                                               , Str ":"]
-                                                             , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
-                                                                 meaning2Blocks (language flags) (makeDeclaration rel)]
-                                                             )
-                                                           ]
-                                           ]
-                                         , incEis cnt)
-                                         where purps = purposes fSpec (language flags) rel
-
-              sctrs :: [Rule] -> Counter -> ([Block],Counter)
-              sctrs xs c0 
-                = case xs of
-                    []  -> ([],c0)
-                    _   -> (fstBlocks ++ restBlocks,c2)
-                  where
-                      r':rs' = xs
-                      (fstBlocks,c1) = ruleBlock r' c0
-                      (restBlocks,c2) = sctrs rs' c1
-                      ruleBlock :: Rule -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ( purposes2Blocks purps ++
-                                           [DefinitionList [ ( [Str (case language flags of
-                                                                       Dutch   -> "Eis"
-                                                                       English -> "Requirement")
-                                                               ,Space
-                                                               ,Str (show(getEisnr cnt))
-                                                               ,if name r2=="" then Str ":" else Str (" ("++name r2++"):")]
-                                                             , [ Plain [RawInline "latex" $ symReqLabel r2] :
-                                                                 meaning2Blocks (language flags) r2
-                                                              ]
-                                                             )
-                                                           ]
-                                           ]
-                                         , incEis cnt)
-                                         where purps = purposes fSpec (language flags) r2
+              sctds :: [Relation] -> [(Origin, Counter -> [Block])]
+              sctds = map (\rel -> (origin rel, relBlock rel))
+              relBlock :: Relation -> Counter -> [Block]
+              relBlock rel cnt 
+               = purposes2Blocks purps
+                 ++ 
+                 [DefinitionList [ ( [ Str (case language flags of
+                                                      Dutch   -> "Eis "
+                                                      English -> "Requirement ")
+                                             , Str (show(getEisnr cnt))
+                                             , Str ":"]
+                                           , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
+                                               meaning2Blocks (language flags) (makeDeclaration rel)]
+                                           )] ]
+                 where purps = purposes fSpec (language flags) rel
+              sctrs :: [Rule] -> [(Origin,Counter -> [Block])]
+              sctrs = map (\rul -> (origin rul, ruleBlock rul))
+              ruleBlock :: Rule -> Counter -> [Block]
+              ruleBlock rul cnt 
+               =  purposes2Blocks purps
+                  ++
+                  [DefinitionList [ ( [Str (case language flags of
+                                                               Dutch   -> "Eis"
+                                                               English -> "Requirement")
+                                                       ,Space
+                                                       ,Str (show(getEisnr cnt))
+                                                       ,if name rul=="" then Str ":" else Str (" ("++name rul++"):")]
+                                                     , [ Plain [RawInline "latex" $ symReqLabel rul] :
+                                                         meaning2Blocks (language flags) rul
+                                                      ]
+                                                     )
+                                                   ] | not (null$meaning2Blocks (language flags) rul)]
+                                 where purps = purposes fSpec (language flags) rul
                       
 
