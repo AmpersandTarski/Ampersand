@@ -7,15 +7,26 @@ import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 import Data.Maybe
 import Control.Monad
-import System.FilePath               
+import System.FilePath
+import System.Directory               
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
+
+customCssPath :: String
+customCssPath = "css/Custom.css"
 
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec opts =
  do { verboseLn opts "Experimental Generation"
     ; writePrototypeFile "Interfaces.php" $ generateInterfaces fSpec opts
+    
+    ; customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
+    ; if customExists
+      then verboseLn opts $ "  File " ++ customCssPath ++ " already exists."
+      else do { verboseLn opts $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
+              ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
+              }
     
     ; when (development opts) $ 
        do { verboseLn opts "Generated tables\n"
