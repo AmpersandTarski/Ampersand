@@ -311,9 +311,11 @@ where
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
 -- 
         
+{-
        (if null (vrels fspec)     then "" else
         "\n -- *** Relations ***: "++
-        concat [indent++" "++showHSname d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec]++"\n")++
+        concat [indent++" "++showHSname d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec]++"\n") ++
+-}
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes ***: "++
         concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
@@ -344,7 +346,6 @@ where
                  showbinding :: (Declaration,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
-
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: PlugInfo   ***
 -- \***********************************************************************
@@ -515,8 +516,8 @@ where
         , "      , actFPA    = "++showHS flags "" (actFPA act)
         , case actPurp act of
            []  -> "      , actPurp   = [] {- no explanations in this activity -}"
-           [e] -> "      , actPurp   = [ "++showHSname e++" ]"
-           es  -> "      , actPurp   = [ "++intercalate (indent'++", ") [showHSname e | e<-es] ++indent'++"]"
+           [e] -> "      , actPurp   = [ "++showHS flags "" e++" ]"
+           es  -> "      , actPurp   = [ "++intercalate (indent'++", ") [showHS flags "" e | e<-es] ++indent'++"]"
         , "      }"
         ]
        where indent' = indent++"                    "
