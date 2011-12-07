@@ -311,11 +311,9 @@ where
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
 -- 
         
-{-
        (if null (vrels fspec)     then "" else
         "\n -- *** Relations ***: "++
-        concat [indent++" "++showHSname d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec]++"\n") ++
--}
+        concat [indent++" "++showHSname d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec, decusr d]++"\n") ++
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes ***: "++
         concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
