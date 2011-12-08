@@ -222,7 +222,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         step4a
          | theme flags == StudentTheme 
          = let cptifcs = [(c,cfld,p) | InternalPlug p@TblSQL{}<-allplugs, (c,cfld)<-cLkpTbl p]
-                      ++ [(cLkp p,column p,p) | InternalPlug p@(ScalarSQL{})<-allplugs]
+                      ++ [(cLkp p,sqlColumn p,p) | InternalPlug p@(ScalarSQL{})<-allplugs]
                binplugs = [p | InternalPlug p@(BinSQL{})<-allplugs]
                --bijective or non-bijective required kernelfields (excl.field for ID and cfld )
                reqks p cfld = [kfld | kfld<-requiredFields p cfld,iskey p kfld, kfld/=cfld]

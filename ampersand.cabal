@@ -13,7 +13,7 @@ license:        GPL
 license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
-tested-with:    GHC == 7.0.2
+tested-with:    GHC == 7.0.3
 data-files:     testData/fail/test_error_contexts_extloop.adl, testData/fail/test_error_contexts_unique.adl, testData/fail/test_error_declarations_namingconventions.adl, testData/fail/test_error_keydefs.adl, testData/fail/test_error_objectdefs.adl, testData/fail/test_error_patterns_scopes.adl, testData/fail/test_error_rules_exprs.adl, testData/fail/test_KeyDef.adl, testData/fail/test_ObjectDef.adl, testData/fail/test_Rules_Expressions.adl, testData/fail/test_Structure_and_Declarations.adl, testData/pass/Aanvraag.adl, testData/pass/Deliver.adl, testData/pass/DeliverDates_oldWay.adl, testData/pass/DeliverDates.adl, testData/pass/OUNL.adl, testData/pass/Outlook.adl, testData/pass/sick.adl, testData/pass/test.adl, testData/pass/Test2.adl, testData/pass/VIRO.adl, testData/README
 
 source-repository head
@@ -67,6 +67,7 @@ library
                     DatabaseDesign.Ampersand.Classes.ViewPoint,
                     DatabaseDesign.Ampersand.Components,
                     DatabaseDesign.Ampersand.Core.ParseTree,
+                    DatabaseDesign.Ampersand.Core.AbstractSyntaxTree,
                     DatabaseDesign.Ampersand.Core.Poset,
                     DatabaseDesign.Ampersand.Core.Poset.Instances,
                     DatabaseDesign.Ampersand.Core.Poset.Internal,
@@ -107,7 +108,6 @@ library
                     DatabaseDesign.Ampersand.Output.Statistics
   other-modules:    
                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
-                    DatabaseDesign.Ampersand.Core.AbstractSyntaxTree,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis,

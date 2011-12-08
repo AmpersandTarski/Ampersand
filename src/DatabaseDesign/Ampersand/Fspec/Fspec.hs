@@ -332,7 +332,7 @@ data PlugSQL
            }
  | ScalarSQL
            { sqlname   :: String
-           , column    :: SqlField
+           , sqlColumn :: SqlField
            , cLkp      :: A_Concept -- the concept implemented by this plug
            , sqlfpa    :: FPA -- ^ function point analysis
            }
@@ -349,7 +349,7 @@ instance Eq PlugSQL where
 lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
 lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-                 [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
+                 [(plug,sqlColumn plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
 
 data SqlField = Fld { fldname     :: String
                     , fldexpr     :: Expression
