@@ -126,7 +126,7 @@ function newAtomLinks($interfaces) {
   echo '<ul id=CreateList>';
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']!='ONE')
-      echo '<li concept='.escapeHtmlAttrStr(escapeURI($interface['srcConcept'])).'><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=">Create new '.htmlSpecialChars($interface['srcConcept']).' ('.htmlSpecialChars($interface['name']).')</a></li>';
+      echo '<li concept='.escapeHtmlAttrStr(escapeURI($interface['srcConcept'])).'><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom="><span class=CreateNewText>Create new '.htmlSpecialChars($interface['srcConcept']).' ('.htmlSpecialChars($interface['name']).')</spin></a></li>';
   }
   echo '</ul>';
 }
