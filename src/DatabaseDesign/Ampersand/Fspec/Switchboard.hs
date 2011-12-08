@@ -40,7 +40,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
          activityNodes = [ DotNode { nodeID         = "act_"++name a
                                    , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color Orange), Label (StrLabel (name a))]
                                    }
-                         | a<-activities fp]
+                         | a<-fpActivities fp]
          edges         = nub
                          [ DotEdge { edgeFromNodeID = "act_"++name from
                                    , edgeToNodeID   = "act_"++name to
@@ -50,8 +50,8 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                          | (from,to,e,r) <- allEdges
                          ]
          allEdges  = nub[(from,to,e,r) | (e,r,from)<-eventsOut, (e',r',to)<-eventsIn, e==e', r==r']
-         eventsIn  = [(e,r,act) | act<-activities fp, EUni rul<-[rrexp (actRule act)], let antec = EIsc [d |d<-rul,      isCpl d ], r<-mors antec, e<-evIn r antec]
-         eventsOut = [(e,r,act) | act<-activities fp, EUni rul<-[rrexp (actRule act)], let consq = EUni [d |d<-rul, not (isCpl d)], r<-mors consq, e<-evIn r consq]
+         eventsIn  = [(e,r,act) | act<-fpActivities fp, EUni rul<-[rrexp (actRule act)], let antec = EIsc [d |d<-rul,      isCpl d ], r<-mors antec, e<-evIn r antec]
+         eventsOut = [(e,r,act) | act<-fpActivities fp, EUni rul<-[rrexp (actRule act)], let consq = EUni [d |d<-rul, not (isCpl d)], r<-mors consq, e<-evIn r consq]
          evIn r (EIsc es)  = foldr uni [] [evIn r e | e<-es]
          evIn r (EUni es)  = foldr uni [] [evIn r e | e<-es]
          evIn r (ECps es)  = foldr uni [] [evIn r e | e<-es]

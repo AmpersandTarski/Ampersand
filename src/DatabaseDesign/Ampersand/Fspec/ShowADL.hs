@@ -277,7 +277,7 @@ instance ShowADL Fspc where
     ++ "\n\nENDCONTEXT"
     where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
                         | d<-declarations fSpec, decusr d, not (null (decpopu d))]
-          cds = vConceptDefs fSpec >- (concatMap conceptDefs patts ++ concatMap (conceptDefs.proc) procs)
+          cds = vConceptDefs fSpec >- (concatMap conceptDefs patts ++ concatMap (conceptDefs.fpProc) procs)
           patts = if null (themes fSpec)
                   then patterns fSpec
                   else [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ]

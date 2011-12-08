@@ -87,11 +87,11 @@ instance Language Fspc where
 
 
 data FProcess
-  = FProc { proc       :: Process
-          , activities :: [Activity]
+  = FProc { fpProc       :: Process
+          , fpActivities :: [Activity]
           }  
 instance Identified FProcess where
-  name = name . proc 
+  name = name . fpProc 
  
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard

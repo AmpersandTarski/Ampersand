@@ -420,10 +420,10 @@ where
 
    type PPurposes = [PPurpose]
    data PPurpose = PRef2 { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
-                             , pexObj   :: PRef2Obj   -- the reference to the object whose purpose is explained
-                             , pexMarkup:: P_Markup   -- the piece of text, including markup and language info
-                             , pexRefID :: String     -- the reference (for traceability)
-                             }
+                         , pexObj   :: PRef2Obj   -- the reference to the object whose purpose is explained
+                         , pexMarkup:: P_Markup   -- the piece of text, including markup and language info
+                         , pexRefID :: String     -- the reference (for traceability)
+                         }
 
    instance Identified PPurpose where
     name pe = name (pexObj pe)

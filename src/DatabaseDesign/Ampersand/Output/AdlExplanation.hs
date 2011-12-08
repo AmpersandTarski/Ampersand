@@ -361,8 +361,8 @@ instance Explainable Fspc where
 
 instance Explainable FProcess where
 --  meaning l fp = meaning l (proc fp)
-  explForObj fp = explForObj (proc fp)
-  explanations fp = explanations (proc fp)
+  explForObj fp = explForObj (fpProc fp)
+  explanations fp = explanations (fpProc fp)
 
 -- Ampersand allows multiple purposes for everything.
 -- The diagnosis report must make mention of this (so the user will notice if (s)he reads the diagnosis).

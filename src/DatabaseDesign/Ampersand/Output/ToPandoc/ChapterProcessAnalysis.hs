@@ -131,7 +131,7 @@ chpProcessAnalysis lev fSpec flags
   
 -- the sections in which processes are analyzed
   procSections :: [FProcess] -> [([Block],[Picture])]
-  procSections fprocs = iterat [fp |fp<-fprocs, not (emptyProcess (proc fp))] 1 (concs (patterns fSpec)) ((concatMap declarations.patterns) fSpec)
+  procSections fprocs = iterat [fp |fp<-fprocs, not (emptyProcess (fpProc fp))] 1 (concs (patterns fSpec)) ((concatMap declarations.patterns) fSpec)
    where
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [([Block],[Picture])]
     iterat [] _ _ _ = []
@@ -147,7 +147,7 @@ chpProcessAnalysis lev fSpec flags
           = purposes2Blocks purps
          purps = purposes fSpec (language flags) fproc
          sctRules  :: [([Inline], [[Block]])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (proc fproc)) i seenConcepts seenDeclarations
+         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (fpProc fproc)) i seenConcepts seenDeclarations
 
   txtLangModel :: FProcess->[Block]
   txtLangModel fp
