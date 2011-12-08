@@ -62,12 +62,14 @@ data ActionType = Create | Read | Update | Delete deriving (Show)
 instance Identified PhpValue where
    name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> objnm x}
 
+instance ShowHSName PlugPHP where
+ showHSName plug = haskellIdentifier ("plug_"++name plug)
+
 instance ShowHS PlugPHP where
- showHSname plug = haskellIdentifier ("plug_"++name plug)
  showHS flags indent plug
     = intercalate indent 
          ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
-                 --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields p] ++indent++"in"
+                 --         [showHSName f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields p] ++indent++"in"
          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.name) plug
          ,"       , phpfile   = "++show (phpfile plug)
          ,"       , phpinArgs = [ "++intercalate (indent++"                   , ") [show cv | cv <-phpinArgs plug] ++ "]"
@@ -76,26 +78,23 @@ instance ShowHS PlugPHP where
          ,"       , phpfpa    = " ++ showHS flags "" (fpa plug)
          ,"       }"
          ]
+         
 instance ShowHS PhpValue where
- showHSname _ = fatal 75 "PhpValue is anonymous with respect to showHS flags."
  showHS flags _ phpVal
    = case phpVal of
         PhpNull{}   -> "PhpNull"
-        PhpObject{} -> "PhpObject{ objectdf = " ++ showHSname (objectdf phpVal) ++ ", phptype  = " ++ showHS flags "" (phptype phpVal) ++ "}"
+        PhpObject{} -> "PhpObject{ objectdf = " ++ showHSName (objectdf phpVal) ++ ", phptype  = " ++ showHS flags "" (phptype phpVal) ++ "}"
 
 instance ShowHS PhpType where
- showHSname _ = fatal 82 "PhpType is anonymous with respect to showHS flags."
  showHS _ indent PhpString = indent++"PhpString"
  showHS _ indent PhpInt    = indent++"PhpInt"
  showHS _ indent PhpFloat  = indent++"PhpFloat"
  showHS _ indent PhpArray  = indent++"PhpArray"
 
 instance ShowHS PhpReturn where
- showHSname _ = fatal 89 "PhpReturn is anonymous with respect to showHS flags."
  showHS flags indent ret = indent++"PhpReturn {retval = "++showHS flags indent (retval ret)++"}"
 
 instance ShowHS PhpAction where
- showHSname _ = fatal 93 "PhpAction is anonymous with respect to showHS flags."
  showHS flags indent act
    = intercalate (indent ++"    ") 
        [ "PhpAction { action = " ++ showHS flags "" (action act)
@@ -103,7 +102,6 @@ instance ShowHS PhpAction where
        , "          }"
        ]
 instance ShowHS ActionType where
- showHSname _ = fatal 101 "\"ActionType\" is anonymous with respect to showHS flags."
  showHS _ indent Create = indent++"Create"
  showHS _ indent Read   = indent++"Read"
  showHS _ indent Update = indent++"Update"
