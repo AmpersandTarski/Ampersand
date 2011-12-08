@@ -81,7 +81,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
             mathVars :: String -> [Var] -> String
             mathVars q vs
              = if null vs then "" else
-               q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon "++dType | (var,dType)<-vss]++": "
+               q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\ \\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++": "
                where
                 vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
 

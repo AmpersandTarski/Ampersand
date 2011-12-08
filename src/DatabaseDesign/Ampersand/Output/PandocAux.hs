@@ -600,6 +600,7 @@ latexEscShw (c:str)      | isAlphaNum c = [c]++latexEscShw str
   f 'Å' = "\\r{A}"         --  ring over the letter
   f 'Ŏ' = "\\u{O}"         --  breve over the letter
   f 'Š' = "\\v{S}"         --  caron/hacek "v") over the letter
+  f '§' = "par. "          --  paragraph symbol (TODO: Lookup in LaTeX)
   f x   = [x]
 
 -- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
@@ -625,7 +626,7 @@ makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
 makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
     FLatex ->  [ Para ( (if i==0 then [ RawInline "latex" (symDefLabel cd++"\n") ] else [])++
-                        [ RawInline "latex" ("\\marge{\\gls{"++stripSpecialChars cdnm++"}}\n") ] ++
+                        [ RawInline "latex" ("\\marge{\\gls{"++latexEscShw cdnm++"}}\n") ] ++
                         [ RawInline "latex" (latexEscShw (cddef cd))] ++
                         [ RawInline "latex" (latexEscShw (" ["++cdref cd++"]")) | not (null (cdref cd)) ]
                       )

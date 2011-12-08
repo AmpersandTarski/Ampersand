@@ -24,7 +24,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
                                         )
   caIntro :: [Block]
   caIntro =
-   purposes2Blocks purps ++ -- This explains the purpose of this context.
+   purposes2Blocks flags purps ++ -- This explains the purpose of this context.
    (case language flags of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van de regels uit hoofdstuk "
@@ -72,7 +72,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
-          = purposes2Blocks purps
+          = purposes2Blocks flags purps
             where purps = purposes fSpec (language flags) pat
          (sctRules,   i',  seenCrs, seenDrs) = dpRule fSpec flags (invariants pat) i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule fSpec flags (processRules pat) i' seenCrs seenDrs
