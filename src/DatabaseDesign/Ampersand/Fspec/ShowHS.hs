@@ -305,11 +305,11 @@ where
 --          Heb je eenmaal een goed werkend pakket interfaces, dan wil je wellicht alleen de door jezelf gespecificeerde interfaces
 --          gebruiken. Dat gebeurt in interfaceS.
 
---        "\n -- ***Interface definitions (both interfaceS and interfaceG, but each one exactly once. ***: "++  
---       (if null 
---            (uni (interfaceS fspec)  (interfaceG fspec)) then "" 
---             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
--- 
+        "\n -- ***Interface definitions (both interfaceS and interfaceG, but each one exactly once. ***: "++  
+       (if null 
+            (uni (interfaceS fspec)  (interfaceG fspec)) then "" 
+             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
+ 
         
        (if null (vrels fspec)     then "" else
         "\n -- *** Relations ***: "++
@@ -669,7 +669,7 @@ where
      = intercalate indent 
            [ "Ifc { ifcName   = " ++ show(ifcName ifc)
            , "    , ifcParams = " ++ "["++intercalate ", " [showHS flags "" rel | rel<-ifcParams ifc] ++ "]"
-           , "    , ifcViols  = " ++ "["++intercalate ", " [showHSname rel | rel<-ifcViols ifc] ++ "]"
+           --, "    , ifcViols  = " ++ "["++intercalate ", " [showHSname rel | rel<-ifcViols ifc] ++ "]" -- TODO: uncomment when ifcViols is implemented
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS flags (indent++"         ") (ifcObj ifc)
            , "    , ifcPos    = " ++ showHS flags "" (ifcPos ifc)
