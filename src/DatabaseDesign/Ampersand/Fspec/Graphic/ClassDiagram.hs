@@ -68,7 +68,7 @@ where
                         | gs<-fsisa fSpec
                         , let c=fst gs -- select only those generalisations whose specific concept is part of the themes to be printed.
                         , null (themes fSpec) || c `elem` (concs [mors pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] `uni`  -- restrict to those themes that must be printed.
-                                                           concs [mors (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec ])
+                                                           concs [mors (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec ])
                         , (not.null) [ r | r<-relsAtts, source r==c ] ||  -- c is either a concept that has attributes or
                                null  [ r | r<-relsAtts, target r==c ]     --      it does not occur as an attribute.
                         ]

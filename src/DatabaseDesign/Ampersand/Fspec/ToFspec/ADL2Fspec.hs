@@ -61,8 +61,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vctxenv      = ctxenv context
                  }
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
-        allProcs = [ FProc {proc = p
-                           ,activities =selectActs p
+        allProcs = [ FProc {fpProc = p
+                           ,fpActivities =selectActs p
                            } | p<-ctxprocs context ]
                    where selectActs p   = [act | act<-fActivities fSpec
                                                , (not.null) (selRoles p act)]

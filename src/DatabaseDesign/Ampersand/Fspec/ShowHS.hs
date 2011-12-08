@@ -438,14 +438,15 @@ where
                 indentB = indentA++"          " -- adding the width of ", ptrls = "
 
    instance ShowHS FProcess where
-    showHSname prc = haskellIdentifier ("fprc_"++name (proc prc))
+    showHSname prc = haskellIdentifier ("fprc_"++name (fpProc prc))
     showHS flags indent prc
      = intercalate indent
-        [ "FProc { proc       = "++showHS flags (indent++"                     ") (proc prc)
-        , "      , activities = "++
-           if null (activities prc) 
+        [ "FProc { fpProc       = "++showHS flags (indent++"                     ") (fpProc prc)
+        , "      , fpActivities = "++
+           if null (fpActivities prc) 
            then "[] -- no activities"
-           else " ["++intercalate (indent++"    , ") [showHS flags (indent++"     ") a | a<-activities prc] ++indent++"    ]"
+           else " ["++intercalate (indent++"                      , ") [showHS flags (indent++"     ") a | a<-fpActivities prc] ++indent++"    ]"
+        , "      }"
         ]
  
    instance ShowHS Process where
@@ -523,9 +524,9 @@ where
    instance ShowHS PPurpose where
     showHSname _ = fatal 499 "a PPurpose is anonymous with respect to showHS flags"
     showHS flags _ expla = 
-       "PRef2 ("++showHS flags "" (pexPos expla)++") "++
-             "("++showHS flags "" (pexObj expla)++") "
-                ++showHS flags "" (pexMarkup  expla)++" "
+       "PRef2 ("++showHS flags "" (pexPos     expla)++") "++
+             "("++showHS flags "" (pexObj     expla)++") "++
+             "("++showHS flags "" (pexMarkup  expla)++") "
                 ++show (pexRefID expla)++" "
                 
    instance ShowHS PRef2Obj where
