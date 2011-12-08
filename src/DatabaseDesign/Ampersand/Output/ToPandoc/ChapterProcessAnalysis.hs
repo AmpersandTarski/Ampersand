@@ -40,7 +40,7 @@ chpProcessAnalysis lev fSpec flags
                                               Dutch   ->  "Procesanalyse"   
                                               English ->  "Process Analysis"
                                         ) ++
-     purposes2Blocks purps ++ -- This explains the purpose of this context.
+     purposes2Blocks flags purps ++ -- This explains the purpose of this context.
      [ case language flags of
          Dutch   ->
             Plain [ Str $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
@@ -144,7 +144,7 @@ chpProcessAnalysis lev fSpec flags
        , [picProcessModel fproc, picLangModel fproc]):  iterat fps i' seenCrs seenDrs
        where
          sctMotivation
-          = purposes2Blocks purps
+          = purposes2Blocks flags purps
          purps = purposes fSpec (language flags) fproc
          sctRules  :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (fpProc fproc)) i seenConcepts seenDeclarations

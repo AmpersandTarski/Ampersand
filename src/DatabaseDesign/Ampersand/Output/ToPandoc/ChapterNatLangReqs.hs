@@ -167,7 +167,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                         English -> [Str "This paragraph shows remaining fact types and concepts "
                                                    ,Str "that have not been described in previous paragraphs."]
                                       )]
-                         Just pat -> purposes2Blocks purps
+                         Just pat -> purposes2Blocks flags purps
                                      where purps = purposes fSpec (language flags) pat
 
               sctcsIntro :: [(A_Concept, [Purpose])] -> [Block]
@@ -243,7 +243,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
               sctds = map (\rel -> (origin rel, relBlock rel))
               relBlock :: Relation -> Counter -> [Block]
               relBlock rel cnt 
-               = purposes2Blocks purps
+               = purposes2Blocks flags purps
                  ++ 
                  [DefinitionList [ ( [ Str (case language flags of
                                                       Dutch   -> "Eis "
@@ -258,7 +258,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
               sctrs = map (\rul -> (origin rul, ruleBlock rul))
               ruleBlock :: Rule -> Counter -> [Block]
               ruleBlock rul cnt 
-               =  purposes2Blocks purps
+               =  purposes2Blocks flags purps
                   ++
                   [DefinitionList [ ( [Str (case language flags of
                                                                Dutch   -> "Eis"

@@ -29,7 +29,13 @@ chpDataAnalysis lev fSpec flags
  | otherwise = 
    ( header ++ 
      daIntro ++
-     daBasics [d | d<-declarations fSpec, decusr d]++
+     (if null (themes fSpec)
+      then daBasics [d | d<-declarations fSpec, decusr d]
+      else daBasics [d | d<-declarations fSpec, decusr d
+                       , decpat d `elem` themes fSpec                                                                                            ||
+                         d `elem` [r | pat<-patterns fSpec  , name pat `elem` themes fSpec, r@Sgn{}<-[makeDeclaration rel|rel<-mors pat]]        ||
+                         d `elem` [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r@Sgn{}<-[makeDeclaration rel|rel<-mors (fpProc prc)]]
+                       ]) ++
      daAssociations remainingRels ++
      [b | p<-entities, b<-daPlug p]
 {- The switchboard should probably not be in the chapter "Data analysis" 

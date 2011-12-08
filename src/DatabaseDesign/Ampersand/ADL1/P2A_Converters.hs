@@ -300,10 +300,10 @@ pODef2aODef actx cast podef
 
 pPurp2aPurp :: A_Context -> PPurpose -> (Purpose, CtxError)
 pPurp2aPurp actx pexpl
- = ( Expl { explPos   = pexPos   pexpl
-          , explObj   = explobs
-          , explMarkup  = pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx) (pexMarkup pexpl)
-          , explRefId = pexRefID pexpl
+ = ( Expl { explPos      = pexPos   pexpl
+          , explObj      = explobs
+          , explMarkup   = pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx) (pexMarkup pexpl)
+          , explRefId    = pexRefID pexpl
           , explUserdefd = True
          -- , explCont  = string2Blocks (ctxmarkup actx) (pexExpl  pexpl)
           }
