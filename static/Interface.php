@@ -53,9 +53,9 @@ echo '</ul>';
 echo '</div>';
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
-  echo '<ul id="Maintenance"><li>';
-  echo '<a id="Reset" "href="Installer.php">Reset database</a>';
-  echo '</li></ul>';
+  echo '<ul id="Maintenance">';
+  echo '<li id="Reset"><a href="Installer.php"><span class=TextContent>Reset database</span></a></li>';
+  echo '</ul>';
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';
   echo newAtomLinks($allInterfaceObjects);
   echo '<div id=SignalAndPhpLogs>';
