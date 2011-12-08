@@ -24,15 +24,15 @@ where
            = "{-# OPTIONS_GHC -Wall #-}"
              ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
-             ++"\n  import UU_Scanner"
-             ++"\n  import ADL"
-             ++"\n  import ShowHS (showHS)"
-             ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
-             ++"\n  import DatabaseDesign.Ampersand.Misc.Plug"
+             ++"\n  import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner"
+             ++"\n  import DatabaseDesign.Ampersand.Core.ParseTree"
+             ++"\n  import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree"
+             ++"\n  import DatabaseDesign.Ampersand.Fspec.ShowHS (showHS)"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.FPA"
+             ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
              ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
-             ++"\n  import DatabaseDesign.Ampersand.TypeInference.InfLibAGFuncs  hiding (fatal)"
-             ++"\n  import DatabaseDesign.Ampersand.Basics"  
+             ++"\n  import DatabaseDesign.Ampersand.Basics"
+             ++"\n  import Text.Pandoc"
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
              ++"\n  main :: IO ()"
@@ -111,10 +111,10 @@ where
                       ,"       }"
                       ]
           ScalarSQL{} -> intercalate indent 
-                      ["ScalarSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
-                      ,"          , column = "++showHS flags (indent++"                     ") (column plug)
-                      ,"          , cLkpTbl = "++showHS flags "" (cLkp plug)
-                      ,"          , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ["ScalarSQL { sqlname   = "++ (show.haskellIdentifier.name) plug
+                      ,"          , sqlColumn = "++ showHS flags (indent++"                     ") (sqlColumn plug)
+                      ,"          , cLkpTbl   = "++ showHS flags "" (cLkp plug)
+                      ,"          , sqlfpa    = "++ showHS flags "" (fpa plug)
                       ,"          }"
                       ]
 
@@ -123,10 +123,11 @@ where
 
    instance ShowHS (ECArule) where
     showHS flags indent r   
-      = "ECA (" ++ showHS flags "" (ecaTriggr r)++")" ++
-        indent++"    (" ++ showHS flags (indent++"     ")  (ecaDelta r)++")"++
-        indent++"    (" ++ showHS flags (indent++"     ")  (ecaAction r)++indent++"    )" ++
-        indent++show (ecaNum r)
+      =         "ECA { ecaTriggr = " ++ showHS flags "" (ecaTriggr r) ++
+        indent++"    , ecaDelta  = " ++ showHS flags (indent++"                  ")  (ecaDelta r)++
+        indent++"    , ecaAction = " ++ showHS flags (indent++"                  ")  (ecaAction r)++
+        indent++"    , ecaNum    = " ++ show (ecaNum r)++
+        indent++"    }"
 
    instance ShowHS Event where
     showHS flags indent e   
@@ -170,7 +171,6 @@ where
           , "    , fldtype = " ++ showHS flags "" (fldtype sqFd)
           , "    , fldnull = " ++ show (fldnull sqFd) -- can there be empty field-values?
           , "    , flduniq = " ++ show (flduniq sqFd) -- are all field-values unique?
-          , "    , fldauto = " ++ show (fldauto sqFd) -- is the field auto increment?
           , "    }"
           ]
 
@@ -284,7 +284,6 @@ where
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
            ,     ", fsisa         = isa'"
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
-           ,     ", pictPatts     = []                                    -- Pictures are not in this generated file."
            ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
 --           ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
@@ -331,7 +330,9 @@ where
         concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-vrules     fspec ]++"\n")++        
        (if null (grules   fspec ) then "" else
         "\n -- *** Generated rules ***: "++
-        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-grules     fspec ]++"\n")++        
+        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-grules     fspec ]++"\n"++
+        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s |s<-map srrel (grules fspec)]++"\n"
+        )++        
        (if null (interfaceG fspec ) then "" else
         "\n -- *** Generated interfaces ***: "++
         concat [indent++" "++showHSName ifc++indent++"  = "++showHS flags (indent++"    ") ifc |ifc<-interfaceG fspec ]++"\n")++        
@@ -340,7 +341,9 @@ where
         concat [indent++" "++showHSName q++indent++"  = "++showHS flags (indent++"    ") q |q<-vquads     fspec ]++"\n")++
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules ***: "++
-        concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n")++
+        concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
+        concat [indent++" "++showHSName rel++indent++"  = fatal 345 --"++"showHS flags (indent++\"    \") rel" |rel<-map (reldcl . ecaDelta) (vEcas fspec) ]++"\n"
+       )++
        (if null (plugInfos fspec ) then "" else
         "\n -- *** PlugInfos ***: "++
         concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
@@ -604,13 +607,12 @@ where
    instance ShowHS Rule where
     showHS flags indent r   
       = intercalate indent 
-        ["Ru{ rrnm  = " ++ show (rrnm r)
-        ,"  , rrexp = ("++ showHS flags "" (rrexp r)++")"
-        ,"  , rrfps = ("++ showHS flags "" (rrfps r)++")"
-        ,"  , rrxpl = " ++ showHS flags "" (rrmean r)
-        ,"  , rrtyp = " ++ showHS flags "" (rrtyp r)
-        ,"  , rrtyp_proof = Nothing -- TBD generate a function for the proof."
-        ,"  , rrdcl = " ++ case rrdcl r of
+        ["Ru{ rrnm   = " ++ show (rrnm r)
+        ,"  , rrexp  = ("++ showHS flags "" (rrexp r)++")"
+        ,"  , rrfps  = ("++ showHS flags "" (rrfps r)++")"
+        ,"  , rrmean = " ++ showHS flags "" (rrmean r)
+        ,"  , rrtyp  = " ++ showHS flags "" (rrtyp r)
+        ,"  , rrdcl  = " ++ case rrdcl r of
                             Nothing   -> "Nothing"
                             Just(p,d) -> "Just ("++showHS flags "" p++","++showHSName d++")"
         ,"  , r_env = " ++ show (r_env r)
@@ -668,7 +670,6 @@ where
            ["Obj{ objnm = " ++ show(objnm r)
        --  ,"   , objpos = " ++ showHS flags "" (objpos r)  -- This is not defined for every ObjectDef
            ,"   , objctx = " ++ showHS flags "" (objctx r)
-           ,"   , objctx_proof = Nothing -- TBD: generation of proof in this haskell code."
            ,if null (objats r) then "   , objats = []" else
             "   , objats"++indent++"      = ["++intercalate (indent ++ "        ,")
                                                  (map (showHS flags (indent ++"         "))
@@ -853,8 +854,8 @@ where
 
    instance ShowHS Origin where
     showHS flags indent (FileLoc l) = "FileLoc (" ++ showHS flags indent l++")"
-    showHS _ _ (DBLoc l) = "DBLoc " ++ l
-    showHS _ _ (Origin s) = "Origin " ++ s
+    showHS _ _ (DBLoc l) = "DBLoc " ++ show l
+    showHS _ _ (Origin s) = "Origin " ++ show s
     showHS _ _ OriginUnknown
       = "OriginUnknown"
 

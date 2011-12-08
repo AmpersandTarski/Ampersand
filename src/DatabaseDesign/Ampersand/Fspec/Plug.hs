@@ -247,7 +247,7 @@ showSQL (SQLBool     ) = "BOOLEAN"
 --REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is 
 --          thus I must check whether fldexpr isUni && isInj && isSur
 iskey :: PlugSQL->SqlField->Bool
-iskey plug@(ScalarSQL{}) f = column plug==f
+iskey plug@(ScalarSQL{}) f = sqlColumn plug==f
 iskey plug@(BinSQL{}) _ --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\r;r~=I i.e. a key for this plug
   | isUni(mLkp plug) || isInj(mLkp plug) = fatal 366 "BinSQL may not store a univalent or injective rel, use TblSQL instead."
   | otherwise              = False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
@@ -257,11 +257,11 @@ iskey plug@(TblSQL{}) f    = elem f (fields plug) && isUni(fldexpr f) && isInj(f
 --an iskey target field is a kernel field related to some similar or larger kernel field
 --any other target field is an attribute field related to its kernel field
 kernelrels::PlugSQL ->[(SqlField,SqlField)]
-kernelrels plug@(ScalarSQL{}) = [(column plug,column plug)]
+kernelrels plug@(ScalarSQL{}) = [(sqlColumn plug,sqlColumn plug)]
 kernelrels (BinSQL{})         = fatal 375 "Binary plugs do not know the concept of kernel fields."
 kernelrels plug@(TblSQL{})    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,iskey plug tfld] 
 attrels::PlugSQL ->[(SqlField,SqlField)]
-attrels plug@(ScalarSQL{}) = [(column plug,column plug)]
+attrels plug@(ScalarSQL{}) = [(sqlColumn plug,sqlColumn plug)]
 attrels (BinSQL{})         = fatal 379 "Binary plugs do not know the concept of attribute fields."
 attrels plug@(TblSQL{})    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(iskey plug tfld)] 
 
@@ -279,7 +279,7 @@ attrels plug@(TblSQL{})    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(iskey
 --
 --auto increment fields are not considered to be required
 requiredFields :: PlugSQL -> SqlField ->[SqlField]
-requiredFields plug@(ScalarSQL{}) _ = [column plug]
+requiredFields plug@(ScalarSQL{}) _ = [sqlColumn plug]
 requiredFields plug@(BinSQL{}) _ = [fst(columns plug),snd(columns plug)]
 requiredFields plug@(TblSQL{}) fld 
  = [f |f<-requiredkeys++requiredatts, not (fldauto f)] 
@@ -385,7 +385,7 @@ bijectivefields p f = [bij |Cluster fs<-kernelclusters p, f `elem` fs,bij<-fs]
 
 --the clusters of kernel sqlfields that are similar because they relate uni,inj,tot,sur
 kernelclusters ::PlugSQL -> [Cluster SqlField]
-kernelclusters plug@(ScalarSQL{}) = [Cluster [column plug]]
+kernelclusters plug@(ScalarSQL{}) = [Cluster [sqlColumn plug]]
 kernelclusters (BinSQL{})         = [] --a binary plugs has no kernel (or at most (entityfield plug))
 kernelclusters plug@(TblSQL{})    = clusterBy similarkey [] (kernelrels plug)
 
@@ -450,13 +450,13 @@ instance ConceptStructure PlugSQL where
 localfunction::PlugSQL -> [SqlField]
 localfunction p@(TblSQL{}) = fields p
 localfunction p@(BinSQL{}) = [fst (columns p),snd (columns p)]
-localfunction p@(ScalarSQL{}) = [column p]
+localfunction p@(ScalarSQL{}) = [sqlColumn p]
 
 tblfields::PlugSQL->[SqlField]
 tblfields plug = case plug of
     TblSQL{}    -> fields plug
     BinSQL{}    -> [fst(columns plug),snd(columns plug)]
-    ScalarSQL{} -> [column plug]
+    ScalarSQL{} -> [sqlColumn plug]
 
 type TblRecord = [String]
 tblcontents :: PlugSQL -> [TblRecord]
