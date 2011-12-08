@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),fSpec2Haskell,haskellIdentifier)
+module DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
    import DatabaseDesign.Ampersand.Core.ParseTree
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
