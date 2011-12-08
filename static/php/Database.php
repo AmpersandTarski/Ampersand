@@ -2,7 +2,7 @@
 error_reporting(E_ALL^E_NOTICE); 
 ini_set("display_errors", 1);
 
-require __DIR__.'/../Interfaces.php'; 
+require __DIR__.'/../Generics.php'; 
 // defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
 
 require_once __DIR__.'/DatabaseUtils.php';

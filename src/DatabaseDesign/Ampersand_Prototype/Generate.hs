@@ -19,7 +19,7 @@ customCssPath = "css/Custom.css"
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec opts =
  do { verboseLn opts "Experimental Generation"
-    ; writePrototypeFile "Interfaces.php" $ generateInterfaces fSpec opts
+    ; writePrototypeFile "Generics.php" $ generateInterfaces fSpec opts
     
     ; customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
     ; if customExists
@@ -40,7 +40,7 @@ generateAll fSpec opts =
         ; writeFile (combine (dirPrototype opts) fname) content
         }
  
-generateInterfaces fSpec opts = genPhp "Generate.hs" "Interfaces.php" $
+generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   [ "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
