@@ -74,8 +74,8 @@ dpRule fSpec flags = dpR
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( [Str (name r)]
          , [ let purps = purposes fSpec (language flags) r in            -- Als eerste de uitleg van de betreffende regel..
-             purposes2Blocks purps ++
-             purposes2Blocks [p | d<-nds, p<-purposes fSpec (language flags) d] ++  -- Dan de uitleg van de betreffende relaties
+             purposes2Blocks flags purps ++
+             purposes2Blocks flags [p | d<-nds, p<-purposes fSpec (language flags) d] ++  -- Dan de uitleg van de betreffende relaties
              [ Plain text1 | not (null nds)] ++
              pandocEqnArray [ ( texOnly_Id(name d)
                               , ":"
@@ -167,14 +167,17 @@ incEis :: Counter -> Counter
 --incRule x = x{getRule = getRule x + 1}
 incEis x = x{getEisnr = getEisnr x + 1}
 
-purposes2Blocks :: [Purpose] -> [Block]
-purposes2Blocks ps
+purposes2Blocks :: Options -> [Purpose] -> [Block]
+purposes2Blocks flags ps
  = case ps of
     [] -> []
-    ps -> case concatMarkup (map explMarkup ps) of
+    ps -> case concatMarkup [exp{amPandoc = amPandoc exp++ref purp} | purp<-ps, let exp=explMarkup purp] of
            Nothing -> []
            Just p  -> amPandoc p
-
+   where   -- The reference information, if available for this purpose, is put
+    ref purp = case fspecFormat flags of
+                FLatex -> [Plain [RawInline "latex" ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]  | (not.null.explRefId) purp]
+                _      -> []
 isMissing :: Maybe Purpose -> Bool
 isMissing mp =
   case mp of 
