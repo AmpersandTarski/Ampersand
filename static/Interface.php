@@ -222,6 +222,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   emit($html, '</div>'); // div class=Atom
   return $html;
 }
+
 function genSignalLogWindow($roleNr, $roleName) {
   if ($roleNr > 0) {
     echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
