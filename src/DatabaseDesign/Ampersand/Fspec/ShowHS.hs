@@ -53,24 +53,29 @@ where
         [x] -> "[ "++f (indent++"  ") x++" ]"
         _   -> "[ "++intercalate (indent++", ") [f (indent++"  ") x | x<-xs]++indent++"]"
 
+   class ShowHSName a where
+    showHSName :: a -> String
+    
    class ShowHS a where
-    showHSname :: a -> String
     showHS     :: Options -> String -> a -> String
 
+   instance ShowHSName a => ShowHSName [a] where
+    showHSName xs = "["++intercalate "," (map showHSName xs)++"]"
+   
    instance ShowHS a => ShowHS [a] where
-    showHSname xs = "["++intercalate "," (map showHSname xs)++"]"
     showHS flags indent = wrap "" (indent++" ") (showHS flags)
     
+   instance ShowHSName a => ShowHSName (Maybe a) where
+    showHSName Nothing  = "Nothing"
+    showHSName (Just x) = showHSName x
+    
    instance ShowHS a => ShowHS (Maybe a) where
-    showHSname Nothing  = "Nothing"
-    showHSname (Just x) = showHSname x
     showHS _ _ Nothing  = "Nothing"
     showHS flags indent (Just x) = showHS flags indent x
 
 
    -- | The following is used to showHS flags for signs: (Concept, Concept)
    instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
-    showHSname _ = fatal 77 "Tuples of Concepts are anonymous with respect to showHS flags."
     showHS flags indent (a,b) = "("++showHS flags (indent++" ") a++","++showHS flags (indent++" ") b++")"
     
    
@@ -78,27 +83,29 @@ where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Plug                          ***
 -- \***********************************************************************
+   instance ShowHSName PlugSQL where
+    showHSName plug = haskellIdentifier ("plug_"++name plug)
+
    instance ShowHS PlugSQL where
-    showHSname plug = haskellIdentifier ("plug_"++name plug)
     showHS flags indent plug
       = case plug of
           TblSQL{} -> intercalate indent 
                       ["let " ++ intercalate (indent++"    ")
-                                             [showHSname f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields plug] ++indent++"in"
+                                             [showHSName f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields plug] ++indent++"in"
                       ,"TblSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
-                      ,"       , fields  = ["++intercalate ", " (map showHSname (fields plug))++"]"
-                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                      ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" r++", "++showHSname ms++", "++showHSname mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
+                      ,"       , fields  = ["++intercalate ", " (map showHSName (fields plug))++"]"
+                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
                       ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
                       ,"       }"
                       ]
           BinSQL{} -> intercalate indent 
-                      ["let " ++ showHSname (fst (columns plug))++indent++"     = "++showHS flags (indent++"       ") (fst (columns plug))
-                              ++ (indent++"    ") ++ showHSname (snd (columns plug))++indent++"     = "++showHS flags (indent++"       ") (snd (columns plug))
+                      ["let " ++ showHSName (fst (columns plug))++indent++"     = "++showHS flags (indent++"       ") (fst (columns plug))
+                              ++ (indent++"    ") ++ showHSName (snd (columns plug))++indent++"     = "++showHS flags (indent++"       ") (snd (columns plug))
                               ++indent++"in"
                       ,"BinSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
-                      ,"       , columns = ("++showHSname (fst (columns plug))++ ", " ++showHSname (snd (columns plug))++")"
-                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
+                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkp = "++showHS flags "" (mLkp plug)
                       ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
                       ,"       }"
@@ -111,8 +118,10 @@ where
                       ,"          }"
                       ]
 
+   instance ShowHSName (ECArule) where
+    showHSName r = "ecaRule"++show (ecaNum r)
+
    instance ShowHS (ECArule) where
-    showHSname r = "ecaRule"++show (ecaNum r)
     showHS flags indent r   
       = "ECA (" ++ showHS flags "" (ecaTriggr r)++")" ++
         indent++"    (" ++ showHS flags (indent++"     ")  (ecaDelta r)++")"++
@@ -120,14 +129,12 @@ where
         indent++show (ecaNum r)
 
    instance ShowHS Event where
-    showHSname _ = fatal 129 "\"Event\" is anonymous with respect to showHS flags."
     showHS flags indent e   
       = if "\n" `isPrefixOf` indent
         then "On " ++ show (eSrt e)++indent++"   (" ++ showHS flags (indent++"    ") (eRel e)++indent++"   )"
         else "On " ++ show (eSrt e)++" (" ++ showHS flags "" (eRel e)++")"
 
    instance ShowHS PAclause where
-    showHSname _ = fatal 136 "\"PAclause\" is anonymous with respect to showHS flags."
     showHS flags indent p   
       = case p of
            Chc{} -> wrap "Chc " (indent ++"    ") (showHS flags) (paCls p)++
@@ -150,10 +157,12 @@ where
            Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
            Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
         where ms = paMotiv p
-              showMotiv ind (conj,rs) = "("++showHS flags (ind++" ") conj++", "++showHSname rs++")"
+              showMotiv ind (conj,rs) = "("++showHS flags (ind++" ") conj++", "++showHSName rs++")"
+
+   instance ShowHSName SqlField where
+    showHSName sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
 
    instance ShowHS SqlField where
-    showHSname sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
     showHS flags indent sqFd
       = intercalate indent
           [ "Fld { fldname = " ++ show (fldname sqFd)
@@ -166,7 +175,6 @@ where
           ]
 
    instance ShowHS SqlType where
-    showHSname _ = fatal 175 "SqlType is anonymous with respect to showHS flags."
     showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i
     showHS _ indent SQLBlob        = indent++"SQLBlob   "
     showHS _ indent SQLPass        = indent++"SQLPass   "
@@ -179,12 +187,14 @@ where
     showHS _ indent (SQLVarchar i) = indent++"SQLVarchar "++show i
     showHS _ indent SQLBool        = indent++"SQLBool   "
 
-   instance ShowHS Quad where
-   -- TODO: is showHSname injective? Make sure it is!
-    showHSname q
+   instance ShowHSName Quad where
+   -- TODO: is showHSName injective? Make sure it is!
+    showHSName q
       = haskellIdentifier ("quad_"++(name.qMorph) q++"_"++sgnt++"_"++(name.cl_rule.qClauses) q)
         where sgnt = if source r==target r then name (source r) else name (source r)++"_"++name (target r)
               r    = qMorph q
+
+   instance ShowHS Quad where
     showHS flags indent q 
       = intercalate indent
           [ "Quad{ qMorph   = " ++ showHS flags newindent (qMorph q)
@@ -195,7 +205,6 @@ where
          newindent = indent ++ "                 "
          
    instance ShowHS Fswitchboard where
-    showHSname _ = fatal 204 "Fswitchboard is anonymous with respect to showHS flags."
     showHS flags indent fsb
       = intercalate indent
           [ "Fswtch { fsbEvIn  = " ++ showHS flags newindent (fsbEvIn  fsb)
@@ -203,34 +212,32 @@ where
           ,wrap
             "       , fsbConjs = " newindent' (\_->shConj) (fsbConjs  fsb)
           ,wrap
-            "       , fsbECAs  = " newindent' (\_->showHSname) (fsbECAs  fsb)
+            "       , fsbECAs  = " newindent' (\_->showHSName) (fsbECAs  fsb)
           , "       }"
           ]
        where 
          newindent   = indent ++ "                   "
          newindent'  = newindent ++ " "
          newindent'' = newindent' ++ "    "
-         shConj (r,conj) = "( "++showHSname r++newindent++"   , "++showHS flags newindent'' conj++newindent++"   )"
+         shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS flags newindent'' conj++newindent++"   )"
 
    instance ShowHS Clauses where
-    showHSname _ = fatal 208 "Clauses is anonymous with respect to showHS flags."
     showHS flags indent c
       = intercalate indent
           [ "Clauses{ cl_conjNF = [ "++intercalate (ind++"  ") 
                                        [ "( "++showHS flags (ind++"    ") a++ind++"  , "++showHS flags (ind++"    ") b++ind++"  )"
                                        | (a,b)<-cl_conjNF c ]++ind++"]"
-          , "       , cl_rule   = " ++ showHSname (cl_rule c)
+          , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
           ]
        where 
          ind = indent ++ "                     "
 
    instance ShowHS FTheme where
-    showHSname _ = fatal 215 "FTheme is anonymous with respect to showHS flags."
     showHS flags indent tme 
      = intercalate newindent
             ["FTheme{ tconcept   = " ++ showHS flags newindent (tconcept tme)
-            ,wrap  ", trules     = " indentA (\_->showHSname) (trules tme)
+            ,wrap  ", trules     = " indentA (\_->showHSName) (trules tme)
             ,      "}" 
             ]
             where newindent = indent ++"    "
@@ -241,14 +248,16 @@ where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
+   instance ShowHSName Fspc where
+    showHSName fspec = haskellIdentifier ("fSpc_"++name fspec)
+   
    instance ShowHS Fspc where
-    showHSname fspec = haskellIdentifier ("fSpc_"++name fspec)
     showHS flags indent fspec
      = intercalate (indent ++"    ") 
            [ "Fspc{ fsName = " ++ show (name fspec)
            ,     ", fsLang        = " ++ show (fsLang fspec) ++ "  -- the default language for this specification"
            ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
-           ,wrap ", vprocesses    = " indentA (\_->showHSname) (vprocesses fspec)
+           ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)
            ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
            ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
            ,     ", interfaceS    = interfaceS'"
@@ -263,18 +272,18 @@ where
            ,     ", fRoleRuls     = " ++
                  case fRoleRuls fspec of
                    []        -> "[]"
-                   [(r,rul)] -> "[ ("++show r++", "++showHSname rul++") ]"
-                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSname rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
-           ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
-           ,wrap ", grules        = " indentA (\_->showHSname) (grules fspec)
-           ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
+                   [(r,rul)] -> "[ ("++show r++", "++showHSName rul++") ]"
+                   _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
+           ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fspec)
+           ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
+           ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
            ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
-           ,wrap ", vquads        = " indentA (\_->showHSname) (vquads fspec)
-           ,wrap ", vEcas         = " indentA (\_->showHSname) (vEcas fspec)
-           ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
+           ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
+           ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
+           ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
            ,     ", fsisa         = isa'"
-           ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
+           ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
            ,     ", pictPatts     = []                                    -- Pictures are not in this generated file."
            ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
@@ -290,11 +299,11 @@ where
        indent++" gE = genEq (typology isa')"++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
        indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map showHSname (interfaceS fspec))++indentB++"]")++
+                                 "[ "++intercalate (indentB++", ") (map showHSName (interfaceS fspec))++indentB++"]")++
         "\n -- ***Activities Generated by the Ampersand compiler ***: "++
        indent++" interfaceG' = "++(if null (interfaceG fspec) then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map showHSname (interfaceG fspec))++indentB++"]")++
---       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p |p<-patterns fspec ]++"\n")++
+                                 "[ "++intercalate (indentB++", ") (map showHSName (interfaceG fspec))++indentB++"]")++
+--       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-patterns fspec ]++"\n")++
 
 -- WHY?  staan hier verschillende lijstjes met interfaces?
 -- BECAUSE! Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
@@ -308,36 +317,36 @@ where
         "\n -- ***Interface definitions (both interfaceS and interfaceG, but each one exactly once. ***: "++  
        (if null 
             (uni (interfaceS fspec)  (interfaceG fspec)) then "" 
-             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
+             else concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
  
         
        (if null (vrels fspec)     then "" else
         "\n -- *** Relations ***: "++
-        concat [indent++" "++showHSname d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec, decusr d]++"\n") ++
+        concat [indent++" "++showHSName d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec, decusr d]++"\n") ++
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes ***: "++
-        concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
+        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- *** User defined rules ***: "++
-        concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r |r<-vrules     fspec ]++"\n")++        
+        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-vrules     fspec ]++"\n")++        
        (if null (grules   fspec ) then "" else
         "\n -- *** Generated rules ***: "++
-        concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r |r<-grules     fspec ]++"\n")++        
+        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-grules     fspec ]++"\n")++        
        (if null (interfaceG fspec ) then "" else
         "\n -- *** Generated interfaces ***: "++
-        concat [indent++" "++showHSname ifc++indent++"  = "++showHS flags (indent++"    ") ifc |ifc<-interfaceG fspec ]++"\n")++        
+        concat [indent++" "++showHSName ifc++indent++"  = "++showHS flags (indent++"    ") ifc |ifc<-interfaceG fspec ]++"\n")++        
        (if null (vquads fspec ) then "" else
         "\n -- *** Quads ***: "++
-        concat [indent++" "++showHSname q++indent++"  = "++showHS flags (indent++"    ") q |q<-vquads     fspec ]++"\n")++
+        concat [indent++" "++showHSName q++indent++"  = "++showHS flags (indent++"    ") q |q<-vquads     fspec ]++"\n")++
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules ***: "++
-        concat [indent++" "++showHSname eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n")++
+        concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n")++
        (if null (plugInfos fspec ) then "" else
         "\n -- *** PlugInfos ***: "++
-        concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
+        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns ***: "++
-        concat [indent++" "++showHSname pat++" gE"++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")
+        concat [indent++" "++showHSName pat++" gE"++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
@@ -348,11 +357,13 @@ where
 -- \*** Eigenschappen met betrekking tot: PlugInfo   ***
 -- \***********************************************************************
 
+   instance ShowHSName PlugInfo where
+    showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
+    showHSName (ExternalPlug _) = fatal 336 "a PlugInfo is anonymous with respect to showHS flags"
+
    instance ShowHS PlugInfo where
-    showHSname (InternalPlug p) = haskellIdentifier ("ipl_"++name p)
-    showHSname (ExternalPlug _) = fatal 336 "a PlugInfo is anonymous with respect to showHS flags"
     showHS _ _ (InternalPlug p)
-     = "InternalPlug "++showHSname p
+     = "InternalPlug "++showHSName p
     showHS flags ind (ExternalPlug o)
      = "ExternalPlug "++showHS flags (ind++"    ") o
    
@@ -361,12 +372,10 @@ where
 -- \***********************************************************************
 
    instance ShowHS RoleRelation where
-    showHSname _ = fatal 347 "a RoleRelation is anonymous with respect to showHS flags"
     showHS flags ind rr
      = "RR "++show (rrRoles rr)++" "++showHS flags (ind++"    ") (rrRels rr)++" "++showHS flags (ind++"    ") (rrPos rr)
    
    instance ShowHS RoleRule where
-    showHSname _ = fatal 352 "a RoleRule is anonymous with respect to showHS flags"
     showHS flags ind rs
      = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS flags (ind++"    ") (mPos rs)
    
@@ -375,8 +384,10 @@ where
 -- \*** Eigenschappen met betrekking tot: Field                         ***
 -- \***********************************************************************
 
+   instance ShowHSName Field where
+    showHSName fld = haskellIdentifier ("fld_"++fld_name fld)
+
    instance ShowHS Field where
-    showHSname fld = haskellIdentifier ("fld_"++fld_name fld)
     showHS flags indent fld
      = "Att "++       "{ fld_name     = "++                     show (fld_name     fld)
        ++ ( if null (fld_sub fld)
@@ -398,12 +409,12 @@ where
        ++ indent++"    , fld_insAble  = "++show (fld_insAble  fld)
        ++ indent++"    , fld_onIns    = "++
           ( if fld_insAble fld
-            then showHSname (fld_onIns fld)
+            then showHSName (fld_onIns fld)
             else "error(\"!Fatal: reference to undefined insert action in field "++fld_name fld++"\")" )
        ++ indent++"    , fld_delAble  = "++                     show (fld_delAble  fld)
        ++ indent++"    , fld_onDel    = "++
           ( if fld_delAble fld
-            then showHSname (fld_onDel fld)
+            then showHSName (fld_onDel fld)
             else "error(\"!Fatal: reference to undefined delete action in field "++fld_name fld++"\")" )
        ++ indent++"    }"
 
@@ -411,8 +422,10 @@ where
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
 -- \***********************************************************************
 
+   instance ShowHSName FSid where
+    showHSName (FS_id nm ) = haskellIdentifier nm 
+
    instance ShowHS FSid where
-    showHSname (FS_id nm ) = haskellIdentifier nm 
     showHS _ _ (FS_id nm) 
       = "(FS_id " ++ show nm ++ ")"
 
@@ -420,25 +433,29 @@ where
 -- \*** Eigenschappen met betrekking tot: Pattern                       ***
 -- \***********************************************************************
 
+   instance ShowHSName Pattern where
+    showHSName pat = haskellIdentifier ("pat_"++name pat)
+   
    instance ShowHS Pattern where
-    showHSname pat = haskellIdentifier ("pat_"++name pat)
     showHS flags indent pat
      = intercalate indentA
         [ "A_Pat { ptnm  = "++show (name pat)
         , ", ptpos = "++showHS flags "" (ptpos pat)
         , ", ptend = "++showHS flags "" (ptend pat)
         , if null (ptrls pat) then ", ptrls = [] -- no rules"
-                              else ", ptrls = [" ++intercalate ", " [showHSname r | r<-ptrls pat] ++"]"
+                              else ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++"]"
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
         , if null (ptdcs pat) then ", ptdcs = [] -- no declarations"
-                              else ", ptdcs = [" ++intercalate          ", " [showHSname d | d<-ptdcs pat] ++"]"
+                              else ", ptdcs = [" ++intercalate          ", " [showHSName d | d<-ptdcs pat] ++"]"
         , wrap ", ptkds = " indentB (showHS flags) (ptkds pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
                 indentB = indentA++"          " -- adding the width of ", ptrls = "
 
+   instance ShowHSName FProcess where
+    showHSName prc = haskellIdentifier ("fprc_"++name (fpProc prc))
+   
    instance ShowHS FProcess where
-    showHSname prc = haskellIdentifier ("fprc_"++name (fpProc prc))
     showHS flags indent prc
      = intercalate indent
         [ "FProc { fpProc       = "++showHS flags (indent++"                     ") (fpProc prc)
@@ -449,28 +466,30 @@ where
         , "      }"
         ]
  
-   instance ShowHS Process where
+   instance ShowHSName Process where
  -- TODO: showHS flags should generate valid Haskell code for the entire pattern. Right now, it doesn't
-    showHSname prc = haskellIdentifier ("prc_"++name prc)
+    showHSName prc = haskellIdentifier ("prc_"++name prc)
+
+   instance ShowHS Process where
     showHS flags indent prc
      = intercalate indent
         [ "Proc { prcNm    = "++show (name prc)
 --        , case prcGns prc of
 --           []          -> "     , prcGns   = [] {- no generalizations -}"
---           [g]         -> "     , prcGns   = [ "++showHSname g++" ]"
---           gs          -> "     , prcGns   = [ "++intercalate (indent'++", ") [showHSname g | g<-gs]++indent'++"]"
+--           [g]         -> "     , prcGns   = [ "++showHSName g++" ]"
+--           gs          -> "     , prcGns   = [ "++intercalate (indent'++", ") [showHSName g | g<-gs]++indent'++"]"
 --        , case prcDcs prc of
 --           []          -> "     , prcDcs   = [] {- no declarations -}"
---           [d]         -> "     , prcDcs   = [ "++showHSname d++" ]"
---           ds          -> "     , prcDcs   = [ "++intercalate (indent'++", ") [showHSname d | d<-ds]++indent'++"]"
+--           [d]         -> "     , prcDcs   = [ "++showHSName d++" ]"
+--           ds          -> "     , prcDcs   = [ "++intercalate (indent'++", ") [showHSName d | d<-ds]++indent'++"]"
         , case prcRules prc of
            []          -> "     , prcRules = [] {- no rules -}"
-           [r]         -> "     , prcRules = [ "++showHSname r++" ]"
-           rs          -> "     , prcRules = [ "++intercalate (indent'++", ") [showHSname r | r<-rs]++indent'++"]"
+           [r]         -> "     , prcRules = [ "++showHSName r++" ]"
+           rs          -> "     , prcRules = [ "++intercalate (indent'++", ") [showHSName r | r<-rs]++indent'++"]"
         , case prcRRuls prc of
            []          -> "     , prcRRuls = [] {- no role-rule assignments -}"
-           [(rol,rul)] -> "     , prcRRuls = [ ("++show rol++", "++showHSname rul++") ]"
-           rs          -> "     , prcRRuls = [ "++intercalate (indent'++", ") ["("++show rol++", "++showHSname rul++")" | (rol,rul)<-rs] ++indent'++"]"
+           [(rol,rul)] -> "     , prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
+           rs          -> "     , prcRRuls = [ "++intercalate (indent'++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indent'++"]"
         , case prcRRels prc of
            []          -> "     , prcRRels = [] {- no role-relation assignments -}"
            [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
@@ -492,10 +511,9 @@ where
 -- \***********************************************************************
 
    instance ShowHS Activity where
-    showHSname _ = fatal 469 "an Activity is anonymous with respect to showHS flags"
     showHS flags indent act = 
        intercalate indent
-        [ "Act { actRule   = "++showHSname (actRule act)
+        [ "Act { actRule   = "++showHSName (actRule act)
         , case actTrig act of
            []  -> "      , actTrig   = [] {- no relations trigger this activity -}"
            [r] -> "      , actTrig   = [ "++showHS flags "" r++" ]"
@@ -506,12 +524,12 @@ where
            rs  -> "      , actAffect = [ "++intercalate (indent'++", ") [showHS flags "" r | r<-rs] ++indent'++"]"
         , case actQuads act of
            []  -> "      , actQuads  = [] {- no relations are affected by this activity -}"
-           [q] -> "      , actQuads  = [ "++showHSname q++" ]"
-           qs  -> "      , actQuads  = [ "++intercalate (indent'++", ") [showHSname q | q<-qs] ++indent'++"]"
+           [q] -> "      , actQuads  = [ "++showHSName q++" ]"
+           qs  -> "      , actQuads  = [ "++intercalate (indent'++", ") [showHSName q | q<-qs] ++indent'++"]"
         , case actEcas act of
            []  -> "      , actEcas   = [] {- no relations are affected by this activity -}"
-           [e] -> "      , actEcas   = [ "++showHSname e++" ]"
-           es  -> "      , actEcas   = [ "++intercalate (indent'++", ") [showHSname e | e<-es] ++indent'++"]"
+           [e] -> "      , actEcas   = [ "++showHSName e++" ]"
+           es  -> "      , actEcas   = [ "++intercalate (indent'++", ") [showHSName e | e<-es] ++indent'++"]"
         , "      , actFPA    = "++showHS flags "" (actFPA act)
         , case actPurp act of
            []  -> "      , actPurp   = [] {- no explanations in this activity -}"
@@ -522,7 +540,6 @@ where
        where indent' = indent++"                    "
 
    instance ShowHS PPurpose where
-    showHSname _ = fatal 499 "a PPurpose is anonymous with respect to showHS flags"
     showHS flags _ expla = 
        "PRef2 ("++showHS flags "" (pexPos     expla)++") "++
              "("++showHS flags "" (pexObj     expla)++") "++
@@ -530,7 +547,6 @@ where
                 ++show (pexRefID expla)++" "
                 
    instance ShowHS PRef2Obj where
-    showHSname _ = fatal 508 "a PRef2Obj is anonymous with respect to showHS flags"
     showHS _ _ peObj
      = case peObj of 
             PRef2ConceptDef str     -> "PRef2ConceptDef " ++show str
@@ -544,19 +560,17 @@ where
             PRef2Fspc str           -> "PRef2Fspc "       ++show str
                            
    instance ShowHS Purpose where
-    showHSname _ = fatal 522 "a Purpose is anonymous with respect to showHS flags"
     showHS flags _ expla = 
        "Expl "++showHS flags "" (explObj expla)++" "
               ++showHS flags "" (explMarkup  expla)++" "
               ++show (explRefId expla)++" "
 
    instance ShowHS ExplObj where
-    showHSname _ = fatal 530 "a ExplObj is anonymous with respect to showHS flags"
     showHS _ {-flags-} _ {-i-} peObj = case peObj of                     -- SJ: names of variables commented out to prevent warnings.
-             ExplConceptDef cd  -> "ExplConceptDef " ++showHSname cd
-             ExplDeclaration d  -> "ExplDeclaration "++showHSname d
-             ExplRule r         -> "ExplRule "       ++showHSname r
-             ExplKeyDef kd      -> "ExplKeyDef "     ++showHSname kd
+             ExplConceptDef cd  -> "ExplConceptDef " ++showHSName cd
+             ExplDeclaration d  -> "ExplDeclaration "++showHSName d
+             ExplRule r         -> "ExplRule "       ++showHSName r
+             ExplKeyDef kd      -> "ExplKeyDef "     ++showHSName kd
              ExplPattern str    -> "ExplPattern "    ++show str
              ExplProcess str    -> "ExplProcess "    ++show str
              ExplInterface str  -> "ExplInterface "  ++show str
@@ -564,7 +578,6 @@ where
              ExplFspc str       -> "ExplFspc "       ++show str
            
    instance ShowHS P_Markup where
-    showHSname _ = fatal 567 "showHSname undefined for Type 'P_Markup'"
     showHS _ indent m
       = intercalate indent 
         ["P_Markup{ mLang   = "++ show (mLang m)
@@ -574,7 +587,6 @@ where
         ]
 
    instance ShowHS A_Markup where
-    showHSname _ = fatal 577 "showHSname undefined for Type 'A_Markup'"
     showHS _ indent m
       = intercalate indent 
         ["A_Markup{ amLang   = "++ show (amLang m)
@@ -586,8 +598,10 @@ where
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
 
+   instance ShowHSName Rule where
+    showHSName r = haskellIdentifier ("rule_"++ rrnm r)
+
    instance ShowHS Rule where
-    showHSname r = haskellIdentifier ("rule_"++ rrnm r)
     showHS flags indent r   
       = intercalate indent 
         ["Ru{ rrnm  = " ++ show (rrnm r)
@@ -598,23 +612,21 @@ where
         ,"  , rrtyp_proof = Nothing -- TBD generate a function for the proof."
         ,"  , rrdcl = " ++ case rrdcl r of
                             Nothing   -> "Nothing"
-                            Just(p,d) -> "Just ("++showHS flags "" p++","++showHSname d++")"
+                            Just(p,d) -> "Just ("++showHS flags "" p++","++showHSName d++")"
         ,"  , r_env = " ++ show (r_env r)
         ,"  , r_usr = " ++ show (r_usr r)
         ,"  , r_sgl = " ++ show (r_sgl r)
-        ,"  , srrel = " ++ showHSname (srrel r)
+        ,"  , srrel = " ++ showHSName (srrel r)
         ,"  }"
         ]
 
    instance ShowHS AMeaning where
-     showHSname _ = fatal 610 "showHSname undefined for type 'AMeaning'"
      showHS flags indent (AMeaning x) = "AMeaning " ++ showHS flags indent x 
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
    instance ShowHS RuleType where
-     showHSname _ = fatal 583 "showHSname undefined for Type 'RuleType'"
      showHS _ _ Truth          = "Truth"
      showHS _ _ Equivalence    = "Equivalence"
      showHS _ _ Implication    = "Implication"
@@ -623,8 +635,10 @@ where
 -- \*** Eigenschappen met betrekking tot: KeyDef                        ***
 -- \***********************************************************************
 
+   instance ShowHSName KeyDef where
+    showHSName kd = haskellIdentifier ("kDef_"++name kd)
+   
    instance ShowHS KeyDef where
-    showHSname kd = haskellIdentifier ("kDef_"++name kd)
     showHS flags indent kd
      = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdcpt kd)++")"
        ++indent++"  [ "++intercalate (indent++"  , ") [showHS flags (indent++"    ") a |a<-kdats kd]++indent++"  ]"
@@ -633,9 +647,11 @@ where
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***
 -- \***********************************************************************
 
-   instance  ShowHS Population where
-    showHSname pop = haskellIdentifier ("pop_"++name rel++"_"++uniqueIDfromOrigin (relpos rel))
+   instance  ShowHSName Population where
+    showHSName pop = haskellIdentifier ("pop_"++name rel++"_"++uniqueIDfromOrigin (relpos rel))
         where rel = popm pop
+
+   instance  ShowHS Population where
     showHS flags indent pop
      = "Popu ("++showHS flags "" (popm pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
    
@@ -643,8 +659,10 @@ where
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
 -- \***********************************************************************
 
+   instance ShowHSName ObjectDef where
+    showHSName obj = haskellIdentifier ("oDef_"++name obj)
+
    instance ShowHS ObjectDef where
-    showHSname obj = haskellIdentifier ("oDef_"++name obj)
     showHS flags indent r 
      = intercalate indent
            ["Obj{ objnm = " ++ show(objnm r)
@@ -663,13 +681,15 @@ where
 -- \*** Eigenschappen met betrekking tot: Interface                     ***
 -- \***********************************************************************
 
+   instance ShowHSName Interface where
+    showHSName obj = haskellIdentifier ("ifc_"++name obj)
+   
    instance ShowHS Interface where
-    showHSname obj = haskellIdentifier ("ifc_"++name obj)
     showHS flags indent ifc
      = intercalate indent 
            [ "Ifc { ifcName   = " ++ show(ifcName ifc)
            , "    , ifcParams = " ++ "["++intercalate ", " [showHS flags "" rel | rel<-ifcParams ifc] ++ "]"
-           --, "    , ifcViols  = " ++ "["++intercalate ", " [showHSname rel | rel<-ifcViols ifc] ++ "]" -- TODO: uncomment when ifcViols is implemented
+           --, "    , ifcViols  = " ++ "["++intercalate ", " [showHSName rel | rel<-ifcViols ifc] ++ "]" -- TODO: uncomment when ifcViols is implemented
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS flags (indent++"         ") (ifcObj ifc)
            , "    , ifcPos    = " ++ showHS flags "" (ifcPos ifc)
@@ -681,7 +701,6 @@ where
 -- \***********************************************************************
 
    instance ShowHS Expression where
-    showHSname expr = fatal 651 $ "an expression is anonymous with respect to showHS flags. Detected at: "++ showADL expr
     showHS flags indent (EEqu (l,r))   = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
     showHS flags indent (EImp (l,r))   = "EImp ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
     showHS   _     _    (EIsc [])      = "EIsc [] {- True -}"
@@ -715,7 +734,6 @@ where
 -- \***********************************************************************
 
    instance ShowHS Sign where
-    showHSname sgn = fatal 702 $ "Illegal call to showHSname ("++show sgn++"). A signature gets no definition in Haskell code."
     showHS flags _ sgn = "Sign ("++showHS flags "" (source sgn)++") ("++showHS flags "" (target sgn)++")"
    
 -- \***********************************************************************
@@ -723,7 +741,6 @@ where
 -- \***********************************************************************
 
    instance ShowHS A_Gen where
-    showHSname g = fatal 677 $ "Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code."
     showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHS flags "" (gengen gen)++") ("++showHS flags "" (genspc gen)++") "++show (genpat gen)
    
 -- \***********************************************************************
@@ -731,11 +748,10 @@ where
 -- \***********************************************************************
 
    instance  ShowHS Relation where
-    showHSname rel = fatal 685 $ "Illegal call to showHSname ("++showADL rel++"). A Relation gets no definition in Haskell code."
     showHS flags _ rel 
        = case rel of
             Rel{} -> "Rel "++show (relnm rel)++" "++showPos
-                         ++" "++showSign++" "++showHSname (reldcl rel)
+                         ++" "++showSign++" "++showHSName (reldcl rel)
             I{}   -> "I "++show1Typ
             V{}   -> "V "++showSgn
             Mp1{} -> "Mp1 "++relval rel++" "++show1Typ
@@ -750,10 +766,12 @@ where
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
 -- \***********************************************************************
 
-   instance ShowHS Declaration where
-    showHSname d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++name (target d)) -- user defined relations
+   instance ShowHSName Declaration where
+    showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++name (target d)) -- user defined relations
                  | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++name (target d)) -- relations generated for signalling
                  | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++name (target d)) -- relations generated per rule
+   
+   instance ShowHS Declaration where
     showHS flags indent d 
        = case d of 
           Sgn{}     -> intercalate indent
@@ -779,8 +797,10 @@ where
 -- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
 -- \***********************************************************************
 
+   instance ShowHSName ConceptDef where
+    showHSName cd = haskellIdentifier ("cDef_"++cdcpt cd)
+
    instance ShowHS ConceptDef where
-    showHSname cd = haskellIdentifier ("cDef_"++cdcpt cd)
     showHS flags _ cd
      = " Cd ("++showHS flags "" (cdpos cd)++") "++cdcpt cd++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
 
@@ -789,7 +809,6 @@ where
 -- \***********************************************************************
 
    instance ShowHS A_Concept where
-    showHSname c = fatal 757 $ "Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code."
     showHS _ _ c = case c of
                        C{} -> "C "++show (name c) ++ " gE []"    -- contents not shown. Adapt this code if you must see the contents too.
                        ONE -> "ONE"
@@ -799,11 +818,9 @@ where
 -- \***********************************************************************
    
    instance ShowHS FPcompl where
-    showHSname c = fatal 768 $ "Illegal call to showHSname ("++show c++"). A FPcompl gets no definition in Haskell code."
     showHS _ _   = show
 
    instance ShowHS FPA where
-    showHSname c = fatal 772 $ "Illegal call to showHSname ("++show c++"). A FPA gets no definition in Haskell code."
     showHS _ _ (ILGV c) = "ILGV "++show c
     showHS _ _ (KGV  c) = "KGV "++show c
     showHS _ _ (IF   c) = "IF "++show c
@@ -816,7 +833,6 @@ where
 -- \***********************************************************************
    
    instance ShowHS Prop where
-    showHSname p = fatal 785 $ "should not showHS flags the name of multiplicities (Prop): "++show p
     showHS _ _ Uni = "Uni"
     showHS _ _ Inj = "Inj"
     showHS _ _ Sur = "Sur"
@@ -832,12 +848,10 @@ where
 -- \***********************************************************************
 
    instance ShowHS FilePos where
-    showHSname p = fatal 801 $ "Illegal call to showHSname ("++show p++"). A FilePos is an anonymous entity in Haskell code."
     showHS _ _ (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
 
    instance ShowHS Origin where
-    showHSname p = fatal 806 $ "Illegal call to showHSname ("++show p++"). A Origin is an anonymous entity in Haskell code."
     showHS flags indent (FileLoc l) = "FileLoc (" ++ showHS flags indent l++")"
     showHS _ _ (DBLoc l) = "DBLoc " ++ l
     showHS _ _ (Origin s) = "Origin " ++ s
@@ -856,7 +870,6 @@ where
 -- \***********************************************************************
 
    instance ShowHS Block where
-    showHSname b = fatal 817 $ "Illegal call to showHSname ("++show b++"). A Block is an anonymous entity in Haskell code."
     showHS _ _   = show
 
 -- \***********************************************************************
@@ -864,14 +877,12 @@ where
 -- \***********************************************************************
 
    instance ShowHS Inline where
-    showHSname i = fatal 825 $ "Illegal call to showHSname ("++show i++"). An Inline is an anonymous entity in Haskell code."
     showHS _ _   = show
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: InfTree                       ***
 -- \***********************************************************************
 --   instance ShowHS InfTree where
---    showHSname itree = fatal 832 $ "Illegal call to showHSname ("++show itree++"). An inference tree is an anonymous entity in Haskell code."
 --    showHS flags indent itree =
 --        case itree of
 --          InfExprs irt (ratype,raobj) itrees -> 
@@ -884,7 +895,6 @@ where
 --       showRaType rat = "RelAlgType{-"++show rat++"-}"
 --
 --   instance ShowHS RelDecl where
---    showHSname d = fatal 845 $ "Illegal call to showHSname ("++show d++"). A declared ruletype is an anonymous entity in Haskell code."
 --    showHS _ indent d = case d of 
 --                          RelDecl{}-> "RelDecl{ dname  = " ++ show (dname d) ++ indent
 --                                   ++ "        ,dtype  = " ++ showRaType dtype ++ indent
@@ -896,7 +906,6 @@ where
 --
 --
 --   instance ShowHS DeclRuleType where
---    showHSname drt = fatal 857 $ "Illegal call to showHSname ("++show drt++"). A declared ruletype is an anonymous entity in Haskell code."
 --    showHS _ _ drt = case drt of
 --                                         D_rel     -> "D_rel"
 --                                         D_rel_h   -> "D_rel_h"
@@ -908,7 +917,6 @@ where
 --                                         D_v_c     -> "D_v_c"
 --                        
 --   instance ShowHS InfRuleType where
---    showHSname irt = fatal 869 $ "Illegal call to showHSname ("++show irt++"). A inference ruletype is an anonymous entity in Haskell code."
 --    showHS _ _ irt = case irt of
 --                                         ISect_cs  -> "ISect_cs"
 --                                         ISect_ncs -> "ISect_ncs"
@@ -943,7 +951,6 @@ where
 
 {- Obsolete?
    instance ShowHS P_Relation where
-    showHSname rel = fatal 709 $ "Illegal call to showHSname ("++showADL rel++"). A P_Relation gets no definition in Haskell code."
     showHS flags _ rel 
        = case rel of
             P_Rel{} -> "P_Rel "++show (name rel)++" "++showPos
@@ -956,7 +963,6 @@ where
            where showPos  = "("++showHS flags "" (origin rel)++")"
 
    instance ShowHS P_Concept where
-    showHSname c = fatal 793 $ "Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code."
     showHS _ _ c = case c of
                        PCpt{}    -> "PCpt "++show (name c)
                        P_Singleton -> "P_Singleton "
