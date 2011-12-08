@@ -133,8 +133,8 @@ instance Dotable FProcess where
           idgs  = [(g,s) |(g,s)<-gs,  g `elem` cpts']  --  all isa edges
           gs    = fsisa fSpec 
           cpts  = nub(cpts' ++ [g |(g,_)<-idgs] ++ [s |(_,s)<-idgs])
-          cpts' = concs (proc fproc)
-          rels  = [r | r@Sgn{}<-(nub.map makeDeclaration.mors) (proc fproc), decusr r
+          cpts' = concs (fpProc fproc)
+          rels  = [r | r@Sgn{}<-(nub.map makeDeclaration.mors) (fpProc fproc), decusr r
                      , not (isProp r)    -- r is not a property
                      ]
    makePicture flags _ _ x =

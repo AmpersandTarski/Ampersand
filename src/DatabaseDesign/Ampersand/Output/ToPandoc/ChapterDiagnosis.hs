@@ -88,7 +88,7 @@ chpDiagnosis lev fSpec flags
       ruls = if null (themes fSpec)
              then [r | r<-vrules fSpec, isSignal r ]
              else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-rules pat,         isSignal r ] ++
-                  [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r<-rules (proc prc) , isSignal r ]
+                  [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r<-rules (fpProc prc) , isSignal r ]
       f r rul | (r,rul) `elem` maintained      = [Plain [Math InlineMath "\\surd"]]
               | (r,rul) `elem` dead            = [Plain [Math InlineMath "\\times"]]
               | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
@@ -187,7 +187,7 @@ chpDiagnosis lev fSpec flags
                      | r@(Rel{}) <-if null (themes fSpec)
                                    then mors fSpec
                                    else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                                        mors [proc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                                        mors [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
                      , null (purposes fSpec (language flags) r)
                      ]
@@ -368,7 +368,7 @@ chpDiagnosis lev fSpec flags
            ruls = if null (themes fSpec)
                   then rules fSpec
                   else concat [rules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                       concat [rules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                       concat [rules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
            upC (Str str:strs) = Str (upCap str):strs
            upC str = str
            fn r = locnm (origin r)
@@ -410,7 +410,7 @@ chpDiagnosis lev fSpec flags
        ]
      | not (null prs)]
      where prs = [(fp,rs) | fp<-procs
-                          , let rs=invariants (proc fp), not (null rs) ]
+                          , let rs=invariants (fpProc fp), not (null rs) ]
            procs = if null (themes fSpec) then vprocesses fSpec else [prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec ]
 
   processrulesInPatterns :: [Block]
@@ -460,7 +460,7 @@ chpDiagnosis lev fSpec flags
      | length prs>1]
      where prs = [(p,rol,rul) | p<-procs, (rol,rul)<-maintains p, name rul `notElem` map name (rules p) ]
            multProcs = length procs>1
-           procs = [proc fp | fp<-vprocesses fSpec
+           procs = [fpProc fp | fp<-vprocesses fSpec
                             , null (themes fSpec) || name fp `elem` themes fSpec]  -- restrict if this is partial documentation.
 
   populationReport :: [Block]
@@ -585,7 +585,7 @@ chpDiagnosis lev fSpec flags
       ruls = if null (themes fSpec)
              then rules fSpec
              else concat [rules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [rules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                  concat [rules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
   violationReport :: [Block]
   violationReport
@@ -701,15 +701,15 @@ chpDiagnosis lev fSpec flags
      invs  = if null (themes fSpec)
              then invariants fSpec
              else concat [invariants pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [invariants (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                  concat [invariants (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
      mults = if null (themes fSpec)
              then multrules fSpec
              else concat [multrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [multrules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                  concat [multrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
      keyrs = if null (themes fSpec)
              then keyrules fSpec
              else concat [keyrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [keyrules (proc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                  concat [keyrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
