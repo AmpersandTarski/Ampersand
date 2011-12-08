@@ -187,7 +187,7 @@ showPlug plug =  ["Table: '"++sqlname plug++"'"] ++
 -- TODO: maybe this one exists already
 getPlugFields (TblSQL  {fields = flds}) = flds
 getPlugFields BinSQL  { columns = (fld1,fld2)} = [fld1, fld2]
-getPlugFields ScalarSQL { column = fld} = [fld]
+getPlugFields ScalarSQL { sqlColumn = fld} = [fld]
 
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++ 
                  "'"++fldname fld ++ "':"++show (target $ fldexpr fld)]

@@ -762,7 +762,7 @@ savefunction flags fSpec fnm depth this
   = let thiscpt = target(objctx this)
         -----------me
         inplugs cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]
-                      ++ [(plug,column plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
+                      ++ [(plug,sqlColumn plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
         (myplug,idfld) = if not(null (inplugs thiscpt)) then head (inplugs thiscpt)
                            else fatal 746 "this concept is not stored in any SQL plug."
         plugkey | null (tblfields myplug) = fatal 747 "no tblfields in plug."
