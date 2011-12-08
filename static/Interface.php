@@ -56,10 +56,6 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<ul><li>';
   echo '<a href="Installer.php">Reset database</a>';
   echo '</li></ul>';
-  echo '<h3>Interfaces</h3>';
-  echo '<ul>';
-  echo topLevelInterfaceLinks($allInterfaceObjects);
-  echo '</ul>';
   echo '<h3>Create</h3>';
   echo newAtomLinks($allInterfaceObjects);
   echo '<div id=SignalAndPhpLogs>';
