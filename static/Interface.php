@@ -34,13 +34,14 @@ function init() {
 <div id="Header"><div id="Logo"></div><div id="Decoration"></div></div>
 
 <?php
-echo '<div id="TopLevelInterfaces">';
-echo '<ul>';
-echo '<li id="LinkToMain"><a href="Interface.php"><span class=TextContent>Main</span></a></li>';
-echo topLevelInterfaceLinks($allInterfaceObjects);
-
 $roleNr = $_REQUEST['role']; // 0 (or not specified) means no role is selected
 $roleName = $roleNr ? $allRoles[$roleNr-1]['name'] : '';
+
+echo '<div id="TopLevelInterfaces">';
+echo '<ul>';
+echo '<li id="LinkToMain"><a href="Interface.php'.($roleNr>0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></li>';
+echo topLevelInterfaceLinks($allInterfaceObjects);
+
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
 echo '<select id=RoleSelector onchange="changeRole()">';
 echo '<option value="0"'.($roleNr==0 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
@@ -112,21 +113,23 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 <?php 
 
 function topLevelInterfaceLinks($interfaces) {
+  global $roleNr;
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']=='ONE')
       echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
-          .'"><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1"><span class=TextContent>'
-          .htmlSpecialChars($interface['name']).'</span></a></li>';
+          .'"><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>0? '&role='.$roleNr : '')
+          .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></li>';
   }
 }
 
 function newAtomLinks($interfaces) {
+  global $roleNr;
   echo '<ul id=CreateList>';
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']!='ONE')
       echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
            .'"><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name']))
-           .'&atom="><span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
+           .'&atom='.($roleNr>0? '&role='.$roleNr : '').'"><span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
            .' ('.htmlSpecialChars($interface['name']).')</spin></a></li>';
   }
   echo '</ul>';
