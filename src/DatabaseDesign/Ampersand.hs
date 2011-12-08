@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand
    , Language(..)
    , Dotable(..)
    , FPAble(..)
-   , ShowHS(..), haskellIdentifier
+   , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
    , (<==>),meet,order,join
    -- * Functions on declarations

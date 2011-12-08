@@ -6,7 +6,7 @@ import DatabaseDesign.Ampersand.Fspec.Plug as X
         tblfields, requiredFields, requires, plugpath, Plugable(..),
         showSQL, fldauto, iskey)
 import DatabaseDesign.Ampersand.Fspec.ShowHS as X
-       (ShowHS(..), fSpec2Haskell, haskellIdentifier)
+       (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import DatabaseDesign.Ampersand.Fspec.ShowADL as X (ShowADL(..), LanguageDependent(..))
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters as X (disambiguate)
 import DatabaseDesign.Ampersand.Fspec.ShowECA as X (showECA)
