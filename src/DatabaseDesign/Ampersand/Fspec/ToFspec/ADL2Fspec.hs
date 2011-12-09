@@ -687,7 +687,9 @@ while maintaining all invariants.
                              , decprL  = ""
                              , decprM  = ""
                              , decprR  = ""
-                             , decMean = fatal 690 "Ampersand generated a Relation without meaning!. Why?"
+                             , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST "TODO: Doel van deze Delta relatie opschrijven")
+                                                  , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
+                                                  ]
                              , decpopu = []
                              , decfpos = Origin "generated relation (Delta)"
                              , deciss  = True
