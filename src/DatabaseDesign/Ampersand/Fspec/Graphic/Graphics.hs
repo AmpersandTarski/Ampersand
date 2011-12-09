@@ -78,10 +78,10 @@ instance Dotable A_Concept where
    conceptualGraph fSpec flags _ c = conceptual2Dot flags (name c) cpts rels idgs
          where 
           rs    = [r | r<-rules fSpec, c `elem` concs r, not (isaRule r)]
-          idgs  = [(g,s) |(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           gs    = fsisa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts  = nub$cpts' ++ [g |(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s |(g,s)<-gs, elem g cpts' || elem s cpts']
+          cpts  = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
           cpts' = concs rs
           rels  = [r | r<-(nub.map makeDeclaration.mors) rs   -- the use of "mors" restricts relations to those actually used in rs
                      , not (isProp r)    -- r is not a property
@@ -93,8 +93,8 @@ instance Dotable Pattern where
    conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) (cpts `uni` concs idgs) rels idgs
         where 
          --DESCR -> get concepts and arcs from pattern
-          idgs = [(g,s) |(g,s)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-                 `uni` [(g,s) |cl<-eqCl fst [(g,s) |(g,s)<-gs, g `elem` cpts || s `elem` cpts], length cl<4, (g,s)<-cl] -- related isas (if not too many)
+          idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
+                 `uni` [(s,g) |cl<-eqCl fst [(s,g) |(s,g)<-gs, s `elem` cpts], length cl<3, (s,g)<-cl] -- related more general (if not too many)
           gs   = fsisa fSpec 
           cpts = concs pat `uni` concs rels
           rels = [r | r@Sgn{}<-(map makeDeclaration.mors) pat
@@ -103,8 +103,8 @@ instance Dotable Pattern where
    conceptualGraph fSpec flags Rel_CG pat = conceptual2Dot flags (name pat) (cpts `uni` concs idgs) rels idgs
         where 
          --DESCR -> get concepts and arcs from pattern
-          idgs = [(g,s) |(g,s)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-                 `uni` [(g,s) |cl<-eqCl fst [(g,s) |(g,s)<-gs, g `elem` cpts || s `elem` cpts], length cl<4, (g,s)<-cl] -- related isas (if not too many)
+          idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
+                 `uni` [(s,g) |cl<-eqCl fst [(s,g) |(s,g)<-gs, s `elem` cpts], length cl<3, (s,g)<-cl] -- related more general (if not too many)
           gs   = fsisa fSpec 
           cpts = concs pat `uni` concs rels
           rels = [r | r@Sgn{}<-declarations pat
@@ -113,7 +113,7 @@ instance Dotable Pattern where
    conceptualGraph fSpec flags Gen_CG pat = conceptual2Dot flags (name pat) cpts [] edges
         where 
          --DESCR -> get concepts and arcs from pattern
-          idgs  = [(g,s) |(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           gs    = fsisa fSpec 
           edges = clos gs idgs
           cpts  = concs edges
@@ -130,7 +130,7 @@ instance Dotable FProcess where
    conceptualGraph fSpec flags _ fproc = conceptual2Dot flags (name fproc) cpts rels idgs
         where 
          --DESCR -> get concepts and arcs from process
-          idgs  = [(g,s) |(g,s)<-gs,  g `elem` cpts']  --  all isa edges
+          idgs  = [(s,g) |(s,g)<-gs,  g `elem` cpts']  --  all isa edges
           gs    = fsisa fSpec 
           cpts  = nub(cpts' ++ [g |(g,_)<-idgs] ++ [s |(_,s)<-idgs])
           cpts' = concs (fpProc fproc)
@@ -150,10 +150,10 @@ instance Dotable Activity where
           rs         = [r | r<-rules fSpec, affected r]
           affected r = not (null (mors r `isc` mors ifc))
          -- involve all isa links from concepts touched by one of the affected rules
-          idgs = [(g,s) |(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           gs   = fsisa fSpec
          -- involve all concepts involved either in the affected rules or in the isa-links
-          cpts = nub $ cpts' ++ [c |(g,s)<-idgs, c<-[g,s]]
+          cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
           cpts'  = concs rs
           rels = [r | r@Sgn{}<-(nub.map makeDeclaration.mors) ifc, decusr r
                     , not (isProp r)    -- r is not a property
@@ -169,9 +169,9 @@ instance Dotable SwitchBdDiagram where
 instance Dotable Rule where
    conceptualGraph fSpec flags _ r = conceptual2Dot flags (name r) cpts rels idgs
     where 
-     idgs = [(g,s) | (g,s)<-fsisa fSpec
+     idgs = [(s,g) | (s,g)<-fsisa fSpec
                    , g `elem` concs r || s `elem` concs r]  --  all isa edges
-     cpts = nub $ concs r++[c |(g,s)<-idgs, c<-[g,s]]
+     cpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
      rels = [d | d@Sgn{}<-(nub.map makeDeclaration.mors) r, decusr d
                , not (isProp d)    -- d is not a property
                ]
@@ -201,7 +201,7 @@ conceptual2Dot flags graphName cpts' rels idgs
         conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) flags | c<-cpts]
         (declarationNodes,declarationEdges) = (concat a, concat b) 
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
-        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge True  flags | (g,s)<-idgs]
+        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge True  flags | (s,g)<-idgs]
               
         baseNodeId :: A_Concept -> String  -- returns the NodeId of the node where edges to this node should connect to. 
         baseNodeId c 

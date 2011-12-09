@@ -51,7 +51,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = allDecs -- contains all user defined plus all generated relations.
-                 , fsisa        = [(gengen g,genspc g) | g<-ctxgs context]
+                 , fsisa        = [(s,g) | s<-concs context, g<-concs context , s < g]
                  , vpatterns    = patterns context
                  , vgens        = gens context
                  , vkeys        = keyDefs context
