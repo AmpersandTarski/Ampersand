@@ -120,7 +120,7 @@ generateInterface fSpec opts interface =
 genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   [ "array ( 'name' => "++showPhpStr (name object)
-  , "      // relation: "++showPhpStr (show (objctx object))  -- escape for the pathological case that one of the names in the relation contains a newline
+  , "      // adl expression: "++showPhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
   ] ++ case objctx object of
            ERel r ->        [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
                             , "      , 'relationIsFlipped' => false" 
@@ -132,15 +132,15 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
                             , "      , 'relationIsFlipped' => ''" 
                             ]          
   ++     
-  [ "      , 'srcConcept' => "++showPhpStr (show (source $ objctx object))
-  , "      , 'tgtConcept' => "++showPhpStr (show (target $ objctx object))
-  , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" $ objctx object) ++ "'" -- todo give an error for Nothing                                                  
+  [ "      , 'srcConcept' => "++showPhpStr (show (source normalizedInterfaceExp))
+  , "      , 'tgtConcept' => "++showPhpStr (show (target normalizedInterfaceExp))
+  , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
   ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
   [ "      )"
   ]
- 
+  where normalizedInterfaceExp = {- conjNF $ -} objctx object
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $
