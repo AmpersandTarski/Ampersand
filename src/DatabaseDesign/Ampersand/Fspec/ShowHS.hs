@@ -327,7 +327,9 @@ where
         concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- *** User defined rules ***: "++
-        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-vrules     fspec ]++"\n")++        
+        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-vrules     fspec ]++"\n"++
+        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s |s<-map srrel (vrules fspec)]++"\n"
+        )++        
        (if null (grules   fspec ) then "" else
         "\n -- *** Generated rules ***: "++
         concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-grules     fspec ]++"\n"++
@@ -342,7 +344,7 @@ where
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules ***: "++
         concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
-        concat [indent++" "++showHSName rel++indent++"  = fatal 345 --"++"showHS flags (indent++\"    \") rel" |rel<-map (reldcl . ecaDelta) (vEcas fspec) ]++"\n"
+        concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map (reldcl . ecaDelta) (vEcas fspec)) ]++"\n"
        )++
        (if null (plugInfos fspec ) then "" else
         "\n -- *** PlugInfos ***: "++
