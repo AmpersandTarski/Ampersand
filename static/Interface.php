@@ -39,8 +39,6 @@ $roleName = $roleNr ? $allRoles[$roleNr-1]['name'] : '';
 
 echo '<div id="TopLevelInterfaces">';
 echo '<ul>';
-echo '<li id="LinkToMain"><a href="Interface.php'.($roleNr>0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></li>';
-echo topLevelInterfaceLinks($allInterfaceObjects);
 
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
 echo '<select id=RoleSelector onchange="changeRole()">';
@@ -49,7 +47,15 @@ for ($i=0; $i<count($allRoles); $i++) {
   $roleNm = $allRoles[$i]['name'];
   echo '<option value="'.($i+1).'"'.($roleNr==($i+1) ? ' selected=yes' : '').'>'.$roleNm.'</option>';
 }
-echo '</select>';
+echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
+
+echo '<li id="LinkToMain"><a href="Interface.php'.($roleNr>0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></li>';
+if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
+  echo '<li id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></li>';
+}
+
+echo topLevelInterfaceLinks($allInterfaceObjects);
+
 echo '</ul>';
 echo '</div>';
 

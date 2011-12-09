@@ -29,10 +29,15 @@ body {
     color: #BF1E74;
 }
 
-#RoleSelector {
+#TopLevelInterfaces #RoleSelector {
     float: right;
     margin: 1px 4px 0 0;
 }
+#TopLevelInterfaces #MenuBarReset {
+    display: block;
+    float: right;
+}
+
 
 #ScrollPane {
     overflow:auto; 
