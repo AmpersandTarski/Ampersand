@@ -32,6 +32,7 @@ where
              ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
              ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
              ++"\n  import DatabaseDesign.Ampersand.Basics"
+             ++"\n  import DatabaseDesign.Ampersand.Classes"
              ++"\n  import Text.Pandoc"
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
@@ -113,7 +114,7 @@ where
           ScalarSQL{} -> intercalate indent 
                       ["ScalarSQL { sqlname   = "++ (show.haskellIdentifier.name) plug
                       ,"          , sqlColumn = "++ showHS flags (indent++"                     ") (sqlColumn plug)
-                      ,"          , cLkpTbl   = "++ showHS flags "" (cLkp plug)
+                      ,"          , cLkp      = "++ showHS flags "" (cLkp plug)
                       ,"          , sqlfpa    = "++ showHS flags "" (fpa plug)
                       ,"          }"
                       ]
@@ -224,8 +225,8 @@ where
    instance ShowHS Clauses where
     showHS flags indent c
       = intercalate indent
-          [ "Clauses{ cl_conjNF = [ "++intercalate (ind++"  ") 
-                                       [ "( "++showHS flags (ind++"    ") a++ind++"  , "++showHS flags (ind++"    ") b++ind++"  )"
+          [ "Clauses{ cl_conjNF = [ "++intercalate (ind++", ") 
+                                       [ "( "++showHS flags (ind++"    ") a++ind++"  , "++showHS flags (ind++"   ") b++ind++"  )"
                                        | (a,b)<-cl_conjNF c ]++ind++"]"
           , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
@@ -263,7 +264,7 @@ where
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
            ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
-           ,     ", fActivities   = interfaceS'++interfaceG'"
+           ,wrap ", fActivities   = " indentA (\_->showHS flags (indentA++"  ")) (fActivities fspec)
            ,     ", fRoleRels     = " ++
                  case fRoleRels fspec of
                    []        -> "[]"
@@ -291,11 +292,12 @@ where
            ,"}" 
            ] ++   
        indent++"where"++
+       indent++" isa' :: [(A_Concept, A_Concept)]"++
        indent++" isa' = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
        indent++" vctxenv'  = ("++showHS flags (indent ++ "         ") envExpr ++ ", bindings)"++
        indent++" bindings  = "++(if null bindings then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showbinding bindings)++indentB++"]")++
-       indent++" gE = genEq (typology isa')"++
+       indent++" gE = genE isa'"++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
        indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showHSName (interfaceS fspec))++indentB++"]")++
@@ -566,9 +568,11 @@ where
                            
    instance ShowHS Purpose where
     showHS flags _ expla = 
-       "Expl "++showHS flags "" (explObj expla)++" "
-              ++showHS flags "" (explMarkup  expla)++" "
-              ++show (explRefId expla)++" "
+       "Expl "++"("++showHS flags "" (explPos expla)++") "
+              ++"("++showHS flags "" (explObj expla)++") "
+                   ++showHS flags "" (explMarkup  expla)++" "
+                   ++show (explUserdefd expla)++" "
+                   ++show (explRefId expla)++" "
 
    instance ShowHS ExplObj where
     showHS _ {-flags-} _ {-i-} peObj = case peObj of                     -- SJ: names of variables commented out to prevent warnings.
@@ -670,7 +674,7 @@ where
     showHS flags indent r 
      = intercalate indent
            ["Obj{ objnm = " ++ show(objnm r)
-       --  ,"   , objpos = " ++ showHS flags "" (objpos r)  -- This is not defined for every ObjectDef
+           ,"   , objpos = " ++ showHS flags "" (objpos r)  
            ,"   , objctx = " ++ showHS flags "" (objctx r)
            ,if null (objats r) then "   , objats = []" else
             "   , objats"++indent++"      = ["++intercalate (indent ++ "        ,")
@@ -791,6 +795,7 @@ where
                         ,"   , deciss  = " ++ show (deciss d)
                         ,"   , decusr  = " ++ show (decusr d)
                         ,"   , decpat  = " ++ show (decpat d)
+                        ,"   , decplug = " ++ show (decplug d)
                         ]++"}"
           Isn{}     -> "Isn{ detyp   = " ++ showHS flags "" (detyp d)++"}"
           Iscompl{} -> "Iscompl{ detyp   = " ++ showHS flags "" (detyp d)++"}"
@@ -813,7 +818,7 @@ where
 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
-                       C{} -> "C "++show (name c) ++ " gE []"    -- contents not shown. Adapt this code if you must see the contents too.
+                       C{} -> "C "++show (name c) ++ " gE [] "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"    -- contents not shown. Adapt this code if you must see the contents too.
                        ONE -> "ONE"
 
 -- \***********************************************************************
