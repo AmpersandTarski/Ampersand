@@ -258,9 +258,9 @@ selectExpr fSpec i src trg (EBrk expr) = sqlcomment "EBrk" $selectExpr fSpec i s
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
 selectExpr _ i src trg (EUni [] ) = sqlcomment "EUni []"$ toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
 selectExpr fSpec i src trg (EUni es') = (phpIndent i) ++ "(" +++ (sqlcomment "EUni es" (selectExprInUnion fSpec i src trg (EUni es'))) +++ (phpIndent i) ++ ")"
-selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment "-V"$ selectExpr fSpec i src trg (EUni [])
+selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment "ECpl (ERel (V _))"$ selectExpr fSpec i src trg (EUni [])
 selectExpr fSpec i src trg (ECpl e' )
-   = sqlcomment "-e"$
+   = sqlcomment "ECpl e'"$
      selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                      (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "+++selectExprBrac fSpec i trg' trg' (ERel (I (target e')))+++" AS csnd")
                      ("NOT EXISTS ("+++ (selectExists' (i+12)
