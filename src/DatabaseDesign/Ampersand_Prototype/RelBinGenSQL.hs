@@ -260,7 +260,7 @@ selectExpr _ i src trg (EUni [] ) = sqlcomment "EUni []"$ toM$ selectGeneric i (
 selectExpr fSpec i src trg (EUni es') = (phpIndent i) ++ "(" +++ (sqlcomment "EUni es" (selectExprInUnion fSpec i src trg (EUni es'))) +++ (phpIndent i) ++ ")"
 selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment "ECpl (ERel (V _))"$ selectExpr fSpec i src trg (EUni [])
 selectExpr fSpec i src trg (ECpl e' )
-   = sqlcomment "ECpl e'"$
+   = sqlcomment "ECpl e"$
      selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                      (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "+++selectExprBrac fSpec i trg' trg' (ERel (I (target e')))+++" AS csnd")
                      ("NOT EXISTS ("+++ (selectExists' (i+12)
