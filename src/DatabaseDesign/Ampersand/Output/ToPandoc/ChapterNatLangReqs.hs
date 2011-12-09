@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation
+--import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
@@ -248,12 +248,23 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                  [DefinitionList [ ( [ Str (case language flags of
                                                       Dutch   -> "Eis "
                                                       English -> "Requirement ")
-                                             , Str (show(getEisnr cnt))
-                                             , Str ":"]
-                                           , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
-                                               meaning2Blocks (language flags) (makeDeclaration rel)]
-                                           )] ]
+                                     , Str (show(getEisnr cnt))
+                                     , Str ":"]
+                                   , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
+                                       meaning2Blocks (language flags) (makeDeclaration rel)
+                                     ]
+                                   )] ]++
+                 ( case (language flags, length dp) of
+                        (_      , 0) -> []
+                        (Dutch  , 1) -> [Para [Str "Een zin die hiermee gemaakt kan worden is bijvoorbeeld:"]]
+                        (English, 1) -> [Para [Str "A sentence that can be formed is for instance:"]]
+                        (Dutch  , _) -> [Para [Str "Zinnen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
+                        (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
+                 )++
+                 [Para (applyM d a b) | (a,b)<-dp ]
                  where purps = purposes fSpec (language flags) rel
+                       d     = makeDeclaration rel
+                       dp    = take 3 (decpopu d)
               sctrs :: [Rule] -> [(Origin,Counter -> [Block])]
               sctrs = map (\rul -> (origin rul, ruleBlock rul))
               ruleBlock :: Rule -> Counter -> [Block]
@@ -273,4 +284,18 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                    ] | not (null$meaning2Blocks (language flags) rul)]
                                  where purps = purposes fSpec (language flags) rul
                       
-
+  applyM :: Declaration -> String -> String -> [Inline]
+  applyM decl a b =
+           case decl of
+             Sgn{} | null (prL++prM++prR) 
+                        -> [Str (upCap a),Space,Str "(",(Str .unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,Str b,Space,Str "(",(Str .unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,Str (decnm decl),Str "."]
+                   | null prL
+                        -> [Str "(",(Str .name.source) decl, Str ") ",Str a,Space,Str prM,Space,Str "(",(Str .unCap.name.target) decl, Str ") ",Str b,Space,Str prR,Str "."]
+                   | otherwise 
+                        -> [Str (upCap prL),Space,Str "(",(Str .unCap.name.source) decl, Str ") ",Str a,Space,Str prM,Space,Str "(",(Str .unCap.name.target) decl, Str ") ",Str b]++if null prR then [Str "."] else [Space,Str prR,Str "."]
+                          where prL = decprL decl
+                                prM = decprM decl
+                                prR = decprR decl
+             Isn{}     -> [Str "(",(Str .name.source) decl, Str ") ",Str (upCap a),Space,Str "equals",Space,Str b,Str "."]
+             Iscompl{} -> [Str "(",(Str .name.source) decl, Str ") ",Str (upCap a),Space,Str "differs",Space,Str "from",Space,Str b,Str "."]
+             Vs{}      -> [Str (show True)]
