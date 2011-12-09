@@ -293,7 +293,7 @@ where
                                  ) ++
               "              label =\"\"" ++
               "      ]\n" ++
-              "       " ++ alias b ++ " -> " ++ alias a' ++ "\n"
+              "       " ++ alias a' ++ " -> " ++ alias b ++ "\n"
 
    dothtml :: String -> String
    dothtml content = "<\n  " ++ content ++ "\n>"
