@@ -19,6 +19,8 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
   listAtomsForConcept($_REQUEST['getAtomsForConcept']);
 } else if (isset($_REQUEST['destroyAtom']) ) {
   removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
+} else if (isset($_REQUEST['testRule']) ) {
+  testRule($_REQUEST['testRule']);
 } else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
@@ -252,9 +254,25 @@ function error($msg) {
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
 
-
 function listAtomsForConcept($concept) {
   echo json_encode (array ( 'res' => getAllConceptAtoms($concept) ));
   // todo: pass errors back to javascript
 }
+
+function testRule($ruleName) {
+  global $dbName;
+  global $allRulesSql;
+  
+  echo "<h2>Testing rule $ruleName</h2>";
+  $ruleSql = $allRulesSql[$ruleName];
+  $ruleAdl = escapeHtmlAttrStr($ruleSql[ruleAdl]);
+  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4>$ruleSql[ruleTestSql]<h4>results</h4>";
+  $rows = queryDb($dbName, $ruleSql['ruleTestSql'], $error);
+  printBinaryTable( $rows );
+
+  echo "<h4>Rule violations SQL</h4>$ruleSql[sql]<h4>results</h4>";
+  $rows = queryDb($dbName, $ruleSql['sql'], $error);
+  printBinaryTable( $rows );
+}
+
 ?>

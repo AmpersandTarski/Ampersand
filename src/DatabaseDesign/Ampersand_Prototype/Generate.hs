@@ -80,13 +80,19 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "$allRulesSql ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ showPhpStr (rrnm rule) ++ " => // rule: "++ show (rrexp $ rule)
+         [ [ showPhpStr (rrnm rule) ++ " =>"
            , "  array ( 'name' => "++showPhpStr (rrnm rule)
+           , "        , 'ruleAdl' => "++showPhpStr (show $ rrexp rule)
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
            , "          // normalized complement (violations): "++ show violationsExpr
            , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ violationsExpr)++"'" 
-           , "        )" ]
+           ] ++
+           (if development opts then -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+                                     -- php/Database.php?testRule=RULENAME
+           [ "        , 'ruleTestSql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . rrexp $ rule)++"'"] 
+              else []) ++
+           [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
   [ ""
   , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");"

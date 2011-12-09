@@ -137,9 +137,9 @@ function selectCoDomain($atom, $selectRel) {
 // Html generation utils
 
 function printBinaryTable($table) {
-  echo '<table>';
+  echo '<table border=solid>';
   foreach ($table as $row)
-  echo '<tr><td>'.$row['src'].'</td><td>'.$row['tgt'].'</td></tr>';
+  echo '<tr><td>'.$row['src'].'&nbsp;</td><td>'.$row['tgt'].'&nbsp;</td></tr>';
   echo '</table>';
 }
 
