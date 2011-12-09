@@ -90,26 +90,38 @@ instance Dotable A_Concept where
           (makePictureObj flags (name x) PTConcept . printDotGraph . conceptualGraph fSpec flags variant) x
 
 instance Dotable Pattern where
-   conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) (cpts `uni` concs idgs) rels idgs
+   conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) cpts (rels++xrels) idgs
         where 
          --DESCR -> get concepts and arcs from pattern
           idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-                 `uni` [(s,g) |cl<-eqCl fst [(s,g) |(s,g)<-gs, s `elem` cpts], length cl<3, (s,g)<-cl] -- related more general (if not too many)
           gs   = fsisa fSpec 
-          cpts = concs pat `uni` concs rels
+          cpts = let cpts' = concs pat `uni` concs rels
+                 in cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
           rels = [r | r@Sgn{}<-(map makeDeclaration.mors) pat
                     , not (isProp r)    -- r is not a property
                     ]
-   conceptualGraph fSpec flags Rel_CG pat = conceptual2Dot flags (name pat) (cpts `uni` concs idgs) rels idgs
+          -- extra rels to connect concepts without rels in this picture, but with rels in the fspec
+          xrels = let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
+                  in [r | c<-orphans, r@Sgn{}<-declarations fSpec
+                        , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
+                        , source r /= target r, decusr r
+                        ]
+   conceptualGraph fSpec flags Rel_CG pat = conceptual2Dot flags (name pat) cpts (rels++xrels) idgs
         where 
          --DESCR -> get concepts and arcs from pattern
           idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-                 `uni` [(s,g) |cl<-eqCl fst [(s,g) |(s,g)<-gs, s `elem` cpts], length cl<3, (s,g)<-cl] -- related more general (if not too many)
           gs   = fsisa fSpec 
-          cpts = concs pat `uni` concs rels
+          cpts = let cpts' = concs pat `uni` concs rels
+                 in cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
           rels = [r | r@Sgn{}<-declarations pat
                     , not (isProp r), decusr r    -- r is not a property
                     ]
+          -- extra rels to connect concepts without rels in this picture, but with rels in the fspec
+          xrels = let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
+                  in [r | c<-orphans, r@Sgn{}<-declarations fSpec
+                        , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
+                        , source r /= target r, decusr r
+                        ]
    conceptualGraph fSpec flags Gen_CG pat = conceptual2Dot flags (name pat) cpts [] edges
         where 
          --DESCR -> get concepts and arcs from pattern
