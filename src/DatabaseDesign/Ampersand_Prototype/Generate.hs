@@ -21,13 +21,20 @@ generateAll fSpec opts =
  do { verboseLn opts "Experimental Generation"
     ; writePrototypeFile "Generics.php" $ generateInterfaces fSpec opts
     
-    ; customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
-    ; if customExists
-      then verboseLn opts $ "  File " ++ customCssPath ++ " already exists."
-      else do { verboseLn opts $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
-              ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
-              }
-    
+    ; case customCssFile opts of
+        Just customCssFilePath ->
+         do { customCssContents <- (readFile customCssFilePath `catch` error ("ERROR: Cannot open custom css file '" ++ customCssFilePath ++ "'"))
+            ; writePrototypeFile customCssPath customCssContents
+            }
+        Nothing ->
+         do { customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
+            ; if customExists
+              then verboseLn opts $ "  File " ++ customCssPath ++ " already exists."
+              else do { verboseLn opts $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
+                      ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
+                      }
+            }
+            
     ; when (development opts) $ 
        do { verboseLn opts "Generated tables\n"
           ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
