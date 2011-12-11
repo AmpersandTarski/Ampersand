@@ -86,11 +86,11 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
            , "          // normalized complement (violations): "++ show violationsExpr
-           , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ violationsExpr)++"'" 
+           , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ violationsExpr)++"'" 
            ] ++
            (if development opts then -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                      -- php/Database.php?testRule=RULENAME
-           [ "        , 'ruleTestSql' => '"++ fromMaybe "" (selectExpr fSpec 25 "src" "tgt" $ conjNF . rrexp $ rule)++"'"] 
+           [ "        , 'ruleTestSql' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ conjNF . rrexp $ rule)++"'"] 
               else []) ++
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
