@@ -43,6 +43,7 @@ data Options = Options { showVersion   :: Bool
                        , dbName        :: String
                        , genAtlas      :: Bool
                        , namespace     :: String
+                       , customCssFile :: Maybe FilePath                       
                        , importfile    :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
                        , importformat  :: ImportFormat --file format that can be parsed to some b to populate some Populated a 
@@ -99,6 +100,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , allInterfaces = False
                       , genAtlas      = False   
                       , namespace     = []
+                      , customCssFile = Nothing
                       , importfile    = []
                       , importformat  = fatal 101 "--importformat is required for --import."
                       , genXML        = False
@@ -254,7 +256,8 @@ options = map pp
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
-          , (Option []        ["headerfile"]  (ReqArg languageOpt "file") "custom header file to prefix to the text before rendering.", Hidden)
+          , (Option []        ["css"]         (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
+                                                                          "Custom.css file to customize the style of the prototype.", Public)
           , (Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics.", Public)
           , (Option []        ["ECA"]         (NoArg genEcaDocOpt)        "generate documentation with ECA rules.", Public)
           , (Option []        ["proofs"]      (NoArg proofsOpt)           "generate derivations.", Public)
