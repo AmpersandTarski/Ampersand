@@ -5,9 +5,11 @@ module DatabaseDesign.Ampersand.Parsing ( parseADLAndIncludes
                                         , ParserError)
 where
 
+import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Input.ADL1.CCv221 (pContext,pIncludeFile,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
 import qualified DatabaseDesign.Ampersand.Input.ADL1.CC664 as CC664
 import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
