@@ -65,7 +65,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
        ++ (if null blocks then [] else [DefinitionList blocks])
        , pict):  iterat ps i'' seenCss seenDss
        where
-         pict = (makePicture flags fSpec Rel_CG pat)   -- the Picture that represents this pattern's knowledge graph
+         pict = (makePicture flags fSpec Plain_CG pat)   -- the Picture that represents this pattern's knowledge graph
                 {caption = case language flags of
                             Dutch   ->"Conceptdiagram van "++name pat
                             English ->"Concept diagram of "++name pat}
