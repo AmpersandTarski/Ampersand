@@ -266,11 +266,11 @@ function testRule($ruleName) {
   echo "<h2>Testing rule $ruleName</h2>";
   $ruleSql = $allRulesSql[$ruleName];
   $ruleAdl = escapeHtmlAttrStr($ruleSql[ruleAdl]);
-  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4>$ruleSql[ruleTestSql]<h4>results</h4>";
+  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[ruleTestSql]</pre><h4>results</h4>";
   $rows = queryDb($dbName, $ruleSql['ruleTestSql'], $error);
   printBinaryTable( $rows );
 
-  echo "<h4>Rule violations SQL</h4>$ruleSql[sql]<h4>results</h4>";
+  echo "<h4>Rule violations SQL</h4><pre>$ruleSql[sql]</pre><h4>results</h4>";
   $rows = queryDb($dbName, $ruleSql['sql'], $error);
   printBinaryTable( $rows );
 }
