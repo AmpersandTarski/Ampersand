@@ -58,7 +58,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
          [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
          , (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel rel)]) ++
-  [ ""     -- sqlRelPlugNames may yield multiple results. TODO: also change to maybe? (like lookupCpt)
+  [ ""     -- sqlRelPlugNames may yield multiple results. TODO: also change to maybe?
   , "$conceptTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
