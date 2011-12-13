@@ -60,10 +60,10 @@ selectExpr ::    Fspc       -- current context
               -> Expression -- expression to be translated
               -> Maybe String     -- resulting SQL expression
 -- quote the attributes (such that column-names such as `Right` or `in` won't yield errors)
-selectExpr fSpec i src@(_:_) trg       e' | head src /= '`'
- = selectExpr fSpec i ('`':src++"`") trg            e'
-selectExpr fSpec i src       trg@(_:_) e' | head trg /= '`'
- = selectExpr fSpec i src            ('`':trg++"`") e'
+selectExpr fSpec i src@(_:_) trg       e | head src /= '`'
+ = selectExpr fSpec i ('`':src++"`") trg            e
+selectExpr fSpec i src       trg@(_:_) e | head trg /= '`'
+ = selectExpr fSpec i src            ('`':trg++"`") e
 
 --TODO
 selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
@@ -131,8 +131,8 @@ selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                      ]++[Just$ "isect0."++src'++" IS NOT NULL",Just$ "isect0."++trg'++" IS NOT NULL"]
-selectExpr fSpec i src trg (EIsc [e']) = sqlcomment i ("matches pattern: (EIsc [e])"++phpIndent (i+3)++"(EIsc [ \""++showADL e'++"\" ])") $
-                                         selectExpr fSpec i src trg e'
+selectExpr fSpec i src trg (EIsc [e]) = sqlcomment i ("matches pattern: (EIsc [e])"++phpIndent (i+3)++"(EIsc [ \""++showADL e++"\" ])") $
+                                         selectExpr fSpec i src trg e
 -- Why not return Nothing?
 -- Reason: EIsc [] should not occur in the query at all! If it does, we have made a mistake earlier.
 selectExpr _     _ _   _   (EIsc [] ) = fatal 123 "Cannot create query for EIsc [] because it is wrong"
@@ -152,58 +152,71 @@ selectExpr _ i src trg (ECps e@((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{}
   = sqlcomment i ("matches pattern: (ECps ((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[]))))"++phpIndent (i+3)++"ECps "++show (map showADL e)) $
     Just$ "SELECT "++relval sr++" AS "++src++", "++relval tr++" AS "++trg
 
-selectExpr fSpec i src trg (ECps es@(e'@(ERel sr@(Mp1{})):f:fx))
+selectExpr fSpec i src trg (ECps es@(e@(ERel sr@(Mp1{})):f:fx))
    = sqlcomment i ("matches pattern: (ECps (ERel Mp1{}:f:fx))"++phpIndent (i+3)++"ECps "++show (map showADL es)) $
      selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                      (selectExprBrac fSpec i src' trg' (ECps (f:fx))+++" AS fst")
                      (Just$"fst."++src'++" = "++relval sr)
-                     where src' = quote$sqlExprSrc fSpec e'
+                     where src' = quote$sqlExprSrc fSpec e
                            trg' = noCollideUnlessTm' (ECps (f:fx)) [src'] (quote$sqlExprTrg fSpec (ECps (f:fx)))
 
-selectExpr fSpec i src trg (ECps es@(e':ERel (V _):f:fx)) -- prevent calculating V in this case
- | src==trg && not (isProp e') = fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e'
+selectExpr fSpec i src trg (ECps es@(e:ERel (V _):f:fx)) -- prevent calculating V in this case
+ | src==trg && not (isProp e) = fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
  | otherwise = sqlcomment i ("matches pattern: ECps (e:ERel (V _):f:fx)"++phpIndent (i+3)++"ECps "++show (map showADL es)) $
     selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
-                     ((selectExprBrac fSpec i src' mid' e')+++" AS fst,"++phpIndent (i+5)+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
+                     ((selectExprBrac fSpec i src' mid' e)+++" AS fst,"++phpIndent (i+5)+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
                      ("fst."++src'+++" IS NOT NULL")
-         where src' = quote$sqlExprSrc fSpec e'
-               mid' = quote$sqlExprTrg fSpec e'
+         where src' = quote$sqlExprSrc fSpec e
+               mid' = quote$sqlExprTrg fSpec e
                mid2'= quote$sqlExprSrc fSpec f
                trg' = noCollideUnlessTm' (ECps (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (ECps (f:fx)))
-selectExpr fSpec i src trg (ECps  [e']       ) = selectExpr fSpec i src trg e'
-selectExpr fSpec i src trg (ECps lst'@(fstm:_:_))
- = sqlcomment i ("matches pattern: (ECps lst@(fstm:_:_))"++phpIndent (i+3)++"ECps "++show (map showADL lst')) $
+selectExpr fSpec i src trg (ECps    [e]       ) = selectExpr fSpec i src trg e
+selectExpr fSpec i src trg (ECps es@(fstm:_:_))
+ = sqlcomment i ("matches pattern: (ECps lst@(fstm:_:_))"++phpIndent (i+3)++"ECps "++show (map showADL es)) $
    selectGeneric i (mainSrc,src) (mainTrg,trg)
-                        (cChain ", " (concExprs++exprbracs)) (cChain (phpIndent i++" AND ") wherecl)
+                        (cChain ", " (concExprs++exprbracs)) (cChain (phpIndent i++"  AND ") wherecl)
 {-  De ECps gedraagt zich als een join. Het is dus zaak om enigszins efficiente code te genereren.
-    Dat doen we door de complement-operatoren van de elementen uit lst' te betrekken in de codegeneratie.
-    De concepten in lst' noemen we c0, c1, ... cn (met n de lengte van lst')
-    De elementen in lst' zelf noemen we F0, F1, ... ECps(n-1).
+    Dat doen we door de complement-operatoren van de elementen uit es te betrekken in de codegeneratie.
+    De concepten in es noemen we c0, c1, ... cn (met n de lengte van es)
+    De elementen in es zelf noemen we F0, F1, ... ECps(n-1).
     Deze namen worden aangehouden in de SQL-aliasing. Dat voorkomt naamconflicten op een wat ruwe manier, maar wel overzichtelijk en effectief.
 -}
-   where mainSrc = (if isNeg (head lst') then "c" else "ECps")++"0."++src'
-         mainTrg = (if isNeg (last lst') then "c"++show (length lst') else "ECps"++show (length lst'-1))++"."++trg'
-         -- de strings die de source en target van ECps lst' weergeven. Bij gelijke namen vindt ontdubbeling van naam plaats met noCollideUnlessTm'
-         src'    = quote$sqlExprSrc fSpec fstm
-         trg'    = {-noCollideUnlessTm' fstm [src']-} (quote$sqlExprTrg fSpec (last lst'))
-         -- ncs geeft alleen de concepten uit lst', die in SQL doorlopen moeten worden, inclusief rangnummer
-         ncs     = [ (0,source (head lst'))  | isNeg (head lst') ]++
-                   [ (n',c)
-                   | (l,(n',l'))<-zip (init lst') (tail (zipnum lst'))
-                   , isNeg l && isNeg l'
-                   , c<-[if target l<=source l' then target l else source l']
+   where mainSrc = (if isNeg (head es) then "c" else "ECps")++"0."++src'
+         mainTrg = (if isNeg (last es) then "c"++show (length es) else "ECps"++show (length es-1))++"."++trg'
+         -- the strings that represent source and target of ECps es. When their names are equal, disambiguation of names happens in noCollideUnlessTm'
+         src'    = if isNeg (head es)
+                   then (quote.sqlExprTrg fSpec.ERel . I .source.head) es
+                   else (quote.sqlExprTrg fSpec.head) es
+         trg'    = if isNeg (last es)
+                   then (noCollideUnlessTm' fstm [src'].quote.sqlExprTrg fSpec.ERel . I .target.last) es
+                   else (noCollideUnlessTm' fstm [src'].quote.sqlExprTrg fSpec.last) es
+         -- poleConcepts lists the concepts that come in between those subexpressions that are used in the FROM clause of the SQL-expression.
+         -- These intermediate concepts are called 'pole concepts', because they represent the poles in the poles-and-fences metaphor.
+         poleConcepts
+                 = [ pole 0 (source (head es)) | isNeg (head es) ] ++                                      
+                   [ pole n c
+                   | (leftExpr,(n,rightExpr))<-zip (init es) (tail (zipnum es))
+                   , isNeg leftExpr && isNeg rightExpr
+                   , let c=if target leftExpr<=source rightExpr then target leftExpr else source rightExpr
                    ]++
-                   [ (length lst',target (last lst'))  | isNeg (last lst') ]
-         -- de SQL-expressies voor de concepten van lst', maar nu in SQL
+                   [ pole (length es) (target (last es)) | isNeg (last es) ]
+                   where
+                   -- each "pole" consists of a serial number, concept, and two SQL code fragments.
+                    pole n c  = ( n                                                                       -- the serial number of this pole,  
+                                , c                                                                       -- the type of this pole            
+                                , selectExprBrac fSpec i sqlAtt sqlAtt (ERel (I c)) +++ " AS "++concNm n  -- the SQL expression of this pole
+                                , quote$sqlExprSrc fSpec (ERel (I c))                                     -- the string that serves as attribute name in SQL
+                                ) where sqlAtt = quote$sqlExprSrc fSpec (ERel (I c))
+         -- the SQL-expressions for the intermediate concepts, maar nu in SQL
          concExprs = [e | (_,e,_)<-concExpr]
-         concExpr  = [ (n,selectExprBrac fSpec i sm sm tm +++ " AS "++concNm n, sm)
-                     | (n,c)<-ncs, tm<-[ERel (I c)], sm<-[quote$sqlExprSrc fSpec tm] ]
-         concTp n = head ([t | (i',_,t)<-concExpr, n==i']++fatal 182 "concTp")
-         concNm n = head (["c"++show n | (i',_,_)<-concExpr, n==i']++fatal 183 "concNm")
-         -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
+         concExpr  = [ (n,selectExprBrac fSpec i srcE srcE trgE +++ " AS "++concNm n, srcE)
+                     | (n,c,sqlExpr,sqlAtt)<-poleConcepts, trgE<-[ERel (I c)], srcE<-[quote$sqlExprSrc fSpec trgE] ]
+         concTp n  = head ([t | (i',_,t)<-concExpr, n==i']++fatal 182 "concTp")
+         concNm n  = head (["c"++show n | (i',_,_)<-concExpr, n==i']++fatal 183 "concNm")
+         -- de SQL-expressies voor de elementen uit es, die elk een Ampersand expressie representeren
          exprbracs = [e | (_,e,_,_)<-exprbrac]
          exprbrac  = [ (n,selectExprBrac fSpec i src'' trg'' l +++ " AS "++exprNm n , src'' , trg'' )
-                     | (n,l)<-zipnum lst'
+                     | (n,l)<-zipnum es
                      , not (isNeg l)
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
@@ -214,31 +227,31 @@ selectExpr fSpec i src trg (ECps lst'@(fstm:_:_))
          -- the 'where'  expressions contain all "magic".
          wherecl  = filterEmpty
                      [ if isNeg l
-                       then "NOT EXISTS"++phpIndent i++"( "+++
-                              selectExists' (i+2) (selectExprBrac fSpec i src'' trg'' (if isNeg l then notCpl l else l) +++ " AS ECps"++show n)
-                                                  (cChain " AND " ([ concNm  n   ++"."++concTp n   ++ "=ECps"++show n      ++"."++src''        | inCs n ]++
-                                                                  [ exprNm (n-1)++"."++exprT (n-1)++ "=ECps"++show n      ++"."++src''         | n>0, not (inCs n) ]++
-                                                                  [ "ECps"++show n ++"."++trg''       ++ "=" ++concNm (n+1)++"."++concTp (n+1) | inCs (n+1) ]++
-                                                                  [ "ECps"++show n ++"."++trg''       ++ "=" ++exprNm (n+1)++"."++exprS (n+1)  | n>0, not (inCs (n+1)) ]++
-                                                                  []))
+                       then "NOT EXISTS"++phpIndent (i+6)++"( "+++
+                              selectExists' (i+8) (selectExprBrac fSpec (i+6) src'' trg'' (if isNeg l then notCpl l else l) +++ " AS ECps"++show n)
+                                                  (cChain "  AND " ([ concNm  n   ++"."++concTp n   ++ "=ECps"++show n      ++"."++src''         | inCs n ]++
+                                                                    [ exprNm (n-1)++"."++exprT (n-1)++ "=ECps"++show n      ++"."++src''         | n>0, not (inCs n) ]++
+                                                                    [ "ECps"++show n ++"."++trg''       ++ "=" ++concNm (n+1)++"."++concTp (n+1) | inCs (n+1) ]++
+                                                                    [ "ECps"++show n ++"."++trg''       ++ "=" ++exprNm (n+1)++"."++exprS (n+1)  | n>0, not (inCs (n+1)) ]++
+                                                                    []))
                                                      +++")"
-                       else cChain " AND " (["c"++show n++"."++src'' ++ "=ECps"++show  n   ++"."++src'' | inCs n]++
-                                            ["ECps"++show n++"."++trg'' ++ "=c"++show (n+1)++"."++trg'' | inCs (n+1)])
-                     | (n,l)<-zipnum lst'
+                       else cChain "  AND " (["c"++show n++"."++src'' ++ "=ECps"++show  n   ++"."++src'' | inCs n]++
+                                             ["ECps"++show n++"."++trg'' ++ "=c"++show (n+1)++"."++trg'' | inCs (n+1)])
+                     | (n,l)<-zipnum es
                      , src''<-[quote$sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                      ]++
                      [ Just$ "ECps"++show n++"."++trg''' ++ "=ECps"++show n'++"."++src''
-                     | ((n,l),(n',l'))<-zip (init (zipnum lst')) (tail (zipnum lst'))
+                     | ((n,l),(n',l'))<-zip (init (zipnum es)) (tail (zipnum es))
                      , not (isNeg l), not (isNeg l')
                      , src'''<-[quote$sqlExprSrc fSpec l]
                      , trg'''<-[noCollideUnlessTm' l [src'''] (quote$sqlExprTrg fSpec l)]
                      , src''<-[quote$sqlExprSrc fSpec l']
                      ]++
                      [ Just$ "c"++show n ++"."++(quote$sqlExprSrc fSpec (ERel (I c)))++" IS NOT NULL"
-                     | (n,c)<-ncs
+                     | (n,c,sqlExpr,sqlAtt)<-poleConcepts
                      ]
-                     where inCs n = n `elem` map fst ncs
+                     where inCs n = n `elem` [n | (n,_,_,_)<-poleConcepts]
 selectExpr _     _ _   _   (ECps  [] ) = fatal 223 "Cannot create query for ECps [] because type is unknown"
 
 selectExpr fSpec i src trg (ERel (V (Sign s t))   ) 
@@ -261,25 +274,25 @@ selectExpr _ i src trg (EUni [] ) = sqlcomment i "EUni []"$ toM$ selectGeneric i
 selectExpr fSpec i src trg (EUni es') = sqlcomment i ("matches pattern: EUni es"++phpIndent (i+3)++"EUni "++show (map showADL es')) $
                                         "(" +++ (selectExprInUnion fSpec i src trg (EUni es')) +++ (phpIndent i) ++ ")"
 selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment i "matches pattern: ECpl (ERel (V _))"$ selectExpr fSpec i src trg (EUni [])
-selectExpr fSpec i src trg (ECpl e' )
-   = sqlcomment i ("matches pattern: ECpl e"++phpIndent (i+3)++"ECpl [ \""++showADL e'++"\" ]") $
+selectExpr fSpec i src trg (ECpl e )
+   = sqlcomment i ("matches pattern: ECpl e"++phpIndent (i+3)++"ECpl [ \""++showADL e++"\" ]") $
      selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
-                     (quote (sqlConcept fSpec (source e')) ++ " AS cfst,"++phpIndent (i+5)+++selectExprBrac fSpec (i+5) trg' trg' (ERel (I (target e')))+++" AS csnd")
+                     (quote (sqlConcept fSpec (source e)) ++ " AS cfst,"++phpIndent (i+5)+++selectExprBrac fSpec (i+5) trg' trg' (ERel (I (target e)))+++" AS csnd")
                      ("NOT EXISTS"++phpIndent i++" ("+++
-                        (selectExists' (i+2) ((selectExprBrac fSpec (i+2) src2 trg2 e') +++ " AS cp")
+                        (selectExists' (i+2) ((selectExprBrac fSpec (i+2) src2 trg2 e) +++ " AS cp")
                                              ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
                         ) +++ ")"
                      )
-                     where src' = quote$sqlAttConcept fSpec (source e') 
-                           trg' = noCollide' [src'] (sqlAttConcept fSpec (target e'))
-                           src2 = quote$sqlExprSrc fSpec e'
-                           trg2 = noCollideUnlessTm' e' [src2] (quote$sqlExprTrg fSpec e')
+                     where src' = quote$sqlAttConcept fSpec (source e) 
+                           trg' = noCollide [src'] (sqlAttConcept fSpec (target e))
+                           src2 = quote$sqlExprSrc fSpec e
+                           trg2 = noCollideUnlessTm' e [src2] (quote$sqlExprTrg fSpec e)
 selectExpr _ i _ _ (EKl0 _)
    = sqlcomment i "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
 selectExpr _ i _ _ (EKl1 _)
    = sqlcomment i "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
-selectExpr fSpec i src trg (ERad  [e']       ) = sqlcomment i ("matches pattern: ERad [e]"++phpIndent (i+3)++"ERad [ \""++showADL e'++"\" ]") $
-                                                 selectExpr fSpec i src trg e'
+selectExpr fSpec i src trg (ERad  [e]       ) = sqlcomment i ("matches pattern: ERad [e]"++phpIndent (i+3)++"ERad [ \""++showADL e++"\" ]") $
+                                                 selectExpr fSpec i src trg e
 selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
  = sqlcomment i ("matches pattern: ERad lst'@(fstm:_:_)"++phpIndent (i+3)++"ERad "++show (map showADL lst')) $
    selectGeneric i (mainSrc,src) (mainTrg,trg)
@@ -334,7 +347,7 @@ selectExpr fSpec i src trg (ERad lst'@(fstm:_:_))
 selectExpr _     _ _   _   (ERad  [] ) = fatal 310 "Cannot create query for ERad []. This should never occur."
 selectExpr fSpec i src trg (ETyp x _)  = sqlcomment i ("matches pattern: ETyp x _"++phpIndent (i+3)++"ETyp ( \""++showADL x++"\" ) _") $
                                          selectExpr fSpec i src trg x
-selectExpr fSpec i src trg (EFlp x)    = sqlcomment i ("matches pattern: EFlp x. EFlp has no consequence for SQL (ignored).") $
+selectExpr fSpec i src trg (EFlp x)    = sqlcomment i ("matches pattern: EFlp x.") $
                                          selectExpr fSpec i trg src x
 selectExpr fSpec i src trg (EDif (ERel V{},x)) = sqlcomment i ("matches pattern: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" )") $
                                                  selectExpr fSpec i src trg (ECpl x) 
@@ -347,12 +360,12 @@ selectExprInUnion :: Fspc
                   -> String
                   -> Expression 
                   -> Maybe String
-selectExprInUnion fSpec i src trg (EBrk  e'        ) =  selectExprInUnion fSpec i src trg e'
-selectExprInUnion fSpec i src trg (ECps [e']       ) =  selectExprInUnion fSpec i src trg e'
-selectExprInUnion fSpec i src trg (EIsc [e']       ) =  selectExprInUnion fSpec i src trg e'
-selectExprInUnion fSpec i src trg (EUni [e']       ) =  selectExprInUnion fSpec i src trg e'
-selectExprInUnion fSpec i src trg (EUni (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') +++ (phpIndent i) ++ ") UNION (" +++ (selectExprInUnion fSpec i src trg (EUni (f:fx))) +++ (phpIndent i) ++ ""
-selectExprInUnion fSpec i src trg e'                 =  selectExpr        fSpec (i+4) src trg e'
+selectExprInUnion fSpec i src trg (EBrk  e        ) =  selectExprInUnion fSpec i src trg e
+selectExprInUnion fSpec i src trg (ECps [e]       ) =  selectExprInUnion fSpec i src trg e
+selectExprInUnion fSpec i src trg (EIsc [e]       ) =  selectExprInUnion fSpec i src trg e
+selectExprInUnion fSpec i src trg (EUni [e]       ) =  selectExprInUnion fSpec i src trg e
+selectExprInUnion fSpec i src trg (EUni (e:(f:fx))) = (selectExprInUnion fSpec i src trg e) +++ (phpIndent i) ++ ") UNION (" +++ (selectExprInUnion fSpec i src trg (EUni (f:fx))) +++ (phpIndent i) ++ ""
+selectExprInUnion fSpec i src trg e                 =  selectExpr        fSpec (i+4) src trg e
 
 selectExprBrac :: Fspc
                -> Int        -- ^ indentation
@@ -360,18 +373,16 @@ selectExprBrac :: Fspc
                -> String     -- ^ target name (preferably quoted)
                -> Expression  -- ^ Whatever expression to generate an SQL query for
                -> Maybe String
-selectExprBrac    f i s@(_:_)   t         e' | head s /= '`'
- = selectExprBrac f i (quote s) t         e'
-selectExprBrac    f i s         t@(_:_)   e' | head t /= '`'
- = selectExprBrac f i s         (quote t) e'
-selectExprBrac fSpec i src trg (EBrk   e' )                             = selectExprBrac fSpec i src trg e'
-selectExprBrac fSpec i src trg (ECps   [e'])                             = selectExprBrac fSpec i src trg e'
-selectExprBrac fSpec i src trg (ERad [e'])                             = selectExprBrac fSpec i src trg e'
-selectExprBrac fSpec i src trg (EIsc [e'])                             = selectExprBrac fSpec i src trg e'
-selectExprBrac fSpec i src trg (EUni [e'])                             = selectExprBrac fSpec i src trg e'
-selectExprBrac fSpec i src trg e'@(ERel{})
- = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames fSpec e',quote s==quote src,quote t==quote trg]
-             ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg e'+++" )"))
+selectExprBrac    f i s@(_:_)   t         e | head s /= '`' = selectExprBrac f i (quote s) t         e
+selectExprBrac    f i s         t@(_:_)   e | head t /= '`' = selectExprBrac f i s         (quote t) e
+selectExprBrac fSpec i src trg (EBrk  e )                   = selectExprBrac fSpec i src trg e
+selectExprBrac fSpec i src trg (ECps [e])                   = selectExprBrac fSpec i src trg e
+selectExprBrac fSpec i src trg (ERad [e])                   = selectExprBrac fSpec i src trg e
+selectExprBrac fSpec i src trg (EIsc [e])                   = selectExprBrac fSpec i src trg e
+selectExprBrac fSpec i src trg (EUni [e])                   = selectExprBrac fSpec i src trg e
+selectExprBrac fSpec i src trg e@(ERel{})
+ = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames fSpec e,quote s==quote src,quote t==quote trg]
+             ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg e+++" )"))
 selectExprBrac fSpec i src trg expr
  = phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
 
@@ -625,7 +636,7 @@ sqlExprSrc fSpec expr = ses expr
                       _ -> head ([t |(_,_,t)<-sqlRelPlugNames fSpec (ERel r)]++[show r])
    ses (EFlp e)     = ses (flp e)
 sqlExprTrg :: Fspc->Expression -> String
-sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
+sqlExprTrg fSpec e = sqlExprSrc fSpec (flp e)
 
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
