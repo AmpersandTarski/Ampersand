@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand
    , ObjectDef(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Relation(..)
-   , Rule(..)
+   , Rule(..), ruleviolations
    , Prop(..)
    , Lang(..)
    , Options(..), DocTheme(..)

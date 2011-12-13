@@ -43,6 +43,7 @@ data Options = Options { showVersion   :: Bool
                        , dbName        :: String
                        , genAtlas      :: Bool
                        , namespace     :: String
+                       , testRule      :: Maybe String                       
                        , customCssFile :: Maybe FilePath                       
                        , importfile    :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
@@ -100,6 +101,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , allInterfaces = False
                       , genAtlas      = False   
                       , namespace     = []
+                      , testRule      = Nothing
                       , customCssFile = Nothing
                       , importfile    = []
                       , importformat  = fatal 101 "--importformat is required for --import."
@@ -256,6 +258,8 @@ options = map pp
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
+          , (Option []        ["testRule"]    (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }) "rule name")
+                                                                          "Show contents and violations of specified rule.", Hidden)
           , (Option []        ["css"]         (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
                                                                           "Custom.css file to customize the style of the prototype.", Public)
           , (Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics.", Public)
