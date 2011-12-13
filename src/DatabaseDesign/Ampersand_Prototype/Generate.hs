@@ -147,7 +147,7 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
   [ "      )"
   ]
-  where normalizedInterfaceExp = {- conjNF $ -} objctx object
+  where normalizedInterfaceExp = conjNF $ objctx object
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $
