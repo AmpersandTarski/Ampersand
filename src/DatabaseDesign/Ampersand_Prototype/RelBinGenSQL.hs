@@ -185,11 +185,11 @@ selectExpr fSpec i src trg (ECps es@(fstm:_:_))
          mainTrg = (if isNeg (last es) then "c"++show (length es) else "ECps"++show (length es-1))++"."++trg'
          -- the strings that represent source and target of ECps es. When their names are equal, disambiguation of names happens in noCollideUnlessTm'
          src'    = if isNeg (head es)
-                   then (quote.sqlExprTrg fSpec.ERel . I .source.head) es
-                   else (quote.sqlExprTrg fSpec.head) es
+                   then (quote.sqlExprSrc fSpec.ERel . I .source.head) es
+                   else (quote.sqlExprSrc fSpec.head) es
          trg'    = if isNeg (last es)
-                   then (noCollideUnlessTm' fstm [src'].quote.sqlExprTrg fSpec.ERel . I .target.last) es
-                   else (noCollideUnlessTm' fstm [src'].quote.sqlExprTrg fSpec.last) es
+                   then (quote.sqlExprTrg fSpec.ERel . I .target.last) es
+                   else (quote.sqlExprTrg fSpec.last) es
          -- poleConcepts lists the concepts that come in between those subexpressions that are used in the FROM clause of the SQL-expression.
          -- These intermediate concepts are called 'pole concepts', because they represent the poles in the poles-and-fences metaphor.
          poleConcepts
