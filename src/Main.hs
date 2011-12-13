@@ -2,6 +2,7 @@
 module Main where
 
 import Control.Monad
+import Data.List
 import System.FilePath        (combine,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
@@ -170,6 +171,7 @@ generateProtoStuff opts fSpec =
         --in prototype it means export the DB of the prototype to .adl file
         [ exportProto  fSpec opts | interfacesG    opts] ++ 
         [ verboseLn opts "\nWARNING: There are rule violations (see above)." | (not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)] ++ 
+        [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts] ] ++
         [ verboseLn opts "Done."]  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
        ) 
    where  
@@ -187,9 +189,10 @@ exportProto fSpec opts =
 doGenProto :: Fspc -> Options -> IO ()
 doGenProto fSpec opts =
  do { verboseLn opts "Checking on rule violations..."
-    ; reportViolations $ violations fSpec
+    ; let allViolations = violations fSpec
+    ; reportViolations allViolations
     
-    ; if (not . null $ violations fSpec) && not (development opts) && theme opts/=StudentTheme 
+    ; if (not . null) allViolations && not (development opts) && theme opts/=StudentTheme 
       then verboseLn opts "\nERROR: No prototype generated because of rule violations." 
       else do { verboseLn opts "Generating prototype..."
               ; phpObjInterfaces fSpec opts  
@@ -200,3 +203,20 @@ doGenProto fSpec opts =
  where reportViolations []    = verboseLn opts $ "No violations found."
        reportViolations viols = verboseLn opts $ concat [show p++": "++showADL r++"\n" |(r,p)<-viols]
 
+
+ruleTest :: Fspc -> Options -> String -> IO ()
+ruleTest fSpec opts ruleName =
+ do { case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
+        [] -> verboseLn opts $ "\nRule test error: rule "++show ruleName++" not found." 
+        (rule:_) -> do { verboseLn opts $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+                       ; verboseLn opts $ showContents rule
+                       ; let ruleComplement = rule { rrexp = ECpl $ EBrk $rrexp rule }
+                       ; verboseLn opts $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                       ; verboseLn opts $ showContents ruleComplement
+                       } 
+    }
+ where showContents rule = let pairs = [ "("++f++"," ++s++")" | (f,s) <- ruleviolations $ rule { rrexp = ECpl $ rrexp rule }]
+                           in  "[" ++ intercalate ", " pairs ++ "]" -- getting the contents is not implemented for rules in Rules.hs, 
+                                                                    -- so we get the violations of the complement instead
+       
+    
