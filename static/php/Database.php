@@ -260,8 +260,14 @@ function listAtomsForConcept($concept) {
 }
 
 function testRule($ruleName) {
+  global $isDev;
   global $dbName;
   global $allRulesSql;
+  
+  if (!$isDev) {
+    echo "<span style=\"color: red\">Rule test unavailable: prototype was not generated with <tt>--dev</tt> option.</span>";
+    return;
+  }
   
   echo "<h2>Testing rule $ruleName</h2>";
   $ruleSql = $allRulesSql[$ruleName];
