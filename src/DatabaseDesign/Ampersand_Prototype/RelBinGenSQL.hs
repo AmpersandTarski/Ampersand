@@ -227,12 +227,12 @@ selectExpr fSpec i src trg (ECps es@(fstm:_:_))
          -- the 'where'  expressions contain all "magic".
          wherecl  = filterEmpty
                      [ if isNeg l
-                       then "NOT EXISTS"++phpIndent (i+6)++"( "+++
-                              selectExists' (i+8) (selectExprBrac fSpec (i+6) src'' trg'' (if isNeg l then notCpl l else l) +++ " AS ECps"++show n)
-                                                  (cChain "  AND " ([ concNm  n   ++"."++concTp n   ++ "=ECps"++show n      ++"."++src''         | inCs n ]++
+                       then "NOT EXISTS/**/"++phpIndent (i+6)++"( "+++
+                              selectExists' (i+8) (selectExprBrac fSpec (i+6) src'' trg'' (notCpl l) +++ " AS ECps"++show n)
+                                                  (cChain "  AND/**/ " ([ concNm  n   ++"."++concTp n   ++ "=ECps"++show n      ++"."++src''         | inCs n ]++
                                                                     [ exprNm (n-1)++"."++exprT (n-1)++ "=ECps"++show n      ++"."++src''         | n>0, not (inCs n) ]++
                                                                     [ "ECps"++show n ++"."++trg''       ++ "=" ++concNm (n+1)++"."++concTp (n+1) | inCs (n+1) ]++
-                                                                    [ "ECps"++show n ++"."++trg''       ++ "=" ++exprNm (n+1)++"."++exprS (n+1)  | n>0, not (inCs (n+1)) ]++
+                                                                    [ "ECps"++show n ++"."++trg''       ++ "=" ++exprNm (n+1)++"."++exprS (n+1)  | not (inCs (n+1)) ]++
                                                                     []))
                                                      +++")"
                        else cChain "  AND " (["c"++show n++"."++src'' ++ "=ECps"++show  n   ++"."++src'' | inCs n]++
