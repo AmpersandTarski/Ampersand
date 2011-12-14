@@ -193,7 +193,7 @@ doGenProto fSpec opts =
     ; reportViolations allViolations
     
     ; if (not . null) allViolations && not (development opts) && theme opts/=StudentTheme 
-      then verboseLn opts "\nERROR: No prototype generated because of rule violations." 
+      then putStrLn opts "\nERROR: No prototype generated because of rule violations." 
       else do { verboseLn opts "Generating prototype..."
               ; phpObjInterfaces fSpec opts  
               ; verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts ++ "."
@@ -201,18 +201,18 @@ doGenProto fSpec opts =
               }
     }
  where reportViolations []    = verboseLn opts $ "No violations found."
-       reportViolations viols = verboseLn opts $ concat [show p++": "++showADL r++"\n" |(r,p)<-viols]
+       reportViolations viols = putStrLn opts $ concat [show p++": "++showADL r++"\n" |(r,p)<-viols]
 
 
 ruleTest :: Fspc -> Options -> String -> IO ()
 ruleTest fSpec opts ruleName =
  do { case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
-        [] -> verboseLn opts $ "\nRule test error: rule "++show ruleName++" not found." 
-        (rule:_) -> do { verboseLn opts $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
-                       ; verboseLn opts $ showContents rule
+        [] -> putStrLn opts $ "\nRule test error: rule "++show ruleName++" not found." 
+        (rule:_) -> do { putStrLn opts $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+                       ; putStrLn opts $ showContents rule
                        ; let ruleComplement = rule { rrexp = ECpl $ EBrk $rrexp rule }
-                       ; verboseLn opts $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
-                       ; verboseLn opts $ showContents ruleComplement
+                       ; putStrLn opts $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                       ; putStrLn opts $ showContents ruleComplement
                        } 
     }
  where showContents rule = let pairs = [ "("++f++"," ++s++")" | (f,s) <- ruleviolations $ rule { rrexp = ECpl $ rrexp rule }]
