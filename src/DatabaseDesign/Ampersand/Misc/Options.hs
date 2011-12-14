@@ -272,7 +272,7 @@ options = map pp
           , (Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell (for debugging).", Public)
           , (Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics.", Public)
           , (Option []        ["blackWhite"]  (NoArg blackWhiteOpt)       "do not use colours in generated graphics", Public)
-          , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicat logic." , Public)
+          , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicate logic." , Public)
           , (Option []        ["noDiagnosis"] (NoArg noDiagnosisOpt)      "omit the diagnosis chapter from the functional specification document." , Public)
           , (Option []        ["diagnosis"]   (NoArg diagnosisOpt)        "diagnose your Ampersand script (generates a .pdf file).", Public)
           , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'EN').", Public)
