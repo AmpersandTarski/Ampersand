@@ -49,7 +49,7 @@ for ($i=0; $i<count($allRoles); $i++) {
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
 
-echo '<li id="LinkToMain"><a href="Interface.php'.($roleNr>0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></li>';
+echo '<li id="LinkToMain"><a href="index.php'.($roleNr>0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></li>';
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
   echo '<li id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></li>';
 }
@@ -123,7 +123,7 @@ function topLevelInterfaceLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']=='ONE')
       echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
-          .'"><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>0? '&role='.$roleNr : '')
+          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>0? '&role='.$roleNr : '')
           .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></li>';
   }
 }
@@ -134,7 +134,7 @@ function newAtomLinks($interfaces) {
   foreach($interfaces as $interface) {
     if ($interface['srcConcept']!='ONE')
       echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
-           .'"><a href="Interface.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name']))
+           .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name']))
            .'&atom='.($roleNr>0? '&role='.$roleNr : '').'"><span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
            .' ('.htmlSpecialChars($interface['name']).')</spin></a></li>';
   }

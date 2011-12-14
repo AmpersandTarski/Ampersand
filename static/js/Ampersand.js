@@ -34,7 +34,7 @@ function cancelEditing() {
   if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we cancel the creation of a new atom, the new atom is removed from the concept table
     // and we navigate back to the previous page. (We do need to create an atom on new, because then we 
-    // can simply use Interface.php to edit it)
+    // can simply use index.php to edit it)
     
     var atom = $('#AmpersandRoot').attr('atom');
     var concept = $('#AmpersandRoot').attr('concept');
@@ -456,7 +456,7 @@ function initializeAutocomplete($textfield, $atom) {
 //Navigation
 
 function navigateTo(interface, atom) {
-  window.location.href = 'Interface.php?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
+  window.location.href = 'index.php?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
                                             'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '')
                                          +'&role='+getSelectedRole();     
 }
