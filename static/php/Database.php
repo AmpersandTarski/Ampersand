@@ -181,8 +181,8 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 function checkRoleRules($roleNr) {
   global $allRoles;  
   
-  if ($roleNr > 0) {
-    $role = $allRoles[$roleNr-1];
+  if ($roleNr >= 0) {
+    $role = $allRoles[$roleNr];
     emitLog("Checking rules for role $role[name]");
     return checkRules($role['ruleNames']);
   }
