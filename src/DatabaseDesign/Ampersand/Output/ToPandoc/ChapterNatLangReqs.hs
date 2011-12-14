@@ -56,8 +56,8 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRequirements = theBlocks
     where
       (theBlocks,_) = if null (themes fSpec)
-                      then aThemeAtATime toBeProcessedStuff (patterns fSpec) (newCounter,Counter 0)
-                      else aThemeAtATime toBeProcessedStuff [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] (newCounter,Counter 0)
+                      then aThemeAtATime toBeProcessedStuff (patterns fSpec) newCounter
+                      else aThemeAtATime toBeProcessedStuff [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] newCounter
       toBeProcessedStuff = ( conceptsWith
                            , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
@@ -78,9 +78,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                        , [Relation]                                 -- all relations to be processed into this section and the sections to come
                        , [Rule])                                    -- all rules to be processed into this section and the sections to come
                     -> [Pattern]         -- the patterns that must be processed into this specification
-                    -> (Counter,Counter)           -- unique definition counters
-                    -> ([Block],(Counter,Counter)) -- The blocks that define the resulting document and the last used unique definition number
-      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) pats iPre 
+                    -> Counter           -- unique definition counters
+                    -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
+      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) pats iPre
            = case pats of
               []  -> printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
@@ -117,20 +117,20 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     -> ( [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
                        , [Relation]          -- Relations to print in this section
                        , [Rule])             -- Rules to print in this section
-                    -> (Counter,Counter)      -- first free number to use for numbered items
-                    -> ([Block],(Counter,Counter))-- the resulting blocks and the last used number.
-      printOneTheme mPat (concs2print, rels2print, rules2print) (reqcnt,defcnt)
+                    -> Counter      -- first free number to use for numbered items
+                    -> ([Block],Counter)-- the resulting blocks and the last used number.
+      printOneTheme mPat (concs2print, rels2print, rules2print) counter0
               = case (mPat, themes fSpec) of
-                 (Nothing, _:_) -> ( [], (reqcnt,defcnt) )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ reqdefblocks
-                                   , ( Counter (getEisnr reqcnt + length reqs)
-                                     , Counter (snd(last cntss)) )
+                 (Nothing, _:_) -> ( [], counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
+                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ reqdefs
+                                   , Counter (getEisnr counter0 + length reqs)
                                    )
            where
               -- sort the requirements by file position
-              reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ]
+              reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs' concs2print]
               -- make blocks for requirements
-              reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr reqcnt)..] reqs]
+              reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
+              reqdefs = concat (map snd reqblocks)
               -- sort the definitions by file position
               defs = sort' fst [((linenr a,colnr a), (i, def)) | (a, i, def)<-sctcs concs2print]
               -- cntss is a list of pairs which should be interpreted as counters [fst..snd] for concept definitions of A_Concept c
@@ -139,7 +139,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
               --              + fst+1==snd for c with two concept defs i.e. [fst..snd]==[fst,fst+1]
               cntss :: [(Int,Int)]
               cntss = tail $ foldl (\x y -> x ++ [(snd(last x)+1,snd(last x) + head y)]) 
-                                   [(fatal 133 "",getEisnr defcnt)] 
+                                   [(fatal 133 "",getEisnr counter0)] 
                                    [[i] | (_,(i,_))<-defs]
               -- make blocks for concepts
               defblocks = [(pos,def cnts) | (cnts, (pos,(_,def)))<-zip [ map Counter [i..j] | (i,j) <- cntss] defs ]
@@ -217,6 +217,22 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                  )
                                           ]
                   where fst3 (a,_,_) = a
+
+              sctcs' :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
+              sctcs'= let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
+                      in map (\(c,exps) -> (mborigin c, cptBlock' (c,exps)))
+              cptBlock' :: (A_Concept, [Purpose]) -> Counter -> [Block]
+              cptBlock' (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
+                                    ++ map cdBlock' (zip (if length (uniquecds c)==1 then [(cnt,"")] else [ (cnt,'.':show i) | i<-[(1::Int)..]])
+                                                        (uniquecds c))
+              cdBlock' :: ((Counter,String),(String,ConceptDef)) -> Block
+              cdBlock' ((cnt,xcnt),(cdnm,cd)) = DefinitionList 
+                                        [( [ Str (case language flags of
+                                                                 Dutch   -> "Definitie "
+                                                                 English -> "Definition ")
+                                           , Str (show (getEisnr cnt)++xcnt)
+                                           , Str ":"]
+                                         , [ makeDefinition flags (getEisnr cnt,cdnm,cd) ])]
 
               -- | the origin of c is the origin of the head of uniquecds c
               --   the integer defines the number of concept defs for c
