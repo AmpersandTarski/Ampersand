@@ -175,7 +175,7 @@ function generateInterface($db, $interface, $srcAtom) {
   if ($srcAtom == null)
     $codomainAtoms = array (); // in case the table would contain (null, some atom)  
   else
-    $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['sqlQuery'])); // filter, in case table contains ($srcAtom, null)
+    $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['expressionSQL'])); // filter, in case table contains ($srcAtom, null)
 
   $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
   

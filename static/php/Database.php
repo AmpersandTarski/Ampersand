@@ -203,7 +203,7 @@ function checkRules($ruleNames) {
   
   foreach ($ruleNames as $ruleName) {
     $ruleSql = $allRulesSql[$ruleName];
-    $rows = queryDb($dbName, $ruleSql['sql'], $error);
+    $rows = queryDb($dbName, $ruleSql['violationsSQL'], $error);
     if ($error) error($error);
     
     if (count($rows) > 0) {
@@ -272,12 +272,12 @@ function testRule($ruleName) {
   echo "<h2>Testing rule $ruleName</h2>";
   $ruleSql = $allRulesSql[$ruleName];
   $ruleAdl = escapeHtmlAttrStr($ruleSql[ruleAdl]);
-  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[ruleTestSql]</pre><h4>results</h4>";
-  $rows = queryDb($dbName, $ruleSql['ruleTestSql'], $error);
+  echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[contentsSQL]</pre><h4>results</h4>";
+  $rows = queryDb($dbName, $ruleSql['contentsSQL'], $error);
   printBinaryTable( $rows );
 
-  echo "<h4>Rule violations SQL</h4><pre>$ruleSql[sql]</pre><h4>results</h4>";
-  $rows = queryDb($dbName, $ruleSql['sql'], $error);
+  echo "<h4>Rule violations SQL</h4><pre>$ruleSql[violationsSQL]</pre><h4>results</h4>";
+  $rows = queryDb($dbName, $ruleSql['violationsSQL'], $error);
   printBinaryTable( $rows );
 }
 

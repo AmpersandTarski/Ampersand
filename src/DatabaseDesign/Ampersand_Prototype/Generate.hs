@@ -92,11 +92,11 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
            , "          // normalized complement (violations): "++ show violationsExpr
-           , "        , 'sql' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ violationsExpr)++"'" 
+           , "        , 'violationsSQL' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ violationsExpr)++"'" 
            ] ++
            (if development opts then -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                      -- php/Database.php?testRule=RULENAME
-           [ "        , 'ruleTestSql' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ conjNF . rrexp $ rule)++"'"] 
+           [ "        , 'contentsSQL' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ conjNF . rrexp $ rule)++"'"] 
               else []) ++
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
@@ -140,7 +140,7 @@ genInterfaceObjects fSpec opts depth object = indent (depth*2) $
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (show (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (show (target normalizedInterfaceExp))
-  , "      , 'sqlQuery' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'" -- todo give an error for Nothing                                                  
+  , "      , 'expressionSQL' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
   ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
