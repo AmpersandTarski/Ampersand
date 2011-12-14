@@ -26,106 +26,106 @@ import System.Time.Utils   -- modification time.
 #endif
 
 phpObjInterfaces :: Fspc -> Options -> IO()
-phpObjInterfaces fSpec flags =
- do { writeStaticFiles flags
-    ; verboseLn flags "---------------------------"
-    ; verboseLn flags "Generating php Object files with Ampersand"
-    ; verboseLn flags "---------------------------"
-    ; write "Installer.php"             (installer fSpec flags)
-    ; verboseLn flags "  Writing: dbsettings.php"
+phpObjInterfaces fSpec opts =
+ do { writeStaticFiles opts
+    ; verboseLn opts "---------------------------"
+    ; verboseLn opts "Generating php Object files with Ampersand"
+    ; verboseLn opts "---------------------------"
+    ; write "Installer.php"             (installer fSpec opts)
+    ; verboseLn opts "  Writing: dbsettings.php"
     ; writeFile (combine targetDir "dbsettings.php") dbsettings
 
-    ; if not (deprecated flags) && (theme flags /= StudentTheme) then
-       do { generateAll fSpec flags
+    ; if not $ deprecated opts then
+       do { generateAll fSpec opts
           }
       else
        do { putStrLn "\nWARNING: Using old php generator because of --deprecated option."
           ; putStrLn "  This generator has known bugs and is no longer being" 
           ; putStrLn "  maintained. Its use is strongly discouraged!\n"
-          ; write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
-          ; write "index.htm"                 (htmlindex fSpec ifcs flags)
+          ; write "connectToDataBase.inc.php" (connectToDataBase fSpec opts)
+          ; write "index.htm"                 (htmlindex fSpec ifcs opts)
           ; write (name fSpec++".php")        (contextGen fSpec)
-          ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
-          ; verboseLn flags "Includable files for all objects:"
+          ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs opts)
+          ; verboseLn opts "Includable files for all objects:"
           ; sequence_
-              [ write (addExtension (name ifc) ".inc.php") (objectInterfaces flags fSpec (ifcObj ifc))
+              [ write (addExtension (name ifc) ".inc.php") (objectInterfaces opts fSpec (ifcObj ifc))
               | ifc <- ifcs
               ]
-          ; verboseLn flags "Wrapper files for all objects:"
+          ; verboseLn opts "Wrapper files for all objects:"
           ; sequence_
-              [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc flags)
+              [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc opts)
               | ifc <- ifcs
               ]
           }
           
-    ; when (genAtlas flags) $ doGenAtlas fSpec flags
-    ; verboseLn flags "\n"
+    ; when (genAtlas opts) $ doGenAtlas fSpec opts
+    ; verboseLn opts "\n"
     }
    where
     write fname content =
-     do { verboseLn flags ("  Generating "++fname)
+     do { verboseLn opts ("  Generating "++fname)
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = "<?php $DB_link=mysql_connect("
-                 ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
-                 ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
-                 ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
+                 ++  "$DB_host='"++addSlashes (sqlHost opts)++"'"
+                 ++", $DB_user='"++addSlashes (sqlLogin opts)++"'"
+                 ++", $DB_pass='"++addSlashes (sqlPwd opts)++"'"
                  ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
-    targetDir = dirPrototype flags
+    targetDir = dirPrototype opts
     ifcs = interfaceS fSpec++ interfaceG fSpec
 
 doGenAtlas :: Fspc -> Options -> IO()
-doGenAtlas fSpec flags =
- do { verboseLn flags ("Installing the Atlas application:")
-    ; verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
-    ; verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
-    ; fillAtlas fSpec flags
+doGenAtlas fSpec opts =
+ do { verboseLn opts ("Installing the Atlas application:")
+    ; verboseLn opts ("Importing "++show (importfile opts)++" into namespace "++ show (namespace opts) ++" of the Atlas ...")
+    ; verboseLn opts ("The atlas application should have been installed in " ++ show (dirPrototype opts) ++ ".")
+    ; fillAtlas fSpec opts
     }             
                 
 writeStaticFiles :: Options -> IO()
-writeStaticFiles flags =  
+writeStaticFiles opts =  
  do {
 #ifdef MIN_VERSION_MissingH 
-      verboseLn flags $ "Updating static files"
+      verboseLn opts $ "Updating static files"
 #else
-      verboseLn flags $ "Writing static files"
+      verboseLn opts $ "Writing static files"
 #endif
-    ; sequence_ [ writeWhenMissingOrOutdated flags sf (writeStaticFile flags sf) | sf <- allStaticFiles ]
+    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) | sf <- allStaticFiles ]
     }
     
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
-writeWhenMissingOrOutdated flags staticFile act =
+writeWhenMissingOrOutdated opts staticFile act =
 #ifdef MIN_VERSION_MissingH 
- do { exists <- doesFileExist $ absFilePath flags staticFile 
+ do { exists <- doesFileExist $ absFilePath opts staticFile 
     ; if exists then
-       do { oldTimeStamp <- getModificationTime $ absFilePath flags staticFile
+       do { oldTimeStamp <- getModificationTime $ absFilePath opts staticFile
           ; if oldTimeStamp < timeStamp staticFile then
-             do { verboseLn flags $ "  Replacing static file "++ filePath staticFile ++" with current version."
+             do { verboseLn opts $ "  Replacing static file "++ filePath staticFile ++" with current version."
                 ; act
                 }
             else
               return () -- skip is not really worth logging
           }
       else
-       do { verboseLn flags $ "  Writing static file "++ filePath staticFile
+       do { verboseLn opts $ "  Writing static file "++ filePath staticFile
           ; act
           }
     }       
 #else
 -- On windows we cannot set the file modification time without requiring a cygwin or mingw build environment,
 -- so we simply replace all static files on each generation.
- do { verboseLn flags $ "  Writing static file "++ filePath staticFile
+ do { verboseLn opts $ "  Writing static file "++ filePath staticFile
     ; act
     }
 #endif
                                     
 writeStaticFile :: Options -> StaticFile -> IO()
-writeStaticFile flags sf = 
-  do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
-     ; write (absFilePath flags sf) (contentString sf) 
+writeStaticFile opts sf = 
+  do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
+     ; write (absFilePath opts sf) (contentString sf) 
 #ifdef MIN_VERSION_MissingH 
      ; let t = clockTimeToEpoch (timeStamp sf)
-     ; setFileTimes (absFilePath flags sf) t t
+     ; setFileTimes (absFilePath opts sf) t t
 #endif
      }
  where write a b = case isBinary sf of
@@ -135,4 +135,4 @@ writeStaticFile flags sf =
        toBin x = read x
 
 absFilePath :: Options -> StaticFile -> FilePath
-absFilePath flags sf = combine (dirPrototype flags) (filePath sf)
+absFilePath opts sf = combine (dirPrototype opts) (filePath sf)
