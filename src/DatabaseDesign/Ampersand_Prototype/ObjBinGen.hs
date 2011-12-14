@@ -12,11 +12,12 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
 import DatabaseDesign.Ampersand_Prototype.ContextGen          (contextGen)
 import DatabaseDesign.Ampersand_Prototype.Apps
 import DatabaseDesign.Ampersand_Prototype.Generate            (generateAll)
+import Control.Monad
 import System.FilePath               
 import System.Directory
 import qualified Data.ByteString as Bin
 import DatabaseDesign.Ampersand_Prototype.CoreImporter  
-import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+import Prelude hiding (writeFile,readFile,getContents)
 
 import DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated
 #ifdef MIN_VERSION_MissingH 
@@ -30,25 +31,34 @@ phpObjInterfaces fSpec flags =
     ; verboseLn flags "---------------------------"
     ; verboseLn flags "Generating php Object files with Ampersand"
     ; verboseLn flags "---------------------------"
-    ; write "index.htm"                 (htmlindex fSpec ifcs flags)
     ; write "Installer.php"             (installer fSpec flags)
-    ; write (name fSpec++".php")        (contextGen fSpec)
-    ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
     ; write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
     ; verboseLn flags "  Writing: dbsettings.php"
     ; writeFile (combine targetDir "dbsettings.php") dbsettings
-    ; verboseLn flags "Includable files for all objects:"
-    ; sequence_
-      [ write (addExtension (name ifc) ".inc.php") (objectInterfaces flags fSpec (ifcObj ifc))
-      | ifc <- ifcs
-      ]
-    ; verboseLn flags "Wrapper files for all objects:"
-    ; sequence_
-      [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc flags)
-      | ifc <- ifcs
-      ]
-    ; sequence_  [ doGenAtlas    fSpec flags | genAtlas     flags]
-    ; sequence_ [generateAll fSpec flags | theme flags /= StudentTheme]
+
+    ; if not (deprecated flags) && (theme flags /= StudentTheme) then
+       do { generateAll fSpec flags
+          }
+      else
+       do { putStrLn "\nWARNING: Using old php generator because of --deprecated option."
+          ; putStrLn "  This generator has known bugs and is no longer being" 
+          ; putStrLn "  maintained. Its use is strongly discouraged!\n"
+          ; write "index.htm"                 (htmlindex fSpec ifcs flags)
+          ; write (name fSpec++".php")        (contextGen fSpec)
+          ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
+          ; verboseLn flags "Includable files for all objects:"
+          ; sequence_
+              [ write (addExtension (name ifc) ".inc.php") (objectInterfaces flags fSpec (ifcObj ifc))
+              | ifc <- ifcs
+              ]
+          ; verboseLn flags "Wrapper files for all objects:"
+          ; sequence_
+              [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc flags)
+              | ifc <- ifcs
+              ]
+          }
+          
+    ; when (genAtlas flags) $ doGenAtlas fSpec flags
     ; verboseLn flags "\n"
     }
    where

@@ -18,8 +18,7 @@ customCssPath = "css/Custom.css"
 
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec opts =
- do { verboseLn opts "Experimental Generation"
-    ; writePrototypeFile "Generics.php" $ generateInterfaces fSpec opts
+ do { writePrototypeFile "Generics.php" $ generateInterfaces fSpec opts
     
     ; case customCssFile opts of
         Just customCssFilePath ->
