@@ -524,8 +524,9 @@ function addClickEvent($item, interface, atom) {
 // LogWindows
 
 function initLogWindows() {
-  $('.LogWindow').click(function (event) {
-    $(this).attr('minimized', $(this).attr('minimized')=='true' ? 'false' : 'true');
+  console.log($('.LogWindow>.Title'));
+  $('.LogWindow>.Title').click(function (event) {
+    $(this).parents().first().attr('minimized', $(this).parents().first().attr('minimized')=='true' ? 'false' : 'true');
     return false;
   });
   $('#SignalLog>.LogMsg').remove();  // don't show logs here
