@@ -32,7 +32,6 @@ phpObjInterfaces fSpec flags =
     ; verboseLn flags "Generating php Object files with Ampersand"
     ; verboseLn flags "---------------------------"
     ; write "Installer.php"             (installer fSpec flags)
-    ; write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
     ; verboseLn flags "  Writing: dbsettings.php"
     ; writeFile (combine targetDir "dbsettings.php") dbsettings
 
@@ -43,6 +42,7 @@ phpObjInterfaces fSpec flags =
        do { putStrLn "\nWARNING: Using old php generator because of --deprecated option."
           ; putStrLn "  This generator has known bugs and is no longer being" 
           ; putStrLn "  maintained. Its use is strongly discouraged!\n"
+          ; write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
           ; write "index.htm"                 (htmlindex fSpec ifcs flags)
           ; write (name fSpec++".php")        (contextGen fSpec)
           ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs flags)
