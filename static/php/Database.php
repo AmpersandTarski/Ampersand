@@ -268,6 +268,11 @@ function testRule($ruleName) {
     echo "<span style=\"color: red\">Rule test unavailable: prototype was not generated with <tt>--dev</tt> option.</span>";
     return;
   }
+  if (!$allRulesSql[$ruleName]) {
+    echo "<span style=\"color: red\">Error: rule \"$ruleName\" does not exist.</span>";
+    return;
+  }
+  
   echo "<a href=\"../Installer.php\" style=\"float:right\">Reset database</a>";
   echo "<h2>Testing rule $ruleName</h2>";
   $ruleSql = $allRulesSql[$ruleName];
