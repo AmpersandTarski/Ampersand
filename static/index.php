@@ -26,7 +26,7 @@ function init() {
   initialize();
 }
 
-<?php echo generateInterfaceMap($allInterfaceObjects); ?>
+<?php echo generateInterfaceMap(); ?>
 
 </script>
 </head>
@@ -54,7 +54,7 @@ if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
   echo '<li id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></li>';
 }
 
-echo topLevelInterfaceLinks($allInterfaceObjects);
+echo topLevelInterfaceLinks();
 
 echo '</ul>';
 echo '</div>';
@@ -63,11 +63,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<ul id="Maintenance">';
   echo '<li id="Reset"><a href="Installer.php"><span class=TextContent>Reset database</span></a></li>';
   echo '</ul>';
-  echo $roleNr;
-  echo $roleName;
   
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';
-  echo newAtomLinks($allInterfaceObjects);
+  echo newAtomLinks();
   echo '<div id=SignalAndPhpLogs>';
   genSignalLogWindow($roleNr, $roleName);
   echo '</div>';
@@ -121,9 +119,11 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
 
 <?php 
 
-function topLevelInterfaceLinks($interfaces) {
+function topLevelInterfaceLinks() {
+  global $allInterfaceObjects;
   global $roleNr;
-  foreach($interfaces as $interface) {
+  
+  foreach($allInterfaceObjects as $interface) {
     if ($interface['srcConcept']=='ONE')
       echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
           .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>=0? '&role='.$roleNr : '')
@@ -131,10 +131,12 @@ function topLevelInterfaceLinks($interfaces) {
   }
 }
 
-function newAtomLinks($interfaces) {
+function newAtomLinks() {
+  global $allInterfaceObjects;
   global $roleNr;
+  
   echo '<ul id=CreateList>';
-  foreach($interfaces as $interface) {
+  foreach($allInterfaceObjects as $interface) {
     if ($interface['srcConcept']!='ONE')
       echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
            .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name']))
@@ -144,10 +146,12 @@ function newAtomLinks($interfaces) {
   echo '</ul>';
 }
 
-function generateInterfaceMap($interfaces) {
+function generateInterfaceMap() {
+  global $allInterfaceObjects;
+  
   echo 'function getInterfacesMap() {';
   echo '  var interfacesMap = new Array();';
-  foreach($interfaces as $interface) {
+  foreach($allInterfaceObjects as $interface) {
     echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['srcConcept']).', '.showHtmlAttrStr($interface['name']).');';
   }
   echo '  return interfacesMap;';
