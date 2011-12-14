@@ -43,6 +43,7 @@ data Options = Options { showVersion   :: Bool
                        , dbName        :: String
                        , genAtlas      :: Bool
                        , namespace     :: String
+                       , deprecated    :: Bool
                        , testRule      :: Maybe String                       
                        , customCssFile :: Maybe FilePath                       
                        , importfile    :: FilePath --a file with content to populate some (Populated a)
@@ -101,6 +102,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , allInterfaces = False
                       , genAtlas      = False   
                       , namespace     = []
+                      , deprecated    = False
                       , testRule      = Nothing
                       , customCssFile = Nothing
                       , importfile    = []
@@ -258,6 +260,7 @@ options = map pp
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
+          , (Option []        ["deprecated"]  (NoArg (\opts -> opts{deprecated = True})) "Force generation of old php prototype (strongly discouraged!)", Hidden)
           , (Option []        ["testRule"]    (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }) "rule name")
                                                                           "Show contents and violations of specified rule.", Hidden)
           , (Option []        ["css"]         (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
