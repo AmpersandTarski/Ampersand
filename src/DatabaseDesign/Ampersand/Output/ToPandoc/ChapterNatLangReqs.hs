@@ -127,26 +127,10 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                    )
            where
               -- sort the requirements by file position
-              reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs' concs2print]
+              reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs concs2print]
               -- make blocks for requirements
               reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
               reqdefs = concat (map snd reqblocks)
-              -- sort the definitions by file position
-              defs = sort' fst [((linenr a,colnr a), (i, def)) | (a, i, def)<-sctcs concs2print]
-              -- cntss is a list of pairs which should be interpreted as counters [fst..snd] for concept definitions of A_Concept c
-              -- for example: + fst==snd for c with only one concept def i.e. [fst..snd]==[fst]
-              --              + fst-1==snd for c without concept defs i.e. [fst..snd]==[]
-              --              + fst+1==snd for c with two concept defs i.e. [fst..snd]==[fst,fst+1]
-              cntss :: [(Int,Int)]
-              cntss = tail $ foldl (\x y -> x ++ [(snd(last x)+1,snd(last x) + head y)]) 
-                                   [(fatal 133 "",getEisnr counter0)] 
-                                   [[i] | (_,(i,_))<-defs]
-              -- make blocks for concepts
-              defblocks = [(pos,def cnts) | (cnts, (pos,(_,def)))<-zip [ map Counter [i..j] | (i,j) <- cntss] defs ]
-              -- sort the requirements and concept definitions
-              reqsdefs = sort' fst (reqblocks ++ defblocks)
-              -- make one [block] of requirements and concept definitions
-              reqdefblocks = concat (map snd reqsdefs)
 
               themeName = case mPat of
                            Nothing  -> ""
@@ -218,41 +202,25 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                           ]
                   where fst3 (a,_,_) = a
 
-              sctcs' :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
-              sctcs'= let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
-                      in map (\(c,exps) -> (mborigin c, cptBlock' (c,exps)))
-              cptBlock' :: (A_Concept, [Purpose]) -> Counter -> [Block]
-              cptBlock' (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
-                                    ++ map cdBlock' (zip (if length (uniquecds c)==1 then [(cnt,"")] else [ (cnt,'.':show i) | i<-[(1::Int)..]])
+              -- | the origin of c is the origin of the head of uniquecds c
+              --   after sorting by origin the counter will be applied
+              sctcs :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
+              sctcs = let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
+                      in map (\(c,exps) -> (mborigin c, cptBlock (c,exps)))
+              -- | make a block for a c with all its purposes and definitions
+              cptBlock :: (A_Concept, [Purpose]) -> Counter -> [Block]
+              cptBlock (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
+                                    ++ map cdBlock (zip (if length (uniquecds c)==1 then [(cnt,"")] else [ (cnt,'.':show i) | i<-[(1::Int)..]])
                                                         (uniquecds c))
-              cdBlock' :: ((Counter,String),(String,ConceptDef)) -> Block
-              cdBlock' ((cnt,xcnt),(cdnm,cd)) = DefinitionList 
+              -- | make a block for a concept definition
+              cdBlock :: ((Counter,String),(String,ConceptDef)) -> Block
+              cdBlock ((cnt,xcnt),(cdnm,cd)) = DefinitionList 
                                         [( [ Str (case language flags of
                                                                  Dutch   -> "Definitie "
                                                                  English -> "Definition ")
                                            , Str (show (getEisnr cnt)++xcnt)
                                            , Str ":"]
                                          , [ makeDefinition flags (getEisnr cnt,cdnm,cd) ])]
-
-              -- | the origin of c is the origin of the head of uniquecds c
-              --   the integer defines the number of concept defs for c
-              --   after sorting by origin the counters will be applied
-              sctcs :: [(A_Concept, [Purpose])] -> [(Origin, Int, [Counter] -> [Block])]
-              sctcs = let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
-                      in map (\(c,exps) -> (mborigin c, length (uniquecds c), cptBlock (c,exps)))
-              -- | make a block for a c with all its purposes and definitions
-              cptBlock :: (A_Concept, [Purpose]) -> [Counter] -> [Block]
-              cptBlock (c,exps) cnts = concat [amPandoc (explMarkup e) | e<-exps] ++ map cdBlock (zip cnts (uniquecds c))
-              -- | make a block for a concept definition
-              cdBlock :: (Counter,(String,ConceptDef)) -> Block
-              cdBlock (cnt,(cdnm,cd)) = DefinitionList 
-                                        [( [ Str (case language flags of
-                                                                 Dutch   -> "Definitie "
-                                                                 English -> "Definition ")
-                                           , Str (show (getEisnr cnt))
-                                           , Str ":"]
-                                         , [ makeDefinition flags (getEisnr cnt,cdnm,cd) ])]
-
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               sctds :: [Relation] -> [(Origin, Counter -> [Block])]
