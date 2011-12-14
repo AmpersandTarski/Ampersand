@@ -12,6 +12,7 @@ import Data.Maybe
 import Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -49,7 +50,7 @@ isOne o = source (contextOf o) == ONE
 -- | add comments to Maybe sql strings, for example for debugging purposes
 sqlcomment :: Int -> String -> Maybe String -> Maybe String 
 sqlcomment _ _    Nothing   = Nothing
-sqlcomment i cmt (Just sql) = Just ("/* "++cmt++" */"++phpIndent i++sql)
+sqlcomment i cmt (Just sql) = Just ("/* "++addSlashes cmt++" */"++phpIndent i++sql)
 
 {- selectExpr translates an Expression (which is in Ampersand's A-structure) into an SQL expression in textual form.
 -}
