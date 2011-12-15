@@ -562,7 +562,9 @@ function setLogItems($logWindow, $logItems) {
 
 function changeRole() {
   var interface = $('#AmpersandRoot').attr('interface');
-  var atom = $('#AmpersandRoot').attr('atom');
+  var atom = $('#AmpersandRoot').attr('isNew')=='true' ? '' : $('#AmpersandRoot').attr('atom');
+  // need to check for new and use atom='' to generate a new temporary atom, rather than navigate to the non-existing
+  // current temporary atom.
   navigateTo(interface, atom); // navigate to takes the role from the updated selector
 }
 
