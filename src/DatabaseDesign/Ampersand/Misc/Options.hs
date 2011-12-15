@@ -74,11 +74,10 @@ data Options = Options { showVersion   :: Bool
                        , genTime       :: ClockTime
                        , interfacesG   :: Bool
                        , test          :: Bool
-                       , sqlLogPwdDefd :: Bool
                        , pangoFont     :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
-                       , sqlHost       :: String  -- do database queries to the specified host
-                       , sqlLogin      :: String  -- pass login name to the database server
-                       , sqlPwd        :: String  -- pass password on to the database server
+                       , sqlHost       :: Maybe String  -- do database queries to the specified host
+                       , sqlLogin      :: Maybe String  -- pass login name to the database server
+                       , sqlPwd        :: Maybe String  -- pass password on to the database server
                        , forcedParserVersion :: Maybe ParserVersion
                        } deriving Show
     
@@ -126,11 +125,10 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , baseName      = fatal 120 "no default value for baseName."
                       , interfacesG   = False
                       , test          = False
-                      , sqlLogPwdDefd = False
                       , pangoFont     = "Sans"
-                      , sqlHost       = "localhost"
-                      , sqlLogin      = "root"
-                      , sqlPwd        = ""
+                      , sqlHost       = Nothing
+                      , sqlLogin      = Nothing
+                      , sqlPwd        = Nothing
                       , forcedParserVersion = Nothing
                       }
                 
@@ -400,14 +398,11 @@ pangoOpt :: Maybe String -> Options -> Options
 pangoOpt (Just nm) opts             = opts{pangoFont     = nm}
 pangoOpt Nothing  opts              = opts
 sqlHostOpt :: Maybe String -> Options -> Options
-sqlHostOpt (Just nm) opts           = opts{sqlHost       = nm}
-sqlHostOpt Nothing   opts           = opts
+sqlHostOpt mnm opts           = opts{sqlHost       = mnm}
 sqlLoginOpt :: Maybe String -> Options -> Options
-sqlLoginOpt (Just nm) opts          = opts{sqlLogin      = nm, sqlLogPwdDefd=True}
-sqlLoginOpt  Nothing  opts          = opts
+sqlLoginOpt mnm opts          = opts{sqlLogin      = mnm}
 sqlPwdOpt :: Maybe String -> Options -> Options
-sqlPwdOpt (Just nm) opts            = opts{sqlPwd        = nm, sqlLogPwdDefd=True}
-sqlPwdOpt Nothing  opts             = opts
+sqlPwdOpt mnm opts            = opts{sqlPwd        = mnm}
 testOpt :: Options -> Options
 testOpt opts                        = opts{test          = True}
 
