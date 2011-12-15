@@ -13,6 +13,9 @@ import DatabaseDesign.Ampersand_Prototype.Version
 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Generate"
+
 customCssPath :: String
 customCssPath = "css/Custom.css"
 
@@ -56,7 +59,10 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
-         , (table,srcCol,tgtCol) <- sqlRelPlugNames fSpec (ERel rel)]) ++
+         , let (table,srcCol,tgtCol) = case getRelationTableInfo fSpec rel of
+                                         Just tableInfo -> tableInfo
+                                         Nothing        -> fatal 61 $ "No table info for relation "++ show rel
+         ]) ++
   [ ""     -- sqlRelPlugNames may yield multiple results. TODO: also change to maybe?
   , "$conceptTableInfo ="
   , "  array" ] ++

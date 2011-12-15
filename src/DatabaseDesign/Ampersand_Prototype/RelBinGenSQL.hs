@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
- (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,selectExpr,selectExprMorph,selectExprBrac,isOne,isOne'
+ (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,getRelationTableInfo,selectExpr,selectExprMorph,selectExprBrac,isOne,isOne'
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..))
@@ -387,6 +387,15 @@ sqlRelPlugs fSpec e
 
 sqlRelPlugNames :: Fspc -> Expression  -> [(String,String,String)] --(plug,source,target)
 sqlRelPlugNames f e = [(name p,fldname s,fldname t) |(p,s,t)<-sqlRelPlugs f e]
+
+-- return table name and source and target column names for relation rel, or nothing if the relation is not found
+getRelationTableInfo :: Fspc -> Relation -> Maybe (String,String,String)
+getRelationTableInfo fSpec rel = case sqlRelPlugNames fSpec (ERel rel) of
+                                   [plugInfo] -> Just plugInfo
+                                   []         -> Nothing
+                                   plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show rel
+                                   -- TODO: currently this fatal is disabled because some relations return multiple plugs
+                                   --       (see ticket #217)
 
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
