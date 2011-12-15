@@ -179,11 +179,11 @@ rel2fld keyds                                       -- >
     | otherwise = case expr of
                    ERel rel -> not $
                                  isTot rel && 
-                                 (not.null) [()|k<-kernelpaths, target k==source rel, isTot k]
+                                 (not.null) [()|k<-kernelpaths, target k==source rel && isTot k || target k==target rel && isSur k ]
                    EFlp (ERel rel)
                             -> not $ 
                                  isSur rel &&
-                                 (not.null) [()|k<-kernelpaths, target k==source rel, isSur k]
+                                 (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
                    _ -> fatal 152 "Illegal Plug Expression"
    kernelpaths = clos kernel
    --    Warshall's transitive closure algorithm, adapted for this purpose:
