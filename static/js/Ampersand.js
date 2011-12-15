@@ -23,7 +23,7 @@ function startEditing() {
   setEditHandlers();
   traceDbCommands(); // to initialize command list
 
-  clearLogItems($('#IssueList')); // lists are cleared here and in cancelEditing, in case back button causes multiple start or cancel actions
+  clearLogItems($('#ErrorLog')); // lists are cleared here and in cancelEditing, in case back button causes multiple start or cancel actions
   clearLogItems($('#PhpLog'));
 }
 
@@ -47,7 +47,7 @@ function cancelEditing() {
     $('#ScrollPane > .Atom').remove();  
     $('#ScrollPane').append($('#Rollback > .Atom')); // this constitutes a move
     
-    clearLogItems($('#IssueList')); // lists are cleared here and in startEditing, in case back button causes multiple start or cancel actions
+    clearLogItems($('#ErrorLog')); // lists are cleared here and in startEditing, in case back button causes multiple start or cancel actions
     clearLogItems($('#PhpLog'));
     
     $('#AmpersandRoot').attr('editing','false');
@@ -94,9 +94,9 @@ function sendCommands(commandArray) {
     setLogItems($('#PhpLog'), $logMessages);
     
     if ($errors.length + $invariantViolations.length > 0) {
-      setLogItems($('#IssueList'), $invariantViolations);
-      addLogItems($('#IssueList'), $errors);
-      $('#IssueList').attr('minimized','false'); // always maximize window
+      setLogItems($('#ErrorLog'), $invariantViolations);
+      addLogItems($('#ErrorLog'), $errors);
+      $('#ErrorLog').attr('minimized','false'); // always maximize window
     } 
     else
       // after saving a new atom, we go back to the previous page
@@ -251,10 +251,10 @@ function computeDbCommands() {
 }
 
 function traceDbCommands() {
-  clearLogItems($('#DbCommandList'));
+  clearLogItems($('#EditLog'));
   var dbCmds = computeDbCommands();
   for (var i=0; i<dbCmds.length; i++)
-    addLogItems($('#DbCommandList'), $('<div class=Command>'+showDbCommand(dbCmds[i])+'</div>'));
+    addLogItems($('#EditLog'), $('<div class=Command>'+showDbCommand(dbCmds[i])+'</div>'));
 }
 
 

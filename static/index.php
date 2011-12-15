@@ -89,11 +89,11 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        ' dev="'.($isDev?'true':'false').'">';
 
-  echo '<div id=DbCommandList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
-  echo '<div id=IssueList class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
+  echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
+  echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   
   echo '<div id=SignalAndPhpLogs>';
-  echo '<div id=PhpLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
+  echo '<div class=LogWindow id=PhpLog minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
   genSignalLogWindow($roleNr, $roleName);
   echo '</div>';
   
@@ -242,7 +242,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
 
 function genSignalLogWindow($roleNr, $roleName) {
   if ($roleNr >= 0) {
-    echo "<div id=SignalLog class=LogWindow minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
+    echo "<div class=LogWindow id=SignalLog minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
     checkRoleRules($roleNr);
     echo "</div>";
   }
