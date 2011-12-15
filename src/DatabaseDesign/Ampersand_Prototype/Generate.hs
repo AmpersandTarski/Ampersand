@@ -128,33 +128,34 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
   , showPhpStr (name interface) ++" => " ] ++
-  genInterfaceObjects fSpec opts 1 (ifcObj interface) 
+  genInterfaceObjects fSpec opts (ifcParams interface) 1 (ifcObj interface) 
   
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> Options -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec opts depth object = indent (depth*2) $
+genInterfaceObjects :: Fspc -> Options -> [Relation] -> Int -> ObjectDef -> [String]
+genInterfaceObjects fSpec opts editableRels depth object = indent (depth*2) $
   [ "array ( 'name' => "++showPhpStr (name object)
   , "      // adl expression: "++showPhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
   ] ++ case objctx object of
-           ERel r ->        [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
-                            , "      , 'relationIsFlipped' => false" 
-                            ]
-           EFlp (ERel r) -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations
-                            , "      , 'relationIsFlipped' => true" 
-                            ]          
-           _             -> [ "      , 'relation' => ''" 
-                            , "      , 'relationIsFlipped' => ''" 
-                            ]          
+         ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
+                                         , "      , 'relationIsFlipped' => false" 
+                                         ]
+         EFlp (ERel r) | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations
+                                         , "      , 'relationIsFlipped' => true" 
+                                         ]          
+         _             -> [ "      , 'relation' => ''" 
+                          , "      , 'relationIsFlipped' => ''" 
+                          ]          
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (show (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (show (target normalizedInterfaceExp))
   , "      , 'expressionSQL' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'" -- todo give an error for Nothing                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
-  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts $ depth + 1) $ objats object) ++
+  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels $ depth + 1) $ objats object) ++
   [ "      )"
   ]
-  where normalizedInterfaceExp = conjNF $ objctx object
+  where isEditable rel = rel `elem` editableRels
+        normalizedInterfaceExp = conjNF $ objctx object
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $
