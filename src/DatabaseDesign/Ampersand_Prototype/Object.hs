@@ -592,10 +592,6 @@ doPhpGet fSpec objVar depth objIn objOut
 -}
 doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
- | length(objats objOut)==1 && isIdent(objctx objOut)
-   --different query composer is used to prevent NULL in lists of INTERFACE Concepts:I[ONE] = [listOfConcepts:V[ONE*Concept]]
-   && source(objctx objOut)==ONE && isTrue((objctx.head.objats)objOut) = [showsql(SqlSel1(selectdomain fSpec ((target.objctx.head.objats)objOut)))]
- | otherwise
   = ["SELECT DISTINCT " ++ head fieldNames      ]
     ++ map ((++) "     , ")
            (tail fieldNames) 

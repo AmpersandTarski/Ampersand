@@ -24,8 +24,8 @@ import Data.List  (intercalate)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 -- import DatabaseDesign.Ampersand.Version (fatalMsg)
 
--- fatal :: Int -> String -> a
--- fatal = fatalMsg "Basics"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Atlas"
 ------
 dsnatlas::String
 dsnatlas = "DSN=Atlasv2"
@@ -60,15 +60,15 @@ type AtomVal = String
 type CptTbl = [AtomVal]
 type RelTbl = [(AtomVal,AtomVal)]
 selectconcept :: (IConnection conn) => conn -> Fspc -> A_Concept -> IO CptTbl
-selectconcept conn fs cpt
+selectconcept conn fSpec cpt
  = do rows <- quickQuery' conn stmt []
       return [fromSql x |[x]<-rows]
-   where  stmt = showsql$SqlSel1 (selectdomain fs cpt)
+   where  stmt = maybe [] id (selectExprMorph fSpec (-1) "fld1" "fld1" (I cpt))
 selectdecl :: (IConnection conn) => conn -> Fspc -> Relation -> IO RelTbl
-selectdecl conn fs rel
+selectdecl conn fSpec rel
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where  stmt = showsql$SqlSel2 (selectbinary fs rel)
+   where stmt = maybe [] id (selectExprMorph fSpec (-1) "fld1" "fld2" rel)
          
 --create atlas tables for this namespace
 creates :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
