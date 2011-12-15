@@ -36,7 +36,6 @@ phpObjInterfaces fSpec opts =
     
     ; let dbSettingsFilePath = combine targetDir "dbsettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
-    ; putStrLn $ show dbSettingsExists ++ show [sqlHost opts, sqlLogin opts, sqlPwd opts]
     -- we generate a dbsettings.php if it doesn't exists, or if a host, login, or password has been specified
     ; if not dbSettingsExists ||  any (isJust) [sqlHost opts, sqlLogin opts, sqlPwd opts]
       then do { verboseLn opts $ "  Writing dbsettings.php."
