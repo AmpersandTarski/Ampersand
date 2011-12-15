@@ -43,7 +43,7 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
         , "  <ul>"
         , "    <li>Compiled with: "++prototypeVersionStr++"</li>"
         , "    <li>Application name: "++appname++"</li>"
-        , "    <li>Database host: "++(fromMaybe "" $ sqlHost flags)++"</li>"
+        , "    <li>Database host: "++(fromMaybe "localhost" $ sqlHost flags)++"</li>"
         , "    <li>Database Usename / password set: "++ (if (isJust $ sqlLogin flags) || (isJust $ sqlPwd flags) then "YES" else "NO")++"</li>"
         , "    <li>Database name: "++dbName flags++"</li>"
         , "  </ul>"

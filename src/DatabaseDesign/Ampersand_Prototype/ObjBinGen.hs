@@ -75,8 +75,8 @@ phpObjInterfaces fSpec opts =
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = "<?php $DB_link=mysql_connect("
-                 ++  "$DB_host='"++addSlashes (fromMaybe "" $ sqlHost opts)++"'"
-                 ++", $DB_user='"++addSlashes (fromMaybe "" $ sqlLogin opts)++"'"
+                 ++  "$DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
+                 ++", $DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
                  ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd opts)++"'"
                  ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype opts
