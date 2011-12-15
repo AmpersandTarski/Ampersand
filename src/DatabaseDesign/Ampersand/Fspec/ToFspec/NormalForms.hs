@@ -149,8 +149,7 @@ where
                                                     = (ERad (init ue++[ECps (last ue:ks)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
                            | not eq && isEIsc k     = (distribute ECps EIsc isECps isEIsc (ECps (k:ks)), ["distribute /\\ over ;"], "==>")
                            | isEUni k               = (distribute ECps EUni isECps isEUni (ECps (k:ks)), ["distribute \\/ over ;"], "<=>")
---                           | and [isNeg x |x<-k:ks] = (notCpl (ERad [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
--- TODO: introduction of ERad disabled, until SQL generation in RelBinGenSQL is ok
+                           | and [isNeg x |x<-k:ks] = (notCpl (ERad [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
                            | isEUni (last (k:ks))   = (EUni [ECps (init (k:ks)++[t']) |EUni xs<-[last (k:ks)], t'<-xs], ["distribute \\/ over ;"], "<=>")
                            | otherwise              = (if isECps f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
                            where (t,steps, equ')    = nM k []
