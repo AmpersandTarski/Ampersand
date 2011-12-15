@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables#-}
 module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
    import Data.List
+   import Data.Maybe
    import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock)
    import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(isOne)
 --   import System.FilePath (addExtension)
@@ -42,8 +43,8 @@ module DatabaseDesign.Ampersand_Prototype.Index(htmlindex) where
         , "  <ul>"
         , "    <li>Compiled with: "++prototypeVersionStr++"</li>"
         , "    <li>Application name: "++appname++"</li>"
-        , "    <li>Database host: "++sqlHost flags++"</li>"
-        , "    <li>Database Usename / password set: "++(if sqlLogPwdDefd flags then "YES" else "NO")++"</li>"
+        , "    <li>Database host: "++(fromMaybe "" $ sqlHost flags)++"</li>"
+        , "    <li>Database Usename / password set: "++ (if (isJust $ sqlLogin flags) || (isJust $ sqlPwd flags) then "YES" else "NO")++"</li>"
         , "    <li>Database name: "++dbName flags++"</li>"
         , "  </ul>"
         , "  -->"

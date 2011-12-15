@@ -12,6 +12,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
 import DatabaseDesign.Ampersand_Prototype.ContextGen          (contextGen)
 import DatabaseDesign.Ampersand_Prototype.Apps
 import DatabaseDesign.Ampersand_Prototype.Generate            (generateAll)
+import Data.Maybe
 import Control.Monad
 import System.FilePath               
 import System.Directory
@@ -32,8 +33,16 @@ phpObjInterfaces fSpec opts =
     ; verboseLn opts "Generating php Object files with Ampersand"
     ; verboseLn opts "---------------------------"
     ; write "Installer.php"             (installer fSpec opts)
-    ; verboseLn opts "  Writing: dbsettings.php"
-    ; writeFile (combine targetDir "dbsettings.php") dbsettings
+    
+    ; let dbSettingsFilePath = combine targetDir "dbsettings.php"
+    ; dbSettingsExists <- doesFileExist dbSettingsFilePath
+    ; putStrLn $ show dbSettingsExists ++ show [sqlHost opts, sqlLogin opts, sqlPwd opts]
+    -- we generate a dbsettings.php if it doesn't exists, or if a host, login, or password has been specified
+    ; if not dbSettingsExists ||  any (isJust) [sqlHost opts, sqlLogin opts, sqlPwd opts]
+      then do { verboseLn opts $ "  Writing dbsettings.php."
+              ; writeFile dbSettingsFilePath dbsettings
+              }
+      else verboseLn opts $ "  Using existing dbsettings.php."
 
     ; if not $ deprecated opts then
        do { generateAll fSpec opts
@@ -67,9 +76,9 @@ phpObjInterfaces fSpec opts =
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = "<?php $DB_link=mysql_connect("
-                 ++  "$DB_host='"++addSlashes (sqlHost opts)++"'"
-                 ++", $DB_user='"++addSlashes (sqlLogin opts)++"'"
-                 ++", $DB_pass='"++addSlashes (sqlPwd opts)++"'"
+                 ++  "$DB_host='"++addSlashes (fromMaybe "" $ sqlHost opts)++"'"
+                 ++", $DB_user='"++addSlashes (fromMaybe "" $ sqlLogin opts)++"'"
+                 ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd opts)++"'"
                  ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype opts
     ifcs = interfaceS fSpec++ interfaceG fSpec

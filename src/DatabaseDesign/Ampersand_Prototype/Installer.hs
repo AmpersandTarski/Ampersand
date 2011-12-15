@@ -3,6 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Installer
   (installer)
 where
   import Data.List
+  import Data.Maybe
   import DatabaseDesign.Ampersand_Prototype.CoreImporter
   import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
   
@@ -19,7 +20,7 @@ where
         , "  $included = false; // get user/pass elsewhere"
         , "  if(file_exists(\"dbsettings.php\")) include \"dbsettings.php\";"
         , "  else { // no settings found.. try some default settings"
-        , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (sqlHost flags)++"',$DB_user='"++addSlashes (sqlLogin flags)++"',$DB_pass='"++addSlashes (sqlPwd flags)++"')))"
+        , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (fromMaybe "" $ sqlHost flags)++"',$DB_user='"++addSlashes (fromMaybe "" $ sqlLogin flags)++"',$DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"')))"
         , "    { // we still have no working settings.. ask the user!"
         , "      die(\"Install failed: cannot connect to MySQL\"); // todo" --todo
         , "    }"
