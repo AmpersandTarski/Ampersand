@@ -91,8 +91,10 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
              | src `isPrefixOf` st = dst ++ process (drop n st)
              | otherwise           = c:process cs
    
-   phpIndent :: Int -> [Char]
-   phpIndent i = "\n"++take i (repeat ' ')
+   phpIndent :: Int -> [Char] 
+   phpIndent i 
+    | i < 0     = " " --space instead of \n
+    | otherwise = "\n"++take i (repeat ' ')
 
    -- | guarantees a valid identifier name. The function is NOT injective! 
    phpIdentifier :: String -> String

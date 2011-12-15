@@ -55,7 +55,7 @@ where
          then
           [ "      <a HREF=\"ctxAtlas.php?content=Atlas&Atlas="
                 ++head([ x |c<-concs fspc,name c=="Context",x<-cptos' c]++[error "Bug at line 52 of InterfaceDef.hs"])
-                ++"\" TITLE=\"Functies die u kunt uitvoeren op de huidige context\" class=\"menuItem\" >Acties</a>"
+                ++"\" TITLE=\"Functies die u kunt uitvoeren op de huidige context\" class=\"menuItem\" >Rapportage</a>"
           , "      <a HREF=\"ctxAtlas.php?content=Meterkast&Meterkast="++namespace flags
                 ++"\" TITLE=\"Overzicht van uw eerder geladen Ampersand scripts\" class=\"menuItem\" >Bestandsoverzicht</a>"
           , "      <a HREF=\"../../index.php?file="++importfile flags

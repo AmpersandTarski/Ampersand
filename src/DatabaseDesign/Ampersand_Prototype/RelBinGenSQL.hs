@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
- (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,selectExpr,selectExprBrac,isOne,isOne',InPlug(..),showsql,SqlSelect(..)
+ (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,selectExpr,selectExprMorph,selectExprBrac,isOne,isOne',InPlug(..),showsql,SqlSelect(..)
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..))

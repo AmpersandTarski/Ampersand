@@ -166,7 +166,7 @@ generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec = 
     sequence_ 
        ([ verboseLn     opts "Generating..."]++
-        [ doGenProto    (protonm fSpec) opts | genPrototype opts] ++
+        [ doGenProto    protonm opts | genPrototype opts] ++
         --interfacesG opts has a different meaning than in ampersand
         --in prototype it means export the DB of the prototype to .adl file
         [ exportProto  fSpec opts | interfacesG    opts] ++ 
@@ -175,7 +175,9 @@ generateProtoStuff opts fSpec =
         [ verboseLn opts "Done."]  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
        ) 
    where  
-   protonm fs = rename fs ("ctx" ++ name fs) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
+   protonm 
+     | deprecated opts = rename fSpec ("ctx" ++ name fSpec) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
+     | otherwise = fSpec
 
 exportProto :: Fspc -> Options -> IO ()
 exportProto fSpec opts =
