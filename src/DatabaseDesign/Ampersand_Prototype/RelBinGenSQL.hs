@@ -249,7 +249,7 @@ selectExpr fSpec i src trg (ERad es)   = sqlcomment i ("case: ERad es@(_:_:_)"++
 selectExpr fSpec i src trg (ETyp x _)  = sqlcomment i ("case: ETyp x _"++phpIndent (i+3)++"ETyp ( \""++showADL x++"\" ) _") $
                                          selectExpr fSpec i src trg x
 selectExpr fSpec i src trg (EFlp x)    = sqlcomment i ("case: EFlp x.") $
-                                         selectExpr fSpec i src trg x
+                                         selectExpr fSpec i trg src x
 selectExpr fSpec i src trg (EDif (ERel V{},x)) = sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" )") $
                                                  selectExpr fSpec i src trg (ECpl x) 
 --selectExpr _     _ _   _   x           = fatal 332 ("Cannot create query for "++showADL x)
