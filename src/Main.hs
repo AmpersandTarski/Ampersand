@@ -205,7 +205,7 @@ doGenProto fSpec opts =
 
 
 ruleTest :: Fspc -> Options -> String -> IO ()
-ruleTest fSpec opts ruleName =
+ruleTest fSpec _ ruleName =
  do { case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
         [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found." 
         (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
