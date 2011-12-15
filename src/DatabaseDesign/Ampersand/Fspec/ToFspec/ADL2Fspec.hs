@@ -949,7 +949,7 @@ Chc [ if isRel e
           (Del, EUni fs)   -> All [ genPAcl deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, EIsc fs)   -> Chc [ genPAcl deltaX Del f motiv | f<-fs ] motiv
 -- Op basis van de Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , ERad ts)   -> genPAcl deltaX tOp (ECpl (ECps (map ECpl ts))) motiv
+          (_  , ERad ts)   -> genPAcl deltaX tOp (ECpl (ECps (map notCpl ts))) motiv
           (_  , EPrd _)    -> fatal 745 "TODO"
           (_  , EKl0 x)    -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x)    -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
