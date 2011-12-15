@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..)) 
 where
+   import DatabaseDesign.Ampersand.Core.ParseTree
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
    import Prelude hiding (Ord(..))
@@ -8,11 +9,11 @@ where
    import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
    import DatabaseDesign.Ampersand.ADL1.Prop                    (Prop(..))
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
-   import DatabaseDesign.Ampersand.Core.ParseTree               (Paire)
    import DatabaseDesign.Ampersand.ADL1.Expression              (flp)
    import DatabaseDesign.Ampersand.ADL1.Concept                 (cptos')
    import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
    import DatabaseDesign.Ampersand.Basics                       (fatalMsg, Collection(..), Identified(..))
+   import DatabaseDesign.Ampersand.Misc.Explain
    import Data.List
    
    fatal :: Int -> String -> a
@@ -62,7 +63,10 @@ where
      = Ru { rrnm        = name key
           , rrexp       = EImp (EIsc [ECps [attexpr,flp attexpr] | attexpr<-[objctx att |att<-kdats key]], ERel (I c))           -- the antecedent
           , rrfps       = origin key     -- position in source file
-          , rrmean      = fatal 65 "A rule, derived from a key, without meaning??"
+          , rrmean      = AMeaning 
+                          [ A_Markup English ReST (string2Blocks ReST "TODO: formulate meaning for KEY")
+                          , A_Markup Dutch ReST (string2Blocks ReST "TODO: formuleer betekenis voor KEY")
+                          ]
           , rrtyp       = Sign c c       -- The type
           , rrdcl       = Nothing        -- This rule was not generated from a property of some declaration.
           , r_env       = ""             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
@@ -75,7 +79,10 @@ where
                                , decprL  = ""
                                , decprM  = ""
                                , decprR  = ""
-                               , decMean = fatal 78 "A rule, derived from a key, without meaning??"
+                               , decMean = AMeaning 
+                                           [ A_Markup English ReST (string2Blocks ReST "TODO: formulate meaning for KEY")
+                                           , A_Markup Dutch ReST (string2Blocks ReST "TODO: formuleer betekenis voor KEY")
+                                           ]
                                , decpopu = []
                                , decfpos = origin key
                                , deciss  = False
