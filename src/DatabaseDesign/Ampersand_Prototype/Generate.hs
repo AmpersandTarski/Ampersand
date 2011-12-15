@@ -10,7 +10,6 @@ import Control.Monad
 import System.FilePath
 import System.Directory               
 import DatabaseDesign.Ampersand_Prototype.Version 
-
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 
 fatal :: Int -> String -> a
@@ -102,7 +101,10 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            ] ++
            (if development opts then -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                      -- php/Database.php?testRule=RULENAME
-           [ "        , 'contentsSQL' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ conjNF . rrexp $ rule)++"'"] 
+           [ "        , 'contentsSQL' => '"++ case conjNF . rrexp $ rule of
+                                                EIsc [] -> "/* EIsc [], not handled by selectExpr */'"
+                                                ECps [] -> "/* EIsc [], not handled by selectExpr */'"
+                                                contentsExpr -> fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ contentsExpr)++"'"] 
               else []) ++
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
