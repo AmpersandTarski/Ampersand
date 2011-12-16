@@ -8,7 +8,7 @@ import Data.List  hiding (group)
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL 
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,addToLast,phpIdentifier,quote)
 import DatabaseDesign.Ampersand_Prototype.Version 
 
 fatal :: Int -> String -> a
@@ -677,8 +677,8 @@ doSqlGet fSpec isArr objIn objOut
                      ++
                      [if isIdent (objctx a)
                       then "'\".addslashes("++name (objIn)++").\"'"++" AS `"++name a++"`"
-                      else "`f"++(show n)++"`.`"++sqlExprTrg fSpec (objctx a)++"`" ++
-                           (if name a == sqlExprTrg fSpec (objctx a)
+                      else "`f"++(show n)++"`."++sqlExprTrg fSpec (objctx a) ++
+                           (if quote(name a) == sqlExprTrg fSpec (objctx a)
                             then []
                             else " AS `"++name a++"`")
                      |(a,n)<-rest]
@@ -705,8 +705,8 @@ doSqlGet fSpec isArr objIn objOut
       |(gr@(_,(a,f)),_)<-comboGroups]
       ++
       [ (r
-         ,"`f"++(show n)++"`.`"++(sqlExprSrc fSpec (objctx a))++
-          "`='\".addslashes("++name (objIn)++").\"'"
+         ,"`f"++(show n)++"`."++(sqlExprSrc fSpec (objctx a))++
+          "='\".addslashes("++name (objIn)++").\"'"
          )
       | (a,n)<-rest
       , not (isIdent (objctx a)) --do not join on fldexpr of kernelfields in the same plug

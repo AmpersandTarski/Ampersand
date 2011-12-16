@@ -170,8 +170,7 @@ selectExpr fSpec i src trg (ECps es@(e:ERel (V _):f:fx)) -- prevent calculating 
                trg' = noCollideUnlessTm' (ECps (f:fx)) [mid2'] (sqlExprTrg fSpec (ECps (f:fx)))
 selectExpr fSpec i src trg (ECps    [e]       ) = selectExpr fSpec i src trg e
 selectExpr fSpec i src trg (ECps es)  -- in this case, it is certain that there are at least two elements in es.
- = Just$
-   "/* case: (ECps es), with two or more elements in es."++phpIndent (i+3)++"ECps "++show (map showADL es)++" */"++phpIndent i++
+ = sqlcomment i ("case: (ECps es), with two or more elements in es."++phpIndent (i+3)++"ECps "++show (map showADL es)) $ Just $ phpIndent i++
    selectClause ++phpIndent i++
    fromClause   ++phpIndent i++
    whereClause 
@@ -499,7 +498,7 @@ sqlPlugFields p e'
   replF ks = ECps (ks)
   -----------------
   
--- | sqlExprSrc gives the SQL-string that serves as the attribute name in SQL.
+-- | sqlExprSrc gives the quoted SQL-string that serves as the attribute name in SQL.
 --   we want it to show the type, which is useful for readability. (Otherwise, just "SRC" and "TRG" would suffice)
 --   It is not clear why the recursion over expressions is repeated here...
 --   WHY not ask for the type of the expression and assemble a nice name? (TODO)
@@ -549,6 +548,7 @@ sqlExprSrc fSpec expr = quote (ses expr)  -- The quotes are added just in case t
                       V{} -> ses (ERel I{rel1typ=target r})
                       _ -> head ([t |(_,_,t)<-sqlRelPlugNames fSpec (ERel r)]++[show r])
    ses (EFlp e)     = ses (flp e)
+-- | sqlExprTrg gives the quoted SQL-string that serves as the attribute name in SQL.
 sqlExprTrg :: Fspc->Expression -> String
 sqlExprTrg fSpec e = sqlExprSrc fSpec (flp e)
 
