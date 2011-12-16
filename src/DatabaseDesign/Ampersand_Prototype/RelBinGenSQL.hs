@@ -12,6 +12,7 @@ import Data.Maybe
 import Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
+import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -207,11 +208,13 @@ selectExpr fSpec i src trg (ECps es)  -- in this case, it is certain that there 
 
 selectExpr fSpec i src trg (ERel (V (Sign s t))   ) 
  = sqlcomment i ("case: (ERel (V (Sign s t)))"++phpIndent (i+3)++"ERel [ \""++showADL (V (Sign s t))++"\" ]") $
-   listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
-               | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
-               , (t',trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
-               , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
-               ]
+   case [selectGeneric i (src',src) (trg',trg) tbls "1"
+        | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
+        , (t',trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
+        , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
+        ] of
+     []    -> fatal 216 $ "Problem in selectExpr (ERel (V (Sign \""++show s++"\" \""++show t++"\")))"
+     sql:_ -> Just sql 
  where concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (ERel (I c))]
 
 selectExpr fSpec i src trg (ERel (I ONE)) = sqlcomment i "I[ONE]"$ selectExpr fSpec i src trg (ERel (V (Sign ONE ONE)))
@@ -328,7 +331,7 @@ selectExprMorph :: Fspc
                 -> Maybe String
 
 selectExprMorph fSpec i src trg rel@V{}
- = selectGeneric i (src',src) (trg',trg)
+ = traceShow ("Rel"++show src++show trg) $ selectGeneric i (src',src) (trg',trg)
                    (sqlConcept fSpec (source rel) +++ " AS vfst, "++sqlConcept fSpec (target rel)++ " AS vsnd")
                    (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
  where src'="vfst."++sqlAttConcept fSpec (source rel)
