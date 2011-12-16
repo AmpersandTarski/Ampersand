@@ -611,12 +611,13 @@ where
     showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
    instance ShowHS Rule where
-    showHS flags indent r   
+    showHS flags indent r@(Ru nm exp fps mean msg typ dcl env usr sgl rel)
       = intercalate indent 
         ["Ru{ rrnm   = " ++ show (rrnm r)
         ,"  , rrexp  = ("++ showHS flags "" (rrexp r)++")"
         ,"  , rrfps  = ("++ showHS flags "" (rrfps r)++")"
         ,"  , rrmean = " ++ showHS flags "" (rrmean r)
+        ,"  , rrmsg = " ++ showHS flags "" (rrmsg r)
         ,"  , rrtyp  = " ++ showHS flags "" (rrtyp r)
         ,"  , rrdcl  = " ++ case rrdcl r of
                             Nothing   -> "Nothing"

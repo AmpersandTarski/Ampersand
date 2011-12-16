@@ -34,7 +34,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "TEST"
-                       , "RELATION", "MEANING", "CONCEPT", "KEY"
+                       , "RELATION", "MEANING", "MESSAGE", "CONCEPT", "KEY"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
@@ -276,24 +276,30 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pMeaning          = rebuild <$ pKey "MEANING" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
                         where rebuild lang fmt mkup =
                                  PMeaning (P_Markup lang fmt mkup)
+
    pGen             :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    pRule            :: Parser Token P_Rule
-   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pList pMeaning <|>
-                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> pList pMeaning
+   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pList pMeaning <*> pList pMessage <|>
+                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> pList pMeaning <*> pList pMessage
                        where
                         --rnn -> rnm with generated name (rulid po)
                         rnn po = rnm po (rulid po)
                         rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
                         rulid _ = fatal 226 "rulid is expecting a file location."
-                        rnm po lbl rexp mean
+                        rnm po lbl rexp mean msg
                           = P_Ru { rr_nm  = lbl
                                  , rr_exp = rexp
                                  , rr_fps = po
                                  , rr_mean = mean
+                                 , rr_msg = msg
                                  }
+                                 
+   pMessage         :: Parser Token P_Markup
+   pMessage          = P_Markup <$ pKey "MESSAGE" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
+
 
 {-  Basically we would have the following expression syntax:
 pExpr ::= pExp1   "="    pExp1                           |

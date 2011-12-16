@@ -184,6 +184,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
        , rrexp = aexpr                      -- The rule expression
        , rrfps = rr_fps prul                -- Position in the Ampersand file
        , rrmean = meanings (rr_mean prul)   -- Ampersand generated explanations (for all known languages)
+       , rrmsg = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) $ rr_msg prul
        , rrtyp = sign aexpr                 -- Allocated type
        , rrdcl = Nothing                    -- The property, if this rule originates from a property on a Declaration
        , r_env = patname                    -- Name of pattern in which it was defined.
