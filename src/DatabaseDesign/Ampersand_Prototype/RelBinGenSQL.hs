@@ -59,9 +59,14 @@ selectExpr ::    Fspc       -- current context
               -> String     -- SQL name of the target of this expression, as assigned by the environment
               -> Expression -- expression to be translated
               -> Maybe String     -- resulting SQL expression
--- quote the attributes, in order to allow column names that happen to be SQL reserved words (such as "Right", "as", etc.).
-selectExpr fSpec i src@(_:_) trg       e | head src /= '`' = selectExpr fSpec i ('`':src++"`") trg            e
-selectExpr fSpec i src       trg@(_:_) e | head trg /= '`' = selectExpr fSpec i src            ('`':trg++"`") e
+-- In order to translate all Expressions, code generators have been written for EUni ( \/ ), EIsc ( /\ ), EFlp ( ~ ), ECpl (unary - ), and ECps ( ; ),
+-- each of which is supposed to generate correct code in 100% of the cases. (TODO: how do we establish that properly?)
+-- The other operators, EEqu ( = ), EImp ( |- ), ERad ( ! ), EPrd ( * ), ELrs ( / ), and ERrs ( \ ), have been implemented in terms of the previous ones,
+-- in order to prevent mistakes in the code generator. It is possible that more efficient code may be generated in these cases.
+-- Special cases are treated up front, so they will overrule the more general cases.
+-- That allows more efficient code while retaining correctness and completeness as much as possible.
+-- Code for the Kleene operators EKl0 ( * ) and EKl1 ( + ) is not done, because this cannot be expressed in SQL.
+-- These operators must be eliminated from the Expression before using selectExpr, or else you will get fatals.
 
 --TODO
 selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
@@ -134,6 +139,9 @@ selectExpr fSpec i src trg (EIsc [e]) = sqlcomment i ("case: (EIsc [e])"++phpInd
 -- Why not return Nothing?
 -- Reason: EIsc [] should not occur in the query at all! If it does, we have made a mistake earlier.
 selectExpr _     _ _   _   (EIsc [] ) = fatal 123 "Cannot create query for EIsc [] because it is wrong"
+selectExpr _ i src trg (EUni [] ) = sqlcomment i "EUni []"$ toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
+selectExpr fSpec i src trg (EUni es') = sqlcomment i ("case: EUni es"++phpIndent (i+3)++"EUni "++show (map showADL es')) $
+                                        "(" +++ (selectExprInUnion fSpec i src trg (EUni es')) +++ (phpIndent i) ++ ")"
 selectExpr _     _ _   _   (ECps [] ) = fatal 140 "Cannot create query for ECps [] because it is wrong"
 selectExpr fSpec i src trg (ECps es@(ERel (V (Sign ONE _)):fs@(_:_)))
   = sqlcomment i ("case: (ECps (ERel (V (Sign ONE _)):fs@(_:_)))"++phpIndent (i+3)++"ECps  "++show (map showADL es)) $
@@ -174,35 +182,37 @@ selectExpr fSpec i src trg (ECps es)  -- in this case, it is certain that there 
    selectClause ++phpIndent i++
    fromClause   ++phpIndent i++
    whereClause 
-{-  De ECps gedraagt zich als een join. Het is dus zaak om enigszins efficiente code te genereren.
-    Dat doen we door de complement-operatoren van de elementen uit es te betrekken in de codegeneratie.
-    De concepten in es noemen we c0, c1, ... cn (met n de lengte van es)
-    De elementen in es zelf noemen we F0, F1, ... ECps(n-1).
-    Deze namen worden aangehouden in de SQL-aliasing. Dat voorkomt naamconflicten op een wat ruwe manier, maar wel overzichtelijk en effectief.
+{-  The ECps is treated as poles-and-fences.
+    Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
+    In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
+    The "outer poles" correspond to the source and target of the entire expression.
+    To prevents name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
 -}
    where mainSrc = "ECps0."++selectSelItem (sqlSrc,src)
-                   where (_,_,sqlSrc,_) = head fenceExps
+                   where (_,_,sqlSrc,_) = head fenceExprs
          mainTrg = "ECps"++show (length es-1)++"."++selectSelItem (sqlTrg,trg) 
-                   where (_,_,_,sqlTrg) = last fenceExps
+                   where (_,_,_,sqlTrg) = last fenceExprs
          selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTrg
-         fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExps ]
+         fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExprs ]
          whereClause
                  = "WHERE " ++ intercalate (phpIndent i++"  AND ")
                    [ "ECps"++show n++"."++lSQLtrg++"=ECps"++show (n+1)++"."++rSQLsrc
-                   | ((n,_,_,lSQLtrg),(_,_,rSQLsrc,_))<-zip (init fenceExps) (tail fenceExps)
+                   | ((n,_,_,lSQLtrg),(_,_,rSQLsrc,_))<-zip (init fenceExprs) (tail fenceExprs)
                    ]
          -- fenceExprs lists the expressions and their SQL-fragments.
          -- In the poles-and-fences metaphor, they serve as the fences between the poles.
-         fenceExps = [ ( n                                                                                -- the serial number of this fence (in between poles n and n+1)
-                       , sqlExpr ++ " AS ECps"++show n
-                       , srcAtt
-                       , trgAtt
-                       )
-                     | (n, expr) <- zip [(0::Int)..] es
-                     , srcAtt<-[sqlExprSrc fSpec expr]
-                     , trgAtt<-[noCollideUnlessTm' expr [srcAtt] (sqlExprTrg fSpec expr)]
-                     , let Just sqlExpr = selectExprBrac fSpec i srcAtt trgAtt expr
-                     ]
+         fenceExprs = [ ( n                                                                                -- the serial number of this fence (in between poles n and n+1)
+                        , sqlExpr ++ " AS ECps"++show n
+                        , srcAtt
+                        , trgAtt
+                        )
+                      | (n, expr) <- zip [(0::Int)..] es
+                      , srcAtt<-[sqlExprSrc fSpec expr]
+                      , trgAtt<-[noCollideUnlessTm' expr [srcAtt] (sqlExprTrg fSpec expr)]
+                      , let Just sqlExpr = selectExprBrac fSpec i srcAtt trgAtt expr
+                      ]
+selectExpr fSpec i src trg (EFlp x)    = sqlcomment i ("case: EFlp x.") $
+                                         selectExpr fSpec i trg src x
 
 selectExpr fSpec i src trg (ERel (V (Sign s t))   ) 
  = sqlcomment i ("case: (ERel (V (Sign s t)))"++phpIndent (i+3)++"ERel [ \""++showADL (V (Sign s t))++"\" ]") $
@@ -220,11 +230,6 @@ selectExpr fSpec i src trg (ERel (I ONE)) = sqlcomment i "I[ONE]"$ selectExpr fS
 selectExpr fSpec i src trg (ERel mrph) = selectExprMorph fSpec i src trg mrph
 selectExpr fSpec i src trg (EBrk expr) = selectExpr fSpec i src trg expr
 
- --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
- --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
-selectExpr _ i src trg (EUni [] ) = sqlcomment i "EUni []"$ toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
-selectExpr fSpec i src trg (EUni es') = sqlcomment i ("case: EUni es"++phpIndent (i+3)++"EUni "++show (map showADL es')) $
-                                        "(" +++ (selectExprInUnion fSpec i src trg (EUni es')) +++ (phpIndent i) ++ ")"
 selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment i "case: ECpl (ERel (V _))"$ selectExpr fSpec i src trg (EUni [])
 selectExpr fSpec i src trg (ECpl e )
    = sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl [ \""++showADL e++"\" ]") $
@@ -243,16 +248,39 @@ selectExpr _ i _ _ (EKl0 _)
    = sqlcomment i "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
 selectExpr _ i _ _ (EKl1 _)
    = sqlcomment i "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
+selectExpr fSpec i src trg (EDif (ERel V{},x)) = sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" )") $
+                                                 selectExpr fSpec i src trg (ECpl x) 
+
+-- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
+-- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
+selectExpr fSpec i src trg (EEqu (l,r))
+ =  sqlcomment i ("case: (EEqu (l,r))"++phpIndent (i+3)++"EEqu ("++showADL l++", "++showADL r++")") $
+    selectExpr fSpec i src trg (EIsc [EUni [ECpl l,r],EUni [ECpl r,l]])
+selectExpr fSpec i src trg (EImp (l,r))
+ =  sqlcomment i ("case: (EImp (l,r))"++phpIndent (i+3)++"EImp ("++showADL l++", "++showADL r++")") $
+    selectExpr fSpec i src trg (EUni [ECpl l,r])
+selectExpr fSpec i src trg (EDif (l,r))
+ =  sqlcomment i ("case: (EDif (l,r))"++phpIndent (i+3)++"EDif ("++showADL l++", "++showADL r++")") $
+    selectExpr fSpec i src trg (EIsc [l,ECpl r])
+selectExpr fSpec i src trg (ERrs (l,r))
+ =  sqlcomment i ("case: (ERrs (l,r))"++phpIndent (i+3)++"ERrs ("++showADL l++", "++showADL r++")") $
+    selectExpr fSpec i src trg (ERad [ECpl (EFlp l),r])
+selectExpr fSpec i src trg (ELrs (l,r))
+ =  sqlcomment i ("case: (ELrs (l,r))"++phpIndent (i+3)++"ELrs ("++showADL l++", "++showADL r++")") $
+    selectExpr fSpec i src trg (ERad [l,ECpl (EFlp r)])
 selectExpr _     _ _   _   (ERad [] )  = fatal 310 "Cannot create query for ERad []. This should never occur."
 selectExpr fSpec i src trg (ERad [e])  = selectExpr fSpec i src trg e
 selectExpr fSpec i src trg (ERad es)   = sqlcomment i ("case: ERad es@(_:_:_)"++phpIndent (i+3)++"ERad "++show (map showADL es)) $
                                          (selectExpr fSpec i src trg . ECpl . ECps . map notCpl) es
+selectExpr _     _ _   _   (EPrd [] )  = fatal 310 "Cannot create query for ERad []. This should never occur."
+selectExpr fSpec i src trg (EPrd [e])  = selectExpr fSpec i src trg e
+selectExpr fSpec i src trg (EPrd es)   = sqlcomment i ("case: EPrd es@(_:_:_)"++phpIndent (i+3)++"EPrd "++show (map showADL es)) $
+                                         selectExpr fSpec i src trg (ECps [l,v,r])
+                                         where l = head es
+                                               r = last es
+                                               v = ERel (V (Sign (target l) (source r)))
 selectExpr fSpec i src trg (ETyp x _)  = sqlcomment i ("case: ETyp x _"++phpIndent (i+3)++"ETyp ( \""++showADL x++"\" ) _") $
                                          selectExpr fSpec i src trg x
-selectExpr fSpec i src trg (EFlp x)    = sqlcomment i ("case: EFlp x.") $
-                                         selectExpr fSpec i trg src x
-selectExpr fSpec i src trg (EDif (ERel V{},x)) = sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" )") $
-                                                 selectExpr fSpec i src trg (ECpl x) 
 --selectExpr _     _ _   _   x           = fatal 332 ("Cannot create query for "++showADL x)
 
 -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
