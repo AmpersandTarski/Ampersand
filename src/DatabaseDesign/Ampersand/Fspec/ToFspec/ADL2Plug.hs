@@ -33,87 +33,44 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 --           Then r can be found in a wide table plug (TblSQL) with a list of two columns [I[A],r], 
 --           and not in a BinSQL with a pair of columns (I/\r;r~, r)
 --
--- a relation r (or r~) is stored in this plug
--- the domain of r is stored in the first column with fldexpr=I/\r;r~
--- the codomain of r is stored in the second column with fldexpr=r
--- REMARK -> NULL is not an element of the domain or codomain of r i.e. fldnull=False for both columns
---
--- a total property of r (or r~) implies that the domain of r equals the domain of I[source r] i.e. I/\r;r~ = I
--- Thus, this plug can be used to lookup concept (source r) 
--- REMARK -> whether the total property holds is decided by multiplicities r and totals, where totals is a function in ADL2Fspec
---
--- REMARK -> fldtype is set by the constructor function field
--- REMARK -> because r cannot be INJ or UNI, r must be a BinSQL and cannot be a ScalarSQL or TblSQL
--- REMARK -> a BinSQL has the same meaning as a TblSQL with mLkpTbl=[(r,fld1,fld2)]
---  i.e. fldexpr fld2 holds the relation from fld1 to fld2, which is r
---       and the rule (fldexpr fld1)~;(fldexpr fld1);r = r holds (see comments rel2fld)
---  to get this meaning, fld1 and fld2 cannot be constructed with rel2fld, because fld1 is not a kernel field!
---  let id::(source r)->(source r)[INJ] such that id=I /\ r;r~:
---  + fld1={fldexpr=id,fldnull=not(isTot r),flduniq=isInj r}
---  + fld2={fldexpr=r ,fldnull=not(isTot (id;r) ,flduniq=isInj (id;r)}
---  if isTot r then id=I else not(isSur id)
+-- a relation r (or r~) is stored in the trgFld of this plug
 rel2plug :: Relation -> [Expression] -> PlugSQL
 rel2plug  r totals
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
-  | not is_Tot && is_Sur
-    = BinSQL { sqlname = name r
-             , columns = (trgFld,srcFld)
-             , cLkpTbl = [(target r,trgFld)| is_Sur]
-             , mLkp    = srcExpr
-             , sqlfpa  = NO
-             }
   | otherwise
     = BinSQL { sqlname = name r
              , columns = (srcFld,trgFld)
-             , cLkpTbl = [(source r,srcFld)| is_Tot]++[(target r,trgFld)| is_Sur]
+             , cLkpTbl = [] --in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
              , mLkp    = trgExpr
              , sqlfpa  = NO
              }
    where
-   is_Tot = Tot `elem` multiplicities r || ERel r `elem` totals
-   is_Sur = Sur `elem` multiplicities r || EFlp (ERel r) `elem` totals
-   srcNm = (if isEndo r then "s" else "")++name (source r)
-   trgNm = (if isEndo r then "t" else "")++name (target r)
+   r_is_Tot = Tot `elem` multiplicities r || ERel r `elem` totals
+   r_is_Sur = Sur `elem` multiplicities r || EFlp (ERel r) `elem` totals
+   srcNm = (if isEndo r then "s" else "")++name (source trgExpr)
+   trgNm = (if isEndo r then "t" else "")++name (target trgExpr)
    --the expr for the source of r
-   srcExpr = if   is_Tot
+   srcExpr = if   r_is_Tot
              then ERel (I (source r)) 
-             else if is_Sur
-                  then EFlp (ERel r)
+             else if r_is_Sur
+                  then ERel (I (target r))
                   else EIsc [ERel (I (source r)),ECps [ERel r,flp (ERel r)]]
    --the expr for the target of r
    trgExpr 
-    | not is_Tot && is_Sur = ERel (I (target r))
+    | not r_is_Tot && r_is_Sur = EFlp (ERel r)
     | otherwise            = ERel r 
-   srcFld
-    | not is_Tot && is_Sur = 
-            Fld { fldname = trgNm                       
-                , fldexpr = trgExpr
-                , fldtype = makeSqlType (target trgExpr)
-                , fldnull = False
-                , flduniq = isInj r {- will be False -}
-                }
-    | otherwise = 
-            Fld { fldname = srcNm                       
+   srcFld = Fld { fldname = srcNm                       
                 , fldexpr = srcExpr
                 , fldtype = makeSqlType (target srcExpr)
-                , fldnull = False
-                , flduniq = isUni r {- will be False -}
+                , fldnull = isTot trgExpr
+                , flduniq = isUni trgExpr
                 } 
-   trgFld
-    | not is_Tot && is_Sur =
-            Fld { fldname = srcNm                       
-                , fldexpr = srcExpr 
-                , fldtype = makeSqlType (target srcExpr)
-                , fldnull = False
-                , flduniq = isUni r {- will be False -}
-                } 
-    | otherwise  =
-            Fld { fldname = trgNm                       
+   trgFld = Fld { fldname = trgNm                       
                 , fldexpr = trgExpr
                 , fldtype = makeSqlType (target trgExpr)
-                , fldnull = False
-                , flduniq = isInj r {- will be False -}
+                , fldnull = isSur trgExpr
+                , flduniq = isInj trgExpr
                 } 
 
 -----------------------------------------
