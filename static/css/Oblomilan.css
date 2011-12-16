@@ -60,6 +60,7 @@ button.Button:hover {
     border-bottom-width: 1px;
     border-bottom-style: dotted; /* only specifying the width does not reserve space for the border */
     border-bottom-color: transparent; /* so we switch it on and off with the color */
+    height: 16px; /* not great to have a fixed height, but otherwise the label height alternates slightly because of yet unknown reasons */
 }
 
 /* AtomName for atoms without subinterfaces (atomic=true) */
@@ -116,7 +117,7 @@ button.Button:hover {
 
 /* DeleteStub */
 [editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
-  	background-position: 3px 3px;
+  	background-position: 3px 4px;
   	width: 22px;
 }
 [editing=true] .AtomList[relation] { /* in this case, the delete stub will serve as the padding */
