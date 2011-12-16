@@ -333,7 +333,8 @@ where
       P_Ru { rr_nm    :: String             -- ^ Name of this rule
            , rr_exp   :: P_Expression       -- ^ The rule expression 
            , rr_fps   :: Origin             -- ^ Position in the Ampersand file
-           , rr_mean  :: [PMeaning]         -- ^ User specified meanings, possibly more than one, for multiple languages.
+           , rr_mean  :: [PMeaning]         -- ^ User-specified meanings, possibly more than one, for multiple languages.
+           , rr_msg   :: [P_Markup]         -- ^ User-specified violation messages, possibly more than one, for multiple languages.
            }
    instance Traced P_Rule where
     origin = rr_fps
