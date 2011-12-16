@@ -1,5 +1,5 @@
 var autoRefresh = false;
-var refreshInterval = 1*1000;
+var refreshInterval = 4*1000;
 
 function initialize() {
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
@@ -609,8 +609,14 @@ function checkDbUpdates() {
               $('#ScrollPane > .Atom').remove();  
               $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
   
+              $signals = $(data).find('#ProcessRuleResults > .AmpersandErr');
+              setLogItems($('#SignalLog'), $signals);
+
               $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );  
               
+              $signals = $(data).find('#SignalLog > .AmpersandErr');
+              setLogItems($('#SignalLog'), $signals);
+
               initializeAtoms();   
               startRefreshTimer();
               markDifference($('#ScrollPane > .Atom'), $oldRootAtom);
