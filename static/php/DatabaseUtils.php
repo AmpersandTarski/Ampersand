@@ -67,7 +67,7 @@ function addAtomToConcept($newAtom, $concept) {
     $conceptColEsc = escapeSQL($conceptCol);
     $newAtomEsc = escapeSQL($newAtom);
 
-    $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"));
+    $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
     
     if (!in_array($newAtom, $existingAtoms))
       DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtomEsc')");
