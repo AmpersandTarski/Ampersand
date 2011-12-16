@@ -277,11 +277,13 @@ body {
 }
 .LogWindow>.MinMaxButton { /* not a button but an icon */
   float: right;
+  cursor: pointer; /* because we can click to minimize/maximize */
 }
 .LogWindow>.Title {
     color: black;
     font-weight: bold;
     margin-bottom: 3px;
+    cursor: pointer; /* because we can click to minimize/maximize */ 
 }
 .LogWindow>.LogItem {
     display: block;

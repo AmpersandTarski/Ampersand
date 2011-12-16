@@ -520,16 +520,15 @@ function addClickEvent($item, interface, atom) {
 // LogWindows
 
 function initLogWindows() {
-  $('.LogWindow>.Title').click(function (event) {
-    $(this).parents().first().attr('minimized', $(this).parents().first().attr('minimized')=='true' ? 'false' : 'true');
-    return false;
-  });
+  $('.LogWindow>.Title').click(minimaximizeParentLogWindow);
+  $('.LogWindow>.MinMaxButton').click(minimaximizeParentLogWindow);
   $('#SignalLog>.LogMsg').remove();  // don't show logs here
   if ($('#SignalLog>.LogItem').length>0)
     $('#SignalLog').attr('nonEmpty','true');
 }
-function minimaximizeLogWindow(event) {
-  $(this).attr('minimized', $(this).attr('minimized')=='true' ? 'false' : 'true');
+function minimaximizeParentLogWindow(event) {
+  $logWindow = $(this).parents().filter('.LogWindow');
+  $logWindow.attr('minimized', $logWindow.attr('minimized')=='true' ? 'false' : 'true');
   return false;
 }
 
