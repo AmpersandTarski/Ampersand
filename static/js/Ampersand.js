@@ -330,9 +330,19 @@ function setEditHandlersBelow($elt) {
     setEditHandlersBelow($newAtomTableRow); // add the necessary handlers to the new element
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
+    var $newAtom = $newAtomTableRow.find('>.AtomListElt>.Atom');
+    // if the atom name is visible, we start editing it.
+    if ( $newAtom.find('>.AtomName').is(":visible") )
+      startAtomEditing($newAtom);
+    else { // otherwise (for composite atoms), we generate an atom name based on time similar to mkUniqueAtomByTime in Database.php 
+      var concept = getEnclosingAtomList($atom).attr('concept')
+      var mSecsSince1970 = ''+(new Date()).getTime();
+      var seconds = mSecsSince1970.slice(0, mSecsSince1970.length-3);
+      var microSeconds = mSecsSince1970.slice(mSecsSince1970.length-3, mSecsSince1970.length)+'000'; // php is a bit more accurate
+      $newAtom.attr('atom',concept+'_'+seconds+'_'+microSeconds);
+    }
+    
     traceDbCommands();
-
-    startAtomEditing($newAtomTableRow.find('>.AtomListElt>.Atom'));
   });
 }
 
