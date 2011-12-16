@@ -68,7 +68,7 @@ selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
  | sqlOk =  sqlcomment i ("case: (EIsc lst@(_:_:_))"++phpIndent (i+3)++"EIsc "++show (map showADL lst')) $
             selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                             (cChain ", " exprbracs) (cChain " AND " wherecl)
- | otherwise = Nothing
+ | otherwise = fatal 71 "sqlOk does not hold"
 {- The story:
  This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: EIsc lst'@(_:_:_))
  For now, we explain only the otherwise clause (code: selectGeneric i ("isect0."++ ...)
@@ -340,9 +340,11 @@ selectExprMorph _ _ src trg rel@Mp1{}
  | src == trg = Just$ "SELECT "++relval rel++" AS "++src
  | otherwise  = Just$ "SELECT "++relval rel++" AS "++src++", "++relval rel++" AS "++trg
 selectExprMorph fSpec i src trg rel -- made for both Rel and I
- = listToMaybe [selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
-               | (p,s,t)<-sqlRelPlugNames fSpec (ERel rel)  -- "NOT NULL" checks could be omitted if column is non-null, but the
-               ]                                            -- code for computing table properties is currently unreliable.
+ = case sqlRelPlugNames fSpec (ERel rel) of
+     []        -> fatal 344 $ "No plug for relation "++show rel
+     (p,s,t):_ -> Just $ selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
+  -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
+  -- code for computing table properties is currently unreliable.
                
 selectExists' :: (Concatable a,Concatable b) => Int -> a -> b -> (Maybe String)
 selectExists' i tbl whr
