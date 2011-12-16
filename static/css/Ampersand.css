@@ -83,17 +83,16 @@ body {
     display: none;
 }
 
+/* show edit operations as style variations when dev=true */
 [dev=true][editing=true] .AtomRow[rowStatus=deleted] {
     display: table-row;
 }
 [dev=true][editing=true] .Atom[status=deleted]>.AtomName {
     text-decoration: line-through;
 }
-
 [dev=true][editing=true] .Atom[status=modified]>.AtomName {
     font-style: italic;
 }
-    
 [dev=true][editing=true] .Atom[status=new]>.AtomName {
     color:blue;
 }
