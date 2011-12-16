@@ -71,31 +71,8 @@ where
                         Rfx-> EImp (i$sign r ,           r                   )
                         Irf-> EIsc [i$sign r, EDif (ERel (V (sign r)), r) ]
            , rrfps = origin d
-           , rrmean = AMeaning 
-                      [A_Markup English ReST (string2Blocks ReST (
-                      case prp of
-                        Sym-> name d++"["++s++"] is symmetric"    
-                        Asy-> name d++"["++s++"] is antisymmetric"
-                        Trn-> name d++"["++s++"] is transitive"
-                        Rfx-> name d++"["++s++"] is reflexive"
-                        Irf-> name d++"["++s++"] is irreflexive"
-                        Uni-> name d++"["++s++"*"++t++"] is univalent"
-                        Sur-> name d++"["++s++"*"++t++"] is surjective"
-                        Inj-> name d++"["++s++"*"++t++"] is injective"
-                        Tot-> name d++"["++s++"*"++t++"] is total"
-                        )),
-                        A_Markup Dutch ReST (string2Blocks ReST (
-                      case prp of
-                        Sym-> name d++"["++s++"] is symmetrisch."    
-                        Asy-> name d++"["++s++"] is antisymmetrisch."
-                        Trn-> name d++"["++s++"] is transitief."
-                        Rfx-> name d++"["++s++"] is reflexief."
-                        Irf-> name d++"["++s++"] is irreflexief."
-                        Uni-> name d++"["++s++"*"++t++"] is univalent"
-                        Sur-> name d++"["++s++"*"++t++"] is surjectief"
-                        Inj-> name d++"["++s++"*"++t++"] is injectief"
-                        Tot-> name d++"["++s++"*"++t++"] is totaal"
-                        ))] 
+           , rrmean = AMeaning $ explain True prp 
+           , rrmsg = explain False prp
            , rrtyp = case prp of
                         Uni-> sign$ECps [EFlp r,r]
                         Tot-> sign$ECps [r,EFlp r]
@@ -127,4 +104,35 @@ where
                   else ""
            r:: Expression
            r = ERel (makeRelation d) 
+           
+           explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
+                                 case prop of
+                                   Sym-> state isPositive English (name d++"["++s++"]") "symmetric"    
+                                   Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
+                                   Trn-> state isPositive English (name d++"["++s++"]") "transitive"
+                                   Rfx-> state isPositive English (name d++"["++s++"]") "reflexive"
+                                   Irf-> state isPositive English (name d++"["++s++"]") "irreflexive"
+                                   Uni-> state isPositive English (name d++"["++s++"*"++t++"]") "univalent"
+                                   Sur-> state isPositive English (name d++"["++s++"*"++t++"]") "surjective"
+                                   Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
+                                   Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
+                                   ))
+                          ,   A_Markup Dutch ReST (string2Blocks ReST (
+                                 case prop of
+                                   Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."    
+                                   Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."
+                                   Trn-> state isPositive Dutch (name d++"["++s++"]") "transitief."
+                                   Rfx-> state isPositive Dutch (name d++"["++s++"]") "reflexief."
+                                   Irf-> state isPositive Dutch (name d++"["++s++"]") "irreflexief."
+                                   Uni-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "univalent"
+                                   Sur-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "surjectief"
+                                   Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
+                                   Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
+                                   ))
+                         ]
+                         
+           state True  _       left right = left ++ " is " ++ right
+           state False English left right = left ++ " is not " ++ right
+           state False Dutch   left right = left ++ " is niet " ++ right
+           
    rulefromProp _ _ _ = fatal 252 "Properties can only be set on user-defined declarations."
