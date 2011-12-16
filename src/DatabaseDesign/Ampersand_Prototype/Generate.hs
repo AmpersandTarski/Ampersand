@@ -62,7 +62,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
                                          Just tableInfo -> tableInfo
                                          Nothing        -> fatal 61 $ "No table info for relation "++ show rel
          ]) ++
-  [ ""     -- sqlRelPlugNames may yield multiple results. TODO: also change to maybe?
+  [ ""
   , "$conceptTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
@@ -97,14 +97,17 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
            , "          // normalized complement (violations): "++ show violationsExpr
-           , "        , 'violationsSQL' => '"++ fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ violationsExpr)++"'" 
+           , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
+                                                  (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
            ] ++
            (if development opts then -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                      -- php/Database.php?testRule=RULENAME
            [ "        , 'contentsSQL' => '"++ case conjNF . rrexp $ rule of
                                                 EIsc [] -> "/* EIsc [], not handled by selectExpr */'"
                                                 ECps [] -> "/* EIsc [], not handled by selectExpr */'"
-                                                contentsExpr -> fromMaybe "" (selectExpr fSpec 26 "src" "tgt" $ contentsExpr)++"'"] 
+                                                contentsExpr -> fromMaybe ("/*ERROR: no sql generated for "++escapePhpStr (showHS opts "" contentsExpr) ++"*/")
+                                                                  -- no fatal here, we don't want --dev to break generation
+                                                                  (selectExpr fSpec 26 "src" "tgt" $ contentsExpr)++"'"] 
               else []) ++
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
@@ -148,7 +151,8 @@ genInterfaceObjects fSpec opts editableRels depth object = indent (depth*2) $
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (show (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (show (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => '" ++ (fromMaybe "" $ selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'" -- todo give an error for Nothing                                                  
+  , "      , 'expressionSQL' => '" ++ (fromMaybe (fatal 151 $ "No sql generated for "++showHS opts "" normalizedInterfaceExp) $
+                                        selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
   ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels $ depth + 1) $ objats object) ++
