@@ -134,6 +134,29 @@ function selectCoDomain($atom, $selectRel) {
 }
 
 
+// Timestamps
+
+// return the most recent modification time for the database (only Ampersand edit operations are recorded)
+function getTimestamp() {
+  global $dbName;
+  $timestampRow = DB_doquer($dbName, "SELECT MAX(`Seconds`) FROM `__History__`");
+  return $timestampRow[0][0];
+  // TODO: add error checking
+}
+
+// set modification timestamp to the current time
+function setTimestamp() {
+  global $dbName;
+  
+  $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+  $microseconds = substr($time[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
+  $seconds =$time[1].$microseconds;  
+  $date = date("j-M-Y, H:i:s.").$microseconds; 
+  DB_doquer($dbName, "INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
+  // TODO: add error checking
+}
+
+
 // Html generation utils
 
 function printBinaryTable($table) {

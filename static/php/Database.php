@@ -19,6 +19,8 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
   listAtomsForConcept($_REQUEST['getAtomsForConcept']);
 } else if (isset($_REQUEST['destroyAtom']) ) {
   removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
+} else if (isset($_REQUEST['getTimestamp']) ) {
+  timestampHtml();
 } else if (isset($_REQUEST['testRule']) ) {
   testRule($_REQUEST['testRule']);
 } else if (isset($_REQUEST['commands']) ) {
@@ -39,6 +41,7 @@ if (isset($_REQUEST['getAtomsForConcept']) ) {
   echo '</div>';
   
   if ($invariantRulesHold) {
+    setTimeStamp();
     emitLog('COMMIT');
     dbCommitTransaction($dbName);
   } else {
@@ -289,4 +292,8 @@ function testRule($ruleName) {
   printBinaryTable( $rows );
 }
 
+function timestampHtml() {
+  $timestamp = getTimestamp();
+  echo "<div class=Result timestamp='$timestamp'>$timestamp</div>";
+}
 ?>
