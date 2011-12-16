@@ -119,7 +119,7 @@ button.Button:hover {
 
 /* DeleteStub */
 [editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
-  	background-position: 0px 4px;
+  	background-position: 0px 3px;
   	width: 22px;
 }
 [editing=true] .AtomList[relation] { /* in this case, the delete stub will serve as the padding */
