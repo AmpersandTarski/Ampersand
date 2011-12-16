@@ -1,7 +1,12 @@
+var autoRefresh = false;
+var refreshInterval = 1*1000;
+
 function initialize() {
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
-}                    // initialize and initializeAtoms (the latter also being called from sendCommands).
+                     // initialize and initializeAtoms (the latter also being called from sendCommands).
+  startRefreshTimer();
+}
 
 function initializeAtoms() {
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
@@ -112,11 +117,7 @@ function sendCommands(commandArray) {
             $('#ScrollPane > .Atom').remove();  
             $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
-            // a bit double, we just did this
-            //$newPage.find('#SignalLog > .LogItem.LogMsg').remove(); // remove the logs
-            //$signals = $newPage.find('#SignalLog > .LogItem');
-            //setLogItems($('#SignalLog'), $signals);
-
+            $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
             $('#AmpersandRoot').attr('editing','false');
 
             initializeAtoms();   
@@ -569,6 +570,56 @@ function changeRole() {
   // need to check for new and use atom='' to generate a new temporary atom, rather than navigate to the non-existing
   // current temporary atom.
   navigateTo(interface, atom); // navigate to takes the role from the updated selector
+}
+
+
+// Refresh timer
+
+function startRefreshTimer() {
+  if (autoRefresh) {
+    setRefreshTimer(refreshInterval);
+  }
+}
+
+function setRefreshTimer(ms) {  
+  timer = setTimeout('refresh()',ms);
+}
+
+function stopRefreshTimer() {
+  clearTimeout(timer);
+}
+
+function refresh() {
+  if ($('#AmpersandRoot').attr('editing') == 'true') // no refresh during editing  
+    startRefreshTimer();
+  else {
+    var currentTimestamp = $('#AmpersandRoot').attr('timestamp');
+    
+    $.post("php/Database.php?getTimestamp",function receiveDataOnPost(data){
+      var dbTimestamp = $(data).attr('timestamp');
+      var dbIsModified = dbTimestamp != currentTimestamp;
+      log(currentTimestamp + ' vs '+dbTimestamp + ' ' + (dbIsModified ? 'modified' : 'not modified'));        
+      
+      if (dbIsModified) {
+        $.get(window.location.href, 
+            function(data) {
+              $newPage = $('<div>');
+              $newPage.html(data);
+          
+              $('#ScrollPane > .Atom').remove();  
+              $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
+  
+  
+              $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
+  
+              initializeAtoms();   
+              startRefreshTimer();
+        });
+      }
+      else
+        startRefreshTimer();
+    });
+  }
 }
 
 
