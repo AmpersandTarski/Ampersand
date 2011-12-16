@@ -335,7 +335,7 @@ function setEditHandlersBelow($elt) {
     if ( $newAtom.find('>.AtomName').is(":visible") )
       startAtomEditing($newAtom);
     else { // otherwise (for composite atoms), we generate an atom name based on time similar to mkUniqueAtomByTime in Database.php 
-      var concept = getEnclosingAtomList($atom).attr('concept')
+      var concept = getEnclosingAtomList($newAtom).attr('concept')
       var mSecsSince1970 = ''+(new Date()).getTime();
       var seconds = mSecsSince1970.slice(0, mSecsSince1970.length-3);
       var microSeconds = mSecsSince1970.slice(mSecsSince1970.length-3, mSecsSince1970.length)+'000'; // php is a bit more accurate
