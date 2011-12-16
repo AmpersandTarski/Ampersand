@@ -29,7 +29,6 @@ function startEditing() {
 
 function cancelEditing() {
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
-  //console.log("clearing warning");
 
   if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we cancel the creation of a new atom, the new atom is removed from the concept table
@@ -39,7 +38,7 @@ function cancelEditing() {
     var atom = $('#AmpersandRoot').attr('atom');
     var concept = $('#AmpersandRoot').attr('concept');
     $.post("php/Database.php",{ destroyAtom: atom, concept:concept },function receiveDataOnPost(data){
-      console.log(data);
+      //log(data);
       history.go(-1);
     }) ;
     
@@ -68,7 +67,6 @@ function commitEditing() {
   }
   
   var dbCommands = computeDbCommands();
-  //console.log("clearing warning");
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
 
   if ($('#AmpersandRoot').attr('isNew')=='true') {
@@ -193,7 +191,7 @@ function computeDbCommands() {
   $('.Atom .Atom').map(function () { // for every parent child pair of atoms (only immediate, so no <parent> .. <atom>  .. <child>)
     $childAtom = $(this);
     if (getEnclosingAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
-      //console.log(getEnclosingAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
+      //log(getEnclosingAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
       
       var $atomList = getEnclosingAtomList($childAtom);
       var relation = $atomList.attr('relation'); 
@@ -240,10 +238,8 @@ function computeDbCommands() {
   });
   
   if (dbCommands.length > 0) { 
-    //console.log("setting warning");
     window.onbeforeunload = function() { return "The page has been modified, are you sure you wish to navigate away?"; };
   } else {
-    //console.log("clearing warning");
     window.onbeforeunload = null;
   }
 
@@ -445,10 +441,10 @@ function initializeAutocomplete($textfield, $atom) {
                                     return true;
                                  }});
     else
-        console.error("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
+        logError("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
     });
    } else
-    console.error("Ampersand: Missing 'concept' html attribute for auto-complete");
+    logError("Ampersand: Missing 'concept' html attribute for auto-complete");
 }
 
 
@@ -524,7 +520,6 @@ function addClickEvent($item, interface, atom) {
 // LogWindows
 
 function initLogWindows() {
-  console.log($('.LogWindow>.Title'));
   $('.LogWindow>.Title').click(function (event) {
     $(this).parents().first().attr('minimized', $(this).parents().first().attr('minimized')=='true' ? 'false' : 'true');
     return false;
@@ -534,7 +529,6 @@ function initLogWindows() {
     $('#SignalLog').attr('nonEmpty','true');
 }
 function minimaximizeLogWindow(event) {
-  console.log('Setting minimized to '+$(this).attr('minimized'));
   $(this).attr('minimized', $(this).attr('minimized')=='true' ? 'false' : 'true');
   return false;
 }
@@ -570,6 +564,17 @@ function changeRole() {
 
 
 // Utils
+
+function log(msg) {
+  if (typeof console!='undefined') // only log when Firebug console is present
+    console.log(msg);
+}
+
+// for errors that should only show up for a user with Firebug 
+function logError(msg) {
+  if (typeof console!='undefined')
+    console.error(msg);
+}
 
 function getEnclosingAtom($elt) {
   return $elt.parents().filter('.Atom').first();
