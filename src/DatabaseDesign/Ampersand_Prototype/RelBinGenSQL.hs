@@ -12,7 +12,6 @@ import Data.Maybe
 import Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
-import Debug.Trace
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RelBinGenSQL"
@@ -331,7 +330,7 @@ selectExprMorph :: Fspc
                 -> Maybe String
 
 selectExprMorph fSpec i src trg rel@V{}
- = traceShow ("Rel"++show src++show trg) $ selectGeneric i (src',src) (trg',trg)
+ = selectGeneric i (src',src) (trg',trg)
                    (sqlConcept fSpec (source rel) +++ " AS vfst, "++sqlConcept fSpec (target rel)++ " AS vsnd")
                    (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
  where src'="vfst."++sqlAttConcept fSpec (source rel)
