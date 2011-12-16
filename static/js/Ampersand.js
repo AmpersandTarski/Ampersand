@@ -34,7 +34,7 @@ function startEditing() {
 
 function cancelEditing() {
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
-
+  
   if ($('#AmpersandRoot').attr('isNew')=='true') {
     // If we cancel the creation of a new atom, the new atom is removed from the concept table
     // and we navigate back to the previous page. (We do need to create an atom on new, because then we 
@@ -111,8 +111,7 @@ function sendCommands(commandArray) {
       else
         $.get(window.location.href, 
           function(data) {
-            $newPage = $('<div>');
-            $newPage.html(data);
+            $newPage = $(data);
         
             $('#ScrollPane > .Atom').remove();  
             $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
@@ -582,14 +581,14 @@ function startRefreshTimer() {
 }
 
 function setRefreshTimer(ms) {  
-  timer = setTimeout('refresh()',ms);
+  timer = setTimeout('checkDbUpdates()',ms);
 }
 
 function stopRefreshTimer() {
   clearTimeout(timer);
 }
 
-function refresh() {
+function checkDbUpdates() {
   if ($('#AmpersandRoot').attr('editing') == 'true') // no refresh during editing  
     startRefreshTimer();
   else {
@@ -603,17 +602,18 @@ function refresh() {
       if (dbIsModified) {
         $.get(window.location.href, 
             function(data) {
-              $newPage = $('<div>');
-              $newPage.html(data);
+              $newPage = $(data);
           
+              var $oldRootAtom = $('#ScrollPane > .Atom');
+              
               $('#ScrollPane > .Atom').remove();  
               $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
   
-  
-              $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
-  
+              $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );  
+              
               initializeAtoms();   
               startRefreshTimer();
+              markDifference($('#ScrollPane > .Atom'), $oldRootAtom);
         });
       }
       else
@@ -621,7 +621,45 @@ function refresh() {
     });
   }
 }
+function markDifference($newAtom, $oldAtom) {
+  $diffRoot = getDiffRoot($newAtom, $oldAtom);
+  log($diffRoot);
+  if ($diffRoot)
+    $diffRoot.css('background-color', 'yellow');
+}
 
+function getDiffRoot($newAtom, $oldAtom) {
+  log ($newAtom.attr('atom') + ' vs ' + $oldAtom.attr('atom'));
+  if ($newAtom.attr('atom') != $oldAtom.attr('atom'))
+    return $newAtom.find('>.AtomName');
+  else {
+    var $newChildInterfaces = $newAtom.find('>.InterfaceList>.Interface'); 
+    var $oldChildInterfaces = $oldAtom.find('>.InterfaceList>.Interface');
+    
+    for (var j=0; j<$newChildInterfaces.length; j++) { // interfaces won't changes, but we need to traverse them to 
+      //log ($newChildInterfaces[j]);                  // be able to create markers at the AtomList level
+      //log ($oldChildInterfaces[j]);
+        
+      var $newChildAtoms = $($newChildInterfaces[j]).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
+      var $oldChildAtoms = $($oldChildInterfaces[j]).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
+      //log ($newChildAtoms);
+      //log ($oldChildAtoms);
+      //log ('lengths: ' + $newChildAtoms.length + ' ' + $oldChildAtoms.length);
+      
+      if ($newChildAtoms.length != $oldChildAtoms.length)
+        return $($newChildInterfaces[j]).find('>.AtomList');
+      else {
+        for (var i=0; i<$newChildAtoms.length; i++) {
+          //log ('child '+i);
+          var $differentElt = getDiffRoot($($newChildAtoms.get(i)), $($oldChildAtoms.get(i)));
+          if ($differentElt)
+            return $differentElt;
+        }
+      }
+    }
+    return null;
+  }
+}
 
 // Utils
 
