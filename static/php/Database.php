@@ -207,7 +207,10 @@ function checkRules($ruleNames) {
     if ($error) error($error);
     
     if (count($rows) > 0) {
-      emitAmpersandErr("Rule '$ruleSql[name]' is broken: $ruleSql[meaning]");
+      // if the rule has an associated message, we show that instead of the name and the meaning
+      $message = $ruleSql['message'] ? $ruleSql['message'] 
+                                     : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
+      emitAmpersandErr($message);
       foreach($rows as $violation){
         emitAmpersandErr("- ('$violation[src]', '$violation[tgt]')");
       }

@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 import DatabaseDesign.Ampersand.Fspec.Fspec
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter  
-import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+import Prelude hiding (writeFile,readFile,getContents)
 import Data.List
 import Data.Maybe
 import Control.Monad
@@ -96,6 +96,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            , "        , 'ruleAdl' => "++showPhpStr (show $ rrexp rule)
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
+           , "        , 'message' => "++showPhpStr (showMessage rule)
            , "          // normalized complement (violations): "++ show violationsExpr
            , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
                                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
@@ -124,6 +125,9 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
        showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
+       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language opts ] of
+                            []    -> ""
+                            markup:_ -> aMarkup2String markup
        rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        processRuleNames = nub $ concatMap snd rulesPerRole
        invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
