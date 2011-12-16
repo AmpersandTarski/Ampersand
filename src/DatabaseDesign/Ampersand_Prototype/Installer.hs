@@ -58,13 +58,13 @@ where
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
              ,"if ($err=='') {"
              ,"  echo 'The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
-	     ,"  $content = '"
+             ,"  $content = '"
              ,"  <?php"
-	     ,"  require \"php/DatabaseUtils.php\";"
-	     ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
-	     ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
+             ,"  require \"php/DatabaseUtils.php\";"
+             ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
+             ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
              ]
-	     ++
+             ++
              ["  fwrite($dumpfile, dumprel(\""++showADL rel++"\",\""++qry++"\"));" 
              | d<-declarations fSpec
              , let rel=makeRelation d
@@ -73,20 +73,20 @@ where
              , let (_,src,trg) = head dbrel
              , let qry = maybe [] id (selectExprMorph fSpec (-1) src trg rel)]
              ++
-	     ["  fwrite($dumpfile, \"ENDCONTEXT\");"
-	     ,"  fclose($dumpfile);"
-	     ,"  "
-	     ,"  function dumprel ($rel,$quer)"
-	     ,"  {"
-	     ,"    $rows = DB_doquer(\""++dbName flags++"\", $quer);"
-	     ,"    $pop = \"\";"
-	     ,"    foreach ($rows as $row)"
-	     ,"      $pop = $pop.\";(\\\"\".escapedoublequotes($row[0]).\"\\\",\\\"\".escapedoublequotes($row[1]).\"\\\")\\n  \";"
-	     ,"    return \"POPULATION \".$rel.\" CONTAINS\\n  [\".substr($pop,1).\"]\\n\";"
-	     ,"  }"
+             ["  fwrite($dumpfile, \"ENDCONTEXT\");"
+             ,"  fclose($dumpfile);"
+             ,"  "
+             ,"  function dumprel ($rel,$quer)"
+             ,"  {"
+             ,"    $rows = DB_doquer(\""++dbName flags++"\", $quer);"
+             ,"    $pop = \"\";"
+             ,"    foreach ($rows as $row)"
+             ,"      $pop = $pop.\";(\\\"\".escapedoublequotes($row[0]).\"\\\",\\\"\".escapedoublequotes($row[1]).\"\\\")\\n  \";"
+             ,"    return \"POPULATION \".$rel.\" CONTAINS\\n  [\".substr($pop,1).\"]\\n\";"
+             ,"  }"
              ,"  function escapedoublequotes($str) { return str_replace(\"\\\"\",\"\\\\\\\\\\\\\"\",$str); }"
-	     ,"  ?>';"
-	     ,"  file_put_contents(\"dbdump.php.\",$content);"  
+             ,"  ?>';"
+             ,"  file_put_contents(\"dbdump.php.\",$content);"  
              ,"}"]
         ) ++
         [ "}" ]
