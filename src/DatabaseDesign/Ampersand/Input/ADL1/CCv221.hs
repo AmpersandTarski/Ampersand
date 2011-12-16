@@ -594,8 +594,7 @@ and the grammar must be disambiguated in order to get a performant parser...
                    <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
        where
        pRecord = mkPair<$> pValue <* pKey "*" <*> pValue
-       pValue  = pAtom <|> pConid <|> pVarid <|> pDigit <|> ((++)<$>pDigit<*>pConid) <|> ((++)<$>pDigit<*>pVarid)
-       pDigit  = show <$> pInteger
+       pValue  = pAtom <|> pConid <|> pVarid <|> pInteger <|> ((++)<$>pInteger<*>pConid) <|> ((++)<$>pInteger<*>pVarid)
        pRecordObs = mkPair<$ pSpec '(' <*> (trim <$> pString)  <* pComma   <*> (trim <$> pString)  <* pSpec ')' --obsolete
 
    -- | pProps is bedoeld voor gebruik in relatie-declaraties.
