@@ -11,7 +11,7 @@ body {
 }
 #TopLevelInterfaces ul {
     background-color: #333333;
-    padding: 3px 0px 2px 10px;
+    padding: 2px 0px 3px 10px;
     margin: 0 0 0 0;
 }
 #TopLevelInterfaces ul li {
@@ -31,7 +31,7 @@ body {
 
 #TopLevelInterfaces #RoleSelector {
     float: right;
-    margin: 1px 4px 0 0;
+    margin: 0px 4px 0 0;
 }
 #TopLevelInterfaces #MenuBarReset {
     display: block;
