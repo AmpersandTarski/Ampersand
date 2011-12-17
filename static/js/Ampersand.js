@@ -1,5 +1,5 @@
 var autoRefresh = false;
-var refreshInterval = 4*1000;
+var refreshInterval = 5*1000;
 
 function initialize() {
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
@@ -112,6 +112,22 @@ function sendCommands(commandArray) {
       if ($('#AmpersandRoot').attr('isNew')=='true')
         history.go(-1);
       else
+        $.ajax({
+           url: window.location.href,
+           cache: false,
+           success: function(data){
+            $newPage = $(data);
+        
+            $('#ScrollPane > .Atom').remove();  
+            $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
+
+            $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
+            $('#AmpersandRoot').attr('editing','false');
+
+            initializeAtoms();   
+           }
+        });
+/*
         $.get(window.location.href, 
           function(data) {
             $newPage = $(data);
@@ -124,6 +140,7 @@ function sendCommands(commandArray) {
 
             initializeAtoms();   
         });
+*/
   });
 }
 
@@ -603,8 +620,12 @@ function checkDbUpdates() {
       log(currentTimestamp + ' vs '+dbTimestamp + ' ' + (dbIsModified ? 'modified' : 'not modified'));        
       
       if (dbIsModified) {
-        $.get(window.location.href, 
-            function(data) {
+//        $.get(window.location.href, 
+//            function(data) {
+        $.ajax({
+           url: window.location.href,
+           cache: false,
+           success: function(data){
               $newPage = $(data);
           
               var $oldRootAtom = $('#ScrollPane > .Atom');
@@ -623,6 +644,8 @@ function checkDbUpdates() {
               initializeAtoms();   
               startRefreshTimer();
               markDifference($('#ScrollPane > .Atom'), $oldRootAtom);
+                         }
+
         });
       }
       else
@@ -656,7 +679,7 @@ function getDiffRoot($newAtom, $oldAtom) {
       //log ('lengths: ' + $newChildAtoms.length + ' ' + $oldChildAtoms.length);
       
       if ($newChildAtoms.length != $oldChildAtoms.length)
-        return $($newChildInterfaces[j]).find('>.AtomList');
+        return $($newChildInterfaces[j]);
       else {
         for (var i=0; i<$newChildAtoms.length; i++) {
           //log ('child '+i);
