@@ -109,7 +109,7 @@ button.Button:hover {
      background-image: url('../images/NavigationButtonMultiHover.png');
 }
 
-/* when we are editing, we do show the atom name, otherwise new atoms will have empty names */
+/* when we are editing, hide the atom name completely, since we don't want a button now */
 [editing=true] .Atom[atomic=false] > .AtomName {
     display: none;
 }
