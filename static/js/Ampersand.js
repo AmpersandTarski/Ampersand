@@ -6,6 +6,9 @@ function initialize() {
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
                      // initialize and initializeAtoms (the latter also being called from sendCommands).
   startRefreshTimer();
+  
+  //animateDifference($('.Atom[atom="Stuiterbal"]>.AtomName').first());
+  //animateDifference(getEnclosingAtomList($('.Atom[atom="Stuiterbal"]>.AtomName').first()));
 }
 
 function initializeAtoms() {
@@ -428,7 +431,7 @@ function initializeAutocomplete($textfield, $atom) {
   if (concept) {
     $.post("php/Database.php",{ getAtomsForConcept: concept },function receiveDataOnPost(data){
     var resultOrError = JSON.parse(data); // contains .res or .err
-    if (typeof resultOrError.res !== 'undefined')
+    if (typeof resultOrError.res != 'undefined')
         $textfield.autocomplete({ source:resultOrError.res
                                 , minLength: 0
                                 , close: function(event, ui) { 
@@ -631,7 +634,7 @@ function markDifference($newAtom, $oldAtom) {
   $diffRoot = getDiffRoot($newAtom, $oldAtom);
   log($diffRoot);
   if ($diffRoot)
-    $diffRoot.css('background-color', 'yellow');
+    animateDifference($diffRoot);
 }
 
 function getDiffRoot($newAtom, $oldAtom) {
@@ -666,6 +669,22 @@ function getDiffRoot($newAtom, $oldAtom) {
     return null;
   }
 }
+
+function animateTo($elt, color, k) {
+  $elt.animate({ backgroundColor: color }, 500, null, k);
+}
+
+function animateDifference( $elt ) {
+  var color = "red"; 
+  animateTo($elt, color, function () {
+  animateTo($elt, "transparent", function () {
+  animateTo($elt, color, function () {
+  animateTo($elt, "transparent", function () {
+  animateTo($elt, color, function () {
+  animateTo($elt, "transparent", function () {
+  }); }); }); }); }); });
+}
+
 
 // Utils
 
