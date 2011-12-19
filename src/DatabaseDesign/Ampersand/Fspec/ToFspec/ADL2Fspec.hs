@@ -50,7 +50,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vconjs       = nub [conj | Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
-                 , vrels        = allDecs -- contains all user defined plus all generated relations.
+                 , vrels        = allDecs -- contains all user defined plus all generated relations plus all defined and computed totals.
                  , fsisa        = [(s,g) | s<-concs context, g<-concs context , s < g]
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -67,25 +67,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    where selectActs p   = [act | act<-fActivities fSpec
                                                , (not.null) (selRoles p act)]
                          selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
+        -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
         allDecs = [ d{decprps_calc = multiplicities d `uni` [Tot |    ERel r <-totals, d==makeDeclaration r]
                                                       `uni` [Sur |EFlp (ERel r)<-totals, d==makeDeclaration r]}
-                  | d<-declarations context -- , deciss d || decusr d
-                  ] {- ++
-                  [ Sgn  { decnm   = "ISA"
-                         , decsgn  = sign g
-                         , decprps = [Uni,Tot,Inj]
-                         , decprps_calc = []
-                         , decprL  = ""
-                         , decprM  = "is a"
-                         , decprR  = ""
-                         , decMean = ""
-                         , decpopu = []
-                         , decfpos = Origin "generated declaration ISA"
-                         , deciss  = True
-                         , decusr  = False
-                         , decpat  = ""
-                         , decplug = False
-                         } | g<-gens context] -}
+                  | d<-declarations context]
      -- determine relations that are total (as many as possible, but not necessarily all)
         totals :: [Expression]
         totals
