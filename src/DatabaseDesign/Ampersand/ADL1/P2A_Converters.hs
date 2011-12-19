@@ -50,7 +50,6 @@ pCtx2aCtx pctx
              , ctxprocs  = procs         -- The processes defined in this context
              , ctxrs     = ctxrules
              , ctxds     = adecs         -- The declarations defined in this context, outside the scope of patterns
-             , ctxdecls  = uniteRels (concatMap declarations pats ++ concatMap declarations procs ++ adecs)   -- All declarations
              , ctxcds    = acds          -- All concept definitions
              , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
              , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
@@ -84,12 +83,6 @@ pCtx2aCtx pctx
     (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef actx NoCast)      . ctx_sql  ) pctx
     (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef actx NoCast)      . ctx_php  ) pctx
     (allpops, popcxes)   = (unzip . map (pPop2aPop   actx)             . pops ) pctx
-    uniteRels ds = [ d | cl<-eqClass (==) ds
-                       , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
-                                        , decprps_calc = (foldr1 uni.map decprps_calc) cl
-                                        , decpopu      = (foldr1 uni.map decpopu) cl
-                                        }
-                       ]
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
