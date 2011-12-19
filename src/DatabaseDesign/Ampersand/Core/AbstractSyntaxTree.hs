@@ -62,7 +62,6 @@ data A_Context
          , ctxprocs  :: [Process]     -- ^ The processes defined in this context
          , ctxrs     :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds     :: [Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-         , ctxdecls  :: [Declaration] -- ^ The declarations defined in this context, including those from patterns and processes
          , ctxcds    :: [ConceptDef]  -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks     :: [KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
          , ctxgs     :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
