@@ -53,7 +53,7 @@ data Fspc = Fspc { fsName       :: String                -- ^ The name of the sp
                  , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec)
                  , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec)
                  , vEcas        :: [ECArule]             -- ^ All ECA rules generated (by ADL2Fspec)
-                 , vrels        :: [Declaration]         -- ^ All user defined and generated declarations.
+                 , vrels        :: [Declaration]         -- ^ All user defined and generated declarations plus all defined and computed totals.
                                                          --   The generated declarations are all generalizations and
                                                          --   one declaration for each signal.
                  , fsisa        :: [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
