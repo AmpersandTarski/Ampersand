@@ -117,11 +117,8 @@ where
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
              ++ indentBlock 17
-                    [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ " " ++ autoIncr ++ "DEFAULT NULL"
-                    | (f,comma)<-zip (tblfields plug) ('(':repeat ',')
-                    , let autoIncr = if fldauto f
-                                     then " AUTO_INCREMENT" else ""
-                    ]
+                    [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
+                    | (f,comma)<-zip (tblfields plug) ('(':repeat ',') ]
              ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
