@@ -89,17 +89,13 @@ rel2plug  r totals
 -- flduniq=isInj (kernelpath);r
 -- 
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
---
--- WHY151210 -> why sqltype=SQLID if there are any keys around and (isIdent r) and the field does not contain strings?
---              what is the motivation for this implementation?
-rel2fld :: [KeyDef] -> [Expression] -> [Expression] -> Expression -> SqlField
-rel2fld keyds                                       -- > 
-        kernel                                      -- > all relations (in the form either ERel r or EFlp (ERel r)) that may be represented as attributes of this entity.
+rel2fld :: [Expression] -> [Expression] -> Expression -> SqlField
+rel2fld kernel                                      -- > all relations (in the form either ERel r or EFlp (ERel r)) that may be represented as attributes of this entity.
         plugAtts                                    -- > all relations (in the form either ERel r or EFlp (ERel r)) that are defined as attributes by the user.
         e                                           -- > either ERel r or EFlp (ERel r), representing the relation from some kernel field k1 to f1
  = Fld fldName                                      -- fldname : 
        e                                            -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-       (if isSQLId then SQLId else makeSqlType (target e))  -- fldtype :
+       (makeSqlType (target e))                     -- fldtype :
        (maybenull e)                                -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
                                                     --           Error: only if source e is the I-field of this plug.
        (isInj e)                                    -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
@@ -110,9 +106,6 @@ rel2fld keyds                                       -- >
    fldName = if null [nm | (r',nm)<-table, e==r'] 
              then fatal 117 $ "null names in table for e: " ++ show (e,table)
              else head [nm | (r',nm)<-table, e==r']
-   isSQLId = isIdent e 
-              && not (null [key | key<-keyds, kdcpt key==target e]) -- if there are any keys around, make this plug autoincrement.
-              && contents e==[] -- and the the field may not contain any strings; WHY is that?
    table   = [ entry
              | cl<-eqCl (map toLower.niceidname) (kernel++plugAtts)
              , entry<-if length cl==1 then [(rel,niceidname rel) |rel<-cl] else tbl cl]
@@ -178,11 +171,11 @@ rel2fld keyds                                       -- >
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
 makeEntities :: ConceptStructure a => A_Context -> [Relation] -> [a] -> [PlugSQL]
-makeEntities context allRels exclusions
+makeEntities _ allRels exclusions
  = sort' ((0-).length.tblfields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
-      ScalarSQL (name c) (rel2fld [] [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
+      ScalarSQL (name c) (rel2fld [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
       else
       TblSQL (name c)               -- plname
              plugFields             -- fields
@@ -207,7 +200,7 @@ makeEntities context allRels exclusions
           lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                                   then fatal 209 "null cLkptable."
                                   else head [f |(c',f)<-conceptLookuptable, cpt==c']
-          fld                   = rel2fld (keyDefs context) mainkernel (restkernel++plugAtts)
+          fld                   = rel2fld mainkernel (restkernel++plugAtts)
     ]
    where   
 -- The first step is to determine which entities to generate.
@@ -268,9 +261,9 @@ So the first step is create the kernels ...   -}
 --rel2fld  (keyDefs context) kernel plugAtts r
 
 makeSqlPlug :: A_Context -> ObjectDef -> PlugSQL
-makeSqlPlug context obj
+makeSqlPlug _ obj
  | null(objats obj) && isI(objctx obj)
-   = ScalarSQL (name obj) (rel2fld [] [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
+   = ScalarSQL (name obj) (rel2fld [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
  | null(objats obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
  | isI(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
@@ -296,7 +289,7 @@ makeSqlPlug context obj
      = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
    plugFields            = [fld r tp | (r,tp)<-plugMors] 
-   fld r tp              = (rel2fld (keyDefs context) (map fst kernel) (map fst attRels) r){fldtype=tp} --redefine sqltype
+   fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r){fldtype=tp} --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(ERel r,lookupC (source r),fld (ERel r) tp) | (ERel r,tp)<-plugMors] ++
                            [(EFlp (ERel r),lookupC (target r),fld (EFlp (ERel r)) tp) | (EFlp (ERel r),tp)<-plugMors]
