@@ -1,11 +1,10 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XPatternGuards #-}
 module DatabaseDesign.Ampersand.Misc.Options 
         (Options(..),getOptions,defaultFlags,usageInfo'
         ,ParserVersion(..)
         ,verboseLn,verbose,FspecFormat(..),ImportFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
---import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
 import System.Environment    (getEnvironment)
 import DatabaseDesign.Ampersand.Misc.Languages (Lang(..))
@@ -44,6 +43,7 @@ data Options = Options { showVersion   :: Bool
                        , genAtlas      :: Bool
                        , namespace     :: String
                        , deprecated    :: Bool
+                       , autoRefresh   :: Maybe Int
                        , testRule      :: Maybe String                       
                        , customCssFile :: Maybe FilePath                       
                        , importfile    :: FilePath --a file with content to populate some (Populated a)
@@ -102,6 +102,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , genAtlas      = False   
                       , namespace     = []
                       , deprecated    = False
+                      , autoRefresh   = Nothing
                       , testRule      = Nothing
                       , customCssFile = Nothing
                       , importfile    = []
@@ -259,6 +260,7 @@ options = map pp
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
           , (Option []        ["deprecated"]  (NoArg (\opts -> opts{deprecated = True})) "Force generation of old php prototype (strongly discouraged!)", Hidden)
+          , (Option []        ["refresh"]     (OptArg autoRefreshOpt "interval") "Experimental auto-refresh feature", Hidden)
           , (Option []        ["testRule"]    (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }) "rule name")
                                                                           "Show contents and violations of specified rule.", Hidden)
           , (Option []        ["css"]         (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
@@ -310,6 +312,9 @@ verboseOpt :: Options -> Options
 verboseOpt      opts = opts{ verboseP     = True} 
 developmentOpt :: Options -> Options
 developmentOpt opts = opts{ development   = True}
+autoRefreshOpt :: Maybe String -> Options -> Options
+autoRefreshOpt (Just interval) opts | [(i,"")] <- reads interval = opts{autoRefresh = Just i}
+autoRefreshOpt _               opts                              = opts{autoRefresh = Just 5}
 prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts 
   = opts { dirPrototype = fromMaybe (dirPrototype opts) nm
