@@ -72,6 +72,11 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';
   echo newAtomLinks();
+
+  // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
+  // This will be obsolete once these and other properties are in a separate div. 
+  echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp()."\"/>"; 
+  
   echo '<div id=SignalAndPhpLogs>';
   genSignalLogWindow($roleNr, $roleName);
   echo '</div>';
