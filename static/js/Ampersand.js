@@ -1,6 +1,3 @@
-var autoRefresh = false;
-var refreshInterval = 5*1000;
-
 function initialize() {
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
@@ -595,8 +592,10 @@ function changeRole() {
 // Refresh timer
 
 function startRefreshTimer() {
-  if (autoRefresh) {
-    setRefreshTimer(refreshInterval);
+  var refreshInterval = $('#AmpersandRoot').attr('refresh');
+
+  if (refreshInterval>0) {
+    setRefreshTimer(refreshInterval*1000);
   }
 }
 

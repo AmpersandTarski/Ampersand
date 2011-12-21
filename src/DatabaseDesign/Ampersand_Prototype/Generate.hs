@@ -53,6 +53,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
+  , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
+  , ""
   , "$relationTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
