@@ -59,7 +59,7 @@ where
                           , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" moet een " ++ name(target g)++" zijn."))
                           ]
            , decpopu = [(a,b) | a <- cptos'(source g), b <- cptos'(target g), a==b]
-           , decfpos = Origin "generated isa by declarations (Language)"
+           , decfpos = origin g
            , deciss  = True
            , decusr  = False
            , decpat  = ""
