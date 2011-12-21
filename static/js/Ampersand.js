@@ -3,9 +3,6 @@ function initialize() {
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
                      // initialize and initializeAtoms (the latter also being called from sendCommands).
   startRefreshTimer();
-  
-  //animateDifference($('.Atom[atom="Stuiterbal"]>.AtomName').first());
-  //animateDifference(getEnclosingAtomList($('.Atom[atom="Stuiterbal"]>.AtomName').first()));
 }
 
 function initializeAtoms() {
@@ -632,13 +629,6 @@ function checkDbUpdates() {
   }
 }
 
-// a replacement of get that uses ajax to disable any caching (as html meta tags do not always succeed in disabling the cache)
-function getNoCache(url, successCallback) {
-  $.ajax({ url: url,
-           cache: false,
-           success: successCallback
-  });
-}
 function markDifference($newAtom, $oldAtom) {
   $diffRoot = getDiffRoot($newAtom, $oldAtom);
   if ($diffRoot)
@@ -728,5 +718,13 @@ function attrBoolValue(attrStr) {
 
 function getSelectedRole() {
   return $('#RoleSelector').val();
+}
+
+//a replacement of get that uses ajax to disable any caching (as html meta tags do not always succeed in disabling the cache)
+function getNoCache(url, successCallback) {
+  $.ajax({ url: url,
+           cache: false,
+           success: successCallback
+  });
 }
 
