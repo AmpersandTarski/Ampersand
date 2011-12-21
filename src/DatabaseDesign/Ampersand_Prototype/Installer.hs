@@ -11,9 +11,22 @@ where
 --  import Debug.Trace
 
   installer :: Fspc -> Options -> String
-  installer fSpec flags = "<?php\n  " ++ intercalate "\n  "
+  installer fSpec flags = intercalate "\n  "
      (
-        [ "// Try to connect to the database\n"
+        [ "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0 Strict//EN\">"
+        , "<html>"
+        , "<head>"
+        , "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>"
+        , ""
+        , "<meta http-equiv=\"Pragma\" content=\"no-cache\">"
+        , "<meta http-equiv=\"no-cache\">"
+        , "<meta http-equiv=\"Expires\" content=\"-1\">"
+        , "<meta http-equiv=\"cache-Control\" content=\"no-cache\">"
+        , ""
+        , "</html>"
+        , "<body>"
+        ,"<?php"
+        , "// Try to connect to the database\n"
         , "if(isset($DB_host)&&!isset($_REQUEST['DB_host'])){"
         , "  $included = true; // this means user/pass are probably correct"
         , "  $DB_link = @mysql_connect(@$DB_host,@$DB_user,@$DB_pass);"
@@ -110,8 +123,9 @@ where
              ,"  file_put_contents(\"dbdump.php.\",$content);"  
              ,"}"]
         ) ++
-        [ "}" ]
-     ) ++ "\n?>\n"
+        [ "}"
+        , "\n?></body></html>\n" ]
+     ) 
     where plugCode plug
            = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug)))
              ++
