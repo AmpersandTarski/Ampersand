@@ -109,35 +109,21 @@ function sendCommands(commandArray) {
       if ($('#AmpersandRoot').attr('isNew')=='true')
         history.go(-1);
       else
-        $.ajax({
-           url: window.location.href,
-           cache: false,
-           success: function(data){
-            $newPage = $(data);
-        
-            $('#ScrollPane > .Atom').remove();  
-            $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
+        getNoCache( window.location.href, function(data){
+          $newPage = $('<div>').html(data);
 
-            $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
-            $('#AmpersandRoot').attr('editing','false');
+          // replace the root Atom with the new one
+          $('#ScrollPane > .Atom').remove();  
+          $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
-            initializeAtoms();   
-           }
+          // update the timestamp
+          $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
+          $('#AmpersandRoot').attr('editing','false');
+
+          // we ignore the signals from $newPage, since we have just set them.
+          
+          initializeAtoms();   
         });
-/*
-        $.get(window.location.href, 
-          function(data) {
-            $newPage = $(data);
-        
-            $('#ScrollPane > .Atom').remove();  
-            $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
-
-            $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
-            $('#AmpersandRoot').attr('editing','false');
-
-            initializeAtoms();   
-        });
-*/
   });
 }
 
@@ -613,38 +599,31 @@ function checkDbUpdates() {
   else {
     var currentTimestamp = $('#AmpersandRoot').attr('timestamp');
     
-    $.post("php/Database.php?getTimestamp",function receiveDataOnPost(data){
+    $.post("php/Database.php?getTimestamp",function(data){
       var dbTimestamp = $(data).attr('timestamp');
       var dbIsModified = dbTimestamp != currentTimestamp;
       log(currentTimestamp + ' vs '+dbTimestamp + ' ' + (dbIsModified ? 'modified' : 'not modified'));        
       
+      // If the timestamp on the server is different, it must be newer, so we need a refresh
       if (dbIsModified) {
-//        $.get(window.location.href, 
-//            function(data) {
-        $.ajax({
-           url: window.location.href,
-           cache: false,
-           success: function(data){
-              $newPage = $(data);
+        getNoCache(window.location.href, function(data){
+          $newPage = $('<div>').html(data);
           
-              var $oldRootAtom = $('#ScrollPane > .Atom');
-              
-              $('#ScrollPane > .Atom').remove();  
-              $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
-  
-              $signals = $(data).find('#ProcessRuleResults > .AmpersandErr');
-              setLogItems($('#SignalLog'), $signals);
+          // replace the root Atom with the new one
+          var $oldRootAtom = $('#ScrollPane > .Atom'); // save the old atom so we can do a diff below
+          $('#ScrollPane > .Atom').remove();  
+          $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
-              $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );  
-              
-              $signals = $(data).find('#SignalLog > .AmpersandErr');
-              setLogItems($('#SignalLog'), $signals);
+          // update the signals
+          $signals = $(data).find('#SignalLog > .AmpersandErr');
+          setLogItems($('#SignalLog'), $signals);
 
-              initializeAtoms();   
-              startRefreshTimer();
-              markDifference($('#ScrollPane > .Atom'), $oldRootAtom);
-                         }
+          // update the timestamp
+          $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
 
+          initializeAtoms();   
+          startRefreshTimer();
+          markDifference($('#ScrollPane > .Atom'), $oldRootAtom);
         });
       }
       else
@@ -652,37 +631,40 @@ function checkDbUpdates() {
     });
   }
 }
+
+// a replacement of get that uses ajax to disable any caching (as html meta tags do not always succeed in disabling the cache)
+function getNoCache(url, successCallback) {
+  $.ajax({ url: url,
+           cache: false,
+           success: successCallback
+  });
+}
 function markDifference($newAtom, $oldAtom) {
   $diffRoot = getDiffRoot($newAtom, $oldAtom);
-  log($diffRoot);
   if ($diffRoot)
     animateDifference($diffRoot);
 }
 
 function getDiffRoot($newAtom, $oldAtom) {
-  log ($newAtom.attr('atom') + ' vs ' + $oldAtom.attr('atom'));
+  //log ($newAtom.attr('atom') + ' vs ' + $oldAtom.attr('atom'));
   if ($newAtom.attr('atom') != $oldAtom.attr('atom'))
     return $newAtom.find('>.AtomName');
   else {
     var $newChildInterfaces = $newAtom.find('>.InterfaceList>.Interface'); 
     var $oldChildInterfaces = $oldAtom.find('>.InterfaceList>.Interface');
     
-    for (var j=0; j<$newChildInterfaces.length; j++) { // interfaces won't changes, but we need to traverse them to 
-      //log ($newChildInterfaces[j]);                  // be able to create markers at the AtomList level
-      //log ($oldChildInterfaces[j]);
+    for (var j=0; j<$newChildInterfaces.length; j++) { 
+      // interfaces won't changes, but we need to traverse them to be able to create markers at the AtomList level
         
-      var $newChildAtoms = $($newChildInterfaces[j]).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
-      var $oldChildAtoms = $($oldChildInterfaces[j]).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
-      //log ($newChildAtoms);
-      //log ($oldChildAtoms);
-      //log ('lengths: ' + $newChildAtoms.length + ' ' + $oldChildAtoms.length);
+      var $newChildAtoms = $newChildInterfaces.eq(j).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
+      var $oldChildAtoms = $oldChildInterfaces.eq(j).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
       
       if ($newChildAtoms.length != $oldChildAtoms.length)
-        return $($newChildInterfaces[j]);
+        return $newChildInterfaces.eq(j);
       else {
         for (var i=0; i<$newChildAtoms.length; i++) {
           //log ('child '+i);
-          var $differentElt = getDiffRoot($($newChildAtoms.get(i)), $($oldChildAtoms.get(i)));
+          var $differentElt = getDiffRoot($newChildAtoms.eq(i), $oldChildAtoms.eq(i));
           if ($differentElt)
             return $differentElt;
         }
