@@ -141,7 +141,7 @@ getOptions =
       (flags,fNames)  <- case getOpt Permute (each options) args of
                          ([],[],[])   -> return (defaultOpts{showHelp=True} ,[])
                          (o ,n ,[])   -> return (foldl (flip id) defaultOpts o ,n)
-                         (_, _, errs) -> ioError (userError (concat errs ++ usageInfo'' progName))
+                         (_, _, errs) -> error $ concat errs ++ "Type '"++ progName++" --help' for usage info."
       checkNSetOptionsAndFileNameM (flags,fNames)
   where 
      defaultOptionsM :: IO Options 
@@ -224,9 +224,6 @@ usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.  
 usageInfo' opts = usageInfo (infoHeader (progrName opts)) (if verboseP opts then each options else publics options)
           
-usageInfo'' :: String -> String 
-usageInfo'' progName = usageInfo (infoHeader progName) (publics options)
-
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
 
