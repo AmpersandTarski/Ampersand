@@ -224,7 +224,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               sctds :: [Relation] -> [(Origin, Counter -> [Block])]
-              sctds = map (\rel -> (origin rel, relBlock rel))
+              sctds = map (\rel -> (origin (makeDeclaration rel), relBlock rel))
               relBlock :: Relation -> Counter -> [Block]
               relBlock rel cnt 
                = purposes2Blocks flags purps
