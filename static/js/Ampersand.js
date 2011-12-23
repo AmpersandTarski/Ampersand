@@ -93,10 +93,11 @@ function sendCommands(commandArray) {
     } 
     else { // we could simply reload here, but this way the state of the log windows is not changed/
       getNoCache( window.location.href, function(data){
-        $newPage = $('<div>').html(data);
+        $newPage = $('<div>').html(data); 
+        // NOTE: need to be careful here not to put elements with id's in the DOM before removing the old ones
 
         // replace the root Atom with the new one
-        $('#ScrollPane > .Atom').remove();  
+        $('#ScrollPane > .Atom').remove();
         $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
         // update the timestamp
@@ -597,7 +598,8 @@ function checkDbUpdates() {
       if (dbIsModified) {
         getNoCache(window.location.href, function(data){
           $newPage = $('<div>').html(data);
-          
+          // NOTE: need to be careful here not to put elements with id's in the DOM before removing the old ones
+
           // replace the root Atom with the new one
           var $oldRootAtom = $('#ScrollPane > .Atom'); // save the old atom so we can do a diff below
           $('#ScrollPane > .Atom').remove();  
