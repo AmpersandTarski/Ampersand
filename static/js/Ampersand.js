@@ -19,8 +19,8 @@ function initializeAtoms() {
 function startEditing() {
   $('#Rollback').empty(); // in case we start twice for some reason
   $('#Rollback').append($('#ScrollPane > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
-  
   $('#AmpersandRoot').attr('editing','true');
+  $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
   clearNavigationHandlers();
   setEditHandlers();
   traceDbCommands(); // to initialize command list
@@ -44,6 +44,7 @@ function cancelEditing() {
     clearLogItems($('#PhpLog'));
     
     $('#AmpersandRoot').attr('editing','false');
+    $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
   }
 }
 
