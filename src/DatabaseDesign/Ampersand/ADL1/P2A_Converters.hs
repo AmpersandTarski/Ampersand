@@ -350,9 +350,9 @@ pCpt2aCpt contxt pc
       where 
       c = C {cptnm = p_cptnm pc
             ,cptgE = genE contxt
-            ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d,c <= source d]
-                       ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d,c <= target d]
-                       ++[v | r<-rules contxt,Mp1 v c'<-mors r,c<=c']
+            ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d, source d <= c]
+                       ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d, target d <= c]
+                       ++[v | r<-rules contxt,Mp1 v c'<-mors r,c'<=c]
             ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
             ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
             }
