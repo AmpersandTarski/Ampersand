@@ -85,14 +85,21 @@ button.Button:hover {
 }
 
 /* AtomName for atoms with subinterfaces (atomic=false)
-   These get a button for navigation and are not displayed while navigating */
+   These get a button for navigation and are not displayed while navigating 
+   
+   IE8 does not support color: transparent. A workaround with 'after' pseudo elements is also not possible in IE8,
+   since it does not allow an 'after' element to have different visibility or transparency from its parent. Hence, it is
+   not possible to hide the name and show the image in IE without adding a div. IE8 users are advised to upgrade or use Firefox.
+   
+   */
 [editing=false] .Atom[atomic=false] > .AtomName {
     color: transparent;
     white-space: nowrap;
+    overflow: hidden;
     float: right;
-    margin-right: 2px;
+    margin-right: 5px;
     margin-top: -7px;
-    width: 20px;
+    width: 15px;
     background-repeat:no-repeat;
     background-position: 0px 0px;
 }
