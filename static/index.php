@@ -84,15 +84,22 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
     
   $interface=$_REQUEST['interface'];
   $atom = $_REQUEST['atom'];
-  $isNew = $atom==''; 
-  // if the atom is '', this means that a new atom should be created. We create a unique new atom in a temporary transaction,
-  // so we can generate the interface in the normal way (by querying the database). When the interface is done, the transaction
-  // is rolled back. On save, the atom is added to the concept table again.
+  $concept = $allInterfaceObjects[$interface]['srcConcept'];
+  
+  $isNew = $concept!='ONE' && !isAtomInConcept($atom,$concept);
+  // If the atom is not in the concept, this means that a new atom was be created (and $atom is a time-based unique name).
+  // We cannot use a url-encoded command for Create new, since such a url causes problems in the browser history. (pressing back 
+  // could cause the creation of another atom) With the current method, going back or refreshing the url simply shows the new atom.
+  // TODO: Once navigation is not done with urls anymore, we can employ a more elegant solution here.
+  //
+  // We add the atom to its concept in a temporary transaction, so we can generate the interface in the normal way (by querying
+  // the database). When the interface is done, the transaction is rolled back. On save, the atom is added to the concept table
+  // again.
   // TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we enocode a session number
   //       in the unique atom name. But since the atom names are based on microseconds, the chances of a problem are pretty slim.
   if ($isNew) {
     DB_doquer($dbName, 'START TRANSACTION');
-    $atom = createNewAtom($allInterfaceObjects[$interface]['srcConcept']);
+    addAtomToConcept($atom, $concept);
   }
 
 echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
@@ -149,11 +156,13 @@ function newAtomLinks() {
   
   echo '<ul id=CreateList>';
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']!='ONE')
-      echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
-           .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name']))
-           .'&atom='.($roleNr>=0? '&role='.$roleNr : '').'"><span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
+    if ($interface['srcConcept']!='ONE') {
+      $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
+      $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
+      echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
+           .'<span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
            .' ('.htmlSpecialChars($interface['name']).')</spin></a></li>';
+    }
   }
   echo '</ul>';
 }

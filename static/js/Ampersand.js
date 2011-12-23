@@ -33,17 +33,9 @@ function cancelEditing() {
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
   
   if ($('#AmpersandRoot').attr('isNew')=='true') {
-    // If we cancel the creation of a new atom, the new atom is removed from the concept table
-    // and we navigate back to the previous page. (We do need to create an atom on new, because then we 
-    // can simply use index.php to edit it)
-    
-    var atom = $('#AmpersandRoot').attr('atom');
-    var concept = $('#AmpersandRoot').attr('concept');
-    $.post("php/Database.php",{ destroyAtom: atom, concept:concept },function receiveDataOnPost(data){
-      //log(data);
-      history.go(-1);
-    }) ;
-    
+    // When the creation of an atom is canceled, we simply navigate back. The atom was created in a temporary transaction,
+    // so we don't need to delete anything.
+    history.go(-1);
   } else {
     $('#ScrollPane > .Atom').remove();  
     $('#ScrollPane').append($('#Rollback > .Atom')); // this constitutes a move
@@ -98,29 +90,23 @@ function sendCommands(commandArray) {
       addLogItems($('#ErrorLog'), $errors);
       $('#ErrorLog').attr('minimized','false'); // always maximize window
     } 
-    else
-      // after saving a new atom, we go back to the previous page
-      // Staying on the page is awkward as the url has atom='' which causes creation of a new atom when reloaded.
-      // This url also should not stay in the history, since back will then create a new atom. The problem can be solved
-      // by using a more complicated way to create new atoms (using post instead of a simple link with atom='').
-      if ($('#AmpersandRoot').attr('isNew')=='true')
-        history.go(-1);
-      else
-        getNoCache( window.location.href, function(data){
-          $newPage = $('<div>').html(data);
+    else { // we could simply reload here, but this way the state of the log windows is not changed/
+      getNoCache( window.location.href, function(data){
+        $newPage = $('<div>').html(data);
 
-          // replace the root Atom with the new one
-          $('#ScrollPane > .Atom').remove();  
-          $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
+        // replace the root Atom with the new one
+        $('#ScrollPane > .Atom').remove();  
+        $('#ScrollPane').append($newPage.find('#ScrollPane > .Atom'));
 
-          // update the timestamp
-          $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
-          $('#AmpersandRoot').attr('editing','false');
+        // update the timestamp
+        $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
+        $('#AmpersandRoot').attr('editing','false');
 
-          // we ignore the signals from $newPage, since we have just set them.
-          
-          initializeAtoms();   
-        });
+        // we ignore the signals from $newPage, since we have just set them.
+        
+        initializeAtoms();   
+      });
+    }
   });
 }
 
@@ -336,10 +322,7 @@ function setEditHandlersBelow($elt) {
       startAtomEditing($newAtom);
     else { // otherwise (for composite atoms), we generate an atom name based on time similar to mkUniqueAtomByTime in Database.php 
       var concept = getEnclosingAtomList($newAtom).attr('concept')
-      var mSecsSince1970 = ''+(new Date()).getTime();
-      var seconds = mSecsSince1970.slice(0, mSecsSince1970.length-3);
-      var microSeconds = mSecsSince1970.slice(mSecsSince1970.length-3, mSecsSince1970.length)+'000'; // php is a bit more accurate
-      $newAtom.attr('atom',concept+'_'+seconds+'_'+microSeconds);
+      $newAtom.attr('atom', mkUniqueAtomName(concept));
     }
     
     traceDbCommands();
@@ -462,9 +445,17 @@ function initializeAutocomplete($textfield, $atom) {
 //Navigation
 
 function navigateTo(interface, atom) {
+  log('navigate to '+interface + ':' + atom);
   window.location.href = 'index.php?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
                                             'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '')
-                                         +'&role='+getSelectedRole();     
+                                         +'&role='+getSelectedRole();
+  // the check for undefined is necessary for when navigateTo is called on a role change from the Main page
+}
+
+function navigateToNew(interface, concept) {
+  var atom = mkUniqueAtomName(concept);
+  window.location.href = 'index.php?interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) + 
+                         '&role='+getSelectedRole();       
 }
 
 function clearNavigationHandlers() {
@@ -728,3 +719,9 @@ function getNoCache(url, successCallback) {
   });
 }
 
+function mkUniqueAtomName(concept) {
+  var mSecsSince1970 = ''+(new Date()).getTime();
+  var seconds = mSecsSince1970.slice(0, mSecsSince1970.length-3);
+  var microSeconds = mSecsSince1970.slice(mSecsSince1970.length-3, mSecsSince1970.length)+'000'; // php is a bit more accurate
+  return 'atom',concept+'_'+seconds+'_'+microSeconds;
+}

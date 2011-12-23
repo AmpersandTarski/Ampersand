@@ -74,6 +74,7 @@ function addAtomToConcept($newAtom, $concept) {
   }
 }
 
+// Currently not used. Javascript creates a unique name and index.php adds to to the concept in a temporary transaction.
 function createNewAtom($concept) {
   $newAtom = mkUniqueAtomByTime($concept);
   
@@ -94,6 +95,10 @@ function getAllConceptAtoms($concept) {
   
   // need to do array_unique and array_filter, since concept table may contain duplicates and NULLs
   return array_unique(array_filter(firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`"))));  
+}
+
+function isAtomInConcept($atom, $concept) {
+  return in_array( $atom, getAllConceptAtoms($concept) );
 }
 
 function getTopLevelInterfacesForConcept($concept) {
