@@ -714,7 +714,7 @@ function getSelectedRole() {
   return $('#RoleSelector').val();
 }
 
-//a replacement of get that uses ajax to disable any caching (as html meta tags do not always succeed in disabling the cache)
+// a replacement of get that uses ajax to disable any caching (as html meta tags do not always succeed in disabling the cache)
 function getNoCache(url, successCallback) {
   $.ajax({ url: url,
            cache: false,
