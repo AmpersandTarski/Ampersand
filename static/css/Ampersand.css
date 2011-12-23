@@ -6,36 +6,39 @@ body {
     width: 100%;
     position: relative;
     z-index: 20;
-    padding-bottom:6px;
+    height: 33px; /* 24 (menu) + 6 (gradient) */
     background: transparent url(../images/menu_bg.png) repeat-x bottom center;
 }
-#TopLevelInterfaces ul {
+#TopLevelInterfaces .MenuBar {
     background-color: #333333;
-    padding: 2px 0px 3px 10px;
-    margin: 0 0 0 0;
+    padding-left: 10px;
+    padding-right: 3px;
+    height: 27px;
 }
-#TopLevelInterfaces ul li {
-    list-style: none;
-    display:inline
-}
-#TopLevelInterfaces ul li a {
-    padding: 4px 20px 3px 20px;
-    font-size: 15px;
+#TopLevelInterfaces .MenuItem {
+    padding-top: 3px;
+    padding-left: 20px;
+    padding-right: 20px;
+    float: left;
+    height: 24px;
     color: white;
-    height:100%;
+    font-size: 18px;
 }
-#TopLevelInterfaces ul li a:hover {
+#TopLevelInterfaces .MenuItem:hover  {
     background: white;
     color: #BF1E74;
 }
-
+#TopLevelInterfaces .MenuItem a {
+    color: inherit;
+}
 #TopLevelInterfaces #RoleSelector {
+    font-size: 14px;
     float: right;
-    margin: 0px 4px 0 0;
+    margin: 3px 4px 0 0;
 }
 #TopLevelInterfaces #MenuBarReset {
-    display: block;
     float: right;
+    margin-right: 10px;
 }
 
 

@@ -44,9 +44,14 @@ $roleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not 
 $roleName = $roleNr>=0 ? $allRoles[$roleNr]['name'] : '';
 
 echo '<div id="TopLevelInterfaces">';
-echo '<ul>';
+echo '<div class="MenuBar">';
+//echo '<ul>';
 
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
+
+echo '<div class="MenuItem" id="LinkToMain"><a href="index.php'.($roleNr>=0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></div>';
+echo topLevelInterfaceLinks();
+
 echo '<select id=RoleSelector onchange="changeRole()">';
 echo '<option value="-1"'.($roleNr==-1 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
 for ($i=0; $i<count($allRoles); $i++) {
@@ -55,15 +60,12 @@ for ($i=0; $i<count($allRoles); $i++) {
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
 
-echo '<li id="LinkToMain"><a href="index.php'.($roleNr>=0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></li>';
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
-  echo '<li id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></li>';
+  echo '<div class="MenuItem" id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></div>';
 }
 
-echo topLevelInterfaceLinks();
-
-echo '</ul>';
-echo '</div>';
+echo '</div>'; // .MenuBar
+echo '</div>'; // #TopLevelInterfaces
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '<ul id="Maintenance">';
@@ -143,10 +145,10 @@ function topLevelInterfaceLinks() {
   global $roleNr;
   
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']=='ONE')
-      echo '<li interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
+    if ($interface['srcConcept']=='ONE') // the interface attribute is there so we can style specific menu items with css
+      echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
           .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>=0? '&role='.$roleNr : '')
-          .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></li>';
+          .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></div>';
   }
 }
 
