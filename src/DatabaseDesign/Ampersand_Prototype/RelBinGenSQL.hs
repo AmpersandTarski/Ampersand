@@ -364,10 +364,10 @@ selectExprMorph fSpec i src trg rel@V{}
        trg'="vsnd."++sqlAttConcept fSpec (target rel)
 selectExprMorph _ _ src trg rel@Mp1{}
  | src == ""&&trg=="" = fatal 394 "Source and target are \"\", use selectExists' for this purpose"
- | src == ""  = Just$ "SELECT "++relval rel++" AS "++trg
- | trg == ""  = Just$ "SELECT "++relval rel++" AS "++src
- | src == trg = Just$ "SELECT "++relval rel++" AS "++src
- | otherwise  = Just$ "SELECT "++relval rel++" AS "++src++", "++relval rel++" AS "++trg
+ | src == ""  = Just$ "SELECT \\'"++relval rel++"\\' AS "++trg
+ | trg == ""  = Just$ "SELECT \\'"++relval rel++"\\' AS "++src
+ | src == trg = Just$ "SELECT \\'"++relval rel++"\\' AS "++src
+ | otherwise  = Just$ "SELECT \\'"++relval rel++"\\' AS "++src++", \\'"++relval rel++"\\' AS "++trg
 selectExprMorph fSpec i src trg rel -- made for both Rel and I
  = case sqlRelPlugNames fSpec (ERel rel) of
      []        -> fatal 344 $ "No plug for relation "++show rel
