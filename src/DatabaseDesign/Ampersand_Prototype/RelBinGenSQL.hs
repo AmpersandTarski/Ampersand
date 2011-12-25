@@ -117,11 +117,11 @@ selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
                      , src''<-[sqlExprSrc fSpec l]
                      , trg''<-[noCollideUnlessTm' l [src''] (sqlExprTrg fSpec l)]
                      ]++
-                     [Just$ "isect0."++src'++" = "++relval r -- sorce and target are equal because this is the case with Mp1
+                     [Just$ "isect0."++src'++" = \\'"++relval r++"\\'" -- source and target are equal because this is the case with Mp1
                      | (ERel r@(Mp1{})) <- mp1Tm
                      ]++
-                     [Just$ "isect0."++src'++" = "++relval m1 -- sorce and target are unequal
-                       ++ " AND isect0."++trg'++" = "++relval m2 -- sorce and target are unequal
+                     [Just$ "isect0."++src'++" = \\'"++relval m1++"\\'" -- source and target are unequal
+                       ++ " AND isect0."++trg'++" = \\'"++relval m2++"\\'" -- source and target are unequal
                      | (ECps ((ERel m1@(Mp1{})):(ERel (V _)):(ERel m2@(Mp1{})):[])) <- mp1Tm
                      ]++
                      [if isI l
@@ -156,13 +156,13 @@ selectExpr fSpec i src trg (ECps e@(s1@(ERel (Mp1{})):(s2@(ERel (V _)):(s3@(ERel
 
 selectExpr _ i src trg (ECps e@((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[])))) -- this will occur quite often because of doSubsExpr
   = sqlcomment i ("case: (ECps ((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[]))))"++phpIndent (i+3)++"ECps "++show (map showADL e)) $
-    Just$ "SELECT "++relval sr++" AS "++src++", "++relval tr++" AS "++trg
+    Just$ "SELECT \\'"++relval sr++"\\' AS "++src++", \\'"++relval tr++"\\' AS "++trg
 
 selectExpr fSpec i src trg (ECps es@(e@(ERel sr@(Mp1{})):f:fx))
    = sqlcomment i ("case: (ECps (ERel Mp1{}:f:fx))"++phpIndent (i+3)++"ECps "++show (map showADL es)) $
      selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                      (selectExprBrac fSpec i src' trg' (ECps (f:fx))+++" AS fst")
-                     (Just$"fst."++src'++" = "++relval sr)
+                     (Just$"fst."++src'++" = \\'"++relval sr++"\\'")
                      where src' = sqlExprSrc fSpec e
                            trg' = noCollideUnlessTm' (ECps (f:fx)) [src'] (sqlExprTrg fSpec (ECps (f:fx)))
 
