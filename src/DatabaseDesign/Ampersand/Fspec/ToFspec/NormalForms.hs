@@ -241,10 +241,11 @@ where
                                   absor2 = eqClass same (rs++k:ks) where e `same` e' = e==notCpl e'
                                   absor3 = eqClass (==) (rs++k:ks)
      nM (EFlp e) _          | isSym e =  (e,[shw e++" is symmetric"],"<=>")
-     nM (ERel r) _          | isEq && not (isIdent r)   = if isRfx r
-                                                        then (EIsc [ERel (I (source r))], [name r++" is an equivalence relation"], "<=>")
-                                                        else (EIsc [ERel (I (source r))], [name r++" is transitive and symmetric"], "==>")
-                                                        where isEq = isTrn r && isSym r
+     -- disabled nm (ERel r) _ because it is buggy for Mp1 relations 
+     --nM (ERel r) _          | isEq && not (isIdent r)   = if isRfx r
+     --                                                   then (EIsc [ERel (I (source r))], [name r++" is an equivalence relation"], "<=>")
+     --                                                   else (EIsc [ERel (I (source r))], [name r++" is transitive and symmetric"], "==>")
+     --                                                   where isEq = isTrn r && isSym r
      nM x _               = (x,[],"<=>")
 
 
