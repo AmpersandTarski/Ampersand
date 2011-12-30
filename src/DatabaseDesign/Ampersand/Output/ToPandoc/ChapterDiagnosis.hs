@@ -657,7 +657,7 @@ chpDiagnosis lev fSpec flags
        [ violtable r ps | length ps>1]
      | (r,ps)<-popviols ]++
 -- the tables containing the actual violations of multiplicity rules
-     concat
+     [BulletList
      [ textMult r++
        [Plain ( case language flags of
                  Dutch   ->
@@ -670,18 +670,14 @@ chpDiagnosis lev fSpec flags
                    
               )]++
        [ violtable r ps | length ps>1]
-     | (r,ps)<-multviols ]
+     | (r,ps)<-multviols ]]
      where
---     text r = if null expls
---              then explains2Blocks (autoMeaning (language flags) r) 
---              else expls 
---              where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
-     textMult r = [Plain [Str "<< TODO: textMult >>"]]
---     textMult r
---            = if null expls
---              then explains2Blocks (autoMeaning (language flags) r) 
---              else expls 
---              where expls = [Plain ([Str "De relatie ",Space]++block++[Str ".",Space]) | Means l econt<-rrxpl r, l==Just (language flags) || l==Nothing, Para block<-econt]
+     textMult r
+       = concat [    [Plain [Str "De relatie ",Space]]
+                  ++ amPandoc mrkup
+                  ++ [Plain [Str ".",Space]]
+                  
+                 | mrkup <- (ameaMrk . rrmean) r, amLang mrkup==language flags]
      quoterule r = if name r==""
                    then Str ("on "++show (origin r))
                    else Quoted SingleQuote [Str (name r)]
