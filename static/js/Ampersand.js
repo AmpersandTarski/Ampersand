@@ -459,6 +459,11 @@ function navigateToNew(interface, concept) {
   window.location.href = 'index.php?interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) + 
                          '&role='+getSelectedRole();       
 }
+function navigateToIdentifier(interface) {
+  var atom = document.getElementById("inputID").value;
+  window.location.href = 'index.php?interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) + 
+                         '&role='+getSelectedRole();       
+}
 
 function clearNavigationHandlers() {
   $('#AmpersandRoot .AtomName').unbind('click'); 
@@ -728,3 +733,14 @@ function mkUniqueAtomName(concept) {
   var microSeconds = mSecsSince1970.slice(mSecsSince1970.length-3, mSecsSince1970.length)+'000'; // php is a bit more accurate
   return 'atom',concept+'_'+seconds+'_'+microSeconds;
 }
+
+function showID(str)
+{
+  var x=document.getElementsByName("txtID");
+  var i=0;
+  for (i=0;i<x.length;i++)
+  {
+    x[i].innerHTML=str;
+  }  
+}
+

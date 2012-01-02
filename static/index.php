@@ -74,6 +74,8 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';
   echo newAtomLinks();
+  echo '<form><h3 id="CreateGotoHeader"><span class=TextContent>Create or go to identifier </span><input id="inputID" type="text" onkeyup="showID(this.value)" size="20" /></form></h3>';
+  echo newAtomLinksById();
 
   // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
   // This will be obsolete once these and other properties are in a separate div. 
@@ -164,6 +166,22 @@ function newAtomLinks() {
       echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
            .'<span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
            .' ('.htmlSpecialChars($interface['name']).')</spin></a></li>';
+    }
+  }
+  echo '</ul>';
+}
+function newAtomLinksById() {
+  global $allInterfaceObjects;
+  global $roleNr;
+  
+  echo '<ul id=CreateList>';
+  foreach($allInterfaceObjects as $interface) {
+    if ($interface['srcConcept']!='ONE') {
+      $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
+      $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
+      echo "\n<li interface='$interfaceStr'><a name=\"gotoID\" href=\"javascript:navigateToIdentifier('$interfaceStr')\">"
+           .'<span class=TextContent>Create new or go to '.htmlSpecialChars($interface['srcConcept'])
+           .' <a class=TextContent name="txtID"/></span> </a></li>';
     }
   }
   echo '</ul>';
