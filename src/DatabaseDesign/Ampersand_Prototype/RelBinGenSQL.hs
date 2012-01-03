@@ -230,7 +230,8 @@ selectExpr fSpec i src trg (ERel (I ONE)) = sqlcomment i "I[ONE]"$ selectExpr fS
 selectExpr fSpec i src trg (ERel mrph) = selectExprMorph fSpec i src trg mrph
 selectExpr fSpec i src trg (EBrk expr) = selectExpr fSpec i src trg expr
 
-selectExpr fSpec i src trg (ECpl (ERel (V _))) = sqlcomment i "case: ECpl (ERel (V _))"$ selectExpr fSpec i src trg (EUni [])
+selectExpr   _   i src trg (ECpl (ERel (V _))) = sqlcomment i "case: ECpl (ERel (V _))"$   -- yields empty
+                                                 toM(selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0"))
 selectExpr fSpec i src trg (ECpl e )
    = sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl [ \""++showADL e++"\" ]") $
      selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
