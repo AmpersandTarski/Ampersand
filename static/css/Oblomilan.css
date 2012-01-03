@@ -121,6 +121,11 @@ button.Button:hover {
     display: none;
 }
 
+/* unless the atom is deleted and we have dev=true, because then we want to see a crossed out name */
+[dev=true][editing=true] .Atom[atomic=false][status=deleted] > .AtomName {
+    display: block;
+}
+
 
 /* DeleteStub */
 [editing=true] .AtomList[relation] > .AtomRow > .DeleteStub {
