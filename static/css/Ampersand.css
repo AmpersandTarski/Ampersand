@@ -41,6 +41,18 @@ body {
     margin-right: 10px;
 }
 
+/* Due to a bug in Chrome, 'before' pseudo elements are not part of the element, which makes it impossible to rename links
+   in the interface with a Custom.css. A workaround is to display these links as inline-block. */
+#TopLevelInterfaces a {
+  display: inline-block;
+}
+#Maintenance a {
+  display: inline-block;
+}
+#CreateList a {
+  display: inline-block;
+}
+
 
 #ScrollPane {
     overflow:auto; 
