@@ -147,9 +147,13 @@ genInterfaceObjects fSpec opts editableRels depth object = indent (depth*2) $
   ] ++ case objctx object of
          ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
                                          , "      , 'relationIsFlipped' => false" 
+                                         , "      , 'min' => "++ if isTot r then "'One'" else "'Zero'"
+                                         , "      , 'max' => "++ if isUni r then "'One'" else "'Many'"
                                          ]
          EFlp (ERel r) | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations
                                          , "      , 'relationIsFlipped' => true" 
+                                         , "      , 'min' => "++ if isSur r then "'One'" else "'Zero'"
+                                         , "      , 'max' => "++ if isInj r then "'One'" else "'Many'"
                                          ]          
          _             -> [ "      , 'relation' => ''" 
                           , "      , 'relationIsFlipped' => ''" 
