@@ -36,14 +36,14 @@ where
 -- testInterface :: Fspc -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
-   testInterface :: Fspc -> Interface -> String
-   testInterface fSpec ifc
+   testInterface :: Options -> Fspc -> Interface -> String
+   testInterface flags fSpec ifc
     = "\nInterface "++ name ifc++"("++intercalate ", " [showADL r++":"++name (target r) | r<-rels]++")\n"++
       " - The parameters correspond to editable fields in a user interface.\n   "++
       (showADL .mapexprs disambiguate fSpec) ifc++"\n"++
       " - Invariants:\n   "++intercalate "\n   " [(showADL .mapexprs disambiguate fSpec) rule    | rule<-invs]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
-      concat [showClause fSpec (allClauses rule) | rule<-invs]++"\n"++
+      concat [showClause fSpec (allClauses flags rule) | rule<-invs]++"\n"++
 {-
       " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
                                  ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
@@ -178,7 +178,7 @@ where
       , Str "Analyzing interfaces:", LineBreak, Str "     "]
       ++
       intercalate [LineBreak, Str "     "] 
-         [[Str (testInterface fSpec ifc)]
+         [[Str (testInterface flags fSpec ifc)]
          | ifc<-take 1 (interfaceG fSpec)]
       ++
       [ LineBreak, Str "--------------", LineBreak]
@@ -268,7 +268,7 @@ where
                            | clause<-shifts
                            , if not (isEUni clause) then fatal 269 ("Clause "++showADL clause++" should be a disjunction") else True
                            , let EUni fus = clause]
-                  | let Clauses ts r = allClauses rule, (conjunct, shifts)<-ts] ++
+                  | let Clauses ts r = allClauses flags rule, (conjunct, shifts)<-ts] ++
            [LineBreak]
 {-
            [ Str ("Available code fragments on rule "++name rule++":", LineBreak ]++
@@ -302,7 +302,7 @@ where
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]
                                    , True ]  -- (isTrue.conjNF) (EUni[ECpl r,r'])
-                                  | r<-[hc | cs<-[allClauses rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
+                                  | r<-[hc | cs<-[allClauses flags rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
                                   ]
 -}
               where e = rrexp rule

@@ -14,7 +14,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug       (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
---   import DatabaseDesign.Ampersand.Fspec.ShowHS
+   import DatabaseDesign.Ampersand.Fspec.ShowHS
 --   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..))
    import Text.Pandoc
    import Data.List (nub,intercalate)
@@ -25,7 +25,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    makeFspec :: Options -> A_Context -> Fspc
    makeFspec flags context = fSpec
     where
-        allQuads = quads (\_->True) (rules context++multrules context++keyrules context)
+        allQuads = quads flags (\_->True) (rules context++multrules context++keyrules context)
         fSpec =
             Fspc { fsName       = name context
                    -- interfaceS contains the interfaces defined in the Ampersand script.
@@ -41,7 +41,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                        , isI ctxrel && source ctxrel==ONE
                                          || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
                                        , allInterfaces flags]  -- generated interfaces
-                 , fSwitchboard = switchboard fSpec
+                 , fSwitchboard = switchboard flags fSpec
                  , fActivities  = [ makeActivity fSpec rul | rul <-processRules context]
                  , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
                  , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
@@ -68,13 +68,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                                , (not.null) (selRoles p act)]
                          selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
         -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
-        allDecs = [ d{decprps_calc = multiplicities d `uni` [Tot |    ERel r <-totals, d==makeDeclaration r]
-                                                      `uni` [Sur |EFlp (ERel r)<-totals, d==makeDeclaration r]}
+        allDecs = [ d{decprps_calc = decprps d `uni` [Tot |      ERel r <-totals, d==makeDeclaration r]
+                                               `uni` [Sur |EFlp (ERel r)<-totals, d==makeDeclaration r]}
                   | d<-declarations context]
      -- determine relations that are total (as many as possible, but not necessarily all)
         totals :: [Expression]
         totals
-         = nub [rel | q<-quads visible (invariants fSpec), isIdent (qMorph q)
+         = nub [rel | q<-quads flags visible (invariants fSpec), isIdent (qMorph q)
                     , (_,hcs)<-cl_conjNF (qClauses q), EUni fus<-hcs
                     , antc<-[(conjNF.EIsc) [notCpl f | f<-fus, isNeg f]], isI antc
                     , f<-fus, isPos f
@@ -83,7 +83,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
            where tots (ECps fs) = init fs++[flp r | r<-tail fs]  -- let I |- r;s;t be a rule, then r and s and t~ and s~ must all be total.
                  tots _ = []
                  visible _ = True -- for computing totality, we take all quads into account.
-                 
+
         --------------
         --making plugs
         --------------
@@ -422,9 +422,9 @@ while maintaining all invariants.
    -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is carried along for traceability.
-   quads :: (Relation->Bool) -> [Rule] -> [Quad]
-   quads visible rs
-    = [ Quad r (Clauses [ (conj,allShifts conj)
+   quads :: Options -> (Relation->Bool) -> [Rule] -> [Quad]
+   quads flags visible rs
+    = [ Quad r (Clauses [ (conj,allShifts flags conj)
                         | conj <- conjuncts rule
       --                , (not.null.lambda Ins (ERel r)) conj  -- causes infinite loop
       --                , not (checkMono conj Ins r)         -- causes infinite loop
@@ -436,28 +436,23 @@ while maintaining all invariants.
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
-   allClauses :: Rule -> Clauses
-   allClauses rule = Clauses [(conj,allShifts conj) | conj<-conjuncts rule] rule
+   allClauses :: Options -> Rule -> Clauses
+   allClauses flags rule = Clauses [(conj,allShifts flags conj) | conj<-conjuncts rule] rule
 
-   allShifts :: Expression -> [Expression]
-   allShifts conjunct = nub [simplify e' | e'<-xshiftL conjunct++shiftR conjunct, not (isTrue e')]
-{- used to be nicer, by normalizing on 'flp'. But that yields overlapping types since january of 2011...
-   Feel free to restore, because I couldn't. (SJ)
-   allShifts conjunct = nub [simplify (normFlp e') | e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
+   allShifts :: Options -> Expression -> [Expression]
+   allShifts flags conjunct = nub [simplify e' | e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
     where
-       normFlp :: Expression -> Expression
-       normFlp (EUni []) = EUni []
-       normFlp (EUni fs) = if length [r | f<-fs, r<-morlist f, inline r] <= length [r | f<-fs, r<-morlist f, not (inline r)]
-                         then EUni (map flp fs) else (EUni fs)
-       normFlp _ = fatal 492 $ "normFlp must be applied to EUni expressions only, look for mistakes in shiftL or shiftR"
--}
-
-    where
-     xshiftL :: Expression -> [Expression]
-     xshiftL r
+    {-
+     diagnostic
+      = intercalate "\n  "
+          [ "shft L: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
+          , "shft R: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
+          ] -}
+     shiftL :: Expression -> [Expression]
+     shiftL r
       | length antss+length conss /= length fus = fatal 498 $ "shiftL will not handle argument of the form "++showADL r
       | null antss || null conss                = [disjuncts r |not (null fs)] --  shiftL doesn't work here.
-      | all idsOnly (concat antss)              = [EUni (ECpl (ECps [ERel (I srcA)]):map ECps conss)]
+      | all idsOnly (concat antss)              = [EUni ([ECpl (ERel (I srcA))] ++ map ECps conss)]
       | otherwise                               = [EUni ([ ECpl (ECps (if null ts then id' css else ts))
                                                            | ts<-ass++[id' css | null ass]
                                                          ]++
@@ -469,6 +464,14 @@ while maintaining all invariants.
                                                    , if null ass then fatal 507 "null ass in shiftL" else True
                                                   ]
       where
+      {-
+       diagnostic
+        = intercalate "\n  "
+          [ "fs:    [ "++intercalate "\n         , " [showHS flags "\n           " f | f<-fs    ]++"\n       ]"
+          , "antss: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antss ]++"\n       ]"
+          , "conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"
+          , "srcA:  "++showHS flags "" srcA
+          ] -}
        EUni fs = disjuncts r                -- informal example [  "-(r;s)", "-(p;r)", "x;y;z" ] coming from  "r;s /\ p;r |- x;y;z"
        fus = filter (not.isI) fs
        antss = [ts | ECpl (ECps ts)<-fus]   -- e.g. [ ["r","s"], ["p","r"] ]
@@ -504,13 +507,22 @@ while maintaining all invariants.
      shiftR r
       | length antss+length conss /= length fus = fatal 541 $ "shiftR will not handle argument of the form "++showADL r
       | null antss || null conss                = [disjuncts r |not (null fs)] --  shiftR doesn't work here.
-      | all idsOnly (concat conss)              = [EUni (ECpl (ECps [ERel (I srcA)]) : map ECps antss)]
+      | all idsOnly (concat conss)              = [EUni (map (ECpl . ECps) antss ++ [ECps [ERel (I srcA)]])]
       | otherwise                               = [EUni ([ ECpl (ECps (if null ts then id' css else ts))
                                                        | ts<-ass++[id' css | null ass]]++
                                                        [ ECps (if null ts then id' ass else ts)
                                                        | ts<-css++[id' ass | null css]])
                                                   | (ass,css)<-nub(move antss conss)]
       where
+      {-
+       diagnostic
+        = intercalate "\n  "
+          [ "fs:    [ "++intercalate "\n         , " [showHS flags "\n           " f | f<-fs    ]++"\n       ]"
+          , "antss: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antss ]++"\n       ]"
+          , "conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"
+          , "srcA:  "++showHS flags "" srcA
+          , "move:  [ "++intercalate "\n         , " [show c | c<-move antss conss ]++"\n       ]"
+          ] -}
        EUni fs = disjuncts r  -- fs is a list of expressions
        fus = filter (not.isI) fs
        antss = [ts | ECpl (ECps ts)<-fus]
@@ -646,13 +658,13 @@ while maintaining all invariants.
 
 -- The function disjuncts yields an expression which has constructor EUni in every case.
    disjuncts :: Expression -> Expression
-   disjuncts = fuRule
-    where fuRule (EUni cps) = (EUni . nub . map cpRule) cps
-          fuRule r        = EUni [cpRule r]
-          cpRule (ECpl r)  = ECpl (fRule r)
-          cpRule r        = fRule r
-          fRule (ECps ts)    = ECps ts
-          fRule  r        = ECps [r]
+   disjuncts = uniRule
+    where uniRule (EUni cps) = (EUni . nub . map cplRule) cps
+          uniRule r          = EUni [cplRule r]
+          cplRule (ECpl r)   = ECpl (cpsRule r)
+          cplRule r          = cpsRule r
+          cpsRule (ECps ts)  = ECps ts
+          cpsRule r          = ECps [r]
 
    actSem :: InsDel -> Relation -> Expression -> Expression
    actSem Ins rel (ERel r) | rel==r    = ERel rel 
@@ -950,8 +962,8 @@ Chc [ if isRel e
                                          if null motive then "null motive" else ""
                                          )
 
-   switchboard :: Fspc -> Fswitchboard
-   switchboard fSpec
+   switchboard :: Options -> Fspc -> Fswitchboard
+   switchboard flags fSpec
     = Fswtch
        { fsbEvIn  = eventsIn
        , fsbEvOut = eventsOut
@@ -959,7 +971,7 @@ Chc [ if isRel e
        , fsbECAs  = ecas
        }
       where
-        qs        = quads visible (invariants fSpec++multrules fSpec++keyrules fSpec)
+        qs        = quads flags visible (invariants fSpec++multrules fSpec++keyrules fSpec)
         ecas      = assembleECAs qs
         conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
