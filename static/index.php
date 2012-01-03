@@ -74,8 +74,9 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';
   echo newAtomLinks();
-  echo '<form><h3 id="CreateGotoHeader"><span class=TextContent>Create or go to identifier </span><input id="inputID" type="text" onkeyup="showID(this.value)" size="20" /></form></h3>';
-  echo newAtomLinksById();
+  // TODO: temporarily disabled until we find out what to do with these
+  //echo '<form><h3 id="CreateGotoHeader"><span class=TextContent>Create or go to identifier </span><input id="inputID" type="text" onkeyup="showID(this.value)" size="20" /></form></h3>';
+  //echo newAtomLinksById();
 
   // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
   // This will be obsolete once these and other properties are in a separate div. 
