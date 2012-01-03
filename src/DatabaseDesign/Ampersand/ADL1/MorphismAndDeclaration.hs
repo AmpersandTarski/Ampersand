@@ -95,7 +95,6 @@ flpSign :: Sign -> Sign
 flpSign (Sign s t) = Sign t s
    
 
-
 instance Relational Declaration where
     multiplicities d = case d of
            Sgn {}       -> decprps_calc d --according to comment in data Declaration, decprps_calc also contains user defined prps
