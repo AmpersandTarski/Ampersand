@@ -225,13 +225,20 @@ function generateInterface($db, $interface, $srcAtom) {
   else
     $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['expressionSQL'])); // filter, in case table contains ($srcAtom, null)
 
+  if (count($codomainAtoms)==0 && $interface['min']=='One') 
+    $codomainAtoms[] = ""; // if there should be at least one field, we add an empty field.
+  
   $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
   
-  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']));
+  $nrOfAtoms = count($codomainAtoms)-1; // disregard the null for the NewAtomTemplate
+  
+  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']))
+                                                    .' min='.showHtmlAttrStr($interface['min']).' max='.showHtmlAttrStr($interface['max'])
+                                                    .' nrOfAtoms='.showHtmlAttrStr($nrOfAtoms); // 
   emit($html, '<div class="AtomList" concept='.showHtmlAttrStr($interface['tgtConcept']).$relationAttrs.'>');
   
-  foreach($codomainAtoms as $tgtAtom) {
-    emit($html, '<div class=AtomRow  rowType='.($tgtAtom==null?'NewAtomTemplate':'Normal').'><div class=DeleteStub>&nbsp;</div>'.
+  foreach($codomainAtoms as $i => $tgtAtom) { // null is the NewAtomTemplate
+    emit($html, '<div class=AtomRow rowType='.($tgtAtom===null ?'NewAtomTemplate': 'Normal').'><div class=DeleteStub>&nbsp;</div>'.
                   '<div class=AtomListElt>');
     emit($html, generateAtomInterfaces($db, $interface, $tgtAtom));
     emit($html,'</div></div>');  
@@ -257,7 +264,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
  *   </InterfaceList>
  * </Atom>
  * 
- * if $atom is null, we are presenting a template
+ * if $atom is null, we are presenting a template. Because ""==null and "" denotes an empty atom, we check with === (since "" !== null)
  */
   $html = "";
   $interfaces = $isTopLevelInterface ? array ($interface) : $interface['subInterfaces'];
@@ -266,7 +273,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept']));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom?'unchanged':'new').' atomic='.jsBool(count($interfaces)==0).'>');
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.jsBool(count($interfaces)==0).'>');
   // can be hidden with css if necessary (old prototype did not show it)
     
   emit($html, "<div class=AtomName>".htmlSpecialChars($atom).'</div>');

@@ -184,6 +184,10 @@ body {
     width: 25px;
 }
 
+/* Don't show deletestub if there should be at least one field and we only have one atom */
+[editing=true] .AtomList[relation][min=One][nrOfAtoms="1"] > .AtomRow > .DeleteStub {
+    visibility: hidden;
+}
 [editing=true] .AtomList[relation] > .AtomRow[rowType=Normal] > .DeleteStub {
     display:table-cell;
 }
@@ -195,11 +199,15 @@ body {
 [editing=true] .AtomList[hover=true] > .AtomRow > .DeleteStub:hover {
     background-image: url('../images/DeleteButtonHover.png');
 }
- 
 
 [editing=true] .AtomList[relation] > .AtomRow > .InsertStub {
-    display:block;  /* only show the insert stub when there is an editable relation*/
+    display:block;  /* only show the insert stub when there is an editable relation */
 }
+
+/* Don't show insertStub if there should be at most one field and we already have one atom */
+[editing=true] .AtomList[relation][max=One][nrOfAtoms="1"] > .AtomRow > .InsertStub {
+    visibility: hidden;  /* we hide it rather than set display to none, so the width doesn't change */
+}                        /* would be nice to set the height to 0, but turns out to be rather complicated */
 
 .AtomList .InsertStub {
     visibility: hidden;

@@ -289,7 +289,8 @@ function setEditHandlersBelow($elt) {
  
   $elt.find('.DeleteStub').click(function() {
     var $atom = $(this).next().children().first(); // children is for AtomListElt
-
+    var $atomList = getEnclosingAtomList($(this));
+    
     if ($atom.attr('status')=='new')
       getEnclosingAtomRow($(this)).remove(); // remove the row of the table containing delete stub and atom
     else {
@@ -298,10 +299,13 @@ function setEditHandlersBelow($elt) {
         $atom.find('.AtomName').text($atom.attr('originalAtom')); // text() automatically escapes text
       }
       $atom.attr('status','deleted');
-      getEnclosingAtomRow($(this)).attr('rowstatus','deleted'); // to make the entire row invisible
+      getEnclosingAtomRow($(this)).attr('rowStatus','deleted'); // to make the entire row invisible
+      // we cannot use rowType for this, since we only change visibility, the rest of the style should be same as for Normal
+      
       $atom.find('.InterfaceList').remove(); // delete all interfaces below to prevent any updates on the children to be sent to the server
     }
     
+    updateNrOfAtoms($atomList);
     traceDbCommands();
   });
   
@@ -314,7 +318,7 @@ function setEditHandlersBelow($elt) {
 
     $newAtomTableRow.attr('rowType','Normal'); // remove the NewAtomTemplate class to make the new atom visible
     $newAtomTemplate.before( $newAtomTableRow ); 
-    
+        
     setEditHandlersBelow($newAtomTableRow); // add the necessary handlers to the new element
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
@@ -327,8 +331,15 @@ function setEditHandlersBelow($elt) {
       $newAtom.attr('atom', mkUniqueAtomName(concept));
     }
     
+    updateNrOfAtoms($atomList);
     traceDbCommands();
   });
+}
+
+function updateNrOfAtoms($atomList) {
+  var $normalRows = $atomList.find('>.AtomRow[rowType="Normal"]');
+  $atomList.attr('nrOfAtoms', $normalRows.length - $normalRows.filter('[rowStatus="deleted"]').length );
+  // with --dev, rows are not removed but have their status set to deleted
 }
 
 // Create a form that contains a text field, put it after $atom, and hide $atom.
