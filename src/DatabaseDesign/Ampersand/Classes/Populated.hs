@@ -47,8 +47,10 @@ where
             EIsc []    -> fatal 47 "Cannot compute contents of EIsc []"
             EIsc es    -> foldr1 isc (map contents es)
             EDif (l,r) -> contents l >- contents r
+            -- The left residual lRel/rRel is defined by y(left/rRel)x if and only if for all z in X, x rRel z implies y lRel z.
             ELrs (l,r) -> [(y,x) | x<-cptos' (source l), y <-cptos' (source r)
                                  , null [z |z<-cptos' (target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
+            -- The right residual lRel\rRel is defined by x(lRel\rRel)y if and only if for all z in X, z lRel x implies z rRel y.
             ERrs (l,r) -> [(x,y) | x<-cptos' (target l), y <-cptos' (target r)
                                  , null [z |z<-cptos' (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
             ERad es    -> if null es 
@@ -79,15 +81,19 @@ where
             ERel rel   -> contents rel
 
 {- Derivation of contents (ERrs (l,r)):
-Let cartP = contents (target l, target r)
-    cL = contents l
+Let cL = contents l
     cR = contents r
   contents (ERrs (l,r))
-= [(x,y) | (x,y)<-cartP,      and [    (z,x) `notElem` cL || (z,y) `elem` cR  |z<-contents (source l)] ]
-= [(x,y) | (x,y)<-cartP, not ( or [not((z,x) `notElem` cL || (z,y) `elem` cR) |z<-contents (source l)])]
-= [(x,y) | (x,y)<-cartP, not ( or [    (z,x)  `elem` cL && (z,y) `notElem` cR |z<-contents (source l)])]
-= [(x,y) | (x,y)<-cartP, null [z |z<-contents (source l), (z,x)  `elem` cL && (z,y) `notElem` cR]]
-= 
+= [(x,y) | x<-contents (target l), y<-contents (target r)
+         ,      and [    (z,x) `notElem` cL || (z,y) `elem` cR  | z<-contents (source l)] ]
+= [(x,y) | x<-contents (target l), y<-contents (target r)
+         , not ( or [not((z,x) `notElem` cL || (z,y) `elem` cR) | z<-contents (source l)])]
+= [(x,y) | x<-contents (target l), y<-contents (target r)
+         , not ( or [    (z,x)  `elem` cL && (z,y) `notElem` cR | z<-contents (source l)])]
+= [(x,y) | x<-contents (target l), y<-contents (target r)
+         , null [ () | z<-contents (source l), (z,x)  `elem` cL && (z,y) `notElem` cR]]
+= [(x,y) | x<-contents (target l), y<-contents (target r)
+         , null [ () | (z,x') <- cL, x==x', (z,y) `notElem` cR ]]
 -}
 
 
