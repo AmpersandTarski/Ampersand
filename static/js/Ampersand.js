@@ -18,7 +18,8 @@ function initializeAtoms() {
  * on #ScrollPane. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
   $('#Rollback').empty(); // in case we start twice for some reason
-  $('#Rollback').append($('#ScrollPane > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
+  if ($('#AmpersandRoot').attr('isNew')!='true') // for create new, we don't need to roll back (cancel is navigate back)
+    $('#Rollback').append($('#ScrollPane > .Atom').clone(true, true)); /* (true,true) is needed to deep-copy edit handlers */
   $('#AmpersandRoot').attr('editing','true');
   $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
   clearNavigationHandlers();
@@ -52,6 +53,7 @@ function commitEditing() {
   $editedAtom = getEnclosingAtom( $('#atomEditor') );
   if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
+  
   if (getEmptyAtomsNotInTemplates().length > 0) {
     alert('Please fill out all <new> atoms first.');
     return;
@@ -114,7 +116,7 @@ function sendCommands(commandArray) {
 
 
 function getEmptyAtomsNotInTemplates() {
-  $emptyAtomsNotInTemplates = $('.Atom[atom=""]').map( function() {
+  $emptyAtomsNotInTemplates = $('#AmpersandRoot .Atom[atom=""]').map( function() {
     if ($(this).parents().filter('[rowType=NewAtomTemplate]').length)
       return null;
     else 
@@ -124,7 +126,7 @@ function getEmptyAtomsNotInTemplates() {
 }
 
 function getNonUniqueAtomLists() {
-  $nonUniqueAtomLists =$('.AtomList').map( function() { // called also on lists in templates, but that's not a big deal
+  $nonUniqueAtomLists =$('#AmpersandRoot .AtomList').map( function() { // called also on lists in templates, but that's not a big deal
     $atoms = $(this).find('>.AtomRow[rowType=Normal]>.AtomListElt>.Atom');
     for (var i=0; i<$atoms.length; i++)
       for (var j=i+1; j<$atoms.length; j++)
