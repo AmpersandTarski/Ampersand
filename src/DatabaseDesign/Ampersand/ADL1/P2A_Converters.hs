@@ -248,28 +248,31 @@ pKDef2aKDef actx pkdef
 -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
 pIFC2aIFC :: (Language l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)
 pIFC2aIFC actx pifc 
- = (Ifc { ifcName = ifc_Name pifc
+ = (Ifc { ifcName   = ifc_Name pifc
         , ifcParams = prms
-        , ifcViols = fatal 206 "not implemented ifcViols"
-        , ifcArgs = ifc_Args pifc
-        , ifcObj = obj
-        , ifcPos = ifc_Pos pifc
-        , ifcExpl = ifc_Expl pifc
-                    }
+        , ifcViols  = fatal 206 "not implemented ifcViols"
+        , ifcArgs   = ifc_Args pifc
+        , ifcObj    = obj
+        , ifcPos    = ifc_Pos pifc
+        , ifcExpl   = ifc_Expl pifc
+        }
    , CxeOrig (cxelist (objcxe:prmcxes)) "interface" (name pifc) (origin pifc) )
    where
     (obj,objcxe)  = pODef2aODef actx NoCast (ifc_Obj pifc)
     (prms,prmcxes)  = unzip [pRel2aRel actx (psign sgn) r | (r,sgn)<-ifc_Params pifc]
+
 -- | pODef2aODef checks compatibility of composition of expressions on equality
 pODef2aODef :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
 pODef2aODef actx cast podef 
- = (Obj { objnm = obj_nm podef
-        , objpos = obj_pos podef
-        , objctx = expr
-        , objats = ats
+ = (Obj { objnm   = obj_nm podef
+        , objpos  = obj_pos podef
+        , objctx  = expr
+        , objats  = ats
         , objstrs = obj_strs podef
-                    }
-   , CxeOrig (cxelist [nmchk,odcxe]) "object definition" "" (origin podef) )
+        }
+   , CxeOrig (cxelist [ nmchk
+                      , exprcxe -- was odcxe, see below
+                      ]) "object definition" "" (origin podef) )
    where
     nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
                          |at<-obj_ats podef, let xs=[at' |at'<-obj_ats podef,name at==name at'],length xs>1]
@@ -278,20 +281,22 @@ pODef2aODef actx cast podef
     -- Step2: check obj_ats in the context of expr
     (ats,atscxes)  = (\f (x,y) -> (x, f y)) cxelist $ unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
     -- Step3: compute type error messages
+    {- SJ 4th jan 2012: I have disabled odcxe in order to find out why it is necessary to check equality. We should run in trouble if this check is indeed necessary...
     odcxe
-     | nocxe exprcxe && nocxe atscxes = eqcxe
+     | nocxe exprcxe && nocxe atscxes = eqcxe   -- equality check disabled (see below)
      | nocxe exprcxe && not(nocxe atscxes) 
           -- the nature of an atscxe is unknown and may be caused by the SourceCast. If so, a note on the type of expr is useful .
         = cxelist [atscxes,newcxe ("Note that the type of "++ showADL expr ++ " at " ++ show(origin podef) ++ " is "++ show (sign expr) ++ ".")]
      | otherwise     = exprcxe
-    -- Step4: check equality
+    -- Step4: check equality  -- Why is this necessary? Compatible should be enough...
     eqcxe = newcxeif (length (nub (target expr:map (source.objctx) ats))/=1)
                      (intercalate "\n" ["The source of expression " 
                                         ++ showADL (objctx x) ++" ("++showADL (source (objctx x))++")"
                                         ++ " is compatible, but not equal to the target of expression "
                                         ++ showADL expr       ++" ("++showADL (target expr) ++ ")."
                                        |x<-ats,source (objctx x)/=target expr])
-
+    -}
+    
 pPurp2aPurp :: A_Context -> PPurpose -> (Purpose, CtxError)
 pPurp2aPurp actx pexpl
  = ( Expl { explPos      = pexPos   pexpl
