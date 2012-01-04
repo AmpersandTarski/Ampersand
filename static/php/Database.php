@@ -105,7 +105,6 @@ function editAddToConcept($atom, $concept) {
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
   global $dbName;
   global $relationTableInfo;
-  global $conceptTableInfo;
   global $tableColumnInfo;
   
   emitLog("editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
