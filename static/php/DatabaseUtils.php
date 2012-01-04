@@ -59,18 +59,26 @@ function addAtomToConcept($newAtom, $concept) {
   global $dbName;
   global $conceptTableInfo;
 
-  foreach ($conceptTableInfo[$concept] as $conceptTableCol) { // $conceptTableInfo[$concept] is an array of tables&columns 
-    $conceptTable = $conceptTableCol['table'];                // maintaining $concept.
-    $conceptCol = $conceptTableCol['col'];                    // We insert the new atom in each of them
+  foreach ($conceptTableInfo[$concept] as $conceptTableCol) { // $conceptTableInfo[$concept] is an array of tables with arrays of columns 
+    $conceptTable = $conceptTableCol['table'];                // maintaining $concept. (we have an array rather than a single column because of generalizations)
+    $conceptCols = $conceptTableCol['cols'];                  // We insert the new atom in each of them.
 
-    $conceptTableEsc = escapeSQL($conceptTable);
-    $conceptColEsc = escapeSQL($conceptCol);
-    $newAtomEsc = escapeSQL($newAtom);
-
-    $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
     
-    if (!in_array($newAtom, $existingAtoms))
-      DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` (`$conceptColEsc`) VALUES ('$newAtomEsc')");
+    $conceptTableEsc = escapeSQL($conceptTable);
+    $newAtomEsc = escapeSQL($newAtom); 
+    
+    // invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one for checking the existence of a concept
+    $firstConceptColEsc = escapeSQL($conceptCols[0]);
+    
+    $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
+    
+    if (!in_array($newAtom, $existingAtoms)) {
+      $allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
+      $newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
+      $allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
+            
+      DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
+    }
   }
 }
 
@@ -82,14 +90,12 @@ function createNewAtom($concept) {
   return $newAtom;
 }
 
-/* NOTE: this only  a single concept table, so it assumes that all concept tables for $concept are up to date (or at least the first one) */
+/* invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one to obtain the list of atoms */
 function getAllConceptAtoms($concept) {
   global $dbName;
   global $conceptTableInfo;
-  
-  $conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables&columns maintaining $concept
-  $conceptCol = $conceptTableInfo[$concept][0]['col'];     // for lookup, we just take the first
-  
+  $conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept
+  $conceptCol = $conceptTableInfo[$concept][0]['cols'][0]; // for lookup, we just take the first table and its first column
   $conceptTableEsc = escapeSQL($conceptTable);
   $conceptColEsc = escapeSQL($conceptCol);
   
