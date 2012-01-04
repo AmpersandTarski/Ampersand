@@ -1,9 +1,10 @@
 module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
-import DatabaseDesign.Ampersand.Fspec.Fspec
 
-import DatabaseDesign.Ampersand_Prototype.CoreImporter  
+import DatabaseDesign.Ampersand_Prototype.CoreImporter 
+import DatabaseDesign.Ampersand.Fspec.Fspec (lookupCpt)
 import Prelude hiding (writeFile,readFile,getContents)
+import Data.Function
 import Data.List
 import Data.Maybe
 import Control.Monad
@@ -11,6 +12,7 @@ import System.FilePath
 import System.Directory               
 import DatabaseDesign.Ampersand_Prototype.Version 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
+import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (getGeneralizations)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
@@ -70,9 +72,12 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [ (showPhpStr $ name c)++" => array "] ++
              (indent 4 $ blockParenthesize "(" ")" ","
-               [ ["array ('table' => "++showPhpStr (name plug)++", 'col' => "++showPhpStr (fldname conceptField)++")"]
-               | (plug,conceptField) <- lookupCpt fSpec c ])
-         | c <- concs fSpec]) ++
+               [ [ "array ( 'table' => "++showPhpStr (name table)
+                 , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" 
+                 , "      )"]
+               -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
+               | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : getGeneralizations fSpec c ])
+         | c <- concs fSpec]) ++        
   [ ""
   , "$tableColumnInfo ="
   , "  array" ] ++
@@ -134,6 +139,9 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        processRuleNames = nub $ concatMap snd rulesPerRole
        invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
        
+       groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
+       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sort tablesFields ]
+
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
   , showPhpStr (name interface) ++" => " ] ++
