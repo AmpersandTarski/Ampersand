@@ -5,7 +5,7 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand.Fspec.Fspec (lookupCpt)
 import Prelude hiding (writeFile,readFile,getContents)
 import Data.Function
-import Data.List
+import Data.List hiding (sort)
 import Data.Maybe
 import Control.Monad
 import System.FilePath
@@ -140,7 +140,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
        
        groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
-       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sort tablesFields ]
+       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
 
 generateInterface fSpec opts interface =
   [ "// Top-level interface "++name interface ++":"
