@@ -486,7 +486,8 @@ function setNavigationHandlers() {
     var interfaces = getInterfacesMap()[concept];  // NOTE: getInterfacesMap is assumed to be declared 
     // (since js has no import mechanism and we don't want to pass variables around all the time, a more elegant solution is not possible)
     
-    if (typeof(interfaces) != 'undefined') { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
+    if (typeof(interfaces) != 'undefined' && interfaces.length > 0) { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
+                                                                       // undefined means no interfaces are defined, length == 0 means no interfaces are visible for selected role
       $(this).click(function (event) {
         if (interfaces.length == 1)
           navigateTo(interfaces[0], atom);

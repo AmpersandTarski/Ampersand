@@ -111,11 +111,16 @@ function isAtomInConcept($atom, $concept) {
   return in_array( $atom, getAllConceptAtoms($concept) );
 }
 
-function getTopLevelInterfacesForConcept($concept) {
+function isInterfaceForRole($interface, $roleNr, $roleName) {
+  return in_array($roleName, $interface['interfaceRoles']) || count($interface['interfaceRoles'])==0 || $roleNr == -1;
+  // an interface is visible if: the interface roles contain $role; the interface does not specify roles; or no role is selected   
+} 
+
+function getTopLevelInterfacesForConcept($concept, $roleNr, $roleName) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']==$concept)
+    if ($interface['srcConcept']==$concept && isInterfaceForRole($interface, $roleNr, $roleName))
     $interfacesForConcept[] = $interface;
   }
   return $interfacesForConcept;

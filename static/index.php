@@ -32,7 +32,11 @@ function init() {
   initialize();
 }
 
-<?php echo generateInterfaceMap(); ?>
+<?php 
+$roleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
+$roleName = $roleNr>=0 ? $allRoles[$roleNr]['name'] : '';
+
+echo generateInterfaceMap(); ?>
 
 </script>
 </head>
@@ -40,9 +44,6 @@ function init() {
 <div id="Header"><div id="Logo"></div><div id="Decoration"></div></div>
 
 <?php
-$roleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
-$roleName = $roleNr>=0 ? $allRoles[$roleNr]['name'] : '';
-
 echo '<div id="TopLevelInterfaces">';
 echo '<div class="MenuBar">';
 //echo '<ul>';
@@ -143,10 +144,11 @@ echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.sho
 function topLevelInterfaceLinks() {
   global $allInterfaceObjects;
   global $roleNr;
+  global $roleName;
   
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']=='ONE') // the interface attribute is there so we can style specific menu items with css
-      echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name']))
+    if ($interface['srcConcept']=='ONE' && isInterfaceForRole($interface, $roleNr, $roleName)) 
+      echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name'])) // the interface attribute is there so we can style specific menu items with css
           .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>=0? '&role='.$roleNr : '')
           .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></div>';
   }
@@ -155,10 +157,11 @@ function topLevelInterfaceLinks() {
 function newAtomLinks() {
   global $allInterfaceObjects;
   global $roleNr;
+  global $roleName;
   
   echo '<ul id=CreateList>';
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']!='ONE') {
+    if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $roleNr, $roleName)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
@@ -171,11 +174,14 @@ function newAtomLinks() {
 
 function generateInterfaceMap() {
   global $allInterfaceObjects;
+  global $roleNr;
+  global $roleName;
   
   echo 'function getInterfacesMap() {';
   echo '  var interfacesMap = new Array();';
   foreach($allInterfaceObjects as $interface) {
-    echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['srcConcept']).', '.showHtmlAttrStr($interface['name']).');';
+    if (isInterfaceForRole($interface, $roleNr, $roleName))
+      echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['srcConcept']).', '.showHtmlAttrStr($interface['name']).');';
   }
   echo '  return interfacesMap;';
   echo '}';
@@ -248,11 +254,14 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
  * 
  * if $atom is null, we are presenting a template. Because ""==null and "" denotes an empty atom, we check with === (since "" !== null)
  */
+  global $roleNr;
+  global $roleName;
+  
   $html = "";
   $interfaces = $isTopLevelInterface ? array ($interface) : $interface['subInterfaces'];
 
 
-  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept']));
+  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $roleNr, $roleName));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
   emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.jsBool(count($interfaces)==0).'>');
