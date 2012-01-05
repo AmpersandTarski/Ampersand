@@ -342,7 +342,8 @@ instance Identified PlugSQL where
   rename p x = p{sqlname=x}
 instance Eq PlugSQL where
   x==y = name x==name y
-
+instance Ord PlugSQL where
+  compare x y = compare (name x) (name y)
 
 -- This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated 
@@ -357,6 +358,11 @@ data SqlField = Fld { fldname     :: String
                     , fldnull     :: Bool -- can there be empty field-values?
                     , flduniq     :: Bool -- are all field-values unique?
                     } deriving (Eq, Show)
+
+instance Ord SqlField where
+  compare x y = compare (fldname x) (fldname y)
+                    
+                    
 data SqlType = SQLChar    Int
              | SQLBlob              -- cannot compare, but can show (as a file)
              | SQLPass              -- password, encrypted: cannot show, but can compare
