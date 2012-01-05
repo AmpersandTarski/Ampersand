@@ -699,6 +699,7 @@ where
            , "    , ifcParams = " ++ "["++intercalate ", " [showHS flags "" rel | rel<-ifcParams ifc] ++ "]"
            --, "    , ifcViols  = " ++ "["++intercalate ", " [showHSName rel | rel<-ifcViols ifc] ++ "]" -- TODO: uncomment when ifcViols is implemented
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
+           , "    , ifcRoles  = " ++ show(ifcRoles ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS flags (indent++"         ") (ifcObj ifc)
            , "    , ifcPos    = " ++ showHS flags "" (ifcPos ifc)
            , "    , ifcExpl   = " ++ show(ifcExpl ifc)
