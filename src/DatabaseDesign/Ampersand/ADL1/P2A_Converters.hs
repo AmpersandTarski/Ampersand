@@ -252,6 +252,7 @@ pIFC2aIFC actx pifc
         , ifcParams = prms
         , ifcViols  = fatal 206 "not implemented ifcViols"
         , ifcArgs   = ifc_Args pifc
+        , ifcRoles  = ifc_Roles pifc
         , ifcObj    = obj
         , ifcPos    = ifc_Pos pifc
         , ifcExpl   = ifc_Expl pifc

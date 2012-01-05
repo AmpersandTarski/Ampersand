@@ -251,6 +251,7 @@ where
                   P_Ifc { ifc_Name   :: String
                         , ifc_Params :: [(P_Relation,P_Sign)]
                         , ifc_Args   :: [[String]]
+                        , ifc_Roles   :: [String]
                         , ifc_Obj    :: P_ObjectDef
                         , ifc_Pos    :: Origin
                         , ifc_Expl   :: String
