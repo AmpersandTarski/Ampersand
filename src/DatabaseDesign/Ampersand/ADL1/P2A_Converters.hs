@@ -246,7 +246,7 @@ pKDef2aKDef actx pkdef
                          |at<-kd_ats pkdef, let xs=[at' |at'<-kd_ats pkdef,name at==name at'],length xs>1]
 
 -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
-pIFC2aIFC :: (Language l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)
+pIFC2aIFC :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)
 pIFC2aIFC actx pifc 
  = (Ifc { ifcName   = ifc_Name pifc
         , ifcParams = prms
@@ -257,11 +257,16 @@ pIFC2aIFC actx pifc
         , ifcPos    = ifc_Pos pifc
         , ifcExpl   = ifc_Expl pifc
         }
-   , CxeOrig (cxelist (objcxe:prmcxes)) "interface" (name pifc) (origin pifc) )
+   , CxeOrig (cxelist (objcxe:prmcxes++duplicateRoleErrs++undeclaredRoleErrs)) "interface" (name pifc) (origin pifc) )
    where
     (obj,objcxe)  = pODef2aODef actx NoCast (ifc_Obj pifc)
     (prms,prmcxes)  = unzip [pRel2aRel actx (psign sgn) r | (r,sgn)<-ifc_Params pifc]
-
+    duplicateRoleErrs = [newcxe $ "Duplicate interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, length (filter (==role) $ ifc_Roles pifc) > 1 ]
+    undeclaredRoleErrs = if null duplicateRoleErrs then [newcxe $ "Undeclared interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, role `notElem` roles actx ]
+                                                   else []
+    -- we show the line nr for the interface, which may be slightly inaccurate, but roles have no position 
+    -- and the implementation of error messages makes it difficult to give a nice one here
+    
 -- | pODef2aODef checks compatibility of composition of expressions on equality
 pODef2aODef :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
 pODef2aODef actx cast podef 
