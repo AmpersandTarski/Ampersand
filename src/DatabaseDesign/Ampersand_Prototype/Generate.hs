@@ -60,7 +60,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "$relationTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
+         [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++
+                                          ", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
          , let (table,srcCol,tgtCol) = case getRelationTableInfo fSpec rel of
                                          Just tableInfo -> tableInfo
@@ -73,7 +74,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
          [ [ (showPhpStr $ name c)++" => array "] ++
              (indent 4 $ blockParenthesize "(" ")" ","
                [ [ "array ( 'table' => "++showPhpStr (name table)
-                 , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" 
+                 , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")"
                  , "      )"]
                -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : getGeneralizations fSpec c ])
@@ -143,15 +144,20 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
 
 generateInterface fSpec opts interface =
-  [ "// Top-level interface "++name interface ++":"
-  , showPhpStr (name interface) ++" => " ] ++
-  genInterfaceObjects fSpec opts (ifcParams interface) 1 (ifcObj interface) 
+  [ let roleStr = case ifcRoles interface of []    -> " for all roles"
+                                             roles -> " for role"++ (if length roles == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
+    in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":" 
+  , showPhpStr (name interface) ++ " => " ] ++
+  genInterfaceObjects fSpec opts (ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface) 
   
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> Options -> [Relation] -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec opts editableRels depth object = indent (depth*2) $
+genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = indent (depth*2) $
   [ "array ( 'name' => "++showPhpStr (name object)
   , "      // adl expression: "++showPhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
+  , case mInterfaceRoles of -- interfaceRoles is only present in top-level interfaces
+      Just interfaceRoles -> "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")"
+      Nothing             -> ""
   ] ++ case objctx object of
          ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
                                          , "      , 'relationIsFlipped' => false" 
@@ -173,7 +179,7 @@ genInterfaceObjects fSpec opts editableRels depth object = indent (depth*2) $
                                         selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
-  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels $ depth + 1) $ objats object) ++
+  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) $ objats object) ++
   [ "      )"
   ]
   where isEditable rel = rel `elem` editableRels
