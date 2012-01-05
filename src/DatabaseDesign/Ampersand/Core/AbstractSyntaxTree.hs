@@ -271,6 +271,7 @@ data Interface = Ifc { ifcName   :: String
                      , ifcParams :: [Relation]
                      , ifcViols  :: [Rule]
                      , ifcArgs   :: [[String]]
+                     , ifcRoles  :: [String]
                      , ifcObj    :: ObjectDef
                      , ifcPos    :: Origin
                      , ifcExpl   :: String
