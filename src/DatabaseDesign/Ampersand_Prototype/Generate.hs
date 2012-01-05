@@ -5,7 +5,7 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand.Fspec.Fspec (lookupCpt)
 import Prelude hiding (writeFile,readFile,getContents)
 import Data.Function
-import Data.List hiding (sort)
+import Data.List
 import Data.Maybe
 import Control.Monad
 import System.FilePath
