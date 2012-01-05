@@ -30,7 +30,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP", "THEMES"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"
-                       , "INTERFACE", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
+                       , "INTERFACE", "FOR", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "TEST"
@@ -522,13 +522,15 @@ and the grammar must be disambiguated in order to get a performant parser...
    pInterface        = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                                (pParams `opt` [])                   <*>  -- a list of relations, which are editable within this interface.
                                (pArgs `opt` [])                     <*>  -- a list of arguments for code generation.
+                               (pRoles `opt` [])                    <*>  -- a list of roles that may use this interface
                                (pKey ":" *> pExpr)                  <*>  -- the context expression (mostly: I[c])
                                pAttrs                                  -- the subobjects
-                       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> P_Expression -> [P_ObjectDef] -> P_Interface
-                             lbl (nm,p) params args expr ats
+                       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> [P_ObjectDef] -> P_Interface
+                             lbl (nm,p) params args roles expr ats
                               = P_Ifc { ifc_Name   = nm
                                       , ifc_Params = params
                                       , ifc_Args   = args
+                                      , ifc_Roles   = roles
                                       , ifc_Obj    = P_Obj { obj_nm   = nm    
                                                            , obj_pos  = p
                                                            , obj_ctx  = expr
@@ -540,6 +542,7 @@ and the grammar must be disambiguated in order to get a performant parser...
                                     }
                              pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')' 
                              pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
+                             pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
                              pAttrs  = pBox
 
    pObj             :: Parser Token P_ObjectDef
