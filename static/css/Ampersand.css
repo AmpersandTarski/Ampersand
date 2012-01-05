@@ -373,6 +373,7 @@ body {
     float:right;
     clear:right;
     background-color: lightblue;
+    max-height: 250px;   /* cannot use a percentage for the height because this log window is floating */
 }
 #PhpLog[minimized=false] {
     width: 500px;
@@ -396,6 +397,7 @@ body {
     color: black;
     background-color: #f0f080;
     border-width: 2px;
+    max-height: 250px;   /* cannot use a percentage for the height because this log window is floating */
 }
 #SignalLog[minimized=false] {
     width: 600px;
