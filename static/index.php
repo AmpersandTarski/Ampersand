@@ -205,7 +205,7 @@ function generateInterface($db, $interface, $srcAtom) {
   if ($srcAtom == null)
     $codomainAtoms = array (); // in case the table would contain (null, some atom)  
   else
-    $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['expressionSQL'])); // filter, in case table contains ($srcAtom, null)
+    $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['expressionSQL']), notNull); // filter, in case table contains ($srcAtom, null)
 
   if (count($codomainAtoms)==0 && $interface['min']=='One') 
     $codomainAtoms[] = ""; // if there should be at least one field, we add an empty field.
