@@ -296,6 +296,8 @@ body {
     padding: 10px;
     z-index: 25;
     width: 200px; /* each log window sets its own maximized width */
+    overflow:auto; 
+    max-height: 35%;
 }
 .LogWindow>.MinMaxButton { /* not a button but an icon */
   float: right;
