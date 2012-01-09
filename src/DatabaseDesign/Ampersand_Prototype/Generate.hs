@@ -105,7 +105,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
            , "        , 'message' => "++showPhpStr (showMessage rule)
-           , "          // normalized complement (violations): "++ show violationsExpr
+           , "          // normalized complement (violations): "++ escapePhpStr (show violationsExpr)
            , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
                                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
            ] ++
@@ -126,10 +126,25 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "$allRoles ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ "array ( 'name' => "++showPhpStr role
+         [ [ "array ( 'concept' => "++showPhpStr role
            , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rules) ++")"
            , "      )" ]
-         | (role,rules) <- rulesPerRole ])
+         | (role,rules) <- rulesPerRole ]) ++
+  [ ""
+  , "$allKeys ="
+  , "  array" ] ++
+       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
+         [ [ showPhpStr (name concept) ++ " =>"
+           , "  array ( 'label' => "++showPhpStr label
+           , "        , 'exps' =>" -- a labeled list of sql queries for the key expressions 
+           , "            array" ]++
+                (indent 14 $ blockParenthesize "(" ")" ","
+                [ [ (showPhpStr $ objnm objDef) ++ " => // " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                  , "   '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef)) $
+                                        (selectExpr fSpec 26 "src" "tgt" $ objctx objDef))++"'"  ] 
+                | (i,objDef) <- zip [1..] objDefs ]) ++  
+           [ "      )" ]           
+         | Kd _ label concept objDefs <- vkeys fSpec ])
        
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
        showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
@@ -154,7 +169,7 @@ generateInterface fSpec opts interface =
 genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = indent (depth*2) $
   [ "array ( 'name' => "++showPhpStr (name object)
-  , "      // adl expression: "++showPhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
+  , "      // adl expression: "++escapePhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
   , case mInterfaceRoles of -- interfaceRoles is only present in top-level interfaces
       Just interfaceRoles -> "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")"
       Nothing             -> ""
@@ -173,8 +188,8 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
                           , "      , 'relationIsFlipped' => ''" 
                           ]          
   ++     
-  [ "      , 'srcConcept' => "++showPhpStr (show (source normalizedInterfaceExp))
-  , "      , 'tgtConcept' => "++showPhpStr (show (target normalizedInterfaceExp))
+  [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
+  , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
   , "      , 'expressionSQL' => '" ++ (fromMaybe (fatal 151 $ "No sql generated for "++showHS opts "" normalizedInterfaceExp) $
                                         selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
   , "      , 'subInterfaces' =>"
