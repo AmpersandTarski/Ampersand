@@ -9,6 +9,7 @@ module DatabaseDesign.Ampersand
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Pattern(..)
    , Declaration(..)
+   , KeyDef(..)
    , Expression(..)
    , Population(..)
    , Fspc(..)
