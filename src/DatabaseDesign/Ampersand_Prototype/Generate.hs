@@ -126,7 +126,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "$allRoles ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ "array ( 'concept' => "++showPhpStr role
+         [ [ "array ( 'name' => "++showPhpStr role
            , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rules) ++")"
            , "      )" ]
          | (role,rules) <- rulesPerRole ]) ++
