@@ -44,7 +44,7 @@ function showKeyAtom($atom, $concept) {
   
   $keyDef = $allKeys[$concept];
 
-  if (!$keyDef) {
+  if (!$keyDef || $atom == '') {
     return $atom;
   }
   else {
