@@ -105,7 +105,9 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
            , "        , 'meaning' => "++showPhpStr (showMeaning rule)
            , "        , 'message' => "++showPhpStr (showMessage rule)
-           , "          // normalized complement (violations): "++ escapePhpStr (show violationsExpr)
+           , "        , 'srcConcept' => "++showPhpStr (name (source $ rrexp rule))
+           , "        , 'tgtConcept' => "++showPhpStr (name (target $ rrexp rule))
+           , "        // normalized complement (violations): "++ escapePhpStr (show violationsExpr)
            , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
                                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
            ] ++
