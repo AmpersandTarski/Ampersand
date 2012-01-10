@@ -173,7 +173,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
   ]
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" 
-                              , "      , 'editableRelations' => array (" ++ intercalate ", " (map (showPhpStr . name) editableRels) ++")" ]
+                              , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
        Nothing             -> [] 
   ++ case objctx object of
          ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
@@ -181,7 +181,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
                                          , "      , 'min' => "++ if isTot r then "'One'" else "'Zero'"
                                          , "      , 'max' => "++ if isUni r then "'One'" else "'Many'"
                                          ]
-         EFlp (ERel r) | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations
+         EFlp (ERel r) | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations. NOTE: same cases appear in getEditableConcepts
                                          , "      , 'relationIsFlipped' => true" 
                                          , "      , 'min' => "++ if isSur r then "'One'" else "'Zero'"
                                          , "      , 'max' => "++ if isInj r then "'One'" else "'Many'"
@@ -201,6 +201,11 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
   ]
   where isEditable rel = rel `elem` editableRels
         normalizedInterfaceExp = conjNF $ objctx object
+        getEditableConcepts obj = case objctx obj of
+                                    ERel r        | isEditable r -> [target r]
+                                    EFlp (ERel r) | isEditable r -> [source r]
+                                    _                            -> []
+                                  ++ concatMap getEditableConcepts (objats obj)
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $
