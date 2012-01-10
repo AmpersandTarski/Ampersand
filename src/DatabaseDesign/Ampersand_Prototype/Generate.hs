@@ -170,10 +170,12 @@ genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int ->
 genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = indent (depth*2) $
   [ "array ( 'name' => "++showPhpStr (name object)
   , "      // adl expression: "++escapePhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
-  , case mInterfaceRoles of -- interfaceRoles is only present in top-level interfaces
-      Just interfaceRoles -> "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")"
-      Nothing             -> ""
-  ] ++ case objctx object of
+  ]
+  ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
+       Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" 
+                              , "      , 'editableRelations' => array (" ++ intercalate ", " (map (showPhpStr . name) editableRels) ++")" ]
+       Nothing             -> [] 
+  ++ case objctx object of
          ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
                                          , "      , 'relationIsFlipped' => false" 
                                          , "      , 'min' => "++ if isTot r then "'One'" else "'Zero'"
