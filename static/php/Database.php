@@ -214,7 +214,14 @@ function checkRules($ruleNames) {
                                      : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
       emitAmpersandErr($message);
       foreach($rows as $violation){
-        emitAmpersandErr("- ('$violation[src]', '$violation[tgt]')");
+        $source = showKeyAtom($violation['src'], $ruleSql['srcConcept']);
+        $target = showKeyAtom($violation['tgt'], $ruleSql['tgtConcept']);
+        
+        // if source and target are the same atom and we have a key for it, don't show a tuple
+        if ($violation['src'] == $violation['tgt'] && $ruleSql['srcConcept'] == $ruleSql['tgtConcept'] && keyForConcept($ruleSql['srcConcept']) )
+          emitAmpersandErr("- '$source'");
+        else
+          emitAmpersandErr("- ('$source', '$target')");
       }
       emitLog('Rule '.$ruleSql['name'].' is broken');
       $allRulesHold = false;
@@ -260,7 +267,16 @@ function error($msg) {
   // since it may trigger an error again, causing a loop)
 
 function listAtomsForConcept($concept) {
-  echo json_encode (array ( 'res' => getAllConceptAtoms($concept) ));
+  $allAtoms = getAllConceptAtoms($concept);
+  if (keyForConcept($concept)) {
+    $allAtomNames = "";
+    foreach ($allAtoms as $atom)
+      $allAtomNames[] = showKeyAtom($atom, $concept);
+  }
+  else
+    $allAtomNames = $allAtoms;
+  
+  echo json_encode (array ( 'res' => $allAtomNames));
   // todo: pass errors back to javascript
 }
 

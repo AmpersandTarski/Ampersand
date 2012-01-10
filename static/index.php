@@ -35,8 +35,13 @@ function init() {
 <?php 
 $roleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
 $roleName = $roleNr>=0 ? $allRoles[$roleNr]['name'] : '';
+$interface=$_REQUEST['interface'];
+$atom = $_REQUEST['atom'];
 
-echo generateInterfaceMap(); ?>
+generateInterfaceMap();
+if (isset($_REQUEST['interface'])) 
+  genEditableConceptInfo($interface);
+?>
 
 </script>
 </head>
@@ -85,8 +90,6 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   echo '</div>';
 } else {
     
-  $interface=$_REQUEST['interface'];
-  $atom = $_REQUEST['atom'];
   $concept = $allInterfaceObjects[$interface]['srcConcept'];
   
   $isNew = $concept!='ONE' && !isAtomInConcept($atom,$concept);
@@ -105,7 +108,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
     addAtomToConcept($atom, $concept);
   }
 
-echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
+  echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
        ' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept']).
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').
@@ -177,7 +180,7 @@ function generateInterfaceMap() {
   global $roleNr;
   global $roleName;
   
-  echo 'function getInterfacesMap() {';
+  echo 'function getInterfacesMap() {'; // TODO: use Json for this
   echo '  var interfacesMap = new Array();';
   foreach($allInterfaceObjects as $interface) {
     if (isInterfaceForRole($interface, $roleNr, $roleName))
@@ -260,14 +263,15 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   $html = "";
   $interfaces = $isTopLevelInterface ? array ($interface) : $interface['subInterfaces'];
 
-
   $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $roleNr, $roleName));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
   emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.jsBool(count($interfaces)==0).'>');
   // can be hidden with css if necessary (old prototype did not show it)
-    
-  emit($html, "<div class=AtomName>".htmlSpecialChars($atom).'</div>');
+  
+  $atomName = showKeyAtom($atom, $interface['tgtConcept']);
+  
+  emit($html, "<div class=AtomName>".htmlSpecialChars($atomName).'</div>');
   if (count($interfaces) > 0) {
     emit($html, '<div class=InterfaceList>');
     foreach($interfaces as $interface) {
@@ -285,5 +289,28 @@ function genSignalLogWindow($roleNr, $roleName) {
     checkRoleRules($roleNr);
     echo "</div>";
   }
+}
+
+function genEditableConceptInfo($interface) {
+  global $allInterfaceObjects;
+  global $relationTableInfo;
+  global $allKeys;
+  
+  $editableConcepts = $allInterfaceObjects[$interface]['editableConcepts'];
+  
+  $atomKeyMap = array ();
+  foreach ($editableConcepts as $editableConcept) {
+    $allAtoms = getAllConceptAtoms($editableConcept);
+    $atomsAndKeys = array ();
+    foreach ($allAtoms as $atom) {
+      $atomsAndKeys[] = array ('atom' => $atom, 'key' => showKeyAtom($atom, $editableConcept));
+    }
+    $atomKeyMap[$editableConcept] = array ('hasKey' => jsBool($allKeys[$editableConcept]), 'atomKeyMap' => $atomsAndKeys);
+  }
+  $atomKeyMapJson = json_encode( $atomKeyMap );
+  echo "\n\nfunction getEditableConceptInfo() {\n";
+  echo "  return $atomKeyMapJson;\n";
+  echo "}\n";
+  
 }
 ?>

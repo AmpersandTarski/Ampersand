@@ -1,3 +1,5 @@
+var navigationWarningEnabled = true;
+
 function initialize() {
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
@@ -227,7 +229,7 @@ function computeDbCommands() {
     }
   });
   
-  if (dbCommands.length > 0) { 
+  if (dbCommands.length > 0 && navigationWarningEnabled) { 
     window.onbeforeunload = function() { return "The page has been modified, are you sure you wish to navigate away?"; };
   } else {
     window.onbeforeunload = null;
@@ -351,7 +353,7 @@ function startAtomEditing($atom) {
   if ($atom.attr('status')=='deleted')
     return;
       
-  $textfield = $('<input type=text size=1 style="width:100%" value="'+atom+'"/>');
+  $textfield = $('<input type=text size=1 style="width:100%" value="'+$atomName.text()+'"/>');
   $form = $('<form id=atomEditor style="margin:0px"/>'); // we use a form to catch the Return key event
   $form.append($textfield);
   $atomName.after($form);
@@ -386,18 +388,33 @@ function startAtomEditing($atom) {
 // contents with the new value from the text field. Then show $atom again and
 // remove the text field.
 function stopAtomEditing($atom) {
+  var $atomList = getEnclosingAtomList($atom); // todo, make function
+  var concept = $atomList.length ? $atomList.attr('concept') : $('#AmpersandRoot').attr('concept'); 
+
   var $atomName = $atom.find('>.AtomName');
   var atom = $atom.attr('atom');
   
   var $form = $('#atomEditor');
-  var newAtom = $form.children().filter('input').attr('value');
+  var newAtomText = $form.children().filter('input').attr('value');
   $form.remove();
 
+  // todo if newAtom is keyed and has no atom, don't do anything
+  var newAtom;
+  if (conceptHasKey(concept)) { // if concept has a key, we map the key back onto an atom (todo: use autocomplete selection, so we don't need this lookup)
+    newAtom = getAtomForKey(newAtomText, concept)
+    
+    if (!newAtom) { // If the entered key does not correspond to an atom, the edit operation is ignored.
+      $atomName.attr('style',''); // Undo the hide() action from above. We don't use show, because that sets a style attribute on the div,
+                                  // which overrides all stylesheets
+      return;
+    }
+  } else {
+    newAtom = atomText; // if concept has no key, then newAtom is simply atomText
+  }
   $atom.attr('atom',newAtom);
   
-  $atomName.text(newAtom);
-  $atomName.attr('style',''); // Undo the hide() action from above. We don't use show, because that sets a style attribute on the div,
-                              // which overrides all stylesheets
+  $atomName.text(newAtomText);
+  $atomName.attr('style',''); // undo hide()
   
   if (newAtom!=atom) {
     
@@ -456,11 +473,9 @@ function initializeAutocomplete($textfield, $atom) {
 }
 
 
-
 //Navigation
 
 function navigateTo(interface, atom) {
-  log('navigate to '+interface + ':' + atom);
   window.location.href = 'index.php?'+(typeof(interface) != 'undefined' &&  typeof(atom) != 'undefined' ?
                                             'interface='+encodeURIComponent(interface)+'&atom='+encodeURIComponent(atom) : '')
                                          +'&role='+getSelectedRole();
@@ -532,6 +547,26 @@ function addClickEvent($item, interface, atom) {
   });
 }
 
+
+//Keys
+
+function conceptHasKey(concept) {
+  return getEditableConceptInfo()[concept]['hasKey'];
+}
+
+// return the atom for key, or null if the key is not in the atomKeyMap
+function getAtomForKey(key, concept) {
+  var conceptAtomKeyMap = getEditableConceptInfo()[concept]['atomKeyMap'];
+  
+  var atom = null;
+  for (var i=0; i<conceptAtomKeyMap.length; i++)
+    if (conceptAtomKeyMap[i].key == key) {
+      atom = conceptAtomKeyMap[i].atom;
+      break;
+    }
+  
+  return atom;
+}
 
 
 // LogWindows
