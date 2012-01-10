@@ -32,6 +32,32 @@ function DB_doquerErr($DbName, $quer, &$error)
   return $rows;
 }
 
+function keyForConcept($concept) {
+  global $allKeys;
+  
+  return $allKeys[$concept];
+}
+
+function showKeyAtom($atom, $concept) {
+  global $db;
+  global $allKeys;
+  
+  $keyDef = $allKeys[$concept];
+
+  if (!$keyDef) {
+    return $atom;
+  }
+  else {
+    $keyStrs = array ();
+    foreach ($keyDef['exps'] as $label => $expSql) {
+      $r = getCoDomainAtoms($db, $atom, $expSql);
+      $keyStrs[] = $r[0];
+    }
+    return implode(', ', $keyStrs);
+  }
+}
+
+
 // return an atom "Concept_<n>" that is not in $existingAtoms (make sure that $existingAtoms covers all concept tables)
 function mkUniqueAtom($existingAtoms, $concept) {
   $generatedAtomNrs = array();
