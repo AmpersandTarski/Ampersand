@@ -276,7 +276,7 @@ function listAtomsForConcept($concept) {
   else
     $allAtomNames = $allAtoms;
   
-  echo json_encode (array ( 'res' => $allAtomNames));
+  echo json_encode (array ( 'res' => array_values($allAtomNames))); // array_values is necessary because php sometimes creates indices, which we don't want in our json. 
   // todo: pass errors back to javascript
 }
 
