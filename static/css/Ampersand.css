@@ -38,6 +38,9 @@ body {
 }
 #TopLevelInterfaces #MenuBarReset {
     float: right;
+}
+#TopLevelInterfaces #MenuBarNew {
+    float: right;
     margin-right: 10px;
 }
 
@@ -284,6 +287,37 @@ body {
     background-color: blue;
 }
 
+
+/* Create-new dropdown menu */
+
+#CreateMenu {
+    display: none;
+    font-family: arial;
+    position: absolute;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #333333;
+    margin-top: -6px;
+    right: 3px;
+    z-index: 51;
+    background-color: #333333;
+}
+
+#CreateMenu > .MenuItem  {
+    padding-top: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    height: 24px;
+    color: white;
+    font-size: 18px;
+    }
+#CreateMenu > .MenuItem:hover  {
+    background: white;
+    color: #BF1E74;
+}
+#CreateMenu > .MenuItem > a  {
+    color: inherit;
+}
 
 /* Log windows */
 

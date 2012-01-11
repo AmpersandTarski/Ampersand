@@ -1,6 +1,7 @@
 var navigationWarningEnabled = true;
 
 function initialize() {
+  initCreateNewMenu();
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
                      // initialize and initializeAtoms (the latter also being called from sendCommands).
@@ -541,7 +542,7 @@ function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
 function addClickEvent($item, interface, atom) { 
   $item.click(function () {
     navigateTo(interface, atom);
-    $('#InterfaceContextMenu').remove(); // so the menu + mask are gone when we press back
+    $('#InterfaceContextMenu').remove(); // so the menu + mask are gone when we press back (maybe not necessary anymore, since we disable the cache)
     $('#FullScreenMask').remove();
     return false;
   });
@@ -566,6 +567,30 @@ function getAtomForKey(key, concept) {
     }
   
   return atom;
+}
+
+
+// Create-new dropdown menu
+
+function initCreateNewMenu() {
+  $('#MenuBarNew').click(function () {
+    var $fullScreenMask = $("<div id=FullScreenMask/>");  /* the mask is for hiding the menu if we click anywhere outside it */
+ 
+    $fullScreenMask.click(function () {
+      $('#CreateMenu').hide();
+      $fullScreenMask.remove();
+    });
+    $('#CreateMenu').show();
+    $('body').append($fullScreenMask);
+  });
+  
+  $('#CreateMenu>.MenuItem').map(function () {
+    $(this).click(function () {
+      navigateToNew($(this).attr('interface'), $(this).attr('concept'));
+      $('#CreateMenu').hide(); // so the menu + mask are gone when we press back (maybe not necessary anymore, since we disable the cache)
+      $fullScreenMask.remove();
+    });
+  });
 }
 
 

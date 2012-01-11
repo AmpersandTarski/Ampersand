@@ -56,7 +56,7 @@ echo '<div class="MenuBar">';
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
 
 echo '<div class="MenuItem" id="LinkToMain"><a href="index.php'.($roleNr>=0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></div>';
-echo topLevelInterfaceLinks();
+topLevelInterfaceLinks();
 
 echo '<select id=RoleSelector onchange="changeRole()">';
 echo '<option value="-1"'.($roleNr==-1 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
@@ -65,7 +65,7 @@ for ($i=0; $i<count($allRoles); $i++) {
   echo '<option value="'.$i.'"'.($roleNr==$i ? ' selected=yes' : '').'>'.$roleNm.'</option>';
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
-
+echo '<div class="MenuItem" id="MenuBarNew"><span class=TextContent>New</span></div>';
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
   echo '<div class="MenuItem" id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></div>';
 }
@@ -74,20 +74,23 @@ echo '</div>'; // .MenuBar
 echo '</div>'; // #TopLevelInterfaces
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
+  // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
+  // This will be obsolete once these and other properties are in a separate div. 
+  echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp()."\">"; 
+  genNewAtomDropDownMenu();
+  echo "</div>";
+  
+  echo '<div id=SignalAndPhpLogs>';
+  genSignalLogWindow($roleNr, $roleName);
+  echo '</div>';
+  
   echo '<ul id="Maintenance">';
   echo '<li id="Reset"><a href="Installer.php"><span class=TextContent>Reset database</span></a></li>';
   echo '</ul>';
   
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';
-  echo newAtomLinks();
 
-  // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
-  // This will be obsolete once these and other properties are in a separate div. 
-  echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp()."\"/>"; 
-  
-  echo '<div id=SignalAndPhpLogs>';
-  genSignalLogWindow($roleNr, $roleName);
-  echo '</div>';
+  genNewAtomLinks();
 } else {
     
   $concept = $allInterfaceObjects[$interface]['srcConcept'];
@@ -113,7 +116,8 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').
        ' timestamp="'.getTimestamp().'">';
-
+  genNewAtomDropDownMenu();
+  
   echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
   echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
   
@@ -157,7 +161,7 @@ function topLevelInterfaceLinks() {
   }
 }
 
-function newAtomLinks() {
+function genNewAtomLinks() {
   global $allInterfaceObjects;
   global $roleNr;
   global $roleName;
@@ -169,10 +173,30 @@ function newAtomLinks() {
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
            .'<span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
-           .' ('.htmlSpecialChars($interface['name']).')</spin></a></li>';
+           .' ('.htmlSpecialChars($interface['name']).')</span></a></li>';
     }
   }
   echo '</ul>';
+}
+
+function genNewAtomDropDownMenu() {
+  global $allInterfaceObjects;
+  global $roleNr;
+  global $roleName;
+
+  // unlike the menu bar, we don't use <a>'s here for navigation, but real click events. This is because the vertical layout may cause a lot of whitespace
+  // which would not be clickable, since <a>'s don't easily stretch. The click events are initialized in initCreateNewMenu (in Ampersand.js).
+  echo '<div id=CreateMenu>';
+  foreach($allInterfaceObjects as $interface) {
+    if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $roleNr, $roleName)) {
+      $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
+      $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
+      echo "\n<div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
+      .'<span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
+      .' ('.htmlSpecialChars($interface['name']).')</span></div>';
+    }
+  }
+  echo '</div>';
 }
 
 function generateInterfaceMap() {
