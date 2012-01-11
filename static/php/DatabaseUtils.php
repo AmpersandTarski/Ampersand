@@ -130,7 +130,7 @@ function getAllConceptAtoms($concept) {
 }
 
 function notNull($atom) { // need a type-based comparison, otherwise 0 is also null
-  return $atom !== 0;
+  return $atom !== null;
 }
 
 function isAtomInConcept($atom, $concept) {
