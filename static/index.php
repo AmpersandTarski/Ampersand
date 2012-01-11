@@ -72,12 +72,12 @@ if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
 
 echo '</div>'; // .MenuBar
 echo '</div>'; // #TopLevelInterfaces
+genNewAtomDropDownMenu();
 
 if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
   // This will be obsolete once these and other properties are in a separate div. 
   echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp()."\">"; 
-  genNewAtomDropDownMenu();
   echo "</div>";
   
   echo '<div id=SignalAndPhpLogs>';
@@ -116,7 +116,6 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').
        ' timestamp="'.getTimestamp().'">';
-  genNewAtomDropDownMenu();
   
   echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
   echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';
@@ -192,7 +191,7 @@ function genNewAtomDropDownMenu() {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
-      .'<span class=TextContent>Create new '.htmlSpecialChars($interface['srcConcept'])
+      .'<span class=TextContent>'.htmlSpecialChars($interface['srcConcept'])
       .' ('.htmlSpecialChars($interface['name']).')</span></div>';
     }
   }
