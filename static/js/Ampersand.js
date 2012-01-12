@@ -410,7 +410,7 @@ function stopAtomEditing($atom) {
       return;
     }
   } else {
-    newAtom = atomText; // if concept has no key, then newAtom is simply atomText
+    newAtom = newAtomText; // if concept has no key, then newAtom is simply atomText
   }
   $atom.attr('atom',newAtom);
   
@@ -552,7 +552,7 @@ function addClickEvent($item, interface, atom) {
 //Keys
 
 function conceptHasKey(concept) {
-  return getEditableConceptInfo()[concept]['hasKey'];
+  return getEditableConceptInfo()[concept]['hasKey']=='true';
 }
 
 // return the atom for key, or null if the key is not in the atomKeyMap
