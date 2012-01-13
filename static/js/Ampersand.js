@@ -1,4 +1,4 @@
-var navigationWarningEnabled = false;
+var navigationWarningEnabled = true;
 
 function initialize() {
   initCreateNewMenu();
@@ -184,7 +184,7 @@ function computeDbCommands() {
   dbCommands = new Array();
   $('.Atom .Atom').map(function () { // for every parent child pair of atoms (only immediate, so no <parent> .. <atom>  .. <child>)
     $childAtom = $(this);
-    if (getEnclosingAtomRow($childAtom).attr('rowType')!='NewAtomTemplate') {
+    if ($childAtom.parents().filter('[rowType=NewAtomTemplate]').length == 0) {
       //log(getEnclosingAtom($childAtom).attr('atom') + '<-->' + $childAtom.attr('atom'));
       
       var $atomList = getEnclosingAtomList($childAtom);
