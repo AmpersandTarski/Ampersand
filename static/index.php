@@ -75,10 +75,14 @@ echo '</div>'; // .MenuBar
 echo '</div>'; // #TopLevelInterfaces
 genNewAtomDropDownMenu();
 
-if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
+$timeStamp = getTimestamp($err);
+if ($err) {
+  echo '<br/>';
+  echo 'Cannot access database. Make sure the MySQL server is running, or <a href="Installer.php">create a new database</span></a>.';  
+} else if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
   // This will be obsolete once these and other properties are in a separate div. 
-  echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".getTimestamp()."\">"; 
+  echo "<div id=AmpersandRoot refresh=$autoRefreshInterval timestamp=\"".$timeStamp."\">"; 
   echo "</div>";
   
   echo '<div id=SignalAndPhpLogs>';
@@ -102,7 +106,7 @@ if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
        ' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept']).
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
        " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').
-       ' timestamp="'.getTimestamp().'">';
+       ' timestamp="'.$timeStamp.'">';
   
   echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
   echo '<div class=LogWindow id=ErrorLog minimized=false><div class=MinMaxButton></div><div class=Title>Errors</div></div>';

@@ -183,11 +183,14 @@ function selectCoDomain($atom, $selectRel) {
 // Timestamps
 
 // return the most recent modification time for the database (only Ampersand edit operations are recorded)
-function getTimestamp() {
+function getTimestamp(&$error) {
   global $dbName;
-  $timestampRow = DB_doquer($dbName, "SELECT MAX(`Seconds`) FROM `__History__`");
-  return $timestampRow[0][0];
-  // TODO: add error checking
+  $timestampRow = DB_doquerErr($dbName, "SELECT MAX(`Seconds`) FROM `__History__`", $error);
+
+  if ($error)
+    return '0';
+  else
+    return $timestampRow[0][0];
 }
 
 // set modification timestamp to the current time
