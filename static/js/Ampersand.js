@@ -1,4 +1,4 @@
-var navigationWarningEnabled = true;
+var navigationWarningEnabled = false;
 
 function initialize() {
   initCreateNewMenu();
@@ -10,6 +10,7 @@ function initialize() {
 
 function initializeAtoms() {
   if ($('#AmpersandRoot').attr('editing') == 'true') {  
+    setUniqueNamesForEmptyAtoms($('#AmpersandRoot'));
     setEditHandlers();
     traceDbCommands(); // to initialize command list
   }
@@ -196,7 +197,7 @@ function computeDbCommands() {
         var childAtom = $childAtom.attr('atom');
 
         // parent deleted does not affect child
-        // if parent is new, then there will only be new children which are handled below. no need to do anything for parent
+        // if parent is new, then all updates will be handled at child
         
         if( $parentAtom.attr('status') == 'modified') {
            if ($childAtom.attr('status') != 'new' && $childAtom.attr('status') != 'deleted' ) {
@@ -217,13 +218,12 @@ function computeDbCommands() {
             dbCommands.push(mkDbCommandDelete(relation, relationIsFlipped, unmodifiedParentAtom, unmodifiedChildAtom));
             break;
           case 'modified':
-            if ($parentAtom.attr('status') != 'new' && $childAtom.attr('status') != 'deleted' ) {
-              var originalAtom = $childAtom.attr('originalAtom');
-              // if parent is modified, the original tuple will already have been deleted (tree traversal handles parent first)
-              // so we can update the tuple with the modified parent. Hence no special case for parent with status=modified
-              dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', originalAtom));
-              
-            }
+            var originalAtom = $childAtom.attr('originalAtom');
+            // - if parent is modified, the original tuple will already have been deleted (tree traversal handles parent first)
+            // so we can update the tuple with the modified parent. Hence no special case for parent with status=modified
+            // - if parent is new, original atom will be empty, since the atom was automatically inserted because of multiplicities
+            // - parent cannot be deleted, since then its children would also be deleted
+            dbCommands.push(mkDbCommandUpdate(relation, relationIsFlipped, parentAtom, childAtom, 'child', originalAtom));
             break;
         }     
       }
@@ -328,13 +328,11 @@ function setEditHandlersBelow($elt) {
     // don't need to add navigation handlers, since page will be refreshed before navigating is allowed
     
     var $newAtom = $newAtomTableRow.find('>.AtomListElt>.Atom');
+    setUniqueNamesForEmptyAtoms($newAtom); // set unique name if atom name is invisible (also for child atoms) 
+
     // if the atom name is visible, we start editing it.
     if ( $newAtom.find('>.AtomName').is(":visible") )
       startAtomEditing($newAtom);
-    else { // otherwise (for composite atoms), we generate an atom name based on time similar to mkUniqueAtomByTime in Database.php 
-      var concept = getEnclosingAtomList($newAtom).attr('concept')
-      $newAtom.attr('atom', mkUniqueAtomName(concept));
-    }
     
     updateNrOfAtoms($atomList);
     traceDbCommands();
@@ -793,6 +791,20 @@ function getNoCache(url, successCallback) {
   $.ajax({ url: url,
            cache: false,
            success: successCallback
+  });
+}
+
+// For all empty atoms below $elt that have a hidden atom name, replace the name attribute with a unique atom name.
+// We cannot do this in php because it depends on the visibility of the name, which is not known at the php level.
+function setUniqueNamesForEmptyAtoms($elt) {
+  log('ja');
+  $elt.find('.Atom').andSelf().filter('.Atom[atom=""]').map( function() { // need find .Atom and filter. Atom because jquery doesn't have find on descendants + self
+    if ($(this).parents().filter('[rowType=NewAtomTemplate]').length == 0 && $(this).find('>.AtomName').is(":hidden")) {
+        var concept = getEnclosingAtomList($(this)).attr('concept')
+        $(this).attr('atom', mkUniqueAtomName(concept));
+        $(this).attr('status', 'new'); // by setting =new here instead of in php, visible atoms are not new, so if we cancel an edit operation or navigate away
+                                       // without having changed any of the new strings, we won't get a warning.   
+    }
   });
 }
 
