@@ -49,9 +49,11 @@ generateAll fSpec opts =
         --; verboseLn opts $ content
         ; writeFile (combine (dirPrototype opts) fname) content
         }
- 
+
 generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
-  [ "$dbName = "++showPhpStr (dbName opts)++";"
+  [ "$versionInfo = "++showPhpStr prototypeVersionStr++";" -- so we can show the version in the php-generated html
+  , ""
+  , "$dbName = "++showPhpStr (dbName opts)++";"
   , ""
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
