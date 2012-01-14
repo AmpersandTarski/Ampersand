@@ -269,8 +269,25 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                  where purps = purposes fSpec (language flags) rul
                       
   applyM :: Declaration -> String -> String -> [Inline]
-  applyM decl a b =
-           case decl of
+  applyM decl a b
+   = if fspecFormat flags==FLatex
+     then let a'  = latexEscShw a
+              b'  = latexEscShw b
+              str = RawInline "latex"
+          in case decl of
+             Sgn{} | null (prL++prM++prR) 
+                        -> [str (upCap a'),Space,str "(",(str.latexEscShw.unCap.name.source) decl, str ")",str "corresponds",Space,str "to",Space,str b',Space,str "(",(str.latexEscShw.unCap.name.target) decl, str ")",str "in",Space,str "relation",Space,str (decnm decl),str "."]
+                   | null prL
+                        -> [str "(",(str.latexEscShw.name.source) decl, str ") ",str a',Space,str prM,Space,str "(",(str.latexEscShw.unCap.name.target) decl, str ") ",str b',Space,str prR,str "."]
+                   | otherwise 
+                        -> [str (upCap prL),Space,str "(",(str.latexEscShw.unCap.name.source) decl, str ") ",str a',Space,str prM,Space,str "(",(str.latexEscShw.unCap.name.target) decl, str ") ",str b']++if null prR then [str "."] else [Space,str prR,str "."]
+                          where prL = latexEscShw (decprL decl)
+                                prM = latexEscShw (decprM decl)
+                                prR = latexEscShw (decprR decl)
+             Isn{}     -> [str "(",(str.latexEscShw.name.source) decl, str ") ",str (upCap a'),Space,str "equals",Space,str b',str "."]
+             Iscompl{} -> [str "(",(str.latexEscShw.name.source) decl, str ") ",str (upCap a'),Space,str "differs",Space,str "from",Space,str b',str "."]
+             Vs{}      -> [str (show True)]
+     else case decl of
              Sgn{} | null (prL++prM++prR) 
                         -> [Str (upCap a),Space,Str "(",(Str .unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,Str b,Space,Str "(",(Str .unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,Str (decnm decl),Str "."]
                    | null prL
