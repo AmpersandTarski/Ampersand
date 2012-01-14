@@ -616,7 +616,7 @@ chpDiagnosis lev fSpec flags
        [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
        | (r,ps)<-cl, length ps>0
        ]
-     | (length.concat) popviol>1, cl<-popviol ]        ++          
+     | (length.concat) popviol>1, cl<-popviol, not (null cl) ]        ++          
 -- the table containing the multiplicity counts
      [ Table []
        [AlignLeft,AlignRight,AlignRight]
@@ -630,7 +630,7 @@ chpDiagnosis lev fSpec flags
        [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
        | (r,ps)<-cl, length ps>0
        ]
-     | (length.concat) multviol>1, cl<-multviol ]        ++          
+     | (length.concat) multviol>1, cl<-multviol, not (null cl) ]        ++          
 -- the tables containing the actual violations of user defined rules
      concat
      [ [ Para ( (case language flags of
@@ -655,22 +655,23 @@ chpDiagnosis lev fSpec flags
                      )
               )]++
        [ violtable r ps | length ps>1]
-     | (r,ps)<-popviols ]++
+     | (r,ps)<-popviols, length popviols>1 ]++
 -- the tables containing the actual violations of multiplicity rules
-     [BulletList
-     [ textMult r++
-       [Plain ( case language flags of
-                 Dutch   ->
-                   if length ps == 1 then [Str "Deze regel wordt overtreden door "]++oneviol r ps++[Str ". "] else
-                    [ Str ("De volgende tabel laat de "++(if length ps>10 then "eerste tien overtredingen zien." else count flags (length ps) ((unCap.name.source)r)++" zien die deze regel overtreden."))]
-                   
-                 English ->
-                   if length ps == 1 then [Str "This rule is violated by "]++oneviol r ps++[Str ". "] else
-                    [ Str ("The following table shows the "++(if length ps>10 then "first ten violations." else count flags (length ps) ((unCap.name.source)r)++" that violate this rule."))]
-                   
-              )]++
-       [ violtable r ps | length ps>1]
-     | (r,ps)<-multviols ]]
+     [ BulletList
+       [ textMult r++
+         [Plain ( case language flags of
+                   Dutch   ->
+                     if length ps == 1 then [Str "Deze regel wordt overtreden door "]++oneviol r ps++[Str ". "] else
+                      [ Str ("De volgende tabel laat de "++(if length ps>10 then "eerste tien overtredingen zien." else count flags (length ps) ((unCap.name.source)r)++" zien die deze regel overtreden."))]
+                     
+                   English ->
+                     if length ps == 1 then [Str "This rule is violated by "]++oneviol r ps++[Str ". "] else
+                      [ Str ("The following table shows the "++(if length ps>10 then "first ten violations." else count flags (length ps) ((unCap.name.source)r)++" that violate this rule."))]
+                     
+                )]++
+         [ violtable r ps | length ps>1]
+       | (r,ps)<-multviols, length multviols>1 ]
+     | not (null multviols) ]
      where
      textMult r
        = concat [    [Plain [Str "De relatie ",Space]]
