@@ -198,8 +198,8 @@ function genNewAtomDropDownMenu() {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
-      .'<div><span class=TextContent>'.htmlSpecialChars($interface['srcConcept'])
-      .' ('.htmlSpecialChars($interface['name']).')</span></div></div>'; // extra div is for renaming menu entries
+      .'<span class=TextContent>'.htmlSpecialChars($interface['srcConcept'])
+      .' ('.htmlSpecialChars($interface['name']).')</span></div>';
     }
   }
   echo '</div>';
