@@ -34,14 +34,14 @@ phpObjInterfaces fSpec opts =
     ; verboseLn opts "---------------------------"
     ; write "Installer.php"             (installer fSpec opts)
     
-    ; let dbSettingsFilePath = combine targetDir "dbsettings.php"
+    ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
-    -- we generate a dbsettings.php if it doesn't exists, or if a host, login, or password has been specified
+    -- we generate a dbSettings.php if it doesn't exists, or if a host, login, or password has been specified
     ; if not dbSettingsExists ||  any (isJust) [sqlHost opts, sqlLogin opts, sqlPwd opts]
-      then do { verboseLn opts $ "  Writing dbsettings.php."
+      then do { verboseLn opts $ "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
-      else verboseLn opts $ "  Using existing dbsettings.php."
+      else verboseLn opts $ "  Using existing dbSettings.php."
 
     ; if not $ deprecated opts then
        do { generateAll fSpec opts

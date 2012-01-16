@@ -9,8 +9,8 @@
 -- 1) DROP IGNORE TABLES (sqlplugs fspec)
 -- 2) CREATE TABLES (sqlplugs fspec)
 -- 3) INSERT INTO TABLES (tblcontents sqlplug)
---the connection should be the same as the one in dbsettings.php
---dbsettings.php connects directly, this module through a DSN=atlas
+--the connection should be the same as the one in dbSettings.php
+--dbSettings.php connects directly, this module through a DSN=atlas
 --
 --the atlas has two outputs: a database and pictures
 --the database contains links to the pictures (see Main.hs)

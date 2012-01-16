@@ -15,7 +15,7 @@ where
  connectToDataBase fSpec flags 
     = (intercalate "\n  " 
       ([ "<?php // generated with "++prototypeVersionStr
-       , "require \"dbsettings.php\";"
+       , "require \"dbSettings.php\";"
        , ""
        , "function display($tbl,$col,$id){"
        , "   return firstRow(firstCol(DB_doquer(\"SELECT DISTINCT `\".$col.\"` FROM `\".$tbl.\"` WHERE `i`='\".addslashes($id).\"'\")));"
