@@ -48,7 +48,7 @@ function keyForConcept($concept) {
   global $allKeys;
 
   foreach ($allKeys as $key)
-    if (in_array($concept, $key['conceptAndSpecs']))
+    if ($concept == $key['concept'] || in_array($concept, getSpecializations($key['concept'])))
       return $key;
 
   return null;

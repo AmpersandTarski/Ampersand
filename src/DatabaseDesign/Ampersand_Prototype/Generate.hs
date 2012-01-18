@@ -151,7 +151,7 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "  array ( 'label' => "++showPhpStr label
-           , "        , 'conceptAndSpecs' => array ("++ intercalate ", " (map (showPhpStr . name) $ concept : getSpecializations fSpec concept) ++")"
+           , "        , 'concept' => "++showPhpStr (name concept)
            , "        , 'exps' =>" -- a labeled list of sql queries for the key expressions 
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" ","
