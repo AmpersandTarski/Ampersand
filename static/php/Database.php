@@ -15,9 +15,7 @@ require_once __DIR__.'/DatabaseUtils.php';
                                                         
 //     Database.php?commands=..
 
-if (isset($_REQUEST['getAtomsForConcept']) ) {
-  listAtomsForConcept($_REQUEST['getAtomsForConcept']);
-} else if (isset($_REQUEST['destroyAtom']) ) {
+if (isset($_REQUEST['destroyAtom']) ) {
   removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
 } else if (isset($_REQUEST['getTimestamp']) ) {
   timestampHtml();
@@ -265,20 +263,6 @@ function error($msg) {
 } // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
-
-function listAtomsForConcept($concept) {
-  $allAtoms = getAllConceptAtoms($concept);
-  if (getKey($concept)) {
-    $allAtomNames = "";
-    foreach ($allAtoms as $atom)
-      $allAtomNames[] = showKeyAtom($atom, $concept);
-  }
-  else
-    $allAtomNames = $allAtoms;
-  
-  echo json_encode (array ( 'res' => array_values($allAtomNames))); // array_values is necessary because php sometimes creates indices, which we don't want in our json. 
-  // todo: pass errors back to javascript
-}
 
 function testRule($ruleName) {
   global $isDev;
