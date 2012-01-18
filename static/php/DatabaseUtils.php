@@ -32,6 +32,18 @@ function DB_doquerErr($DbName, $quer, &$error)
   return $rows;
 }
 
+function getGeneralizations($concept) {
+  global $allGeneralizations;
+
+  return isset( $allGeneralizations[$concept]) ? $allGeneralizations[$concept] : array ();
+}
+
+function getSpecializations($concept) {
+  global $allSpecializations;
+
+  return isset( $allSpecializations[$concept]) ? $allSpecializations[$concept] : array ();
+}
+
 function keyForConcept($concept) {
   global $allKeys;
 
@@ -149,7 +161,8 @@ function getTopLevelInterfacesForConcept($concept, $roleNr, $roleName) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']==$concept && isInterfaceForRole($interface, $roleNr, $roleName))
+    if (($interface['srcConcept']==$concept || in_array($concept, getSpecializations($interface['srcConcept']))) 
+       && isInterfaceForRole($interface, $roleNr, $roleName))
     $interfacesForConcept[] = $interface;
   }
   return $interfacesForConcept;

@@ -213,8 +213,12 @@ function generateInterfaceMap() {
   echo 'function getInterfacesMap() {'; // TODO: use Json for this
   echo '  var interfacesMap = new Array();';
   foreach($allInterfaceObjects as $interface) {
-    if (isInterfaceForRole($interface, $roleNr, $roleName))
-      echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($interface['srcConcept']).', '.showHtmlAttrStr($interface['name']).');';
+    if (isInterfaceForRole($interface, $roleNr, $roleName)) {
+      $conceptOrSpecs = array_merge(array($interface['srcConcept']), getSpecializations($interface['srcConcept']));
+      
+      foreach ($conceptOrSpecs as $concept) 
+        echo '  mapInsert(interfacesMap, '.showHtmlAttrStr($concept).', '.showHtmlAttrStr($interface['name']).');';
+    }
   }
   echo '  return interfacesMap;';
   echo '}';
