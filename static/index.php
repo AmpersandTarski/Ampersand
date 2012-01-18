@@ -198,8 +198,8 @@ function genNewAtomDropDownMenu() {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
-      .'<span class=TextContent>'.htmlSpecialChars($interface['srcConcept'])
-      .' ('.htmlSpecialChars($interface['name']).')</span></div>';
+      .'<div><span class=TextContent>'.htmlSpecialChars($interface['srcConcept'])
+      .' ('.htmlSpecialChars($interface['name']).')</span></div></div>'; // extra div is for renaming menu entries
     }
   }
   echo '</div>';
@@ -324,7 +324,6 @@ function genSignalLogWindow($roleNr, $roleName) {
 function genEditableConceptInfo($interface) {
   global $allInterfaceObjects;
   global $relationTableInfo;
-  global $allKeys;
   
   $editableConcepts = $allInterfaceObjects[$interface]['editableConcepts'];
   
@@ -335,7 +334,7 @@ function genEditableConceptInfo($interface) {
     foreach ($allAtoms as $atom) {
       $atomsAndKeys[] = array ('atom' => $atom, 'key' => showKeyAtom($atom, $editableConcept));
     }
-    $atomKeyMap[$editableConcept] = array ('hasKey' => jsBool($allKeys[$editableConcept]), 'atomKeyMap' => $atomsAndKeys);
+    $atomKeyMap[$editableConcept] = array ('hasKey' => jsBool(keyForConcept($editableConcept)), 'atomKeyMap' => $atomsAndKeys);
   }
   $atomKeyMapJson = json_encode( $atomKeyMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";

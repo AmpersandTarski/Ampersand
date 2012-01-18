@@ -40,9 +40,8 @@ function keyForConcept($concept) {
 
 function showKeyAtom($atom, $concept) {
   global $db;
-  global $allKeys;
   
-  $keyDef = $allKeys[$concept];
+  $keyDef = keyForConcept($concept);
 
   if (!$keyDef || $atom == '') {
     return $atom;
