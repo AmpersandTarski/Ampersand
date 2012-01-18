@@ -32,12 +32,6 @@ function DB_doquerErr($DbName, $quer, &$error)
   return $rows;
 }
 
-function getGeneralizations($concept) {
-  global $allGeneralizations;
-
-  return isset( $allGeneralizations[$concept]) ? $allGeneralizations[$concept] : array ();
-}
-
 function getSpecializations($concept) {
   global $allSpecializations;
 
