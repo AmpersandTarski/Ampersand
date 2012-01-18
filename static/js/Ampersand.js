@@ -431,44 +431,33 @@ function stopAtomEditing($atom) {
   }
 }
 
-//The values are retrieved from the server with an getAtomsForConcept=<concept> request, so there is a slight
-//delay before they are shown.
 // For documentation, make sure to read docs.jquery.com/UI/Autocomplete and not docs.jquery.com/Plugins/autocomplete (which is incorrect)
 function initializeAutocomplete($textfield, $atom) {
   var $atomList = getEnclosingAtomList($atom);
   var concept = $atomList.length ? $atomList.attr('concept') : $('#AmpersandRoot').attr('concept'); 
   // If there is no enclosing list, we are at the top-level atom and take the concept from AmpersandRoot 
 
-  if (concept) {
-    $.post("php/Database.php",{ getAtomsForConcept: concept },function receiveDataOnPost(data){
-    var resultOrError = JSON.parse(data); // contains .res or .err
-    if (typeof resultOrError.res != 'undefined')
-        $textfield.autocomplete({ source:resultOrError.res
-                                , minLength: 0
-                                , close: function(event, ui) { 
-                                  if (typeof event.originalEvent != 'undefined')
-                                    stopAtomEditing($atom);
-                                  // We only stop editing here if the close was caused by an explicit event.
-                                  // If the menu disappears because the user is typing (when the text does not match any autocomplete string) 
-                                  // the originalEvent is not defined and we don't stop editing.
-                                }
-                                , select: function(event, ui) { 
-                                    // Another jQuery problem: on a mouse click, the textfield has not been updated
-                                    // at this point, so stopAtomEditing does not register the selected value.
-                                    // As a workaround, we explicitly set the value to the menu selection.
-                                    // Strangely enough, there is no problem for the Return key event.
-                                    if (event.originalEvent && event.originalEvent.originalEvent &&
-                                        event.originalEvent.originalEvent.type == "click")
-                                      $textfield.attr('value', ui.item.value);
+  $textfield.autocomplete({ source: getAllConceptAtoms(concept)
+                          , minLength: 0
+                          , close: function(event, ui) { 
+                            if (typeof event.originalEvent != 'undefined')
+                              stopAtomEditing($atom);
+                            // We only stop editing here if the close was caused by an explicit event.
+                            // If the menu disappears because the user is typing (when the text does not match any autocomplete string) 
+                            // the originalEvent is not defined and we don't stop editing.
+                          }
+                          , select: function(event, ui) { 
+                              // Another jQuery problem: on a mouse click, the textfield has not been updated
+                              // at this point, so stopAtomEditing does not register the selected value.
+                              // As a workaround, we explicitly set the value to the menu selection.
+                              // Strangely enough, there is no problem for the Return key event.
+                              if (event.originalEvent && event.originalEvent.originalEvent &&
+                                  event.originalEvent.originalEvent.type == "click")
+                                $textfield.attr('value', ui.item.value);
 
-                                    stopAtomEditing($atom); 
-                                    return true;
-                                 }});
-    else
-        logError("Ampersand: Error while retrieving auto-complete values:\n"+resultOrError.err);
-    });
-   } else
-    logError("Ampersand: Missing 'concept' html attribute for auto-complete");
+                              stopAtomEditing($atom); 
+                              return true;
+                           }});
 }
 
 
@@ -759,6 +748,16 @@ function logError(msg) {
     console.error(msg);
 }
 
+// precondition: concept appears on the page (and is therefore represented in getEditableConceptInfo)
+function getAllConceptAtoms(concept) {
+  var atomKeyMap = getEditableConceptInfo()[concept]["atomKeyMap"];
+  var atoms = new Array();
+  for (var i=0; i<atomKeyMap.length; i++) {
+    atoms.push( atomKeyMap[i]["key"] ); // if the concept has no key, "key" contains the atom name.
+  }
+  return atoms;
+}
+
 function getEnclosingAtom($elt) {
   return $elt.parents().filter('.Atom').first();
 }
@@ -797,7 +796,6 @@ function getNoCache(url, successCallback) {
 // For all empty atoms below $elt that have a hidden atom name, replace the name attribute with a unique atom name.
 // We cannot do this in php because it depends on the visibility of the name, which is not known at the php level.
 function setUniqueNamesForEmptyAtoms($elt) {
-  log('ja');
   $elt.find('.Atom').andSelf().filter('.Atom[atom=""]').map( function() { // need find .Atom and filter. Atom because jquery doesn't have find on descendants + self
     if ($(this).parents().filter('[rowType=NewAtomTemplate]').length == 0 && $(this).find('>.AtomName').is(":hidden")) {
         var concept = getEnclosingAtomList($(this)).attr('concept')
