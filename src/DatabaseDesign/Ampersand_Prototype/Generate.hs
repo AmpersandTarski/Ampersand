@@ -59,6 +59,12 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , ""
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
   , ""
+  , "$allGeneralizations ="
+  , "  array" ] ++
+       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
+         [ [ (showPhpStr $ name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) $ generalizations) ++")" ] 
+         | concept <- concs fSpec, let generalizations = getGeneralizations fSpec concept,  not $ null generalizations ]) ++        
+  [ ""
   , "$relationTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
