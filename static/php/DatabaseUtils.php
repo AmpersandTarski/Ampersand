@@ -239,6 +239,10 @@ function showHtmlAttrStr($str) {
   return '"'.escapeHtmlAttrStr($str).'"';
 }
 
+function showHtmlAttrBool($b) {
+  return $b ? '"true"' : '"false"';
+}
+
 function escapeHtmlAttrStr($str) {
   return str_replace(array('"'), array('&quot;'), $str); // we do escapeSQL and replace \" by &quot; and \' by '
 }
@@ -251,9 +255,6 @@ function escapeJsStr($str) {
   return escapeSQL($str);
 }
 
-function jsBool($b) {
-	return $b ? 'true' : 'false';
-}
 // This is needed for non-javascript urls, where javascript would call encodeURIComponent
 // We only handle the &, the browser takes care of the rest.
 function escapeURI($str) {

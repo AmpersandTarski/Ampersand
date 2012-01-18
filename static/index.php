@@ -257,7 +257,7 @@ function generateInterface($db, $interface, $srcAtom) {
   
   $nrOfAtoms = count($codomainAtoms)-1; // disregard the null for the NewAtomTemplate
   
-  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrStr(jsBool($interface['relationIsFlipped']))
+  $relationAttrs = $interface['relation']=='' ? '' : ' relation='.showHtmlAttrStr($interface['relation']).' relationIsFlipped='.showHtmlAttrBool($interface['relationIsFlipped'])
                                                     .' min='.showHtmlAttrStr($interface['min']).' max='.showHtmlAttrStr($interface['max'])
                                                     .' nrOfAtoms='.showHtmlAttrStr($nrOfAtoms); // 
   emit($html, '<div class="AtomList" concept='.showHtmlAttrStr($interface['tgtConcept']).$relationAttrs.'>');
@@ -300,7 +300,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $roleNr, $roleName));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.jsBool(count($interfaces)==0).'>');
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.showHtmlAttrBool(count($interfaces)==0).'>');
   // can be hidden with css if necessary (old prototype did not show it)
   
   $atomName = showKeyAtom($atom, $interface['tgtConcept']);
@@ -338,7 +338,7 @@ function genEditableConceptInfo($interface) {
     foreach ($allAtoms as $atom) {
       $atomsAndKeys[] = array ('atom' => $atom, 'key' => showKeyAtom($atom, $editableConcept));
     }
-    $atomKeyMap[$editableConcept] = array ('hasKey' => jsBool(getKey($editableConcept)), 'atomKeyMap' => $atomsAndKeys);
+    $atomKeyMap[$editableConcept] = array ('hasKey' => getKey($editableConcept)!=null, 'atomKeyMap' => $atomsAndKeys);
   }
   $atomKeyMapJson = json_encode( $atomKeyMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";

@@ -550,7 +550,7 @@ function addClickEvent($item, interface, atom) {
 //Keys
 
 function conceptHasKey(concept) {
-  return getEditableConceptInfo()[concept]['hasKey']=='true';
+  return getEditableConceptInfo()[concept]['hasKey'];
 }
 
 // return the atom for key, or null if the key is not in the atomKeyMap
