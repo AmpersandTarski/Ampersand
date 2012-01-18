@@ -218,7 +218,7 @@ function checkRules($ruleNames) {
         $target = showKeyAtom($violation['tgt'], $ruleSql['tgtConcept']);
         
         // if source and target are the same atom and we have a key for it, don't show a tuple
-        if ($violation['src'] == $violation['tgt'] && $ruleSql['srcConcept'] == $ruleSql['tgtConcept'] && keyForConcept($ruleSql['srcConcept']) )
+        if ($violation['src'] == $violation['tgt'] && $ruleSql['srcConcept'] == $ruleSql['tgtConcept'] && getKey($ruleSql['srcConcept']) )
           emitAmpersandErr("- '$source'");
         else
           emitAmpersandErr("- ('$source', '$target')");
@@ -268,7 +268,7 @@ function error($msg) {
 
 function listAtomsForConcept($concept) {
   $allAtoms = getAllConceptAtoms($concept);
-  if (keyForConcept($concept)) {
+  if (getKey($concept)) {
     $allAtomNames = "";
     foreach ($allAtoms as $atom)
       $allAtomNames[] = showKeyAtom($atom, $concept);

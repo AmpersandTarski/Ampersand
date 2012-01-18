@@ -38,7 +38,7 @@ function getSpecializations($concept) {
   return isset( $allSpecializations[$concept]) ? $allSpecializations[$concept] : array ();
 }
 
-function keyForConcept($concept) {
+function getKey($concept) {
   global $allKeys;
 
   foreach ($allKeys as $key)
@@ -51,7 +51,7 @@ function keyForConcept($concept) {
 function showKeyAtom($atom, $concept) {
   global $db;
   
-  $keyDef = keyForConcept($concept);
+  $keyDef = getKey($concept);
 
   if (!$keyDef || $atom == '') {
     return $atom;

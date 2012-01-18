@@ -338,7 +338,7 @@ function genEditableConceptInfo($interface) {
     foreach ($allAtoms as $atom) {
       $atomsAndKeys[] = array ('atom' => $atom, 'key' => showKeyAtom($atom, $editableConcept));
     }
-    $atomKeyMap[$editableConcept] = array ('hasKey' => jsBool(keyForConcept($editableConcept)), 'atomKeyMap' => $atomsAndKeys);
+    $atomKeyMap[$editableConcept] = array ('hasKey' => jsBool(getKey($editableConcept)), 'atomKeyMap' => $atomsAndKeys);
   }
   $atomKeyMapJson = json_encode( $atomKeyMap );
   echo "\n\nfunction getEditableConceptInfo() {\n";
