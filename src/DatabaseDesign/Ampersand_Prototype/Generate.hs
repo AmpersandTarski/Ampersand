@@ -12,7 +12,7 @@ import System.FilePath
 import System.Directory               
 import DatabaseDesign.Ampersand_Prototype.Version 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
-import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (getGeneralizations)
+import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (getGeneralizations, getSpecializations)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
@@ -138,8 +138,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "$allKeys ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ showPhpStr (name concept) ++ " =>"
-           , "  array ( 'label' => "++showPhpStr label
+         [ [ "  array ( 'label' => "++showPhpStr label
+           , "        , 'conceptAndSpecs' => array ("++ intercalate ", " (map (showPhpStr . name) $ concept : getSpecializations fSpec concept) ++")"
            , "        , 'exps' =>" -- a labeled list of sql queries for the key expressions 
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" ","

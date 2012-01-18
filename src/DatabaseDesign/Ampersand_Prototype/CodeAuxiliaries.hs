@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries
-       (Named(..),atleastOne,reName,nameFresh,noCollide,mapExpression, mapRelation, mapDeclaration, mapSign, getGeneralizations) where
+       (Named(..),atleastOne,reName,nameFresh,noCollide,mapExpression, mapRelation, mapDeclaration, mapSign, getGeneralizations, getSpecializations) where
        
 import Data.Char
-import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
+import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 data (Eq a) => Named a = Named { nName :: String, nObject :: a} deriving (Eq)
@@ -84,4 +84,7 @@ mapSign f (Sign s t) = Sign (f s) (f t)
 
 getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
 getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
+
+getSpecializations :: Fspc -> A_Concept -> [A_Concept]
+getSpecializations fSpec c = filter (c Poset.>) $ concs fSpec
 

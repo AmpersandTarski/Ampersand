@@ -34,8 +34,12 @@ function DB_doquerErr($DbName, $quer, &$error)
 
 function keyForConcept($concept) {
   global $allKeys;
-  
-  return $allKeys[$concept];
+
+  foreach ($allKeys as $key)
+    if (in_array($concept, $key['conceptAndSpecs']))
+      return $key;
+
+  return null;
 }
 
 function showKeyAtom($atom, $concept) {
