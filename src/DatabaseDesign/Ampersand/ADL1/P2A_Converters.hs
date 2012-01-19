@@ -17,7 +17,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      , disambiguate
      )
 where
-
+import Debug.Trace
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Data.List(nub,intercalate)
 import DatabaseDesign.Ampersand.ADL1
@@ -233,7 +233,7 @@ pKDef2aKDef actx pkdef
        , kdcpt = c
        , kdats = ats
                     }
-   , CxeOrig (cxelist (nmchk:kdcxe:atscxes)) "key definition" "" (origin pkdef) )
+   , CxeOrig (cxelist (nmchk:kdcxe:duplicateKeyErrs:multipleKeyErrs:atscxes)) "key definition" "" (origin pkdef) )
    where
     (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
     c  = pCpt2aCpt actx (kd_cpt pkdef)
@@ -244,6 +244,10 @@ pKDef2aKDef actx pkdef
                                        |x<-ats,source (objctx x)/=c])
     nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
                          |at<-kd_ats pkdef, let xs=[at' |at'<-kd_ats pkdef,name at==name at'],length xs>1]
+    duplicateKeyErrs = newcxeif (length (filter (\k -> name k == kd_lbl pkdef) $ keyDefs actx) > 1) $
+                         "Duplicate key name \""++kd_lbl pkdef++"\" at "++show (origin pkdef)  
+    multipleKeyErrs = newcxeif (length (filter (\k -> name (kdcpt k) == name c) $ keyDefs actx) > 1) $
+                         "Multiple keys for concept  \""++name c++"\" at "++show (origin pkdef)  
 
 -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
 pIFC2aIFC :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)
