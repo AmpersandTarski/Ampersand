@@ -79,7 +79,7 @@ class ProcessStructure a where
    
 rulesFromKey :: KeyDef -> [Rule]
 rulesFromKey key = mkProductInjectivityRule keyExps : 
-                   map mkTotalityRule keyExps   ++
+                   mkProductTotalityRule keyExps :
                    map mkUnivalenceRule keyExps  
 
  where keyExps = [ (objnm att, objctx att) | att <- kdats key ]
@@ -87,7 +87,8 @@ rulesFromKey key = mkProductInjectivityRule keyExps :
        mkProductInjectivityRule exprs = mkKeyRule "PrInj" "Product injectivity" "Product-injectiviteit" $ 
          EImp (EIsc [ ECps [expr,flp expr] | (_,expr) <- exprs ] , ERel (I $ kdcpt key))
           
-       mkTotalityRule (lbl, expr) = mkKeyRule ("Tot"++lbl) "Totality" "Totaliteit" $ EImp (ERel (I $ kdcpt key), ECps [expr,flp expr]) 
+       mkProductTotalityRule exprs = mkKeyRule "PrTot" "Product totality" "Product-totaliteit" $
+         EImp (ERel (I $ kdcpt key), EUni [ECps [expr,flp expr] | (_,expr) <- exprs ]) 
 
        mkUnivalenceRule (lbl, expr) = mkKeyRule ("Uni"++lbl) "Univalence" "Univalentie" $ EImp (ECps [flp expr, expr], ERel (I $ target expr)) 
  
