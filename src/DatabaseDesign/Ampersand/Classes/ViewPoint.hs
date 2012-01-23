@@ -82,7 +82,7 @@ rulesFromKey key = mkProductInjectivityRule keyExps :
                    mkProductTotalityRule keyExps :
                    map mkUnivalenceRule keyExps  
 
- where keyExps = [ (objnm att, objctx att) | att <- kdats key ]
+ where keyExps = [ (objnm att, objctx att) | KeyExp att <- kdats key ]
  
        mkProductInjectivityRule exprs = mkKeyRule "PrInj" "Product injectivity" "Product-injectiviteit" $ 
          EImp (EIsc [ ECps [expr,flp expr] | (_,expr) <- exprs ] , ERel (I $ kdcpt key))

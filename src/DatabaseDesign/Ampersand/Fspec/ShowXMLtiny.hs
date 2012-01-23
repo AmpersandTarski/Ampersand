@@ -140,7 +140,7 @@ where
      mkTag k = Tag "KeyDef" [nameToAttr k]
      mkXmlTree k = Elem (mkTag k)
                         ( Elem (simpleTag "Key on") [mkXmlTree (kdcpt k)] :
-                          attributesTree (kdats k)
+                          attributesTree ([e | KeyExp e <- kdats k]) -- TODO: currently ignores KeyText segments
                         )
 
 
