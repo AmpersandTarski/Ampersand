@@ -231,23 +231,31 @@ pKDef2aKDef actx pkdef
  = (Kd { kdpos = kd_pos pkdef
        , kdlbl = kd_lbl pkdef
        , kdcpt = c
-       , kdats = ats
+       , kdats = segs
                     }
-   , CxeOrig (cxelist (nmchk:kdcxe:duplicateKeyErrs:multipleKeyErrs:atscxes)) "key definition" "" (origin pkdef) )
+   , CxeOrig (cxelist (nmchk:kdcxe:duplicateKeyErrs:multipleKeyErrs:segscxes)) "key definition" "" (origin pkdef) )
    where
-    (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
+    (segs, segscxes) = unzip . map (pKeySeg2aKeySeg actx c) $ kd_ats pkdef
     c  = pCpt2aCpt actx (kd_cpt pkdef)
     -- check equality
-    kdcxe = newcxeif (nocxe (cxelist atscxes) && length (nub (c:map (source.objctx) ats))/=1)
+    ats = [ expr | KeyExp expr <- segs ]
+    kdcxe = newcxeif (nocxe (cxelist segscxes) && length (nub (c:map (source.objctx) ats))/=1)
                      (intercalate "\n" ["The source of expression " ++ showADL (objctx x) 
                                         ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the key concept ("++ showADL c ++ ")."
                                        |x<-ats,source (objctx x)/=c])
-    nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
-                         |at<-kd_ats pkdef, let xs=[at' |at'<-kd_ats pkdef,name at==name at'],length xs>1]
+    nmchk  = cxelist$nub [ newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
+                         | P_KeyExp at<-kd_ats pkdef, let xs=[ at' | P_KeyExp at'<-kd_ats pkdef,name at==name at' ],length xs>1]
     duplicateKeyErrs = newcxeif (length (filter (\k -> name k == kd_lbl pkdef) $ keyDefs actx) > 1) $
                          "Duplicate key name \""++kd_lbl pkdef++"\" at "++show (origin pkdef)  
     multipleKeyErrs = newcxeif (length (filter (\k -> name (kdcpt k) == name c) $ keyDefs actx) > 1) $
                          "Multiple keys for concept  \""++name c++"\" at "++show (origin pkdef)  
+
+-- (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
+pKeySeg2aKeySeg :: (Language l, ConceptStructure l, Identified l) => l -> A_Concept -> P_KeySegment -> (KeySegment, CtxError)
+pKeySeg2aKeySeg _    _      (P_KeyText str)   = (KeyText str, cxenone)
+pKeySeg2aKeySeg actx concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef actx (SourceCast concpt) keyExp
+                                                in ( KeyExp objDef, cxe)
+  
 
 -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
 pIFC2aIFC :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> P_Interface -> (Interface,CtxError)

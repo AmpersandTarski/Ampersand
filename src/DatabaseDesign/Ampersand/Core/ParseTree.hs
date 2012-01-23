@@ -21,6 +21,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Interface(..), P_ObjectDef(..), P_ObjectDefs
    
    , P_KeyDef(..),P_KeyDefs
+   , P_KeySegment(..)
    
    , PPurpose(..),PRef2Obj(..),PPurposes,PMeaning(..)
    
@@ -276,16 +277,18 @@ where
 
    type P_KeyDefs = [P_KeyDef]
    data P_KeyDef = 
-            P_Kd { kd_pos :: Origin       -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                 , kd_lbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                 , kd_cpt :: P_Concept    -- ^ this expression describes the instances of this object, related to their context
-                 , kd_ats :: P_ObjectDefs -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
+            P_Kd { kd_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+                 , kd_lbl :: String         -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                 , kd_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
+                 , kd_ats :: [P_KeySegment] -- ^ the constituent segments of this key.
                  } --deriving (Eq,Show)
    instance Identified P_KeyDef where
     name = kd_lbl
 
    instance Traced P_KeyDef where
     origin = kd_pos
+   
+   data P_KeySegment = P_KeyExp P_ObjectDef | P_KeyText String deriving (Eq, Show) -- ^ A name/expression pairs or a piece of text
    
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.

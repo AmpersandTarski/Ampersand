@@ -10,6 +10,7 @@ module DatabaseDesign.Ampersand
    , Pattern(..)
    , Declaration(..)
    , KeyDef(..)
+   , KeySegment(..)
    , Expression(..)
    , Population(..)
    , Fspc(..)

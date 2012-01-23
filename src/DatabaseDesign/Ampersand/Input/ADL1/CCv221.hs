@@ -34,7 +34,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "TEST"
-                       , "RELATION", "MEANING", "MESSAGE", "CONCEPT", "KEY"
+                       , "RELATION", "MEANING", "MESSAGE", "CONCEPT", "KEY", "TXT"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
@@ -472,14 +472,20 @@ and the grammar must be disambiguated in order to get a performant parser...
 -- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
 -- KEY onSSN: Person("social security number":ssn)
    pKeyDef          :: Parser Token P_KeyDef
-   pKeyDef           = kd <$ pKey "KEY" <*> pLabelProps <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeyAtt <* pSpec ')'
-                        where kd :: Label -> P_Concept -> P_ObjectDefs -> P_KeyDef 
+   pKeyDef           = kd <$ pKey "KEY" <*> pLabelProps <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeySegment <* pSpec ')'
+                        where kd :: Label -> P_Concept -> [P_KeySegment] -> P_KeyDef 
                               kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
                                                            , kd_lbl = nm
                                                            , kd_cpt = c
-                                                           , kd_ats = [if null (obj_nm x) then x{obj_nm=show i} else x | (i,x)<-zip [(1::Integer)..] ats]
-                                                           }
+                                                           , kd_ats = [ case keySeg of
+                                                                          P_KeyExp x       -> if null (obj_nm x) then P_KeyExp $ x{obj_nm=show i} else P_KeyExp x 
+                                                                          ks@(P_KeyText _) -> ks 
+                                                                      | (i,keySeg)<-zip [(1::Integer)..] ats]
+                                                           } -- nrs also count text segments but they're are not important anyway
 
+   pKeySegment :: Parser Token P_KeySegment
+   pKeySegment = P_KeyExp <$> pKeyAtt <|> P_KeyText <$ pKey "TXT" <*> pString
+                              
    pKeyAtt          :: Parser Token P_ObjectDef
    pKeyAtt           = attL <$> pLabelProps <*> pExpr <|>
                        att <$> pExpr
