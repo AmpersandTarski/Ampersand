@@ -186,9 +186,13 @@ instance ShowADL Interface where
 instance ShowADL KeyDef where
  showADL kd 
   = "KEY "++kdlbl kd
-          ++": "++name (kdcpt kd)
-          ++"("++intercalate ", " [(if null (name o) then "" else name o++":") ++ showADL (objctx o)
-                                  | o<-kdats kd]++")"
+          ++ ": " ++name (kdcpt kd)
+          ++ "(" ++intercalate ", " (map showADL $ kdats kd) ++ ")"
+
+instance ShowADL KeySegment where
+ showADL (KeyExp objDef) = (if null (name objDef) then "" else name objDef++":") ++ showADL (objctx objDef)
+ showADL (KeyText str) = "TXT " ++ show str
+                             
 
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only

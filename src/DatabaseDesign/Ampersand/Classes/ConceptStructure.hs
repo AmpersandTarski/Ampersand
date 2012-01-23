@@ -54,9 +54,9 @@ where
 --  closExprs c = closExprs (ctxpats c) `uni` closExprs [ifcObj s | s<-ctxifcs c]
     genE      c = ctxpo c
    instance ConceptStructure KeyDef where
-    concs     kd = [kdcpt kd] `uni` concs (kdats kd)
-    mors      kd = mors (kdats kd)
-    morlist   kd = morlist (kdats kd)
+    concs     kd = [kdcpt kd] `uni` concs ([objDef | KeyExp objDef <- kdats kd])
+    mors      kd = mors ([objDef | KeyExp objDef <- kdats kd])
+    morlist   kd = morlist ([objDef | KeyExp objDef <- kdats kd])
 --  closExprs kd = closExprs (kdats kd)
 
    instance ConceptStructure Expression where

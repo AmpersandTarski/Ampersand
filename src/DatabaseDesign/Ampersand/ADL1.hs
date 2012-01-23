@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Process(..), P_Process(..), P_RoleRelation(..),RoleRelation(..), RoleRule(..)
            , P_Pattern(..), Pattern(..)
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations
-           , P_KeyDef(..), P_KeyDefs, KeyDef(..)
+           , P_KeyDef(..), P_KeyDefs, P_KeySegment(..), KeyDef(..), KeySegment(..)
            , P_Population(..), Population(..)
            , P_ObjectDef(..), P_ObjectDefs
            , ObjectDef(..), P_Interface(..), Interface(..)
@@ -44,6 +44,7 @@ where
                                          ,Expression(..)
                                          ,A_Gen(..)
                                          ,KeyDef(..)
+                                         ,KeySegment(..)
                                          ,ObjectDef(..)
                                          ,Interface(..)
                                          ,Pattern(..)

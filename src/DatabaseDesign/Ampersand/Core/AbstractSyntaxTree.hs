@@ -9,6 +9,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , RuleType(..)
  , Declaration(..)
  , KeyDef(..)
+ , KeySegment(..)
  , A_Gen(..)
  , Interface(..)
  , ObjectDef(..)
@@ -242,14 +243,14 @@ instance Signaling Declaration where
 data KeyDef = Kd { kdpos :: Origin       -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                  , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                  , kdcpt :: A_Concept    -- ^ this expression describes the instances of this object, related to their context
-                 , kdats :: [ObjectDef]  -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
+                 , kdats :: [KeySegment]  -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
                  } deriving (Eq,Show)
 instance Identified KeyDef where
   name = kdlbl
 instance Traced KeyDef where
   origin = kdpos
 
-
+data KeySegment = KeyExp ObjectDef | KeyText String deriving (Eq, Show)
 
 data A_Gen = Gen { genfp  :: Origin         -- ^ the position of the GEN-rule
                  , gengen :: A_Concept      -- ^ generic concept

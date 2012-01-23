@@ -331,14 +331,17 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
 -- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
 -- KEY onSSN: Person("social security number":ssn)
    pKeyDef          :: Parser Token P_KeyDef
-   pKeyDef           = kd <$ pKey "KEY" <*> pLabelProps <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeyAtt <* pSpec ')'
-                        where kd :: Label -> P_Concept -> P_ObjectDefs -> P_KeyDef 
+   pKeyDef           = kd <$ pKey "KEY" <*> pLabelProps <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeySegment <* pSpec ')'
+                        where kd :: Label -> P_Concept -> [P_KeySegment] -> P_KeyDef 
                               kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
                                                            , kd_lbl = nm
                                                            , kd_cpt = c
                                                            , kd_ats = ats
                                                            }
 
+                              pKeySegment :: Parser Token P_KeySegment
+                              pKeySegment = P_KeyExp <$> pKeyAtt <|> P_KeyText <$ pKey "S" <*> pString
+                              
                               pKeyAtt :: Parser Token P_ObjectDef
                               pKeyAtt  = attL <$> pLabelProps <*> pExpr <|>
                                          att <$> pExpr

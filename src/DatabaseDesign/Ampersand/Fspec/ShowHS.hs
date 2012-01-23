@@ -324,6 +324,9 @@ where
        (if null (vrels fspec)     then "" else
         "\n -- *** Relations ***: "++
         concat [indent++" "++showHSName d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec, decusr d]++"\n") ++
+       (if null (vkeys fspec)     then "" else
+        "\n -- *** Keys ***: "++
+        concat [indent++" "++showHSName k++indent++"  = "++showHS flags (indent++"    ") k |k<- vkeys fspec]++"\n") ++
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes ***: "++
         concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
@@ -650,7 +653,18 @@ where
    instance ShowHS KeyDef where
     showHS flags indent kd
      = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdcpt kd)++")"
-       ++indent++"  [ "++intercalate (indent++"  , ") [showHS flags (indent++"    ") a |a<-kdats kd]++indent++"  ]"
+       ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ kdats kd)++indent++"  ]"
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: KeySegment                        ***
+-- \***********************************************************************
+
+   --instance ShowHSName KeySegment where
+   -- showHSName kd = haskellIdentifier ("kDef_"++name kd)
+   
+   instance ShowHS KeySegment where
+    showHS _     _      (KeyText str) = "KeyText "++show str
+    showHS flags indent (KeyExp objDef) = "KeyExp ("++ showHS flags indent objDef ++ ")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***
