@@ -58,7 +58,6 @@ function showKeyAtom($atom, $concept) {
   }
   else {
     $keyStrs = array ();
-    echo count($keyDef['segments']);
     foreach ($keyDef['segments'] as $keySegment) 
       if ($keySegment['segmentType'] == 'Text')
         $keyStrs[] = $keySegment['Text'];
