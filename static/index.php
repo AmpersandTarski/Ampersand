@@ -303,7 +303,8 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.showHtmlAttrBool(count($interfaces)==0).'>');
   // can be hidden with css if necessary (old prototype did not show it)
   
-  $atomName = showKeyAtom($atom, $interface['tgtConcept']);
+  $atomName = showKeyAtom($atom, $interface['tgtConcept']); 
+  // TODO: can be done more efficiently if we query the concept atoms once for each concept
   
   emit($html, "<div class=AtomName>".htmlSpecialChars($atomName).'</div>');
   if (count($interfaces) > 0) {

@@ -146,15 +146,11 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name concept)
-           , "        , 'exps' =>" -- a labeled list of sql queries for the key expressions 
+           , "        , 'segments' =>" -- a labeled list of sql queries for the key expressions 
            , "            array" ]++
-                (indent 14 $ blockParenthesize "(" ")" ","
-                [ [ (showPhpStr $ objnm objDef) ++ " => // " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
-                  , "   '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef)) $
-                                        (selectExpr fSpec 26 "src" "tgt" $ objctx objDef))++"'"  ] 
-                | (i,objDef) <- zip [1..] objDefs ]) ++  
+                (indent 14 $ blockParenthesize "(" ")" "," $ map genKeySeg keySegs) ++  
            [ "      )" ]           
-         | Kd _ label concept objDefs <- vkeys fSpec ])
+         | Kd _ label concept keySegs <- vkeys fSpec ])
        
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
        showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
@@ -167,6 +163,14 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
        
        groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
+       
+       genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
+       genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
+                                   , "      , 'label' => "++ (showPhpStr $ objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                                   , "      , 'expSQL' =>"
+                                   , "          '" ++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef)) $
+                                                (selectExpr fSpec 33 "src" "tgt" $ objctx objDef))++"' )"  ] 
+                
 
 generateInterface fSpec opts interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"

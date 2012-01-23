@@ -23,7 +23,7 @@ function DB_doquerErr($DbName, $quer, &$error)
     $error = 'Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'": '.mysql_error();
     return false;
   }
-  if($result===true) return true; // succes.. but no contents..
+  if($result===true) return true; // success.. but no contents..
   $rows=Array();
   while (($row = @mysql_fetch_array($result))!==false) {
     $rows[]=$row;
@@ -58,11 +58,15 @@ function showKeyAtom($atom, $concept) {
   }
   else {
     $keyStrs = array ();
-    foreach ($keyDef['exps'] as $label => $expSql) {
-      $r = getCoDomainAtoms($db, $atom, $expSql);
-      $keyStrs[] = $r[0];
-    }
-    return implode(', ', $keyStrs);
+    echo count($keyDef['segments']);
+    foreach ($keyDef['segments'] as $keySegment) 
+      if ($keySegment['segmentType'] == 'Text')
+        $keyStrs[] = $keySegment['Text'];
+      else {
+        $r = getCoDomainAtoms($db, $atom, $keySegment['expSQL']);
+        $keyStrs[] = $r[0];
+      }
+    return implode($keyStrs);
   }
 }
 
