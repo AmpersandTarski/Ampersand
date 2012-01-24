@@ -9,6 +9,8 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
+import DatabaseDesign.Ampersand.Classes.ViewPoint (violations)
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
@@ -45,13 +47,15 @@ main
 --    takes the Fspc as its input, and spitts out everything the user requested.
 generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
-    sequence_ 
-       ([ verboseLn     flags "Generating..."]++
-        [ doGenXML      fSpec flags | genXML       flags] ++
-        [ doGenHaskell  fSpec flags | haskell      flags] ++ 
-        [ interfaceGen  fSpec flags | interfacesG  flags] ++
-        [ doGenDocument fSpec flags | genFspec     flags] ++ 
-        [ prove         fSpec flags | proofs       flags] ++
-        [ verbose flags "Done."]
-       ) 
+ do { verboseLn flags "Generating..."
+    ; when (genXML flags)      $ doGenXML      fSpec flags
+    ; when (haskell flags)     $ doGenHaskell  fSpec flags 
+    ; when (interfacesG flags) $ interfaceGen  fSpec flags
+    ; when (genFspec flags)    $ doGenDocument fSpec flags 
+    ; when (proofs flags)      $ prove         fSpec flags
+    --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
+    --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
+    --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
+    ; verbose flags "Done."
+    }
 
