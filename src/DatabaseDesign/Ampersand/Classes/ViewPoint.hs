@@ -79,18 +79,20 @@ class ProcessStructure a where
    
 rulesFromKey :: KeyDef -> [Rule]
 rulesFromKey key = mkProductInjectivityRule keyExps : 
-                   mkProductTotalityRule keyExps :
+                   --mkProductTotalityRule keyExps :
                    map mkUnivalenceRule keyExps  
 
  where keyExps = [ (objnm att, objctx att) | KeyExp att <- kdats key ]
  
-       mkProductInjectivityRule exprs = mkKeyRule "PrInj" "Product injectivity" "Product-injectiviteit" $ 
-         EImp (EIsc [ ECps [expr,flp expr] | (_,expr) <- exprs ] , ERel (I $ kdcpt key))
-          
-       mkProductTotalityRule exprs = mkKeyRule "PrTot" "Product totality" "Product-totaliteit" $
-         EImp (ERel (I $ kdcpt key), EUni [ECps [expr,flp expr] | (_,expr) <- exprs ]) 
+       mkProductInjectivityRule exprs = mkKeyRule "Diamond" "Diamond rule" "Diamantregel" $ 
+         EImp (EIsc [ diamond expr $ EFlp expr | (_,expr) <- exprs ] , ERel (I $ kdcpt key))
+       
+       diamond e1 e2 = EIsc [ ERad [ECpl e1,e2], ERad [e1, ECpl e2] ]
+       
+       --mkProductTotalityRule exprs = mkKeyRule "PrTot" "Product totality" "Product-totaliteit" $
+       --  EImp (ERel (I $ kdcpt key), EUni [ECps [expr, EFlp expr] | (_,expr) <- exprs ]) 
 
-       mkUnivalenceRule (lbl, expr) = mkKeyRule ("Uni"++lbl) "Univalence" "Univalentie" $ EImp (ECps [flp expr, expr], ERel (I $ target expr)) 
+       mkUnivalenceRule (lbl, expr) = mkKeyRule ("Uni"++lbl) "Univalence" "Univalentie" $ EImp (ECps [EFlp expr, expr], ERel (I $ target expr)) 
  
        -- This was taken from old rulefromKey. Even after cleaning up a bit, it's still quite messy.
        mkKeyRule abbr propertyEN propertyNL expression =
