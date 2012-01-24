@@ -8,10 +8,12 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import Data.List
+import Data.Maybe
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 --import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
+import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ChapterNatLangReqs.hs"
@@ -245,7 +247,11 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                         (Dutch  , _) -> [Para [Str "Zinnen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
                         (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
                  )++
-                 [Para (applyM d a b) | (a,b)<-dp ]
+                 [ Para $ applyM d srcKeyAtom tgtKeyAtom 
+                 | (a,b)<-dp
+                 , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) a 
+                 , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) b
+                 ]
                  where purps = purposes fSpec (language flags) rel
                        d     = makeDeclaration rel
                        dp    = take 3 (decpopu d)
@@ -300,3 +306,32 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
              Isn{}     -> [Str "(",(Str .name.source) decl, Str ") ",Str (upCap a),Space,Str "equals",Space,Str b,Str "."]
              Iscompl{} -> [Str "(",(Str .name.source) decl, Str ") ",Str (upCap a),Space,Str "differs",Space,Str "from",Space,Str b,Str "."]
              Vs{}      -> [Str (show True)]
+
+
+-- TODO: fix showing/not showing based on relation
+-- TODO: what about relations in the target key?
+-- TODO: move these to some auxiliaries or utils
+showKeyAtom :: Fspc -> Maybe Relation -> A_Concept -> String -> String
+showKeyAtom fSpec mRel cncpt atom =
+  case catMaybes $ map (getKey fSpec) $ cncpt : getGeneralizations fSpec cncpt of
+    []    -> atom
+    key:_ -> if fmap ERel mRel `elem` justKeyRels then atom else concatMap showKeySegment $ kdats key 
+     where showKeySegment (KeyText str) = str
+           showKeySegment (KeyExp objDef) = 
+             case [ tgtAtom | (srcAtom, tgtAtom) <- contents (objctx objDef), atom == srcAtom ] of
+               []        -> ""
+               keyAtom:_ -> keyAtom  
+               
+           justKeyRels = map (Just . objctx) $ [objDef | KeyExp objDef <- kdats key]
+      
+getKey :: Fspc -> A_Concept -> Maybe KeyDef
+getKey fSpec cncpt = 
+  case filter ((== cncpt) .  kdcpt) $ vkeys fSpec of
+    []       -> Nothing 
+    keyDef:_ -> Just keyDef 
+
+-- TODO: move this to some auxiliaries or utils and share with Prototype (also remove import of Poset)
+getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
+getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
+
+ 
