@@ -30,6 +30,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics           --      (fatalMsg,Identified(..))
 import Data.List(nub)
+import DatabaseDesign.Ampersand.ADL1.Rule (ruleviolations)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
@@ -84,7 +85,8 @@ instance Language Fspc where
   keyDefs      = vkeys
   gens         = vgens
   patterns     = vpatterns
-
+  violations fSpec = [(r,viol) |r<- invariants fSpec ++ grules fSpec, viol<-ruleviolations r]
+                     -- default violations computes al rules again from declarations
 
 data FProcess
   = FProc { fpProc       :: Process
