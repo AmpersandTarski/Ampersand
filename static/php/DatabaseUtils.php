@@ -3,7 +3,23 @@ require __DIR__.'/../dbSettings.php';
 // We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
 // by php/Database.php, we would need '../dbSettings.php'.
-  
+
+function initSession() {
+  session_start();
+
+  $sessionAtom = $_SESSION['sessionAtom'];
+  if (!isset($sessionAtom)) {
+    $sessionAtom = mkUniqueAtomByTime('SESSION');
+    $_SESSION['sessionAtom']  = $sessionAtom;
+    addAtomToConcept($sessionAtom, 'SESSION');
+  }
+
+  //echo "SessionAtom is $sessionAtom";
+}
+
+function resetSession() {
+  unset($_SESSION['sessionAtom']);
+}
 
 function DB_doquer($DbName, $quer) {
   $result = DB_doquerErr($DbName, $quer, $error);
@@ -15,6 +31,8 @@ function DB_doquer($DbName, $quer) {
 
 function DB_doquerErr($DbName, $quer, &$error)
 {
+  
+  $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
   global $DB_link,$DB_errs;
   $DB_slct = mysql_select_db($DbName,$DB_link);
     

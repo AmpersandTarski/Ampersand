@@ -7,6 +7,8 @@ require __DIR__.'/../Generics.php';
 
 require_once __DIR__.'/DatabaseUtils.php';
 
+initSession();
+
 // This module handles three requests: 
 //
 //     Database.php?getAllAtomsForConcept=..
@@ -15,7 +17,9 @@ require_once __DIR__.'/DatabaseUtils.php';
                                                         
 //     Database.php?commands=..
 
-if (isset($_REQUEST['destroyAtom']) ) {
+if (isset($_REQUEST['resetSession']) ) {
+  resetSession();
+} else if (isset($_REQUEST['destroyAtom']) ) {
   removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
 } else if (isset($_REQUEST['getTimestamp']) ) {
   timestampHtml();
@@ -24,7 +28,6 @@ if (isset($_REQUEST['destroyAtom']) ) {
 } else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
-  
   dbStartTransaction($dbName);
   emitLog('BEGIN');
 
@@ -161,6 +164,8 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   global $dbName; 
   global $relationTableInfo;
+  global $tableColumnInfo;
+  
   emitLog ("editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom)");
   $srcAtom = $isFlipped ? $childAtom : $parentAtom;
   $tgtAtom = $isFlipped ? $parentAtom : $childAtom;
@@ -172,7 +177,14 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   $tableEsc = escapeSQL($table);
   $srcAtomEsc = escapeSQL($srcAtom);
   $tgtAtomEsc = escapeSQL($tgtAtom);
-  $query = "DELETE FROM `$tableEsc` WHERE `$srcCol`='$srcAtomEsc' AND `$tgtCol`='$tgtAtomEsc';";
+  $srcColEsc = escapeSQL($srcCol);
+  $tgtColEsc = escapeSQL($tgtCol);
+  
+  if ($tableColumnInfo[$table][$tgtCol]['null']) // note: this uniqueness is not set as an SQL table attribute
+    $query = "UPDATE `$tableEsc` SET `$tgtColEsc`=NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
+  else
+    $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
+  
   emitLog ($query);
   queryDb($dbName, $query);
 }

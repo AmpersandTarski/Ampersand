@@ -18,6 +18,11 @@ function initializeAtoms() {
     setNavigationHandlers();
 }
 
+function resetSession() {
+  $.post('php/Database.php/php/Database.php?resetSession');
+  window.location.reload();
+}
+
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
  * on #ScrollPane. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {

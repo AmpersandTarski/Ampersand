@@ -36,6 +36,9 @@ body {
     float: right;
     margin: 3px 4px 0 0;
 }
+#TopLevelInterfaces #MenuBarLogout {
+    float: right;
+}
 #TopLevelInterfaces #MenuBarReset {
     float: right;
 }
