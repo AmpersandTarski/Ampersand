@@ -94,7 +94,8 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
          [ [(showPhpStr $ name plug)++" =>"
            , "  array" ] ++
                 (indent 4 $ blockParenthesize "(" ")" ","
-                [ [ (showPhpStr $ fldname field) ++ " => array ( 'unique' => "++showPhpBool (flduniq field)++
+                [ [ (showPhpStr $ fldname field) ++ " => array ( 'concept' => "++showPhpStr (name . target $ fldexpr field)++
+                                                              ", 'unique' => "++showPhpBool (flduniq field)++
                                                               ", 'null' => " ++ showPhpBool (fldnull field)++")" ] 
                 | field <- getPlugFields plug]) 
          | InternalPlug plug <- plugInfos fSpec]) ++
