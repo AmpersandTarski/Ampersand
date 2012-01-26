@@ -4,22 +4,55 @@ require __DIR__.'/../dbSettings.php';
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
 // by php/Database.php, we would need '../dbSettings.php'.
 
-function initSession() {
-  session_start();
+// Sessions
 
+define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
+
+function initSession() {
+  global $dbName;
+  
+  session_start();
+  cleanupExpiredSessions();
+  
   $sessionAtom = $_SESSION['sessionAtom'];
-  if (!isset($sessionAtom)) {
+  
+  // create a new session if $sessionAtom is not set (browser started a new session) 
+  // or $sessionAtom is not in SESSIONS (previous session expired)
+  if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
     $sessionAtom = mkUniqueAtomByTime('SESSION');
     $_SESSION['sessionAtom']  = $sessionAtom;
     addAtomToConcept($sessionAtom, 'SESSION');
   }
-
-  //echo "SessionAtom is $sessionAtom";
+  
+  $timeInSeconds = time();
+  DB_doquer($dbName, "INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
+                     "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
+  //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
 }
 
 function resetSession() {
-  unset($_SESSION['sessionAtom']);
+  deleteSession($_SESSION['sessionAtom']);
 }
+
+function deleteSession($sessionAtom) {
+  //echo "deleting $sessionAtom<br/>";
+  DB_doquer($dbName, "DELETE FROM `__SessionTimeout__` WHERE SESSION = '$sessionAtom';");
+  deleteAtom($sessionAtom, 'SESSION');
+  
+}
+
+// Remove expired sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+function cleanupExpiredSessions() {
+  global $dbName;
+  $expirationLimit = time() - EXPIRATION_TIME;
+  
+  $expiredSessions = firstCol(DB_doquer($dbName, "SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
+  foreach ($expiredSessions as $sessionAtom)
+    deleteSession($sessionAtom);
+}
+
+
+// Queries
 
 function DB_doquer($DbName, $quer) {
   $result = DB_doquerErr($DbName, $quer, $error);
@@ -134,6 +167,34 @@ function addAtomToConcept($newAtom, $concept) {
       $allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
             
       DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
+    }
+  }
+}
+
+// Remove all occurrences of $atom in the database (all concept tables and all relations)
+// In tables where the atom may not be null, the entire row is removed. 
+// TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't
+//       happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
+function deleteAtom($atom, $concept) {
+  global $dbName;
+  global $tableColumnInfo;
+
+
+  foreach ($tableColumnInfo as $table => $tableInfo)
+  foreach ($tableInfo as $column => $fieldInfo) {
+    // TODO: could be optimized by doing one query per table. But deleting per column yields the same result.
+    //       (unlike adding)
+    if ($fieldInfo['concept']==$concept) {
+      $tableEsc = escapeSQL($table);
+      $columnEsc = escapeSQL($column);
+      $atomEsc = escapeSQL($atom);
+
+      if ($fieldInfo['null'])  // if the field can be null, we set all occurrences to null
+        $query = "UPDATE `$tableEsc` SET `$columnEsc`=NULL WHERE `$columnEsc`='$atomEsc';";
+      else // otherwise, we remove the entire row for each occurrence
+        $query = "DELETE FROM `$tableEsc` WHERE `$columnEsc` = '$atomEsc';";
+      echo $query;
+      DB_doquer($dbName, $query);
     }
   }
 }
