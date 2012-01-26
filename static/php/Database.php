@@ -9,18 +9,15 @@ require_once __DIR__.'/DatabaseUtils.php';
 
 initSession();
 
-// This module handles three requests: 
+// This module handles four requests: 
 //
-//     Database.php?getAllAtomsForConcept=..
-//     Database.php?destroyAtom=..&concept=..    note: unlike delete, this removes the atom from its concept table
-//                                                     it is assumed that the atom does not occur in any other tables
-                                                        
+//     Database.php?resetSession
+//     Database.php?getTimestamp
+//     Database.php?testRule=..
 //     Database.php?commands=..
 
 if (isset($_REQUEST['resetSession']) ) {
   resetSession();
-} else if (isset($_REQUEST['destroyAtom']) ) {
-  removeAtomFromConcept($_REQUEST['destroyAtom'], $_REQUEST['concept']);
 } else if (isset($_REQUEST['getTimestamp']) ) {
   timestampHtml();
 } else if (isset($_REQUEST['testRule']) ) {
