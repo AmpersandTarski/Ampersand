@@ -14,7 +14,6 @@ function initSession() {
   // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
   //       This way, errors during initSession do not prevent the reset-database link from being visible.
   DB_doquerErr($dbName, "SELECT * FROM `__SessionTimeout__` WHERE false", $error);
-  echo $error;
   if ($error) return;
   
   session_start();
