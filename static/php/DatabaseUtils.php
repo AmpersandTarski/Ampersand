@@ -11,6 +11,12 @@ define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
 function initSession() {
   global $dbName;
   
+  // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+  //       This way, errors during initSession do not prevent the reset-database link from being visible.
+  DB_doquerErr($dbName, "SELECT * FROM `__SessionTimeout__` WHERE false", $error);
+  echo $error;
+  if ($error) return;
+  
   session_start();
   cleanupExpiredSessions();
   
@@ -64,8 +70,9 @@ function DB_doquer($DbName, $quer) {
 
 function DB_doquerErr($DbName, $quer, &$error)
 {
-  
+  //Replace the special atom value _SESSION by the current sessionAtom
   $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
+  
   global $DB_link,$DB_errs;
   $DB_slct = mysql_select_db($DbName,$DB_link);
     
