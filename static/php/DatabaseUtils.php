@@ -193,7 +193,7 @@ function deleteAtom($atom, $concept) {
         $query = "UPDATE `$tableEsc` SET `$columnEsc`=NULL WHERE `$columnEsc`='$atomEsc';";
       else // otherwise, we remove the entire row for each occurrence
         $query = "DELETE FROM `$tableEsc` WHERE `$columnEsc` = '$atomEsc';";
-      echo $query;
+      //echo $query;
       DB_doquer($dbName, $query);
     }
   }
