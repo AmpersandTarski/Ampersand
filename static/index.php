@@ -69,7 +69,8 @@ for ($i=0; $i<count($allRoles); $i++) {
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
 echo '<div class="MenuItem" id="MenuBarNew"><span class=TextContent>New</span></div>';
-echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Logout</span></a></div>';
+if ($conceptTableInfo['SESSIONS']) // only show logout button when concept SESSIONS is used by adl script
+  echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Logout</span></a></div>';
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
   echo '<div class="MenuItem" id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></div>';
 }

@@ -11,32 +11,35 @@ define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
 function initSession() {
   global $dbName;
   
-  // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
-  //       This way, errors during initSession do not prevent the reset-database link from being visible.
-  DB_doquerErr($dbName, "SELECT * FROM `__SessionTimeout__` WHERE false", $error);
-  if ($error) return;
-  
-  session_start();
-  cleanupExpiredSessions();
-  
-  $sessionAtom = $_SESSION['sessionAtom'];
-  
-  // create a new session if $sessionAtom is not set (browser started a new session) 
-  // or $sessionAtom is not in SESSIONS (previous session expired)
-  if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
-    $sessionAtom = mkUniqueAtomByTime('SESSION');
-    $_SESSION['sessionAtom']  = $sessionAtom;
-    addAtomToConcept($sessionAtom, 'SESSION');
+  if ($conceptTableInfo['SESSIONS']) { // only execute session code when concept SESSIONS is used by adl script
+    // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+    //       This way, errors during initSession do not prevent the reset-database link from being visible.
+    DB_doquerErr($dbName, "SELECT * FROM `__SessionTimeout__` WHERE false", $error);
+    if ($error) return;
+    
+    session_start();
+    cleanupExpiredSessions();
+    
+    $sessionAtom = $_SESSION['sessionAtom'];
+    
+    // create a new session if $sessionAtom is not set (browser started a new session) 
+    // or $sessionAtom is not in SESSIONS (previous session expired)
+    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
+      $sessionAtom = mkUniqueAtomByTime('SESSION');
+      $_SESSION['sessionAtom']  = $sessionAtom;
+      addAtomToConcept($sessionAtom, 'SESSION');
+    }
+    
+    $timeInSeconds = time();
+    DB_doquer($dbName, "INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
+                       "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
+    //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
   }
-  
-  $timeInSeconds = time();
-  DB_doquer($dbName, "INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
-                     "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
-  //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
 }
 
 function resetSession() {
-  deleteSession($_SESSION['sessionAtom']);
+  if ($conceptTableInfo['SESSIONS']) // only execute session code when concept SESSIONS is used by adl script
+    deleteSession($_SESSION['sessionAtom']);
 }
 
 function deleteSession($sessionAtom) {
