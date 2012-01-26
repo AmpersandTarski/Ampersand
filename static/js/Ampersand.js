@@ -19,8 +19,10 @@ function initializeAtoms() {
 }
 
 function resetSession() {
-  $.post('php/Database.php/php/Database.php?resetSession');
-  window.location.reload();
+  $.ajax({ url: 'php/Database.php/php/Database.php?resetSession',
+           cache: false,
+           success: function(data){ window.location.reload(); }
+  });
 }
 
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
