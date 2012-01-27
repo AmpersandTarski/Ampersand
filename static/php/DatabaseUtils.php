@@ -10,13 +10,13 @@ define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
 
 function initSession() {
   global $dbName;
+  global $conceptTableInfo;
   
-  if ($conceptTableInfo['SESSIONS']) { // only execute session code when concept SESSIONS is used by adl script
+  if ($conceptTableInfo['SESSION']) { // only execute session code when concept SESSION is used by adl script
     // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
     //       This way, errors during initSession do not prevent the reset-database link from being visible.
     DB_doquerErr($dbName, "SELECT * FROM `__SessionTimeout__` WHERE false", $error);
     if ($error) return;
-    
     session_start();
     cleanupExpiredSessions();
     
@@ -38,11 +38,15 @@ function initSession() {
 }
 
 function resetSession() {
-  if ($conceptTableInfo['SESSIONS']) // only execute session code when concept SESSIONS is used by adl script
+  global $conceptTableInfo;
+  
+  if ($conceptTableInfo['SESSION']) // only execute session code when concept SESSION is used by adl script
     deleteSession($_SESSION['sessionAtom']);
 }
 
 function deleteSession($sessionAtom) {
+  global $dbName;
+  
   //echo "deleting $sessionAtom<br/>";
   DB_doquer($dbName, "DELETE FROM `__SessionTimeout__` WHERE SESSION = '$sessionAtom';");
   deleteAtom($sessionAtom, 'SESSION');
