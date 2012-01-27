@@ -38,8 +38,8 @@ main
                                                   parsePopsM_ popsText flags fn
                              verboseLn flags "Type checking..."
                              return (case pCtx of
-                                        Right ctx   -> typeCheck ctx pPops
-                                        Left msgs -> (fatal 38 "There are errors that should have been presented!",PE msgs)
+                                        Right ctx -> typeCheck ctx pPops
+                                        Left msg  -> (fatal 38 "There are errors that should have been presented!",PE [msg])
                                     )   
 
 

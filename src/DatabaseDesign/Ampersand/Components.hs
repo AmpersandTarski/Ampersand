@@ -45,25 +45,15 @@ fatal = fatalMsg "Components"
 parseCtxM_  :: String        -- ^ The string to be parsed
             -> Options       -- ^ flags to be taken into account
             -> String        -- ^ The name of the .adl file (used for error messages)
-            -> IO (Either [ParserError] P_Context) -- ^ The IO monad with the parse tree. 
-parseCtxM_ adlstring flags fn =
-      do res <- tryAll versions2try 
-         verboseLn flags (case res of 
-                            Right _  -> ""
-                            Left xs -> showErr xs
-                         )
-         return res                   
+            -> IO (Either ParserError P_Context) -- ^ The IO monad with the parse tree. 
+parseCtxM_ adlstring flags fn = tryAll versions2try
     where 
-      showErr xs = if verboseP flags 
-                   then intercalate "-------------------------------" [show err | err<-xs]
-                   else show (head xs)
-
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion flags of
          Just pv  -> [pv]
          Nothing  -> [PV664,PV211]
       
-      try :: ParserVersion -> IO (Either [ParserError] P_Context)
+      try :: ParserVersion -> IO (Either ParserError P_Context)
       try pv = do { verbose flags $ "Parsing with "++show pv++"..."
                   ; eRes <- parseADLAndIncludes adlstring fn pv flags
                   ; case eRes of 
@@ -73,13 +63,13 @@ parseCtxM_ adlstring flags fn =
                                  >> return (Left err)
                   }
                   
-      tryAll :: [ParserVersion] -> IO (Either [ParserError] P_Context)
+      tryAll :: [ParserVersion] -> IO (Either ParserError P_Context)
       tryAll [] = fatal 76 "tryAll must not be called with an empty list. Consult your dealer."
       tryAll [pv] = try pv 
       tryAll (pv:pvs) = do mCtx <- try pv 
                            case mCtx of
                             Right ctx  -> return (Right ctx)
-                            Left _   -> tryAll pvs
+                            Left _     -> tryAll pvs
 
                          
 -- | Same as parseCtxM_ , however this one is for a list of populations
