@@ -226,7 +226,7 @@ function checkRules($ruleNames) {
         
         // if source and target are the same atom and we have a key for it, don't show a tuple
         if ($violation['src'] == $violation['tgt'] && $ruleSql['srcConcept'] == $ruleSql['tgtConcept'] && getKey($ruleSql['srcConcept']) )
-          emitAmpersandErr("- '$source'");
+          emitAmpersandErr("- $source");
         else
           emitAmpersandErr("- ('$source', '$target')");
       }
