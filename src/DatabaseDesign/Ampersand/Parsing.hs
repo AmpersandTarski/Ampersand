@@ -21,7 +21,7 @@ parseADLAndIncludes :: String        -- ^ The string to be parsed
          -> String        -- ^ The name of the .adl file (used for error messages)
          -> ParserVersion -- ^ The specific version of the parser to be used
          -> Options       -- ^ Options to use
-         -> IO (Either [ParserError] P_Context) -- ^ The result: Either some errors, or the parsetree.
+         -> IO (Either ParserError P_Context) -- ^ The result: Either some errors, or the parsetree.
      
 parseADLAndIncludes str fn pv opts =
   do { case parseADL str fn pv of
@@ -37,7 +37,7 @@ parseADLAndIncludes str fn pv opts =
 parseADL :: String        -- ^ The string to be parsed
          -> String        -- ^ The name of the .adl file (used for error messages)
          -> ParserVersion -- ^ The specific version of the parser to be used
-         -> Either [ParserError] (P_Context, [String]) -- ^ The result: Either some errors, or the parsetree. 
+         -> Either ParserError (P_Context, [String]) -- ^ The result: Either some errors, or the parsetree. 
 
 parseADL str fn pv =
   case pv of
@@ -45,7 +45,7 @@ parseADL str fn pv =
       PV664  -> runParser pv (addEmptyIncludes <$> CC664.pContext) fn str
  where addEmptyIncludes parsedContext = (parsedContext, []) -- the old parsed does not return include filenames, so we add an empty list
     
-runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either [ParserError] res
+runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either ParserError res
 runParser parserVersion parser filename input = 
   let scanner = case parserVersion of 
                   PV664  -> scan CC664.keywordstxt CC664.keywordsops CC664.specialchars CC664.opchars filename initPos
@@ -53,11 +53,11 @@ runParser parserVersion parser filename input =
       steps :: Steps (Pair res (Pair [Token] a)) Token
       steps = parse parser $ scanner input
   in  case  getMsgs steps of
-        []  -> Right $ let Pair result _ = evalSteps steps in result
-        msgs -> Left msgs
+        []       -> Right $ let Pair result _ = evalSteps steps in result
+        msg:msgs -> Left msg
 
 -- to keep things simple, we always parse all included files, even if one of them has a parse error
-readAndParseIncludeFiles :: [String] -> IO (Either [ParserError] (P_Context -> P_Context))
+readAndParseIncludeFiles :: [String] -> IO (Either ParserError (P_Context -> P_Context))
 readAndParseIncludeFiles filenames = 
  do { parsedIncludeFiles <- mapM readAndParseIncludeFile filenames
     ; let result = sequence parsedIncludeFiles -- we use the Either monad: result will be the first Left, or a list of all Rights
@@ -68,7 +68,7 @@ readAndParseIncludeFiles filenames =
  where applyAll :: [P_Context -> P_Context] -> P_Context -> P_Context
        applyAll fs ctxt = foldr ($) ctxt fs
  
-readAndParseIncludeFile :: String -> IO (Either [ParserError] (P_Context -> P_Context))
+readAndParseIncludeFile :: String -> IO (Either ParserError (P_Context -> P_Context))
 readAndParseIncludeFile fn = 
  do { fileContents <- readFile fn `catch` (\exc -> do { error $ "\n\nError: cannot read include file "++show fn})
     ; return $ runParser PV211 pIncludeFile fn fileContents
@@ -82,7 +82,7 @@ parsePops :: String            -- ^ The string to be parsed
 parsePops str fn pv = 
     case  runParser pv pPopulations fn str of
       Right result -> Right result
-      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
+      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
 
 -- | Parse isolated ADL1 expression strings
 parseExpr :: String            -- ^ The string to be parsed
@@ -92,4 +92,4 @@ parseExpr :: String            -- ^ The string to be parsed
 parseExpr str fn pv =
     case runParser pv pExpr fn str of
       Right result -> Right result
-      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show (head msg)
+      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
