@@ -32,8 +32,7 @@ main
    = let scriptName = fileName opts
          fn = importfile opts
          thepCtx (Right pCtx) = pCtx
-         thepCtx (Left [])  = fatal 34 "There should be parse errors."
-         thepCtx (Left err) = error ("Parsing interrupted due to parse error:\n"++show(head err))
+         thepCtx (Left err)   = error $ "Parse error:\n"++show err
      in
      do scriptText <- readFile scriptName
         ePCtxErr <- parseCtxM_ scriptText opts scriptName
