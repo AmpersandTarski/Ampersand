@@ -3,8 +3,6 @@ error_reporting(E_ALL^E_NOTICE);
 ini_set("display_errors", 1);
 
 require __DIR__.'/../Generics.php'; 
-// defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
-
 require_once __DIR__.'/DatabaseUtils.php';
 
 initSession();
@@ -25,7 +23,7 @@ if (isset($_REQUEST['resetSession']) ) {
 } else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
-  dbStartTransaction($dbName);
+  dbStartTransaction();
   emitLog('BEGIN');
 
   processCommands(); // update database according to edit commands
@@ -41,16 +39,15 @@ if (isset($_REQUEST['resetSession']) ) {
   if ($invariantRulesHold) {
     setTimeStamp();
     emitLog('COMMIT');
-    dbCommitTransaction($dbName);
+    dbCommitTransaction();
   } else {
     emitLog('ROLLBACK');
-    dbRollbackTransaction($dbName);
+    dbRollbackTransaction();
   }
   echo '</div>';
 }
 
 function processCommands() {  
-  global $dbName; 
   $commandsJson =$_POST['commands']; 
   if (isset($commandsJson)) {
     $commandArray = json_decode($commandsJson);
@@ -101,7 +98,6 @@ function editAddToConcept($atom, $concept) {
 
 // NOTE: if $originalAtom == '', editUpdate means insert
 function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
-  global $dbName;
   global $relationTableInfo;
   global $tableColumnInfo;
   
@@ -130,23 +126,23 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
     $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
     emitLog ($query);
-    queryDb($dbName, $query);
+    queryDb($query);
   }
   else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
     $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
     emitLog ($query);
-    queryDb($dbName, $query);
+    queryDb($query);
   }
   else */ {
     // delete only if there was an $originalAtom
     if ($originalAtom!='') {
       $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
       emitLog ($query);
-      queryDb($dbName, $query);
+      queryDb($query);
     }
     $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
     emitLog ($query);
-    queryDb($dbName, $query);
+    queryDb($query);
   }
   
   // ensure that the $modifiedAtom is in the concept tables for $modifiedConcept
@@ -159,7 +155,6 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
 }
 
 function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
-  global $dbName; 
   global $relationTableInfo;
   global $tableColumnInfo;
   
@@ -183,7 +178,7 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
     $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
   
   emitLog ($query);
-  queryDb($dbName, $query);
+  queryDb($query);
 }
 
 // NOTE: log messages emited here are only shown on a commit, not during normal navigation.
@@ -205,14 +200,13 @@ function checkInvariantRules() {
 }
 
 function checkRules($ruleNames) {
-  global $dbName;
   global $allRulesSql;
   
   $allRulesHold = true;
   
   foreach ($ruleNames as $ruleName) {
     $ruleSql = $allRulesSql[$ruleName];
-    $rows = queryDb($dbName, $ruleSql['violationsSQL'], $error);
+    $rows = queryDb($ruleSql['violationsSQL'], $error);
     if ($error) error($error);
     
     if (count($rows) > 0) {
@@ -239,20 +233,20 @@ function checkRules($ruleNames) {
   return $allRulesHold;
 }
 
-function dbStartTransaction($dbName) {
-  queryDb($dbName, 'START TRANSACTION');
+function dbStartTransaction() {
+  queryDb('START TRANSACTION');
 }
 
-function dbCommitTransaction($dbName) {
-  queryDb($dbName, 'COMMIT');
+function dbCommitTransaction() {
+  queryDb('COMMIT');
 }
 
-function dbRollbackTransaction($dbName) {
-  queryDb($dbName, 'ROLLBACK');
+function dbRollbackTransaction() {
+  queryDb('ROLLBACK');
 }
 
-function queryDb($dbName, $querySql) {
-  $result = DB_doquerErr($dbName, $querySql, $error);
+function queryDb($querySql) {
+  $result = DB_doquerErr($querySql, $error);
   if ($error)
     error($error);
   
@@ -275,7 +269,6 @@ function error($msg) {
 
 function testRule($ruleName) {
   global $isDev;
-  global $dbName;
   global $allRulesSql;
   
   if (!$isDev) {
@@ -292,11 +285,11 @@ function testRule($ruleName) {
   $ruleSql = $allRulesSql[$ruleName];
   $ruleAdl = escapeHtmlAttrStr($ruleSql[ruleAdl]);
   echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[contentsSQL]</pre><h4>results</h4>";
-  $rows = queryDb($dbName, $ruleSql['contentsSQL'], $error);
+  $rows = queryDb($ruleSql['contentsSQL'], $error);
   printBinaryTable( $rows );
 
   echo "<h4>Rule violations SQL</h4><pre>$ruleSql[violationsSQL]</pre><h4>results</h4>";
-  $rows = queryDb($dbName, $ruleSql['violationsSQL'], $error);
+  $rows = queryDb($ruleSql['violationsSQL'], $error);
   printBinaryTable( $rows );
 }
 

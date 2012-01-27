@@ -9,13 +9,12 @@ require __DIR__.'/../dbSettings.php';
 define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
 
 function initSession() {
-  global $dbName;
   global $conceptTableInfo;
   
   if ($conceptTableInfo['SESSION']) { // only execute session code when concept SESSION is used by adl script
     // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
     //       This way, errors during initSession do not prevent the reset-database link from being visible.
-    DB_doquerErr($dbName, "SELECT * FROM `__SessionTimeout__` WHERE false", $error);
+    DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
     if ($error) return;
     session_start();
     cleanupExpiredSessions();
@@ -31,8 +30,8 @@ function initSession() {
     }
     
     $timeInSeconds = time();
-    DB_doquer($dbName, "INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
-                       "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
+    DB_doquer("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
+              "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
     //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
   }
 }
@@ -45,20 +44,17 @@ function resetSession() {
 }
 
 function deleteSession($sessionAtom) {
-  global $dbName;
-  
   //echo "deleting $sessionAtom<br/>";
-  DB_doquer($dbName, "DELETE FROM `__SessionTimeout__` WHERE SESSION = '$sessionAtom';");
+  DB_doquer("DELETE FROM `__SessionTimeout__` WHERE SESSION = '$sessionAtom';");
   deleteAtom($sessionAtom, 'SESSION');
   
 }
 
 // Remove expired sessions from __SessionTimeout__ and all concept tables and relations where it appears.
 function cleanupExpiredSessions() {
-  global $dbName;
   $expirationLimit = time() - EXPIRATION_TIME;
   
-  $expiredSessions = firstCol(DB_doquer($dbName, "SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
+  $expiredSessions = firstCol(DB_doquer("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
   foreach ($expiredSessions as $sessionAtom)
     deleteSession($sessionAtom);
 }
@@ -66,21 +62,23 @@ function cleanupExpiredSessions() {
 
 // Queries
 
-function DB_doquer($DbName, $quer) {
-  $result = DB_doquerErr($DbName, $quer, $error);
+function DB_doquer($quer) {
+  $result = DB_doquerErr($quer, $error);
   
   if ($error)
     die("<div class=InternalError>$error</div>");
   return $result;
 }
 
-function DB_doquerErr($DbName, $quer, &$error)
-{
+function DB_doquerErr($quer, &$error) {
+  global $dbName;
+  global $DB_link;
+  global $DB_errs;
+  
   //Replace the special atom value _SESSION by the current sessionAtom
   $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
   
-  global $DB_link,$DB_errs;
-  $DB_slct = mysql_select_db($DbName,$DB_link);
+  $DB_slct = mysql_select_db($dbName, $DB_link);
     
   $result=mysql_query($quer,$DB_link);
   if(!$result){
@@ -113,8 +111,6 @@ function getKey($concept) {
 }
 
 function showKeyAtom($atom, $concept) {
-  global $db;
-  
   $keyDef = getKey($concept);
 
   if (!$keyDef || $atom == '') {
@@ -126,7 +122,7 @@ function showKeyAtom($atom, $concept) {
       if ($keySegment['segmentType'] == 'Text')
         $keyStrs[] = $keySegment['Text'];
       else {
-        $r = getCoDomainAtoms($db, $atom, $keySegment['expSQL']);
+        $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
         $keyStrs[] = $r[0];
       }
     return implode($keyStrs);
@@ -158,7 +154,6 @@ function mkUniqueAtomByTime($concept) {
 }
 
 function addAtomToConcept($newAtom, $concept) {
-  global $dbName;
   global $conceptTableInfo;
 
   foreach ($conceptTableInfo[$concept] as $conceptTableCol) { // $conceptTableInfo[$concept] is an array of tables with arrays of columns 
@@ -172,14 +167,14 @@ function addAtomToConcept($newAtom, $concept) {
     // invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one for checking the existence of a concept
     $firstConceptColEsc = escapeSQL($conceptCols[0]);
     
-    $existingAtoms = firstCol(DB_doquer($dbName, "SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
+    $existingAtoms = firstCol(DB_doquer("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
     
     if (!in_array($newAtom, $existingAtoms)) {
       $allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
       $newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
       $allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
             
-      DB_doquer($dbName, "INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
+      DB_doquer("INSERT INTO `$conceptTableEsc` ($allConceptColsEsc) VALUES ($allValuesEsc)");
     }
   }
 }
@@ -189,9 +184,7 @@ function addAtomToConcept($newAtom, $concept) {
 // TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't
 //       happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 function deleteAtom($atom, $concept) {
-  global $dbName;
   global $tableColumnInfo;
-
 
   foreach ($tableColumnInfo as $table => $tableInfo)
   foreach ($tableInfo as $column => $fieldInfo) {
@@ -207,7 +200,7 @@ function deleteAtom($atom, $concept) {
       else // otherwise, we remove the entire row for each occurrence
         $query = "DELETE FROM `$tableEsc` WHERE `$columnEsc` = '$atomEsc';";
       //echo $query;
-      DB_doquer($dbName, $query);
+      DB_doquer($query);
     }
   }
 }
@@ -222,15 +215,15 @@ function createNewAtom($concept) {
 
 /* invariant: all concept tables (which are columns) are maintained properly, so we can query an arbitrary one to obtain the list of atoms */
 function getAllConceptAtoms($concept) {
-  global $dbName;
   global $conceptTableInfo;
+
   $conceptTable = $conceptTableInfo[$concept][0]['table']; // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept
   $conceptCol = $conceptTableInfo[$concept][0]['cols'][0]; // for lookup, we just take the first table and its first column
   $conceptTableEsc = escapeSQL($conceptTable);
   $conceptColEsc = escapeSQL($conceptCol);
   
   // need to do array_unique and array_filter, since concept table may contain duplicates and NULLs
-  return array_unique(array_filter(firstCol(DB_doquer($dbName, "SELECT `$conceptColEsc` FROM `$conceptTableEsc`")),notNull));  
+  return array_unique(array_filter(firstCol(DB_doquer("SELECT `$conceptColEsc` FROM `$conceptTableEsc`")),notNull));  
 }
 
 function notNull($atom) { // need a type-based comparison, otherwise 0 is also null
@@ -276,8 +269,8 @@ function targetCol($rows) {
   return $rows;
 }
 
-function getCoDomainAtoms($db, $atom, $selectRel) {
-  return targetCol(DB_doquer($db, selectCoDomain($atom, $selectRel)));
+function getCoDomainAtoms($atom, $selectRel) {
+  return targetCol(DB_doquer(selectCoDomain($atom, $selectRel)));
 }
 
 function selectCoDomain($atom, $selectRel) {
@@ -289,8 +282,7 @@ function selectCoDomain($atom, $selectRel) {
 
 // return the most recent modification time for the database (only Ampersand edit operations are recorded)
 function getTimestamp(&$error) {
-  global $dbName;
-  $timestampRow = DB_doquerErr($dbName, "SELECT MAX(`Seconds`) FROM `__History__`", $error);
+  $timestampRow = DB_doquerErr("SELECT MAX(`Seconds`) FROM `__History__`", $error);
 
   if ($error)
     return '0';
@@ -300,13 +292,11 @@ function getTimestamp(&$error) {
 
 // set modification timestamp to the current time
 function setTimestamp() {
-  global $dbName;
-  
   $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
   $microseconds = substr($time[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
   $seconds =$time[1].$microseconds;  
   $date = date("j-M-Y, H:i:s.").$microseconds; 
-  DB_doquer($dbName, "INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
+  DB_doquer("INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
   // TODO: add error checking
 }
 

@@ -3,7 +3,6 @@ error_reporting(E_ALL^E_NOTICE);
 ini_set("display_errors", 1);
 
 require "Generics.php"; 
-// defines $dbName, $isDev, $relationTableInfo, $allInterfaceObjects, $allRulesSql, $invariantRuleNames, and $allRoles
 
 require "php/DatabaseUtils.php";
 require "php/Database.php";
@@ -135,7 +134,7 @@ if ($err) {
   // TODO: with multiple users, this mechanism may lead to non-unique new atom names, until we enocode a session number
   //       in the unique atom name. But since the atom names are based on microseconds, the chances of a problem are pretty slim.
   if ($isNew) {
-  DB_doquer($dbName, 'START TRANSACTION');
+  DB_doquer('START TRANSACTION');
       addAtomToConcept($atom, $concept);
   }
   
@@ -143,14 +142,14 @@ if ($err) {
   // we need an extra ScrollPane div because the log windows need to be outside scroll area but inside ampersand root
   // (since their css depends on the 'editing' attribute)
   echo '<div id=ScrollPane>';
-  echo generateAtomInterfaces($dbName, $allInterfaceObjects[$interface], $atom, true); 
+  echo generateAtomInterfaces($allInterfaceObjects[$interface], $atom, true); 
   echo '</div>';
   
   echo '</div>';
   echo '<div id=Rollback></div>'; // needs to be outside AmpersandRoot, so it's easy to address all interface elements not in the Rollback
   
   if ($isNew) {
-    DB_doquer($dbName, 'ROLLBACK');
+    DB_doquer('ROLLBACK');
   }
 } ?>
 </body>
@@ -228,7 +227,7 @@ function generateInterfaceMap() {
   echo '}';
 }
 
-function generateInterface($db, $interface, $srcAtom) {
+function generateInterface($interface, $srcAtom) {
 /*
  *  <Interface label='interface label'>
  *   <Label>interface label</Label>
@@ -252,7 +251,7 @@ function generateInterface($db, $interface, $srcAtom) {
   if ($srcAtom == null)
     $codomainAtoms = array (); // in case the table would contain (null, some atom)  
   else
-    $codomainAtoms = array_filter(getCoDomainAtoms($db, $srcAtom, $interface['expressionSQL']), notNull); // filter, in case table contains ($srcAtom, null)
+    $codomainAtoms = array_filter(getCoDomainAtoms($srcAtom, $interface['expressionSQL']), notNull); // filter, in case table contains ($srcAtom, null)
 
   if (count($codomainAtoms)==0 && $interface['min']=='One') 
     $codomainAtoms[] = ""; // if there should be at least one field, we add an empty field.
@@ -269,7 +268,7 @@ function generateInterface($db, $interface, $srcAtom) {
   foreach($codomainAtoms as $i => $tgtAtom) { // null is the NewAtomTemplate
     emit($html, '<div class=AtomRow rowType='.($tgtAtom===null ?'NewAtomTemplate': 'Normal').'><div class=DeleteStub>&nbsp;</div>'.
                   '<div class=AtomListElt>');
-    emit($html, generateAtomInterfaces($db, $interface, $tgtAtom));
+    emit($html, generateAtomInterfaces($interface, $tgtAtom));
     emit($html,'</div></div>');  
   }
   
@@ -280,7 +279,7 @@ function generateInterface($db, $interface, $srcAtom) {
   return $html;
 }
 
-function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=false) {
+function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
 /* if $interface is a top-level interface, we only generate for $interface itself
  * otherwise, we generate for its subinterfaces 
  * 
@@ -314,7 +313,7 @@ function generateAtomInterfaces($db, $interface, $atom, $isTopLevelInterface=fal
   if (count($interfaces) > 0) {
     emit($html, '<div class=InterfaceList>');
     foreach($interfaces as $interface) {
-      emit($html, generateInterface($db, $interface, $atom));
+      emit($html, generateInterface($interface, $atom));
     }
     emit($html, '</div>'); // div class=InterfaceList
   }
