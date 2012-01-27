@@ -35,8 +35,9 @@ where
            Vs{}      -> [mkPair a b |a<-cptos' (source d),b<-cptos' (target d)]
 
    instance Populated Relation where
-    contents (Mp1{relval=x}) = [mkPair x x]
-    contents rel = contents (makeDeclaration rel)
+    contents (Mp1 x (C {cptnm="SESSION"})) = [] -- TODO: HACK to prevent populating SESSION
+    contents (Mp1 x _)                     = [mkPair x x]
+    contents rel                           = contents (makeDeclaration rel)
 
    instance Populated Expression where
     contents expr  

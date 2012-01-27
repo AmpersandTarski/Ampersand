@@ -22,6 +22,7 @@ where
    isSingleton _   = False
 
   cptos' :: A_Concept -> [String]
+  cptos' C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
   cptos' C{cptos=x} = x
   cptos' ONE = fatal 126 "Asking for the value of the universal singleton"
   
