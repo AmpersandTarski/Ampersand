@@ -184,14 +184,20 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 // NOTE: log messages emited here are only shown on a commit, not during normal navigation.
 function checkRoleRules($roleNr) {
   global $allRoles;  
-  
-  if ($roleNr >= 0) {
-    $role = $allRoles[$roleNr];
-    emitLog("Checking rules for role $role[name]");
-    return checkRules($role['ruleNames']);
-  }
+  if ($roleNr == -1) // if no role is selected, evaluate the rules for all roles
+    for ($r = 0; $r < count($allRoles); $r++)
+      checkRoleRulesPerRole($r);  
   else
-    return true;
+    checkRoleRulesPerRole($roleNr);
+}
+
+// Precondition: $roleNr >= 0
+function checkRoleRulesPerRole($roleNr) {
+  global $allRoles;
+  
+  $role = $allRoles[$roleNr];
+  emitLog("Checking rules for role $role[name]");
+  checkRules($role['ruleNames']);
 }
 
 function checkInvariantRules() {

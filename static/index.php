@@ -322,11 +322,11 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
 }
 
 function genSignalLogWindow($roleNr, $roleName) {
-  if ($roleNr >= 0) {
-    echo "<div class=LogWindow id=SignalLog minimized=false><div class=MinMaxButton></div><div class=Title>Signals for $roleName</div>";
-    checkRoleRules($roleNr);
-    echo "</div>";
-  }
+  echo "<div class=LogWindow id=SignalLog minimized=false><div class=MinMaxButton></div><div class=Title>".
+       ($roleNr==-1?"All signals":"Signals for $roleName").
+       "</div>";
+  checkRoleRules($roleNr);
+  echo "</div>";
 }
 
 function genEditableConceptInfo($interface) {
