@@ -25,6 +25,23 @@ function resetSession() {
   });
 }
 
+function resetDatabase() {
+  $.ajax({ url: 'Installer.php',
+           cache: false,
+           success: function(data){
+                      $resetPage = $('<div>').html(data);
+                      if ($resetPage.find("#ResetSuccess").length > 0) {
+                        alert('The database has been reset to its initial population.');
+                        window.location.reload();
+                      } else
+                     // In case of an error, we simply navigate to the old Installer.php to show the error
+                     // Of course there is a very small possibility that reset will succeed now, but that does not cause any problems
+                        window.location.href = 'Installer.php'; 
+                    },
+           error: function(data){ alert('ERROR: Network problem during reset operation.\nThe database has not been reset.'); }
+  });
+}
+
 /* A clone of the top-level atom is parked on #Rollback at edit start. On cancel, the atom and its navigation handlers are put back 
  * on #ScrollPane. This is a feasible solution since the interfaces will be of a manageable size */
 function startEditing() {
@@ -657,6 +674,7 @@ function checkDbUpdates() {
   else {
     var currentTimestamp = $('#AmpersandRoot').attr('timestamp');
     
+    // todo: is this okay without nocache?
     $.post("php/Database.php?getTimestamp",function(data){
       var dbTimestamp = $(data).attr('timestamp');
       var dbIsModified = dbTimestamp != currentTimestamp;

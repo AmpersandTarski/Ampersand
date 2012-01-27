@@ -103,7 +103,7 @@ where
           ++ concat (map plugCode [p | InternalPlug p<-plugInfos fSpec])
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
              ,"if ($err=='') {"
-             ,"  echo 'The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
+             ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
              ,"  $content = '"
              ,"  <?php"
              ,"  require \"php/DatabaseUtils.php\";"

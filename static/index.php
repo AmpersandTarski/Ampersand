@@ -71,7 +71,7 @@ echo '<div class="MenuItem" id="MenuBarNew"><span class=TextContent>New</span></
 if ($conceptTableInfo['SESSION']) // only show logout button when concept SESSION is used by adl script
   echo '<div class="MenuItem" id="MenuBarLogout"><a href="javascript:resetSession()"><span class=TextContent>Logout</span></a></div>';
 if ($isDev) { // with --dev on, we show the reset-database link in the menu bar
-  echo '<div class="MenuItem" id="MenuBarReset"><a href="Installer.php"><span class=TextContent>Reset</span></a></div>';
+  echo '<div class="MenuItem" id="MenuBarReset"><a href="javascript:resetDatabase()"><span class=TextContent>Reset</span></a></div>';
 }
 
 echo '</div>'; // .MenuBar
@@ -93,7 +93,7 @@ if ($err) {
   echo '</div>';
   
   echo '<ul id="Maintenance">';
-  echo '<li id="Reset"><a href="Installer.php"><span class=TextContent>Reset database</span></a></li>';
+  echo '<li id="Reset"><a href="javascript:resetDatabase()"><span class=TextContent>Reset database</span></a></li>';
   echo '</ul>';
   
   echo '<h3 id="CreateHeader"><span class=TextContent>Create</span></h3>';

@@ -78,7 +78,7 @@ phpObjInterfaces fSpec opts =
                  ++  "$DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
                  ++", $DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
                  ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd opts)++"'"
-                 ++") or exit(\"Username / password are probably incorrect.\"); $DB_debug = 3; ?>"
+                 ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype opts
     ifcs = interfaceS fSpec++ interfaceG fSpec
 
