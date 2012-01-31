@@ -189,6 +189,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                  , rr_exp  = Pimp(antc,cons)
                                  , rr_fps  = rulepos (lbl,po) po'
                                  , rr_mean = meaning expl
+                                 , rr_msg = []
                                  }      
                         kc isSg (lbl,po) cons po' antc = hc isSg (lbl,po) antc po' cons
                         dc _ (lbl,po) defd po' expr expl
@@ -196,12 +197,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                  , rr_exp  = Pequ (defd,expr)
                                  , rr_fps  = rulepos (lbl,po) po'
                                  , rr_mean = meaning expl
+                                 , rr_msg = []
                                }
                         ac _ (lbl,po) expr expl
                           = P_Ru { rr_nm  = if null lbl then rulid po else lbl
                                  , rr_exp = expr
                                  , rr_fps = po
                                  , rr_mean = meaning expl
+                                 , rr_msg = []
                                  }
                         meaning str = [PMeaning (P_Markup Nothing Nothing str)]
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
