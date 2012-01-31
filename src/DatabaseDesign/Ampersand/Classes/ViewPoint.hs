@@ -107,6 +107,7 @@ rulesFromKey key = mkProductInjectivityRule keyExps :
                                   , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
                                   ]
                 , rrmsg       = []
+                , rrviol      = Nothing
                 , rrtyp       = sign expression
                 , rrdcl       = Nothing        -- This rule was not generated from a property of some declaration.
                 , r_env       = ""             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.

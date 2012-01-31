@@ -12,6 +12,8 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Expression(..)
    
+   , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..)
+   
    , P_Rule(..)
    
    , ConceptDef(..),ConceptDefs
@@ -223,12 +225,20 @@ where
       | Prel P_Relation                    -- ^ simple relation
       deriving (Eq, Show) -- deriving only for debugging purposes
 
+   data SrcOrTgt = Src | Tgt deriving Show
+
+   data P_PairView = P_PairView [P_PairViewSegment]
+
+   data P_PairViewSegment = P_PairViewText String
+                          | P_PairViewExp SrcOrTgt P_Expression
+
    data P_Rule  =
       P_Ru { rr_nm    :: String             -- ^ Name of this rule
            , rr_exp   :: P_Expression       -- ^ The rule expression 
            , rr_fps   :: Origin             -- ^ Position in the Ampersand file
            , rr_mean  :: [PMeaning]         -- ^ User-specified meanings, possibly more than one, for multiple languages.
            , rr_msg   :: [P_Markup]         -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+           , rr_viol  :: Maybe P_PairView   -- ^ Custom presentation for violations, currently only in a single language
            }
    instance Traced P_Rule where
     origin = rr_fps

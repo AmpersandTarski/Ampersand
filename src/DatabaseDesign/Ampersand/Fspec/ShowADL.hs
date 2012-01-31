@@ -157,14 +157,20 @@ instance ShowADL Pattern where
     where ds = ptdcs pat++[d | d@Sgn{}<-declarations pat `uni` nub [makeDeclaration r | r<-mors (ptrls pat) `uni` mors (ptkds pat)]
                              , decusr d, d `notElem` ptdcs pat]
 
+instance ShowADL PairViewSegment where
+ showADL (PairViewText str)         = "TXT " ++ show str
+ showADL (PairViewExp srcOrTgt exp) = showADLSrcOrTgt srcOrTgt ++ " " ++ showADL exp
+  where showADLSrcOrTgt Src = "SRC"
+        showADLSrcOrTgt Tgt = "TGT"
+        
 instance ShowADL Rule where
  showADL r
   = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
-     ++ concatMap meaning mkups
-   where
-     AMeaning mkups = rrmean r
-     meaning m =
-       "\n     MEANING "++ showADL m
+     ++ concat ["\n     MEANING "++showADL mng | mng <- ameaMrk $ rrmean r ]
+     ++ concat ["\n     MESSAGE "++showADL msg | msg <- rrmsg r]
+     ++ case rrviol r of
+          Nothing                -> ""
+          Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showADL pvSegs)++")"
        
 instance ShowADL A_Gen where
  showADL (Gen _ g s _) = "SPEC "++showADL s++" ISA "++showADL g

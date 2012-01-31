@@ -170,7 +170,18 @@ pRRel2aRRel actx prrel
    , CxeOrig (cxelist editcxes) "role relation" "" (origin prrel))
    where
      (rels,editcxes) = unzip [pRel2aRel actx (psign t) r | (r,t)<-rr_Rels prrel]
- 
+
+p2aPairView :: A_Context -> Sign -> P_PairView -> (PairView,CtxError)
+p2aPairView actx sgn (P_PairView ppvs) = (PairView pvs, cxelist errs) 
+ where (pvs, errs) = unzip $ map (p2aPairViewSegment actx sgn) ppvs
+
+p2aPairViewSegment :: A_Context -> Sign -> P_PairViewSegment -> (PairViewSegment,CtxError)
+p2aPairViewSegment _    _   (P_PairViewText str)          = (PairViewText str, cxenone)
+p2aPairViewSegment actx sgn (P_PairViewExp srcOrTgt pexp) = (PairViewExp srcOrTgt aexpr, exprcxe)
+    where (aexpr,exprcxe) = pExpr2aExpr actx (SourceCast $ segSrcType sgn srcOrTgt) pexp
+          segSrcType (Sign srcType _) Src = srcType 
+          segSrcType (Sign _ tgtType) Tgt = tgtType
+           
 pRul2aRul :: A_Context -> String -> P_Rule -> (Rule,CtxError)
 pRul2aRul actx patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
  = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
@@ -178,6 +189,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
        , rrfps = rr_fps prul                -- Position in the Ampersand file
        , rrmean = meanings (rr_mean prul)   -- Ampersand generated explanations (for all known languages)
        , rrmsg = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) $ rr_msg prul
+       , rrviol = mviol
        , rrtyp = sign aexpr                 -- Allocated type
        , rrdcl = Nothing                    -- The property, if this rule originates from a property on a Declaration
        , r_env = patname                    -- Name of pattern in which it was defined.
@@ -201,9 +213,12 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
                      , decplug = True
                      }
        }
-   , CxeOrig exprcxe "rule" "" (origin prul)
+   , CxeOrig (cxelist [exprcxe, mviolcxe]) "rule" "" (origin prul)
    )
    where (aexpr,exprcxe) = pExpr2aExpr actx NoCast (rr_exp prul)
+         (mviol, mviolcxe) = case fmap (p2aPairView actx $ sign aexpr) $ rr_viol prul of
+                               Nothing              -> (Nothing, cxenone)
+                               Just (viol, violcxe) -> (Just viol, violcxe)
          meanings = pMeanings2aMeaning (ctxlang actx) (ctxmarkup actx) 
 pMeanings2aMeaning :: Lang          -- The default language
                   -> PandocFormat  -- The default format
