@@ -137,6 +137,9 @@ generateRules fSpec opts =
                                                                   -- no fatal here, we don't want --dev to break generation
                                                                   (selectExpr fSpec 26 "src" "tgt" $ contentsExpr)++"'"] 
               else []) ++
+           [ "        , 'pairView' =>" -- a list of sql queries for the pair-view segments 
+           , "            array" ]++
+                (indent 14 $ blockParenthesize "(" ")" "," $ genMPairView $ rrviol rule) ++  
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
   [ ""
@@ -148,6 +151,19 @@ generateRules fSpec opts =
        rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        processRuleNames = nub $ concatMap snd rulesPerRole
        invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
+       
+       genMPairView Nothing                  = []
+       genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs
+       
+       genPairViewSeg (PairViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
+       genPairViewSeg (PairViewExp srcOrTgt exp) =
+         [ "array ( 'segmentType' => 'Exp'"
+         , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
+         , "      , 'expTgt' => "++showPhpStr (show $ target exp)
+         , "      , 'expSQL' =>"
+         , "          '" ++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" exp) $
+                                      (selectExpr fSpec 33 "src" "tgt" exp))++"' )"  ] 
+       
    
 generateRoles fSpec opts =
   [ "$allRoles ="

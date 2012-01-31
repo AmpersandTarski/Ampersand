@@ -129,6 +129,39 @@ function showKeyAtom($atom, $concept) {
   }
 }
 
+function showPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView) {
+  if (count($pairView) == 0) {
+    $source = showKeyAtom($srcAtom, $srcConcept);
+    $target = showKeyAtom($tgtAtom, $tgtConcept);
+
+    // if source and target are the same atom and we have a key for it, don't show a tuple
+    if ($violation['src'] == $violation['tgt'] && $srcConcept == $tgtConcept && getKey($srcConcept) )
+      return "<span class=\"Pair\">".
+               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\">$source</span>".
+             "</span>";
+    else
+      return "<span class=\"Pair\">(".
+               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\">'$source'</span>".
+               ", <span class=\"PairAtom\" atom=\"$tgtAtom\" concept=\"$tgtConcept\">'$target'</span>".
+              ")</span>";
+  } else {
+      $pairStrs = array ("<span class=\"Pair\">");
+      foreach ($pairView as $segment)
+      if ($segment['segmentType'] == 'Text')
+      $pairStrs[] = $segment['Text'];
+      else {
+        $atom    = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
+        $concept = $segment['srcOrTgt'] == 'Src' ? $srcConcept : $tgtConcept;
+        $r = getCoDomainAtoms($atom, $segment['expSQL']);
+        
+        // we label all expressionsegments as violation source or target based on the source of their expression
+        $pairStrs[] = "<span class=\"PairAtom\" atom=\"$atom\" concept=\"$concept\">";
+        $pairStrs[] = showKeyAtom($r[0], $segment['expTgt']) . "</span>"; 
+      }
+      $pairStrs[] = "</span>";
+      return implode($pairStrs);
+  }
+}
 
 // return an atom "Concept_<n>" that is not in $existingAtoms (make sure that $existingAtoms covers all concept tables)
 function mkUniqueAtom($existingAtoms, $concept) {
