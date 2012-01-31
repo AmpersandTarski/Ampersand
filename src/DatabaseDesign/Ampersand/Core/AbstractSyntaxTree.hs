@@ -618,7 +618,7 @@ instance Sortable A_Concept where
            | otherwise = fatal 568 $ "meet undefined: a="++show a++", b="++show b
   join a b | a <= b = b
            | b <= a = a
-           | a `compare` b == CP = fatal 565 "implement ISA"
+           | a `compare` b == CP = fatal 565 ("implement ISA" ++ show(a,b))
            | otherwise = fatal 571 $ "join undefined: a="++show a++", b="++show b
   sortBy f = Data.List.sortBy ((comparableClass .) . f)
 
