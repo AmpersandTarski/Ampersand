@@ -179,105 +179,38 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                         [ECps (ls ++ rs) | l@(ECps ls) <- q, x <= target l,
                          r@(ECps rs) <- q, x <= source r, null (ls `isc` rs)]
 
---  Step 4: a) generate interfaces starting with INTERFACE concept: I[Concept]
---          b) generate interfaces starting with INTERFACE concepts: V[ONE*Concept] 
+--  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
+--          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept] 
 --          note: based on a theme one can pick a certain set of generated interfaces (there is not one correct set)
 --                default theme => generate interfaces from the clos total expressions and clos injective expressions (see step1-3).
---                                 PRO: any rule set can be maintained AND every relation can be edited
---                                 CON: step 3 may explode leading to unacceptable compile time
---                student theme => generate interfaces based on plugs i.e. INTERFACE entityplug: I[ID] hiding I[ID] (note: step1-3 are skipped)
---                                 For every concept A in ScalarSQL and TblSQL (cLkp) there is a INTERFACE with attributes:
---                                   -> each non-bijective kernelfield B required by A (non-bijective flds with less or equal NULLs)
---                                      -> each total attrfield r with source r=B (non-lists) (note: uni&tot r are required for A)
---                                   -> each bijective (required) kernelfield C of A (bijective flds with equal NULLs)
---                                      -> each total attrfield r with source r=C (non-lists) (note: uni&tot r are required for A)
---                                   -> each attrfield r with source r=A (non-lists)
---                                   -> each target_m_field where r in BinSQL with source r=A (lists)
---                                   -> each non-bijective kernelfield D that requires A (non-bijective flds with more or equal NULLs)
---                                 note: the INTERFACE of C is similar to that of A, only instance of C is $id 
---                                 note: the INTERFACE of B contains links to the interface of A, C and D
---                                       => if A and ID are bijective, then all fields in the plug + some BinSQL can be edited by INTERFACE gen:I[GEN]
---                                 PRO-CON: opposite of PRO-CON of default theme
---                                 note: student rules in the atlas are always signal rules (not maintained)
---                                       and every r can be edited in the student theme, 
---                                           because every concept A is in exactly one TblSQL or ScalarSQL 
---                                           (i.e. INTERFACE A:I[A] exists with attributes for each target_m_field where r in BinSQL with source r=A)
---                                       thus, no CON for contexts with only process rules 
+--                student theme => generate interface for each concept with declarations where concept is source or target (note: step1-3 are skipped)
         interfaceGen = step4a ++ step4b
         step4a
          | theme flags == StudentTheme 
-         = let cptifcs = [(c,cfld,p) | InternalPlug p@TblSQL{}<-allplugs, (c,cfld)<-cLkpTbl p]
-                      ++ [(cLkp p,sqlColumn p,p) | InternalPlug p@(ScalarSQL{})<-allplugs]
-               binplugs = [p | InternalPlug p@(BinSQL{})<-allplugs]
-               --bijective or non-bijective required kernelfields (excl.field for ID and cfld )
-               reqks p cfld = [kfld | kfld<-requiredFields p cfld,iskey p kfld, kfld/=cfld]
-               --atts of kfld required by cfld
-               reqatts kfld p cfld = [attfld | (kfld',attfld)<-attrels p, kfld==kfld', attfld `elem` requiredFields p cfld]
-               --cfld is att of flds
-               attof p cfld = [attfld | (cfld',attfld)<-attrels p, cfld==cfld',cfld/=attfld]
-               --atts of cfld
-               myatts c = [attfld | InternalPlug p@(TblSQL{})   <-allplugs, (_,attfld)<-attrels p, target(fldexpr attfld)==c]
-               --objats of Obj{kfld} within interface for cfld
-               katts kfld p cfld
-                 = [Obj { objnm   = "katts"++ fldname attfld
-                        , objpos  = Origin "generated object katts"
-                        , objctx  = plugpath p kfld attfld --composition from kfld to attfld
-                        , objats  = []
-                        , objstrs = [] }
-                        |attfld<-reqatts kfld p cfld]
-               --non-bijective kernelfields that require cfld
-               ksreq p cfld = [kfld |kfld<-tblfields p,iskey p kfld, requires p (kfld,cfld), kfld `notElem` bijectivefields p cfld]
-               --objats for interface for concept c (see comment above)
-               catts p c cfld
-                 = [Obj { objnm   = "reqks"++ show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
-                        , objpos  = Origin "generated object reqks"
-                        , objctx  = plugpath p cfld kfld --composition from cfld to kfld
-                        , objats  = katts kfld p cfld
-                        , objstrs = [] }
-                   | kfld<-reqks p cfld] 
-                   ++ 
-                   [Obj { objnm   = "myatts"++ fldname attfld
-                               , objpos  = Origin "generated object myatts"
-                               , objctx  = flp(fldexpr attfld) 
-                               , objats  = []
-                               , objstrs = [] }
-                   | attfld<-myatts c] 
-                   ++ 
-                   [Obj { objnm   = "attof"++ fldname attfld
-                               , objpos  = Origin "generated object attof"
-                               , objctx  = plugpath p cfld attfld --composition from cfld to attfld
-                               , objats  = []
-                               , objstrs = [] }
-                   | attfld<-attof p cfld] 
-                   ++
-                   [Obj { objnm   = "bin"++ name bp
-                        , objpos  = Origin "generated object bin"
-                        , objctx  = if source(mLkp bp)==c then mLkp bp else flp (mLkp bp)
-                        , objats  = []
-                        , objstrs = [] }
-                   | bp<-binplugs, source(mLkp bp)==c || target(mLkp bp)==c]
-                   ++
-                   [Obj { objnm   = "ksreq"++ show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
-                        , objpos  = Origin "generated object ksreq"
-                        , objctx  = plugpath p cfld kfld --composition from cfld to kfld
-                        , objats  = [] --note: atts of kfld are not required for cfld (kfld isn't either)
-                        , objstrs = [] }
-                   | kfld<-ksreq p cfld]
-           in
-           --interface for each concept in TblSQL or ScalarSQL
-           [Ifc { ifcName   = name c
-                , ifcParams = [rel | rel<-mors p, not (isIdent rel)]
+         = [Ifc { ifcName   = name c ++ " (instantie)"
+                , ifcParams = map makeRelation directdecls
                 , ifcViols  = []
                 , ifcArgs   = []
-                , ifcObj    = Obj { objnm   = name c
+                , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                   , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
-                                  , objctx  = case p of TblSQL{} -> ERel (I c) ; _ -> fldexpr cfld
-                                  , objats  = catts p c cfld
+                                  , objctx  = ERel (I c)
+                                  , objats  = (Obj { objnm   = "I["++name c++"]"
+                                                   , objpos  = Origin "generated object: step 4a - default theme"
+                                                   , objctx  = ERel (I c)
+                                                   , objats  = []
+                                                   , objstrs = [] })
+                                              :[Obj { objnm   = name d ++ "::"++name(source d)++"*"++name(target d)
+                                                    , objpos  = Origin "generated object: step 4a - default theme"
+                                                    , objctx  = if source rel==c then rel else EFlp rel
+                                                    , objats  = []
+                                                    , objstrs = [] }
+                                               | d <- directdecls, let rel=ERel (makeRelation d)]
                                   , objstrs = [] }
                 , ifcPos    = Origin "generated interface for each concept in TblSQL or ScalarSQL"
                 , ifcExpl   = "Interface " ++name c++" has been generated by Ampersand."
+                , ifcRoles = []
                 }
-           | (c,cfld,p)<-cptifcs] 
+           | c<-concs fSpec, let directdecls = [d | d<-declarations fSpec, elem c (concs d)]]
          --end student theme
          --otherwise: default theme
          | otherwise --note: the uni of maxInj and maxTot may take significant time (e.g. -p while generating index.htm)
@@ -331,6 +264,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                   , objstrs = [] }
                 , ifcPos    = ifcPos  ifcc
                 , ifcExpl   = ifcExpl ifcc
+                , ifcRoles  = []
                 }
            | ifcc<-step4a
            , let c   = source(objctx (ifcObj ifcc))
@@ -338,7 +272,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  nm' 0  = plural (language flags)(name c)
                  nm' i  = plural (language flags)(name c) ++ show i
                  nms = [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)]
-                 nm = if null nms then fatal 355 "impossible" else head nms 
+                 nm = if theme flags == StudentTheme then name c else if null nms then fatal 355 "impossible" else head nms 
                  att = Obj (name c) (Origin "generated attribute object: step 4b") (ERel (V (Sign ONE c))) [] []
            ]
         ----------------------
