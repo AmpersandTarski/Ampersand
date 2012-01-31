@@ -136,7 +136,7 @@ objectWrapper fSpec ifcs ifc flags
    objectName      = name o
    objectId        = phpIdentifier objectName
    appname         = name fSpec
-   editable | theme flags==StudentTheme =  [r |("Student",r)<-fRoleRels fSpec]
+   editable | genAtlas flags =  [r |("Student",r)<-fRoleRels fSpec]
             | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
    visibleedit = foldr (||) visiblenew [mayedit x editable |x<-allobjctx o]
    visibledel = False --del() not implemented yet -- visiblenew --if you may add you may delete 

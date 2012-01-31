@@ -804,7 +804,7 @@ savefunction flags fSpec fnm depth this
         shouldcut = not(null notreqid_and_notinthis_flds)
         cancut = null reqbyid_and_notinthis_flds
         --editable
-        editable | theme flags==StudentTheme =  [r |("Student",r)<-fRoleRels fSpec]
+        editable | genAtlas flags =  [r |("Student",r)<-fRoleRels fSpec]
                  | otherwise = map makeRelation (declarations fSpec) ++map I (concs fSpec)
         mayedit :: Expression -> Bool
         mayedit item = let rexprs=[ERel r |r<-editable] in elem item (rexprs++map flp rexprs)

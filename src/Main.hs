@@ -166,9 +166,6 @@ generateProtoStuff opts fSpec =
     sequence_ 
        ([ verboseLn     opts "Generating..."]++
         [ doGenProto    protonm opts | genPrototype opts] ++
-        --interfacesG opts has a different meaning than in ampersand
-        --in prototype it means export the DB of the prototype to .adl file
-        [ exportProto  fSpec opts | interfacesG    opts] ++ 
         [ verboseLn opts "\nWARNING: There are rule violations (see above)." | (not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)] ++ 
         [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts] ] ++
         [ verboseLn opts "Done."]  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning

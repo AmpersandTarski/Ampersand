@@ -157,7 +157,7 @@ where
                 ]
                 | ifc<-ifcs, let o=ifcObj ifc
                 , isOne o
-                , theme flags/=StudentTheme || elem (name o) ["Contextoverzicht", "Overtredingen","Regels","Relaties","Paren","Concepten","Termen"]
+                , not (genAtlas flags) || elem (name o) ["Contextoverzicht", "Overtredingen","Regels","Relaties","Paren","Concepten","Termen"]
                 , let ifctitle = case language flags of Dutch -> "Toon alle "++name ifc; English -> "Show all " ++name ifc
                 , let ifcref="<?php echo interfaceref('"++name ifc++"');?>\" TITLE=\""++ifctitle++"\" class=\"menuItem\">"
                 ]
