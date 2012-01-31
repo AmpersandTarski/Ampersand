@@ -22,7 +22,14 @@ customCssPath = "css/Custom.css"
 
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec opts =
- do { writePrototypeFile "Generics.php" $ generateInterfaces fSpec opts
+ do { writePrototypeFile "Generics.php" . genPhp "Generate.hs" "Generics.php" . intercalate [""] $ 
+        [ generateConstants fSpec opts
+        , generateSpecializations fSpec opts
+        , generateTableInfos fSpec opts
+        , generateRules fSpec opts
+        , generateRoles fSpec opts
+        , generateKeys fSpec opts
+        , generateInterfaces fSpec opts ]
     
     ; case customCssFile opts of
         Just customCssFilePath ->
@@ -50,7 +57,7 @@ generateAll fSpec opts =
         ; writeFile (combine (dirPrototype opts) fname) content
         }
 
-generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
+generateConstants fSpec opts = 
   [ "$versionInfo = "++showPhpStr prototypeVersionStr++";" -- so we can show the version in the php-generated html
   , ""
   , "$dbName = "++showPhpStr (dbName opts)++";"
@@ -58,14 +65,17 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
   , "$isDev = "++showPhpBool (development opts)++";"
   , ""
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
-  , ""
-  , "$allSpecializations ="
+  ]
+  
+generateSpecializations fSpec opts =
+  [ "$allSpecializations ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [ (showPhpStr $ name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) $ specializations) ++")" ] 
-         | concept <- concs fSpec, let specializations = getSpecializations fSpec concept,  not $ null specializations ]) ++        
-  [ ""
-  , "$relationTableInfo ="
+         | concept <- concs fSpec, let specializations = getSpecializations fSpec concept,  not $ null specializations ])        
+
+generateTableInfos fSpec opts =
+  [ "$relationTableInfo ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++
@@ -98,14 +108,12 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
                                                               ", 'unique' => "++showPhpBool (flduniq field)++
                                                               ", 'null' => " ++ showPhpBool (fldnull field)++")" ] 
                 | field <- getPlugFields plug]) 
-         | InternalPlug plug <- plugInfos fSpec]) ++
-  [ ""
-  , "$allInterfaceObjects ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $ 
-         map (generateInterface fSpec opts) allInterfaces) ++
-  [ ""
-  , "$allRulesSql ="
+         | InternalPlug plug <- plugInfos fSpec])
+ where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
+       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
+ 
+generateRules fSpec opts =
+  [ "$allRulesSql ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ showPhpStr (rrnm rule) ++ " =>"
@@ -132,17 +140,27 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
   [ ""
-  , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");"
-  , ""
-  , "$allRoles ="
+  , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");" ]
+ where showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
+       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language opts ] of
+                            []    -> ""
+                            markup:_ -> aMarkup2String markup
+       rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
+       processRuleNames = nub $ concatMap snd rulesPerRole
+       invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
+   
+generateRoles fSpec opts =
+  [ "$allRoles ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "array ( 'name' => "++showPhpStr role
            , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rules) ++")"
            , "      )" ]
-         | (role,rules) <- rulesPerRole ]) ++
-  [ ""
-  , "$allKeys ="
+         | (role,rules) <- rulesPerRole ])
+ where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
+       
+generateKeys fSpec opts =
+  [ "$allKeys ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "  array ( 'label' => "++showPhpStr label
@@ -153,25 +171,19 @@ generateInterfaces fSpec opts = genPhp "Generate.hs" "Generics.php" $
            [ "      )" ]           
          | Kd _ label concept keySegs <- vkeys fSpec ])
        
- where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
-       showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
-       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language opts ] of
-                            []    -> ""
-                            markup:_ -> aMarkup2String markup
-       rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
-       processRuleNames = nub $ concatMap snd rulesPerRole
-       invRules = grules fSpec ++ filter (`notElem` processRuleNames) (vrules fSpec)
-       
-       groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
-       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
-       
-       genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
+ where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                    , "      , 'label' => "++ (showPhpStr $ objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                    , "      , 'expSQL' =>"
                                    , "          '" ++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef)) $
                                                 (selectExpr fSpec 33 "src" "tgt" $ objctx objDef))++"' )"  ] 
                 
+generateInterfaces fSpec opts =
+  [ "$allInterfaceObjects ="
+  , "  array" ] ++
+       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $ 
+         map (generateInterface fSpec opts) allInterfaces)
+ where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
 generateInterface fSpec opts interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"
