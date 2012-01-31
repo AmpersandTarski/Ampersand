@@ -303,16 +303,14 @@ pODef2aODef actx cast podef
         , objats  = ats
         , objstrs = obj_strs podef
         }
-   , CxeOrig (cxelist [ nmchk
-                      , exprcxe -- was odcxe, see below
-                      ]) "object definition" "" (origin podef) )
+   , CxeOrig (cxelist (nmchk : exprcxe : atscxes)) "object definition" "" (origin podef) )
    where
     nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
                          |at<-obj_ats podef, let xs=[at' |at'<-obj_ats podef,name at==name at'],length xs>1]
     -- Step1: check obj_ctx
     (expr,exprcxe)  = pExpr2aExpr actx cast (obj_ctx podef)
     -- Step2: check obj_ats in the context of expr
-    (ats,atscxes)  = (\f (x,y) -> (x, f y)) cxelist $ unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
+    (ats,atscxes) =  unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
     -- Step3: compute type error messages
     {- SJ 4th jan 2012: I have disabled odcxe in order to find out why it is necessary to check equality. We should run in trouble if this check is indeed necessary...
     odcxe
