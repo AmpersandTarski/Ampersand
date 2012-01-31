@@ -38,7 +38,7 @@ function resetDatabase() {
                      // Of course there is a very small possibility that reset will succeed now, but that does not cause any problems
                         window.location.href = 'Installer.php'; 
                     },
-           error: function(data){ alert('ERROR: Network problem during reset operation.\nThe database has not been reset.'); }
+           error: function(data){ alert('NETWORK ERROR\n\nThe database has not been reset.'); }
   });
 }
 
@@ -504,28 +504,43 @@ function clearNavigationHandlers() {
   $('#AmpersandRoot .AtomName').unbind('click'); 
 }
 
+function setLogNavigationHandlers($logWindow) {
+  $logWindow.find(".Pair > .PairAtom").map(function () {
+    $pairAtom = $(this); 
+    var concept =$pairAtom.attr('concept');
+    var atom = $pairAtom.attr('atom');
+    
+    setAtomNavigationHandler( $pairAtom, atom, concept );
+  });
+}
+
 function setNavigationHandlers() {
   $("#AmpersandRoot .AtomName").map(function () {
     $atomList = getEnclosingAtomList($(this)); 
     $atom=getEnclosingAtom($(this));
-    concept =$atomList.attr('concept');
+    var concept =$atomList.attr('concept');
     var atom = $atom.attr('atom');
-    var interfaces = getInterfacesMap()[concept];  // NOTE: getInterfacesMap is assumed to be declared 
-    // (since js has no import mechanism and we don't want to pass variables around all the time, a more elegant solution is not possible)
     
-    if (typeof(interfaces) != 'undefined' && interfaces.length > 0) { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
-                                                                       // undefined means no interfaces are defined, length == 0 means no interfaces are visible for selected role
-      $(this).click(function (event) {
-        if (interfaces.length == 1)
-          navigateTo(interfaces[0], atom);
-        else
-          mkInterfaceMenu(event, $(this), interfaces, atom);
-      });
-    }     
+    setAtomNavigationHandler( $(this), atom, concept );
   });
 }
 
-function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
+function setAtomNavigationHandler($elt, atom, concept) {
+  var interfaces = getInterfacesMap()[concept];  // NOTE: getInterfacesMap is assumed to be declared 
+  // (since js has no import mechanism and we don't want to pass variables around all the time, a more elegant solution is not possible)
+  
+  if (typeof(interfaces) != 'undefined' && interfaces.length > 0) { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
+                                                                     // undefined means no interfaces are defined, length == 0 means no interfaces are visible for selected role
+    $elt.click(function (event) {
+      if (interfaces.length == 1)
+        navigateTo(interfaces[0], atom);
+      else
+        mkInterfaceMenu(event, interfaces, atom);
+    });
+  }       
+}
+
+function mkInterfaceMenu(event, interfaces, atom) {
   $('#InterfaceContextMenu').remove();
   var $fullScreenMask = $("<div id=FullScreenMask/>");  /* the mask is for hiding the menu if we click anywhere outside it */
   var $menu = $('<div id=InterfaceContextMenu>');
@@ -535,9 +550,8 @@ function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
     $fullScreenMask.remove();
   });
   $('body').append($fullScreenMask);
-  $parentDiv.append($menu);
-  $menu.offset({ top: event.pageY, left: event.pageX });
-
+  $fullScreenMask.append($menu);
+ 
   for (var i=0; i<interfaces.length; i++) {
     var $item = $('<div class=InterfaceContextMenuItem interface='+
                 interfaces[i]+'>'+interfaces[i]+'</div>');   
@@ -548,6 +562,11 @@ function mkInterfaceMenu(event, $parentDiv, interfaces, atom) {
     // We need this separate function here to get a reference to i's value rather than the variable i.
     // (otherwise we encounter the 'infamous loop problem': all i's have the value of i after the loop)
   }
+  
+  // take into account menu size and page size, so menu is always visible, also at the edges
+  $menu.offset({ left: Math.min(event.pageX, $(document).width() - $menu.outerWidth() - 2 )
+               , top: Math.min(event.pageY, $(document).height() - $menu.outerHeight() - 2) });
+
 }
 
 function addClickEvent($item, interface, atom) { 
@@ -613,7 +632,9 @@ function initLogWindows() {
   $('#SignalLog>.LogMsg').remove();  // don't show logs here
   if ($('#SignalLog>.LogItem').length>0)
     $('#SignalLog').attr('nonEmpty','true');
+  setLogNavigationHandlers($(".LogWindow"));
 }
+
 function minimaximizeParentLogWindow(event) {
   $logWindow = $(this).parents().filter('.LogWindow');
   $logWindow.attr('minimized', $logWindow.attr('minimized')=='true' ? 'false' : 'true');
@@ -627,10 +648,11 @@ function clearLogItems($logWindow) {
 
 // $logItems is a jQuery set of divs (LogItem class is added here)
 function addLogItems($logWindow, $logItems) {
-  $logItems.addClass('LogItem');
+  $logItems.addClass('LogItem'); 
   $logWindow.append($logItems);
   if ($logItems.length > 0)
     $logWindow.attr('nonEmpty','true');
+  setLogNavigationHandlers($logItems);
 }
 
 function setLogItems($logWindow, $logItems) {

@@ -221,14 +221,22 @@ function checkRules($ruleNames) {
                                      : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
       emitAmpersandErr($message);
       foreach($rows as $violation){
-        $source = showKeyAtom($violation['src'], $ruleSql['srcConcept']);
-        $target = showKeyAtom($violation['tgt'], $ruleSql['tgtConcept']);
-        
+        $srcAtom = $violation['src'];
+        $tgtAtom = $violation['tgt'];
+        $srcConcept = $ruleSql['srcConcept'];
+        $tgtConcept = $ruleSql['tgtConcept'];
+        $source = showKeyAtom($srcAtom, $srcConcept);
+        $target = showKeyAtom($tgtAtom, $tgtConcept);
         // if source and target are the same atom and we have a key for it, don't show a tuple
-        if ($violation['src'] == $violation['tgt'] && $ruleSql['srcConcept'] == $ruleSql['tgtConcept'] && getKey($ruleSql['srcConcept']) )
-          emitAmpersandErr("- $source");
+        if ($violation['src'] == $violation['tgt'] && $srcConcept == $tgtConcept && getKey($srcConcept) )
+          emitAmpersandErr("- <span class=\"Pair\">".
+                                "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\">$source</span>".
+                             "</span>");
         else
-          emitAmpersandErr("- ('$source', '$target')");
+          emitAmpersandErr("- <span class=\"Pair\">(".
+                               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\">'$source'</span>".
+                             ", <span class=\"PairAtom\" atom=\"$tgtAtom\" concept=\"$tgtConcept\">'$target'</span>".
+                           ")</span>");
       }
       emitLog('Rule '.$ruleSql['name'].' is broken');
       $allRulesHold = false;

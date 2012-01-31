@@ -376,6 +376,13 @@ body {
     display:none
 }
 
+.PairAtom {
+    cursor: pointer;
+}
+.PairAtom:hover {
+    background-color: #909090;
+}
+
 #EditLog {
     display: none;
     right: 5px;
