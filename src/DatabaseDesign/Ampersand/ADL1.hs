@@ -4,6 +4,8 @@ module DatabaseDesign.Ampersand.ADL1
            , P_Context(..), A_Context(..)
            , Process(..), P_Process(..), P_RoleRelation(..),RoleRelation(..), RoleRule(..)
            , P_Pattern(..), Pattern(..)
+           , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
+           , SrcOrTgt(..)
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations
            , P_KeyDef(..), P_KeyDefs, P_KeySegment(..), KeyDef(..), KeySegment(..)
            , P_Population(..), Population(..)
@@ -48,6 +50,9 @@ where
                                          ,ObjectDef(..)
                                          ,Interface(..)
                                          ,Pattern(..)
+                                         ,PairView(..)
+                                         ,PairViewSegment(..) 
+                                         ,SrcOrTgt(..)
                                          ,Rule(..)
                                          ,RuleType(..)
                                          ,RoleRelation(..)

@@ -72,7 +72,7 @@ where
     
    instance ShowHS a => ShowHS (Maybe a) where
     showHS _ _ Nothing  = "Nothing"
-    showHS flags indent (Just x) = showHS flags indent x
+    showHS flags indent (Just x) = "Just (" ++ showHS flags indent x ++ ")"
 
 
    -- | The following is used to showHS flags for signs: (Concept, Concept)
@@ -607,6 +607,17 @@ where
         ,"        }"
         ]
 -- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: PairView                      ***
+-- \***********************************************************************
+
+   instance ShowHS PairView where
+     showHS flags indent (PairView pvs) = "PairView "++showHS flags indent pvs
+     
+   instance ShowHS PairViewSegment where
+     showHS flags indent (PairViewText txt) = "PairViewText "++show txt
+     showHS flags indent (PairViewExp srcOrTgt exp) = "PairViewExp "++show srcOrTgt++" ("++showHS flags "" exp++")"
+
+-- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
 
@@ -614,17 +625,16 @@ where
     showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
    instance ShowHS Rule where
-    showHS flags indent r@(Ru nm exp fps mean msg typ dcl env usr sgl rel)
+    showHS flags indent r@(Ru nm exp fps mean msg mviol typ dcl env usr sgl rel)
       = intercalate indent 
         ["Ru{ rrnm   = " ++ show (rrnm r)
         ,"  , rrexp  = ("++ showHS flags "" (rrexp r)++")"
         ,"  , rrfps  = ("++ showHS flags "" (rrfps r)++")"
         ,"  , rrmean = " ++ showHS flags "" (rrmean r)
         ,"  , rrmsg = " ++ showHS flags "" (rrmsg r)
+        ,"  , rrviol = " ++ showHS flags "" (rrviol r)
         ,"  , rrtyp  = " ++ showHS flags "" (rrtyp r)
-        ,"  , rrdcl  = " ++ case rrdcl r of
-                            Nothing   -> "Nothing"
-                            Just(p,d) -> "Just ("++showHS flags "" p++","++showHSName d++")"
+        ,"  , rrdcl  = " ++ showHS flags "" (rrdcl r)
         ,"  , r_env = " ++ show (r_env r)
         ,"  , r_usr = " ++ show (r_usr r)
         ,"  , r_sgl = " ++ show (r_sgl r)
