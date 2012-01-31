@@ -73,6 +73,7 @@ where
            , rrfps = origin d
            , rrmean = AMeaning $ explain True prp 
            , rrmsg = explain False prp
+           , rrviol = Nothing
            , rrtyp = case prp of
                         Uni-> sign$ECps [EFlp r,r]
                         Tot-> sign$ECps [r,EFlp r]

@@ -5,6 +5,9 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , A_Context(..)
  , Process(..)
  , Pattern(..)
+ , PairView(..)
+ , PairViewSegment(..)
+ , SrcOrTgt(..)
  , Rule(..)
  , RuleType(..)
  , Declaration(..)
@@ -41,7 +44,7 @@ import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics.Auxiliaries (eqCl)
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
-import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..))
+import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,ConceptDefs,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt)
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc
@@ -140,12 +143,19 @@ concatMarkup es
                       intercalate "\n   " [(show.f.head) cl | cl<-cls])
    where f e = (amLang e, amFormat e)
 
+
+data PairView = PairView [PairViewSegment] deriving Show
+
+data PairViewSegment = PairViewText String
+                     | PairViewExp SrcOrTgt Expression deriving Show
+
 data Rule =
      Ru { rrnm      :: String                  -- ^ Name of this rule
         , rrexp     :: Expression              -- ^ The rule expression
         , rrfps     :: Origin                  -- ^ Position in the Ampersand file
         , rrmean    :: AMeaning                -- ^ Ampersand generated explanations (MEANINGs) (for all known languages)
         , rrmsg     :: [A_Markup]              -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+        , rrviol    :: Maybe PairView          -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp     :: Sign                    -- ^ Allocated type
         , rrdcl     :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
         , r_env     :: String                  -- ^ Name of pattern in which it was defined.

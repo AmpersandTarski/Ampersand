@@ -33,8 +33,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "INTERFACE", "FOR", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
-                       , "RULE", "TEST"
-                       , "RELATION", "MEANING", "MESSAGE", "CONCEPT", "KEY", "TXT"
+                       , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
+                       , "RELATION", "MEANING", "CONCEPT", "KEY", "TXT"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
@@ -282,25 +282,36 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    pRule            :: Parser Token P_Rule
-   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pList pMeaning <*> pList pMessage <|>
-                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> pList pMeaning <*> pList pMessage
+   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pList pMeaning <*> pList pMessage <*> optional pViolation <|>
+                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> pList pMeaning <*> pList pMessage <*> optional pViolation
                        where
                         --rnn -> rnm with generated name (rulid po)
                         rnn po = rnm po (rulid po)
                         rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
                         rulid _ = fatal 226 "rulid is expecting a file location."
-                        rnm po lbl rexp mean msg
+                        rnm po lbl rexp mean msg mViolation
                           = P_Ru { rr_nm  = lbl
                                  , rr_exp = rexp
                                  , rr_fps = po
                                  , rr_mean = mean
                                  , rr_msg = msg
+                                 , rr_viol = mViolation
                                  }
-                                 
+                                                                  
    pMessage         :: Parser Token P_Markup
    pMessage          = P_Markup <$ pKey "MESSAGE" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
 
+   pViolation         :: Parser Token P_PairView
+   pViolation          = id <$ pKey "VIOLATION" <*> pPairView
 
+   pPairView :: Parser Token P_PairView
+   pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
+   
+   pPairViewSegment :: Parser Token P_PairViewSegment
+   pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pExpr
+                  <|> P_PairViewText <$ pKey "TXT" <*> pString
+    where pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
+                              
 {-  Basically we would have the following expression syntax:
 pExpr ::= pExp1   "="    pExp1                           |
           pExp1   "|-"   pExp1                           |
