@@ -28,7 +28,7 @@ button.Button {
     font-size:80%;
     width: 120px;
     height: 30px;
-    background: url(../images/button.gif) no-repeat 0px 0px;
+    background: url(../images/EditButton.png) no-repeat 0px 0px;
     text-align: center;
     font-weight: bold;
     color: #333;
