@@ -36,13 +36,22 @@ generateAll fSpec opts =
          do { customCssContents <- (readFile customCssFilePath `catch` error ("ERROR: Cannot open custom css file '" ++ customCssFilePath ++ "'"))
             ; writePrototypeFile customCssPath customCssContents
             }
-        Nothing ->
-         do { customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
-            ; if customExists
-              then verboseLn opts $ "  File " ++ customCssPath ++ " already exists."
-              else do { verboseLn opts $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
-                      ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
-                      }
+        Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
+         do { let dedicatedCSSPath = replaceExtension (fileName opts) "css"
+            ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
+            ; if dedicatedCSSExists then
+               do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
+                  ; customCssContents <- (readFile dedicatedCSSPath `catch` error ("ERROR: Cannot open custom css file '" ++ dedicatedCSSPath ++ "'"))
+                  ; writePrototypeFile customCssPath customCssContents
+                  }
+              else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
+               do { customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
+                  ; if customExists
+                    then verboseLn opts $ "  File " ++ customCssPath ++ " already exists."
+                    else do { verboseLn opts $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
+                            ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
+                            }
+                  }
             }
             
     ; when (development opts) $ 
