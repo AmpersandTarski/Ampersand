@@ -376,10 +376,10 @@ body {
     display:none
 }
 
-.PairAtom {
+.PairAtom[hasInterface] {
     cursor: pointer;
 }
-.PairAtom:hover {
+.PairAtom[hasInterface]:hover {
     background-color: #909090;
 }
 

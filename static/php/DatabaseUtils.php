@@ -129,20 +129,23 @@ function showKeyAtom($atom, $concept) {
   }
 }
 
-function showPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView) {
+function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $tgtNrOfIfcs, $pairView) {
   if (count($pairView) == 0) {
     $source = showKeyAtom($srcAtom, $srcConcept);
     $target = showKeyAtom($tgtAtom, $tgtConcept);
-
+        
+    $srcHasInterfaces = $srcNrOfIfcs == 0 ? '' : ' hasInterface=' . ($srcNrOfIfcs == 1 ? 'single' : 'multiple');
+    $tgtHasInterfaces = $tgtNrOfIfcs == 0 ? '' : ' hasInterface=' . ($tgtNrOfIfcs == 1 ? 'single' : 'multiple');
+    
     // if source and target are the same atom and we have a key for it, don't show a tuple
     if ($violation['src'] == $violation['tgt'] && $srcConcept == $tgtConcept && getKey($srcConcept) )
       return "<span class=\"Pair\">".
-               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\">$source</span>".
+               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\"$srcHasInterfaces>$source</span>".
              "</span>";
     else
       return "<span class=\"Pair\">(".
-               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\">'$source'</span>".
-               ", <span class=\"PairAtom\" atom=\"$tgtAtom\" concept=\"$tgtConcept\">'$target'</span>".
+               "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\"$srcHasInterfaces>'$source'</span>".
+               ", <span class=\"PairAtom\" atom=\"$tgtAtom\" concept=\"$tgtConcept\"$tgtHasInterfaces>'$target'</span>".
               ")</span>";
   } else {
       $pairStrs = array ("<span class=\"Pair\">");
@@ -152,10 +155,11 @@ function showPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView) {
       else {
         $atom    = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
         $concept = $segment['srcOrTgt'] == 'Src' ? $srcConcept : $tgtConcept;
+        $hasInterfaces = $segment['srcOrTgt'] == 'Src' ? $srcHasInterfaces : tgtHasInterfaces;
         $r = getCoDomainAtoms($atom, $segment['expSQL']);
         
         // we label all expressionsegments as violation source or target based on the source of their expression
-        $pairStrs[] = "<span class=\"PairAtom\" atom=\"$atom\" concept=\"$concept\">";
+        $pairStrs[] = "<span class=\"PairAtom\" atom=\"$atom\" concept=\"$concept\"$hasInterfaces>";
         $pairStrs[] = showKeyAtom($r[0], $segment['expTgt']) . "</span>"; 
       }
       $pairStrs[] = "</span>";
@@ -281,6 +285,10 @@ function getTopLevelInterfacesForConcept($concept, $roleNr, $roleName) {
     $interfacesForConcept[] = $interface;
   }
   return $interfacesForConcept;
+}
+
+function getNrOfInterfaces($concept, $roleNr, $roleName) {
+  return count(getTopLevelInterfacesForConcept($concept, $roleNr, $roleName));
 }
 
 
