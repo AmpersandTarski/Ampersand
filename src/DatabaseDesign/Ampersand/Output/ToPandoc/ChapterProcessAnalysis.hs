@@ -35,7 +35,7 @@ chpProcessAnalysis lev fSpec flags
 
   header :: [Block]
   header
-   = labeledHeader lev (xLabel ProcessAnalisys)
+   = labeledHeader lev (xLabel ProcessAnalysis)
                                        (case language flags of
                                               Dutch   ->  "Procesanalyse"   
                                               English ->  "Process Analysis"
