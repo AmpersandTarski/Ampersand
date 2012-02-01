@@ -25,7 +25,7 @@ body {
     font-size: 18px;
 }
 #TopLevelInterfaces .MenuItem:hover  {
-    background: white;
+    background-color: white;
     color: #BF1E74;
 }
 #TopLevelInterfaces .MenuItem a {
@@ -63,6 +63,7 @@ body {
 #ScrollPane {
     overflow:auto; 
     position:absolute;
+    background-color: inherit; /* otherwise position: absolute causes background to be white */
     top: 50px;
     left:0px;
     right:0px;
@@ -170,7 +171,6 @@ body {
     padding-left: 5px;
     -moz-border-radius: 5px;  /* rounded corners for Firefox */
     -webkit-border-radius: 5px;  /* rounded corners for Safari */
-    background-color: white;
 }
  
     
