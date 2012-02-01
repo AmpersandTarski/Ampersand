@@ -16,19 +16,22 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                                                      Dutch   ->  "Inleiding"   
                                                      English ->  "Introduction"
                                                   )
+        contextPurposes = [p | p <- purposes fSpec (language flags) fSpec]
         --TODO: different intro for theme flags == "student"
         introContents Dutch = 
-         [ Para 
-                [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "
-                , Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                , Str "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken "
-                , Str "om afspraken na te leven. "
-                , Str "Een aantal van deze afspraken is gebruikt als functionele eis om de onderhavige functionele specificatie"
-                , Note [Para [Str "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "]]
-                , Str " samen te stellen. "
-                , Str "Deze eisen staan opgesomd in hoofdstuk ", xrefReference FunctionalRequirements, Str ", geordend op thema. "
-                ]
-          , Para 
+          ( if null contextPurposes
+            then [ Para 
+                        [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "
+                        , Quoted  SingleQuote [Str (name fSpec)], Str ". "
+                        , Str "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken "
+                        , Str "om afspraken na te leven. "
+                        , Str "Een aantal van deze afspraken is gebruikt als functionele eis om de onderhavige functionele specificatie"
+                        , Note [Para [Str "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "]]
+                        , Str " samen te stellen. "
+                        , Str "Deze eisen staan opgesomd in hoofdstuk ", xrefReference FunctionalRequirements, Str ", geordend op thema. "
+                        ]]
+            else concat [amPandoc (explMarkup p) | p<-contextPurposes] )++
+          [ Para 
                 [ Str "De diagnose in hoofdstuk ", xrefReference Diagnosis
                 , Str " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                 ]

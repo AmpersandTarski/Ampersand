@@ -32,7 +32,6 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Output
 import Control.Monad
-import Data.List
 import System.FilePath
 import DatabaseDesign.Ampersand.Parsing
 fatal :: Int -> String -> a

@@ -6,10 +6,12 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , Chapter(..)
     , Xreferencable(..)
     , xrefFigure1
+    , Purpose(..)
     , purpose
     , purposes
     , purposes2Blocks
     , meaning2Blocks
+    , amPandoc
     , isMissing
     , dpRule
     , Counter(..),newCounter,incEis)
