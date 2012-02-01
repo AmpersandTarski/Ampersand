@@ -46,7 +46,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
           , Para 
                 [ Str "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
                 , Str "De gegevensanalyse in hoofdstuk "
-                , xrefReference DataAnalisys
+                , xrefReference DataAnalysis
                 , Str " beschrijft de gegevensverzamelingen waarop ", Quoted  SingleQuote [Str (name fSpec)], Str " wordt gebouwd. "
                 , Str "Elk volgend hoofdstuk definieert één business service. "
                 , Str "Hierdoor kunnen bouwers zich concentreren op één service tegelijk. "
@@ -82,7 +82,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
           , Para 
                 [ Str "Chapters that follow have the builders of ", Quoted  SingleQuote [Str (name fSpec)], Str " as their intended audience. "
                 , Str "The data analysis in chapter "
-                , xrefReference DataAnalisys
+                , xrefReference DataAnalysis
                 , Str " describes the data sets upon which ", Quoted  SingleQuote [Str (name fSpec)], Str " is built. "
                 , Str "Each subsequent chapter defines one business service. "
                 , Str "This allows builders focus on a single service at a time. "

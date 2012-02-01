@@ -37,7 +37,7 @@ data Chapter = Intro
              | Diagnosis 
              | ConceptualAnalysis
              | ProcessAnalysis
-             | DataAnalisys
+             | DataAnalysis
              | SoftwareMetrics
              deriving Show
 
