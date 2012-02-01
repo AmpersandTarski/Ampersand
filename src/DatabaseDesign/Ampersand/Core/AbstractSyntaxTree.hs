@@ -622,11 +622,11 @@ order _ = ((\x y -> if x==y then EQ else NC),[])
 instance Poset A_Concept where
   a `compare` b = (fst$order a) a b
 instance Sortable A_Concept where
-  meet a b | b <= a = b
+  meet a b | b <= a = b        -- meet yields the more generic of two concepts
            | a <= b = a
            | a `compare` b == CP = fatal 561 "implement ISA" 
            | otherwise = fatal 568 $ "meet undefined: a="++show a++", b="++show b
-  join a b | a <= b = b
+  join a b | a <= b = b        -- join yields the more specific of two concepts
            | b <= a = a
            | a `compare` b == CP = fatal 565 ("implement ISA" ++ show(a,b))
            | otherwise = fatal 571 $ "join undefined: a="++show a++", b="++show b
