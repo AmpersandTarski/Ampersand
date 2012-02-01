@@ -55,7 +55,7 @@ chpDataAnalysis lev fSpec flags
              then [p | InternalPlug p<-plugInfos fSpec]
              else nub [p | c<-concs remainingRels, (p,_)<-lookupCpt fSpec c ]
   header :: [Block]
-  header = labeledHeader lev (xLabel DataAnalisys) (case language flags of
+  header = labeledHeader lev (xLabel DataAnalysis) (case language flags of
                                               Dutch   ->  "Gegevensstructuur"   
                                               English ->  "Data structure"
                                         )
