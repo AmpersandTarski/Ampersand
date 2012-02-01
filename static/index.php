@@ -108,7 +108,7 @@ if ($err) {
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
        ' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept']).
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
-       " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').
+       " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr($roleNr==-1 ? 'Algemeen' : $roleName).
        ' timestamp="'.$timeStamp.'">';
   
   echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
