@@ -11,7 +11,7 @@ import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
---import DatabaseDesign.Ampersand.Output.AdlExplanation
+import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
@@ -19,7 +19,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "ChapterNatLangReqs.hs"
 
 chpNatLangReqs :: Int -> Fspc -> Options ->  [Block]
-chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
+chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else []
   where
   header :: [Block]
   header = labeledHeader lev (xLabel FunctionalRequirements)
@@ -27,6 +27,22 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                              Dutch   ->  "Gemeenschappelijke taal"   
                                              English ->  "Shared Language"
                                          )
+                                         
+  legalRefs = [ Header 1 [Str (case language flags of
+                                              Dutch   -> "Referentietabel"
+                                              English -> "Reference table"
+                              )
+                         ]   
+              , Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0]
+                    [ [ plainStr "Wet" ], [ plainStr "Artikel" ] ]  -- law article
+                  [ [ [ plainStr $ getWet ref ],   [ plainStr $ getArtikel ref ] ] 
+                  | ref <- nub . filter (not . null) . map explRefId $ explanations fSpec 
+                  ]
+              ]
+         where plainStr str = Plain [Str str]
+               getWet ref = reverse . takeWhile (/=' ') . reverse $ ref
+               getArtikel ref = reverse . dropWhile (==' ') .dropWhile (/=' ') . reverse $ ref
+               
   dpIntro :: [Block]
   dpIntro = 
     case language flags of

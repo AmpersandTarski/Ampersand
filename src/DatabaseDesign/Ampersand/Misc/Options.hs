@@ -65,6 +65,7 @@ data Options = Options { showVersion   :: Bool
                        , showPredExpr  :: Bool   -- for generated output, show predicate logic?
                        , noDiagnosis   :: Bool   -- omit the diagnosis chapter from the functional specification document
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
+                       , genLegalRefs  :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
                        , progrName     :: String --The name of the adl executable
@@ -120,6 +121,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , showPredExpr  = False
                       , noDiagnosis   = False
                       , diagnosisOnly = False
+                      , genLegalRefs  = False
                       , language      = Dutch
                       , progrName     = fatal 118 "No monadic options available."
                       , fileName      = fatal 119 "no default value for fileName."
@@ -272,6 +274,8 @@ options = map pp
           , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicate logic." , Public)
           , (Option []        ["noDiagnosis"] (NoArg noDiagnosisOpt)      "omit the diagnosis chapter from the functional specification document." , Public)
           , (Option []        ["diagnosis"]   (NoArg diagnosisOpt)        "diagnose your Ampersand script (generates a .pdf file).", Public)
+          , (Option []        ["legalrefs"]   (NoArg (\opts -> opts{genLegalRefs = True}))
+                                                                          "generate a table of legal references in Natural Language chapter.", Public)
           , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'EN').", Public)
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
 
