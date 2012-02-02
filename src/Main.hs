@@ -49,6 +49,7 @@ generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
  do { verboseLn flags "Generating..."
     ; when (genXML flags)      $ doGenXML      fSpec flags
+    ; when (genUML flags)      $ doGenUML      fSpec flags 
     ; when (haskell flags)     $ doGenHaskell  fSpec flags 
     ; when (interfacesG flags) $ interfaceGen  fSpec flags
     ; when (genFspec flags)    $ doGenDocument fSpec flags 

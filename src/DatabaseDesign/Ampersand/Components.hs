@@ -16,6 +16,7 @@ module DatabaseDesign.Ampersand.Components
    , prove
    , doGenHaskell
    , doGenXML
+   , doGenUML
    , doGenDocument
     -- * etc...
   )
@@ -30,6 +31,7 @@ import Text.Pandoc
 import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Basics 
 import DatabaseDesign.Ampersand.Fspec
+import DatabaseDesign.Ampersand.Fspec.UML
 import DatabaseDesign.Ampersand.Output
 import Control.Monad
 import System.FilePath
@@ -136,6 +138,14 @@ doGenXML fSpec flags
    where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")
                
+doGenUML :: Fspc -> Options -> IO()
+doGenUML fSpec flags =
+ do { verboseLn flags "Generating UML..."
+    ; umlStr <- generateUML fSpec flags
+    ; writeFile outputFile umlStr
+    ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
+    }
+   where outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) ".xmi")
 
 -- This function will generate all Pictures for a given Fspc. 
 -- the returned Fspc contains the details about the Pictures, so they
