@@ -3,7 +3,8 @@
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
 module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
-        (ClassDiag(..), clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
+         (ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
+         clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
 where
    import Data.Char (isAlphaNum,ord,isUpper,toUpper)
    import Data.List
