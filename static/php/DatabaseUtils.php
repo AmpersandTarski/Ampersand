@@ -271,28 +271,34 @@ function isAtomInConcept($atom, $concept) {
   return in_array( $atom, getAllConceptAtoms($concept) );
 }
 
-function isInterfaceForRole($interface, $roleNr, $roleName) {
-  return in_array($roleName, $interface['interfaceRoles']) || count($interface['interfaceRoles'])==0 || $roleNr == -1;
-  // an interface is visible if: the interface roles contain $role; the interface does not specify roles; or no role is selected   
+function isInterfaceForRole($interface, $roleNr) {
+  return $roleNr == -1 || count($interface['interfaceRoles'])==0 || in_array(getRoleName($roleNr), $interface['interfaceRoles']);
+  // an interface is visible if: no role is selected; the interface does not specify roles; or the interface roles contain $role
 } 
 
-function getTopLevelInterfacesForConcept($concept, $roleNr, $roleName) {
+function getTopLevelInterfacesForConcept($concept, $roleNr) {
   global $allInterfaceObjects;
   $interfacesForConcept = array();
   foreach($allInterfaceObjects as $interface) {
     if (($interface['srcConcept']==$concept || in_array($concept, getSpecializations($interface['srcConcept']))) 
-       && isInterfaceForRole($interface, $roleNr, $roleName))
+       && isInterfaceForRole($interface, $roleNr))
     $interfacesForConcept[] = $interface;
   }
   return $interfacesForConcept;
 }
 
-function getNrOfInterfaces($concept, $roleNr, $roleName) {
-  return count(getTopLevelInterfacesForConcept($concept, $roleNr, $roleName));
+function getNrOfInterfaces($concept, $roleNr) {
+  return count(getTopLevelInterfacesForConcept($concept, $roleNr));
 }
 
 
 // Misc utils
+
+function getRoleName($roleNr) {
+  global $allRoles;
+
+  return $roleNr==-1 ? 'Algemeen' : $allRoles[$roleNr]['name'];
+}
 
 function firstRow($rows) {
   return $rows[0];

@@ -209,7 +209,7 @@ function checkRules($ruleNames) {
   global $allRulesSql;
   
   $allRulesHold = true;
-  $selectedRoleName = getSelectedRoleName();
+
   foreach ($ruleNames as $ruleName) {
     $ruleSql = $allRulesSql[$ruleName];
     $rows = queryDb($ruleSql['violationsSQL'], $error);
@@ -220,8 +220,8 @@ function checkRules($ruleNames) {
       $message = $ruleSql['message'] ? $ruleSql['message'] 
                                      : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
       emitAmpersandErr($message);
-      $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $_REQUEST['role'], $selectedRoleName);
-      $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $_REQUEST['role'], $selectedRoleName);
+      $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $_REQUEST['role']);
+      $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $_REQUEST['role']);
       
       $pairView = $ruleSql['pairView'];
       foreach($rows as $violation)
@@ -270,15 +270,6 @@ function error($msg) {
 } // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
-
-function getSelectedRoleName() {
-  global $allRoles;  
-  $roleNr = $_REQUEST['role'];
-  if ($roleNr == -1)
-    return 'Algemeen'; // todo: this Algemeen should be specified somewhere else
-  else
-    return $allRoles[$roleNr]['name'];
-}
 
 function testRule($ruleName) {
   global $isDev;
