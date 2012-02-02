@@ -63,7 +63,9 @@ library
                     haskell98 >= 1.1.0.1 && < 1.2,
                     base >= 4.3.1.0 && < 5,
                     directory >= 1.1.0.0 && < 1.2,
-                    containers >= 0.4     && < 0.5
+                    containers >= 0.4     && < 0.5,
+                    mtl        >= 2.0 && < 2.1
+
   exposed-modules:  
                     DatabaseDesign.Ampersand,
                     DatabaseDesign.Ampersand.ADL1,
@@ -141,7 +143,8 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    DatabaseDesign.Ampersand.Parsing
+                    DatabaseDesign.Ampersand.Parsing,
+                    DatabaseDesign.Ampersand.Fspec.UML
 
   if flag(library)
     buildable:  True
@@ -162,7 +165,8 @@ executable ampersand
                     haskell98 >= 1.1.0.1 && < 1.2,
                     base >= 4.3.1.0 && < 5,
                     directory >= 1.1.0.0 && < 1.2,
-                    containers >= 0.4     && < 0.5
+                    containers >= 0.4     && < 0.5,
+                    mtl        >= 2.0 && < 2.1
   if flag(executable)
     buildable:  True
   else
@@ -188,7 +192,8 @@ test-suite AmpersandTests
                    haskell98 >= 1.1.0.1 && < 1.2,
                    base >= 4.3.1.0 && < 5,
                    directory >= 1.1.0.0 && < 1.2,
-                   containers >= 0.4     && < 0.5
+                   containers >= 0.4     && < 0.5,
+                   mtl        >= 2.0 && < 2.1
   hs-source-dirs:  src
   ghc-options:     -rtsopts
   main-is:         test-ampersand.hs
