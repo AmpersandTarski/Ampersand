@@ -31,7 +31,7 @@ import Text.Pandoc
 import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Basics 
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.UML
+import DatabaseDesign.Ampersand.Fspec.GenerateUML
 import DatabaseDesign.Ampersand.Output
 import Control.Monad
 import System.FilePath

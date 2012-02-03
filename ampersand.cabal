@@ -144,7 +144,7 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Parsing,
-                    DatabaseDesign.Ampersand.Fspec.UML
+                    DatabaseDesign.Ampersand.Fspec.GenerateUML
 
   if flag(library)
     buildable:  True

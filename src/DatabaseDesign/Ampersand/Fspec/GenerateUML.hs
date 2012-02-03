@@ -1,4 +1,4 @@
-module DatabaseDesign.Ampersand.Fspec.UML (generateUML) where
+module DatabaseDesign.Ampersand.Fspec.GenerateUML (generateUML) where
 
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc
