@@ -1,5 +1,6 @@
 module DatabaseDesign.Ampersand.Fspec.UML where
 
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
 import DatabaseDesign.Ampersand.Fspec
@@ -26,19 +27,25 @@ type UML = StateUML [String]
 
 showUML :: UML -> String
 showUML uml = unlines $ evalState uml $ UMLState 0 Map.empty []
-
+{-OOclassdiagram {classes     :: [Class]            --
+                                   ,assocs      :: [Association]      --
+                                   ,aggrs       :: [Aggregation]      --
+                                   ,geners      :: [Generalization]   --
+                                   ,nameandcpts :: (String,[A_Concept])}-}
 genUMLClassDiag :: ClassDiag -> UML
-genUMLClassDiag diagram =
+genUMLClassDiag (OOclassdiagram classes assocs _ _ (contextName, allConcepts)) =
  do { packageId <- getUnlabeledId "Package" 
     ; diagramId <- getUnlabeledId "Diagram" 
-    ; classesUML <- mapM genUMLClass $ classes diagram 
-    ; assocsUML <- mapM genUMLAssociation $ {- [OOAssoc "Document" "" "" "Dossier" "" ""] -- -} assocs diagram 
+    ; datatypesUML <- mapM genUMLDatatype $ map name allConcepts >- [ name | OOClass name _ _ <-  classes ] 
+    ; classesUML <- mapM genUMLClass $ classes 
+    ; assocsUML <- mapM genUMLAssociation $ {- [OOAssoc "Document" "" "" "Dossier" "" ""] -- -} assocs 
     ; diagramElements <- genDiagramElements
     ; return $ [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                , "<xmi:XMI xmi:version=\"2.1\" xmlns:uml=\"http://schema.omg.org/spec/UML/2.1\" xmlns:xmi=\"http://schema.omg.org/spec/XMI/2.1\">"
                , " <xmi:Documentation exporter=\"Enterprise Architect\" exporterVersion=\"6.5\"/>"
-               , " <uml:Model xmi:type=\"uml:Model\" name=\""++fst (nameandcpts diagram)++"\" visibility=\"public\">"
-               , "  <packagedElement xmi:type=\"uml:Package\" xmi:id=\""++packageId++"\" name=\""++fst (nameandcpts diagram)++"\" visibility=\"public\">" ] ++
+               , " <uml:Model xmi:type=\"uml:Model\" name=\""++contextName++"\" visibility=\"public\">"
+               , "  <packagedElement xmi:type=\"uml:Package\" xmi:id=\""++packageId++"\" name=\""++contextName++"\" visibility=\"public\">" ] ++
+               concat datatypesUML ++
                concat classesUML ++ 
                concat assocsUML ++ 
                [ "  </packagedElement>"
@@ -56,9 +63,15 @@ genUMLClassDiag diagram =
                , " </xmi:Extension>"
                , "</xmi:XMI>" ]
     }
+genUMLDatatype :: String -> UML
+genUMLDatatype name =
+ do { classId <- getLabeledId "Class" name
+    ; addToDiagram classId
+    ; return $ [ "   <packagedElement xmi:type=\"uml:DataType\" xmi:id=\""++classId++"\" name=\""++name++"\" visibility=\"public\"/> " ]
+    }
 
 genUMLClass :: Class -> UML
-genUMLClass  (OOClass name attrs methods) =
+genUMLClass (OOClass name attrs methods) =
  do { classId <- getLabeledId "Class" name
     ; addToDiagram classId
     ; attributesUML <- mapM genUMAttribute attrs
@@ -71,7 +84,7 @@ genUMAttribute :: Attribute -> UML
 genUMAttribute  (OOAttr name attrType leftOpen) =
  do { attrId <- getUnlabeledId "Attr"
     ; classId <- getLabeledId "Class" attrType
-    ; return [ "      <ownedAttribute xmi:type=\"uml:Property\" xmi:id=\""++attrId++"\" name=\""++name++"\" visibility=\"private\" isStatic=\"false\""++
+    ; return [ "      <ownedAttribute xmi:type=\"uml:Property\" xmi:id=\""++attrId++"\" name=\""++name++"\" visibility=\"public\" isStatic=\"false\""++
                                     " isReadOnly=\"false\" isDerived=\"false\" isOrdered=\"false\" isUnique=\"true\" isDerivedUnion=\"false\">"
              , "       <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\"INTID1\" value=\"1\"/>"
              , "       <upperValue xmi:type=\"uml:LiteralInteger\" xmi:id=\"INTID2\" value=\"1\"/>"
