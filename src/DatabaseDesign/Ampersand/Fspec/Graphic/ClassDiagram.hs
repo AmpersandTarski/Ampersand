@@ -102,7 +102,7 @@ where
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs'    = [ OOAssoc (nm source s) (multiplicities rel) "" (nm target t) (multiplicities (EFlp rel)) relname
+       assocs'    = [ OOAssoc (nm source s) (mults rel) "" (nm target t) (mults (EFlp rel)) relname
                     | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec
                     , let rel=mLkp plug
                     , not ((isSignal.head.mors) rel)
@@ -113,9 +113,9 @@ where
                     , let (s,t)=columns plug
                     ]
                     where
-                     multiplicities r = let minVal = if isTot r then MinOne else MinZero
-                                            maxVal = if isInj r then MaxOne else MaxMany
-                                        in  Mult minVal maxVal 
+                     mults r = let minVal = if isTot r then MinOne else MinZero
+                                   maxVal = if isInj r then MaxOne else MaxMany
+                               in  Mult minVal maxVal 
                      nm f = name.concept.lookup'.f.fldexpr
        aggrs'     = []
        geners'    = []
@@ -146,12 +146,12 @@ where
                     else [ OOClass (name c) (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (name (source r)) (multiplicities (EFlp r)) "" (name (target r)) (multiplicities r) ((name.head.morlist) r)
+       assocs'    = [ OOAssoc (name (source r)) (mults r) "" (name (target r)) (mults $ EFlp r) ((name.head.morlist) r)
                     | r<-assRels]
                     where
-                     multiplicities r = let minVal = if isTot r then MinOne else MinZero
-                                            maxVal = if isInj r then MaxOne else MaxMany
-                                        in  Mult minVal maxVal 
+                     mults r = let minVal = if isTot r then MinOne else MinZero
+                                   maxVal = if isInj r then MaxOne else MaxMany
+                               in  Mult minVal maxVal 
        aggrs'     = []
        geners'    = []
 -- The following code was inspired on ADL2Plug
