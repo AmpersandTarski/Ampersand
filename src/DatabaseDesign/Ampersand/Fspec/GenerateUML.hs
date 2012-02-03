@@ -92,10 +92,10 @@ genUMAttribute  (OOAttr name attrType optional) =
     }
 
 genUMLAssociation :: Association -> UML
-genUMLAssociation (OOAssoc lClass lMults lRole rClass rMults rRole) =
+genUMLAssociation (OOAssoc lType lMults lRole rType rMults rRole) =
  do { assocId <- mkUnlabeledId "Assoc"
-    ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd lMults assocId lClass
-    ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd rMults assocId rClass
+    ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd lMults assocId lType
+    ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd rMults assocId rType
         
     ; return $
         [ "   <packagedElement xmi:type=\"uml:Association\" xmi:id=\""++assocId++"\" name=\""++rRole++"\" visibility=\"public\">"
@@ -105,17 +105,17 @@ genUMLAssociation (OOAssoc lClass lMults lRole rClass rMults rRole) =
         [ "   </packagedElement>"
         ]
     }
- where genMemberAndOwnedEnd (Mult minVal maxVal) assocId className =
+ where genMemberAndOwnedEnd (Mult minVal maxVal) assocId typeName =
         do { endId <- mkUnlabeledId "MemberEnd"
-           ; classId <- refLabeledId className
+           ; typeId <- refLabeledId typeName
            ; lIntId <- mkUnlabeledId "Int"
            ; uIntId <- mkUnlabeledId "Int"
            ; return 
                [ "    <memberEnd xmi:idref=\""++endId++"\"/>"
                , "    <ownedEnd xmi:type=\"uml:Property\" xmi:id=\""++endId++"\" visibility=\"public\" association=\""++assocId++"\" isStatic=\"false\""++
                               " isReadOnly=\"false\" isDerived=\"false\" isOrdered=\"false\" isUnique=\"true\" isDerivedUnion=\"false\" aggregation=\"none\">"
-               , "     <type xmi:idref=\""++classId++"\"/>"
-               , "     <lowerValue xmi:type=\"uml:LiiteralInteger\" xmi:id=\""++lIntId++"\" value=\""++(if minVal == MinZero then "0" else "1")++"\"/>"
+               , "     <type xmi:idref=\""++typeId++"\"/>"
+               , "     <lowerValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++lIntId++"\" value=\""++(if minVal == MinZero then "0" else "1")++"\"/>"
                , case maxVal of
                    MaxOne  -> "     <upperValue xmi:type=\"uml:LiteralInteger\" xmi:id=\""++uIntId++"\" value=\"1\"/>"
                    MaxMany -> "     <upperValue xmi:type=\"uml:LiteralUnlimitedNatural\" xmi:id=\""++uIntId++"\" value=\"-1\"/>"
