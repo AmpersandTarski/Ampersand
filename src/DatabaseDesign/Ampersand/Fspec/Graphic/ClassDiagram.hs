@@ -4,7 +4,8 @@
 
 module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
-         clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
+          Multiplicities(..), MinValue(..), MaxValue(..),
+          clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
 where
    import Data.Char (isAlphaNum,ord,isUpper,toUpper)
    import Data.List
@@ -101,7 +102,7 @@ where
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs'    = [ OOAssoc (nm source s) (multiplicity rel) "" (nm target t) (multiplicity (EFlp rel)) relname
+       assocs'    = [ OOAssoc (nm source s) (multiplicities rel) "" (nm target t) (multiplicities (EFlp rel)) relname
                     | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec
                     , let rel=mLkp plug
                     , not ((isSignal.head.mors) rel)
@@ -112,8 +113,9 @@ where
                     , let (s,t)=columns plug
                     ]
                     where
-                     multiplicity r | isTot r   = "1..n"
-                                    | otherwise = ""
+                     multiplicities r = let minVal = if isTot r then MinOne else MinZero
+                                            maxVal = if isInj r then MaxOne else MaxMany
+                                        in  Mult minVal maxVal 
                      nm f = name.concept.lookup'.f.fldexpr
        aggrs'     = []
        geners'    = []
@@ -144,11 +146,12 @@ where
                     else [ OOClass (name c) (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (name (source r)) (multiplicity (EFlp r)) "" (name (target r)) (multiplicity r) ((name.head.morlist) r)
+       assocs'    = [ OOAssoc (name (source r)) (multiplicities (EFlp r)) "" (name (target r)) (multiplicities r) ((name.head.morlist) r)
                     | r<-assRels]
                     where
-                     multiplicity r | isTot r   = "1..n"
-                                    | otherwise = ""
+                     multiplicities r = let minVal = if isTot r then MinOne else MinZero
+                                            maxVal = if isInj r then MaxOne else MaxMany
+                                        in  Mult minVal maxVal 
        aggrs'     = []
        geners'    = []
 -- The following code was inspired on ADL2Plug
@@ -235,12 +238,17 @@ where
               "      edge [ \n" ++
               "              arrowhead = \"none\" \n" ++
               "              arrowtail = \"none\" \n" ++
-              (if null (nametable m2) then "" else "              headlabel = " ++ nametable m2 ++ "\n") ++
-              (if null (nametable m1) then "" else "              taillabel = " ++ nametable m1 ++ "\n") ++
+              (if null (nametable $ mult2Str m2) then "" else "              headlabel = " ++ nametable (mult2Str m2) ++ "\n") ++
+              (if null (nametable $ mult2Str m1) then "" else "              taillabel = " ++ nametable (mult2Str m1) ++ "\n") ++
               "              label = \"" ++ n2 ++ "\" \n" ++
               "      ]\n" ++
               "       " ++ alias from ++ " -> " ++ alias to
-              where 
+              where
+                 mult2Str (Mult MinZero MaxOne)  = "[0..1]"
+                 mult2Str (Mult MinZero MaxMany) = "[0..n]"
+                 mult2Str (Mult MinOne  MaxOne)  = "[1..1]"
+                 mult2Str (Mult MinOne  MaxMany) = "[1..n]"
+                  
                  nametable "" = "\"\""
                  nametable name' = dothtml (dottable notableborderopts 
                                               (dotrow "" (dotcell "" name')))
@@ -368,13 +376,20 @@ where
                                     deriving Show
    data Attribute      = OOAttr         String             -- name of the attribute
                                         String             -- type of the attribute (Concept name or built-in type)
-                                        Bool               -- fNull:  says whether the attribute may be left open
+                                        Bool               -- fNull:  says whether the attribute is optional
                                     deriving Show
+   
+   data MinValue = MinZero | MinOne deriving (Show, Eq)
+   
+   data MaxValue = MaxOne | MaxMany deriving (Show, Eq)
+   
+   data Multiplicities = Mult MinValue MaxValue deriving Show
+   
    data Association    = OOAssoc        String             -- source: the left hand side class
-                                        String             -- left hand side multiplicities
+                                        Multiplicities     -- left hand side multiplicities
                                         String             -- left hand side role
                                         String             -- target: the right hand side class
-                                        String             -- right hand side multiplicities
+                                        Multiplicities     -- right hand side multiplicities
                                         String             -- right hand side role
                                     deriving Show
    data Aggregation    = OOAggr         Deleting           --
