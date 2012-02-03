@@ -665,11 +665,20 @@ function setLogItems($logWindow, $logItems) {
 // Roles
 
 function changeRole() {
-  var interface = $('#AmpersandRoot').attr('interface');
-  var atom = $('#AmpersandRoot').attr('isNew')=='true' ? '' : $('#AmpersandRoot').attr('atom');
-  // need to check for new and use atom='' to generate a new temporary atom, rather than navigate to the non-existing
-  // current temporary atom.
-  navigateTo(interface, atom); // navigate to takes the role from the updated selector
+  if ($('#AmpersandRoot').attr('isNew')=='true') {
+    // Role changes are events in the history, so for create new, this means the old create-new page remains in the
+    // history and will be shown after save or cancel. Unfortunately, it is not reloaded, so it's still in edit mode showing empty fields.
+    // Forcing a refresh after going back, or removing the current history item and moving to a different page is not possible using normal page navigation,
+    // so until we have an ajax-based implementation, this is not supported. Disabling the cache to force a refresh even on a normal browser back could
+    // also solve the problem, but this seems to be very tricky.
+    alert('Role changes during create new are currently not supported.');
+    return;
+  } else {
+    var interface = $('#AmpersandRoot').attr('interface');
+  
+    var atom = $('#AmpersandRoot').attr('atom');
+    navigateTo(interface, atom); // navigate to takes the role from the updated selector
+  }
 }
 
 
