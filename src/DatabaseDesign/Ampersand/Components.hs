@@ -141,8 +141,7 @@ doGenXML fSpec flags
 doGenUML :: Fspc -> Options -> IO()
 doGenUML fSpec flags =
  do { verboseLn flags "Generating UML..."
-    ; umlStr <- generateUML fSpec flags
-    ; writeFile outputFile umlStr
+    ; writeFile outputFile $ generateUML fSpec flags
     ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
     }
    where outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) ".xmi")
