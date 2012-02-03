@@ -136,7 +136,8 @@ function sendCommands(commandArray) {
 
         // we ignore the signals from $newPage, since we have just set them.
         
-        initializeAtoms();   
+        initializeAtoms(); 
+        $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
       });
     }
   });
@@ -746,7 +747,7 @@ function getDiffRoot($newAtom, $oldAtom) {
     var $oldChildInterfaces = $oldAtom.find('>.InterfaceList>.Interface');
     
     for (var j=0; j<$newChildInterfaces.length; j++) { 
-      // interfaces won't changes, but we need to traverse them to be able to create markers at the AtomList level
+      // interfaces won't change, but we need to traverse them to be able to create markers at the AtomList level
         
       var $newChildAtoms = $newChildInterfaces.eq(j).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
       var $oldChildAtoms = $oldChildInterfaces.eq(j).find('>.AtomList>.AtomRow[rowType=Normal]>.AtomListElt>.Atom'); 
