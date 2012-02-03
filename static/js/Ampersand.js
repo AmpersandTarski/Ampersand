@@ -740,7 +740,7 @@ function markDifference($newAtom, $oldAtom) {
 
 function getDiffRoot($newAtom, $oldAtom) {
   //log ($newAtom.attr('atom') + ' vs ' + $oldAtom.attr('atom'));
-  if ($newAtom.attr('atom') != $oldAtom.attr('atom'))
+  if ($newAtom.find('>.AtomName').text() != $oldAtom.find('>.AtomName').text())
     return $newAtom.find('>.AtomName');
   else {
     var $newChildInterfaces = $newAtom.find('>.InterfaceList>.Interface'); 
