@@ -19,7 +19,9 @@ initSession();
 <meta http-equiv="no-cache">
 <meta http-equiv="Expires" content="-1">
 <meta http-equiv="cache-Control" content="no-cache"> 
- 
+
+<link rel="apple-touch-icon-precomposed" href="images/AmpersandIcon.png">
+
 <link href="css/Ampersand.css" rel="stylesheet" type="text/css"/>
 <link href="css/Custom.css" rel="stylesheet" type="text/css"/>
 
