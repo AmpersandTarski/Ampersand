@@ -1,11 +1,20 @@
 var navigationWarningEnabled = true;
 
 function initialize() {
+  tweakLayout();
   initCreateNewMenu();
   initLogWindows();  // Cannot call this from the post callback in sendCommands, since the existing click events somehow
   initializeAtoms(); // cannot be unbound from there. Therefore, initialization is split in two functions: 
                      // initialize and initializeAtoms (the latter also being called from sendCommands).
   startRefreshTimer();
+}
+
+function tweakLayout() {
+  // on an iPad, the roleSelector is posititioned too far down, so we move it up 
+  if (navigator.userAgent.match(/iPad/i) != null) {
+    var offset = $('#RoleSelector').offset();
+    $('#RoleSelector').offset({ left: offset.left, top: offset.top-2 });
+  }
 }
 
 function initializeAtoms() {
