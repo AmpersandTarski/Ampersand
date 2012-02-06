@@ -130,12 +130,12 @@ function showKeyAtom($atom, $concept) {
 }
 
 function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $tgtNrOfIfcs, $pairView) {
+  $srcHasInterfaces = $srcNrOfIfcs == 0 ? '' : ' hasInterface=' . ($srcNrOfIfcs == 1 ? 'single' : 'multiple');
+  $tgtHasInterfaces = $tgtNrOfIfcs == 0 ? '' : ' hasInterface=' . ($tgtNrOfIfcs == 1 ? 'single' : 'multiple');
+
   if (count($pairView) == 0) {
     $source = showKeyAtom($srcAtom, $srcConcept);
     $target = showKeyAtom($tgtAtom, $tgtConcept);
-        
-    $srcHasInterfaces = $srcNrOfIfcs == 0 ? '' : ' hasInterface=' . ($srcNrOfIfcs == 1 ? 'single' : 'multiple');
-    $tgtHasInterfaces = $tgtNrOfIfcs == 0 ? '' : ' hasInterface=' . ($tgtNrOfIfcs == 1 ? 'single' : 'multiple');
     
     // if source and target are the same atom and we have a key for it, don't show a tuple
     if ($violation['src'] == $violation['tgt'] && $srcConcept == $tgtConcept && getKey($srcConcept) )
@@ -155,7 +155,7 @@ function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $t
       else {
         $atom    = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
         $concept = $segment['srcOrTgt'] == 'Src' ? $srcConcept : $tgtConcept;
-        $hasInterfaces = $segment['srcOrTgt'] == 'Src' ? $srcHasInterfaces : tgtHasInterfaces;
+        $hasInterfaces = $segment['srcOrTgt'] == 'Src' ? $srcHasInterfaces : $tgtHasInterfaces;
         $r = getCoDomainAtoms($atom, $segment['expSQL']);
         
         // we label all expressionsegments as violation source or target based on the source of their expression
