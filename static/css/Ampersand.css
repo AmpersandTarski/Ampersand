@@ -121,12 +121,12 @@ body {
 
 
 .Atom[atom='']>.AtomName:after {
-    content: "<empty>";
+    content: "<leeg>";
     font-weight: bold;
 }
     
 .Atom[atom=''][status=new]>.AtomName:after {
-    content: "<new>";
+    content: "<nieuw>";
     font-weight: bold;
 }
     
