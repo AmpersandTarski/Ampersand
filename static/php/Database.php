@@ -20,6 +20,8 @@ if (isset($_REQUEST['resetSession']) ) {
   timestampHtml();
 } else if (isset($_REQUEST['testRule']) ) {
   testRule($_REQUEST['testRule']);
+} else if (isset($_REQUEST['ip']) ) {
+  echo $_SERVER['SERVER_ADDR'];
 } else if (isset($_REQUEST['commands']) ) {
   echo '<div id="UpdateResults">';
 
