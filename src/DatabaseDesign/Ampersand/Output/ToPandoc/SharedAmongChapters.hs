@@ -49,10 +49,10 @@ class Xreferencable a where
   xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")
   
 instance Xreferencable Chapter where
-  xLabel a = "chapter"++show a
+  xLabel a = "chapter" ++ escapeNonAlphaNum (show a)
   
 instance Xreferencable Picture where
-  xLabel a = "figure"++uniqueName a
+  xLabel a = "figure" ++ escapeNonAlphaNum (uniqueName a)
 
 --Image [Inline] Target
 --      alt.text (URL,title)

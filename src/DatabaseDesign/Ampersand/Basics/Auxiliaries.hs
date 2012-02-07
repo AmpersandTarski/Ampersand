@@ -9,10 +9,12 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    , zip4
    , splits
    , combinations
+   , escapeNonAlphaNum
    )
   where
    import DatabaseDesign.Ampersand.Basics.Version (fatalMsg)
- 
+   import Data.Char
+   
    fatal :: Int -> String -> a
    fatal = fatalMsg "Basics.Auxiliaries"
 
@@ -77,3 +79,10 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    combinations []       = [[]]
    combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
 
+   -- escape anything except regular characters and digits to _<character code>
+   -- e.g. escapeNonAlphaNum "a_é" = "a_95_233"
+   escapeNonAlphaNum :: String -> String
+   escapeNonAlphaNum cs = concatMap escapeNonAlphaNumChar cs
+    where escapeNonAlphaNumChar c | isAlphaNum c && isAscii c = [c]
+          escapeNonAlphaNumChar c | otherwise                 = '_' : show (ord c)
+   
