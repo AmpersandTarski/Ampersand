@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CCv221 
-   (pContext, pIncludeFile, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
+   (pContext, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger)
@@ -108,30 +108,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
 
    pIncludeStatement :: Parser Token String
    pIncludeStatement = pKey "INCLUDE" *> pString
-
-   -- this parser returns a function which, when applied to a P_Context, adds all context elements from the parsed include file
-   -- in front of the context elements in that P_Context.
-   --
-   -- The included file is surrounded with CONTEXT <name> and ENDCONTEXT to allow included files to be compiled standalone.
-   -- However, the body may consist only of context elements, so no include statements, language ids, etc. 
-   pIncludeFile         :: Parser Token (P_Context -> P_Context)
-   pIncludeFile  = addElementsToContext <$ pKey "CONTEXT" <* pConid <*> pList pContextElement <* pKey "ENDCONTEXT"
-    where addElementsToContext includedCtxtElts = \originalContext ->
-            originalContext { ctx_thms  = nub $ concat [xs | CThm xs<-includedCtxtElts] ++ ctx_thms originalContext  
-                            , ctx_pats  = [p | CPat p<-includedCtxtElts] ++ ctx_pats originalContext
-                            , ctx_PPrcs = [p | CPrc p<-includedCtxtElts] ++ ctx_PPrcs originalContext
-                            , ctx_rs    = [p | CRul p<-includedCtxtElts] ++ ctx_rs originalContext
-                            , ctx_ds    = [p | CDcl p<-includedCtxtElts] ++ ctx_ds originalContext
-                            , ctx_cs    = [c | CCon c<-includedCtxtElts] ++ ctx_cs originalContext
-                            , ctx_ks    = [k | CKey k<-includedCtxtElts] ++ ctx_ks originalContext
-                            , ctx_gs    = [g | CGen g<-includedCtxtElts] ++ ctx_gs originalContext
-                            , ctx_ifcs  = [s | Cifc s<-includedCtxtElts] ++ ctx_ifcs originalContext
-                            , ctx_ps    = [e | CPrp e<-includedCtxtElts] ++ ctx_ps originalContext
-                            , ctx_pops  = [p | CPop p<-includedCtxtElts] ++ ctx_pops originalContext
-                            , ctx_sql   = [p | CSqlPlug p<-includedCtxtElts] ++ ctx_sql originalContext
-                            , ctx_php   = [p | CPhpPlug p<-includedCtxtElts] ++ ctx_php originalContext
-                            } 
-
    
    pFormatID    :: Parser Token PandocFormat
    pFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid)
