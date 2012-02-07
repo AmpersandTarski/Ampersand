@@ -427,9 +427,9 @@ labeledHeader lev lbl str =
                  : [Para [xrefLabel lbl]]
  
 xrefLabel :: String -> Inline        -- uitbreidbaar voor andere rendering dan LaTeX
-xrefLabel myLabel = RawInline "latex" ("\\label{"++myLabel++"}")
+xrefLabel myLabel = RawInline "latex" ("\\label{"++escapeNonAlphaNum (myLabel)++"}")
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
-xrefCitation myLabel = RawInline "latex" ("\\cite{"++myLabel++"}")
+xrefCitation myLabel = RawInline "latex" ("\\cite{"++escapeNonAlphaNum (myLabel)++"}")
 
 
 -- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
