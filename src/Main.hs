@@ -9,7 +9,7 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Classes.ViewPoint (violations)
+--import DatabaseDesign.Ampersand.Classes.ViewPoint (violations)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
