@@ -48,14 +48,6 @@ picType2prefix pt = case pt of
                       PTSwitchBoard  -> "SB_"
                       PTFinterface     -> "Serv_"
 
-filenameEsc :: String -> String
-filenameEsc "" = ""
-filenameEsc (' ':cs) = '_': filenameEsc cs
-filenameEsc ('\\':cs) = '_': filenameEsc cs
-filenameEsc ('/':cs) = '_': filenameEsc cs
-filenameEsc (c:cs) | isAlphaNum c = c: filenameEsc cs
-                   | otherwise    = filenameEsc cs
-
 makePictureObj :: Options
             -> String   -- Name of the picture
             -> PictType -- Type of the picture
@@ -100,7 +92,7 @@ makePictureObj flags nm pTyp dotsource
 --       Deze functie garandeert sowieso geen uniekheid, is die garantie nodig?
 --       unieke namen voor (ConceptualGraph) datatypes zouden moeten worden gegarandeerd op het datatype als dat nodig is
 uniquePicName :: PictType -> String -> String
-uniquePicName pt nm = filenameEsc (picType2prefix pt++nm)
+uniquePicName pt nm = escapeNonAlphaNum (picType2prefix pt++nm)
 
 --         relImgPath = "img" </> user </> (baseName flags)
 --         user = takeWhile (/='.') (userAtlas flags)
