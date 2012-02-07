@@ -56,7 +56,7 @@ parseCtxM_ adlstring flags fn = tryAll versions2try
       
       try :: ParserVersion -> IO (Either ParserError P_Context)
       try pv = do { verbose flags $ "Parsing with "++show pv++"..."
-                  ; eRes <- parseADLAndIncludes adlstring fn pv flags
+                  ; eRes <- parseADL pv adlstring fn
                   ; case eRes of 
                       Right ctx  -> verboseLn flags " successful"
                                 >> return (Right ctx)
