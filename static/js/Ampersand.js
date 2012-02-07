@@ -92,7 +92,7 @@ function commitEditing() {
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
   
   if (getEmptyAtomsNotInTemplates().length > 0) {
-    alert('Nog niet alle benodigde velden zijn ingevuld.');
+    alert('Please fill out all <new> atoms first.');
     return;
   }
   if (getNonUniqueAtomLists().length > 0) {
