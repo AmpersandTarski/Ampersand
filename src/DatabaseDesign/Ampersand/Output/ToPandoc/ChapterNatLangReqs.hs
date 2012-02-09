@@ -28,21 +28,29 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                                              English ->  "Shared Language"
                                          )
                                          
-  legalRefs = [ Header 1 [Str (case language flags of
-                                              Dutch   -> "Referentietabel"
-                                              English -> "Reference table"
-                              )
+  legalRefs = [ Header 1 [Str sectionTitle
                          ]   
-              , Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0]
-                    [ [ plainStr "Wet" ], [ plainStr "Artikel" ] ]  -- law article
-                  [ [ [ plainStr $ getWet ref ],   [ plainStr $ getArtikel ref ] ] 
-                  | ref <- nub . filter (not . null) . map explRefId $ explanations fSpec 
-                  ]
+              ,  Plain [ RawInline "latex" $  unlines $
+                         [ "\\begin{longtable}{lp{10cm}}"
+                         , "\\hline "
+                         , "{\\bf "++lawHeader ++ "} & {\\bf " ++ articleHeader ++"} \\\\"
+                         , "\\hline"
+                         , "\\endhead\n" ] ++ 
+                         [ getWet ref ++ " & " ++ getArtikel ref ++"\\\\\n"
+                         | ref <- nub . filter (not . null) . map explRefId $ explanations fSpec 
+                         ] ++
+                         [ "\\end{longtable}" ]
+                       ]
+                         
               ]
-         where plainStr str = Plain [Str str]
-               getWet ref = reverse . takeWhile (/=' ') . reverse $ ref
-               getArtikel ref = reverse . dropWhile (==' ') .dropWhile (/=' ') . reverse $ ref
-               
+         where getWet ref = reverse . takeWhile (/=' ') . reverse $ ref --  the law is the last word in the ref
+               getArtikel ref = reverse . dropWhile (`elem` [' ', ',']) .dropWhile (/=' ') . reverse $ ref 
+               -- the article is everything but the law (and we also drop any trailing commas)
+               (sectionTitle, lawHeader, articleHeader) = 
+                 case language flags of
+                   Dutch   -> ("Referentietabel", "Wet", "Artikel")
+                   English -> ("Reference table", "Law", "Article")
+
   dpIntro :: [Block]
   dpIntro = 
     case language flags of
