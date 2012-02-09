@@ -82,7 +82,7 @@ genNewAtomDropDownMenu();
 $timeStamp = getTimestamp($err);
 if ($err) {
   echo '<br/>';
-  echo 'Cannot access database. Make sure the MySQL server is running, or <a href="Installer.php">create a new database</span></a>.';  
+  echo 'Cannot access database. Make sure the MySQL server is running, or <a href="javascript:resetDatabase()">create a new database</span></a>.';  
 } else if (!isset($_REQUEST['interface']) || !isset($_REQUEST['atom'])) {
   // Add dummy AmpersandRoot with just the refresh interval and timestamp to auto update signals.
   // This will be obsolete once these and other properties are in a separate div. 
