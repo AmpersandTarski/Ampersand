@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "RELATION", "MEANING", "CONCEPT", "KEY", "TXT"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
-                       , "ONE", "BIND", "TOPHP", "BINDING"
+                       , "ONE"
                        , "BYPLUG"
                        , "ROLE", "EDITS", "MAINTAINS"
                        ]
@@ -52,26 +52,18 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pPopulations :: Parser Token [P_Population]
    pPopulations = pList1 pPopulation
 
-   pBind             :: Parser Token (P_Declaration,String)
-   pBind              = rebuild <$ pKey "BIND" <*> pDeclaration <* pKey "TOPHP" <*> (pConid <|> pString)
-                       where rebuild d s = (d,s)
-
-   pBindings :: Parser Token [(P_Declaration,String)]
-   pBindings = (pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` []
-   
    pContext         :: Parser Token (P_Context, [String]) -- the result is the parsed context and a list of include filenames
    pContext  = rebuild <$ pKey "CONTEXT" <*> pConid
                             <*> pList pIncludeStatement 
                             <*> optional pLanguageID 
                             <*> optional pFormatID 
-                            <*> optional (rebexpr <$ pKey ":" <*> pExpr <*> pBindings ) <*>
                               --    ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
-                               pList pContextElement <* pKey "ENDCONTEXT"
+                            <*> pList pContextElement <* pKey "ENDCONTEXT"
                        where
                        rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
                        rebexpr x y = (x,y)
-                       rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> Maybe (P_Expression, [(P_Declaration, String)]) -> [ContextElement] -> (P_Context, [String])
-                       rebuild nm includeFileNames lang fmt env ces = 
+                       rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+                       rebuild nm includeFileNames lang fmt ces = 
                          (PCtx{ ctx_nm    = nm
                               , ctx_lang  = lang
                               , ctx_markup= fmt
@@ -88,7 +80,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                               , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
                               , ctx_sql   = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
                               , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
-                              , ctx_env   = env                     -- an expression on the context with unbound relations, to be bound in this environment
                               }
                           , includeFileNames)
 

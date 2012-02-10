@@ -76,7 +76,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                               , ctx_pops  = [p | CPop p<-ces]             -- The populations defined in this context
                               , ctx_sql   = [plug | CSqlPlug plug<-ces]   -- user defined sqlplugs, taken from the Ampersand script
                               , ctx_php   = [plug | CPhpPlug plug<-ces]   -- user defined phpplugs, taken from the Ampersand script
-                              , ctx_env   = Nothing
                               }
                           where
                                ps = [p | CPat p<-ces]
