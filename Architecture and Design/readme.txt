@@ -1,1 +1,0 @@
-This directory contains everything that documents the ADL tool, the source of which is in the directory src.
