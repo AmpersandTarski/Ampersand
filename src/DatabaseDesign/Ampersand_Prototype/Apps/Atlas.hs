@@ -217,7 +217,6 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
-       , ctx_env   = Nothing
       }
 
 atlas2rule :: String -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> P_Rule
