@@ -71,7 +71,6 @@ where
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
             , ctx_sql    :: P_ObjectDefs    -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php    :: P_ObjectDefs    -- ^ user defined phpplugs, taken from the Ampersand script
-            , ctx_env    :: Maybe (P_Expression , [(P_Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
             }
 
    instance Show P_Context where
