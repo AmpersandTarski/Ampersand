@@ -58,7 +58,7 @@ PURPOSE|{-
 3
 
 0
-Population or Service (Box[])
+Population or Interface (Box[])
 -16777208
 255
 
@@ -83,11 +83,11 @@ Population or Service (Box[])
 0
 Box
 3
-Comment and string
+Comment and string and box[]
 -16777208
 6340863
 This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
-'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
+'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}|\[[^]\r\n]*\]
 0
 1
 0
@@ -108,15 +108,15 @@ This element does nothing except to make sure that the start/end of block elemen
 0
 Start of box[]
 -16777208
-16760928
+192
 With this element we make the layout "Box" toggle to itself.  This will add "Population or Service" to the stack of layouts to toggle back to.  The stack is popped by "end of box[]".  This way, the layout "box" can be nested into itself.
-\[
+\s*=\s*\[
 0
 0
 2
-0
 1
-0
+1
+6
 
 0
 
