@@ -141,6 +141,7 @@ function sendCommands(commandArray) {
 
         // update the timestamp
         $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
+        $('#AmpersandRoot').attr('isNew', $newPage.find('#AmpersandRoot').attr('isNew') );
         $('#AmpersandRoot').attr('editing','false');
 
         // we ignore the signals from $newPage, since we have just set them.
@@ -318,11 +319,13 @@ function setEditHandlersBelow($elt) {
     var relationToParent = $atomList.attr('relation');
     
     var $atom = getEnclosingAtom($(this)); 
+    if ($atom.attr('atomic')=='true') {
+      // this code also allows editing if there is a child atom in an editable relation
+      //var childrenWithRelation = $atom.find('>.InterfaceList>.Interface>.AtomList[relation]');
+      if (relationToParent /* || childrenWithRelation.length != 0 */) {
+        startAtomEditing($atom);
     
-    // this code also allows editing if there is a child atom in an editable relation
-    //var childrenWithRelation = $atom.find('>.InterfaceList>.Interface>.AtomList[relation]');
-    if (relationToParent /* || childrenWithRelation.length != 0 */) {
-      startAtomEditing($atom);
+      }
     }
   });
  
