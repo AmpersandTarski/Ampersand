@@ -1,50 +1,70 @@
 module DatabaseDesign.Ampersand.ADL1.TypeCheck (inferType) where
 
 import Prelude hiding (Ord(..))
+import DatabaseDesign.Ampersand.Core.Poset.Instances
 import DatabaseDesign.Ampersand.Core.Poset
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Basics
-import Data.List
+import DatabaseDesign.Ampersand.Basics hiding (sort)
+import Data.List hiding (sort)
+import DatabaseDesign.Ampersand.Fspec.ShowADL
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import Debug.Trace
 
 -- TODO: specializations & nice errors
 
 inferType :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
-             ctxt -> P_Expression -> ([Sign], P_Expression) 
-inferType context e = inferTypeWithCast context Nothing Nothing e
+             ctxt -> ( [Expression], a) -> P_Expression -> String 
+inferType context (ampExps, _) e =
+  let (possibles, res) = inferTypeWithCast context Nothing Nothing e
+      --(possibles, res) = (fst $ infer context (error "assigned accessed") e, "NO RES")
+  in  "\nType checking:"++showADL e++"\n" ++
+      "Ampersand:\n"++ concat [ showADL e ++ " :: [" ++ show (source ampExp) ++ "*" ++ show (target ampExp) ++ "]\n" | ampExp <- ampExps] ++
+      "Martijn, possible: "++ show possibles ++ "\n" ++
+      case res of Right typedExp -> "Typed:" ++ showADL typedExp
+                  Left  err      -> "ERROR:" ++ err  
 
 inferTypeWithCast :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
-                     ctxt -> Maybe A_Concept -> Maybe A_Concept -> P_Expression -> ([Sign], P_Expression) 
+                     ctxt -> Maybe A_Concept -> Maybe A_Concept -> P_Expression -> ([Sign], Either String P_Expression) 
 inferTypeWithCast context  mSrc mTgt e =
-  let (possibleTypes, typedExp) = infer context assigned e
-      assigned = case cast mSrc mTgt possibleTypes of
-                                 [aType] -> aType
-                                 []      -> typeError "not typeable"
-                                 _       -> typeError "ambiguous"
-   in  (possibleTypes, typedExp)
- where cast srcCast tgtCast types = [ sg | sg@(Sign s t) <- types, srcCast `eqOrNothing` s && tgtCast `eqOrNothing` t ]
+  let (possibleTypes, result) = infer context assigned e
+      (assigned,mErr) = case cast mSrc mTgt possibleTypes of
+                               [aType] -> (aType, Nothing)
+                               []      -> (undefined, Just "not typeable")
+                               _       -> (undefined, Just "ambiguous") -- todo use dummy type instead of undefined
+   in  (possibleTypes, case mErr of Just err -> Left err
+                                    Nothing -> result)
+ where cast srcCast tgtCast types =
+         case types of
+               []       -> []
+               tps@(tp@(Sign ms mt):_) -> 
+                 greatestSign [ sg | sg@(Sign s t) <- types, srcCast `eqOrNothing` s && tgtCast `eqOrNothing` t ]
        Nothing `eqOrNothing` _  = True
-       Just t1 `eqOrNothing` t2 = t1 == t2
+       Just t1 `eqOrNothing` t2 = t2 <= t1
 
 infer :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
-         ctxt -> Sign -> P_Expression -> ([Sign], P_Expression) 
+         ctxt -> Sign -> P_Expression -> ([Sign], Either String P_Expression) 
 infer context ~assigned@(Sign assignedSrc assignedTgt) pExp =
   case pExp of 
     (Prel P_I)         -> ( [ Sign c c | c <- concs context ]
-                          , if assignedSrc==assignedTgt then Prel P_I `withType` assigned else typeError "I")
+                          , if assignedSrc==assignedTgt then Right $ Prel P_I `withType` assigned else typeError "I")
     (Prel mp1@P_Mp1{}) -> ( [ Sign c c | c <- concs context ]
-                          , if assignedSrc==assignedTgt then Prel mp1 `withType` assigned else typeError "Mp1")
-    (Prel P_V)         -> ( [ Sign src tgt | src <- concs context, tgt <- concs context ], Prel P_V `withType` assigned)
+                          , if assignedSrc==assignedTgt then Right $ Prel mp1 `withType` assigned else typeError "Mp1")
+    (Prel P_V)         -> ( [ Sign src tgt | src <- concs context, tgt <- concs context ], Right $ Prel P_V `withType` assigned)
     (Prel (P_Rel nm o)) -> let relTypes = getRelTypes context nm
-                           in (relTypes, if assigned `elem` relTypes then Prel (P_Rel nm o) `withType` assigned else typeError "Rel")
+                           in (relTypes, if assigned `elem` relTypes then Right $ Prel (P_Rel nm o) `withType` assigned else typeError "Rel")
     (PTyp e tp) -> let (possibles, typedExp) = infer context assigned e
-                       (Sign aSrc aTgt) = pSign2aSign context tp 
-                   in  ([Sign aSrc aTgt], if (Sign aSrc aTgt) `elem` possibles
-                                          then if aSrc==assignedSrc && aTgt==assignedTgt 
-                                               then typedExp
-                                               else typeError "sig" -- assigned type from above doesn't fit
-                                               else typeError "wrong type sig") -- type sig doesn't fit possible types
-    (PFlp e)        -> let (psbls, typedExp) = infer context (Sign assignedTgt assignedSrc) e in (map (\(Sign s t)-> Sign t s) psbls, PFlp typedExp)
+                       (Sign src tgt) = pSign2aSign context tp 
+                       possibles' = [Sign s t | Sign s t <- possibles, s<=src && t <= tgt]
+                   in  ( possibles'
+                       , if not . null $ possibles'
+                         then if src<=assignedSrc && tgt<=assignedTgt 
+                              then typedExp
+                              else typeError "sig" -- assigned type from above doesn't fit
+                         else typeError "wrong type sig") -- type sig doesn't fit possible types
+    (PFlp e)        -> case infer context (Sign assignedTgt assignedSrc) e of 
+                          (psbls, Left err) -> (psbls, Left err) 
+                          (psbls, Right typedExp) ->(map (\(Sign s t)-> Sign t s) psbls, Right $ PFlp typedExp)
     (PBrk e)        -> mapA PBrk $ infer context assigned e 
     (PCpl e)        -> mapA PCpl $ infer context assigned e 
     (Pequ (e1, e2)) -> mapA (Pequ . listToPair) $ inferListEqual context assigned [e1, e2] 
@@ -56,58 +76,86 @@ infer context ~assigned@(Sign assignedSrc assignedTgt) pExp =
     (PRad es)       -> mapA PRad $ inferListChain context assigned es
     (PPrd es)       -> mapA PPrd $ inferListChain context assigned es
 
-    (PLrs _)        -> typeError "Left residuals are not yet supported"
-    (PRrs _)        -> typeError "Left residuals are not yet supported"
-    (PKl0 _)        -> typeError "Kleene star is not yet supported"
-    (PKl1 _)        -> typeError "Kleene plus is  not yet supported"
+    (PLrs _)        -> error "Left residuals are not yet supported"
+    (PRrs _)        -> error "Left residuals are not yet supported"
+    (PKl0 _)        -> error "Kleene star is not yet supported"
+    (PKl1 _)        -> error "Kleene plus is  not yet supported"
 
 inferListEqual :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
-                  ctxt -> Sign -> [P_Expression] -> ([Sign], [P_Expression])
-inferListEqual _       _        []     = typeError "Incorrect P structure"
+                  ctxt -> Sign -> [P_Expression] -> ([Sign], Either String [P_Expression])
+inferListEqual _       _        []     = error "Fatal, incorrect P structure"
 inferListEqual context assigned [e]    = mapA (\x-> [x]) $ infer context assigned e
-inferListEqual context assigned (e:es) = 
-  let (possibles1, typedExp) = infer context assigned e
-      (possibles2, typedExps) = inferListEqual context assigned es
-      possibleTypes = [ Sign src tgt | Sign src tgt <- possibles1
-                      , Sign src' tgt' <- possibles2
-                      , src == src' && tgt == tgt' ]
-      finalType = if assigned `elem` possibleTypes then typedExp:typedExps  else typeError "list not equally typed"
-  in  (possibleTypes, finalType) -- finalType is typedExp or aExp
+inferListEqual context assigned (e:es) =
+  let (possiblesHead, resHead) = infer context assigned e
+      (possiblesTail, resTail) = inferListEqual context assigned es
+      possiblesList = nub $
+                      [ Sign src tgt | Sign src tgt <- possiblesHead
+                                     , Sign src' tgt' <- possiblesTail
+                                     , src >= src' && tgt >= tgt' ] ++
+                      [ Sign src tgt | Sign src tgt <- possiblesTail
+                                     , Sign src' tgt' <- possiblesHead
+                                     , src >= src' && tgt >= tgt' ]
+      resList = case (resHead, resTail) of
+                  (Left err, _)       -> Left err
+                  (Right _, Left err) -> Left err
+                  (Right typedExp, Right typedExps) -> if assigned `elem` possiblesList 
+                                                       then Right $ typedExp:typedExps
+                                                       else Left  "list not equally typed"   
+  in trace ("\n"++show possiblesHead ++" vs "++ show possiblesTail) $ (possiblesList, resList)
 
 inferListChain :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
-                  ctxt -> Sign -> [P_Expression] -> ([Sign], [P_Expression])
-inferListChain _       _                    []     = typeError "Incorrect P structure"
+                  ctxt -> Sign -> [P_Expression] -> ([Sign], Either String [P_Expression])
+inferListChain _       _                    []     = error "Fatal, incorrect P structure"
 inferListChain context assigned             [e]    = mapA (\x-> [x]) $ infer context assigned e
-inferListChain context ~(Sign assignedSrc assignedTgt) (e:es) = 
-  let (possibles1, typedExp) = infer context (Sign assignedSrc middleType) e 
-      (possibles2, typedExps) = inferListChain context (Sign middleType assignedTgt) es
-      possibleTypes = [  Sign src tgt | Sign src med <- possibles1, Sign med' tgt <- possibles2, med == med' ]
-      left  = [ med |  Sign src med <- possibles1, src == assignedSrc ]
-      right = [ med |  Sign med tgt <- possibles2, tgt == assignedTgt ]
-      middleType = case left `intersect` right of
-                     [m] -> m
-                     []  -> typeError "compose no match"
-                     _   -> typeError $ "compose" ++ "ambiguity"
-  in  (nub possibleTypes, typedExp : typedExps) -- maybe doubles are already an typeError?  
+inferListChain context ~assigned@(Sign assignedSrc assignedTgt) (e:es) = 
+  let (possiblesHead, resHead) = infer context (Sign assignedSrc middleType) e 
+      (possiblesTail, resTail) = inferListChain context (Sign middleType assignedTgt) es
+      possiblesList = nub [  Sign src tgt | Sign src med <- possiblesHead, Sign med' tgt <- possiblesTail, med == med' ]
+      left  = [ med |  Sign src med <- possiblesHead, src == assignedSrc ]
+      right = [ med |  Sign med tgt <- possiblesTail, tgt == assignedTgt ]
+      (middleType, mErr) = case left `intersect` right of
+                             [m] -> (m, Nothing)
+                             []  -> (undefined, Just "compose no match")
+                             _   -> (undefined, Just $ "compose" ++ "ambiguity")
+      resList = case (resHead, resTail, mErr) of
+                  (Left err, _, _)             -> Left err
+                  (Right _, Left err, _)       -> Left err
+                  (Right _, Right _, Just err) -> Left err
+                  (Right typedExp, Right typedExps, Nothing) -> 
+                    if assigned `elem` possiblesList 
+                    then Right $ typedExp:typedExps
+                    else Left  "list not equally typed"   
+                    
+  in  (possiblesList, resList)  
 
 -- Utils
 
+greatestSign :: [Sign] -> [Sign]
+greatestSign []             = [] -- error "Greatest []"
+greatestSign (sign : signs) = greatestSign' sign signs
+ where greatestSign' gr []              = [gr] 
+       greatestSign' (Sign grs grt) (Sign s t : ss) | grs >= s && grt >= t = greatestSign' (Sign grs grt) ss
+       greatestSign' (Sign grs grt) (Sign s t : ss) | s >= grs && t >= grt = greatestSign' (Sign s t) ss
+       greatestSign' _              _               | otherwise            = []
+
+ 
 withType :: P_Expression -> Sign -> P_Expression
 withType e t = PTyp e (pSign t)
 
-mapA :: (a->a') -> ([Sign], a) -> ([Sign], a')
-mapA f (types, a) = (types, f a)
+mapA :: (a->a') -> ([Sign], Either String a) -> ([Sign], Either String a')
+mapA f (types, result) = (types, case result of Right a  -> Right $ f a
+                                                Left err -> Left err)
 
 getRelTypes :: Language context => context -> String -> [Sign] 
 getRelTypes context relName = [Sign (source d) (target d) | d<-declarations context, name d==relName ]
 
 listToPair :: [a] -> (a,a)
 listToPair [e1,e2] = (e1,e2) -- explicit function, so we can fatal when something is wrong
-listToPair _       = typeError "fatal, wrong list length"
+listToPair _       = error "fatal, wrong list length"
 
 -- Temporary stuff
-typeError :: String -> a
-typeError msg = error $ "New type checker: " ++ msg
+typeError :: String -> Either String a
+typeError msg = Left $ "New type checker: " ++ msg
 
 
 -- temp backward mapping because we generate a typed P now
@@ -137,3 +185,32 @@ pCpt2aCpt contxt pc
             ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
             ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
             }
+{-
+BUGS:
+
+ab :: A * B
+ab /\ I
+ampersand: !fatal error 705 (module P2A_Converter, Ampersand v2.2.0.444:445M)
+  no solutions and no inferUniIsc for ab/\ I 
+
+
+BUGS?
+aabb[A*B] :: [A*B]      no type error?
+
+
+ab -  aabb   :: [A*B]   no type error?
+ab /\ -aabb  :: [AA*BB] why not equal to previous? (and why no type error)
+
+UNCLEAR:
+
+example Stef different errors when e1 - e2 is rewritten to e1 /\ -e2?
+
+RULE t3 : V[AA*B] /\ V[A*BB]
+The pattern named "Type" contains errors in the rule at line line 36, file "Type.adl":
+Incomparable types in expression  V [AA*B]/\ V [A*BB] between
+   [AA*B] (in V[AA*B])
+   [A*BB] (in V[A*BB])
+why not AA*BB?
+
+
+-}
