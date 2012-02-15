@@ -151,21 +151,21 @@ doGenUML fSpec flags =
 -- can be referenced while rendering the Fspc.
 -- This function generates a pandoc document, possibly with pictures from an fSpec.
 doGenDocument :: Fspc -> Options -> IO()
-doGenDocument fSpec flags
-   = verboseLn flags ("Processing "++name fSpec)                              >>
-     makeOutput                                                               >>
-     verboseLn flags ("Document has been written into " ++ outputFile ++ ".") >>
-     when (genGraphics flags && not(null thePictures) && fspecFormat flags/=FPandoc) 
-          (foldr1 (>>) [ writePicture flags p | p<-thePictures] )              >>
+doGenDocument fSpec flags =
+ do { verboseLn flags ("Processing "++name fSpec)
+    ; makeOutput
+    ; verboseLn flags ("Document has been written into " ++ outputFile ++ ".")
+    ; when (genGraphics flags && not(null thePictures) && fspecFormat flags/=FPandoc) $ 
+        mapM_ (writePicture flags) thePictures
      -- postProcessing of the generated output file depends on the format:
-     postProcessor
-     where
-       (thePandoc,thePictures) 
-            = case (theme flags, fspecFormat flags) of
+    ; postProcessor
+    }
+  where (thePandoc,thePictures) = 
+          case (theme flags, fspecFormat flags) of
  -- TODO Ticket #104: Could not find texOnly_proofdoc in any module? Where has in gone?
  --                (ProofTheme, FLatex ) -> (texOnly_proofdoc fSpec,[])     --generate a proof document
                  (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
                  (_         , _      ) -> fSpec2Pandoc fSpec flags
-       (outputFile,makeOutput,postProcessor) = writepandoc flags gis thePandoc
-       gis = concs fSpec -- the glossary items
+        (outputFile,makeOutput,postProcessor) = writepandoc flags gis thePandoc
+        gis = concs fSpec -- the glossary items
 
