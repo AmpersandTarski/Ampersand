@@ -80,6 +80,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                               , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
                               , ctx_sql   = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
                               , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
+                              , ctx_experimental = False -- is set in Components.hs
                               }
                           , includeFileNames)
 

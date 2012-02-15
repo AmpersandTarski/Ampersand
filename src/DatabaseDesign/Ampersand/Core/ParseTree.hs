@@ -71,6 +71,7 @@ where
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
             , ctx_sql    :: P_ObjectDefs    -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php    :: P_ObjectDefs    -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_experimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
             }
 
    instance Show P_Context where

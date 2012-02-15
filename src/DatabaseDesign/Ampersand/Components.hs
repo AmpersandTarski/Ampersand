@@ -59,7 +59,7 @@ parseCtxM_ adlstring flags fn = tryAll versions2try
                   ; eRes <- parseADL pv adlstring fn
                   ; case eRes of 
                       Right ctx  -> verboseLn flags " successful"
-                                >> return (Right ctx)
+                                >> return (Right $ ctx{ctx_experimental = experimental flags}) -- set the experimental flag
                       Left err -> verboseLn flags "...failed"
                                  >> return (Left err)
                   }

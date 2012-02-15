@@ -74,6 +74,7 @@ data A_Context
          , ctxsql    :: [ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp    :: [ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
+         , ctxexperimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
