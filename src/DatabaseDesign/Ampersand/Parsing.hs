@@ -14,15 +14,25 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
- 
+import Data.Char
+
 type ParserError = Message Token
+
 
 parseADL :: ParserVersion -- ^ The specific version of the parser to be used
          -> String        -- ^ The string to be parsed
          -> String        -- ^ The name of the .adl file (used for error messages)
          -> IO (Either ParserError P_Context) -- ^ The result: Either some errors, or the parsetree.
 parseADL parserVersion fileContents filename =
-  parseADL' parserVersion [] fileContents filename
+ do { (result, _) <- parseADL' parserVersion [] fileContents filename
+    ; return result
+    }
+
+-- We don't distinguish between "INCLUDE SomeADL" and "INCLUDE SoMeAdL" to prevent errors on case-insensitive file systems.
+-- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
+upperCase :: String -> String
+upperCase str = map toUpper str
+
 
 -- parse the input file and read and parse the imported files
 -- The alreadyParsed parameter keeps track of filenames that have been parsed already, which are ignored when included again.
@@ -31,40 +41,45 @@ parseADL' :: ParserVersion -- ^ The specific version of the parser to be used
          -> [String]      -- ^ Already parsed contexts 
          -> String        -- ^ The string to be parsed
          -> String        -- ^ The name of the .adl file (used for error messages)
-         -> IO (Either ParserError P_Context) -- ^ The result: Either some errors, or the parsetree.
+         -> IO (Either ParserError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
 parseADL' parserVersion alreadyParsed fileContents filename =
   do { case parseSingleADL parserVersion fileContents filename of
-           Left err -> return $ Left err
-           Right (parsedContext, includeFilenames) -> 
-             do { includeParseResults <- readAndParseIncludeFiles (filename:alreadyParsed) filename includeFilenames
-                ; case includeParseResults of
-                    Left err              -> return $ Left err
-                    Right includeContexts -> return $ Right $ foldl mergeContexts parsedContext includeContexts                 
+           Left err -> return (Left err, alreadyParsed)
+           Right (parsedContext, includeFilenames) ->
+             do { (includeParseResults, alreadyParsed') <- readAndParseIncludeFiles (upperCase filename:alreadyParsed) filename includeFilenames
+                ; return ( case includeParseResults of
+                             Left err              -> Left err
+                             Right includeContexts -> Right $ foldl mergeContexts parsedContext includeContexts
+                         , alreadyParsed' )             
                 }     
     }
 
-readAndParseIncludeFiles :: [String] -> String -> [String] -> IO (Either ParserError [P_Context])
-readAndParseIncludeFiles alreadyParsed includerFilename [] = return $ Right []
-readAndParseIncludeFiles alreadyParsed includerFilename (filename:filenames) | filename `elem` alreadyParsed = return $ Right []
-readAndParseIncludeFiles alreadyParsed includerFilename (filename:filenames) | otherwise = 
- do { result <- readAndParseIncludeFile alreadyParsed includerFilename filename
+readAndParseIncludeFiles :: [String] -> String -> [String] -> IO (Either ParserError [P_Context], [String])
+readAndParseIncludeFiles alreadyParsed includerFilename [] = return (Right [], alreadyParsed)
+readAndParseIncludeFiles alreadyParsed includerFilename (filename:filenames) = 
+ do { (result, alreadyParsed') <- readAndParseIncludeFile alreadyParsed includerFilename filename
     ; case result of
-        Left err -> return $ Left err
+        Left err -> return (Left err, alreadyParsed')
         Right context ->
-         do { results <- readAndParseIncludeFiles (filename : alreadyParsed) includerFilename filenames
+         do { (results, alreadyParsed'') <- readAndParseIncludeFiles alreadyParsed' includerFilename filenames
             ; case results of
-                Left err -> return $ Left err
-                Right contexts -> return $ Right $ context : contexts 
+                Left err -> return (Left err, alreadyParsed'')
+                Right contexts -> return (Right $ context : contexts, alreadyParsed'') 
             }
     }
 
-readAndParseIncludeFile :: [String] -> String -> String -> IO (Either ParserError P_Context)
-readAndParseIncludeFile alreadyParsed includerFilename includedFilename = 
- do { fileContents <- readFile includedFilename `catch` (\exc -> do { error $ "\n\nError: cannot read include file " ++ show includedFilename ++ 
-                                                                              ", included in " ++ show includerFilename})
-    ; parseADL' PV211 alreadyParsed fileContents includedFilename     
-    }
-   
+readAndParseIncludeFile :: [String] -> String -> String -> IO (Either ParserError P_Context, [String])
+readAndParseIncludeFile alreadyParsed includerFilename includedFilename =
+  if upperCase includedFilename `elem` alreadyParsed 
+  then return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles) 
+  else do { fileContents <- readFile includedFilename `catch` (\exc -> do { error $ "\n\nError: cannot read include file " ++ show includedFilename ++ 
+                                                                                    ", included in " ++ show includerFilename})
+          ; parseADL' PV211 alreadyParsed fileContents includedFilename     
+          }
+
+emptyContext :: P_Context
+emptyContext = PCtx "" Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] []
+
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts (PCtx nm1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1)
               (PCtx nm2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2) =
