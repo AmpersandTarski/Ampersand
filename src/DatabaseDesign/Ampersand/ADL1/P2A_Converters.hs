@@ -17,7 +17,6 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      , disambiguate
      )
 where
-import Debug.Trace
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Data.List(nub,intercalate)
 import DatabaseDesign.Ampersand.ADL1
@@ -29,6 +28,7 @@ import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
+import DatabaseDesign.Ampersand.ADL1.TypeCheck
 import Data.Maybe
 
 fatal :: Int -> String -> a
@@ -58,6 +58,7 @@ pCtx2aCtx pctx
              , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
+             , ctxexperimental = ctx_experimental pctx
              }
     cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -564,7 +565,7 @@ it removes some of the redundant ones i.e. (PTyp e sgn) for which the isolated e
 -}
 pExpr2aExpr :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_Expression -> (Expression, CtxError)
 pExpr2aExpr contxt cast pexpr
- = case infer contxt pexpr cast of
+ = case let ampRes = infer contxt pexpr cast in if cExperimental contxt then inferType contxt ampRes pexpr else ampRes of
    ([] ,[])   -> ( fatal 389 ("Illegal reference to expression '"++showADL pexpr++".")
                  , newcxe ("Unknown type error in "++showADL pexpr++".")) --should not be possible
    ([x],[])   -> if isTypeable x
