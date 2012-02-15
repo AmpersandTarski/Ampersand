@@ -102,7 +102,7 @@ where
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs'    = [ OOAssoc (nm source s) (mults rel) "" (nm target t) (mults (EFlp rel)) relname
+       assocs'    = [ OOAssoc (nm source s) (mults $ EFlp rel) "" (nm target t) (mults rel) relname
                     | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec
                     , let rel=mLkp plug
                     , not ((isSignal.head.mors) rel)
@@ -146,7 +146,7 @@ where
                     else [ OOClass (name c) (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (name (source r)) (mults r) "" (name (target r)) (mults $ EFlp r) ((name.head.morlist) r)
+       assocs'    = [ OOAssoc (name (source r)) (mults $ EFlp r) "" (name (target r)) (mults r) ((name.head.morlist) r)
                     | r<-assRels]
                     where
                      mults r = let minVal = if isTot r then MinOne else MinZero
