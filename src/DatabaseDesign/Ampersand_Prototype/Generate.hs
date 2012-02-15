@@ -88,7 +88,7 @@ generateTableInfos fSpec opts =
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
          [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++
-                                          ", table => "++showPhpStr table++", srcCol => "++showPhpStr srcCol++", tgtCol => "++showPhpStr tgtCol++")"] 
+                                          ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
          , let (table,srcCol,tgtCol) = case getRelationTableInfo fSpec rel of
                                          Just tableInfo -> tableInfo
