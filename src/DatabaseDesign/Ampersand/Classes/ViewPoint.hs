@@ -41,8 +41,9 @@ class Language a where
   --TODO -> there are more rules than rules+multrules that can be violated
   violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
   violations x = [(r,viol) |r<-invariants x++multrules x++keyrules x, viol<-ruleviolations r]
-
-
+  cExperimental :: a -> Bool 
+  cExperimental _ = False
+  
 -- | In a language, a declaration must be made for each gen.
 makeDecl :: A_Gen -> Declaration
 makeDecl g
@@ -169,6 +170,7 @@ instance Language A_Context where
   keyDefs      context = nub$(concatMap keyDefs (ctxpats context)) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
   gens         context = concatMap gens (ctxpats context) `uni` ctxgs context
   patterns             = ctxpats
+  cExperimental context = ctxexperimental context
 
 instance ProcessStructure A_Context where
   processes            = ctxprocs

@@ -9,20 +9,27 @@ import DatabaseDesign.Ampersand.Basics hiding (sort)
 import Data.List hiding (sort)
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError
+
 import Debug.Trace
 
 -- TODO: specializations & nice errors
 
+-- maybe don't use lists. It is nec. for enforcing src == tgt in I, but we can use EndoSign Concept for that
+
 inferType :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
-             ctxt -> ( [Expression], a) -> P_Expression -> String 
-inferType context (ampExps, _) e =
+             ctxt -> ([Expression], [String]) -> P_Expression -> ([Expression], [String]) 
+inferType context oldTypeCheckerResults@(ampExps, _) e =
   let (possibles, res) = inferTypeWithCast context Nothing Nothing e
       --(possibles, res) = (fst $ infer context (error "assigned accessed") e, "NO RES")
-  in  "\nType checking:"++showADL e++"\n" ++
-      "Ampersand:\n"++ concat [ showADL e ++ " :: [" ++ show (source ampExp) ++ "*" ++ show (target ampExp) ++ "]\n" | ampExp <- ampExps] ++
-      "Martijn, possible: "++ show possibles ++ "\n" ++
-      case res of Right typedExp -> "Typed:" ++ showADL typedExp
-                  Left  err      -> "ERROR:" ++ err  
+      msg = "\nType checking:"++showADL e++"\n" ++
+            "Ampersand:\n"++ concat [ showADL e ++ " :: [" ++ show (source ampExp) ++ "*" ++ show (target ampExp) ++ "]\n" | ampExp <- ampExps] ++
+            "Martijn, possibles: "++ show possibles ++ "\n" ++
+            "greatestSign: "++ show (greatestSign possibles) ++ "\n" ++
+            case res of Right typedExp -> "Typed:" ++ showADL typedExp
+                        Left  err      -> "ERROR:" ++ err
+                        
+  in  trace msg oldTypeCheckerResults
 
 inferTypeWithCast :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
                      ctxt -> Maybe A_Concept -> Maybe A_Concept -> P_Expression -> ([Sign], Either String P_Expression) 
@@ -35,10 +42,7 @@ inferTypeWithCast context  mSrc mTgt e =
    in  (possibleTypes, case mErr of Just err -> Left err
                                     Nothing -> result)
  where cast srcCast tgtCast types =
-         case types of
-               []       -> []
-               tps@(tp@(Sign ms mt):_) -> 
-                 greatestSign [ sg | sg@(Sign s t) <- types, srcCast `eqOrNothing` s && tgtCast `eqOrNothing` t ]
+         greatestSign [ sg | sg@(Sign s t) <- types, srcCast `eqOrNothing` s && tgtCast `eqOrNothing` t ]
        Nothing `eqOrNothing` _  = True
        Just t1 `eqOrNothing` t2 = t2 <= t1
 
@@ -53,14 +57,17 @@ infer context ~assigned@(Sign assignedSrc assignedTgt) pExp =
     (Prel P_V)         -> ( [ Sign src tgt | src <- concs context, tgt <- concs context ], Right $ Prel P_V `withType` assigned)
     (Prel (P_Rel nm o)) -> let relTypes = getRelTypes context nm
                            in (relTypes, if assigned `elem` relTypes then Right $ Prel (P_Rel nm o) `withType` assigned else typeError "Rel")
-    (PTyp e tp) -> let (possibles, typedExp) = infer context assigned e
+    (PTyp e tp) -> let (possibles, typedExp) = infer context assigned' e
                        (Sign src tgt) = pSign2aSign context tp 
                        possibles' = [Sign s t | Sign s t <- possibles, s<=src && t <= tgt]
+                       assigned' = if src<=assignedSrc && tgt<=assignedTgt
+                                   then Sign src tgt
+                                   else if assignedSrc <= src && assignedTgt <= tgt
+                                        then Sign assignedSrc assignedTgt
+                                        else error "Something is wrong"
                    in  ( possibles'
                        , if not . null $ possibles'
-                         then if src<=assignedSrc && tgt<=assignedTgt 
-                              then typedExp
-                              else typeError "sig" -- assigned type from above doesn't fit
+                         then typedExp 
                          else typeError "wrong type sig") -- type sig doesn't fit possible types
     (PFlp e)        -> case infer context (Sign assignedTgt assignedSrc) e of 
                           (psbls, Left err) -> (psbls, Left err) 
@@ -101,7 +108,8 @@ inferListEqual context assigned (e:es) =
                   (Right typedExp, Right typedExps) -> if assigned `elem` possiblesList 
                                                        then Right $ typedExp:typedExps
                                                        else Left  "list not equally typed"   
-  in trace ("\n"++show possiblesHead ++" vs "++ show possiblesTail) $ (possiblesList, resList)
+  in trace ("\ninferListEqual "++show possiblesHead ++" vd "++ show possiblesTail ++ "  "++show possiblesList) $
+       (possiblesList, resList)
 
 inferListChain :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
                   ctxt -> Sign -> [P_Expression] -> ([Sign], Either String [P_Expression])
@@ -131,13 +139,15 @@ inferListChain context ~assigned@(Sign assignedSrc assignedTgt) (e:es) =
 -- Utils
 
 greatestSign :: [Sign] -> [Sign]
-greatestSign []             = [] -- error "Greatest []"
+greatestSign signs = [ sign | sign  <- signs, all (sign `isSuperType`) signs ]
+ where (Sign s1 t1) `isSuperType` (Sign s2 t2) = s1 >= s2 && t1 >= t2 
+{-
 greatestSign (sign : signs) = greatestSign' sign signs
  where greatestSign' gr []              = [gr] 
        greatestSign' (Sign grs grt) (Sign s t : ss) | grs >= s && grt >= t = greatestSign' (Sign grs grt) ss
        greatestSign' (Sign grs grt) (Sign s t : ss) | s >= grs && t >= grt = greatestSign' (Sign s t) ss
        greatestSign' _              _               | otherwise            = []
-
+-}
  
 withType :: P_Expression -> Sign -> P_Expression
 withType e t = PTyp e (pSign t)
