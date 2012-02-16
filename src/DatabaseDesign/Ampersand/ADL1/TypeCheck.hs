@@ -16,7 +16,11 @@ import Debug.Trace
 -- TODO: specializations & nice errors
 
 -- maybe don't use lists. It is nec. for enforcing src == tgt in I, but we can use EndoSign Concept for that
+{-
 
+Idea: upward, add supertypes if necessary, and going down, narrow when required.
+Maybe we can even replace types by supertypes (does this create a problem when for example I[a*a] becomes I[aa*a]? 
+-}
 inferType :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
              ctxt -> ([Expression], [String]) -> P_Expression -> ([Expression], [String]) 
 inferType context oldTypeCheckerResults@(ampExps, _) e =
@@ -206,7 +210,7 @@ ampersand: !fatal error 705 (module P2A_Converter, Ampersand v2.2.0.444:445M)
 
 BUGS?
 aabb[A*B] :: [A*B]      no type error?
-
+No, narrows aabb
 
 ab -  aabb   :: [A*B]   no type error?
 ab /\ -aabb  :: [AA*BB] why not equal to previous? (and why no type error)
@@ -221,6 +225,13 @@ Incomparable types in expression  V [AA*B]/\ V [A*BB] between
    [AA*B] (in V[AA*B])
    [A*BB] (in V[A*BB])
 why not AA*BB?
+
+
+
+BUGS
+type checker: infer PCpl is implemented just like PBrk, so it cannot affect typing (which is wrong)
+
+RelBinGenSQL does not do anything for PTyp, so narrowing relations does not work
 
 
 -}
