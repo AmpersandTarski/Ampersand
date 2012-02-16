@@ -16,27 +16,27 @@ fatal = fatalMsg "Main"
 
 main :: IO ()
 main
- = do flags <- getOptions
-      if showVersion flags || showHelp flags
-        then mapM_ putStr (helpNVersionTexts ampersandVersionStr flags)
-        else do (ctx,err) <- parseAndTypeCheck flags
+ = do opts <- getOptions
+      if showVersion opts || showHelp opts
+        then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
+        else do (ctx,err) <- parseAndTypeCheck opts
                 if nocxe err 
-                  then let fspc = makeFspec flags ctx in
-                       generate flags fspc
+                  then let fspc = makeFspec opts ctx in
+                       generate opts fspc
                   else putStr (show err)
                   
   where
       parseAndTypeCheck :: Options -> IO(A_Context, CtxError) 
-      parseAndTypeCheck flags 
-                        = let scriptName = fileName flags in
+      parseAndTypeCheck opts 
+                        = let scriptName = fileName opts in
                           do scriptText <- readFile scriptName
-                             verboseLn flags "Start parsing...."
-                             pCtx <- parseCtxM_ scriptText flags scriptName
-                             pPops <- case importfile flags of
+                             verboseLn opts "Start parsing...."
+                             pCtx <- parseCtxM_ scriptText opts scriptName
+                             pPops <- case importfile opts of
                                          [] -> return []
                                          fn -> do popsText <- readFile fn
-                                                  parsePopsM_ popsText flags fn
-                             verboseLn flags "Type checking..."
+                                                  parsePopsM_ popsText opts fn
+                             verboseLn opts "Type checking..."
                              return (case pCtx of
                                         Right ctx -> typeCheck ctx pPops
                                         Left msg  -> (fatal 38 "There are errors that should have been presented!",PE [msg])
@@ -44,19 +44,20 @@ main
 
 
 --  | The Fspc is the datastructure that contains everything to generate the output. This monadic function
---    takes the Fspc as its input, and spitts out everything the user requested.
+--    takes the Fspc as its input, and spits out everything the user requested.
 generate :: Options -> Fspc -> IO ()
-generate flags fSpec = 
- do { verboseLn flags "Generating..."
-    ; when (genXML flags)      $ doGenXML      fSpec flags
-    ; when (genUML flags)      $ doGenUML      fSpec flags 
-    ; when (haskell flags)     $ doGenHaskell  fSpec flags 
-    ; when (interfacesG flags) $ interfaceGen  fSpec flags
-    ; when (genFspec flags)    $ doGenDocument fSpec flags 
-    ; when (proofs flags)      $ prove         fSpec flags
+generate opts fSpec = 
+ do { verboseLn opts "Generating..."
+    ; when (genXML opts)      $ doGenXML      fSpec opts
+    ; when (genUML opts)      $ doGenUML      fSpec opts 
+    ; when (genBericht opts)  $ doGenBericht  fSpec opts 
+    ; when (haskell opts)     $ doGenHaskell  fSpec opts 
+    ; when (interfacesG opts) $ interfaceGen  fSpec opts
+    ; when (genFspec opts)    $ doGenDocument fSpec opts 
+    ; when (proofs opts)      $ prove         fSpec opts
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
-    ; verbose flags "Done."
+    ; verbose opts "Done."
     }
 
