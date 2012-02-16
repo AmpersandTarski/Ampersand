@@ -145,7 +145,8 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Parsing,
                     DatabaseDesign.Ampersand.Fspec.GenerateUML,
-                    DatabaseDesign.Ampersand.ADL1.TypeCheck
+                    DatabaseDesign.Ampersand.ADL1.TypeCheck,
+                    DatabaseDesign.Ampersand.Output.GenBericht
 
   if flag(library)
     buildable:  True

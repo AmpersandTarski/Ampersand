@@ -2,7 +2,7 @@
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 -- 
 module DatabaseDesign.Ampersand.Components 
-  ( -- * Parsersing
+  ( -- * Parsing
     -- ** Pure parsers
     -- ** Monadic parsers
      parseCtxM_
@@ -17,6 +17,7 @@ module DatabaseDesign.Ampersand.Components
    , doGenHaskell
    , doGenXML
    , doGenUML
+   , doGenBericht
    , doGenDocument
     -- * etc...
   )
@@ -34,6 +35,7 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.GenerateUML
 import DatabaseDesign.Ampersand.Output
 import Control.Monad
+import Data.List
 import System.FilePath
 import DatabaseDesign.Ampersand.Parsing
 fatal :: Int -> String -> a
@@ -78,18 +80,19 @@ parsePopsM_   :: String            -- ^ The string to be parsed
               -> Options           -- ^ flags to be taken into account
               -> String            -- ^ The name of the .pop file (used for error messages)
               -> IO [P_Population] -- ^ The IO monad with the populations. 
-parsePopsM_ popsstring flags fn 
-               = verboseLn flags "Parsing populations."
-              >> case parsePops popsstring fn PV211 of
-                    Right res -> return res
-                    Left err -> error err
+parsePopsM_ popsstring flags fn =
+ do { verboseLn flags "Parsing populations."
+    ; case parsePops popsstring fn PV211 of
+        Right res -> return res
+        Left err -> error err
+    }
                     
 -- | Parse isolated ADL1 expression strings
 parseADL1pExpr :: String -> String -> IO P_Expression
-parseADL1pExpr pexprstr fn 
-               = case parseExpr pexprstr fn PV211 of
-                    Right res -> return res
-                    Left err -> error err
+parseADL1pExpr pexprstr fn = 
+  case parseExpr pexprstr fn PV211 of
+    Right res -> return res
+    Left err -> error err
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   Apply nocxe on the error object to determine whether there are errors.
@@ -105,38 +108,39 @@ typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aC
 -- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
 --    So the answer is: we assume a correct implementation with unambiguous expressions only.
 interfaceGen :: Fspc -> Options -> IO()
-interfaceGen    fSpec flags
-  =    writeFile outputFile (showADL fSpec) 
-    >> verboseLn flags ("Ampersand-script written to " ++ outputFile ++ ".")
-    where  outputFile = combine (dirOutput flags) "Generated.adl"
+interfaceGen    fSpec flags =
+ do { writeFile outputFile (showADL fSpec) 
+    ; verboseLn flags $ "Ampersand-script written to " ++ outputFile ++ "."
+    }
+ where outputFile = combine (dirOutput flags) "Generated.adl"
 
 prove :: Fspc -> Options -> IO()
-prove fSpec flags
-    =  verboseLn flags ("Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ ".")
-    >> writeFile outputFile (writeHtmlString defaultWriterOptions thePandoc)
-    >> verboseLn flags "Proof written."
-    where outputFile
-            = combine (dirOutput flags) (replaceExtension ("proofs_of_"++baseName flags) ".html") 
-          thePandoc = setTitle title (doc theDoc)
-          title  = text ("Proofs for "++name fSpec)
-          theDoc = para (fromList(deriveProofs flags fSpec))
-      --    theDoc = plain (text "Aap")  -- use for testing...
+prove fSpec flags =
+ do { verboseLn flags $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
+    ; writeFile outputFile $ writeHtmlString defaultWriterOptions thePandoc
+    ; verboseLn flags "Proof written."
+    }
+ where outputFile = combine (dirOutput flags) $ replaceExtension ("proofs_of_"++baseName flags) ".html" 
+       thePandoc = setTitle title (doc theDoc)
+       title  = text $ "Proofs for "++name fSpec
+       theDoc = para $ fromList (deriveProofs flags fSpec)
+       --theDoc = plain (text "Aap")  -- use for testing...
 
 doGenHaskell :: Fspc -> Options -> IO()
-doGenHaskell fSpec flags
-   =  verboseLn flags ("Generating Haskell source code for "++name fSpec)
-   >> writeFile outputFile (fSpec2Haskell fSpec flags) 
-   >> verboseLn flags ("Haskell written into " ++ outputFile ++ ".")
-   where outputFile
-           = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
+doGenHaskell fSpec flags =
+ do {  verboseLn flags $ "Generating Haskell source code for "++name fSpec
+    ; writeFile outputFile (fSpec2Haskell fSpec flags) 
+    ; verboseLn flags $ "Haskell written into " ++ outputFile ++ "."
+    }
+ where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".hs"
    
 doGenXML :: Fspc -> Options -> IO()
-doGenXML fSpec flags 
-   =  verboseLn flags "Generating XML..." >>
-      writeFile outputFile ( showXML fSpec (genTime flags))   
-   >> verboseLn flags ("XML written into " ++ outputFile ++ ".")
-   where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")
+doGenXML fSpec flags =
+ do { verboseLn flags "Generating XML..."
+    ;  writeFile outputFile $ showXML fSpec (genTime flags)   
+    ; verboseLn flags $ "XML written into " ++ outputFile ++ "."
+    }
+   where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".xml"
                
 doGenUML :: Fspc -> Options -> IO()
 doGenUML fSpec flags =
@@ -144,7 +148,17 @@ doGenUML fSpec flags =
     ; writeFile outputFile $ generateUML fSpec flags
     ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
     }
-   where outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) ".xmi")
+   where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".xmi"
+
+doGenBericht :: Fspc -> Options -> IO()
+doGenBericht fSpec flags =
+ do { verboseLn flags "Generating 'Berichtendefinities'..."
+    ; filenamesContents <- generateBericht fSpec flags 
+    ; sequence_ $ [ writeFile (combine (dirOutput flags) filename) fileContents 
+                  | (filename, fileContents) <- filenamesContents ] 
+    ; Prelude.putStrLn $ "Generated file" ++ (if length filenamesContents > 1 then "s" else "") ++
+                         ": " ++ intercalate ", " (map fst filenamesContents) ++ "."
+    }
 
 -- This function will generate all Pictures for a given Fspc. 
 -- the returned Fspc contains the details about the Pictures, so they
@@ -154,7 +168,7 @@ doGenDocument :: Fspc -> Options -> IO()
 doGenDocument fSpec flags =
  do { verboseLn flags ("Processing "++name fSpec)
     ; makeOutput
-    ; verboseLn flags ("Document has been written into " ++ outputFile ++ ".")
+    ; verboseLn flags $ "Document has been written to " ++ outputFile ++ "."
     ; when (genGraphics flags && not(null thePictures) && fspecFormat flags/=FPandoc) $ 
         mapM_ (writePicture flags) thePictures
      -- postProcessing of the generated output file depends on the format:
