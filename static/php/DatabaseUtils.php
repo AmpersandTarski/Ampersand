@@ -4,6 +4,15 @@ require __DIR__.'/../dbSettings.php';
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
 // by php/Database.php, we would need '../dbSettings.php'.
 
+// let PHP also report undefined variable references
+function terminate_missing_variables($errno, $errstr, $errfile, $errline) {
+  if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
+  echo ("$errstr in $errfile line $errline");
+
+  return false; // Let the PHP error handler handle all the rest
+}
+set_error_handler("terminate_missing_variables");
+
 // Sessions
 
 define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
@@ -11,7 +20,7 @@ define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
 function initSession() {
   global $conceptTableInfo;
   
-  if ($conceptTableInfo['SESSION']) { // only execute session code when concept SESSION is used by adl script
+  if (isset($conceptTableInfo['SESSION'])) { // only execute session code when concept SESSION is used by adl script
     // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
     //       This way, errors during initSession do not prevent the reset-database link from being visible.
     DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
@@ -72,6 +81,7 @@ function DB_doquer($quer) {
 
 function DB_doquerErr($quer, &$error) {
   global $dbName;
+  global $_SESSION;
   global $DB_link;
   global $DB_errs;
   

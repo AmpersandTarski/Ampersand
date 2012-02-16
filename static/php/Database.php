@@ -1,5 +1,5 @@
 <?php
-error_reporting(E_ALL^E_NOTICE); 
+error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
 require __DIR__.'/../Generics.php'; 
@@ -211,6 +211,7 @@ function checkRules($ruleNames) {
   global $allRulesSql;
   
   $allRulesHold = true;
+  $error = '';
 
   foreach ($ruleNames as $ruleName) {
     $ruleSql = $allRulesSql[$ruleName];
