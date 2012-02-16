@@ -133,7 +133,7 @@ function showKeyAtom($atom, $concept) {
         $keyStrs[] = $keySegment['Text'];
       else {
         $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
-        $keyStrs[] = $r[0];
+        $keyStrs[] = count($r) ? $r[0] : "";
       }
     return implode($keyStrs);
   }
@@ -148,7 +148,7 @@ function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $t
     $target = showKeyAtom($tgtAtom, $tgtConcept);
     
     // if source and target are the same atom and we have a key for it, don't show a tuple
-    if ($violation['src'] == $violation['tgt'] && $srcConcept == $tgtConcept && getKey($srcConcept) )
+    if ($srcAtom == $tgtAtom && $srcConcept == $tgtConcept && getKey($srcConcept) )
       return "<span class=\"Pair\">".
                "<span class=\"PairAtom\" atom=\"$srcAtom\" concept=\"$srcConcept\"$srcHasInterfaces>$source</span>".
              "</span>";
@@ -270,7 +270,7 @@ function getAllConceptAtoms($concept) {
   $conceptColEsc = escapeSQL($conceptCol);
   
   // need to do array_unique and array_filter, since concept table may contain duplicates and NULLs
-  return array_unique(array_filter(firstCol(DB_doquer("SELECT `$conceptColEsc` FROM `$conceptTableEsc`")),notNull));  
+  return array_unique(array_filter(firstCol(DB_doquer("SELECT `$conceptColEsc` FROM `$conceptTableEsc`")),'notNull'));  
 }
 
 function notNull($atom) { // need a type-based comparison, otherwise 0 is also null
