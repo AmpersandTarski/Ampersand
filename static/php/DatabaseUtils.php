@@ -133,7 +133,9 @@ function showKeyAtom($atom, $concept) {
         $keyStrs[] = $keySegment['Text'];
       else {
         $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
-        $keyStrs[] = count($r) ? $r[0] : "";
+        $keyStrs[] = count($r) ? $r[0] : "<Key relation not total>";
+        // this can happen in a create-new interface when the key fields have not yet been 
+        // filled out, while the atom is shown (but hidden by css) at the top. 
       }
     return implode($keyStrs);
   }

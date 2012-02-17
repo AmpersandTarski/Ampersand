@@ -36,13 +36,11 @@ function init() {
 }
 
 <?php 
-$roleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
-$interface=$_REQUEST['interface'];
-$atom = $_REQUEST['atom'];
+$selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
 
 generateInterfaceMap();
 if (isset($_REQUEST['interface'])) 
-  genEditableConceptInfo($interface);
+  genEditableConceptInfo($_REQUEST['interface']);
 ?>
 
 </script>
@@ -57,14 +55,14 @@ echo '<div class="MenuBar">';
 
 // TODO: until there is more time to design a nice user interface, we put the role selector as a list item in the top-level interfaces list
 
-echo '<div class="MenuItem" id="LinkToMain"><a href="index.php'.($roleNr>=0? '?role='.$roleNr : '').'"><span class=TextContent>Main</span></a></div>';
+echo '<div class="MenuItem" id="LinkToMain"><a href="index.php'.($selectedRoleNr>=0? '?role='.$selectedRoleNr : '').'"><span class=TextContent>Main</span></a></div>';
 topLevelInterfaceLinks();
 
 echo '<select id=RoleSelector onchange="changeRole()">';
-echo '<option value="-1"'.($roleNr==-1 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
+echo '<option value="-1"'.($selectedRoleNr==-1 ? ' selected=yes' : '').'>Algemeen</option>'; // selected if role==0 or role is not specified
 for ($i=0; $i<count($allRoles); $i++) {
   $roleNm = $allRoles[$i]['name'];
-  echo '<option value="'.$i.'"'.($roleNr==$i ? ' selected=yes' : '').'>'.$roleNm.'</option>';
+  echo '<option value="'.$i.'"'.($selectedRoleNr==$i ? ' selected=yes' : '').'>'.$roleNm.'</option>';
 }
 echo '</select>'; // the select is in front of the rest, so it floats to the right before the reset item does.
 echo '<div class="MenuItem" id="MenuBarNew"><span class=TextContent>New</span></div>';
@@ -89,7 +87,7 @@ if ($err) {
   echo "</div>";
   
   echo '<div id=SignalAndPhpLogs>';
-  genSignalLogWindow($roleNr);
+  genSignalLogWindow($selectedRoleNr);
   echo '</div>';
   
   echo '<ul id="Maintenance">';
@@ -100,7 +98,9 @@ if ($err) {
 
   genNewAtomLinks();
 } else {
-    
+  $interface= $_REQUEST['interface'];
+  $atom = $_REQUEST['atom'];
+	
   $concept = $allInterfaceObjects[$interface]['srcConcept'];
   
   $isNew = $concept!='ONE' && !isAtomInConcept($atom,$concept);
@@ -108,7 +108,7 @@ if ($err) {
   echo '<div id=AmpersandRoot interface='.showHtmlAttrStr($interface).' atom='.showHtmlAttrStr($atom).
        ' concept='.showHtmlAttrStr($allInterfaceObjects[$interface]['srcConcept']).
        ' editing='.($isNew?'true':'false').' isNew='.($isNew?'true':'false').
-       " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($roleNr)).
+       " refresh=$autoRefreshInterval dev=".($isDev?'true':'false').' role='.showHtmlAttrStr(getRoleName($selectedRoleNr)).
        ' timestamp="'.$timeStamp.'">';
   
   echo '<div class=LogWindow id=EditLog minimized=false><div class=MinMaxButton></div><div class=Title>Edit commands</div></div>';
@@ -116,7 +116,7 @@ if ($err) {
   
   echo '<div id=SignalAndPhpLogs>';
   echo '<div class=LogWindow id=PhpLog minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
-  genSignalLogWindow($roleNr);
+  genSignalLogWindow($selectedRoleNr);
   echo '</div>';
   
   echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
@@ -159,23 +159,23 @@ if ($err) {
 
 function topLevelInterfaceLinks() {
   global $allInterfaceObjects;
-  global $roleNr;
+  global $selectedRoleNr;
   
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']=='ONE' && isInterfaceForRole($interface, $roleNr)) 
+    if ($interface['srcConcept']=='ONE' && isInterfaceForRole($interface, $selectedRoleNr)) 
       echo '<div class="MenuItem" interface="'.escapeHtmlAttrStr(escapeURI($interface['name'])) // the interface attribute is there so we can style specific menu items with css
-          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($roleNr>=0? '&role='.$roleNr : '')
+          .'"><a href="index.php?interface='.escapeHtmlAttrStr(escapeURI($interface['name'])).'&atom=1'.($selectedRoleNr>=0? '&role='.$selectedRoleNr : '')
           .'"><span class=TextContent>'.htmlSpecialChars($interface['name']).'</span></a></div>';
   }
 }
 
 function genNewAtomLinks() {
   global $allInterfaceObjects;
-  global $roleNr;
+  global $selectedRoleNr;
   
   echo '<ul id=CreateList>';
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $roleNr)) {
+    if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<li interface='$interfaceStr'><a href=\"javascript:navigateToNew('$interfaceStr','$conceptStr')\">"
@@ -188,13 +188,13 @@ function genNewAtomLinks() {
 
 function genNewAtomDropDownMenu() {
   global $allInterfaceObjects;
-  global $roleNr;
+  global $selectedRoleNr;
 
   // unlike the menu bar, we don't use <a>'s here for navigation, but real click events. This is because the vertical layout may cause a lot of whitespace
   // which would not be clickable, since <a>'s don't easily stretch. The click events are initialized in initCreateNewMenu (in Ampersand.js).
   echo '<div id=CreateMenu>';
   foreach($allInterfaceObjects as $interface) {
-    if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $roleNr)) {
+    if ($interface['srcConcept']!='ONE' && isInterfaceForRole($interface, $selectedRoleNr)) {
       $interfaceStr = escapeHtmlAttrStr(escapeURI($interface['name']));
       $conceptStr = escapeHtmlAttrStr(escapeURI($interface['srcConcept']));
       echo "\n<div class=MenuItem interface='$interfaceStr' concept='$conceptStr'>"
@@ -207,12 +207,12 @@ function genNewAtomDropDownMenu() {
 
 function generateInterfaceMap() {
   global $allInterfaceObjects;
-  global $roleNr;
+  global $selectedRoleNr;
   
   echo 'function getInterfacesMap() {'; // TODO: use Json for this
   echo '  var interfacesMap = new Array();';
   foreach($allInterfaceObjects as $interface) {
-    if (isInterfaceForRole($interface, $roleNr)) {
+    if (isInterfaceForRole($interface, $selectedRoleNr)) {
       $conceptOrSpecs = array_merge(array($interface['srcConcept']), getSpecializations($interface['srcConcept']));
       
       foreach ($conceptOrSpecs as $concept) 
@@ -248,8 +248,7 @@ function generateInterface($interface, $srcAtom) {
     $codomainAtoms = array (); // in case the table would contain (null, some atom)  
   else
     $codomainAtoms = array_filter(getCoDomainAtoms($srcAtom, $interface['expressionSQL']), 'notNull'); // filter, in case table contains ($srcAtom, null)
-
-  if (count($codomainAtoms)==0 && isset($interface['min']) && $interface['min']=='One')  
+  if (count($codomainAtoms)==0 && isset($interface['min']) && $interface['min']=='One') // 'min' is only defined for editable relations  
     $codomainAtoms[] = ""; // if there should be at least one field, we add an empty field.
   
   $codomainAtoms[] = null; // the null is presented as a NewAtomTemplate (which is cloned when inserting a new atom)
@@ -290,12 +289,12 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
  * 
  * if $atom is null, we are presenting a template. Because ""==null and "" denotes an empty atom, we check with === (since "" !== null)
  */
-  global $roleNr;
+  global $selectedRoleNr;
   
   $html = "";
   $interfaces = $isTopLevelInterface ? array ($interface) : $interface['subInterfaces'];
 
-  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $roleNr));
+  $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $selectedRoleNr));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
   emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.showHtmlAttrBool(count($interfaces)==0).'>');
@@ -316,11 +315,11 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
   return $html;
 }
 
-function genSignalLogWindow($roleNr) {
+function genSignalLogWindow($selectedRoleNr) {
   echo "<div class=LogWindow id=SignalLog minimized=false><div class=MinMaxButton></div><div class=Title>".
-       ($roleNr==-1 ? "All signals" : "Signals for ".getRoleName($roleNr)).
+       ($selectedRoleNr==-1 ? "All signals" : "Signals for ".getRoleName($selectedRoleNr)).
        "</div>";
-  checkRoleRules($roleNr);
+  checkRoleRules($selectedRoleNr);
   echo "</div>";
 }
 

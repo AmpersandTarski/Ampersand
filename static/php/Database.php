@@ -14,6 +14,8 @@ initSession();
 //     Database.php?testRule=..
 //     Database.php?commands=..
 
+$selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
+
 if (isset($_REQUEST['resetSession']) ) {
   resetSession();
 } else if (isset($_REQUEST['getTimestamp']) ) {
@@ -35,7 +37,7 @@ if (isset($_REQUEST['resetSession']) ) {
   echo '</div>';
   
   echo '<div id="ProcessRuleResults">';
-  checkRoleRules($_REQUEST['role']);
+  checkRoleRules($selectedRoleNr);
   echo '</div>';
   
   if ($invariantRulesHold) {
@@ -209,6 +211,7 @@ function checkInvariantRules() {
 
 function checkRules($ruleNames) {
   global $allRulesSql;
+  global $selectedRoleNr;
   
   $allRulesHold = true;
   $error = '';
@@ -223,8 +226,8 @@ function checkRules($ruleNames) {
       $message = $ruleSql['message'] ? $ruleSql['message'] 
                                      : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
       emitAmpersandErr($message);
-      $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $_REQUEST['role']);
-      $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $_REQUEST['role']);
+      $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $selectedRoleNr);
+      $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $selectedRoleNr);
       
       $pairView = $ruleSql['pairView'];
       foreach($rows as $violation)
