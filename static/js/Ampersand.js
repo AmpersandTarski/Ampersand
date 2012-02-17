@@ -10,7 +10,7 @@ function initialize() {
 }
 
 function tweakLayout() {
-  // on an iPad, the roleSelector is posititioned too far down, so we move it up 
+  // on an iPad, the roleSelector is positioned too far down, so we move it up 
   if (navigator.userAgent.match(/iPad/i) != null) {
     var offset = $('#RoleSelector').offset();
     $('#RoleSelector').offset({ left: offset.left, top: offset.top-2 });
