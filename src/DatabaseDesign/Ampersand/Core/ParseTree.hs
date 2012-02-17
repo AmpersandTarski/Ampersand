@@ -342,10 +342,8 @@ where
    data P_Concept
       = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
       | P_Singleton 
-   instance Eq P_Concept where
-    PCpt a == PCpt b = a==b
-    P_Singleton == P_Singleton = True
-    _ == _ = False
+      deriving (Eq, Ord)
+-- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 
    instance Identified P_Concept where
     name (PCpt {p_cptnm = nm}) = nm
