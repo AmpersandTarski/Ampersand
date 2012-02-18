@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand
    , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), P_Expression(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..)
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
    , Architecture(..)
-   , A_Concept(..), newAcpt
+   , A_Concept(..), newAcpt, atomsOf
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Pattern(..)
    , Declaration(..)
@@ -80,7 +80,7 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.trim
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
-   , cptos', rulefromProp, allprops, endoprops
+   , rulefromProp, allprops, endoprops
    , Populated(..), Paire, Purpose(..), ExplObj(..), PictType(..)
    )
 where

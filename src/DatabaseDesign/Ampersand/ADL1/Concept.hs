@@ -1,10 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
-module DatabaseDesign.Ampersand.ADL1.Concept ( Conceptual(..)
-                   
-                   
-                   , newAcpt,cptos'
-                   ) 
+module DatabaseDesign.Ampersand.ADL1.Concept ( newAcpt,atomsOf) 
 where
   import DatabaseDesign.Ampersand.Basics (fatalMsg)
   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -14,20 +10,21 @@ where
   fatal = fatalMsg "ADL1.Concept"
 
 
-  class Eq c => Conceptual c where
-   isSingleton :: c -> Bool
 
-  instance Conceptual A_Concept where
-   isSingleton ONE = True
-   isSingleton _   = False
-
-  cptos' :: A_Concept -> [String]
-  cptos' C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
-  cptos' C{cptos=x} = x
-  cptos' ONE = fatal 126 "Asking for the value of the universal singleton"
+  -- | This function returns the atoms of a concept
+  atomsOf :: A_Concept -> [String]
+  atomsOf C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
+  atomsOf C{cptos=x} = x
+  atomsOf ONE = fatal 126 "Asking for the value of the universal singleton"
   
 
-  newAcpt :: String -> A_Concept
-  newAcpt nm = C{ cptnm=nm, cptgE = ((\x y -> if x==y then EQ else NC),[]), cptos = [], cpttp=[], cptdf=[]}
+  -- | Constructor of a concept with the given name and population
+  newAcpt :: String -> [String] -> A_Concept
+  newAcpt nm atoms = C { cptnm = nm
+                       , cptgE = ((\x y -> if x==y then EQ else NC),[])
+                       , cptos = atoms
+                       , cpttp = []
+                       , cptdf = []
+                       }
   
 

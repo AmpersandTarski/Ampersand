@@ -190,6 +190,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                  , rr_fps  = rulepos (lbl,po) po'
                                  , rr_mean = meaning expl
                                  , rr_msg = []
+                                 , rr_viol = Nothing
                                  }      
                         kc isSg (lbl,po) cons po' antc = hc isSg (lbl,po) antc po' cons
                         dc _ (lbl,po) defd po' expr expl
@@ -198,13 +199,15 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                  , rr_fps  = rulepos (lbl,po) po'
                                  , rr_mean = meaning expl
                                  , rr_msg = []
-                               }
+                                 , rr_viol = Nothing
+                                 }
                         ac _ (lbl,po) expr expl
                           = P_Ru { rr_nm  = if null lbl then rulid po else lbl
                                  , rr_exp = expr
                                  , rr_fps = po
                                  , rr_mean = meaning expl
                                  , rr_msg = []
+                                 , rr_viol = Nothing
                                  }
                         meaning str = [PMeaning (P_Markup Nothing Nothing str)]
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
@@ -382,6 +385,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                       , ifc_Params = params
                                   --  , ifcViols  = []
                                       , ifc_Args   = args
+                                      , ifc_Roles  = []
                                       , ifc_Obj    = P_Obj { obj_nm    = nm    
                                                            , obj_pos   = p
                                                            , obj_ctx   = expr
@@ -475,10 +479,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                   where k obj str = f <$> pKey str where f _ = obj
 
 
-
    pContent         :: Parser Token Pairs
    pContent          = pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
-
 
    pRecord          :: Parser Token Paire
    pRecord           = mkPair<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
