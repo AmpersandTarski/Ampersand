@@ -71,10 +71,11 @@ instance Relational Relation where
            I{}                 -> False
            Mp1{}               -> False
     isFalse _   = False
-    isIdent rel = case rel of
-                   I{}   -> True       -- > tells whether the argument is equivalent to I
+    isIdent rel = case rel of       -- > tells whether the argument is equivalent to I
+                   Rel{} -> False
                    V{}   -> isEndo rel && isSingleton (source rel)
-                   _     -> False
+                   I{}   -> True
+                   Mp1{} -> True
    
 
 flpDecl :: Declaration -> Declaration
@@ -240,6 +241,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ETyp e sgn   -> source sgn==target sgn && isIdent e
      ERel rel     -> isIdent rel
      EBrk f       -> isIdent f
+     EFlp f       -> isIdent f
      _            -> False  -- TODO: find richer answers for EDif, ERrs and ELrs
 
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
@@ -254,6 +256,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ETyp e sgn   -> source sgn==target sgn && isImin e
      ERel rel     -> isImin rel
      EBrk f       -> isImin f
+     EFlp f       -> isIdent f
      _           -> False  -- TODO: find richer answers for EDif, ERrs and ELrs
 
 
