@@ -7,7 +7,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Pattern(..)
  , PairView(..)
  , PairViewSegment(..)
- , SrcOrTgt(..)
+ , SrcOrTgt
  , Rule(..)
  , RuleType(..)
  , Declaration(..)

@@ -484,7 +484,7 @@ chpDiagnosis lev fSpec flags
           Dutch   -> [[Plain [Str "Concept"]], [Plain [Str "Populatie"]  ]]
           English -> [[Plain [Str "Concept"]], [Plain [Str "Population"] ]]
         )
-        [ [[Plain [Str (name c)]], [Plain [(Str . show . length . cptos) c]]]
+        [ [[Plain [Str (name c)]], [Plain [(Str . show . length . atomsOf) c]]]
         | c<-cs
         ]
      | length cs>=1 ] ++
@@ -503,7 +503,7 @@ chpDiagnosis lev fSpec flags
       ds  = [d | d<-declarations fSpec
                , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                , (not.null.decpopu) d]
-      cs  = [c | c@C{}<-ccs, (not.null.cptos) c]
+      cs  = [c | c@C{}<-ccs, (not.null.atomsOf) c]
       ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
 
   wipReport :: [Block]

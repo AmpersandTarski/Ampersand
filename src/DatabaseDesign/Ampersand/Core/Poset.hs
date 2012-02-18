@@ -72,7 +72,7 @@ makePartialOrder rs = (gE , cls)
              | otherwise = NC
       cls = map (List.nub.localsort.concat)$eqCl last$List.nub$map (List.nub.localsort.concat) (eqCl head [(List.nub.concat)[[x,y]|(x,y)<-pth]|pth<-paths])
       --localsort is needed, because an application of sort requires this partial order
-      localsort xs = List.sortBy localorder xs
+      localsort = List.sortBy localorder
       localorder a b 
             | a==b = Prelude.EQ
             | (a,b) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = Prelude.LT

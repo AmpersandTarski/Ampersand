@@ -148,7 +148,7 @@ entityfield p
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 entityconcept :: PlugSQL -> A_Concept
 entityconcept p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
-  = (newAcpt "ID"){cptos=[show idnr | (idnr,_)<-zip [(1::Int)..] (contents (mLkp p))]}  
+  = newAcpt "ID" [show idnr | (idnr,_)<-zip [(1::Int)..] (contents (mLkp p))]  
 entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
   = case concept p of
      C{} -> (concept p){cptnm=name(concept p)++ "ID"} 

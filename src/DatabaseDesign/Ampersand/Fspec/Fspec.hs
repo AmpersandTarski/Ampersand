@@ -347,7 +347,7 @@ instance Eq PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
--- This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
+-- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated 
 lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
 lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++

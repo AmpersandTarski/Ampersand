@@ -8,7 +8,6 @@ module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Associ
 import Data.Maybe
                                   
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.ADL1.Concept      (Conceptual(..))
 import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),flipProps)
 import DatabaseDesign.Ampersand.ADL1.Pair         (flipPair) 
 import DatabaseDesign.Ampersand.ADL1.Expression
@@ -117,6 +116,10 @@ instance Relational Declaration where
     isIdent d = case d of
                  Isn{} -> True   -- > tells whether the argument is equivalent to I
                  _     -> False
+
+isSingleton :: A_Concept -> Bool
+isSingleton ONE = True
+isSingleton _   = False
 
 makeRelation :: Declaration -> Relation
 makeRelation d
