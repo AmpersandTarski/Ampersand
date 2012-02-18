@@ -7,14 +7,14 @@ import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
 import DatabaseDesign.Ampersand.ADL1.Expression              (flp)
-import DatabaseDesign.Ampersand.ADL1.Concept                 (cptos')
+import DatabaseDesign.Ampersand.ADL1.Concept                 (atomsOf)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
-import DatabaseDesign.Ampersand.Basics                       (fatalMsg, Collection(..), Identified(..),eqClass)
+import DatabaseDesign.Ampersand.Basics                       (Collection(..), Identified(..),eqClass)
 import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
  
-fatal :: Int -> String -> a
-fatal = fatalMsg "Classes.ViewPoint"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Classes.ViewPoint"
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
@@ -58,7 +58,7 @@ makeDecl g
                         [ A_Markup English ReST (string2Blocks ReST ("Every "++name (source g)++" must be a " ++ name(target g)++"."))
                         , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" moet een " ++ name(target g)++" zijn."))
                         ]
-         , decpopu = [(a,b) | a <- cptos'(source g), b <- cptos'(target g), a==b]
+         , decpopu = [(a,b) | a <- (atomsOf.source) g, b <- (atomsOf.target) g, a==b]
          , decfpos = origin g
          , deciss  = True
          , decusr  = False

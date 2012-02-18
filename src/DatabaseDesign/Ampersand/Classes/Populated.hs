@@ -1,9 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..))
 where
-   import DatabaseDesign.Ampersand.ADL1.Concept                    (cptos')
+   import DatabaseDesign.Ampersand.ADL1.Concept                    (atomsOf)
    import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair)
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..))
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg)   
    
@@ -20,11 +19,11 @@ where
    
    instance Populated A_Concept where
     contents c
-       = [mkPair s s |s<-cptos' c]
+       = [mkPair s s |s<-atomsOf c]
 
    instance Populated Sign where
     contents (Sign s t)
-       = [mkPair a b |a<-cptos' s, b<-cptos' t]
+       = [mkPair a b |a<-atomsOf s, b<-atomsOf t]
 
    instance Populated Declaration where
     contents d 
@@ -32,10 +31,10 @@ where
            Sgn{}     -> decpopu d
            Isn{}     -> contents (detyp d)
            Iscompl{} -> [mkPair a b |(a,_)<-contents (detyp d),(_,b)<-contents (detyp d),a/=b]
-           Vs{}      -> [mkPair a b |a<-cptos' (source d),b<-cptos' (target d)]
+           Vs{}      -> [mkPair a b |a<-(atomsOf.source) d, b<-(atomsOf.target) d]
 
    instance Populated Relation where
-    contents (Mp1 x (C {cptnm="SESSION"})) = [] -- TODO: HACK to prevent populating SESSION
+    contents (Mp1 _ (C {cptnm="SESSION"})) = [] -- TODO: HACK to prevent populating SESSION
     contents (Mp1 x _)                     = [mkPair x x]
     contents rel                           = contents (makeDeclaration rel)
 
@@ -49,11 +48,11 @@ where
             EIsc es    -> foldr1 isc (map contents es)
             EDif (l,r) -> contents l >- contents r
             -- The left residual lRel/rRel is defined by y(left/rRel)x if and only if for all z in X, x rRel z implies y lRel z.
-            ELrs (l,r) -> [(y,x) | x<-cptos' (source l), y <-cptos' (source r)
-                                 , null [z |z<-cptos' (target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
+            ELrs (l,r) -> [(y,x) | x<-(atomsOf.source) l, y <-(atomsOf.source) r
+                                 , null [z |z<-(atomsOf.target) r, (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
             -- The right residual lRel\rRel is defined by x(lRel\rRel)y if and only if for all z in X, z lRel x implies z rRel y.
-            ERrs (l,r) -> [(x,y) | x<-cptos' (target l), y <-cptos' (target r)
-                                 , null [z |z<-cptos' (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
+            ERrs (l,r) -> [(x,y) | x<-(atomsOf.target) l, y <-(atomsOf.target) r
+                                 , null [z |z<-(atomsOf.source) l, (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
             ERad es    -> if null es 
                           then fatal 55 "Cannot compute contents of ERad []"
                           else let (dx,_,_,_)
