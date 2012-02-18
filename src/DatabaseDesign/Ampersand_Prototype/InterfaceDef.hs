@@ -54,7 +54,7 @@ where
         (if name fspc == "ctxAtlas"
          then
           [ "      <a HREF=\"ctxAtlas.php?content=Atlas&Atlas="
-                ++head([ x |c<-concs fspc,name c=="Context",x<-cptos' c]++[error "Bug at line 52 of InterfaceDef.hs"])
+                ++head([ x |c<-concs fspc,name c=="Context",x<-atomsOf c]++[error "Bug at line 52 of InterfaceDef.hs"])
                 ++"\" TITLE=\"Functies die u kunt uitvoeren op de huidige context\" class=\"menuItem\" >Rapportage</a>"
           , "      <a HREF=\"ctxAtlas.php?content=Meterkast&Meterkast="++namespace flags
                 ++"\" TITLE=\"Overzicht van uw eerder geladen Ampersand scripts\" class=\"menuItem\" >Bestandsoverzicht</a>"
@@ -83,9 +83,9 @@ where
           ["  if ($_REQUEST['content']=='Contextoverzicht') {"
           , "    echo \"<DIV class='Floater ctxinfo'>\";"
           , "    echo \"  <DIV class='FloaterHeader'>\";"
-          , "    echo \"    <DIV class='FloaterContent'>aantal relaties : "++show(length[ x |c<-concs fspc,name c=="Relation",x<-cptos' c])++"</DIV>\";"
-          , "    echo \"    <DIV class='FloaterContent'>aantal concepten: "++show(length[ x |c<-concs fspc,name c=="Concept",x<-cptos' c])++"</DIV>\";"
-          , "    echo \"    <DIV class='FloaterContent'>aantal regels   : "++show(length[ x |c<-concs fspc,name c=="UserRule",x<-cptos' c])++"</DIV>\";"
+          , "    echo \"    <DIV class='FloaterContent'>aantal relaties : "++show(length[ x |c<-concs fspc,name c=="Relation",x<-atomsOf c])++"</DIV>\";"
+          , "    echo \"    <DIV class='FloaterContent'>aantal concepten: "++show(length[ x |c<-concs fspc,name c=="Concept" ,x<-atomsOf c])++"</DIV>\";"
+          , "    echo \"    <DIV class='FloaterContent'>aantal regels   : "++show(length[ x |c<-concs fspc,name c=="UserRule",x<-atomsOf c])++"</DIV>\";"
           , "    echo \"  </DIV>\";"
           , "    echo \"</DIV>\";"
           , "  }"

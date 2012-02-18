@@ -154,8 +154,8 @@ atlas2context fSpec flags =
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
       --Context--
-      cxs <- selectconcept conn fSpec (newAcpt "Context")
-      pats <- selectconcept conn fSpec (newAcpt "Pattern")
+      cxs <- selectconcept conn fSpec (newAcpt "Context" [])
+      pats <- selectconcept conn fSpec (newAcpt "Pattern" [])
       --Relation
       relname <- selectdecl conn fSpec (therel fSpec "rel" [] [])
       relsc <- selectdecl conn fSpec (therel fSpec "src" [] [])

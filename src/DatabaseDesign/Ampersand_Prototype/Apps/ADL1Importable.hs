@@ -70,8 +70,8 @@ instance ADL1Importable A_Concept where
  makeADL1Populations atlasds cs 
    = let cptaof = [makeRelation d |d<-atlasds,name d=="atomof"]
          cptasx = [makeRelation d |d<-atlasds,name d=="atomsyntax"]
-     in  (makepopu [(c#>x,c) |c<-cs,x<-cptos' c] fst cptaof (name.snd))
-        :(makepopu [(c#>x,x) |c<-cs,x<-cptos' c] fst cptasx snd)
+     in  (makepopu [(c#>x,c) |c<-cs,x<-atomsOf c] fst cptaof (name.snd))
+        :(makepopu [(c#>x,x) |c<-cs,x<-atomsOf c] fst cptasx snd)
         :[]
 
 instance ADL1Importable ConceptDef where
