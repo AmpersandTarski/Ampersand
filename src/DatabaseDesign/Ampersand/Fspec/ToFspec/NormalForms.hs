@@ -38,8 +38,9 @@ where
                        where r' = case r of
                                     Blk{} -> r
                                     _     -> r{paMotiv = ms} 
--- BECAUSE? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
--- Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
+-- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
+-- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
+-- BECAUSE! Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
 -- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
 -- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
 -- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
@@ -150,7 +151,7 @@ where
                            | not eq && isEIsc k     = (distribute ECps EIsc isECps isEIsc (ECps (k:ks)), ["distribute /\\ over ;"], "==>")
                            | isEUni k               = (distribute ECps EUni isECps isEUni (ECps (k:ks)), ["distribute \\/ over ;"], "<=>")
                            | and [isNeg x |x<-k:ks] = (notCpl (ERad [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
-                           | isEUni (last (k:ks))   = (EUni [ECps (init (k:ks)++[t']) |EUni xs<-[last (k:ks)], t'<-xs], ["distribute \\/ over ;"], "<=>")
+                           | isEUni (last (k:ks))   = (EUni [ECps (init (k:ks)++[t']) |EUni xs<-[last (k:ks)], t'<-xs], ["distr \\/ over ;"], "<=>")
                            | otherwise              = (if isECps f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
                            where (t,steps, equ')    = nM k []
                                  (f,steps',equ'')   = nM (ECps ks) (k:rs)
@@ -374,5 +375,5 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
    isI (EUni fs) = all isI fs
    isI (EKl0 e ) = isI e
    isI (EKl1 e ) = isI e
-   isI (ECpl e ) = isI e
+   isI (EFlp e ) = isI e
    isI _ = False            

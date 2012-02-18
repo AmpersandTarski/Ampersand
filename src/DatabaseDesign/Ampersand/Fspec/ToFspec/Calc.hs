@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
             ( deriveProofs 
             , lambda
             , checkMono
-            , showProof
+            , showProof, showPrf
             , testInterface )
 where
 
@@ -364,6 +364,15 @@ where
                                        showProof shw prf
                                        --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
    showProof _  []                   = []
+
+   showPrf :: (expr->String) -> Proof expr -> [String]
+   showPrf shw [(expr,_,_)]        = [ "    "++shw expr]
+   showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++
+                                     (if null ss  then [ equ ] else
+                                      if null equ then [ (unwords ss) ] else
+                                      [ equ++" { "++intercalate " and " ss++" }" ])++
+                                     showPrf shw prf
+   showPrf _  []                   = []
 
 -- derivMono provides a derivation to prove that (precondition) r is a subset of (postcondition) r'.
 -- This is useful in proving that an action {expr} a {expr'} maintains its invariant, i.e. that  expr|-expr'  holds (proven by monotony properties)
