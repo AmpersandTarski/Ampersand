@@ -3,6 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
 import DatabaseDesign.Ampersand.Fspec.Fspec (lookupCpt)
+import DatabaseDesign.Ampersand.Fspec(showPrf,cfProof)
 import Prelude hiding (writeFile,readFile,getContents)
 import Data.Function
 import Data.List
@@ -220,9 +221,13 @@ generateInterface fSpec opts interface =
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = indent (depth*2) $
-  [ "array ( 'name' => "++showPhpStr (name object)
-  , "      // adl expression: "++escapePhpStr (show normalizedInterfaceExp)  -- escape for the pathological case that one of the names in the relation contains a newline
-  ]
+  [ "array ( 'name' => "++showPhpStr (name object)]
+  ++ (if objctx object /= normalizedInterfaceExp && verboseP opts
+      then   ["      // original expression:"]
+           ++["      // "++escapePhpStr ls | ls<-showPrf showADL (cfProof showADL (objctx object))] -- escape for the pathological case that one of the names in the relation contains a newline
+           ++["      // which is the expression to transform to SQL"]
+      else   ["      // original expression: "++escapePhpStr (show normalizedInterfaceExp)]  -- escape for the pathological case that one of the names in the relation contains a newline
+     )
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" 
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
