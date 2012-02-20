@@ -1,25 +1,23 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries
-       (Named(..),atleastOne,reName,nameFresh,noCollide,mapExpression, mapRelation, mapDeclaration, mapSign, getGeneralizations, getSpecializations) where
+       (Named(..),atleastOne,reName,nameFresh,noCollide,mapExpression, mapRelation, mapDeclaration, mapSign) where
        
 import Data.Char
-import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 
 data (Eq a) => Named a = Named { nName :: String, nObject :: a} deriving (Eq)
 instance (Show a,Eq a)=> Show (Named a) where
-  show a = "$"++(nName a)++(show (nObject a))
+  show a = "$"++nName a++show (nObject a)
 
 reName :: (Eq a) => String->Named a -> Named a
 reName s o = Named s (nObject o)
 
 nameFresh :: (Eq a, Eq a1) => [Named a] -> String -> a1 -> Named a1
-nameFresh vars nm obj
-  = Named realname obj
-    where  realname = noCollide (map nName vars) nm
+nameFresh vars nm
+  = Named $ noCollide (map nName vars) nm
 
 -- | make sure a function returns at least one item (run-time check) or give a debug error
-atleastOne :: [Char] -> [t] -> [t]
+atleastOne :: String -> [t] -> [t]
 atleastOne errormsg [] = error errormsg
 atleastOne _ (a:as) = a:as
 
@@ -81,10 +79,3 @@ mapDeclaration f d
 
 mapSign :: (A_Concept->A_Concept) -> Sign -> Sign
 mapSign f (Sign s t) = Sign (f s) (f t)
-
-getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
-getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
-
-getSpecializations :: Fspc -> A_Concept -> [A_Concept]
-getSpecializations fSpec c = filter (c Poset.>) $ concs fSpec
-

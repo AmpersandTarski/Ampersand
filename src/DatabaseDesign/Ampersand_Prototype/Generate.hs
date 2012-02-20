@@ -2,8 +2,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
-import DatabaseDesign.Ampersand.Fspec.Fspec (lookupCpt)
-import DatabaseDesign.Ampersand.Fspec(showPrf,cfProof)
+import DatabaseDesign.Ampersand.Fspec(showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
 import Prelude hiding (writeFile,readFile,getContents)
 import Data.Function
 import Data.List
@@ -13,7 +12,6 @@ import System.FilePath
 import System.Directory               
 import DatabaseDesign.Ampersand_Prototype.Version 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
-import DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries (getGeneralizations, getSpecializations)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
@@ -34,7 +32,7 @@ generateAll fSpec opts =
     
     ; case customCssFile opts of
         Just customCssFilePath ->
-         do { customCssContents <- (readFile customCssFilePath `catch` error ("ERROR: Cannot open custom css file '" ++ customCssFilePath ++ "'"))
+         do { customCssContents <- readFile customCssFilePath `catch` error ("ERROR: Cannot open custom css file '" ++ customCssFilePath ++ "'")
             ; writePrototypeFile customCssPath customCssContents
             }
         Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
@@ -57,7 +55,7 @@ generateAll fSpec opts =
             
     ; when (development opts) $ 
        do { verboseLn opts "Generated tables\n"
-          ; verboseLn opts $ unlines $ concatMap showPlug $ [ plug | InternalPlug plug <- plugInfos fSpec]
+          ; verboseLn opts ( unlines ( concatMap showPlug [ plug | InternalPlug plug <- plugInfos fSpec]))
           }
     }
   where
@@ -81,7 +79,7 @@ generateSpecializations fSpec opts =
   [ "$allSpecializations ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [ (showPhpStr $ name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) $ specializations) ++")" ] 
+         [ [ (showPhpStr $ name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ] 
          | concept <- concs fSpec, let specializations = getSpecializations fSpec concept,  not $ null specializations ])        
 
 generateTableInfos fSpec opts =
@@ -91,9 +89,8 @@ generateTableInfos fSpec opts =
          [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++
                                           ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
-         , let (table,srcCol,tgtCol) = case getRelationTableInfo fSpec rel of
-                                         Just tableInfo -> tableInfo
-                                         Nothing        -> fatal 61 $ "No table info for relation "++ show rel
+         , let (table,srcCol,tgtCol) = fromMaybe (fatal 61 $ "No table info for relation " ++ show rel)
+                                         (getRelationTableInfo fSpec rel)
          ]) ++
   [ ""
   , "$conceptTableInfo ="
@@ -138,15 +135,18 @@ generateRules fSpec opts =
            , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
                                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
            ] ++
-           (if development opts then -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
-                                     -- php/Database.php?testRule=RULENAME
-           [ "        , 'contentsSQL' => '"++ case conjNF . rrexp $ rule of
-                                                EIsc [] -> "/* EIsc [], not handled by selectExpr */'"
-                                                ECps [] -> "/* EIsc [], not handled by selectExpr */'"
-                                                contentsExpr -> fromMaybe ("/*ERROR: no sql generated for "++escapePhpStr (showHS opts "" contentsExpr) ++"*/")
-                                                                  -- no fatal here, we don't want --dev to break generation
-                                                                  (selectExpr fSpec 26 "src" "tgt" $ contentsExpr)++"'"] 
-              else []) ++
+           ["        , 'contentsSQL' => '" ++
+              case conjNF . rrexp $ rule of
+                  EIsc [] -> "/* EIsc [], not handled by selectExpr */'"
+                  ECps [] -> "/* EIsc [], not handled by selectExpr */'"
+                  contentsExpr -> fromMaybe
+                                    ("/*ERROR: no sql generated for " ++
+                                       escapePhpStr (showHS opts "" contentsExpr) ++ "*/")
+                                    (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+                                    ++ "'"
+            | development opts -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+                                       -- php/Database.php?testRule=RULENAME
+           ] ++
            [ "        , 'pairView' =>" -- a list of sql queries for the pair-view segments 
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" "," $ genMPairView $ rrviol rule) ++  
@@ -292,7 +292,7 @@ addToLastLine :: String -> [String] -> [String]
 addToLastLine str [] = [str] 
 addToLastLine str lines = init lines ++ [last lines ++ str] 
   
-toPhp str = map replace str
+toPhp = map replace
  where replace ' ' = '_'
        replace c   = c
  
