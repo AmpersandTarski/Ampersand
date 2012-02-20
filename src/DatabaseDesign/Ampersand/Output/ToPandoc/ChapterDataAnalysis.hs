@@ -85,7 +85,7 @@ chpDataAnalysis lev fSpec flags
                             1 -> "Er is één gegevensverzameling,"
                             _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
                         )
-                  , Str $ " "++count flags (length (assocs classDiagram)) "associatie" ]++
+                  , Space, Str $ count flags (length (assocs classDiagram)) "associatie" ]++
                   ( case classification of
                      Nothing -> []
                      Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisatie" ] ) ++
@@ -113,7 +113,7 @@ chpDataAnalysis lev fSpec flags
                             1 -> "There is one data set,"
                             _ -> "There are "++count flags (length (classes classDiagram)) "data set"++","
                         )
-                  , Str $ " "++count flags (length (assocs classDiagram)) "association"]++
+                  , Space, Str $ count flags (length (assocs classDiagram)) "association"]++
                   ( case classification of
                      Nothing -> []
                      Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisation"++"," ] ) ++
@@ -125,7 +125,7 @@ chpDataAnalysis lev fSpec flags
   daPicsOnly :: [Block]
   daPicsOnly = 
    (case language flags of
-     Dutch   -> [Para $
+     Dutch   -> [Para
                   ( if genGraphics flags 
                     then 
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
@@ -142,7 +142,7 @@ chpDataAnalysis lev fSpec flags
                      , Str ". " ]
                     else []
                   )]
-     English -> [Para $
+     English -> [Para
                   ( if genGraphics flags 
                     then 
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing

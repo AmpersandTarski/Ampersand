@@ -427,9 +427,9 @@ labeledHeader lev lbl str =
                  : [Para [xrefLabel lbl]]
  
 xrefLabel :: String -> Inline        -- uitbreidbaar voor andere rendering dan LaTeX
-xrefLabel myLabel = RawInline "latex" ("\\label{"++escapeNonAlphaNum (myLabel)++"}")
+xrefLabel myLabel = RawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
-xrefCitation myLabel = RawInline "latex" ("\\cite{"++escapeNonAlphaNum (myLabel)++"}")
+xrefCitation myLabel = RawInline "latex" ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 
 
 -- Para [Math DisplayMath "\\id{aap}=A\\times B\\\\\n\\id{noot}=A\\times B\n"]
@@ -522,7 +522,7 @@ latexEscShw ""           = ""
 latexEscShw ('\"':c:str) | isAlphaNum c = "``"++latexEscShw (c:str)
                          | otherwise    = "''"++latexEscShw (c:str)
 latexEscShw "\""         = "''"
-latexEscShw (c:str)      | isAlphaNum c = [c]++latexEscShw str
+latexEscShw (c:str)      | isAlphaNum c = c:latexEscShw str
                          | otherwise    = f c++latexEscShw str
  where
   f '-' = "\\- "
@@ -651,7 +651,7 @@ latexEscShw (c:str)      | isAlphaNum c = [c]++latexEscShw str
   f 'Ú' = "\\'{U}"         --  acute accent
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
-  f x   = [c] -- let us think if this should be:    fatal 661 ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
+  f _   = [c] -- let us think if this should be:    fatal 661 ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
 
 -- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
 stripSpecialChars :: String -> String
@@ -675,13 +675,13 @@ uniquecds c = [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) 
 makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
 makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
-    FLatex ->  [ Para ( (if i==0 then [ RawInline "latex" (symDefLabel cd++"\n") ] else [])++
+    FLatex ->  [ Para ( [ RawInline "latex" (symDefLabel cd ++ "\n") | i == 0] ++
                         [ RawInline "latex" ("\\marge{\\gls{"++latexEscShw cdnm++"}}\n") ] ++
                         [ RawInline "latex" (latexEscShw (cddef cd))] ++
                         [ RawInline "latex" (latexEscShw (" ["++cdref cd++"]")) | not (null (cdref cd)) ]
                       )
                ]
-    _      ->  [ Para ( [Str (cddef cd)] ++ [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ] )
+    _      ->  [ Para ( Str (cddef cd) : [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ] )
                ]
 
 commaEngPandoc :: Inline -> [Inline] -> [Inline]

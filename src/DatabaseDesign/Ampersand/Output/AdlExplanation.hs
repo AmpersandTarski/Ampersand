@@ -7,11 +7,11 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec(FProcess(..),Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
-import DatabaseDesign.Ampersand.Misc
+--import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc
-import DatabaseDesign.Ampersand.Output.PredLogic
-import Data.Char             (toLower)
+--import DatabaseDesign.Ampersand.Output.PredLogic
+--import Data.Char             (toLower)
 import Data.List             (intercalate)
 
 fatal :: Int -> String -> a
@@ -373,12 +373,12 @@ instance Explainable Activity where
                     [p]   -> Just p
                     purps -> case concatMarkup (map explMarkup purps) of
                               Nothing -> Nothing
-                              Just p  -> Just (Expl { explPos      = explPos (head purps) -- ^ The position in the Ampersand script of this purpose definition
-                                                    , explObj      = ExplRule (actRule x) -- ^ The object that is explained.
-                                                    , explMarkup   = p                    -- ^ This field contains the text of the explanation including language and markup info.
-                                                    , explUserdefd = False                -- ^ Is this purpose defined in the script?
-                                                    , explRefId    = intercalate ", " (map explRefId purps) -- ^ The reference of the explaination
-                                                    })
+                              Just p  -> Just Expl { explPos      = explPos (head purps) -- ^ The position in the Ampersand script of this purpose definition
+                                                   , explObj      = ExplRule (actRule x) -- ^ The object that is explained.
+                                                   , explMarkup   = p                    -- ^ This field contains the text of the explanation including language and markup info.
+                                                   , explUserdefd = False                -- ^ Is this purpose defined in the script?
+                                                   , explRefId    = intercalate ", " (map explRefId purps) -- ^ The reference of the explaination
+                                                   }
 
 class Meaning a where 
   meaning :: Lang -> a -> Maybe A_Markup

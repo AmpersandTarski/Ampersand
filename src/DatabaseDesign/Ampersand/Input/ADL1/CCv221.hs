@@ -60,8 +60,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                               --    ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
                             <*> pList pContextElement <* pKey "ENDCONTEXT"
                        where
-                       rebexpr :: P_Expression -> [(P_Declaration, String)] -> (P_Expression , [(P_Declaration,String)])
-                       rebexpr x y = (x,y)
                        rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
                        rebuild nm includeFileNames lang fmt ces = 
                          (PCtx{ ctx_nm    = nm

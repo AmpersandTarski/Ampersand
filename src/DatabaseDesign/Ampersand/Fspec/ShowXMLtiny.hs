@@ -31,7 +31,6 @@ where
    import Time                                   (ClockTime)
    import DatabaseDesign.Ampersand.Fspec.Plug 
    import DatabaseDesign.Ampersand.Misc.TinyXML 
-   import DatabaseDesign.Ampersand.Misc.Explain 
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowXMLtiny"
@@ -140,7 +139,7 @@ where
      mkTag k = Tag "KeyDef" [nameToAttr k]
      mkXmlTree k = Elem (mkTag k)
                         ( Elem (simpleTag "Key on") [mkXmlTree (kdcpt k)] :
-                          attributesTree ([e | KeyExp e <- kdats k]) -- TODO: currently ignores KeyText segments
+                          attributesTree [e | KeyExp e <- kdats k] -- TODO: currently ignores KeyText segments
                         )
 
 
@@ -320,7 +319,7 @@ where
      mkXmlTree p = Elem (mkTag p) []
                         
    instance XML ConceptDef where
-     mkTag f = Tag "ConceptDef" ( (mkAttr "name" (cdcpt f))
+     mkTag f = Tag "ConceptDef" ( mkAttr "name" (cdcpt f)
                                   : [mkAttr "Trace" (cdref f) |not (null (cdref f))])
      mkXmlTree f = Elem (mkTag f) (explainTree (cddef f))
    

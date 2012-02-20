@@ -153,13 +153,13 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EPrd ts  -> [Tot | isTot (head ts)]++[Sur | isSur (last ts)]++[Rfx | isRfx (head ts)&&isRfx (last ts)]++[Trn]
      EUni []  -> fatal 151 "Illegal call to multiplicities (EUni [])"
      EUni [t] -> multiplicities t
-     EUni ts  -> [Tot | or (map isTot gts)]++[Sur | or (map isSur gts)]++[Rfx | or (map isRfx gts)]
+     EUni ts  -> [Tot | any isTot gts]++[Sur | any isSur gts]++[Rfx | any isRfx gts]
                  where mgs = Sign (greatest$map source ts)(greatest$map target ts)  -- the Most General Signature of expressions in ts
                        gts = [t | t<-ts, sign t==mgs]
      EIsc []  -> fatal 154 "Illegal call to multiplicities (EIsc [])"
      EIsc [t] -> multiplicities t
-     EIsc ts  -> [Tot | and (map isTot gts)]++[Sur | and (map isSur gts)]++
-                 [Uni | and (map isUni gts)]++[Inj | and (map isInj gts)]++[Asy | or (map isAsy [t | t<-ts, sign t==mgs])] -- TODO:  Is this correct if the elements of ts have different types? (i.e. where generalization and specialization kick in)
+     EIsc ts  -> [Tot | all isTot gts]++[Sur | all isSur gts]++
+                 [Uni | all isUni gts]++[Inj | all isInj gts]++[Asy | any isAsy [t | t<-ts, sign t==mgs]] -- TODO:  Is this correct if the elements of ts have different types? (i.e. where generalization and specialization kick in)
                  where mgs = Sign (greatest$map source ts)(greatest$map target ts)  -- the Most General Signature of expressions in ts
                        gts = [t | t<-ts, sign t==mgs]
                   -- TODO:  expr /\ a is Asy if a is Asy, is Uni if a is Uni (TODO), is Tot if both a and expr are tot

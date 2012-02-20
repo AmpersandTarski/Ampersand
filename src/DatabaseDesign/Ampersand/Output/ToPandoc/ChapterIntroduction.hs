@@ -16,7 +16,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                                                      Dutch   ->  "Inleiding"   
                                                      English ->  "Introduction"
                                                   )
-        contextPurposes = [p | p <- purposes fSpec (language flags) fSpec]
+        contextPurposes = purposes fSpec (language flags) fSpec
         --TODO: different intro for theme flags == "student"
         introContents Dutch = 
           ( if null contextPurposes

@@ -159,7 +159,7 @@ where
       intercalate [LineBreak, Str "--------------", LineBreak]
          [ derivation rule
          | rule<-rules fSpec]++
-      [Str ("Aantal Rules: "++(show (length (rules fSpec))))]
+      [Str ("Aantal Rules: "++(show.length.rules) fSpec)]
 {-
       ++
       [ LineBreak, Str "--------------", LineBreak]
@@ -233,7 +233,7 @@ where
          = [Str (showADL rule)]++
            ( if e'==e
              then [Str " is already in conjunctive normal form", LineBreak]
-             else [LineBreak, Str "Convert into conjunctive normal form", LineBreak] ++ showProof (showADL . disambiguate fSpec) ([(e,[],"<=>")]++prf)
+             else [LineBreak, Str "Convert into conjunctive normal form", LineBreak] ++ showProof (showADL . disambiguate fSpec) ((e,[],"<=>"):prf)
            )++
            [ LineBreak, Str "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     " ]++
            (disjProof. ECpl . rrexp) rule++[ LineBreak, LineBreak ] ++
@@ -249,10 +249,10 @@ where
                                       [Str ("Computing the violations means to negate the conjunct: "++showADL (notCpl clause)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notCpl clause/=viols] ++
                                       [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (EUni[ECpl clause,clause'])), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
-                                    | rel<-nub [x |x<-mors r]
+                                    | rel<-nub (mors r)
                                     , ev<-[Ins,Del]
                                     , let e'      =         subst (rel, actSem ev rel (delta (sign rel))) clause
-                                    , let clause' = conjNF (e')
+                                    , let clause' = conjNF e'
                                     , let step    = conjNF (EUni[ECpl clause,clause'])
                                     , let viols   = conjNF (notCpl clause)
                                     , let negs    = EUni [f | f<-fus, isNeg f]
@@ -369,7 +369,7 @@ where
    showPrf shw [(expr,_,_)]        = [ "    "++shw expr]
    showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++
                                      (if null ss  then [ equ ] else
-                                      if null equ then [ (unwords ss) ] else
+                                      if null equ then [ unwords ss ] else
                                       [ equ++" { "++intercalate " and " ss++" }" ])++
                                      showPrf shw prf
    showPrf _  []                   = []

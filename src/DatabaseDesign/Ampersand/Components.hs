@@ -154,7 +154,7 @@ doGenBericht :: Fspc -> Options -> IO()
 doGenBericht fSpec flags =
  do { verboseLn flags "Generating 'Berichtendefinities'..."
     ; filenamesContents <- generateBericht fSpec flags 
-    ; sequence_ $ [ do { Prelude.putStrLn $ "\nGenerated file "++filename ++ ":\n" ++ fileContents
+    ; sequence_   [ do { Prelude.putStrLn $ "\nGenerated file "++filename ++ ":\n" ++ fileContents
                        ; writeFile (combine (dirOutput flags) filename) fileContents
                        } 
                   | (filename, fileContents) <- filenamesContents ] 

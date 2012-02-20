@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Basics.Collection
     elems    :: Eq b => a b -> [b]
 
    instance Collection [] where
-    eleM         = any . (==)
+    eleM         = elem
     xs `uni` ys  = xs++(ys>-xs)
     xs `isc` ys  = [y | y<-ys, y `elem` xs]
     xs >- ys     = [x | x<-xs, x `notElem` ys]
