@@ -945,6 +945,12 @@ inferCpsRad contxt pconstructor constructor p_rs ac
           combMsgs  = [ms | (_,ms)<-combs, not (null ms)]      -- messages from combinations that are wrong (i.e. that have messages)
           interMsgs = [ "The type between "++show (pconstructor lft)++" and "++show (pconstructor rht)++"is ambiguous,\nbecause it may be one of "++show is
                       | (is,(lft,rht))<-zip inter (splits p_rs), length is>1]   -- example: splits [1,2,3,4] = [([1],[2,3,4]),([1,2],[3,4]),([1,2,3],[4])]
+             where
+               -- | 'splits' makes pairs of a list of things. Example : splits [1,2,3,4,5] = [([1],[2,3,4,5]),([1,2],[3,4,5]),([1,2,3],[4,5]),([1,2,3,4],[5])]
+               splits :: [a] -> [([a], [a])]
+               splits xs = [splitAt i xs | i<-[1..(length xs - 1)]]
+
+             
           messages  = if null deepMsgs
                       then (case solutions of
                              []  -> (concat.take 1) combMsgs   -- the messages found by combining terms, from which an arbitrary wrong combination is taken
@@ -1085,3 +1091,8 @@ p_mors expr = case expr of
        PTyp e _     ->  p_mors e                     -- e   ^ type cast expression  ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
        Prel r       ->  [r]                     -- rel ^ simple relation
 -}
+-- | example: combinations [[1,2,3],[10,20],[4]] = [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
+combinations :: [[a]] -> [[a]]
+combinations []       = [[]]
+combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
+                              

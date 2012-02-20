@@ -9,14 +9,14 @@ module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStruct
                                                                    )
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
-   import DatabaseDesign.Ampersand.Basics                          (fatalMsg,Collection(..),Classification,preCl)
+   import DatabaseDesign.Ampersand.Basics                          (Collection(..),Classification,preCl)
    import Data.List
    import DatabaseDesign.Ampersand.ADL1.Expression
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration
    import DatabaseDesign.Ampersand.Core.Poset(Ordering(..))
    import Prelude hiding (Ordering(..))
-   fatal :: Int -> String -> a
-   fatal = fatalMsg "Classes.ConceptStructure"
+--   fatal :: Int -> String -> a
+--   fatal = fatalMsg "Classes.ConceptStructure"
 
    class ConceptStructure a where
     concs   :: a -> [A_Concept]                 -- ^ the set of all concepts used in data structure a
@@ -24,7 +24,7 @@ where
     mors     = nub . morlist
     morlist :: a -> [Relation]        -- ^ the list of all relations used within data structure a (the difference with mors is that morlist is not unique)
     genE    :: a -> GenR
-    genE cstruc = if null cs then ((\x y -> if x==y then EQ else NC),[]) else head cs where cs = [order c |c<-concs cstruc]
+    genE cstruc = if null cs then (\x y -> if x==y then EQ else NC,[]) else head cs where cs = [order c |c<-concs cstruc]
     
 -- class KleeneClos where
 --  closExprs    :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
@@ -52,11 +52,11 @@ where
     mors      c = mors (ctxpats c) `uni` mors (ctxprocs c) `uni` mors [ifcObj s | s<-ctxifcs c]
     morlist   c = morlist (ctxpats c)++morlist (ctxprocs c)++morlist [ifcObj s | s<-ctxifcs c]
 --  closExprs c = closExprs (ctxpats c) `uni` closExprs [ifcObj s | s<-ctxifcs c]
-    genE      c = ctxpo c
+    genE        = ctxpo 
    instance ConceptStructure KeyDef where
-    concs     kd = [kdcpt kd] `uni` concs ([objDef | KeyExp objDef <- kdats kd])
-    mors      kd = mors ([objDef | KeyExp objDef <- kdats kd])
-    morlist   kd = morlist ([objDef | KeyExp objDef <- kdats kd])
+    concs     kd = [kdcpt kd] `uni` concs [objDef | KeyExp objDef <- kdats kd]
+    mors      kd = mors                   [objDef | KeyExp objDef <- kdats kd]
+    morlist   kd = morlist                [objDef | KeyExp objDef <- kdats kd]
 --  closExprs kd = closExprs (kdats kd)
 
    instance ConceptStructure Expression where

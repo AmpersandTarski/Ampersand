@@ -57,8 +57,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 -- It circumvents the PanDoc structure and goes straight to LaTeX source code.
 -- TODO when PanDoc is up to the job.
    showLatex :: PredLogic -> String
-   showLatex x
-    = predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\wedge", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x
+   showLatex
+    = predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\wedge", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in")
       where rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
               = if isIdent r then lhs++"\\ =\\ "++rhs else
                 case name r of
@@ -175,8 +175,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                 , Declaration -> String -> String -> String -- apply
                 , String                                    -- set element
                 ) -> PredLogic -> String
-   predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el) e
-    = charshow 0 e
+   predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
+    = charshow 0
         where
          wrap i j str = if i<=j then str else "("++str++")"
          charshow :: Integer -> PredLogic -> String
@@ -215,7 +215,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
          makeRel :: String -> Relation -- This function exists solely for the purpose of dom and cod
          makeRel str
              = makeRelation
-                 (Sgn { decnm   = str
+                  Sgn { decnm   = str
                       , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
                       , decprps = [Uni,Tot]
                       , decprps_calc = []
@@ -229,7 +229,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                       , decusr  = False
                       , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
                       , decplug = fatal 229 "Do not refer to decplug of this dummy relation"
-                      })
+                      }
 
 --objOrShow :: Lang -> PredLogic -> String
 --objOrShow l = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "*", "+", "NOT", rel, fun, langVars l, "\n", " ")

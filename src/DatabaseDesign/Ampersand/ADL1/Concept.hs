@@ -21,7 +21,7 @@ where
   -- | Constructor of a concept with the given name and population
   newAcpt :: String -> [String] -> A_Concept
   newAcpt nm atoms = C { cptnm = nm
-                       , cptgE = ((\x y -> if x==y then EQ else NC),[])
+                       , cptgE = (\x y -> if x==y then EQ else NC,[])
                        , cptos = atoms
                        , cpttp = []
                        , cptdf = []

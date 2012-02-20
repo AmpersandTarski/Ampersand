@@ -6,7 +6,6 @@ import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
-import DatabaseDesign.Ampersand.ADL1.Expression              (flp)
 import DatabaseDesign.Ampersand.ADL1.Concept                 (atomsOf)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
 import DatabaseDesign.Ampersand.Basics                       (Collection(..), Identified(..),eqClass)
@@ -151,7 +150,7 @@ instance Language A_Context where
                              , objats  = map objectdef (ctxpats context)
                              , objstrs = []
                              }
-  conceptDefs  context = ctxcds context
+  conceptDefs          = ctxcds
   declarations context = uniteRels (concatMap declarations (patterns context)
                                  ++ concatMap declarations (processes context)
                                  ++ ctxds context
@@ -170,7 +169,7 @@ instance Language A_Context where
   keyDefs      context = nub$(concatMap keyDefs (ctxpats context)) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
   gens         context = concatMap gens (ctxpats context) `uni` ctxgs context
   patterns             = ctxpats
-  cExperimental context = ctxexperimental context
+  cExperimental        = ctxexperimental
 
 instance ProcessStructure A_Context where
   processes            = ctxprocs

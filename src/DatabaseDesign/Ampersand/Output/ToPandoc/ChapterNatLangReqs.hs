@@ -13,7 +13,6 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
-import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ChapterNatLangReqs.hs"
@@ -44,7 +43,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                          
               ]
          where getWet ref = reverse . takeWhile (/=' ') . reverse $ ref --  the law is the last word in the ref
-               getArtikel ref = reverse . dropWhile (`elem` [' ', ',']) .dropWhile (/=' ') . reverse $ ref 
+               getArtikel ref = reverse . dropWhile (`elem` " ,") .dropWhile (/=' ') . reverse $ ref 
                -- the article is everything but the law (and we also drop any trailing commas)
                (sectionTitle, lawHeader, articleHeader) = 
                  case language flags of
@@ -156,7 +155,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs concs2print]
               -- make blocks for requirements
               reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
-              reqdefs = concat (map snd reqblocks)
+              reqdefs = concatMap snd reqblocks
 
               themeName = case mPat of
                            Nothing  -> ""
@@ -236,8 +235,10 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               -- | make a block for a c with all its purposes and definitions
               cptBlock :: (A_Concept, [Purpose]) -> Counter -> [Block]
               cptBlock (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
-                                    ++ map cdBlock (zip (if length (uniquecds c)==1 then [(cnt,"")] else [ (cnt,'.':show i) | i<-[(1::Int)..]])
-                                                        (uniquecds c))
+                  ++ zipWith (curry cdBlock)
+                       (if length (uniquecds c) == 1 then [(cnt, "")] else
+                          [(cnt, '.' : show i) | i <- [(1 :: Int) ..]])
+                       (uniquecds c)
               -- | make a block for a concept definition
               cdBlock :: ((Counter,String),(String,ConceptDef)) -> Block
               cdBlock ((cnt,xcnt),(cdnm,cd)) = DefinitionList 
@@ -337,7 +338,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
 -- TODO: move these to some auxiliaries or utils
 showKeyAtom :: Fspc -> Maybe Relation -> A_Concept -> String -> String
 showKeyAtom fSpec mRel cncpt atom =
-  case catMaybes $ map (getKey fSpec) $ cncpt : getGeneralizations fSpec cncpt of
+  case mapMaybe (getKey fSpec) (cncpt : getGeneralizations fSpec cncpt) of
     []    -> atom
     key:_ -> if fmap ERel mRel `elem` justKeyRels then atom else concatMap showKeySegment $ kdats key 
      where showKeySegment (KeyText str) = str
@@ -346,7 +347,7 @@ showKeyAtom fSpec mRel cncpt atom =
                []        -> ""
                keyAtom:_ -> keyAtom  
                
-           justKeyRels = map (Just . objctx) $ [objDef | KeyExp objDef <- kdats key]
+           justKeyRels = map (Just . objctx) [objDef | KeyExp objDef <- kdats key]
       
 getKey :: Fspc -> A_Concept -> Maybe KeyDef
 getKey fSpec cncpt = 
@@ -354,8 +355,5 @@ getKey fSpec cncpt =
     []       -> Nothing 
     keyDef:_ -> Just keyDef 
 
--- TODO: move this to some auxiliaries or utils and share with Prototype (also remove import of Poset)
-getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
-getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
 
  

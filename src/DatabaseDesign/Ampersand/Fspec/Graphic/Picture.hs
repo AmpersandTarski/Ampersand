@@ -5,7 +5,6 @@ module DatabaseDesign.Ampersand.Fspec.Graphic.Picture
     , Pictures,PictType(..),uniquePicName
     , makePictureObj,writePicture)
 where
-import Data.Char (isAlphaNum)
 import System             (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
 import System.Directory

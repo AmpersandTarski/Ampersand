@@ -7,7 +7,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Pattern(..)
  , PairView(..)
  , PairViewSegment(..)
- , SrcOrTgt
  , Rule(..)
  , RuleType(..)
  , Declaration(..)
@@ -136,10 +135,10 @@ concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
  = case eqCl f es of
     []   -> Nothing
-    [cl] -> Just (A_Markup { amLang   = amLang (head cl)
-                           , amFormat = amFormat (head cl)
-                           , amPandoc = concat (map amPandoc es)
-                           })
+    [cl] -> Just A_Markup { amLang   = amLang (head cl)
+                          , amFormat = amFormat (head cl)
+                          , amPandoc = concatMap amPandoc es
+                          }
     cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
                       intercalate "\n   " [(show.f.head) cl | cl<-cls])
    where f e = (amLang e, amFormat e)
@@ -363,8 +362,8 @@ instance Show Expression where
  showsPrec _ = showString . showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
 showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
-showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr) expr
- = showchar expr
+showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
+ = showchar
    where
      showchar (EEqu (l,r)) = showchar l++equi++showchar r
      showchar (EImp (l,r)) = showchar l++impl++showchar r
@@ -396,7 +395,7 @@ showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPr
      showchar (ERel rel@(Mp1{})) = "'"++relval rel++"'"
 
 insParentheses :: Expression -> Expression
-insParentheses expr = insPar 0 expr
+insParentheses = insPar 0
       where
        wrap :: Integer -> Integer -> Expression -> Expression
        wrap i j e' = if i<=j then e' else EBrk e'
@@ -619,9 +618,9 @@ class Signaling a where
 type GenR = (A_Concept -> A_Concept -> Ordering,[[A_Concept]])
 order      :: A_Concept -> GenR
 order c@(C{}) = cptgE c
-order _ = ((\x y -> if x==y then EQ else NC),[])
+order _ = (\x y -> if x==y then EQ else NC,[])
 instance Poset A_Concept where
-  a `compare` b = (fst$order a) a b
+  a `compare` b = fst (order a) a b
 instance Sortable A_Concept where
   meet a b | b <= a = b        -- meet yields the more specific of two concepts
            | a <= b = a

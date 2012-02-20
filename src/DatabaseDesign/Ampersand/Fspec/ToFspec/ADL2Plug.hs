@@ -51,11 +51,11 @@ rel2plug  r totals
    srcNm = (if isEndo r then "s" else "")++name (source trgExpr)
    trgNm = (if isEndo r then "t" else "")++name (target trgExpr)
    --the expr for the source of r
-   srcExpr = if   r_is_Tot
-             then ERel (I (source r)) 
-             else if r_is_Sur
-                  then ERel (I (target r))
-                  else EIsc [ERel (I (source r)),ECps [ERel r,flp (ERel r)]]
+   srcExpr
+    | r_is_Tot = ERel (I (source r))
+    | r_is_Sur = ERel (I (target r))
+    | otherwise =
+      EIsc [ERel (I (source r)), ECps [ERel r, flp (ERel r)]]
    --the expr for the target of r
    trgExpr 
     | not r_is_Tot && r_is_Sur = EFlp (ERel r)

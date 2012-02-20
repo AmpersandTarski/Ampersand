@@ -8,7 +8,7 @@ where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
+--   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
    import Data.List
    import DatabaseDesign.Ampersand.Classes
@@ -318,9 +318,11 @@ where
         "\n -- ***Interface definitions (both interfaceS and interfaceG, but each one exactly once. ***: "++  
        (if null 
             (uni (interfaceS fspec)  (interfaceG fspec)) then "" 
-             else concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s |s<- (uni (interfaceS fspec)  (interfaceG fspec)) ]++"\n")++
- 
-        
+        else concat [indent ++
+                       " " ++
+                         showHSName s ++
+                           indent ++ "  = " ++ showHS flags (indent ++ "    ") s
+                     | s <- uni (interfaceS fspec) (interfaceG fspec)]++"\n")++
        (if null (vrels fspec)     then "" else
         "\n -- *** Relations ***: "++
         concat [indent++" "++showHSName d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec, decusr d]++"\n") ++
@@ -614,8 +616,8 @@ where
      showHS flags indent (PairView pvs) = "PairView "++showHS flags indent pvs
      
    instance ShowHS PairViewSegment where
-     showHS flags indent (PairViewText txt) = "PairViewText "++show txt
-     showHS flags indent (PairViewExp srcOrTgt exp) = "PairViewExp "++show srcOrTgt++" ("++showHS flags "" exp++")"
+     showHS _     _ (PairViewText txt) = "PairViewText "++show txt
+     showHS flags _ (PairViewExp srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS flags "" e++")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
@@ -625,20 +627,20 @@ where
     showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
    instance ShowHS Rule where
-    showHS flags indent r@(Ru nm exp fps mean msg mviol typ dcl env usr sgl rel)
+    showHS flags indent r@(Ru nm e fps mean msg mviol typ dcl env usr sgl rel)
       = intercalate indent 
-        ["Ru{ rrnm   = " ++ show (rrnm r)
-        ,"  , rrexp  = ("++ showHS flags "" (rrexp r)++")"
-        ,"  , rrfps  = ("++ showHS flags "" (rrfps r)++")"
-        ,"  , rrmean = " ++ showHS flags "" (rrmean r)
-        ,"  , rrmsg = " ++ showHS flags "" (rrmsg r)
-        ,"  , rrviol = " ++ showHS flags "" (rrviol r)
-        ,"  , rrtyp  = " ++ showHS flags "" (rrtyp r)
-        ,"  , rrdcl  = " ++ showHS flags "" (rrdcl r)
-        ,"  , r_env = " ++ show (r_env r)
-        ,"  , r_usr = " ++ show (r_usr r)
-        ,"  , r_sgl = " ++ show (r_sgl r)
-        ,"  , srrel = " ++ showHSName (srrel r)
+        ["Ru{ rrnm   = " ++ show nm
+        ,"  , rrexp  = ("++ showHS flags "" e ++")"
+        ,"  , rrfps  = ("++ showHS flags "" fps ++")"
+        ,"  , rrmean = " ++ showHS flags "" mean
+        ,"  , rrmsg = " ++ showHS flags "" msg
+        ,"  , rrviol = " ++ showHS flags "" mviol
+        ,"  , rrtyp  = " ++ showHS flags "" typ
+        ,"  , rrdcl  = " ++ showHS flags "" dcl
+        ,"  , r_env = " ++ show env
+        ,"  , r_usr = " ++ show usr
+        ,"  , r_sgl = " ++ show sgl
+        ,"  , srrel = " ++ showHSName rel
         ,"  }"
         ]
 

@@ -26,8 +26,8 @@ genUMLClassDiag (OOclassdiagram classes assocs _ _ (contextName, allConcepts)) =
  do { packageId <- mkUnlabeledId "Package" 
     ; diagramId <- mkUnlabeledId "Diagram"
     
-    ; sequence $ map (mkLabeledId "Datatype") datatypeNames
-    ; sequence $ map (mkLabeledId "Class") classNames
+    ; mapM (mkLabeledId "Datatype") datatypeNames
+    ; mapM (mkLabeledId "Class") classNames
 
     ; datatypesUML <- mapM genUMLDatatype datatypeNames
     ; classesUML <- mapM genUMLClass classes 
@@ -64,7 +64,7 @@ genUMLDatatype :: String -> UML
 genUMLDatatype name =
  do { datatypeId <- refLabeledId name
     ; addToDiagram datatypeId
-    ; return $ [ "   <packagedElement xmi:type=\"uml:DataType\" xmi:id=\""++datatypeId++"\" name=\""++name++"\" visibility=\"public\"/> " ]
+    ; return [ "   <packagedElement xmi:type=\"uml:DataType\" xmi:id=\""++datatypeId++"\" name=\""++name++"\" visibility=\"public\"/> " ]
     }
 
 genUMLClass :: Class -> UML
@@ -145,9 +145,8 @@ type UML = StateUML [String]
 
 addToDiagram :: String -> StateUML ()
 addToDiagram elementId =
- do { modify $ \state -> state { diagramEltIds = elementId : diagramEltIds state} 
-    }
-    
+  modify $ \state -> state { diagramEltIds = elementId : diagramEltIds state} 
+      
 mkUnlabeledId :: String -> StateUML String
 mkUnlabeledId tag =
  do { idC <- gets idCounter 
@@ -159,10 +158,9 @@ mkUnlabeledId tag =
 refLabeledId :: String -> StateUML String
 refLabeledId label =
  do { lidMap <- gets labelIdMap
-    ; labeledId <- case Map.lookup label lidMap of
-                   Just lid -> return lid
-                   Nothing  -> fatal 147 $ "Requesting non-existent label "++label
-    ; return labeledId
+    ; case Map.lookup label lidMap of
+          Just lid -> return lid
+          Nothing  -> fatal 147 $ "Requesting non-existent label "++label
     }
     
 mkLabeledId :: String -> String -> StateUML ()

@@ -23,6 +23,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , FPcompl(..)
           , PlugInfo(..)
           , SqlType(..)
+          , getGeneralizations, getSpecializations
           )
 where
 --import DatabaseDesign.Ampersand.ADL1          
@@ -31,6 +32,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics           --      (fatalMsg,Identified(..))
 import Data.List(nub)
 import DatabaseDesign.Ampersand.ADL1.Rule (ruleviolations)
+import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
@@ -268,7 +270,7 @@ data PAclause
               | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
                     }
               | Let { paExpr  :: PAclause               -- the expression that represents a condition to be tested.
-                    , paBody  :: (PAclause -> PAclause)
+                    , paBody  :: PAclause -> PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Ref { paVar   :: String
@@ -378,4 +380,9 @@ data SqlType = SQLChar    Int
              | SQLBool              -- exists y/n
              deriving (Eq,Show)
 
-    
+getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
+getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
+
+getSpecializations :: Fspc -> A_Concept -> [A_Concept]
+getSpecializations fSpec c = filter (c Poset.>) $ concs fSpec
+

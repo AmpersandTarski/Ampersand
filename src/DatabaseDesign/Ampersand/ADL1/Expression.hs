@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
 
 subst :: (Relation,Expression) -> Expression -> Expression
-subst (rel,f) t = subs t
+subst (rel,f) = subs
      where
        subs (EEqu (l,r)) = EEqu (subs l,subs r)
        subs (EImp (l,r)) = EImp (subs l,subs r)
@@ -90,7 +90,7 @@ subsi n f expr = expr'
                          | otherwise = (x, i+1)
 
 foldlMapExpression :: (a -> r -> a) -> (Relation->r) -> a -> Expression -> a
-foldlMapExpression f g a e = foldrMapExpression f' g a e where f' x y = f y x
+foldlMapExpression f = foldrMapExpression f' where f' x y = f y x
 
 foldrMapExpression :: (r -> a -> a) -> (Relation->r) -> a -> Expression -> a
 foldrMapExpression f g a (EEqu (l,r))  = foldrMapExpression f g (foldrMapExpression f g a l) r
