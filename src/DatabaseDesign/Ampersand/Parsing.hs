@@ -7,6 +7,9 @@ where
 
 import Prelude hiding (putStr,readFile,writeFile)
 import Data.List
+import Data.Char
+import System.Directory
+import System.FilePath
 import DatabaseDesign.Ampersand.Input.ADL1.CCv221 (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
 import qualified DatabaseDesign.Ampersand.Input.ADL1.CC664 as CC664
 import DatabaseDesign.Ampersand.Misc
@@ -14,7 +17,6 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
-import Data.Char
 
 type ParserError = Message Token
 
@@ -24,29 +26,33 @@ parseADL :: ParserVersion -- ^ The specific version of the parser to be used
          -> String        -- ^ The name of the .adl file (used for error messages)
          -> IO (Either ParserError P_Context) -- ^ The result: Either some errors, or the parsetree.
 parseADL parserVersion fileContents filename =
- do { (result, _) <- parseADL' parserVersion [] fileContents filename
+ do { (result, _) <- parseADL' parserVersion [] fileContents "" filename
+    ; Prelude.putStrLn $ show filename
     ; return result
     }
 
--- We don't distinguish between "INCLUDE SomeADL" and "INCLUDE SoMeAdL" to prevent errors on case-insensitive file systems.
--- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
-upperCase :: String -> String
-upperCase str = map toUpper str
-
+-- TODO: refactor. Structure is awkward due to file contents being passed to parseADL, rather than just the filename
 
 -- parse the input file and read and parse the imported files
 -- The alreadyParsed parameter keeps track of filenames that have been parsed already, which are ignored when included again.
 -- Hence, include cycles do not cause an error.
+-- We don't distinguish between "INCLUDE SomeADL" and "INCLUDE SoMeAdL" to prevent errors on case-insensitive file systems.
+-- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
+
 parseADL' :: ParserVersion -- ^ The specific version of the parser to be used
          -> [String]      -- ^ Already parsed contexts 
          -> String        -- ^ The string to be parsed
-         -> String        -- ^ The name of the .adl file (used for error messages)
+         -> String        -- ^ The path to the .adl file 
+         -> String        -- ^ The name of the .adl file
          -> IO (Either ParserError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
-parseADL' parserVersion alreadyParsed fileContents filename =
-  do { case parseSingleADL parserVersion fileContents filename of
+parseADL' parserVersion alreadyParsed fileContents filepath filename =
+  do { let includedFilepath = combine filepath filename
+     ; includedCanFilepath <- canonicalizePath includedFilepath
+     ; case parseSingleADL parserVersion fileContents includedFilepath of
            Left err -> return (Left err, alreadyParsed)
            Right (parsedContext, includeFilenames) ->
-             do { (includeParseResults, alreadyParsed') <- readAndParseIncludeFiles (upperCase filename:alreadyParsed) filename includeFilenames
+             do { (includeParseResults, alreadyParsed') <-
+                     readAndParseIncludeFiles (includedFilepath:alreadyParsed) filepath filename includeFilenames
                 ; return ( case includeParseResults of
                              Left err              -> Left err
                              Right includeContexts -> Right $ foldl mergeContexts parsedContext includeContexts
@@ -54,29 +60,36 @@ parseADL' parserVersion alreadyParsed fileContents filename =
                 }     
     }
 
-readAndParseIncludeFiles :: [String] -> String -> [String] -> IO (Either ParserError [P_Context], [String])
-readAndParseIncludeFiles alreadyParsed includerFilename [] = return (Right [], alreadyParsed)
-readAndParseIncludeFiles alreadyParsed includerFilename (filename:filenames) = 
- do { (result, alreadyParsed') <- readAndParseIncludeFile alreadyParsed includerFilename filename
+readAndParseIncludeFiles :: [String] -> String -> String -> [String] ->
+                            IO (Either ParserError [P_Context], [String])
+readAndParseIncludeFiles alreadyParsed filepath includerFilename [] = return (Right [], alreadyParsed)
+readAndParseIncludeFiles alreadyParsed filepath includerFilename (filename:filenames) = 
+ do { (result, alreadyParsed') <- readAndParseIncludeFile alreadyParsed filepath includerFilename filename
     ; case result of
         Left err -> return (Left err, alreadyParsed')
         Right context ->
-         do { (results, alreadyParsed'') <- readAndParseIncludeFiles alreadyParsed' includerFilename filenames
+         do { (results, alreadyParsed'') <- readAndParseIncludeFiles alreadyParsed' filepath includerFilename filenames
             ; case results of
                 Left err -> return (Left err, alreadyParsed'')
                 Right contexts -> return (Right $ context : contexts, alreadyParsed'') 
             }
     }
 
-readAndParseIncludeFile :: [String] -> String -> String -> IO (Either ParserError P_Context, [String])
-readAndParseIncludeFile alreadyParsed includerFilename includedFilename =
-  if upperCase includedFilename `elem` alreadyParsed 
-  then return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles) 
-  else do { fileContents <- readFile includedFilename `catch` (\exc -> do { error $ "\n\nError: cannot read include file " ++ show includedFilename ++ 
-                                                                                    ", included in " ++ show includerFilename})
-          ; parseADL' PV211 alreadyParsed fileContents includedFilename     
-          }
-
+readAndParseIncludeFile :: [String] -> String -> String -> String ->
+                           IO (Either ParserError P_Context, [String])
+readAndParseIncludeFile alreadyParsed filepath includerFilename includedFilename =
+ do { includedCanFilepath <- canonicalizePath includedFilepath -- includedFilename may be a path
+    ; if includedCanFilepath `elem` alreadyParsed 
+      then return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles) 
+      else do { fileContents <- readFile includedFilepath
+              ; Prelude.putStrLn $ "read " ++ includedFilepath
+              ; parseADL' PV211 alreadyParsed fileContents (takeDirectory includedFilepath) (takeFileName includedFilepath)     
+              }
+    }
+ `catch` (\exc -> do { error $ "\n\nError: cannot read include file " ++ show includedFilepath ++ 
+                               ", included in " ++ show includerFilename})
+ where includedFilepath = combine filepath includedFilename
+ 
 emptyContext :: P_Context
 emptyContext = PCtx "" Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] False
 
