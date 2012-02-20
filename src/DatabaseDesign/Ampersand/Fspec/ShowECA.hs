@@ -21,7 +21,7 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
     showECA fSpec _ (On Del rel) = "ON DELETE Delta FROM " ++ (showADL.disambiguate fSpec) (ERel rel)
 
    instance ECA PAclause where
-    showECA fSpec ind p = showPAclause ind p
+    showECA fSpec = showPAclause
      where
       showPAclause :: String -> PAclause -> String
       showPAclause indent pa@Do{}

@@ -14,9 +14,9 @@ where
 --line column pos
 
    posIn :: Traced a => Origin -> a -> Origin -> Bool
-   posIn (FileLoc (FilePos (f , (Pos bl bc) , _)))
+   posIn (FileLoc (FilePos (f , Pos bl bc, _)))
          x
-         (FileLoc (FilePos (f', (Pos el ec) , _)))
+         (FileLoc (FilePos (f', Pos el ec, _)))
          | f/=f' = False
          | bl==el = bc < colnr x && colnr x < ec
          | otherwise = bl < linenr x && linenr x < el

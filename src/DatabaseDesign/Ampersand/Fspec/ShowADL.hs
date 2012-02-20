@@ -159,7 +159,7 @@ instance ShowADL Pattern where
 
 instance ShowADL PairViewSegment where
  showADL (PairViewText str)         = "TXT " ++ show str
- showADL (PairViewExp srcOrTgt exp) = showADLSrcOrTgt srcOrTgt ++ " " ++ showADL exp
+ showADL (PairViewExp srcOrTgt e) = showADLSrcOrTgt srcOrTgt ++ " " ++ showADL e
   where showADLSrcOrTgt Src = "SRC"
         showADLSrcOrTgt Tgt = "TGT"
         
@@ -311,7 +311,7 @@ showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
 --used to compose error messages at p2a time
 instance ShowADL P_Expression where
- showADL expr = showPExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]") expr
+ showADL = showPExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
    where
     showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr)
      = showchar
@@ -353,7 +353,7 @@ instance ShowADL P_Concept where
  showADL = name
 
 instance ShowADL PAclause where
-    showADL p = showPAclause "\n " p
+    showADL = showPAclause "\n "
      where
       showPAclause indent pa@Chc{}
        = let indent'=indent++"   " in "execute ONE from"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]

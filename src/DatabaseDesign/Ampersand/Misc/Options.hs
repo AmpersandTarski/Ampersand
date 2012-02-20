@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wall -XPatternGuards #-}
+{-# LANGUAGE PatternGuards #-}
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Misc.Options 
         (Options(..),getOptions,defaultFlags,usageInfo'
         ,ParserVersion(..)
@@ -431,7 +432,7 @@ verbose flags x
 verboseLn :: Options -> String -> IO ()
 verboseLn flags x
    | verboseP flags = -- each line is handled separately, so the buffer will be flushed in time. (see ticket #179)
-                      sequence_ (map putStrLn (lines x))
+                      mapM_ putStrLn (lines x)
    | otherwise      = return ()
 helpNVersionTexts :: String -> Options -> [String]
 helpNVersionTexts vs flags          = [preVersion flags++vs++postVersion flags++"\n" | showVersion flags]++

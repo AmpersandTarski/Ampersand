@@ -64,11 +64,11 @@ infer context ~assigned@(Sign assignedSrc assignedTgt) pExp =
     (PTyp e tp) -> let (possibles, typedExp) = infer context assigned' e
                        (Sign src tgt) = pSign2aSign context tp 
                        possibles' = [Sign s t | Sign s t <- possibles, s<=src && t <= tgt]
-                       assigned' = if src<=assignedSrc && tgt<=assignedTgt
-                                   then Sign src tgt
-                                   else if assignedSrc <= src && assignedTgt <= tgt
-                                        then Sign assignedSrc assignedTgt
-                                        else error "Something is wrong"
+                       assigned'
+                         | src <= assignedSrc && tgt <= assignedTgt = Sign src tgt
+                         | assignedSrc <= src && assignedTgt <= tgt = Sign assignedSrc assignedTgt
+                         | otherwise                                = error "Something is wrong"
+
                    in  ( possibles'
                        , if not . null $ possibles'
                          then typedExp 
@@ -95,7 +95,7 @@ infer context ~assigned@(Sign assignedSrc assignedTgt) pExp =
 inferListEqual :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
                   ctxt -> Sign -> [P_Expression] -> ([Sign], Either String [P_Expression])
 inferListEqual _       _        []     = error "Fatal, incorrect P structure"
-inferListEqual context assigned [e]    = mapA (\x-> [x]) $ infer context assigned e
+inferListEqual context assigned [e]    = mapA (:[]) $ infer context assigned e
 inferListEqual context assigned (e:es) =
   let (possiblesHead, resHead) = infer context assigned e
       (possiblesTail, resTail) = inferListEqual context assigned es
@@ -112,13 +112,13 @@ inferListEqual context assigned (e:es) =
                   (Right typedExp, Right typedExps) -> if assigned `elem` possiblesList 
                                                        then Right $ typedExp:typedExps
                                                        else Left  "list not equally typed"   
-  in trace ("\ninferListEqual "++show possiblesHead ++" vd "++ show possiblesTail ++ "  "++show possiblesList) $
+  in trace ("\ninferListEqual "++show possiblesHead ++" vd "++ show possiblesTail ++ "  "++show possiblesList)
        (possiblesList, resList)
 
 inferListChain :: (Language ctxt, ConceptStructure ctxt, Identified ctxt) =>
                   ctxt -> Sign -> [P_Expression] -> ([Sign], Either String [P_Expression])
 inferListChain _       _                    []     = error "Fatal, incorrect P structure"
-inferListChain context assigned             [e]    = mapA (\x-> [x]) $ infer context assigned e
+inferListChain context assigned             [e]    = mapA (: []) $ infer context assigned e
 inferListChain context ~assigned@(Sign assignedSrc assignedTgt) (e:es) = 
   let (possiblesHead, resHead) = infer context (Sign assignedSrc middleType) e 
       (possiblesTail, resTail) = inferListChain context (Sign middleType assignedTgt) es

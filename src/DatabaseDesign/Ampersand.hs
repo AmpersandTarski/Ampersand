@@ -72,7 +72,7 @@ module DatabaseDesign.Ampersand
    , verboseLn, verbose
    , ImportFormat(..),helpNVersionTexts
    -- * Other functions
-   , eqCl, naming
+   , eqCl
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
    , DatabaseDesign.Ampersand.Basics.putStr
    , DatabaseDesign.Ampersand.Basics.readFile

@@ -370,12 +370,12 @@ crowfootArrowType isHead r
        where 
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]
          getCrowfootShape a b =
-          (case (a,b) of
+           case (a,b) of
             (True ,True ) -> [my_tee          ]
-            (True ,False) -> [my_crow, my_tee]
-            (False,True ) -> [my_odot, my_tee]
+            (True ,False) -> [my_crow, my_tee ]
+            (False,True ) -> [my_odot, my_tee ]
             (False,False) -> [my_crow, my_odot]
-          )   
+             
          my_tee :: ( ArrowModifier , ArrowShape )
          my_tee = ( noMod , Tee )
          my_odot :: ( ArrowModifier , ArrowShape )
@@ -385,11 +385,9 @@ crowfootArrowType isHead r
 
 plainArrowType :: Bool -> Declaration -> ArrowType
 plainArrowType isHead r
-   = case isHead of 
-       True -> if isFunction r
-               then noArrow
-               else AType [(open,Normal)] 
-       False -> noArrow
+   = if isHead then
+       (if isFunction r then noArrow else AType [(open, Normal)]) else
+       noArrow
 
 noMod :: ArrowModifier
 noMod = ArrMod { arrowFill = FilledArrow

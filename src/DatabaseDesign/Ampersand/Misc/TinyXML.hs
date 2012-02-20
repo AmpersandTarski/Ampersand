@@ -29,7 +29,7 @@ module DatabaseDesign.Ampersand.Misc.TinyXML where
    showStart a = "<" ++ tName a ++ showAtts (tAtts a) ++ ">" 
   
    showAtts :: [XAtt] -> String
-   showAtts xs = concatMap showAtt xs
+   showAtts = concatMap showAtt
       where showAtt :: XAtt -> String
             showAtt a= " "++attName a++"="++show (attValue a)
 

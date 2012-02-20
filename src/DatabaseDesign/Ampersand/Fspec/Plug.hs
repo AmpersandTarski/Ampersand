@@ -194,7 +194,7 @@ instance Object PlugSQL where
      f c mms
        | null stop = f c mms'  -- a path from c to a is not found (yet), so add another step to the recursion
        | null (sort' length stop) = fatal 243 "null (sort' length stop)."
-       | otherwise = ECps [r | r <- head (sort' length stop)]  -- pick the shortest path and turn it into an expression.
+       | otherwise = ECps (head (sort' length stop))  -- pick the shortest path and turn it into an expression.
       where
         mms' = if [] `elem` mms 
                then fatal 295 "null in mms."

@@ -52,7 +52,6 @@ where
                                          ,Pattern(..)
                                          ,PairView(..)
                                          ,PairViewSegment(..) 
-                                         ,SrcOrTgt(..)
                                          ,Rule(..)
                                          ,RuleType(..)
                                          ,RoleRelation(..)
