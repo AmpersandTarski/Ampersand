@@ -18,13 +18,18 @@ set_error_handler("terminate_missing_variables");
 define( "EXPIRATION_TIME", 5*60 ); // expiration time in seconds
 
 function initSession() {
+	// when using $_SESSION, we get a nonsense warning if not declared global, however here
+	// we only do isset, so no need for global
   global $conceptTableInfo;
   
-  if (isset($conceptTableInfo['SESSION'])) { // only execute session code when concept SESSION is used by adl script
-    // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+  if (isset($conceptTableInfo['SESSION']) && !isset($_SESSION)) {
+  	// only execute session code when concept SESSION is used by adl script
+    
+  	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
     //       This way, errors during initSession do not prevent the reset-database link from being visible.
     DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
     if ($error) return;
+    
     session_start();
     cleanupExpiredSessions();
     
@@ -80,8 +85,8 @@ function DB_doquer($quer) {
 }
 
 function DB_doquerErr($quer, &$error) {
+  global $_SESSION; // when using $_SESSION, we get a nonsense warning if not declared global  
   global $dbName;
-  global $_SESSION;
   global $DB_link;
   global $DB_errs;
   

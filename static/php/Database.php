@@ -293,8 +293,9 @@ function testRule($ruleName) {
   echo "<a href=\"../Installer.php\" style=\"float:right\">Reset database</a>";
   echo "<h2>Testing rule $ruleName</h2>";
   $ruleSql = $allRulesSql[$ruleName];
-  $ruleAdl = escapeHtmlAttrStr($ruleSql[ruleAdl]);
+  $ruleAdl = escapeHtmlAttrStr($ruleSql['ruleAdl']);
   echo "<b>ADL:</b>&nbsp;<tt style=\"color:blue\">$ruleAdl</tt><h4>Rule SQL</h4><pre>$ruleSql[contentsSQL]</pre><h4>results</h4>";
+  $error = '';
   $rows = queryDb($ruleSql['contentsSQL'], $error);
   printBinaryTable( $rows );
 
