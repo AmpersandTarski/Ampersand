@@ -206,7 +206,7 @@ chpDataAnalysis lev fSpec flags
      ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
 -}
 
--- | The function daBasics lists the basic sentences that have been used in assembling the data model.
+  -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
   daBasics :: [Declaration] -> [Block]
   daBasics rs
     = [ Table [] [AlignLeft,AlignCenter,AlignCenter] [0.0,0.0,0.0]

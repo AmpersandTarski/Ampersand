@@ -298,7 +298,7 @@ where
    instance Traced P_KeyDef where
     origin = kd_pos
    
-   data P_KeySegment = P_KeyExp P_ObjectDef | P_KeyText String deriving (Eq, Show) -- ^ A name/expression pairs or a piece of text
+   data P_KeySegment = P_KeyExp P_ObjectDef | P_KeyText String deriving (Eq, Show) -- A name/expression pairs or a piece of text
    
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
