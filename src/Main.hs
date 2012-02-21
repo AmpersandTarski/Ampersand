@@ -191,7 +191,7 @@ doGenProto fSpec opts =
     ; reportViolations allViolations
     
     ; if (not . null) allViolations && not (development opts) && theme opts/=StudentTheme 
-      then putStrLn "\nERROR: No prototype generated because of rule violations." 
+      then putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)" 
       else do { verboseLn opts "Generating prototype..."
               ; phpObjInterfaces fSpec opts  
               ; verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts ++ "."
