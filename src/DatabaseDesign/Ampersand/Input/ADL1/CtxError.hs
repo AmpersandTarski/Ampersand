@@ -18,7 +18,7 @@ data CtxError = Cxes    {cxesibls::[CtxError]} -- ^ any number of errors
               | Cxe     {cxechild::CtxError    -- ^ lower level errors
                         ,cxemsg::String}       -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
               | CxeNone                        -- ^ indicates the absence of an error
-              | PE      {cxeMsgs :: [ParserError]} -- ^ list of parse-time messages 
+              | PE      {cxeMsgs :: [ParseError]} -- ^ list of parse-time messages 
           --    deriving (Eq)
 instance Eq CtxError where
   Cxes es == Cxes es' = es == es'
