@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 -- 
 module DatabaseDesign.Ampersand.Components 
@@ -48,7 +47,7 @@ fatal = fatalMsg "Components"
 parseCtxM_  :: String        -- ^ The string to be parsed
             -> Options       -- ^ flags to be taken into account
             -> String        -- ^ The name of the .adl file (used for error messages)
-            -> IO (Either ParserError P_Context) -- ^ The IO monad with the parse tree. 
+            -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
 parseCtxM_ adlstring flags fn = tryAll versions2try
     where 
       versions2try :: [ParserVersion]
@@ -56,9 +55,9 @@ parseCtxM_ adlstring flags fn = tryAll versions2try
          Just pv  -> [pv]
          Nothing  -> [PV664,PV211]
       
-      try :: ParserVersion -> IO (Either ParserError P_Context)
+      try :: ParserVersion -> IO (Either ParseError P_Context)
       try pv = do { verbose flags $ "Parsing with "++show pv++"..."
-                  ; eRes <- parseADL pv adlstring fn
+                  ; eRes <- parseADL pv fn
                   ; case eRes of 
                       Right ctx  -> verboseLn flags " successful"
                                 >> return (Right $ ctx{ctx_experimental = experimental flags}) -- set the experimental flag
@@ -66,7 +65,7 @@ parseCtxM_ adlstring flags fn = tryAll versions2try
                                  >> return (Left err)
                   }
                   
-      tryAll :: [ParserVersion] -> IO (Either ParserError P_Context)
+      tryAll :: [ParserVersion] -> IO (Either ParseError P_Context)
       tryAll [] = fatal 76 "tryAll must not be called with an empty list. Consult your dealer."
       tryAll [pv] = try pv 
       tryAll (pv:pvs) = do mCtx <- try pv 
