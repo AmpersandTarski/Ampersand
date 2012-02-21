@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       , makeDefinition, uniquecds
       , count
       , ShowMath(..)
-      , latexEscShw, stripSpecialChars
+      , latexEscShw, escapeNonAlphaNum
       , xrefCitation
       , texOnly_Id
       , texOnly_fun
@@ -297,7 +297,7 @@ theTemplate flags gis
                , "\\usepackage{glossaries}\n"
                , "\\makeglossaries\n"
                ] ++
-               [ "\\newglossaryentry{"++stripSpecialChars cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
+               [ "\\newglossaryentry{"++escapeNonAlphaNum cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
                | c<-gis, (cdnm,cd)<-uniquecds c]
                ++
                [ "\\begin{document}\n"
@@ -393,19 +393,19 @@ class SymRef a where
   symDefPageRef c = "\\pageref{Def"++symLabel c++"}"
 
 instance SymRef ConceptDef where
-  symLabel cd = "Concept:"++stripSpecialChars (cdcpt cd)
+  symLabel cd = "Concept:"++escapeNonAlphaNum (cdcpt cd)
 
 instance SymRef A_Concept where
-  symLabel c = "Concept:"++stripSpecialChars (name c)
+  symLabel c = "Concept:"++escapeNonAlphaNum (name c)
 
 instance SymRef Declaration where
-  symLabel d = "Decl:"++stripSpecialChars (name d++name (source d)++name (target d))
+  symLabel d = "Decl:"++escapeNonAlphaNum (name d++name (source d)++name (target d))
 
 instance SymRef Rule where
-  symLabel r = "Rule:"++stripSpecialChars (name r)
+  symLabel r = "Rule:"++escapeNonAlphaNum (name r)
 
 instance SymRef PlugInfo where
-  symLabel p = "PlugInfo "++stripSpecialChars (name p)
+  symLabel p = "PlugInfo "++escapeNonAlphaNum (name p)
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [RawInline "latex" ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
@@ -522,7 +522,7 @@ latexEscShw ""           = ""
 latexEscShw ('\"':c:str) | isAlphaNum c = "``"++latexEscShw (c:str)
                          | otherwise    = "''"++latexEscShw (c:str)
 latexEscShw "\""         = "''"
-latexEscShw (c:str)      | isAlphaNum c = c:latexEscShw str
+latexEscShw (c:str)      | isAlphaNum c && isAscii c = c:latexEscShw str
                          | otherwise    = f c++latexEscShw str
  where
   f '-' = "\\- "
@@ -652,17 +652,6 @@ latexEscShw (c:str)      | isAlphaNum c = c:latexEscShw str
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
   f _   = [c] -- let us think if this should be:    fatal 661 ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
-
--- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
-stripSpecialChars :: String -> String
-stripSpecialChars x 
-       = case x of
-             []     -> []
-             '_':cs -> upCap (stripSpecialChars cs)  -- since underscore is not allowed, use capital instead
-             c:cs   -> (if isAscii c 
-                       then [c]
-                       else "__"++ show (ord c)++"__")  -- TODO: is this allowed in LaTeX references?
-                       ++stripSpecialChars cs
              
 
 --posixFilePath :: FilePath -> String
@@ -676,7 +665,7 @@ makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
 makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
     FLatex ->  [ Para ( [ RawInline "latex" (symDefLabel cd ++ "\n") | i == 0] ++
-                        [ RawInline "latex" ("\\marge{\\gls{"++latexEscShw cdnm++"}}\n") ] ++
+                        [ RawInline "latex" ("\\marge{\\gls{"++escapeNonAlphaNum cdnm++"}}\n") ] ++
                         [ RawInline "latex" (latexEscShw (cddef cd))] ++
                         [ RawInline "latex" (latexEscShw (" ["++cdref cd++"]")) | not (null (cdref cd)) ]
                       )
