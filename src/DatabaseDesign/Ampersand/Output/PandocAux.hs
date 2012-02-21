@@ -525,7 +525,6 @@ latexEscShw "\""         = "''"
 latexEscShw (c:str)      | isAlphaNum c && isAscii c = c:latexEscShw str
                          | otherwise    = f c++latexEscShw str
  where
-  f '-' = "\\- "
   f '"' = "\\textquotedbl "
   f '#' = "\\#"
   f '$' = "\\$"
