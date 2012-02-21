@@ -3,6 +3,7 @@ module Main where
 
 import Control.Monad
 import Data.List
+import Data.Function (on)
 import System.FilePath        (combine,dropFileName,takeBaseName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
@@ -23,8 +24,8 @@ main
        then mapM_ putStr (helpNVersionTexts prototypeVersionStr opts)
        else do (cx,err) <- parseAndTypeCheck opts
                if nocxe err 
-                 then let fspc = makeFspec opts cx in
-                      do generateProtoStuff opts fspc
+                 then let fspc = makeFspec opts cx
+                      in  generateProtoStuff opts fspc
                  else putStr (show err) 
   where
   parseAndTypeCheck :: Options -> IO(A_Context,CtxError) 
@@ -199,20 +200,24 @@ doGenProto fSpec opts =
               }
     }
  where reportViolations []    = verboseLn opts $ "No violations found."
-       reportViolations viols = putStrLn $ concat [show p++": "++showADL r++"\n" |(r,p)<-viols]
+       reportViolations viols =
+         let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
+         in  putStrLn $ intercalate "\n"
+                          [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps 
+                          | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
+                          ]
 
 
 ruleTest :: Fspc -> Options -> String -> IO ()
 ruleTest fSpec _ ruleName =
- do { case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
-        [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found." 
-        (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
-                       ; putStrLn $ showContents rule
-                       ; let ruleComplement = rule { rrexp = ECpl $ EBrk $rrexp rule }
-                       ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
-                       ; putStrLn $ showContents ruleComplement
-                       } 
-    }
+ case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
+   [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found." 
+   (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+                  ; putStrLn $ showContents rule
+                  ; let ruleComplement = rule { rrexp = ECpl $ EBrk $rrexp rule }
+                  ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                  ; putStrLn $ showContents ruleComplement
+                  } 
  where showContents rule = let pairs = [ "("++f++"," ++s++")" | (f,s) <- ruleviolations $ rule { rrexp = ECpl $ rrexp rule }]
                            in  "[" ++ intercalate ", " pairs ++ "]" -- getting the contents is not implemented for rules in Rules.hs, 
                                                                     -- so we get the violations of the complement instead
