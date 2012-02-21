@@ -429,7 +429,7 @@ chpDataAnalysis lev fSpec flags
   daPlug p
    = if null content then [] else plugHeader ++ content
      where
-       plugHeader = labeledHeader (lev+1) ("sct:Plug "++stripSpecialChars (name p)) (name p)
+       plugHeader = labeledHeader (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of
