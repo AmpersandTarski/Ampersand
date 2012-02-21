@@ -373,11 +373,11 @@ instance Explainable Activity where
                     [p]   -> Just p
                     purps -> case concatMarkup (map explMarkup purps) of
                               Nothing -> Nothing
-                              Just p  -> Just Expl { explPos      = explPos (head purps) -- ^ The position in the Ampersand script of this purpose definition
-                                                   , explObj      = ExplRule (actRule x) -- ^ The object that is explained.
-                                                   , explMarkup   = p                    -- ^ This field contains the text of the explanation including language and markup info.
-                                                   , explUserdefd = False                -- ^ Is this purpose defined in the script?
-                                                   , explRefId    = intercalate ", " (map explRefId purps) -- ^ The reference of the explaination
+                              Just p  -> Just Expl { explPos      = explPos (head purps) -- The position in the Ampersand script of this purpose definition
+                                                   , explObj      = ExplRule (actRule x) -- The object that is explained.
+                                                   , explMarkup   = p                    -- This field contains the text of the explanation including language and markup info.
+                                                   , explUserdefd = False                -- Is this purpose defined in the script?
+                                                   , explRefId    = intercalate ", " (map explRefId purps) -- The reference of the explaination
                                                    }
 
 class Meaning a where 
