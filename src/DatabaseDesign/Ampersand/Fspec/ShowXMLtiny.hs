@@ -155,7 +155,7 @@ where
      mkXmlTree x@(Obj{}) 
            = Elem (mkTag x)
                       ( descriptionTree (objctx x)
-                     ++ attributesTree (objats x)
+                     ++ attributesTree (objatsLegacy x)
                      ++ [Elem (simpleTag "Directives")
                               [PlainText (show (objstrs x))] |not (null (objstrs x))]
                       )    --TODO: De directieven moeten waarschijnlijk nog verder uitgewerkt.

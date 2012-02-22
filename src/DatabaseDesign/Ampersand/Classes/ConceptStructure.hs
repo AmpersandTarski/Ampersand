@@ -11,6 +11,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
    import DatabaseDesign.Ampersand.Basics                          (Collection(..),Classification,preCl)
    import Data.List
+   import Data.Maybe
    import DatabaseDesign.Ampersand.ADL1.Expression
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration
    import DatabaseDesign.Ampersand.Core.Poset(Ordering(..))
@@ -22,7 +23,8 @@ where
     concs   :: a -> [A_Concept]                 -- ^ the set of all concepts used in data structure a
     mors    :: a -> [Relation]        -- ^ the set of all relations used within data structure a,
     mors     = nub . morlist
-    morlist :: a -> [Relation]        -- ^ the list of all relations used within data structure a (the difference with mors is that morlist is not unique)
+    morlist :: a -> [Relation]        -- ^ the list of all relations used within data structure a
+                                      --   (the difference with mors is that morlist is not unique wrt name and signature)
     genE    :: a -> GenR
     genE cstruc = if null cs then (\x y -> if x==y then EQ else NC,[]) else head cs where cs = [order c |c<-concs cstruc]
     
@@ -33,6 +35,11 @@ where
     concs   (a,b) = concs a `uni` concs b
     mors    (a,b) =  mors a `uni` mors b
     morlist (a,b) = morlist a ++ morlist b
+
+   instance ConceptStructure a => ConceptStructure (Maybe a) where
+    concs   ma = maybe [] concs $ ma
+    mors    ma = maybe [] mors $ ma
+    morlist ma = maybe [] morlist $ ma
  
    instance ConceptStructure a => ConceptStructure [a] where
     concs     = nub . concatMap concs
@@ -93,11 +100,20 @@ where
 --  closExprs _ = []
 
    instance ConceptStructure ObjectDef where
-    concs     obj = [target (objctx obj)] `uni` concs (objats obj)
-    mors      obj = mors (objctx obj) `uni` mors (objats obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
-    morlist   obj = morlist (objctx obj)++morlist (objats obj)
+    concs     obj = [target (objctx obj)] `uni` concs (objmsub obj)
+    mors      obj = mors (objctx obj) `uni` mors (objmsub obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
+    morlist   obj = morlist (objctx obj)++morlist (objmsub obj)
 --  closExprs obj = closExprs (objctx obj) `uni` closExprs (objats obj)
 
+   -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
+   instance ConceptStructure SubInterface where
+    concs (Box objs)       = concs objs 
+    concs (InterfaceRef _) = [] 
+    mors (Box objs)       = mors objs 
+    mors (InterfaceRef _) = [] 
+    morlist (Box objs)       = morlist objs 
+    morlist (InterfaceRef _) = [] 
+          
    instance ConceptStructure Pattern where
     concs     pat = concs (ptgns pat) `uni` concs (ptdcs pat) `uni` concs (ptrls pat) `uni` concs (ptkds pat)
     mors      pat = mors (ptrls pat) `uni` mors (ptkds pat) `uni` mors [makeRelation d | d<-ptdcs pat, (not.null) (multiplicities d)]
