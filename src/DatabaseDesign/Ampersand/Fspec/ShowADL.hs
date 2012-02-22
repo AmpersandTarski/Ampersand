@@ -35,6 +35,9 @@ class LanguageDependent a where
   mapexprs :: (Language l, ConceptStructure l, Identified l) => (l -> Expression -> Expression) -> l -> a -> a
   mapexprs _ _ = id
 
+instance LanguageDependent a => LanguageDependent (Maybe a) where
+  mapexprs f l (Just x) = Just $ mapexprs f l x
+
 instance LanguageDependent (a, Expression) where
   mapexprs f l (x,e) = (x, f l e)
 instance LanguageDependent Rule where
@@ -42,7 +45,10 @@ instance LanguageDependent Rule where
 instance LanguageDependent Interface where
   mapexprs f l ifc = ifc{ifcViols = map (mapexprs f l) (ifcViols ifc), ifcObj = mapexprs f l (ifcObj ifc)}
 instance LanguageDependent ObjectDef where
-  mapexprs f l obj = obj{objctx = f l (objctx obj), objats = map (mapexprs f l) (objats obj)}
+  mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
+instance LanguageDependent SubInterface where
+  mapexprs f l iref@(InterfaceRef _) = iref
+  mapexprs f l (Box objs) = Box $ map (mapexprs f l) objs
 instance LanguageDependent Relation where
   mapexprs _ _ = id
 instance LanguageDependent ECArule where
@@ -58,15 +64,17 @@ instance ShowADL ObjectDef where
 -- BECAUSE (SJ): Dit blijft nog even zo, omdat showADL gebruikt wordt in het genereren van interfaces.
 --              Zolang we dat nog niet onder de knie hebben blijft de code wat troebel.
  showADL obj = " : "++showADL (objctx obj)++
-               recur "\n  " (objats obj)
-  where recur :: String -> [ObjectDef] -> String
-        recur ind objs
+               recur "\n  " (objmsub obj)
+  where recur :: String -> Maybe SubInterface -> String
+        recur ind Nothing = ""
+        recur ind (Just (InterfaceRef name)) = "InterfaceRef name"
+        recur ind (Just (Box objs))
          = ind++" BOX [ "++
            intercalate (ind++"     , ") 
                                [ showstr (name o)++
                                   (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
                                   " : "++showADL (objctx o)++
-                                  if null (objats o) then "" else recur (ind++"     ") (objats o)
+                                  recur ind (objmsub o)
                                | o<-objs
                                ]++
            ind++"     ]"

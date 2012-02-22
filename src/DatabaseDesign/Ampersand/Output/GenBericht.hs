@@ -29,7 +29,10 @@ genBerichtObjDef objDef = indentHead 1 $
     , def $ objctx objDef 
     , name (target $ objctx objDef)
     ] :
-   concatMap genBerichtObjDef (objats objDef)           
+    case objmsub objDef of
+      Nothing -> []
+      Just (InterfaceRef name) -> [["INTERFACEREF "++name,"","",""]]
+      Just (Box objs) -> concatMap genBerichtObjDef objs           
  where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
        
        def (ERel (Rel{reldcl=Sgn{decMean=meaning}}))        = showMeaning meaning
