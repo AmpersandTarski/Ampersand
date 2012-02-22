@@ -55,7 +55,7 @@ where
 --         = "\nQuad "++show i++":\nmorphism: "++(showADL . ERel) rel++":\nshifts: "++concat ["\n"++showADLe s |s<-shs]++"\nconjunct: "++showADL conj++"\nrule: "++showADL r++""
 --TODO: Deze code komt ook voor in ADL2Fspec.hs. Dat lijkt dubbelop, en derhalve niet goed.
         rels = nub (recur (ifcObj ifc))
-         where recur obj = [editMph (objctx o) | o<-objats obj, editable (objctx o)]++[r | o<-objats obj, r<-recur o]
+         where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]
         vis        = nub (rels++map (I . target) rels)
         visible r  = r `elem` vis
         invs       = [rule | rule<-invariants fSpec, (not.null) (mors rule `isc` vis)]

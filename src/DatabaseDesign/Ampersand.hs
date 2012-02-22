@@ -14,7 +14,6 @@ module DatabaseDesign.Ampersand
    , Expression(..)
    , Population(..)
    , Fspc(..)
-   , ObjectDef(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Relation(..)
    , Rule(..), ruleviolations
@@ -31,7 +30,10 @@ module DatabaseDesign.Ampersand
    , Identified(..)
    , ProcessStructure(..)
    , Relational(..)
+   , ObjectDef(..)
+   , objAts, objatsLegacy
    , Interface(..)
+   , SubInterface(..)
    , Object(..)
    , Plugable(..)
    , Explainable(..)

@@ -301,7 +301,7 @@ pODef2aODef actx cast podef
  = (Obj { objnm   = obj_nm podef
         , objpos  = obj_pos podef
         , objctx  = expr
-        , objats  = ats
+        , objmsub = Just . Box $ ats
         , objstrs = obj_strs podef
         }
    , CxeOrig (cxelist (nmchk : exprcxe : atscxes)) "object definition" "" (origin podef) )

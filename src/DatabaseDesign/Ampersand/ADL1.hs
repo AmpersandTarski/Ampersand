@@ -10,7 +10,10 @@ module DatabaseDesign.Ampersand.ADL1
            , P_KeyDef(..), P_KeyDefs, P_KeySegment(..), KeyDef(..), KeySegment(..)
            , P_Population(..), Population(..)
            , P_ObjectDef(..), P_ObjectDefs
-           , ObjectDef(..), P_Interface(..), Interface(..)
+           , ObjectDef(..), P_Interface(..)
+           , objAts, objatsLegacy
+           , SubInterface(..)
+           , Interface(..)
            , P_Expression(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
            , A_Gen(..),P_Gen(..), P_Gens
@@ -48,6 +51,9 @@ where
                                          ,KeyDef(..)
                                          ,KeySegment(..)
                                          ,ObjectDef(..)
+                                         ,objAts
+                                         ,objatsLegacy
+                                         ,SubInterface(..)
                                          ,Interface(..)
                                          ,Pattern(..)
                                          ,PairView(..)

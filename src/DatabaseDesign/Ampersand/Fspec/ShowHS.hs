@@ -703,11 +703,7 @@ where
            ["Obj{ objnm = " ++ show(objnm r)
            ,"   , objpos = " ++ showHS flags "" (objpos r)  
            ,"   , objctx = " ++ showHS flags "" (objctx r)
-           ,if null (objats r) then "   , objats = []" else
-            "   , objats"++indent++"      = ["++intercalate (indent ++ "        ,")
-                                                 (map (showHS flags (indent ++"         "))
-                                                      (objats r))
-                         ++indent++"        ]"
+           ,"   , objmsub = " ++ showHS flags "" (objmsub r)
            ,"   , objstrs = " ++ show(objstrs r)
            ]++indent++"   }"
 
@@ -730,6 +726,14 @@ where
            , "    , ifcPos    = " ++ showHS flags "" (ifcPos ifc)
            , "    , ifcExpl   = " ++ show(ifcExpl ifc)
            ]++"    }"
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: SubInterface                  ***
+-- \***********************************************************************
+
+   instance ShowHS SubInterface where
+    showHS flags indent (InterfaceRef name) = "InterfaceRef "++show name 
+    showHS flags indent (Box objs) = "Box ("++showHS flags (indent++"  ") objs++")" 
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***

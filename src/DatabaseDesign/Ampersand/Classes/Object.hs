@@ -25,5 +25,5 @@ instance Object A_Context where
  
 instance Object ObjectDef where
  concept obj = target (objctx obj)
- attributes  = objats
+ attributes  = objAts
  contextOf   = objctx
