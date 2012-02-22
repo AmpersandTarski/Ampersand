@@ -253,7 +253,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
                                         selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
   , "      , 'subInterfaces' =>"
   , "          array"
-  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) $ objats object) ++
+  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) $ objatsLegacy object) ++
   [ "      )"
   ]
   where isEditable rel = rel `elem` editableRels
@@ -262,7 +262,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
                                     ERel r        | isEditable r -> [target r]
                                     EFlp (ERel r) | isEditable r -> [source r]
                                     _                            -> []
-                                  ++ concatMap getEditableConcepts (objats obj)
+                                  ++ concatMap getEditableConcepts (objatsLegacy obj)
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $

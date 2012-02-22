@@ -130,14 +130,14 @@ makePhpPlug obj
    inFile = listToMaybe [ str    --objstrs obj = [["FILE=date.plug.php"]]
                         | x<-objstrs obj, 'F':'I':'L':'E':'=':str<-x ]
    inAttrs :: [CodeVar]
-   inAttrs = [toAttr attr | attr<-objats obj, (or$ map (elem "PHPARG") (objstrs attr))]
+   inAttrs = [toAttr attr | attr<-objatsLegacy obj, (or$ map (elem "PHPARG") (objstrs attr))]
    toAttr :: ObjectDef -> CodeVar
    toAttr a = CodeVar{cvIndexed=IndexByName -- TODO, read this from parameters
                      ,cvContent=Right [] -- TODO!! Allow complex objects..
                      ,cvExpression=conc2php (objctx a)}
    outObj :: CodeVar
    outObj = CodeVar{cvIndexed=IndexByName
-                   ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj,  ["PHPARGS"] `notElem` objstrs attr]
+                   ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objatsLegacy obj,  ["PHPARGS"] `notElem` objstrs attr]
                    ,cvExpression=conc2php (objctx obj)}
    verifiesInput::Bool
    verifiesInput = True   

@@ -122,7 +122,7 @@ showClasses flags fSpec o
                                indentBlock (if isOne o then 4 else 6)
                                ( [ "// fill the attributes"
                                  ] ++
-                                 ( if null [a |a<-objats o,isUni (objctx a)]
+                                 ( if null [a |a<-objatsLegacy o,isUni (objctx a)]
                                    then ["$me=array();"]
                                    else []            
                                  ) ++ (doPhpGet fSpec
@@ -130,7 +130,7 @@ showClasses flags fSpec o
                                                0
                                                (o  {objnm =if isOne o then "1" else "$id"
                                                    ,objctx=ERel(I(concept o))
-                                                   ,objats=[]}
+                                                   ,objmsub=Nothing}
                                                )
                                                o
                                      ) 
@@ -548,8 +548,8 @@ doPhpGet fSpec objVar depth objIn objOut
     mname aout = objVar++"['"++name aout++"']"
     unisNeeded = [aout |aout<-allNeeded,isObjUni aout]
     arrsNeeded = [aout |aout<-allNeeded,not$isObjUni aout]
-    allNeeded  = [aout |aout<-objats objOut {-% ,null[a |a<-objats objIn,objctx a==objctx aout] %-}]
-    depthNeeded= [aout |aout<-objats objOut {-% ,null[a |a<-objats objIn,a `msubset` aout] %-} ]
+    allNeeded  = [aout |aout<-objatsLegacy objOut {-% ,null[a |a<-objats objIn,objctx a==objctx aout] %-}]
+    depthNeeded= [aout |aout<-objatsLegacy objOut {-% ,null[a |a<-objats objIn,a `msubset` aout] %-} ]
     {-% msubset i o= and ((objctx i==objctx o) -- must contain same elems
                           :[or [msubset i' o' |i'<-objats i] -- and at least every attribute of o must be in i
                            |o'<-objats o]) %-}
@@ -557,7 +557,7 @@ doPhpGet fSpec objVar depth objIn objOut
     doQuer fl [] = fatal 540 $ "doPhpGet: doQuer has no query for "++fl
     doQuer firstLine quer 
      = addToLast "\"));" ([ firstLine++"(DB_doquer(\""++head quer] ++ map ((++) (take (12+length firstLine) (repeat ' '))) (tail quer))
-    trunc att = att{objats=[]}
+    trunc att = att{objmsub=Nothing}
     ----------fill id's of attributes of objOut functions
     --one query to get a row containing all UNI values
     --objVar=$me, or $(mname aout) (UNI), or $v++depth (ARRAY)
@@ -566,11 +566,11 @@ doPhpGet fSpec objVar depth objIn objOut
      | otherwise
         = let idAt = trunc(objOut{objctx=targetCpt,objnm="id"})
               targetCpt = ERel(I$target$objctx objOut)
-          in doQuer (objVar++"=firstRow") (doSqlGet fSpec False objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt}))
+          in doQuer (objVar++"=firstRow") (doSqlGet fSpec False objIn (objOut{objmsub = Just . Box $ idAt : map trunc unisNeeded,objctx=targetCpt}))
     -- getArrayOf: code for leaves or for nodes (in the objDef tree) is different. For leaves: use firstCol to show them
     getArrayOf aout 
-     = doQuer (mname aout ++ "="++ (if null(objats aout) then "firstCol" else ""))
-              (doSqlGet fSpec True objIn objOut{objats=[{-% truncKeepUni %-}trunc (if null(objats aout) then aout else aout{objnm="id"}) ]})
+     = doQuer (mname aout ++ "="++ (if null(objatsLegacy aout) then "firstCol" else ""))
+              (doSqlGet fSpec True objIn objOut{objmsub= Just . Box $ [{-% truncKeepUni %-}trunc (if null(objatsLegacy aout) then aout else aout{objnm="id"}) ]})
     {-% 
     truncKeepUni = trunc -- (zie TODO boven bij doPhpGet)
                          -- WHY is dit een probleem m.a.w. wil je wel recursie in SQL && PHP?
@@ -603,7 +603,7 @@ doSqlGet fSpec isArr objIn objOut
                      (if isOne' objOut then [] else [" WHERE " ++ snd (head tbls)])
                )
    where  
-   aOuts = [a |a<-objats objOut]
+   aOuts = [a |a<-objatsLegacy objOut]
    rest :: [(ObjectDef,Integer)]
    rest = zip [ a | a<-aOuts, a `notElem` [a' | g <- comboGroups, (a',_) <- snd g]]
               [(1::Integer)..]
@@ -624,7 +624,7 @@ doSqlGet fSpec isArr objIn objOut
                          , not (null res)]
       combos 
        = [ ((plug,(ai,fld0)),(a,fld1))
-         | ai<-objats objIn --(see TODO doPhpGet => altijd objats objIn=[])
+         | ai<-objatsLegacy objIn --(see TODO doPhpGet => altijd objats objIn=[])
          , a<-aOuts
          , Just e' <-[takeOff (objctx ai) (objctx a)]
          , (plug,fld0,fld1)<-sqlRelPlugs fSpec e'

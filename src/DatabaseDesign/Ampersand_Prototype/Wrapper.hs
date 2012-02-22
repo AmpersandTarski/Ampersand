@@ -51,14 +51,14 @@ objectWrapper fSpec ifcs ifc flags
    , "    }"
    ]
   ++ --(see phpList2Array below)
-   indentBlock 4 (concat [phpList2Array 0 ("$"++phpIdentifier (name a)) (show n) a | (a,n)<-zip (objats o) [(0::Integer)..]])
+   indentBlock 4 (concat [phpList2Array 0 ("$"++phpIdentifier (name a)) (show n) a | (a,n)<-zip (objatsLegacy o) [(0::Integer)..]])
   ++
    ( if isOne o
-     then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++",False);"
+     then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objatsLegacy o]++",False);"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++");"
           ] 
-     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']" ++ [',' |not(null (objats o))]
-                                  ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++",False);"
+     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']" ++ [',' |not(null (objatsLegacy o))]
+                                  ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objatsLegacy o]++",False);"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++".'&" ++ objectId ++"='.urlencode($"++objectId++"->getId())"++");"
           ] 
    )
@@ -141,7 +141,7 @@ objectWrapper fSpec ifcs ifc flags
    visibleedit = foldr (||) visiblenew [mayedit x editable |x<-allobjctx o]
    visibledel = False --del() not implemented yet -- visiblenew --if you may add you may delete 
    visiblenew = mayadd (target(objctx o)) editable
-   allobjctx obj = objctx obj : concatMap allobjctx (objats obj)
+   allobjctx obj = objctx obj : concatMap allobjctx (objatsLegacy obj)
    showObjectCode --display some concept instance in read or edit mode by definition of INTERFACE
     = [ "writeHead(\"<TITLE>"++objectName++" - "++appname++" - Ampersand Prototype</TITLE>\""
       , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
@@ -164,7 +164,7 @@ objectWrapper fSpec ifcs ifc flags
              ]
         else ["?><H1>"++objectName++"</H1>"] --the context element is a constant, it is nicer to display the ifclabel (objectName)
       ) --END: display/edit the identifier of some concept instance
-     ++ concat [attributeWrapper fSpec ifcs editable objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
+     ++ concat [attributeWrapper fSpec ifcs editable objectId (show n) (length(objatsLegacy o)>1) a | (a,n)<-zip (objatsLegacy o) [(0::Integer)..]]
      ++  --(see attributeWrapper below)
       ["<?php"
       ,"if($edit) echo '</FORM>';"
@@ -275,7 +275,7 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
    --attContent makes a suitable frame based on the multiplicity of (objctx att)
    --depth increases with 1 iff not(UNI), this should sync with phpList2Array (saving request) and attEdit (javascript functions) for synced paths
    --uniAtt prints the values as links in read mode and as values in edit mode
-   --if there are objats, then the instances on this level are printed as headers with links
+   --if there are objatsLegacy, then the instances on this level are printed as headers with links
    --through attHeaders the recursion of attContent is made with
    --   att'= a
    --   var'=(var++"['"++name a++"']")
@@ -305,7 +305,7 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
    ----------------
    -- attContent shows a list of values, using uniAtt if it is only one
    attContent var depth path cls att 
-    | not (isUni (objctx att)) --(not(UNI) with or without objats) 
+    | not (isUni (objctx att)) --(not(UNI) with or without objatsLegacy) 
       = let
         content = uniAtt atnm idvar (depth+1) (path ++".'.$i"++show depth++".'") cls att
         atnm = if "$"++phpIdentifier (name att)==var then "$v"++show depth else "$"++phpIdentifier (name att)
@@ -317,12 +317,12 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
         , "foreach("++var++" as $i"++show depth++"=>"++idvar ++"){"
         , --atnm is set to I(idvar) or value(idvar), where  value is the name of the display relation
           "  "++atnm ++"="++(if null (displaydirective att) then idvar
-                       else (if null(objats att)
+                       else (if null(objatsLegacy att)
                              then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
                              else idvar)) ++ ";" 
         , "  echo '"
         , "  <LI CLASS=\""++itemUI editable (objctx att)++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\" "++autocompleteHtmlAttrs++">';"
-        , if null(objats att) || null(displaydirective att) 
+        , if null(objatsLegacy att) || null(displaydirective att) 
           then [] 
           else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);"
         ]
@@ -407,7 +407,7 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
     where autocompleteHtmlAttrs = "context=\""++name fSpec++"\" interface=\""++objectId++"\" concept=\""++show (target $ objctx att)++"\""
    ----------------end: attContent
    uniAtt var idvar depth path cls att
-    | null (objats att)
+    | null (objatsLegacy att)
       = let
         content=if null gotoP || isIdent (contextOf att) 
                 then if null (urlstrs att) 
@@ -437,9 +437,9 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
         echobit= "htmlspecialchars("++idvar ++ "['id'])"
         content 
          = [ indentBlock 2 c
-           | (a,n)<-zip (objats att) [(0::Integer)..]
+           | (a,n)<-zip (objatsLegacy att) [(0::Integer)..]
            , c<-[attHeading (var++"['"++name a++"']") depth (path++"."++show n)
-                                (cls ++ if length(objats att) > 1
+                                (cls ++ if length(objatsLegacy att) > 1
                                         then (if null cls then "" else "_")
                                              ++ phpIdentifier (name a)
                                         else "") a]]
@@ -482,7 +482,7 @@ attributeWrapper fSpec ifcs editable objectId path0 siblingatt0s att0
    -----------end: uniAtt
    -- attHeading shows a heading and its value
    attHeading var depth path cls att 
-    | objats att==[]
+    | objatsLegacy att==[]
       = ["echo '"++name att++": ';"] ++ content
     | otherwise
       = [ "?> "
@@ -519,7 +519,7 @@ showBlockJS cls editable att
    where
      attCode' = map (\x->"'"++x++"'") (attCode "'+id+'." cls att)
      attCode strt c at = ["<DIV>"++(name a)++": "++(specifics c (strt ++ show n) a)++"</DIV>"
-                         | (n,a)<-zip [(0::Integer)..] (objats at)]
+                         | (n,a)<-zip [(0::Integer)..] (objatsLegacy at)]
      specifics c n a = if isUni (objctx a)
                          then if isTot (objctx a)
                               then "<SPAN CLASS=\""++itemUI editable (objctx att)++acls c a++"\" ID=\""++n
@@ -532,13 +532,13 @@ showBlockJS cls editable att
 -------------
 uniEditAtt::String->Integer->String->String->ObjectDef->[(String,ObjectDef)]
 uniEditAtt var depth path cls att
-  | null (objats att) = []
+  | null (objatsLegacy att) = []
   | otherwise = concat 
-       [ b | (a,n)<-zip (objats att) [(0::Integer)..]
+       [ b | (a,n)<-zip (objatsLegacy att) [(0::Integer)..]
            , b<-[attEdit (var++"['"++name a++"']") --(TODO: vgl. UniContentAtt)
                 depth
                 (path++"."++show n) 
-                (cls ++ if length(objats att) > 1
+                (cls ++ if length(objatsLegacy att) > 1
                         then (if null cls then "" else "_") ++ phpIdentifier (name a)
                         else "")
                 a]
@@ -550,8 +550,8 @@ attEdit var depth path cls att
      newBlocks = uniEditAtt atnm (depth+1) (path ++".'.$i"++show depth++".'") cls att
      atnm = if "$"++phpIdentifier (name att)==var then "$v"++show depth else "$"++phpIdentifier (name att)
      in
-     (if null (objats att) then [] else [(cls,att)]) ++ newBlocks
- | objats att==[] = []
+     (if null (objatsLegacy att) then [] else [(cls,att)]) ++ newBlocks
+ | objatsLegacy att==[] = []
  | (isTot(objctx att)) = uniEditAtt var depth path cls att
  | otherwise 
    = let 
@@ -589,18 +589,18 @@ phpList2ArrayUni depth var rqvar a
                  ) ++
    concat
    [ phpList2Array depth (var++"['"++name a'++"']") (rqvar++"."++show n) a'
-   | (a',n)<-zip (objats a) [(0::Integer)..],not (isUni (objctx a'))]
+   | (a',n)<-zip (objatsLegacy a) [(0::Integer)..],not (isUni (objctx a'))]
 phpList2ArrayVal :: String->String->ObjectDef->[String]
 phpList2ArrayVal var rqvar a
- = if null (objats a) then ["savevalue(@$r['"++rqvar++"'])"]
+ = if null (objatsLegacy a) then ["savevalue(@$r['"++rqvar++"'])"]
    else [ "array( 'id' => savevalue(@$r['"++rqvar'++"'])"] ++ 
         [ ", '" ++ name a' ++ "' => "
           ++ concat (phpList2ArrayVal var (rqvar++'.':show n) a')
-        | (a',n)<-zip (objats a) [(0::Integer)..], isUni (objctx a')] ++
+        | (a',n)<-zip (objatsLegacy a) [(0::Integer)..], isUni (objctx a')] ++
         [ ")"]
          -- we gebruiken voor rqvar' liever iets waarvan het attribuut ingesteld wordt:
    where  rqvar' = head ( [(rqvar++'.':show n)
-                         | (a',n)<-zip (objats a) [(0::Integer)..]
+                         | (a',n)<-zip (objatsLegacy a) [(0::Integer)..]
                          , isUni (objctx a')
                          , isIdent (objctx a')
                          ] ++ [rqvar] )
