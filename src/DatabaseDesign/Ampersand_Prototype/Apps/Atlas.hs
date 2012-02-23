@@ -248,7 +248,7 @@ geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y |(x',y)<-f,x==x']
 atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [P_Population]
 atlas2pops relcontent relname relsc reltg pairleft pairright atomsyntax 
- = [P_Popu r [s,t] (map (makepair.snd) cl)
+ = [P_Popu r (P_Sign [s,t]) (map (makepair.snd) cl)
    |cl<-eqCl fst relcontent,not(null cl)
    , let r = makerel (fst(head cl)) relname
    , let s = PCpt(geta relsc (fst(head cl)) (error "while geta relsc1."))
@@ -293,8 +293,8 @@ atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
      |(x,y)<-patpurpose]
   ++ [PRef2 (DBLoc "Atlas(RulPurpose)") (PRef2Rule x) (P_Markup Nothing Nothing y) []
      |(x,y)<-rulpurpose]
-  ++ [PRef2 (DBLoc "Atlas(RelPurpose)") (PRef2Declaration r (P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
-                                                                    ,PCpt(geta reltg x (error "while geta reltg3."))])) (P_Markup Nothing Nothing y) []
+  ++ [PRef2 (DBLoc "Atlas(RelPurpose)") (PRef2Declaration (r, P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
+                                                                     ,PCpt(geta reltg x (error "while geta reltg3."))])) (P_Markup Nothing Nothing y) []
      |(x,y)<-relpurpose, let r=makerel x relname]
   ++ [PRef2 (DBLoc "Atlas(CptPurpose)") (PRef2ConceptDef x) (P_Markup Nothing Nothing y) []
      |(x,y)<-cptpurpose]

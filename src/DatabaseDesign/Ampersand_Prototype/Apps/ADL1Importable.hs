@@ -29,7 +29,7 @@ setRelats r = id r -- { relats = [source r,target r]}
 makepopu :: [t] -> (t -> String) -> [Relation] -> (t -> String) -> P_Population
 makepopu xs f [r] g 
  = P_Popu{ p_popm  = P_Rel {rel_nm = relnm r, rel_pos = relpos r}
-         , p_type  = [PCpt (name (source r)), PCpt (name (target r))]
+         , p_type  = P_Sign [PCpt (name (source r)), PCpt (name (target r))]
          , p_popps = [mkPair (trim$f x) (trim$g x) |x<-xs, not(null(f x)), not(null(g x)) ] --REMARK -> Our MySql configuration trims spaces
          }
 makepopu _ _ rs _ 
@@ -243,7 +243,7 @@ instance ADL1Importable Fspc where
 contextelements :: (Identified t, Identified a) => [t] -> [Relation] -> a -> [P_Population]
 contextelements xs [r] fspec
  = [P_Popu{ p_popm = P_Rel {rel_nm = relnm r, rel_pos = relpos r}
-          , p_type  = [PCpt (name (source r)), PCpt (name (target r))]
+          , p_type  = P_Sign [PCpt (name (source r)), PCpt (name (target r))]
           , p_popps=[mkPair (name x) (name fspec) |x<-xs]
           }]
 contextelements _ _ _
@@ -260,7 +260,7 @@ comparerules x y
 nextid :: (Identified t) => [t] -> [Relation] -> [P_Population]
 nextid xs [r]
  = [P_Popu{ p_popm = P_Rel {rel_nm = relnm r, rel_pos = relpos r}
-          , p_type  = [PCpt (name (source r)), PCpt (name (target r))]
+          , p_type  = P_Sign [PCpt (name (source r)), PCpt (name (target r))]
           , p_popps=nxt xs []
           }]
    where nxt [] rnxt = rnxt --end

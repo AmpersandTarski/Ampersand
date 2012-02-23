@@ -59,15 +59,15 @@ main
                                                   funrep = [makeRelation d |d<-declarations atlas,name d=="report"]
                                                   funadl = [makeRelation d |d<-declarations atlas,name d=="showadl"]
                                                   loadcontext r 
-                                                   = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair fn (name fspec),mkPair fnnxt fnnxt]}]
+                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair fn (name fspec),mkPair fnnxt fnnxt]}]
                                                   loadedfile r
-                                                   = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair usr fn]         } | not (null usr)]
+                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair usr fn]         } | not (null usr)]
                                                   -- uploadfile r        = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair usr "browse"]   } | not (null usr)]
                                                   --TODO -> the user has more files, how do I get them in this population
                                                   fileof r myfiles
-                                                   = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
+                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
                                                   contextfunction r x
-                                                   = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair (name fspec) x] }]
+                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair (name fspec) x] }]
                                               in
                                               do verbose opts "writing pictures for atlas... "
                                                  sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
