@@ -223,9 +223,9 @@ function generateInterfaceMap() {
   echo '}';
 }
 
-function generateInterface($interface, $srcAtom) {
+function generateInterface($interface, $srcAtom, $isRef=false) {
 /*
- *  <Interface label='interface label'>
+ *  <Interface label='interface label' isRef=true'/'false'>
  *   <Label>interface label</Label>
  *   <AtomList concept=.. [relation=..  relationIsFlipped=..]>
  *     ..
@@ -241,7 +241,8 @@ function generateInterface($interface, $srcAtom) {
  */
   
   $html = "";
-  emit($html, '<div class=Interface label='.showHtmlAttrStr($interface['name']).'>');
+  emit($html, '<div class=Interface label='.showHtmlAttrStr($interface['name']).
+                                  ' isRef='.showHtmlAttrBool($isRef).'>');
   emit($html, "<div class=Label>".htmlSpecialChars($interface['name']).'</div>');
   
   if ($srcAtom == null)
@@ -290,24 +291,41 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
  * if $atom is null, we are presenting a template. Because ""==null and "" denotes an empty atom, we check with === (since "" !== null)
  */
   global $selectedRoleNr;
+  global $allInterfaceObjects;
+  
   
   $html = "";
-  $interfaces = $isTopLevelInterface ? array ($interface) : $interface['subInterfaces'];
-
+  $subInterfaceIsRef = false;
+  
+  if ($isTopLevelInterface)
+  	$subInterfaces = array ($interface);
+  else
+  	if (isset($interface['boxSubInterfaces']))
+  	  $subInterfaces = $interface['boxSubInterfaces'];
+  	else 
+      if (isset($interface['refSubInterface'])) {
+        $subInterfaces = array ($allInterfaceObjects[$interface['refSubInterface']]);
+        $subInterfaceIsRef = true;
+      }
+      else
+        $subInterfaces = array ();
+  
+  // note that the assignments below are about interfaces for the atom, not about the subinterfaces 
   $nrOfInterfaces = count(getTopLevelInterfacesForConcept($interface['tgtConcept'], $selectedRoleNr));
   $hasInterfaces = $nrOfInterfaces == 0 ? '' : ' hasInterface=' . ($nrOfInterfaces == 1 ? 'single' : 'multiple');
   
-  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.' status='.($atom!==null?'unchanged':'new').' atomic='.showHtmlAttrBool(count($interfaces)==0).'>');
-  // can be hidden with css if necessary (old prototype did not show it)
+  emit($html, '<div class=Atom atom='.showHtmlAttrStr($atom).$hasInterfaces.
+                             ' status='.($atom!==null?'unchanged':'new').
+                             ' atomic='.showHtmlAttrBool(count($subInterfaces)==0).'>');
   
   $atomName = showKeyAtom($atom, $interface['tgtConcept']); 
   // TODO: can be done more efficiently if we query the concept atoms once for each concept
   
   emit($html, "<div class=AtomName>".htmlSpecialChars($atomName).'</div>');
-  if (count($interfaces) > 0) {
+  if (count($subInterfaces) > 0) {
     emit($html, '<div class=InterfaceList>');
-    foreach($interfaces as $interface) {
-      emit($html, generateInterface($interface, $atom));
+    foreach($subInterfaces as $interface) {
+      emit($html, generateInterface($interface, $atom, $subInterfaceIsRef));
     }
     emit($html, '</div>'); // div class=InterfaceList
   }

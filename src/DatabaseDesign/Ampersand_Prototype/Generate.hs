@@ -251,18 +251,36 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
   , "      , 'expressionSQL' => '" ++ (fromMaybe (fatal 151 $ "No sql generated for "++showHS opts "" normalizedInterfaceExp) $
                                         selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
-  , "      , 'subInterfaces' =>"
-  , "          array"
-  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) $ objatsLegacy object) ++
+  ] 
+  ++ generateMSubInterface fSpec opts editableRels depth (objmsub object) ++
   [ "      )"
   ]
-  where isEditable rel = rel `elem` editableRels
-        normalizedInterfaceExp = conjNF $ objctx object
-        getEditableConcepts obj = case objctx obj of
-                                    ERel r        | isEditable r -> [target r]
-                                    EFlp (ERel r) | isEditable r -> [source r]
-                                    _                            -> []
-                                  ++ concatMap getEditableConcepts (objatsLegacy obj)
+ where isEditable rel = rel `elem` editableRels
+       normalizedInterfaceExp = conjNF $ objctx object
+       getEditableConcepts obj = case objctx obj of
+                                   ERel r        | isEditable r -> [target r]
+                                   EFlp (ERel r) | isEditable r -> [source r]
+                                   _                            -> []
+                                 ++ concatMap getEditableConcepts (objAts obj)
+  
+generateMSubInterface :: Fspc -> Options -> [Relation] -> Int -> Maybe SubInterface -> [String] 
+generateMSubInterface fSpec opts editableRels depth Nothing = indent (depth*2) $ 
+  [ "      // No subinterfaces" ] 
+generateMSubInterface fSpec opts editableRels depth (Just (InterfaceRef nm)) = indent (depth*2) $ 
+  [ "      // InterfaceRef" 
+  , "      , 'refSubInterface' => "++ showPhpStr nm
+  ]
+generateMSubInterface fSpec opts editableRels depth (Just (Box objects)) = indent (depth*2) $ 
+  [ "      // Box" 
+  , "      , 'boxSubInterfaces' =>"
+  , "          array"
+  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) objects)
+  -- In contrast to what hLint thinks, these $'s are not redundant!
+
+
+
+
+-- utils
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
 genPhp generatorModule moduleName contentLines = unlines $
@@ -273,8 +291,6 @@ genPhp generatorModule moduleName contentLines = unlines $
   [ "?>"
   ]
  
--- utils
-
 blockParenthesize :: String -> String -> String -> [[String]] -> [String]
 blockParenthesize open close sep [] = [open ++ close]
 blockParenthesize open close sep  liness = concat [ zipWith (++) (pre:repeat "  ") (lines::[String]) 
