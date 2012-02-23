@@ -470,14 +470,14 @@ and the grammar must be disambiguated in order to get a performant parser...
                                P_Obj { obj_nm   = nm
                                      , obj_pos  = p
                                      , obj_ctx  = attexpr 
-                                     , obj_ats  = []
+                                     , obj_msub = Nothing
                                      , obj_strs = strs
                                      }
                              att attexpr = 
                                P_Obj { obj_nm   = ""
                                      , obj_pos  = Origin "pKeyAtt CCv221.hs"
                                      , obj_ctx  = attexpr 
-                                     , obj_ats  = []
+                                     , obj_msub = Nothing
                                      , obj_strs = []
                                      }
 
@@ -507,17 +507,17 @@ and the grammar must be disambiguated in order to get a performant parser...
                                (pArgs `opt` [])                     <*>  -- a list of arguments for code generation.
                                (pRoles `opt` [])                    <*>  -- a list of roles that may use this interface
                                (pKey ":" *> pExpr)                  <*>  -- the context expression (mostly: I[c])
-                               pAttrs                                  -- the subobjects
-                       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> [P_ObjectDef] -> P_Interface
-                             lbl (nm,p) params args roles expr ats
+                               (Just <$> pSubInterface `opt` Nothing)  -- the optional subinterface
+                       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> Maybe P_SubInterface -> P_Interface
+                             lbl (nm,p) params args roles expr msub
                               = P_Ifc { ifc_Name   = nm
                                       , ifc_Params = params
                                       , ifc_Args   = args
-                                      , ifc_Roles   = roles
+                                      , ifc_Roles  = roles
                                       , ifc_Obj    = P_Obj { obj_nm   = nm    
                                                            , obj_pos  = p
                                                            , obj_ctx  = expr
-                                                           , obj_ats  = ats
+                                                           , obj_msub = msub
                                                            , obj_strs = args
                                                            }
                                       , ifc_Pos    = p
@@ -531,14 +531,19 @@ and the grammar must be disambiguated in order to get a performant parser...
    pObj             :: Parser Token P_ObjectDef
    pObj              = obj <$> pLabelProps
                            <*> pExpr                                             -- the context expression (for example: I[c])
-                           <*> (pBox `opt` [])  -- the subobjects
-                       where obj (Lbl nm pos' strs) expr ats = 
+                           <*> (Just <$> pSubInterface `opt` Nothing)  -- the optional subinterface
+                       where obj (Lbl nm pos' strs) expr msub = 
                                P_Obj { obj_nm   = nm
                                      , obj_pos  = pos'
                                      , obj_ctx  = expr
-                                     , obj_ats  = ats
+                                     , obj_msub = msub
                                      , obj_strs = strs
                                      }
+                                     
+   pSubInterface :: Parser Token P_SubInterface
+   pSubInterface   = (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos 
+                 <|> P_Box <$> pBox
+   
    pBox            :: Parser Token [P_ObjectDef]
    pBox            = pKey "BOX" *> pSpec '[' *> pList1Sep (pSpec ',') pObj <* pSpec ']'
 

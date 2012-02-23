@@ -31,6 +31,9 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.TypeCheck
 import Data.Maybe
 
+-- TODO: this module should import Database.Ampersand.Core.ParseTree directly, and it should be one 
+--       of the very few modules that imports it. (might require some refactoring due to shared stuff)
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "P2A_Converter"
 
@@ -242,7 +245,7 @@ pMarkup2aMarkup defLang defFormat pm
            where fmt = fromMaybe defFormat (mFormat pm)
            
 -- | pKDef2aKDef checks compatibility of composition with key concept on equality
-pKDef2aKDef :: (Language l, ConceptStructure l, Identified l) => l -> P_KeyDef -> (KeyDef, CtxError)
+pKDef2aKDef :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> P_KeyDef -> (KeyDef, CtxError)
 pKDef2aKDef actx pkdef
  = (Kd { kdpos = kd_pos pkdef
        , kdlbl = kd_lbl pkdef
@@ -267,7 +270,7 @@ pKDef2aKDef actx pkdef
                          "Multiple keys for concept  \""++name c++"\" at "++show (origin pkdef)  
 
 -- (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
-pKeySeg2aKeySeg :: (Language l, ConceptStructure l, Identified l) => l -> A_Concept -> P_KeySegment -> (KeySegment, CtxError)
+pKeySeg2aKeySeg :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> A_Concept -> P_KeySegment -> (KeySegment, CtxError)
 pKeySeg2aKeySeg _    _      (P_KeyText str)   = (KeyText str, cxenone)
 pKeySeg2aKeySeg actx concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef actx (SourceCast concpt) keyExp
                                                 in ( KeyExp objDef, cxe)
@@ -296,22 +299,24 @@ pIFC2aIFC actx pifc
     -- and the implementation of error messages makes it difficult to give a nice one here
     
 -- | pODef2aODef checks compatibility of composition of expressions on equality
-pODef2aODef :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
+pODef2aODef :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
 pODef2aODef actx cast podef 
  = (Obj { objnm   = obj_nm podef
         , objpos  = obj_pos podef
         , objctx  = expr
-        , objmsub = Just . Box $ ats
+        , objmsub = msub
         , objstrs = obj_strs podef
         }
-   , CxeOrig (cxelist (nmchk : exprcxe : atscxes)) "object definition" "" (origin podef) )
+   , CxeOrig (cxelist (nmchk : exprcxe : msubcxes)) "object definition" "" (origin podef) )
    where
     nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
-                         |at<-obj_ats podef, let xs=[at' |at'<-obj_ats podef,name at==name at'],length xs>1]
+                         |at<-getSubPObjs podef, let xs=[at' |at'<-getSubPObjs podef,name at==name at'],length xs>1]
+    getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
+    getSubPObjs _                                      = []
     -- Step1: check obj_ctx
     (expr,exprcxe)  = pExpr2aExpr actx cast (obj_ctx podef)
     -- Step2: check obj_ats in the context of expr
-    (ats,atscxes) =  unzip [pODef2aODef actx (SourceCast (target expr)) at | at<-obj_ats podef]
+    (msub,msubcxes) = p2a_MaybeSubInterface actx (target expr) $ obj_msub podef
     -- Step3: compute type error messages
     {- SJ 4th jan 2012: I have disabled odcxe in order to find out why it is necessary to check equality. We should run in trouble if this check is indeed necessary...
     odcxe
@@ -329,6 +334,24 @@ pODef2aODef actx cast podef
                                        |x<-ats,source (objctx x)/=target expr])
     -}
     
+p2a_MaybeSubInterface :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => 
+                         l -> A_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
+p2a_MaybeSubInterface _    _    Nothing = (Nothing, [])
+p2a_MaybeSubInterface actx conc (Just (P_Box p_objs)) =
+  let (objs, errs) = unzip [pODef2aODef actx (SourceCast conc) p_obj | p_obj<-p_objs] 
+  in  (Just $ Box objs, errs)
+p2a_MaybeSubInterface actx conc (Just (P_InterfaceRef pos nm)) =
+  (Just $ InterfaceRef nm, [err])
+ where err = case [ifc | ifc <- interfaces actx, name ifc == nm ] of
+               []                    -> newcxe $ "Undeclared interface \""++nm++"\" at position " ++show pos ++ "."
+               [Ifc { ifcObj = Obj {objctx= ifcExp}}] ->
+                 if source ifcExp >= conc
+                 then cxenone
+                 else newcxe $ "Incompatible interface "++show nm++" at position "++show pos++":"++
+                               "\nInterface source concept "++name (source ifcExp)++" is not equal to or a supertype of "++name conc
+               _ -> fatal 350 $ "Multiple interfaces for ref "++nm
+   -- todo origin
+  
 pPurp2aPurp :: A_Context -> PPurpose -> (Purpose, CtxError)
 pPurp2aPurp actx pexpl
  = ( Expl { explPos      = pexPos   pexpl
