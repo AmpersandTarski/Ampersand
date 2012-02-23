@@ -9,10 +9,10 @@ module DatabaseDesign.Ampersand.ADL1
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations
            , P_KeyDef(..), P_KeyDefs, P_KeySegment(..), KeyDef(..), KeySegment(..)
            , P_Population(..), Population(..)
-           , P_ObjectDef(..), P_ObjectDefs
+           , P_ObjectDef(..)
            , ObjectDef(..), P_Interface(..)
            , objAts, objatsLegacy
-           , SubInterface(..)
+           , P_SubInterface(..), SubInterface(..)
            , Interface(..)
            , P_Expression(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni

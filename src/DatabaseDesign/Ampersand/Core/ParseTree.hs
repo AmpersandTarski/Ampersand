@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Population(..)
    
-   , P_Interface(..), P_ObjectDef(..), P_ObjectDefs
+   , P_Interface(..), P_ObjectDef(..), P_SubInterface(..)
    
    , P_KeyDef(..),P_KeyDefs
    , P_KeySegment(..)
@@ -69,8 +69,8 @@ where
             , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
             , ctx_ps     :: PPurposes   -- ^ The pre-explanations defined in this context, outside the scope of patterns
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
-            , ctx_sql    :: P_ObjectDefs    -- ^ user defined sqlplugs, taken from the Ampersand script
-            , ctx_php    :: P_ObjectDefs    -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_sql    :: [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctx_php    :: [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
             , ctx_experimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
             }
 
@@ -273,11 +273,12 @@ where
    instance Traced P_Interface where
     origin = ifc_Pos
 
-   type P_ObjectDefs = [P_ObjectDef]
+   data P_SubInterface = P_Box [P_ObjectDef] | P_InterfaceRef Origin String deriving (Eq, Show) 
+
    data P_ObjectDef = P_Obj { obj_nm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                         , obj_pos  :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
                         , obj_ctx  :: P_Expression  -- ^ this expression describes the instances of this object, related to their context. 
-                        , obj_ats  :: P_ObjectDefs     -- ^ the attributes, which are object definitions themselves.
+                        , obj_msub :: Maybe P_SubInterface -- ^ the attributes, which are object definitions themselves.
                         , obj_strs :: [[String]]     -- ^ directives that specify the interface.
                         }  deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
    instance Identified P_ObjectDef where
