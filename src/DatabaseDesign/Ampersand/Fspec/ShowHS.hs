@@ -562,7 +562,7 @@ where
     showHS _ _ peObj
      = case peObj of 
             PRef2ConceptDef str     -> "PRef2ConceptDef " ++show str
-            PRef2Declaration rel ps -> "PRef2Declaration "++show rel++if null (psign ps) then "" else show (psign ps)
+            PRef2Declaration (rel, ps) -> "PRef2Declaration "++show rel++if null (psign ps) then "" else show (psign ps)
             PRef2Rule str           -> "PRef2Rule "       ++show str
             PRef2KeyDef str         -> "PRef2KeyDef "     ++show str
             PRef2Pattern str        -> "PRef2Pattern "    ++show str
