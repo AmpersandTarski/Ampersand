@@ -286,7 +286,7 @@ data Interface = Ifc { ifcName   :: String
                      , ifcViols  :: [Rule]
                      , ifcArgs   :: [[String]]
                      , ifcRoles  :: [String]
-                     , ifcObj    :: ObjectDef
+                     , ifcObj    :: ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcPos    :: Origin
                      , ifcExpl   :: String
                      } deriving Show

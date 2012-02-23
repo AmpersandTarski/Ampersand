@@ -355,14 +355,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                            P_Obj { obj_nm   = nm
                                                  , obj_pos  = p
                                                  , obj_ctx  = attexpr 
-                                                 , obj_ats  = []
+                                                 , obj_msub = Nothing
                                                  , obj_strs = strs
                                                  }
                                         att attexpr =
                                             P_Obj { obj_nm   = ""
                                                   , obj_pos  = Origin "pKeyAtt CC664"
                                                   , obj_ctx  = attexpr 
-                                                  , obj_ats  = []
+                                                  , obj_msub = Nothing
                                                   , obj_strs = []
                                                   }
 
@@ -389,7 +389,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                       , ifc_Obj    = P_Obj { obj_nm    = nm    
                                                            , obj_pos   = p
                                                            , obj_ctx   = expr
-                                                           , obj_ats   = ats
+                                                           , obj_msub  = Just . P_Box $ ats
                                                            , obj_strs  = args
                                                            }
                                       , ifc_Pos    = p
@@ -418,7 +418,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                               P_Obj { obj_nm   = nm
                                     , obj_pos  = pos'
                                     , obj_ctx  = expr
-                                    , obj_ats  = ats
+                                    , obj_msub = Just . P_Box $ ats
                                     , obj_strs = strs
                                     }
                          -- | De pProps' is identiek aan pProps, maar werkt alleen op UNI en TOT. Ze is bedoeld voor de Service definities.
