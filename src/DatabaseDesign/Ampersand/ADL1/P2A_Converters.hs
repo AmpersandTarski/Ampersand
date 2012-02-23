@@ -65,7 +65,7 @@ pCtx2aCtx pctx
              }
     cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
-    postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk
+    postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk ++ cyclicInterfaces
     hierarchy = 
         let ctx_gens = ctx_gs pctx `uni` concatMap pt_gns (ctx_pats pctx) `uni` concatMap procGens (ctx_PPrcs pctx)
         in [(a (gen_spc g),a (gen_gen g)) | g<-ctx_gens]
@@ -111,6 +111,18 @@ pCtx2aCtx pctx
                                  , name d==name d'
                                  , sign d <==> sign d']
                     , length ds>1]
+    cyclicInterfaces = [ newcxe $ "These interfaces form a reference cycle:\n" ++
+                                  unlines [ " -" ++ show ifcName ++ " at position " ++ show (origin (lookupInterface ifcName))
+                                          | ifcName <- cycle ]
+                       | cycle <- getCycles refsPerInterface ]
+      where refsPerInterface = [(ifcName ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ifcs ]
+            getDeepIfcRefs obj = case objmsub obj of
+                                   Nothing                -> []
+                                   Just (InterfaceRef nm) -> [nm]
+                                   Just (Box objs)        -> concatMap getDeepIfcRefs objs
+            lookupInterface nm = case [ ifc | ifc <- ifcs, ifcName ifc == nm ] of
+                                   [ifc] -> ifc
+                                   _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
 pPat2aPat :: A_Context -> [Population] -> P_Pattern -> (Pattern, CtxError)
 pPat2aPat actx pops ppat 
