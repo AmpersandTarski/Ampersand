@@ -4,9 +4,12 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    , eqClass
    , sort
    , sort'
+   , getCycles
    )
   where
-   import Data.List(sort)   
+   import Data.List
+   import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
+   import Data.Maybe
    import GHC.Exts(sortWith)
 
    -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
@@ -40,3 +43,11 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
 --   sort' _ [] = []
 --   sort' f (x:xs) = sort' f [e |e<-xs, f e<f x] ++ [x] ++ sort' f [e |e<-xs, f e>=f x]
 
+   -- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
+   --   and a list of to-vertices)
+   getCycles :: Eq a => [(a, [a])] -> [[a]]
+   getCycles edges =
+     let allVertices = nub . concat $ [ from : to | (from, to) <- edges ] 
+         keyFor v = fromMaybe (error "FATAL") $ elemIndex v allVertices
+         graphEdges = [ (v, keyFor v , map keyFor vs)  | (v, vs) <- edges ]
+     in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
