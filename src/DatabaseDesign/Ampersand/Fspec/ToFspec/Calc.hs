@@ -224,9 +224,9 @@ where
 --                          [(conj,nub [r |(_,_,_,r)<-cl]) | cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
 --          ]
        fst4 (w,_,_,_) = w
-       snd3 (_,y,_) = y
-       thd3 (_,_,z) = z
-       thd4 (_,_,z,_) = z
+--       snd3 (_,y,_) = y
+--       thd3 (_,_,z) = z
+--       thd4 (_,_,z,_) = z
        --TODO: See ticket #105
        derivation :: Rule -> [Inline]
        derivation rule 
@@ -312,10 +312,6 @@ where
                     disjProof = showProof showADL . dfProof showADL
 --                    showPr    = showProof showADL  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
-       cleanup :: [(String,String)] -> [(String,String)]
-       cleanup [x] = [x]
-       cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)
-       cleanup [] = []
        commaEng :: String -> [String] -> String
        commaEng  _  [] = ""
        commaEng  _  [x] = x

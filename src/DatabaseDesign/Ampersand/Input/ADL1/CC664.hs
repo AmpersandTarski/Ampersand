@@ -110,7 +110,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                 pRefID = (pKey "REF" *> pString) `opt` []
                                 pExplObj :: Parser Token PRef2Obj
                                 pExplObj = PRef2ConceptDef  <$ pKey "CONCEPT"  <*> (pConid <|> pString) <|>
-                                           PRef2Declaration <$ pKey "RELATION" <*> pRelation <*> pSign  <|>
+                                           PRef2Declaration <$ pKey "RELATION"  <*> pRelSign             <|>
                                            PRef2Rule        <$ pKey "RULE"     <*> pADLid               <|>
                                            PRef2KeyDef      <$ pKey "KEY"      <*> pADLid               <|>  
                                            PRef2Pattern     <$ pKey "PATTERN"  <*> pADLid               <|>
@@ -125,12 +125,17 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                                             "ENGLISH"    -> English
                                                             _ -> fatal 122 (if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
 
+   pRelSign         :: Parser Token (P_Relation, P_Sign)
+   pRelSign          = f <$> pRelation <*> optional pSign
+                        where f rel Nothing    = (rel,P_Sign [])
+                              f rel (Just sgn) = (rel,sgn)
 
+   pPopulation :: Parser Token P_Population
+   pPopulation = ppop <$ pKey "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
+       where
+         ppop (r,sgn) c = P_Popu r sgn c
+         
 
-   pPopulation         :: Parser Token P_Population
-   pPopulation = ppop <$ pKey "POPULATION" <*> pRelation <*> optional pSign <* pKey "CONTAINS" <*> pContent
-                 where ppop r  Nothing   c = P_Popu r [] c
-                       ppop r (Just sgn) c = P_Popu r (psign sgn) c
 
    pPattern         :: Parser Token P_Pattern
    pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)

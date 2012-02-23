@@ -7,7 +7,7 @@ module DatabaseDesign.Ampersand.ADL1
            , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
            , SrcOrTgt(..)
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations
-           , P_KeyDef(..), P_KeyDefs, P_KeySegment(..), KeyDef(..), KeySegment(..)
+           , P_KeyDef(..), P_KeySegment(..), KeyDef(..), KeySegment(..)
            , P_Population(..), Population(..)
            , P_ObjectDef(..)
            , ObjectDef(..), P_Interface(..)
@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Relation(..), flp, isTypeable, makeRelation
            , Declaration(..), flpDecl, isSgn
            , P_Relation(..),P_Declaration(..)
-           , ConceptDef(..), ConceptDefs
+           , ConceptDef(..)
            , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR, newAcpt, atomsOf
            , RuleType(..)
            , Prop(..),allprops,endoprops,flipProps
@@ -31,7 +31,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Signaling(..)
            , Association(..), Relational(..)
            , Label(..)
-           , Paire, Pairs, srcPaire, trgPaire, mkPair, clos1
+           , Paire, Pairs, mkPair , srcPaire, trgPaire
            , isAll, isChc, isBlk, isNop, isDo, dos
            , PPurpose(..), PRef2Obj(..), ExplObj(..)
            , Purpose(..)

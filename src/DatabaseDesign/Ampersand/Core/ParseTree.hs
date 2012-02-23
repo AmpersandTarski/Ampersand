@@ -16,16 +16,16 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Rule(..)
    
-   , ConceptDef(..),ConceptDefs
+   , ConceptDef(..)
    
    , P_Population(..)
    
    , P_Interface(..), P_ObjectDef(..), P_SubInterface(..)
    
-   , P_KeyDef(..),P_KeyDefs
+   , P_KeyDef(..)
    , P_KeySegment(..)
    
-   , PPurpose(..),PRef2Obj(..),PPurposes,PMeaning(..)
+   , PPurpose(..),PRef2Obj(..),PMeaning(..)
    
    , P_Concept(..), P_Sign(..)
    
@@ -46,7 +46,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
 where
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos           
    import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Identified(..))
-   import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,srcPaire, trgPaire, mkPair, clos1)   -- For the time being. Should be split into P and A construct.
+   import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
    import Data.List   (intercalate)
    
    fatal :: Int -> String -> a
@@ -63,19 +63,19 @@ where
             , ctx_PPrcs  :: [P_Process]     -- ^ The processes as defined by the parser
             , ctx_rs     :: [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
             , ctx_ds     :: [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-            , ctx_cs     :: ConceptDefs     -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks     :: P_KeyDefs       -- ^ The key definitions defined in this context, outside the scope of patterns
+            , ctx_cs     :: [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
+            , ctx_ks     :: [P_KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
             , ctx_gs     :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps     :: PPurposes   -- ^ The pre-explanations defined in this context, outside the scope of patterns
+            , ctx_ps     :: [PPurpose]      -- ^ The pre-explanations defined in this context, outside the scope of patterns
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
-            , ctx_sql    :: [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
-            , ctx_php    :: [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_sql    :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctx_php    :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
             , ctx_experimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
             }
 
    instance Show P_Context where
-     showsPrec _ ctx = showString (ctx_nm ctx)
+     showsPrec _ = showString . ctx_nm
 
    instance Eq P_Context where
      c1 == c2  =  name c1 == name c2
@@ -99,9 +99,9 @@ where
                           , procDcls  :: [P_Declaration]
                           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-                          , procCds   :: ConceptDefs      -- ^ The concept definitions defined in this process
-                          , procKds   :: P_KeyDefs        -- ^ The key definitions defined in this process
-                          , procXps   :: PPurposes    -- ^ The pre-explanations of elements defined in this process
+                          , procCds   :: [ConceptDef]     -- ^ The concept definitions defined in this process
+                          , procKds   :: [P_KeyDef]       -- ^ The key definitions defined in this process
+                          , procXps   :: [PPurpose]       -- ^ The pre-explanations of elements defined in this process
                           , procPop   :: [P_Population]   -- ^ The populations that are local to this process
                           } 
 
@@ -114,10 +114,10 @@ where
     -- | A RoleRule r means that a role called 'mRoles r' must maintain the process rule called 'mRules r'
    data RoleRule
       = Maintain
-        { mRoles :: [String]         -- ^ name of a role
-        , mRules :: [String]         -- ^ name of a Rule
-        , mPos   :: Origin       -- ^ position in the Ampersand script
-        } deriving (Eq, Show)        -- just for debugging
+        { mRoles :: [String]    -- ^ name of a role
+        , mRules :: [String]    -- ^ name of a Rule
+        , mPos   :: Origin      -- ^ position in the Ampersand script
+        } deriving (Eq, Show)   -- just for debugging
 
    instance Traced RoleRule where
     origin = mPos
@@ -129,9 +129,9 @@ where
               , pt_rls :: [P_Rule]        -- ^ The user defined rules in this pattern
               , pt_gns :: [P_Gen]         -- ^ The generalizations defined in this pattern
               , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
-              , pt_cds :: ConceptDefs     -- ^ The concept definitions defined in this pattern
-              , pt_kds :: P_KeyDefs       -- ^ The key definitions defined in this pattern
-              , pt_xps :: PPurposes   -- ^ The explanations of elements defined in this pattern
+              , pt_cds :: [ConceptDef]    -- ^ The concept definitions defined in this pattern
+              , pt_kds :: [P_KeyDef]      -- ^ The key definitions defined in this pattern
+              , pt_xps :: [PPurpose]      -- ^ The purposes of elements defined in this pattern
               , pt_pop :: [P_Population]  -- ^ The populations that are local to this pattern
               }   --deriving (Show)       -- for debugging purposes
 
@@ -141,7 +141,6 @@ where
    instance Traced P_Pattern where
     origin = pt_pos
 
-   type ConceptDefs = [ConceptDef]
    data ConceptDef 
       = Cd  { cdpos :: Origin   -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
             , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
@@ -254,19 +253,20 @@ where
                
    data P_Population
      = P_Popu { p_popm   :: P_Relation
-              , p_type   :: [P_Concept]
+              , p_type   :: P_Sign
               , p_popps  :: Pairs
               }
 
    data P_Interface = 
-                  P_Ifc { ifc_Name   :: String
-                        , ifc_Params :: [(P_Relation,P_Sign)]
-                        , ifc_Args   :: [[String]]
-                        , ifc_Roles   :: [String]
-                        , ifc_Obj    :: P_ObjectDef
-                        , ifc_Pos    :: Origin
-                        , ifc_Expl   :: String
-                        } --deriving Show
+        P_Ifc { ifc_Name   :: String                 -- ^ the name of the interface
+              , ifc_Params :: [(P_Relation,P_Sign)]  -- ^ a list of relations, which are editable within this interface.
+              , ifc_Args   :: [[String]]             -- ^ a list of arguments for code generation.
+              , ifc_Roles  :: [String]               -- ^ a list of roles that may use this interface
+              , ifc_Obj    :: P_ObjectDef            -- ^ the context expression (mostly: I[c])
+              , ifc_Pos    :: Origin
+              , ifc_Expl   :: String
+              } --deriving Show
+
    instance Identified P_Interface where
     name = ifc_Name
 
@@ -275,18 +275,18 @@ where
 
    data P_SubInterface = P_Box [P_ObjectDef] | P_InterfaceRef Origin String deriving (Eq, Show) 
 
-   data P_ObjectDef = P_Obj { obj_nm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                        , obj_pos  :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                        , obj_ctx  :: P_Expression  -- ^ this expression describes the instances of this object, related to their context. 
-                        , obj_msub :: Maybe P_SubInterface -- ^ the attributes, which are object definitions themselves.
-                        , obj_strs :: [[String]]     -- ^ directives that specify the interface.
-                        }  deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
+   data P_ObjectDef = 
+        P_Obj { obj_nm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+              , obj_pos  :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+              , obj_ctx  :: P_Expression   -- ^ this expression describes the instances of this object, related to their context. 
+              , obj_msub :: Maybe P_SubInterface  -- ^ the attributes, which are object definitions themselves.
+              , obj_strs :: [[String]]     -- ^ directives that specify the interface.
+              }  deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
    instance Identified P_ObjectDef where
     name = obj_nm
    instance Traced P_ObjectDef where
     origin = obj_pos
 
-   type P_KeyDefs = [P_KeyDef]
    data P_KeyDef = 
             P_Kd { kd_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                  , kd_lbl :: String         -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -305,7 +305,7 @@ where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
    data PRef2Obj = PRef2ConceptDef String
-                 | PRef2Declaration P_Relation P_Sign
+                 | PRef2Declaration (P_Relation, P_Sign)
                  | PRef2Rule String
                  | PRef2KeyDef String
                  | PRef2Pattern String
@@ -318,7 +318,7 @@ where
    instance Identified PRef2Obj where
      name pe = case pe of 
         PRef2ConceptDef str -> str
-        PRef2Declaration rel _ -> name rel
+        PRef2Declaration (rel, _) -> name rel
         PRef2Rule str -> str
         PRef2KeyDef str -> str
         PRef2Pattern str -> str
@@ -327,7 +327,6 @@ where
         PRef2Context str -> str
         PRef2Fspc str -> str
 
-   type PPurposes = [PPurpose]
    data PPurpose = PRef2 { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
                          , pexObj   :: PRef2Obj   -- the reference to the object whose purpose is explained
                          , pexMarkup:: P_Markup   -- the piece of text, including markup and language info

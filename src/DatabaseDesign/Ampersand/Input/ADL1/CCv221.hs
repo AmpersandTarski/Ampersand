@@ -14,9 +14,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
             )
    import DatabaseDesign.Ampersand.Basics  (fatalMsg,Collection(..),trim)
    import DatabaseDesign.Ampersand.Core.ParseTree    
-   import Data.Char (toUpper)
---   import DatabaseDesign.Ampersand.Misc         (Lang(..),defaultFlags, Options(..))
---   import DatabaseDesign.Ampersand.Misc.Explain
    import Data.List (nub,sort)
    fatal :: Int -> String -> a
    fatal = fatalMsg "ADL1.CCv221"
@@ -37,6 +34,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "RELATION", "MEANING", "CONCEPT", "KEY", "TXT"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
+                       , "REST", "HTML", "LATEX", "MARKDOWN"
                        , "ONE"
                        , "BYPLUG"
                        , "ROLE", "EDITS", "MAINTAINS"
@@ -55,98 +53,39 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    pContext         :: Parser Token (P_Context, [String]) -- the result is the parsed context and a list of include filenames
    pContext  = rebuild <$ pKey "CONTEXT" <*> pConid
                             <*> pList pIncludeStatement 
-                            <*> optional pLanguageID 
-                            <*> optional pFormatID 
-                              --    ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
+                            <*> optional pLanguageRef 
+                            <*> optional pTextMarkup 
                             <*> pList pContextElement <* pKey "ENDCONTEXT"
-                       where
-                       rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
-                       rebuild nm includeFileNames lang fmt ces = 
-                         (PCtx{ ctx_nm    = nm
-                              , ctx_lang  = lang
-                              , ctx_markup= fmt
-                              , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-                              , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
-                              , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
-                              , ctx_rs    = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
-                              , ctx_ds    = [p | CDcl p<-ces]       -- The declarations defined in this context, outside the scope of patterns
-                              , ctx_cs    = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
-                              , ctx_ks    = [k | CKey k<-ces]       -- The key definitions defined in this context, outside the scope of patterns
-                              , ctx_gs    = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
-                              , ctx_ifcs  = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns
-                              , ctx_ps    = [e | CPrp e<-ces]       -- The pre-explanations defined in this context, outside the scope of patterns
-                              , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
-                              , ctx_sql   = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
-                              , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
-                              , ctx_experimental = False -- is set in Components.hs
-                              }
-                          , includeFileNames)
+     where
+       rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+       rebuild nm includeFileNames lang fmt ces = 
+          (PCtx{ ctx_nm    = nm
+               , ctx_lang  = lang
+               , ctx_markup= fmt
+               , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+               , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
+               , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
+               , ctx_rs    = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
+               , ctx_ds    = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
+               , ctx_cs    = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
+               , ctx_gs    = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
+               , ctx_ks    = [k | CKey k<-ces]       -- The key definitions defined in this context, outside the scope of patterns
+               , ctx_ifcs  = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns
+               , ctx_sql   = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
+               , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
+               , ctx_ps    = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
+               , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
+               , ctx_experimental = False -- is set in Components.hs
+               }
+          , includeFileNames)
 
-   data ContextElement = CPat P_Pattern
-                       | CPrc P_Process
-                       | CRul P_Rule
-                       | CDcl P_Declaration
-                       | CCon ConceptDef
-                       | CKey P_KeyDef
-                       | CGen P_Gen
-                       | Cifc P_Interface
-                       | CPop P_Population
-                       | CSqlPlug P_ObjectDef
-                       | CPhpPlug P_ObjectDef
-                       | CPrp PPurpose
-                       | CThm [String]           -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
-
-   pIncludeStatement :: Parser Token String
-   pIncludeStatement = pKey "INCLUDE" *> pString
-   
-   pFormatID    :: Parser Token PandocFormat
-   pFormatID     = f <$> (pKey "TEXTMARKUP" *> pConid)
-                         where
-                          f str = case map toUpper str of
-                                      "REST"     -> ReST
-                                      "HTML"     -> HTML
-                                      "LATEX"    -> LaTeX
-                                      "MARKDOWN" -> Markdown
-                                      _ -> fatal 113 (if null str then "must specify a markup format" else "markup format "++str++" is not supported")
-
-   pPrintThemes       :: Parser Token [String]
-   pPrintThemes        = pKey "THEMES" *> pList1Sep (pSpec ',') (pConid <|> pString)
-
-   pLanguageID        :: Parser Token Lang
-   pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH"))
-                         where
-                          lang str = case str of
-                                      "DUTCH"      -> Dutch
-                                      "ENGLISH"    -> English
-                                      _ -> fatal 141 (if null str then "must specify a language" else "language "++str++" is not supported")
-
-   pRefID             :: Parser Token String
-   pRefID              = (pKey "REF" *> pString) `opt` []
-
-   pPurpose           :: Parser Token PPurpose
-   pPurpose            = rebuild <$> pKey_pos "EXPLAIN" <*> pRef2Obj <*> optional pLanguageID <*> optional pFormatID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
-                         rebuild <$> pKey_pos "PURPOSE" <*> pRef2Obj <*> optional pLanguageID <*> optional pFormatID <*> pRefID <*> pExpl
-                         where
-                           rebuild orig obj lang fmt ref str
-                             = PRef2 orig obj (P_Markup lang fmt str) ref
-   pRef2Obj           :: Parser Token PRef2Obj
-   pRef2Obj            = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString)          <|>
-                         pRef2Declaration <$ pKey "RELATION"  <*> pRelation <*> optional pSign  <|>
-                         PRef2Rule        <$ pKey "RULE"      <*> pADLid                        <|>
-                         PRef2KeyDef      <$ pKey "KEY"       <*> pADLid                        <|>  
-                         PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid                        <|>
-                         PRef2Process     <$ pKey "PROCESS"   <*> pADLid                        <|>
-                         PRef2Interface   <$ pKey "INTERFACE" <*> pADLid                        <|>
-                         PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
-                         where pRef2Declaration nm Nothing    = PRef2Declaration nm P_Sign {psign=[] }
-                               pRef2Declaration nm (Just psgn)= PRef2Declaration nm psgn
-
-   pContextElement    :: Parser Token ContextElement
-   pContextElement     = CPat     <$> pPattern      <|>
-                         CPrc     <$> pProcess      <|>
-                         CRul     <$> pRule         <|>
-                         CDcl     <$> pDeclaration  <|>
+       pContextElement :: Parser Token ContextElement
+       pContextElement = CPat     <$> pPatternDef   <|>
+                         CPrc     <$> pProcessDef   <|>
+                         CRul     <$> pRuleDef      <|>
+                         CRel     <$> pRelationDef  <|>
                          CCon     <$> pConceptDef   <|>
+                         CGen     <$> pGenDef       <|>
                          CKey     <$> pKeyDef       <|>
                          Cifc     <$> pInterface    <|>
                          CSqlPlug <$> pSqlplug      <|>
@@ -155,128 +94,329 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                          CPop     <$> pPopulation   <|>
                          CThm     <$> pPrintThemes
 
-   pPopulation         :: Parser Token P_Population
-   pPopulation = ppop <$ pKey "POPULATION" <*> pRelation <*> optional pSign <* pKey "CONTAINS" <*> pContent
-                 where ppop r  Nothing   c = P_Popu r [] c
-                       ppop r (Just sgn) c = P_Popu r (psign sgn) c
 
-   pPattern         :: Parser Token P_Pattern
-   pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
-                       <*> pList pPatElem
-                       <*> pKey_pos "ENDPATTERN"
-                       where
-                         rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
-                         rebuild pos' nm pes end
-                          = P_Pat { pt_nm  = nm
-                                  , pt_pos = pos'
-                                  , pt_end = end
-                                  , pt_rls = [r | Pr r<-pes]
-                                  , pt_gns = [g | Pg g<-pes]
-                                  , pt_dcs = [d | Pd d<-pes]
-                                  , pt_cds = [c | Pc c<-pes]
-                                  , pt_kds = [k | Pk k<-pes]
-                                  , pt_xps = [e | Pe e<-pes]
-                                  , pt_pop = [p | Pp p<-pes]
-                                  } 
+   data ContextElement = CPat P_Pattern
+                       | CPrc P_Process
+                       | CRul P_Rule
+                       | CRel P_Declaration
+                       | CCon ConceptDef
+                       | CGen P_Gen
+                       | CKey P_KeyDef
+                       | Cifc P_Interface
+                       | CSqlPlug P_ObjectDef
+                       | CPhpPlug P_ObjectDef
+                       | CPrp PPurpose
+                       | CPop P_Population
+                       | CThm [String]    -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
 
-   data PatElem      = Pr P_Rule
-                     | Pg P_Gen
-                     | Pd P_Declaration 
-                     | Pc ConceptDef
-                     | Pk P_KeyDef
-                     | Pe PPurpose
-                     | Pp P_Population
+   pIncludeStatement :: Parser Token String
+   pIncludeStatement = pKey "INCLUDE" *> pString
+
+   pLanguageRef :: Parser Token Lang
+   pLanguageRef = pKey "IN" *> 
+                  ( Dutch   <$ pKey "DUTCH"  ) <|>
+                  ( English <$ pKey "ENGLISH")
+
+   pTextMarkup :: Parser Token PandocFormat
+   pTextMarkup = ( ReST     <$ pKey "REST"     ) <|>
+                 ( HTML     <$ pKey "HTML"     ) <|>
+                 ( LaTeX    <$ pKey "LATEX"    ) <|>
+                 ( Markdown <$ pKey "MARKDOWN" )
+
+   pPatternDef    :: Parser Token P_Pattern
+   pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
+                         <*> pList pPatElem
+                         <*> pKey_pos "ENDPATTERN"
+     where
+       rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
+       rebuild pos' nm pes end
+        = P_Pat { pt_nm  = nm
+                , pt_pos = pos'
+                , pt_end = end
+                , pt_rls = [r | Pr r<-pes]
+                , pt_gns = [g | Pg g<-pes]
+                , pt_dcs = [d | Pd d<-pes]
+                , pt_cds = [c | Pc c<-pes]
+                , pt_kds = [k | Pk k<-pes]
+                , pt_xps = [e | Pe e<-pes]
+                , pt_pop = [p | Pp p<-pes]
+                } 
+       pPatElem :: Parser Token PatElem
+       pPatElem = Pr <$> pRuleDef      <|>
+                  Pd <$> pRelationDef  <|>
+                  Pc <$> pConceptDef   <|>
+                  Pg <$> pGenDef       <|>
+                  Pk <$> pKeyDef       <|>
+                  Pe <$> pPurpose      <|>
+                  Pp <$> pPopulation
+
+   data PatElem = Pr P_Rule
+                | Pd P_Declaration 
+                | Pc ConceptDef
+                | Pg P_Gen
+                | Pk P_KeyDef
+                | Pe PPurpose
+                | Pp P_Population
                               
-   pPatElem         :: Parser Token PatElem
-   pPatElem          = Pr <$> pRule         <|>
-                       Pg <$> pGen          <|>
-                       Pd <$> pDeclaration  <|>
-                       Pc <$> pConceptDef   <|>
-                       Pk <$> pKeyDef       <|>
-                       Pe <$> pPurpose      <|>
-                       Pp <$> pPopulation
+   pProcessDef :: Parser Token P_Process
+   pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> (pConid <|> pString)
+                         <*> pList pProcElem
+                         <*> pKey_pos "ENDPROCESS"
+      where
+       rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Process
+       rebuild pos' nm pes end
+         = P_Prc { procNm    = nm
+                 , procPos   = pos'
+                 , procEnd   = end
+                 , procRules = [rr | PrR rr<-pes]
+                 , procGens  = [g  | PrG g <-pes]
+                 , procDcls  = [d  | PrD d <-pes]
+                 , procRRuls = [rr | PrM rr<-pes]
+                 , procRRels = [rr | PrL rr<-pes]
+                 , procCds   = [cd | PrC cd<-pes]
+                 , procKds   = [kd | PrK kd<-pes]
+                 , procXps   = [e  | PrE e <-pes]
+                 , procPop   = [p  | PrP p <-pes]
+                 }
+       pProcElem :: Parser Token ProcElem
+       pProcElem = PrR <$> pRuleDef      <|>
+                   PrD <$> pRelationDef  <|>
+                   PrM <$> pRoleRule     <|>
+                   PrL <$> pRoleRelation <|>
+                   PrC <$> pConceptDef   <|>
+                   PrG <$> pGenDef       <|>
+                   PrK <$> pKeyDef       <|>
+                   PrE <$> pPurpose      <|>
+                   PrP <$> pPopulation
 
-   pProcess         :: Parser Token P_Process
-   pProcess  = rebuild <$> pKey_pos "PROCESS" <*> (pConid <|> pString)
-                       <*> pList pProcElem
-                       <*> pKey_pos "ENDPROCESS"
-                       where
-                         rebuild :: Origin -> String -> [ProcElem] -> Origin -> P_Process
-                         rebuild pos' nm pes end
-                          = P_Prc { procNm    = nm
-                                  , procPos   = pos'
-                                  , procEnd   = end
-                                  , procRules = [rr | PrR rr<-pes]
-                                  , procGens  = [g  | PrG g <-pes]
-                                  , procDcls  = [d  | PrD d <-pes]
-                                  , procRRuls = [rr | PrM rr<-pes]
-                                  , procRRels = [rr | PrL rr<-pes]
-                                  , procCds   = [cd | PrC cd<-pes]
-                                  , procKds   = [kd | PrK kd<-pes]
-                                  , procXps   = [e  | PrE e <-pes]
-                                  , procPop   = [p  | PrP p <-pes]
-                                  }
+   data ProcElem = PrR P_Rule
+                 | PrD P_Declaration
+                 | PrM RoleRule
+                 | PrL P_RoleRelation
+                 | PrC ConceptDef
+                 | PrG P_Gen
+                 | PrK P_KeyDef
+                 | PrE PPurpose
+                 | PrP P_Population
 
-   data ProcElem     = PrR P_Rule
-                     | PrG P_Gen
-                     | PrD P_Declaration
-                     | PrM RoleRule
-                     | PrL P_RoleRelation
-                     | PrC ConceptDef
-                     | PrK P_KeyDef
-                     | PrE PPurpose
-                     | PrP P_Population
+   pRuleDef :: Parser Token P_Rule
+   pRuleDef = rebuild <$> pKey_pos "RULE"
+                      <*> optional (pADLid <* pKey ":" )
+                      <*> pExpr
+                      <*> pList pMeaning                 
+                      <*> pList pMessage
+                      <*> optional pViolation
+                 where
+                   rebuild po mn rexp mean msg mViolation
+                     = P_Ru { rr_nm   = case mn of 
+                                          Just lbl -> lbl
+                                          Nothing  -> rulid po
+                            , rr_exp  = rexp
+                            , rr_fps  = po
+                            , rr_mean = mean
+                            , rr_msg  = msg
+                            , rr_viol = mViolation
+                            }
+                   rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
+                   rulid _ = fatal 226 "rulid is expecting a file location."
+                   pMessage :: Parser Token P_Markup
+                   pMessage = P_Markup <$ pKey "MESSAGE" 
+                                      <*> optional pLanguageRef
+                                      <*> optional pTextMarkup
+                                      <*> (pString <|> pExpl)
+                   pViolation :: Parser Token P_PairView
+                   pViolation = id <$ pKey "VIOLATION" <*> pPairView
 
-   pProcElem        :: Parser Token ProcElem
-   pProcElem         = PrR <$> pRule         <|>
-                       PrG <$> pGen          <|>
-                       PrD <$> pDeclaration  <|>
-                       PrM <$> pRoleRule     <|>
-                       PrL <$> pRoleRelation <|>
-                       PrC <$> pConceptDef   <|>
-                       PrK <$> pKeyDef       <|>
-                       PrE <$> pPurpose      <|>
-                       PrP <$> pPopulation
+                   pPairView :: Parser Token P_PairView
+                   pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
+   
+                   pPairViewSegment :: Parser Token P_PairViewSegment
+                   pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pExpr
+                                  <|> P_PairViewText <$ pKey "TXT" <*> pString
+                       where pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
 
-   pMeaning         :: Parser Token PMeaning
-   pMeaning          = rebuild <$ pKey "MEANING" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
-                        where rebuild lang fmt mkup =
-                                 PMeaning (P_Markup lang fmt mkup)
 
-   pGen             :: Parser Token P_Gen
-   pGen              = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
+
+   pRelationDef     :: Parser Token P_Declaration
+   pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*> (pKey "*" <|> pKey "->" )  <*> pConceptRef
+                         <|>
+                         rbd <$> pKey_pos "RELATION" <*> pVarid  <*> pSign
+                       )
+                         <*> ((True <$ pKey "BYPLUG") `opt` False)
+                         <*> (pProps `opt` [])
+                         <*> ((True <$ pKey "BYPLUG") `opt` False)
+                         <*> (pPragma `opt` [])
+                         <*> pList pMeaning
+                         <*> ((pKey "=" *> pContent) `opt` [])
+                         <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
+                       where rebuild nm pos' s fun' t bp1 props
+                               = rbd pos' nm (P_Sign [s,t]) bp1 props'
+                                 where props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
+                             rbd pos' nm sgn bp1 props bp2 pragma meanings content
+                               = P_Sgn { dec_nm   = nm
+                                       , dec_sign = sgn
+                                       , dec_prps = props
+                                       , dec_prL  = head pr
+                                       , dec_prM  = pr!!1
+                                       , dec_prR  = pr!!2
+                                       , dec_Mean = meanings
+                                       , dec_popu = content
+                                       , dec_fpos = pos'
+                                       , dec_plug = bp1 || bp2
+                                       }
+                                 where pr = pragma++["","",""]
+                             pProps :: Parser Token [Prop]
+                             pProps  = (f.concat) <$> (pSpec '[' *> pListSep (pSpec ',') pProp <* pSpec ']')
+                                 where f ps = nub (ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)])
+                             pProp  :: Parser Token [Prop]
+                             pProp   = k [Uni] "UNI" <|> k [Inj] "INJ" <|> k [Sur] "SUR" <|> k [Tot] "TOT" <|>
+                                       k [Sym] "SYM" <|> k [Asy] "ASY" <|> k [Trn] "TRN" <|>
+                                       k [Rfx] "RFX" <|> k [Irf] "IRF" <|> k [Sym, Asy] "PROP"
+                                 where k obj str = f <$> pKey str where f _ = obj
+                             pPragma :: Parser Token [String]
+                             pPragma = pKey "PRAGMA" *> pList1 pString
+
+   pConceptDef      :: Parser Token ConceptDef
+   pConceptDef       = Cd <$> pKey_pos "CONCEPT"
+                          <*> (pConid <|> pString)   -- the concept name
+                          <*> ((True <$ pKey "BYPLUG") `opt` False)
+                          <*> pString                -- the definition text
+                          <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
+                          <*> (pString `opt` "")     -- a reference to the source of this definition.
+
+   pGenDef          :: Parser Token P_Gen
+   pGenDef           = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
-   pRule            :: Parser Token P_Rule
-   pRule             = rnm <$> pKey_pos "RULE" <*> pADLid <* pKey ":" <*> pExpr <*> pList pMeaning <*> pList pMessage <*> optional pViolation <|>
-                       rnn <$> pKey_pos "RULE" <*>                        pExpr <*> pList pMeaning <*> pList pMessage <*> optional pViolation
-                       where
-                        --rnn -> rnm with generated name (rulid po)
-                        rnn po = rnm po (rulid po)
-                        rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
-                        rulid _ = fatal 226 "rulid is expecting a file location."
-                        rnm po lbl rexp mean msg mViolation
-                          = P_Ru { rr_nm  = lbl
-                                 , rr_exp = rexp
-                                 , rr_fps = po
-                                 , rr_mean = mean
-                                 , rr_msg = msg
-                                 , rr_viol = mViolation
-                                 }
-                                                                  
-   pMessage         :: Parser Token P_Markup
-   pMessage          = P_Markup <$ pKey "MESSAGE" <*> optional pLanguageID <*> optional pFormatID <*> (pString <|> pExpl)
+   -- | A key definition looks like:   KEY Person(name, address),
+   -- which means that name<>name~ /\ address<>addres~ |- I[Person].
+   -- You may also use an expression on each attribute place, for example: KEY onpassport: Person(nationality, passport;documentnr),
+   -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
+   -- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
+   -- KEY onSSN: Person("social security number":ssn)
+   pKeyDef :: Parser Token P_KeyDef
+   pKeyDef  = kd <$ pKey "KEY" <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pKeySegment <* pSpec ')'
+       where kd :: Label -> P_Concept -> [P_KeySegment] -> P_KeyDef 
+             kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
+                                          , kd_lbl = nm
+                                          , kd_cpt = c
+                                          , kd_ats = [ case keySeg of
+                                                          P_KeyExp x       -> if null (obj_nm x) then P_KeyExp $ x{obj_nm=show i} else P_KeyExp x 
+                                                          P_KeyText _ -> keySeg 
+                                                     | (i,keySeg)<-zip [(1::Integer)..] ats]
+                                          } -- nrs also count text segments but they're are not important anyway
+             pKeySegment :: Parser Token P_KeySegment
+             pKeySegment = P_KeyExp  <$> pKeyAtt <|> 
+                           P_KeyText <$ pKey "TXT" <*> pString
+             pKeyAtt :: Parser Token P_ObjectDef
+             pKeyAtt = rebuild <$> optional pLabelProps <*> pExpr
+                 where
+                   rebuild mLbl attexpr =
+                     case mLbl of
+                       Just (Lbl nm p strs) ->
+                               P_Obj { obj_nm   = nm
+                                     , obj_pos  = p
+                                     , obj_ctx  = attexpr 
+                                     , obj_msub = Nothing
+                                     , obj_strs = strs
+                                     }
+                       Nothing ->
+                               P_Obj { obj_nm   = ""
+                                     , obj_pos  = Origin "pKeyAtt CCv221.hs"
+                                     , obj_ctx  = attexpr 
+                                     , obj_msub = Nothing
+                                     , obj_strs = []
+                                     }
+                       
+   pInterface :: Parser Token P_Interface
+   pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
+                        (pParams `opt` [])                   <*>  
+                        (pArgs   `opt` [])                   <*>  
+                        (pRoles  `opt` [])                   <*>  
+                        (pKey ":" *> pExpr)                  <*>  
+                        optional pSubInterface        -- the optional subinterface
+       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> Maybe P_SubInterface -> P_Interface
+             lbl (nm,p) params args roles expr msub
+                = P_Ifc { ifc_Name   = nm
+                        , ifc_Params = params
+                        , ifc_Args   = args
+                        , ifc_Roles  = roles
+                        , ifc_Obj    = P_Obj { obj_nm   = nm    
+                                             , obj_pos  = p
+                                             , obj_ctx  = expr
+                                             , obj_msub = msub
+                                             , obj_strs = args
+                                             }
+                        , ifc_Pos    = p
+                        , ifc_Expl   = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
+                                    }
+             pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')' 
+             pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
+             pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
 
-   pViolation         :: Parser Token P_PairView
-   pViolation          = id <$ pKey "VIOLATION" <*> pPairView
+   pSubInterface :: Parser Token P_SubInterface 
+   pSubInterface = rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos  
+               <|> P_Box <$> pBox 
+      where
+        rebuild (n,p) = P_InterfaceRef p n
 
-   pPairView :: Parser Token P_PairView
-   pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
-   
-   pPairViewSegment :: Parser Token P_PairViewSegment
-   pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pExpr
-                  <|> P_PairViewText <$ pKey "TXT" <*> pString
-    where pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
+   pSqlplug         :: Parser Token P_ObjectDef
+   pSqlplug          = pKey_pos "SQLPLUG" *> pObjDef
+
+   pPhpplug         :: Parser Token P_ObjectDef
+   pPhpplug          = pKey_pos "PHPPLUG" *> pObjDef
+
+   pPurpose         :: Parser Token PPurpose
+   pPurpose          = rebuild <$> ( pKey_pos "EXPLAIN" <|> pKey_pos "PURPOSE" )  -- "EXPLAIN" will become obsolete
+                               <*> pRef2Obj
+                               <*> optional pLanguageRef
+                               <*> optional pTextMarkup
+                               <*> ((pKey "REF" *> pString) `opt` [])
+                               <*> pExpl      
+        where
+          rebuild orig obj lang fmt ref str
+              = PRef2 orig obj (P_Markup lang fmt str) ref
+          pRef2Obj :: Parser Token PRef2Obj
+          pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString) <|>
+                     PRef2Declaration <$ pKey "RELATION"  <*> pRelSign             <|>
+                     PRef2Rule        <$ pKey "RULE"      <*> pADLid               <|>
+                     PRef2KeyDef      <$ pKey "KEY"       <*> pADLid               <|>  
+                     PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid               <|>
+                     PRef2Process     <$ pKey "PROCESS"   <*> pADLid               <|>
+                     PRef2Interface   <$ pKey "INTERFACE" <*> pADLid               <|>
+                     PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
+
+   pPopulation :: Parser Token P_Population
+   pPopulation = ppop <$ pKey "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
+       where
+         ppop (r,sgn) c = P_Popu r sgn c
+         
+   pRoleRelation    :: Parser Token P_RoleRelation
+   pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
+                               pList1Sep (pSpec ',') pADLid <*
+                               pKey "EDITS"                 <*>
+                               pList1Sep (pSpec ',') pRelSign
+                        where rr p roles rels = P_RR roles rels p
+
+   pRoleRule        :: Parser Token RoleRule
+   pRoleRule         = rr <$> pKey_pos "ROLE"               <*>
+                              pList1Sep (pSpec ',') pADLid  <*
+                              pKey "MAINTAINS"              <*>
+                              pList1Sep (pSpec ',') pADLid 
+                       where rr p roles rulIds = Maintain roles rulIds p
+
+   pPrintThemes :: Parser Token [String]
+   pPrintThemes = pKey "THEMES" 
+               *> pList1Sep (pSpec ',') (pConid <|> pString)
+
+   pMeaning :: Parser Token PMeaning
+   pMeaning = rebuild <$  pKey "MEANING" 
+                      <*> optional pLanguageRef
+                      <*> optional pTextMarkup
+                      <*> (pString <|> pExpl)
+      where rebuild lang fmt mkup =
+               PMeaning (P_Markup lang fmt mkup)
+
                               
 {-  Basically we would have the following expression syntax:
 pExpr ::= pExp1   "="    pExp1                           |
@@ -385,34 +525,34 @@ and the grammar must be disambiguated in order to get a performant parser...
 -- Alternatively, this works too:    pExp6  =  pExp7 <??> (flip PTyp <$> pSign)
 
    pExp7  :: Parser Token P_Expression
-   pExp7  =  Prel <$> pRelation                                                <|>
+   pExp7  =  Prel <$> pRelationRef                                                <|>
              PBrk <$  pSpec '('  <*>  pExpr  <*  pSpec ')'
 
 
-   pRelation        :: Parser Token P_Relation
-   pRelation         = P_I <$ pKey "I"      <|>
-                       P_V <$ pKey "V"      <|>
-                       rebuild <$> pVarid_val_pos      <|>
-                       single  <$> pAtom 
-                       where rebuild (nm,pos') = P_Rel {rel_nm = nm, rel_pos = pos'}
-                             single x = P_Mp1 { rel_1val = x}     
+   pRelationRef :: Parser Token P_Relation
+   pRelationRef      = P_I   <$  pKey "I"   <|>
+                       P_V   <$  pKey "V"   <|>
+                       P_Mp1 <$> pAtom      <|>
+                       rbld  <$> pVarid_val_pos
+        where rbld (nm,pos') = P_Rel {rel_nm = nm, rel_pos = pos'}
 
    pRelSign         :: Parser Token (P_Relation, P_Sign)
-   pRelSign          = f <$> pRelation <*> optional pSign
+   pRelSign          = f <$> pRelationRef 
+                         <*> optional pSign
                         where f rel Nothing    = (rel,P_Sign [])
                               f rel (Just sgn) = (rel,sgn)
-
+                                                                 
    pSign :: Parser Token P_Sign
-   pSign = rebuild <$ pSpec '[' <*> pConcept <*> optional (pKey "*" *> pConcept) <* pSpec ']'
+   pSign = rebuild <$ pSpec '[' <*> pConceptRef <*> optional (pKey "*" *> pConceptRef) <* pSpec ']'
       where
         rebuild :: P_Concept -> Maybe P_Concept -> P_Sign
         rebuild a mb = case mb of 
-                        Just b -> P_Sign { psign = [a,b] }
+                        Just b  -> P_Sign { psign = [a,b] }
                         Nothing -> P_Sign { psign = [a] }
    
-   pConcept         :: Parser Token P_Concept
-   pConcept          = (P_Singleton <$ pKey "ONE") <|> (PCpt <$> (pConid <|> pString))
-                      -- where c str = C str (==) []
+   pConceptRef      :: Parser Token P_Concept
+   pConceptRef       = (P_Singleton <$ pKey "ONE") 
+                   <|> (PCpt <$> (pConid <|> pString))
 
 -- BECAUSE:
 --  (SJ) Waarom heeft een label (optioneel) strings?
@@ -426,159 +566,19 @@ and the grammar must be disambiguated in order to get a performant parser...
                              lbl (nm,pos')  = Lbl nm pos' 
                              pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
 
-
-   pADLid           :: Parser Token String
-   pADLid            = pVarid <|> pConid <|> pString
-
-   pADLid_val_pos   :: Parser Token (String, Origin)
-   pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
-
-   pConceptDef      :: Parser Token ConceptDef
-   pConceptDef       = Cd <$> pKey_pos "CONCEPT"
-                          <*> (pConid <|> pString)   -- the concept name
-                          <*> ((True <$ pKey "BYPLUG") `opt` False)
-                          <*> pString                -- the definition text
-                          <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
-                          <*> (pString `opt` "")     -- a reference to the source of this definition.
-
-
--- A key definition looks like:   KEY Person(name, address),
--- which means that name<>name~ /\ address<>addres~ |- I[Person].
--- You may also use an expression on each attribute place, for example: KEY onpassport: Person(nationality, passport;documentnr),
--- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
--- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
--- KEY onSSN: Person("social security number":ssn)
-   pKeyDef          :: Parser Token P_KeyDef
-   pKeyDef           = kd <$ pKey "KEY" <*> pLabelProps <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeySegment <* pSpec ')'
-                        where kd :: Label -> P_Concept -> [P_KeySegment] -> P_KeyDef 
-                              kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
-                                                           , kd_lbl = nm
-                                                           , kd_cpt = c
-                                                           , kd_ats = [ case keySeg of
-                                                                          P_KeyExp x       -> if null (obj_nm x) then P_KeyExp $ x{obj_nm=show i} else P_KeyExp x 
-                                                                          ks@(P_KeyText _) -> ks 
-                                                                      | (i,keySeg)<-zip [(1::Integer)..] ats]
-                                                           } -- nrs also count text segments but they're are not important anyway
-
-   pKeySegment :: Parser Token P_KeySegment
-   pKeySegment = P_KeyExp <$> pKeyAtt <|> P_KeyText <$ pKey "TXT" <*> pString
-                              
-   pKeyAtt          :: Parser Token P_ObjectDef
-   pKeyAtt           = attL <$> pLabelProps <*> pExpr <|>
-                       att <$> pExpr
-                       where attL (Lbl nm p strs) attexpr = 
-                               P_Obj { obj_nm   = nm
-                                     , obj_pos  = p
-                                     , obj_ctx  = attexpr 
-                                     , obj_msub = Nothing
-                                     , obj_strs = strs
-                                     }
-                             att attexpr = 
-                               P_Obj { obj_nm   = ""
-                                     , obj_pos  = Origin "pKeyAtt CCv221.hs"
-                                     , obj_ctx  = attexpr 
-                                     , obj_msub = Nothing
-                                     , obj_strs = []
-                                     }
-
-   pRoleRelation    :: Parser Token P_RoleRelation
-   pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
-                               pList1Sep (pSpec ',') pADLid <*
-                               pKey "EDITS"                 <*>
-                               pList1Sep (pSpec ',') pRelSign
-                        where rr p roles rels = P_RR roles rels p
-
-   pRoleRule        :: Parser Token RoleRule
-   pRoleRule         = rr <$> pKey_pos "ROLE"               <*>
-                              pList1Sep (pSpec ',') pADLid  <*
-                              pKey "MAINTAINS"              <*>
-                              pList1Sep (pSpec ',') pADLid 
-                       where rr p r s = Maintain r s p
-
-   pSqlplug         :: Parser Token P_ObjectDef
-   pSqlplug          = pKey_pos "SQLPLUG" *> pObj
-
-   pPhpplug         :: Parser Token P_ObjectDef
-   pPhpplug          = pKey_pos "PHPPLUG" *> pObj
-
-   pInterface       :: Parser Token P_Interface
-   pInterface        = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
-                               (pParams `opt` [])                   <*>  -- a list of relations, which are editable within this interface.
-                               (pArgs `opt` [])                     <*>  -- a list of arguments for code generation.
-                               (pRoles `opt` [])                    <*>  -- a list of roles that may use this interface
-                               (pKey ":" *> pExpr)                  <*>  -- the context expression (mostly: I[c])
-                               (Just <$> pSubInterface `opt` Nothing)  -- the optional subinterface
-                       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> Maybe P_SubInterface -> P_Interface
-                             lbl (nm,p) params args roles expr msub
-                              = P_Ifc { ifc_Name   = nm
-                                      , ifc_Params = params
-                                      , ifc_Args   = args
-                                      , ifc_Roles  = roles
-                                      , ifc_Obj    = P_Obj { obj_nm   = nm    
-                                                           , obj_pos  = p
-                                                           , obj_ctx  = expr
-                                                           , obj_msub = msub
-                                                           , obj_strs = args
-                                                           }
-                                      , ifc_Pos    = p
-                                      , ifc_Expl   = ""
-                                    }
-                             pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')' 
-                             pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'
-                             pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
-                             pAttrs  = pBox
-
-   pObj             :: Parser Token P_ObjectDef
-   pObj              = obj <$> pLabelProps
-                           <*> pExpr                                             -- the context expression (for example: I[c])
-                           <*> (Just <$> pSubInterface `opt` Nothing)  -- the optional subinterface
-                       where obj (Lbl nm pos' strs) expr msub = 
+   pObjDef          :: Parser Token P_ObjectDef
+   pObjDef           = obj <$> pLabelProps
+                           <*> pExpr            -- the context expression (for example: I[c])
+                           <*> optional pSubInterface  -- the optional subinterface 
+                       where obj (Lbl nm pos' strs) expr msub  = 
                                P_Obj { obj_nm   = nm
                                      , obj_pos  = pos'
                                      , obj_ctx  = expr
-                                     , obj_msub = msub
+                                     , obj_msub = msub 
                                      , obj_strs = strs
                                      }
-                                     
-   pSubInterface :: Parser Token P_SubInterface
-   pSubInterface   = (\(n,p) -> P_InterfaceRef p n) <$ pKey "INTERFACE" <*> pADLid_val_pos 
-                 <|> P_Box <$> pBox
-   
    pBox            :: Parser Token [P_ObjectDef]
-   pBox            = pKey "BOX" *> pSpec '[' *> pList1Sep (pSpec ',') pObj <* pSpec ']'
-
-   optional :: (Sequence p, Alternative p) => p a -> p (Maybe a)
-   optional a        = Just <$> a <|> pSucceed Nothing
-
-
-   pDeclaration     :: Parser Token P_Declaration
-   pDeclaration      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConcept  <*> (pKey "*" <|> pKey "->" )  <*> pConcept
-                         <|>
-                         rbd <$> pKey_pos "RELATION" <*> pVarid  <*> pSign
-                       )
-                         <*> ((True <$ pKey "BYPLUG") `opt` False)
-                         <*> (pProps `opt` [])
-                         <*> ((True <$ pKey "BYPLUG") `opt` False)
-                         <*> (pPragma `opt` [])
-                         <*> pList pMeaning
-                         <*> ((pKey "=" *> pContent) `opt` [])
-                         <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
-                       where rebuild nm pos' s fun' t bp1 props
-                               = rbd pos' nm (P_Sign [s,t]) bp1 props'
-                                 where props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
-                             rbd pos' nm sgn bp1 props bp2 pragma meanings content
-                               = P_Sgn { dec_nm   = nm
-                                       , dec_sign = sgn
-                                       , dec_prps = props
-                                       , dec_prL  = head pr
-                                       , dec_prM  = pr!!1
-                                       , dec_prR  = pr!!2
-                                       , dec_Mean = meanings
-                                       , dec_popu = content
-                                       , dec_fpos = pos'
-                                       , dec_plug = bp1 || bp2
-                                       }
-                                 where pr = pragma++["","",""]
+   pBox            = pKey "BOX" *> pSpec '[' *> pList1Sep (pSpec ',') pObjDef <* pSpec ']'
 
    pContent         :: Parser Token Pairs
    pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'
@@ -588,19 +588,17 @@ and the grammar must be disambiguated in order to get a performant parser...
        pValue  = pAtom <|> pConid <|> pVarid <|> pInteger <|> ((++)<$>pInteger<*>pConid) <|> ((++)<$>pInteger<*>pVarid)
        pRecordObs = mkPair<$ pSpec '(' <*> (trim <$> pString)  <* pComma   <*> (trim <$> pString)  <* pSpec ')' --obsolete
 
-   -- | pProps is bedoeld voor gebruik in relatie-declaraties.
-   pProps           :: Parser Token [Prop]
-   pProps            = (f.concat) <$> (pSpec '[' *> pListSep (pSpec ',') pProp <* pSpec ']')
-                       where f ps = nub (ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)])
 
-   pProp            :: Parser Token [Prop]
-   pProp             = k [Uni] "UNI" <|> k [Inj] "INJ" <|> k [Sur] "SUR" <|> k [Tot] "TOT" <|>
-                       k [Sym] "SYM" <|> k [Asy] "ASY" <|> k [Trn] "TRN" <|>
-                       k [Rfx] "RFX" <|> k [Irf] "IRF" <|> k [Sym, Asy] "PROP"
-                       where k obj str = f <$> pKey str where f _ = obj
 
-   pPragma          :: Parser Token [String]
-   pPragma           = pKey "PRAGMA" *> pList1 pString
+   pADLid           :: Parser Token String
+   pADLid            = pVarid <|> pConid <|> pString
+
+   pADLid_val_pos   :: Parser Token (String, Origin)
+   pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
+
+   optional :: (Sequence p, Alternative p) => p a -> p (Maybe a)
+   optional a        = Just <$> a <|> pSucceed Nothing
+
 
    get_tok_pos :: Token -> Origin
    get_tok_pos     (Tok _ _ s l f) = FileLoc(FilePos (f,l,s))
