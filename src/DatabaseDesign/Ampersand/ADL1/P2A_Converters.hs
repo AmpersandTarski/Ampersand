@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      , pSign2aSign
      , pExpr2aExpr
      , pDecl2aDecl
-     , pRel2aRel
+ --    , pRel2aRel
      , pCtx2aCtx
      , pPat2aPat
      , pRul2aRul
@@ -380,7 +380,7 @@ pPurp2aPurp actx pexpl
 pExOb2aExOb :: A_Context -> PRef2Obj -> (ExplObj, CtxError)
 pExOb2aExOb actx (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
                                             where cds = [cd | cd<-conceptDefs actx, cdcpt cd==str ]
-pExOb2aExOb actx (PRef2Declaration pr t) = (ExplDeclaration (makeDeclaration rel), relcxe)
+pExOb2aExOb actx (PRef2Declaration (pr,t)) = (ExplDeclaration (makeDeclaration rel), relcxe)
                                             where (rel,relcxe) = pRel2aRel actx (psign t) pr
 pExOb2aExOb actx (PRef2Rule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
                                             where ruls = [rul | rul<-rules actx, name rul==str ]
@@ -400,7 +400,8 @@ pPop2aPop contxt p
           }
    , relcxe
    )
-   where (prel,relcxe) = pRel2aRel contxt (p_type p) (p_popm p)
+   where (prel,relcxe) = pRel2aRel contxt ((psign.p_type) p) (p_popm p)
+         
 
 pGen2aGen :: (Language l, ConceptStructure l, Identified l) => l -> String -> P_Gen -> A_Gen
 pGen2aGen contxt patNm pg

@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Misc -- hiding (test)
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.Basics
-import Paths_Ampersand
+import Paths_ampersand
 import System.FilePath
 
 fatal :: Int -> String -> a
