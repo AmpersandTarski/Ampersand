@@ -1,5 +1,11 @@
 module DatabaseDesign.Ampersand.ADL1.TypeCheck (inferType) where
 
+{-
+This module is for experimenting with a refactored typechecker.
+
+It is currently not used by the Ampersand compiler.
+-}
+
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Core.Poset.Instances
 import DatabaseDesign.Ampersand.Core.Poset
