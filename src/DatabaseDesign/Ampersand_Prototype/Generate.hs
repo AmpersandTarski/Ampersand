@@ -318,7 +318,7 @@ escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\")
 
 showPhpBool b = if b then "true" else "false"
   
-indent n lines = [ replicate n 'x' ++ line | line <- lines ]
+indent n lines = [ replicate n ' ' ++ line | line <- lines ]
 
 -- FSpec utils
 
