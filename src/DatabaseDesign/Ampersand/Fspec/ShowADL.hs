@@ -36,6 +36,7 @@ class LanguageDependent a where
   mapexprs _ _ = id
 
 instance LanguageDependent a => LanguageDependent (Maybe a) where
+  mapexprs _ _ Nothing  = Nothing
   mapexprs f l (Just x) = Just $ mapexprs f l x
 
 instance LanguageDependent (a, Expression) where
@@ -47,7 +48,7 @@ instance LanguageDependent Interface where
 instance LanguageDependent ObjectDef where
   mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
 instance LanguageDependent SubInterface where
-  mapexprs f l iref@(InterfaceRef _) = iref
+  mapexprs _ _ iref@(InterfaceRef _) = iref
   mapexprs f l (Box objs) = Box $ map (mapexprs f l) objs
 instance LanguageDependent Relation where
   mapexprs _ _ = id
@@ -66,15 +67,15 @@ instance ShowADL ObjectDef where
  showADL obj = " : "++showADL (objctx obj)++
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
-        recur ind Nothing = ""
-        recur ind (Just (InterfaceRef name)) = "InterfaceRef name"
+        recur _   Nothing = ""
+        recur ind (Just (InterfaceRef nm)) = ind++" INTERFACE "++showstr nm
         recur ind (Just (Box objs))
          = ind++" BOX [ "++
            intercalate (ind++"     , ") 
                                [ showstr (name o)++
                                   (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
                                   " : "++showADL (objctx o)++
-                                  recur ind (objmsub o)
+                                  recur (ind++"      ") (objmsub o)
                                | o<-objs
                                ]++
            ind++"     ]"
@@ -192,7 +193,7 @@ instance ShowADL RoleRule where
 
 instance ShowADL Interface where
  showADL ifc 
-  = "INTERFACE "++name ifc
+  = "INTERFACE "++showstr(name ifc)
           ++(if null (ifcParams ifc) then [] else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
           ++(if null (ifcArgs ifc) then [] else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
           ++showADL (ifcObj ifc)
