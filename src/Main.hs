@@ -48,7 +48,6 @@ generate opts fSpec =
  do { verboseLn opts "Generating..."
     ; when (genXML opts)      $ doGenXML      fSpec opts
     ; when (genUML opts)      $ doGenUML      fSpec opts 
-    ; when (genBericht opts)  $ doGenBericht  fSpec opts 
     ; when (haskell opts)     $ doGenHaskell  fSpec opts 
     ; when (interfacesG opts) $ interfaceGen  fSpec opts
     ; when (genFspec opts)    $ doGenDocument fSpec opts 
