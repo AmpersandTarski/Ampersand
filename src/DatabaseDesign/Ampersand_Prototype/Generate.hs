@@ -220,7 +220,7 @@ generateInterface fSpec opts interface =
   
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = indent (depth*2) $
+genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if objctx object /= normalizedInterfaceExp && verboseP opts
       then   ["      // original expression:"]
@@ -251,7 +251,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
   , "      , 'expressionSQL' => '" ++ (fromMaybe (fatal 151 $ "No sql generated for "++showHS opts "" normalizedInterfaceExp) $
-                                        selectExpr fSpec 25 "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
+                                        selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
   ] 
   ++ generateMSubInterface fSpec opts editableRels depth (objmsub object) ++
   [ "      )"
@@ -265,21 +265,18 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
                                  ++ concatMap getEditableConcepts (objAts obj)
   
 generateMSubInterface :: Fspc -> Options -> [Relation] -> Int -> Maybe SubInterface -> [String] 
-generateMSubInterface fSpec opts editableRels depth Nothing = indent (depth*2) $ 
+generateMSubInterface fSpec opts editableRels depth Nothing = 
   [ "      // No subinterfaces" ] 
-generateMSubInterface fSpec opts editableRels depth (Just (InterfaceRef nm)) = indent (depth*2) $ 
+generateMSubInterface fSpec opts editableRels depth (Just (InterfaceRef nm)) = 
   [ "      // InterfaceRef" 
   , "      , 'refSubInterface' => "++ showPhpStr nm
   ]
-generateMSubInterface fSpec opts editableRels depth (Just (Box objects)) = indent (depth*2) $ 
+generateMSubInterface fSpec opts editableRels depth (Just (Box objects)) = 
   [ "      // Box" 
   , "      , 'boxSubInterfaces' =>"
   , "          array"
   ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) objects)
-  -- In contrast to what hLint thinks, these $'s are not redundant!
-
-
-
+  
 
 -- utils
 
@@ -321,7 +318,7 @@ escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\")
 
 showPhpBool b = if b then "true" else "false"
   
-indent n lines = [ replicate n ' ' ++ line | line <- lines ]
+indent n lines = [ replicate n 'x' ++ line | line <- lines ]
 
 -- FSpec utils
 
