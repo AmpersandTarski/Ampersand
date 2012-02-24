@@ -334,9 +334,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                         (pArgs   `opt` [])                   <*>  
                         (pRoles  `opt` [])                   <*>  
                         (pKey ":" *> pExpr)                  <*>  
-                        optional pSubInterface        -- the optional subinterface
-       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> Maybe P_SubInterface -> P_Interface
-             lbl (nm,p) params args roles expr msub
+                        pSubInterface
+       where lbl :: (String, Origin) -> [(P_Relation,P_Sign)] -> [[String]] -> [String] -> P_Expression -> P_SubInterface -> P_Interface
+             lbl (nm,p) params args roles expr sub
                 = P_Ifc { ifc_Name   = nm
                         , ifc_Params = params
                         , ifc_Args   = args
@@ -344,7 +344,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                         , ifc_Obj    = P_Obj { obj_nm   = nm    
                                              , obj_pos  = p
                                              , obj_ctx  = expr
-                                             , obj_msub = msub
+                                             , obj_msub = Just sub
                                              , obj_strs = args
                                              }
                         , ifc_Pos    = p
