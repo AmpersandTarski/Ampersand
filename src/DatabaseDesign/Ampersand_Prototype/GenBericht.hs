@@ -5,6 +5,7 @@ import Data.List
 import Text.CSV
 import System.FilePath
 import System.Directory
+import Control.Monad
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc
@@ -18,16 +19,15 @@ doGenBericht :: Fspc -> Options -> IO ()
 doGenBericht fSpec opts =
  do { verboseLn opts "Generating 'Berichtendefinities'..."
     ; createDirectoryIfMissing True $ combine (dirPrototype opts) "Berichten"
-    ; genFile "Berichten/Berichten.csv" $ generateBerichtCSV fSpec opts
+    ; let berichtenCSV = genBerichtInterfaces $ interfaceS fSpec
+    ; when (development opts) $ verboseLn opts $ layout berichtenCSV
+    ; genFile "Berichten/Berichten.csv" $ printSemicolonSeparated berichtenCSV
     }
  where genFile filename contents = 
         do { writeFile (combine (dirPrototype opts) filename) contents
            ; verboseLn opts $ "\nGenerated file "++filename
            }
            
-generateBerichtCSV :: Fspc -> Options -> String
-generateBerichtCSV fSpec opts = printCSV {-layout-} . genBerichtInterfaces $ interfaceS fSpec
-
 genBerichtInterfaces :: [Interface] -> CSV
 genBerichtInterfaces interfaces = ["Naam", "Card.", "Definitie", "Type"] :
                                   concatMap genBerichtInterface interfaces
@@ -36,7 +36,7 @@ genBerichtInterface :: Interface -> CSV
 genBerichtInterface interface = genBerichtObjDef (ifcObj interface) ++ [["","","",""]]
 
 genBerichtObjDef :: ObjectDef -> CSV
-genBerichtObjDef objDef = indentHead 1 $ 
+genBerichtObjDef objDef = 
     [ name objDef
     , card $ objctx objDef
     , def $ objctx objDef 
@@ -45,7 +45,7 @@ genBerichtObjDef objDef = indentHead 1 $
     case objmsub objDef of
       Nothing -> []
       Just (InterfaceRef name) -> [["INTERFACEREF "++name,"","",""]]
-      Just (Box objs) -> concatMap genBerichtObjDef objs           
+      Just (Box objs) -> indentHead 1 $ concatMap genBerichtObjDef objs           
  where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
        
        def (ERel (Rel{reldcl=Sgn{decMean=meaning}}))        = showMeaning meaning
@@ -54,7 +54,9 @@ genBerichtObjDef objDef = indentHead 1 $
        
        showMeaning meaning = concat [ aMarkup2String m | m@A_Markup{amLang=Dutch} <- ameaMrk meaning ]
 
-indentHead i lines = [(replicate i '+'++c1):line | (c1:line) <- lines]
+indentHead i lines = [((concat $ replicate i ". ")++c1):line | (c1:line) <- lines]
+
+-- Utils
 
 layout :: [[String]] -> String
 layout lines = 
@@ -64,4 +66,12 @@ layout lines =
                          in  map (fill width) col
   in  unlines . map unwords . transpose . map formatColumn $ columns
  where fill i str = str ++ take (i - length str) (replicate i ' ') 
+ 
+-- Modified version of Text.CSV.printCSV
+printSemicolonSeparated :: CSV -> String
+printSemicolonSeparated records = unlines (printRecord `map` records)
+    where printRecord = concat . intersperse ";" . map printField
+          printField f = "\"" ++ concatMap escape f ++ "\""
+          escape '"' = "\"\""
+          escape x = [x]
  

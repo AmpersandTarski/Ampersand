@@ -92,11 +92,11 @@ main
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec =
  do { verboseLn opts "Generating..."
-    ; when (genBericht opts)   $ doGenBericht fSpec opts 
     ; when (genPrototype opts) $ doGenProto protonm opts
+    ; when (genBericht opts)   $ doGenBericht fSpec opts 
+    ; sequence_ [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts]] 
     ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
         verboseLn opts "\nWARNING: There are rule violations (see above)."
-    ; sequence_ [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts]] 
     ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
    where  
