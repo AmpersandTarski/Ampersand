@@ -17,7 +17,6 @@ module DatabaseDesign.Ampersand.Components
    , doGenHaskell
    , doGenXML
    , doGenUML
-   , doGenBericht
    , doGenDocument
     -- * etc...
   )
@@ -147,18 +146,6 @@ doGenUML fSpec flags =
     ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
     }
    where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".xmi"
-
-doGenBericht :: Fspc -> Options -> IO()
-doGenBericht fSpec flags =
- do { verboseLn flags "Generating 'Berichtendefinities'..."
-    ; filenamesContents <- generateBericht fSpec flags 
-    ; sequence_   [ do { Prelude.putStrLn $ "\nGenerated file "++filename ++ ":\n" ++ fileContents
-                       ; writeFile (combine (dirOutput flags) filename) fileContents
-                       } 
-                  | (filename, fileContents) <- filenamesContents ] 
-    ; Prelude.putStrLn $ "Generated file" ++ (if length filenamesContents > 1 then "s" else "") ++
-                         ": " ++ intercalate ", " (map fst filenamesContents) ++ "."
-    }
 
 -- This function will generate all Pictures for a given Fspc. 
 -- the returned Fspc contains the details about the Pictures, so they
