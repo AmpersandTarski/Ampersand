@@ -403,10 +403,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                              pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign        <* pSpec ')' 
                              pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
                              pAttrs  = pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']'
-                             pRelSign :: Parser Token (P_Relation, P_Sign)
-                             pRelSign = f <$> pRelation <*> optional pSign
-                                         where f rel Nothing    = (rel,P_Sign [])
-                                               f rel (Just sgn) = (rel,sgn)
 
 
 
