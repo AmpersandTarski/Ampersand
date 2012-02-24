@@ -30,6 +30,7 @@ import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.TypeCheck
 import Data.Maybe
+import Data.List
 
 -- TODO: this module should import Database.Ampersand.Core.ParseTree directly, and it should be one 
 --       of the very few modules that imports it. (might require some refactoring due to shared stuff)
@@ -84,8 +85,8 @@ pCtx2aCtx pctx
     (ctxrules,rulecxes)  = (unzip . map (pRul2aRul   actx "NoPattern") . ctx_rs   ) pctx
     (keys,    keycxes)   = (unzip . map (pKDef2aKDef actx)             . ctx_ks   ) pctx
     (ifcs,interfacecxes) = (unzip . map (pIFC2aIFC   actx)             . ctx_ifcs ) pctx
-    (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef actx NoCast)      . ctx_sql  ) pctx
-    (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef actx NoCast)      . ctx_php  ) pctx
+    (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef actx [] NoCast)   . ctx_sql  ) pctx
+    (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef actx [] NoCast)   . ctx_php  ) pctx
     (allpops, popcxes)   = (unzip . map (pPop2aPop   actx)             . pops ) pctx
     pops pc
      = ctx_pops pc ++
@@ -112,9 +113,9 @@ pCtx2aCtx pctx
                                  , sign d <==> sign d']
                     , length ds>1]
     cyclicInterfaces = [ newcxe $ "These interfaces form a reference cycle:\n" ++
-                                  unlines [ " -" ++ show ifcName ++ " at position " ++ show (origin (lookupInterface ifcName))
-                                          | ifcName <- cycle ]
-                       | cycle <- getCycles refsPerInterface ]
+                                  unlines [ "- " ++ show ifcNm ++ " at " ++ show (origin $ lookupInterface ifcNm)
+                                          | ifcNm <- iCycle ]
+                       | iCycle <- getCycles refsPerInterface ]
       where refsPerInterface = [(ifcName ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ifcs ]
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                -> []
@@ -284,7 +285,7 @@ pKDef2aKDef actx pkdef
 -- (ats,atscxes)  = (unzip . map (pODef2aODef actx (SourceCast c)) . kd_ats) pkdef
 pKeySeg2aKeySeg :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> A_Concept -> P_KeySegment -> (KeySegment, CtxError)
 pKeySeg2aKeySeg _    _      (P_KeyText str)   = (KeyText str, cxenone)
-pKeySeg2aKeySeg actx concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef actx (SourceCast concpt) keyExp
+pKeySeg2aKeySeg actx concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef actx [] (SourceCast concpt) keyExp
                                                 in ( KeyExp objDef, cxe)
   
 
@@ -302,7 +303,8 @@ pIFC2aIFC actx pifc
         }
    , CxeOrig (cxelist (objcxe:prmcxes++duplicateRoleErrs++undeclaredRoleErrs)) "interface" (name pifc) (origin pifc) )
    where
-    (obj,objcxe)  = pODef2aODef actx NoCast (ifc_Obj pifc)
+    parentIfcRoles = if null $ ifc_Roles pifc then roles actx else ifc_Roles pifc -- if no roles are specified, the interface supports all roles
+    (obj,objcxe)  = pODef2aODef actx parentIfcRoles NoCast (ifc_Obj pifc)
     (prms,prmcxes)  = unzip [pRel2aRel actx (psign sgn) r | (r,sgn)<-ifc_Params pifc]
     duplicateRoleErrs = [newcxe $ "Duplicate interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, length (filter (==role) $ ifc_Roles pifc) > 1 ]
     undeclaredRoleErrs = if null duplicateRoleErrs then [newcxe $ "Undeclared interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, role `notElem` roles actx ]
@@ -311,8 +313,8 @@ pIFC2aIFC actx pifc
     -- and the implementation of error messages makes it difficult to give a nice one here
     
 -- | pODef2aODef checks compatibility of composition of expressions on equality
-pODef2aODef :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
-pODef2aODef actx cast podef 
+pODef2aODef :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => l -> [String] -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
+pODef2aODef actx parentIfcRoles cast podef 
  = (Obj { objnm   = obj_nm podef
         , objpos  = obj_pos podef
         , objctx  = expr
@@ -328,7 +330,7 @@ pODef2aODef actx cast podef
     -- Step1: check obj_ctx
     (expr,exprcxe)  = pExpr2aExpr actx cast (obj_ctx podef)
     -- Step2: check obj_ats in the context of expr
-    (msub,msubcxes) = p2a_MaybeSubInterface actx (target expr) $ obj_msub podef
+    (msub,msubcxes) = p2a_MaybeSubInterface actx parentIfcRoles (target expr) $ obj_msub podef
     -- Step3: compute type error messages
     {- SJ 4th jan 2012: I have disabled odcxe in order to find out why it is necessary to check equality. We should run in trouble if this check is indeed necessary...
     odcxe
@@ -347,22 +349,24 @@ pODef2aODef actx cast podef
     -}
     
 p2a_MaybeSubInterface :: (Language l, ProcessStructure l, ConceptStructure l, Identified l) => 
-                         l -> A_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
-p2a_MaybeSubInterface _    _    Nothing = (Nothing, [])
-p2a_MaybeSubInterface actx conc (Just (P_Box p_objs)) =
-  let (objs, errs) = unzip [pODef2aODef actx (SourceCast conc) p_obj | p_obj<-p_objs] 
+                         l -> [String] -> A_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
+p2a_MaybeSubInterface _    _              _    Nothing = (Nothing, [])
+p2a_MaybeSubInterface actx parentIfcRoles conc (Just (P_Box p_objs)) =
+  let (objs, errs) = unzip [pODef2aODef actx parentIfcRoles (SourceCast conc) p_obj | p_obj<-p_objs] 
   in  (Just $ Box objs, errs)
-p2a_MaybeSubInterface actx conc (Just (P_InterfaceRef pos nm)) =
+p2a_MaybeSubInterface actx parentIfcRoles conc (Just (P_InterfaceRef pos nm)) =
   (Just $ InterfaceRef nm, [err])
  where err = case [ifc | ifc <- interfaces actx, name ifc == nm ] of
-               []                    -> newcxe $ "Undeclared interface \""++nm++"\" at position " ++show pos ++ "."
-               [Ifc { ifcObj = Obj {objctx= ifcExp}}] ->
-                 if source ifcExp >= conc
-                 then cxenone
-                 else newcxe $ "Incompatible interface "++show nm++" at position "++show pos++":"++
+               []                                     -> newcxe $ "Undeclared interface \""++nm++"\" at " ++show pos ++ "."
+               (_:_:_)                                -> fatal 350 $ "Multiple interfaces for ref "++nm
+               [Ifc { ifcObj = Obj {objctx= ifcExp}, ifcRoles = roles }] ->
+                 if source ifcExp < conc
+                 then newcxe $ "Incompatible interface "++show nm++" at "++show pos++":"++
                                "\nInterface source concept "++name (source ifcExp)++" is not equal to or a supertype of "++name conc
-               _ -> fatal 350 $ "Multiple interfaces for ref "++nm
-   -- todo origin
+                 else let unsupportedRoles = parentIfcRoles \\ roles
+                      in  newcxeif (not $ null unsupportedRoles) $
+                         "Interface "++show nm++", referenced at "++show pos++", does not support all roles of the containing interface. "++
+                         "Unsupported roles: "++ intercalate ", " unsupportedRoles ++"."
   
 pPurp2aPurp :: A_Context -> PPurpose -> (Purpose, CtxError)
 pPurp2aPurp actx pexpl
