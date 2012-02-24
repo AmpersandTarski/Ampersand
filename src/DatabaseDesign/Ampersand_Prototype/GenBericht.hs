@@ -15,6 +15,9 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "GenBericht"
+
 doGenBericht :: Fspc -> Options -> IO ()
 doGenBericht fSpec opts =
  do { verboseLn opts "Generating 'Berichtendefinities'..."
@@ -30,13 +33,13 @@ doGenBericht fSpec opts =
            
 genBerichtInterfaces :: [Interface] -> CSV
 genBerichtInterfaces interfaces = ["Naam", "Card.", "Definitie", "Type"] :
-                                  concatMap genBerichtInterface interfaces
+                                  concatMap (genBerichtInterface interfaces) interfaces
 
-genBerichtInterface :: Interface -> CSV
-genBerichtInterface interface = genBerichtObjDef (ifcObj interface) ++ [["","","",""]]
+genBerichtInterface :: [Interface] -> Interface -> CSV
+genBerichtInterface interfaces interface = genBerichtObjDef interfaces (ifcObj interface) ++ [["","","",""]]
 
-genBerichtObjDef :: ObjectDef -> CSV
-genBerichtObjDef objDef = 
+genBerichtObjDef :: [Interface] -> ObjectDef -> CSV
+genBerichtObjDef interfaces objDef = 
     [ name objDef
     , card $ objctx objDef
     , def $ objctx objDef 
@@ -44,8 +47,8 @@ genBerichtObjDef objDef =
     ] :
     case objmsub objDef of
       Nothing -> []
-      Just (InterfaceRef name) -> [["INTERFACEREF "++name,"","",""]]
-      Just (Box objs) -> indentHead 1 $ concatMap genBerichtObjDef objs           
+      Just (Box objs) -> indentHead 1 $ concatMap (genBerichtObjDef interfaces) objs           
+      Just (InterfaceRef nm) -> indentHead 1 . genBerichtObjDef interfaces $ objForInterfaceNamed nm
  where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
        
        def (ERel (Rel{reldcl=Sgn{decMean=meaning}}))        = showMeaning meaning
@@ -54,10 +57,17 @@ genBerichtObjDef objDef =
        
        showMeaning meaning = concat [ aMarkup2String m | m@A_Markup{amLang=Dutch} <- ameaMrk meaning ]
 
+       objForInterfaceNamed :: String -> ObjectDef
+       objForInterfaceNamed nm = ifcObj $ getInterfaceByName interfaces nm
+                                
 indentHead i lines = [((concat $ replicate i ". ")++c1):line | (c1:line) <- lines]
 
 -- Utils
 
+getInterfaceByName :: [Interface] -> String -> Interface
+getInterfaceByName interfaces nm = case [ ifc | ifc <- interfaces, name ifc == nm ] of
+                                [ifc] -> ifc
+                                _     -> fatal 63 $ "getInterface by name: multiple or no interfaces named "++show nm 
 layout :: [[String]] -> String
 layout lines = 
   let columns = transpose lines
