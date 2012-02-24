@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1
-           ( P_Architecture(..),Architecture(..)
-           , P_Context(..), A_Context(..)
+           ( P_Context(..), A_Context(..)
            , Process(..), P_Process(..), P_RoleRelation(..),RoleRelation(..), RoleRule(..)
            , P_Pattern(..), Pattern(..)
            , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
@@ -16,7 +15,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Interface(..)
            , P_Expression(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
-           , A_Gen(..),P_Gen(..), P_Gens
+           , A_Gen(..),P_Gen(..)
            , Relation(..), flp, isTypeable, makeRelation
            , Declaration(..), flpDecl, isSgn
            , P_Relation(..),P_Declaration(..)
@@ -45,7 +44,6 @@ where
                                          , (<==>),meet,order,join
                                          ,Signaling(..)
                                          ,A_Context(..),Process(..)
-                                         ,Architecture(..)
                                          ,Expression(..)
                                          ,A_Gen(..)
                                          ,KeyDef(..)

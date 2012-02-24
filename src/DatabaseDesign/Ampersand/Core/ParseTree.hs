@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Core.ParseTree (
-     P_Architecture(..)
-   , P_Context(..)
+     P_Context(..)
    , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
@@ -29,7 +28,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Concept(..), P_Sign(..)
    
-   , P_Gen(..),P_Gens
+   , P_Gen(..)
    
    , Lang(..)
    , P_Markup(..)
@@ -52,8 +51,6 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "ParseTree"
    
-   -- | Architecture of Ampersand consists of a set of contexts
-   data P_Architecture = P_Arch { p_arch_Contexts :: [P_Context]}
    data P_Context
       = PCtx{ ctx_nm     :: String          -- ^ The name of this context
             , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
@@ -364,7 +361,6 @@ where
      showsPrec _ s = 
          showString (   "[" ++ intercalate "*" (map show (psign s)) ++ "]" )
 
-   type P_Gens = [P_Gen]
    data P_Gen = PGen{ gen_fp  :: Origin         -- ^ the position of the GEN-rule
                     , gen_gen :: P_Concept      -- ^ generic concept
                     , gen_spc :: P_Concept      -- ^ specific concept

@@ -254,9 +254,6 @@ instance ShowADL ConceptDef where
  showADL cd
   = "\n  CONCEPT "++show (cdcpt cd)++" "++show (cddef cd)++" "++(if null (cdref cd) then "" else show (cdref cd))
 
-instance ShowADL Architecture where
- showADL arch = intercalate "\n\n" (map showADL (arch_Contexts arch))
-  
 instance ShowADL A_Context where
  showADL context
   = "CONTEXT " ++name context

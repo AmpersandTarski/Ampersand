@@ -1,8 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
-   Architecture(..)
- , A_Context(..)
+   A_Context(..)
  , Process(..)
  , Pattern(..)
  , PairView(..)
@@ -55,8 +54,6 @@ import Data.List
 fatal :: Int -> String -> a
 fatal = fatalMsg "AbstractSyntaxTree.hs"
 
-
-data Architecture = A_Arch { arch_Contexts :: [A_Context]}
 
 data A_Context
    = ACtx{ ctxnm     :: String        -- ^ The name of this context
