@@ -114,9 +114,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
 
    pLanguageRef :: Parser Token Lang
    pLanguageRef = pKey "IN" *> 
-                  ( Dutch   <$ pKey "DUTCH"  ) <|>
-                  ( English <$ pKey "ENGLISH")
-
+                  (( Dutch   <$ pKey "DUTCH"  ) <|>
+                   ( English <$ pKey "ENGLISH")
+                  )
    pTextMarkup :: Parser Token PandocFormat
    pTextMarkup = ( ReST     <$ pKey "REST"     ) <|>
                  ( HTML     <$ pKey "HTML"     ) <|>
