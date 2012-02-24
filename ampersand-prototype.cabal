@@ -51,6 +51,7 @@ Executable prototype
                  DatabaseDesign.Ampersand_Prototype.ConnectToDataBase ,
                  DatabaseDesign.Ampersand_Prototype.ContextGen ,
                  DatabaseDesign.Ampersand_Prototype.CoreImporter ,
+                 DatabaseDesign.Ampersand_Prototype.GenBericht ,
                  DatabaseDesign.Ampersand_Prototype.Generate ,
                  DatabaseDesign.Ampersand_Prototype.GetCode ,
                  DatabaseDesign.Ampersand_Prototype.Index ,
@@ -64,4 +65,5 @@ Executable prototype
                  DatabaseDesign.Ampersand_Prototype.ShowCode ,
                  DatabaseDesign.Ampersand_Prototype.Version ,
                  DatabaseDesign.Ampersand_Prototype.Wrapper
+
      
