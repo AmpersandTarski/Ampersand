@@ -30,19 +30,17 @@ main
   where
   parseAndTypeCheck :: Options -> IO(A_Context,CtxError) 
   parseAndTypeCheck opts 
-   = let scriptName = fileName opts
-         fn = importfile opts
+   = let fn = importfile opts
          thepCtx (Right pCtx) = pCtx
          thepCtx (Left err)   = error $ "Parse error:\n"++show err
      in
-     do scriptText <- readFile scriptName
-        ePCtxErr <- parseCtxM_ scriptText opts scriptName
+     do ePCtxErr <- parseCtxM_ opts
         pPops <- if null fn then return [] else
                  do popsText <- readFile fn
                     case importformat opts of
                        Adl1PopFormat -> parsePopsM_ popsText opts fn
                        Adl1Format -> do verbose opts ("Importing ADL1 file "++fn++"... ")
-                                        cx <- parseCtxM_ popsText opts fn
+                                        cx <- parseCtxM_ opts
                                         if nocxe (snd(typeCheck (thepCtx cx) [])) 
                                          then let (atlas,_) = typeCheck (thepCtx ePCtxErr) [] -- the atlas without the import
                                                   fspec = makeFspec opts (fst(typeCheck (thepCtx cx) [])) -- the fspec of the adl file to import as a pop of atlas.adl

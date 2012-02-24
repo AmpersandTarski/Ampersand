@@ -9,7 +9,6 @@ import DatabaseDesign.Ampersand
 --     A_Context
 --   , P_Context(..)
 --   , PRef2Obj(..), PPurpose(..)
---   , Architecture(..)
 --   , A_Concept(..), newAcpt
 --   , ConceptDef(..), ConceptStructure(..)
 --   , Pattern(..)
