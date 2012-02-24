@@ -13,7 +13,7 @@ import DatabaseDesign.Ampersand_Prototype.Apps.Atlas   (atlas2context)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
-
+ 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
@@ -87,88 +87,16 @@ main
                                          else error (show (snd(typeCheck (thepCtx cx) [])))
         verboseLn opts "Type checking..."
         return (typeCheck (thepCtx ePCtxErr) pPops)
-  {-              
-parseFilePrototype :: Options -> ParserVersion -> IO(A_Context)
-parseFilePrototype opts pv 
-      = let fnFull = fileName opts in
-        do verbose opts ("Parsing("++show pv++")... ")
-           adlText <- readFile fnFull
-           importpops <- parseImportFile adlText pv fnFull opts 
-           parsedfile <- parseADL1 adlText (if null(importfile opts) then pv else PV2011) importpops opts fnFull 
-           atlasfspec <- makeFspec opts parsedfile           
---           verbose opts (show[showsql(SqlSel2(selectbinary atlasfspec c)) |c<-concs atlasfspec])
-  --         verbose opts (show[showsql(SqlSel1(selectvector atlasfspec "xxx" c)) |c<-concs atlasfspec])
-    --       verbose opts (show[showsql(SqlSel1(selectvector atlasfspec "xxx" (makeRelation d))) |d<-declarations atlasfspec])
---           verbose opts (show[showsql(SqlSel1(selectdomain atlasfspec (makeRelation d))) |d<-declarations atlasfspec])
-  --         verbose opts (show[showsql(SqlSel2(selectbinary atlasfspec ((ERel (makeRelation d))))) |d<-declarations atlasfspec])
-       --    verbose opts (show[showsql(SqlSel2(selectbinary atlasfspec (EUni[ERel(makeRelation d),ERel(flp$makeRelation d)]))) |d<-declarations atlasfspec,source d==target d])
---           verbose opts (show[(showsql(SqlSel2(selectbinary atlasfspec r'))
-  --                             ,showCode 0 x
-    --                           ,show r') |r<-rules atlasfspec,let r'=(conjNF . ECpl . normExpr) r,head(showexpression r)=='I'
-      --                                           , let Just x=getCodeFor atlasfspec [] [codeVariableForBinary "v" r']])
-           if interfacesG opts then atlas2context atlasfspec opts else return parsedfile
-
-parseImportFile :: String -> ParserVersion -> String -> Options -> IO(P_Populations Concept)  
-parseImportFile adlText pv adlfn opts  
- = let fn = importfile opts 
-       fnnxt fspec = name fspec ++ "'"
-       fdir = let d=dropFileName fn in if null d then "." else d
-       usr= namespace opts
-       getr r = if length r==1 then head r else error "import error: no or multiple declarations for relvar"
-       impctx atlas = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
-       impfil atlas = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
-       impupl atlas = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
-       usrfil atlas = [makeRelation d |d<-declarations atlas,name d=="fileof"]
-       --funrld atlas = [makeRelation d |d<-declarations atlas,name d=="reload"]
-       funfsp atlas = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
-       funrep atlas = [makeRelation d |d<-declarations atlas,name d=="report"]
-       funadl atlas = [makeRelation d |d<-declarations atlas,name d=="showadl"]
-       loadcontext r fspec = [Popu{ p_popm=getr r, p_popps=[mkPair fn (name fspec),mkPair (fnnxt fspec) (fnnxt fspec)]}]
-       loadedfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr fn]         } | not (null usr)]
-      -- uploadfile r        = [Popu{ p_popm=getr r, p_popps=[mkPair usr "browse"]   } | not (null usr)]
-       --TODO -> the user has more files, how do I get them in this population
-       fileof r myfiles    = [Popu{ p_popm=getr r, p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
-       contextfunction fspec r x
-                           = [Popu{ p_popm=getr r, p_popps=[mkPair (name fspec) x] }]
-   in
-   if not(null fn)
-   then do verbose opts "Parsing import file... "
-           popText <- readFile fn
-           case importformat opts of
-             Adl1PopFormat -> do verbose opts "Importing ADL1 populations file... "
-                                 parseADL1Pop popText fn 
-             Adl1Format -> do verbose opts ("Importing ADL1 file "++fn++"... ")
-                              cx <- parseADL1 popText pv [] opts fn
-                              fspec <- makeFspec opts cx
-                              verbose opts "writing pictures for atlas... "
-                              sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
-                              verbose opts ("pictures for atlas written... "++show pv)
-                              atlas <- parseADL1 adlText PV211 [] opts adlfn
-                              myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
-                              verboseLn opts "Generating pictures for atlas..."
-                              sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
-                              return (makeADL1Populations (declarations atlas) [fspec]
-                                    ++makeADL1Populations (declarations atlas) (picturesForAtlas opts fspec)
-                                    ++loadcontext (impctx atlas) fspec
-                                    ++loadedfile (impfil atlas)
-                                    ++contextfunction fspec (impupl atlas) "new context"
-                                    ++fileof (usrfil atlas) myfiles
-                                   -- ++ contextfunction fspec (funrld atlas) (name fspec)
-                                    ++ contextfunction fspec (funfsp atlas) (takeBaseName fn ++ ".pdf")
-                                    ++ contextfunction fspec (funrep atlas) (name fspec)
-                                    ++ contextfunction fspec (funadl atlas) (fnnxt fspec)
-                                     )
-   else return []
--}
+    
 generateProtoStuff :: Options -> Fspc -> IO ()
-generateProtoStuff opts fSpec = 
-    sequence_ 
-       ([ verboseLn     opts "Generating..."]++
-        [ doGenProto    protonm opts | genPrototype opts] ++
-        [ verboseLn opts "\nWARNING: There are rule violations (see above)." | (not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)] ++ 
-        [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts] ] ++
-        [ verboseLn opts "Done."]  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
-       ) 
+generateProtoStuff opts fSpec =
+ do { verboseLn opts "Generating..."
+    ; when (genPrototype opts) $ doGenProto protonm opts
+    ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
+        verboseLn opts "\nWARNING: There are rule violations (see above)."
+    ; sequence_ [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts]] 
+    ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
+    }
    where  
    protonm 
      | deprecated opts = rename fSpec ("ctx" ++ name fSpec) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
@@ -197,7 +125,7 @@ doGenProto fSpec opts =
               ; if test opts then verboseLn opts $ show (vplugInfos fSpec) else verboseLn opts ""
               }
     }
- where reportViolations []    = verboseLn opts $ "No violations found."
+ where reportViolations []    = verboseLn opts "No violations found."
        reportViolations viols =
          let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"
