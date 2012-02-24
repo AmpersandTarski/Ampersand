@@ -168,8 +168,7 @@ executable ampersand
                     base >= 4.3.1.0 && < 5,
                     directory >= 1.1.0.0 && < 1.2,
                     containers >= 0.4     && < 0.5,
-                    mtl        >= 2.0 && < 2.1,
-                    csv        >= 0.1 && < 0.2
+                    mtl        >= 2.0 && < 2.1
   if flag(executable)
     buildable:  True
   else
