@@ -28,10 +28,8 @@ main
   where
       parseAndTypeCheck :: Options -> IO(A_Context, CtxError) 
       parseAndTypeCheck opts 
-                        = let scriptName = fileName opts in
-                          do scriptText <- readFile scriptName
-                             verboseLn opts "Start parsing...."
-                             pCtx <- parseCtxM_ scriptText opts scriptName
+                        = do verboseLn opts "Start parsing...."
+                             pCtx <- parseCtxM_ opts
                              pPops <- case importfile opts of
                                          [] -> return []
                                          fn -> do popsText <- readFile fn

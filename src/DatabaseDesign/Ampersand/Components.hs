@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 -- 
 module DatabaseDesign.Ampersand.Components 
@@ -44,11 +45,9 @@ fatal = fatalMsg "Components"
 -- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
 --   This parser is for parsing of a Context
-parseCtxM_  :: String        -- ^ The string to be parsed
-            -> Options       -- ^ flags to be taken into account
-            -> String        -- ^ The name of the .adl file (used for error messages)
+parseCtxM_  :: Options       -- ^ flags to be taken into account
             -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
-parseCtxM_ adlstring flags fn = tryAll versions2try
+parseCtxM_ flags = tryAll versions2try
     where 
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion flags of
@@ -57,7 +56,7 @@ parseCtxM_ adlstring flags fn = tryAll versions2try
       
       try :: ParserVersion -> IO (Either ParseError P_Context)
       try pv = do { verbose flags $ "Parsing with "++show pv++"..."
-                  ; eRes <- parseADL pv fn
+                  ; eRes <- parseADL pv (fileName flags)
                   ; case eRes of 
                       Right ctx  -> verboseLn flags " successful"
                                 >> return (Right $ ctx{ctx_experimental = experimental flags}) -- set the experimental flag
