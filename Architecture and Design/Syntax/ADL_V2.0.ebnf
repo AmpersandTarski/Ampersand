@@ -52,7 +52,7 @@ InterfaceDef    ::= 'INTERFACE'
                     ('(' RelSign (',' RelSign)* ')')?
                     ('{' (Id Id*) (',' Id Id*)*'}')?
                     ('FOR' Id (',' Id)* )?
-                    ':' Expr SubInterface?
+                    ':' Expr SubInterface
 SubInterface    ::= 'INTERFACE' Id |
                     Box
 Plug            ::= ('SQLPLUG' | 'PHPPLUG') Obj
