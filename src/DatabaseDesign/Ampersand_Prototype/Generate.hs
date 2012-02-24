@@ -40,7 +40,7 @@ generateAll fSpec opts =
             ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
             ; if dedicatedCSSExists then
                do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
-                  ; customCssContents <- (readFile dedicatedCSSPath `catch` error ("ERROR: Cannot open custom css file '" ++ dedicatedCSSPath ++ "'"))
+                  ; customCssContents <- readFile dedicatedCSSPath `catch` error ("ERROR: Cannot open custom css file '" ++ dedicatedCSSPath ++ "'")
                   ; writePrototypeFile customCssPath customCssContents
                   }
               else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
@@ -231,6 +231,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object = inden
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" 
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
+                                       -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
   ++ case objctx object of
          ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
