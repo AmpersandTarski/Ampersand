@@ -1,8 +1,10 @@
 module DatabaseDesign.Ampersand_Prototype.GenBericht where
 
+import Prelude hiding (writeFile)
 import Data.List
 import Text.CSV
-
+import System.FilePath
+import System.Directory
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc
@@ -11,22 +13,20 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
--- when (genBericht opts)  $ doGenBericht  fSpec opts 
-    
-doGenBericht :: Fspc -> Options -> IO ()
-doGenBericht fSpec flags =
- do { verboseLn flags "Generating 'Berichtendefinities'..."
-    ; filenamesContents <- generateBericht fSpec flags 
-    ; sequence_   [ do { Prelude.putStrLn $ "\nGenerated file "++filename ++ ":\n" ++ fileContents
-                       ; writeFile (combine (dirOutput flags) filename) fileContents
-                       } 
-                  | (filename, fileContents) <- filenamesContents ] 
-    ; Prelude.putStrLn $ "Generated file" ++ (if length filenamesContents > 1 then "s" else "") ++
-                         ": " ++ intercalate ", " (map fst filenamesContents) ++ "."
-    }
 
-generateBericht :: Fspc -> Options -> IO [(String, String)]
-generateBericht fSpec opts = return [("Bericht.csv", printCSV {-layout-} . genBerichtInterfaces $ interfaceS fSpec)]
+doGenBericht :: Fspc -> Options -> IO ()
+doGenBericht fSpec opts =
+ do { verboseLn opts "Generating 'Berichtendefinities'..."
+    ; createDirectoryIfMissing True $ combine (dirPrototype opts) "Berichten"
+    ; genFile "Berichten/Berichten.csv" $ generateBerichtCSV fSpec opts
+    }
+ where genFile filename contents = 
+        do { writeFile (combine (dirPrototype opts) filename) contents
+           ; verboseLn opts $ "\nGenerated file "++filename
+           }
+           
+generateBerichtCSV :: Fspc -> Options -> String
+generateBerichtCSV fSpec opts = printCSV {-layout-} . genBerichtInterfaces $ interfaceS fSpec
 
 genBerichtInterfaces :: [Interface] -> CSV
 genBerichtInterfaces interfaces = ["Naam", "Card.", "Definitie", "Type"] :

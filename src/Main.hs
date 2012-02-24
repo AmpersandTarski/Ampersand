@@ -13,6 +13,7 @@ import DatabaseDesign.Ampersand_Prototype.Apps.Atlas   (atlas2context)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
+import DatabaseDesign.Ampersand_Prototype.GenBericht
  
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
@@ -91,6 +92,7 @@ main
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec =
  do { verboseLn opts "Generating..."
+    ; when (genBericht opts)   $ doGenBericht fSpec opts 
     ; when (genPrototype opts) $ doGenProto protonm opts
     ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
         verboseLn opts "\nWARNING: There are rule violations (see above)."
