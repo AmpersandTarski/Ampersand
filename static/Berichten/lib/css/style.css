@@ -1,0 +1,66 @@
+/** general */
+
+body, td { font-family: arial; font-size: 12px; }
+iframe { display:block; width:100%; border:none; }
+
+body#menu { background-color:#eeeeee; }
+body#header { overflow:hidden; }
+
+#header { width:100%; height:100px; background-image:url('../img/logo-JustID.png'); background-position:center top; background-repeat:no-repeat; }
+#header #colofon { position:absolute; top:20px; right:20px; }
+#header h1 { font-size: 14pt; padding-left: 20px; padding-top: 10px; }
+
+#abies h2 { background-color: #eeeeee; border: 1px solid #cccccc; padding:10px; }
+#abies h3 { font-size:11pt; }
+
+#abies div.info {  }
+
+.bdDescription { width:100%; }
+.bdDescription  td{ font-size:8pt; border:1px solid white; background-color:#dddddd; }
+.bdDescription  .descriptionHeader { width:150px; font-weight:bold; }
+
+.abieDescription { width:100%; }
+.abieDescription  td{ font-size:8pt; border:1px solid white; background-color:#dddddd; }
+.abieDescription  .descriptionHeader { width:150px; font-weight:bold; }
+
+.strong { font-weight: bold; }
+.print { float:right; right:20px; }
+
+a.infolink { float:right; right:0px; }
+
+a { color:#2494C5; }
+a:visited { color:#2494C5; }
+
+#libselector {
+    width:100%;
+    padding:20px;
+    border: 1px solid #cccccc;
+    background-color: #eeeeee;
+}
+
+hr { border:0px; height:1px; width:100%; background-color:#2494C5; }
+
+
+/** table */
+table { border-collapse: collapse; }
+
+/** abies */
+div.gegevenselement { 
+    padding-top: 20px;
+    border-top: 1px solid #cccccc;
+}
+div.gegevenselement .objectclass { 
+    font-weight: bold;
+    font-size: 12pt;
+}
+
+table.properties { width:100%; border:1px solid #CC003D; margin-bottom:20px; }
+td { padding:5px; border:1px solid #CC003D; vertical-align:top; }
+td.head { background-color:#CC003D; color:white; font-size:11px; font-weight:bold; }
+table.header { width:100%; }
+.bold { font-weight:bold; }
+
+td.associatedobjectclass { width:200px; }
+td.xmltag { width:200px; }
+td.representationterm, td.uni { width:200px; }
+td.cardinality { width:20px; }
