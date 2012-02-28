@@ -121,35 +121,35 @@ printSemicolonSeparated records = unlines (printRecord `map` records)
 genGegevensWB entities = gegevensWB_Header ++ 
                          gegevensWb_Toc entities ++
                          gegevensWB_Middle ++
-                         concatMap gegevensWB_Element entities ++
+                         concatMap (gegevensWB_Element entities) entities ++
                          gegevensWB_Footer
 
 gegevensWb_Toc entities = unlines
-  [ "      <li><a href=\"#abie-"++escapeNonAlphaNum concept++"\" title=\""++concept++"\">"++concept++"</a></li>"
+  [ "      <li>" ++ mkLocalLink concept concept ++ "</li>"
   | Entity{ entName = concept, definition = def } <- entities
   ]
 
 
 -- TODO: it's not the concept, but the interface name, yet refTp is a concept? or also an interface name?
-gegevensWB_Element (Entity concept _ card def refTp props) =
+gegevensWB_Element entities (Entity concept _ card def refTp props) =
   wbElement_Header concept ++
-  concatMap (wbElement_Element concept) props ++ 
+  concatMap (wbElement_Element entities concept) props ++ 
   wbElement_Footer 
 
 wbElement_Header concept  =
-  "    <a name=\"abie-"++escapeNonAlphaNum concept++"\" id=\"abie-"++escapeNonAlphaNum concept++"\"> </a>\n" ++
+  "    " ++ mkAnchor concept ++
   "    <div class=\"gegevenselement\">\n" ++
   "      <div class=\"objectclass\">"++concept++"</div>\n" ++
   "      <div class=\"definition\">"++concept++"</div>\n" ++
   "      <table class=\"properties\">\n" ++
   "        <tr><td class=\"head\">Property term</td><td class=\"head\">Cardinality</td><td class=\"head\">Representation term</td></tr>\n" 
   
-wbElement_Element parentConcept (Entity concept _ card def refTp props) =
+wbElement_Element entities parentConcept (Entity concept _ card def refTp props) =
   "        <tr class=\"property-abie-"++escapeNonAlphaNum parentConcept++"\">\n" ++
   "          <td class=\"property_term\" title=\""++def++"\">"++def++"</td>\n" ++
   -- NOTE: don't want def twice here
   "          <div class=\"info d1e110\"></div><td class=\"cardinality\">"++card++"</td>\n" ++
-  "          <td class=\"representationterm\"><a href=\"Gegevenswoordenboek.html#abie-"++escapeNonAlphaNum refTp++"\"> "++refTp++"</a></td>\n" ++
+  "          <td class=\"representationterm\">" ++ mkLink entities refTp refTp ++ "</a></td>\n" ++
   -- TODO: leave out <a> if this is not a defined data type 
   "        </tr>\n"
   
@@ -158,12 +158,24 @@ wbElement_Footer =
   "      </table>\n" ++
   "    </div>\n" 
 
+mkAnchor entityName = "<a name=\"abie-"++escapeNonAlphaNum entityName++"\" id=\"abie-"++escapeNonAlphaNum entityName++"\"> </a>\n"
+
+mkLocalLink name html = "<a href=\"#abie-"++escapeNonAlphaNum name++"\" title=\""++name++"\">" ++
+                        html ++ "</a>"
+
+mkLink entities name html =
+  if isEntity entities name 
+  then "<a id=\"abie-"++escapeNonAlphaNum name++"\" href=\"Gegevenswoordenboek.html#abie-"++escapeNonAlphaNum name++"\">\n"++
+       html ++ "</a>"
+  else html
+
+isEntity entities name = length (filter ((==name) . entName) entities) > 0 
 
 genBerichtDef entities =
   berichtDef_Header ++
   berichtDef_Toc entities ++
   berichtDef_Middle ++
-  concatMap berichtDef_ElementLine entities ++
+  concatMap (berichtDef_ElementLine entities) entities ++
   berichtDef_Footer
 
 berichtDef_Toc entities = unlines
@@ -172,15 +184,15 @@ berichtDef_Toc entities = unlines
   ]
   
   
-berichtDef_ElementLine (Entity entNm depth card def refTp props) =
+berichtDef_ElementLine entities (Entity entNm depth card def refTp props) =
   "        <tr>\n" ++
   "          <td class=\"bold\" title=\""++def++"\""++padding++">\n" ++
-  "            <a id=\"abie-"++escapeNonAlphaNum entNm++"\" href=\"Gegevenswoordenboek.html#abie-"++escapeNonAlphaNum entNm++"\">\n" ++
-  "            "++entNm++"</a></td>\n" ++
+  "            " ++ mkLink entities refTp entNm ++
+  "          </td>\n" ++
   "          <td>"++card++"</td>\n" ++
   "          <td>"++def++"</td>\n" ++
   "        </tr>\n" ++
-  concatMap berichtDef_ElementLine props
+  concatMap (berichtDef_ElementLine entities) props
  where padding = if depth > 0  then " style=\"padding-left:"++show (depth*25)++"px\"" else ""
   
   
