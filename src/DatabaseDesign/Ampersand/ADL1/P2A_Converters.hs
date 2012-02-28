@@ -18,7 +18,6 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import Data.List(nub,intercalate)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
