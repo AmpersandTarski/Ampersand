@@ -319,13 +319,11 @@ function setEditHandlersBelow($elt) {
     var relationToParent = $atomList.attr('relation');
     
     var $atom = getEnclosingAtom($(this)); 
-    if ($atom.attr('atomic')=='true') {
-      // this code also allows editing if there is a child atom in an editable relation
-      //var childrenWithRelation = $atom.find('>.InterfaceList>.Interface>.AtomList[relation]');
-      if (relationToParent /* || childrenWithRelation.length != 0 */) {
-        startAtomEditing($atom);
     
-      }
+    // this code also allows editing if there is a child atom in an editable relation
+    //var childrenWithRelation = $atom.find('>.InterfaceList>.Interface>.AtomList[relation]');
+    if (relationToParent /* || childrenWithRelation.length != 0 */) {
+      startAtomEditing($atom);
     }
   });
  
