@@ -33,11 +33,13 @@ parseADL parserVersion filename =
 -- Hence, include cycles do not cause an error.
 -- We don't distinguish between "INCLUDE SomeADL" and "INCLUDE SoMeAdL" to prevent errors on case-insensitive file systems.
 -- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
+upperCase :: String -> String
+upperCase str = map toUpper str
 
 readAndParseFile :: ParserVersion -> [String] -> Maybe String -> String -> String ->
                            IO (Either ParseError P_Context, [String])
 readAndParseFile parserVersion alreadyParsed mIncluderFilepath fileDir relativeFilepath =
- do { canonicFilepath <- canonicalizePath filepath
+ do { canonicFilepath <- fmap upperCase $ canonicalizePath filepath
     ; if canonicFilepath `elem` alreadyParsed 
       then return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles) 
       else do { fileContents <- readFile filepath
