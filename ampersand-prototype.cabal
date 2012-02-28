@@ -45,26 +45,11 @@ Executable prototype
                  DatabaseDesign.Ampersand_Prototype.Apps ,
                  DatabaseDesign.Ampersand_Prototype.Apps.Atlas ,
                  DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable ,
-                 DatabaseDesign.Ampersand_Prototype.Code ,
-                 DatabaseDesign.Ampersand_Prototype.CodeAuxiliaries ,
-                 DatabaseDesign.Ampersand_Prototype.CodeStatement ,
-                 DatabaseDesign.Ampersand_Prototype.CodeVariables ,
-                 DatabaseDesign.Ampersand_Prototype.ConnectToDataBase ,
-                 DatabaseDesign.Ampersand_Prototype.ContextGen ,
                  DatabaseDesign.Ampersand_Prototype.CoreImporter ,
                  DatabaseDesign.Ampersand_Prototype.GenBericht ,
                  DatabaseDesign.Ampersand_Prototype.Generate ,
-                 DatabaseDesign.Ampersand_Prototype.GetCode ,
-                 DatabaseDesign.Ampersand_Prototype.Index ,
                  DatabaseDesign.Ampersand_Prototype.Installer ,
-                 DatabaseDesign.Ampersand_Prototype.InterfaceDef ,
                  DatabaseDesign.Ampersand_Prototype.ObjBinGen ,
-                 DatabaseDesign.Ampersand_Prototype.Object ,
-                 DatabaseDesign.Ampersand_Prototype.PlugPHP ,
                  DatabaseDesign.Ampersand_Prototype.RelBinGenBasics ,
                  DatabaseDesign.Ampersand_Prototype.RelBinGenSQL ,
-                 DatabaseDesign.Ampersand_Prototype.ShowCode ,
-                 DatabaseDesign.Ampersand_Prototype.Version ,
-                 DatabaseDesign.Ampersand_Prototype.Wrapper
-
-     
+                 DatabaseDesign.Ampersand_Prototype.Version

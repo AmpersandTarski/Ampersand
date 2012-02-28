@@ -2,14 +2,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.ObjBinGen  (phpObjInterfaces) where
  
-import DatabaseDesign.Ampersand_Prototype.ConnectToDataBase   (connectToDataBase)
-import DatabaseDesign.Ampersand_Prototype.Object              (objectInterfaces)
-import DatabaseDesign.Ampersand_Prototype.Wrapper             (objectWrapper)
 import DatabaseDesign.Ampersand_Prototype.Installer           (installer)
-import DatabaseDesign.Ampersand_Prototype.InterfaceDef        (interfaceDef)
-import DatabaseDesign.Ampersand_Prototype.Index               (htmlindex)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics     (addSlashes)
-import DatabaseDesign.Ampersand_Prototype.ContextGen          (contextGen)
 import DatabaseDesign.Ampersand_Prototype.Apps
 import DatabaseDesign.Ampersand_Prototype.Generate            (generateAll)
 import Data.Maybe
@@ -43,29 +37,7 @@ phpObjInterfaces fSpec opts =
               }
       else verboseLn opts $ "  Using existing dbSettings.php."
 
-    ; if not $ deprecated opts then
-       do { generateAll fSpec opts
-          }
-      else
-       do { putStrLn "\nWARNING: Using old php generator because of --deprecated option."
-          ; putStrLn "  This generator has known bugs and is no longer being" 
-          ; putStrLn "  maintained. Its use is strongly discouraged!\n"
-          ; write "connectToDataBase.inc.php" (connectToDataBase fSpec opts)
-          ; write "index.htm"                 (htmlindex fSpec ifcs opts)
-          ; write (name fSpec++".php")        (contextGen fSpec)
-          ; write "interfaceDef.inc.php"      (interfaceDef fSpec ifcs opts)
-          ; verboseLn opts "Includable files for all objects:"
-          ; sequence_
-              [ write (addExtension (name ifc) ".inc.php") (objectInterfaces opts fSpec (ifcObj ifc))
-              | ifc <- ifcs
-              ]
-          ; verboseLn opts "Wrapper files for all objects:"
-          ; sequence_
-              [ write (addExtension (name ifc) ".php") (objectWrapper fSpec ifcs ifc opts)
-              | ifc <- ifcs
-              ]
-          }
-          
+    ; generateAll fSpec opts          
     ; when (genAtlas opts) $ doGenAtlas fSpec opts
     ; verboseLn opts "\n"
     }
@@ -80,7 +52,6 @@ phpObjInterfaces fSpec opts =
                  ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd opts)++"'"
                  ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
     targetDir = dirPrototype opts
-    ifcs = interfaceS fSpec++ interfaceG fSpec
 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec opts =

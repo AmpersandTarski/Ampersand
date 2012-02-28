@@ -92,17 +92,13 @@ main
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec =
  do { verboseLn opts "Generating..."
-    ; when (genPrototype opts) $ doGenProto protonm opts
+    ; when (genPrototype opts) $ doGenProto fSpec opts
     ; when (genBericht opts)   $ doGenBericht fSpec opts 
     ; sequence_ [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts]] 
     ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
         verboseLn opts "\nWARNING: There are rule violations (see above)."
     ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
-   where  
-   protonm 
-     | deprecated opts = rename fSpec ("ctx" ++ name fSpec) --rename to ensure unique name of php page (there can be concept names or plurals of them equal to context name)
-     | otherwise = fSpec
 
 exportProto :: Fspc -> Options -> IO ()
 exportProto fSpec opts =
