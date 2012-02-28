@@ -359,11 +359,13 @@ p2a_MaybeSubInterface actx parentIfcRoles conc (Just (P_InterfaceRef pos nm)) =
  where err = case [ifc | ifc <- interfaces actx, name ifc == nm ] of
                []                                     -> newcxe $ "Undeclared interface \""++nm++"\" at " ++show pos ++ "."
                (_:_:_)                                -> fatal 350 $ "Multiple interfaces for ref "++nm
-               [Ifc { ifcObj = Obj {objctx= ifcExp}, ifcRoles = roles }] ->
+               [Ifc { ifcObj = Obj {objctx= ifcExp}, ifcRoles = thisIfcRoles }] ->
                  if source ifcExp < conc
                  then newcxe $ "Incompatible interface "++show nm++" at "++show pos++":"++
                                "\nInterface source concept "++name (source ifcExp)++" is not equal to or a supertype of "++name conc
-                 else let unsupportedRoles = parentIfcRoles \\ roles
+                 else let unsupportedRoles = if null thisIfcRoles
+                                             then [] -- no roles specified means all roles are supported
+                                             else parentIfcRoles \\ thisIfcRoles
                       in  newcxeif (not $ null unsupportedRoles) $
                          "Interface "++show nm++", referenced at "++show pos++", does not support all roles of the containing interface. "++
                          "Unsupported roles: "++ intercalate ", " unsupportedRoles ++"."
