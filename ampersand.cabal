@@ -65,7 +65,8 @@ library
                     directory >= 1.1.0.0 && < 1.2,
                     containers >= 0.4     && < 0.5,
                     mtl        >= 2.0 && < 2.1,
-                    csv        >= 0.1 && < 0.2
+                    csv        >= 0.1 && < 0.2,
+                    split      >= 0.1 && < 0.2
 
   exposed-modules:  
                     DatabaseDesign.Ampersand,
