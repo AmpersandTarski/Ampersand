@@ -1,14 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
-where
+module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
+
+import Data.List
+import Data.List.Split
+import Data.Maybe
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import Data.List
-import Data.Maybe
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
@@ -35,20 +36,27 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                          , "{\\bf "++lawHeader ++ "} & {\\bf " ++ articleHeader ++"} \\\\"
                          , "\\hline"
                          , "\\endhead\n" ] ++ 
-                         [ getWet ref ++ " & " ++ getArtikel ref ++"\\\\\n"
-                         | ref <- nub . filter (not . null) . map explRefId $ explanations fSpec 
+                         [ wet ++ " & " ++ art ++"\\\\\n"
+                         | (wet, art) <- allRefs 
                          ] ++
                          [ "\\end{longtable}" ]
                        ]
                          
               ]
          where getWet ref = reverse . takeWhile (/=' ') . reverse $ ref --  the law is the last word in the ref
-               getArtikel ref = reverse . dropWhile (`elem` " ,") .dropWhile (/=' ') . reverse $ ref 
+               getArtikelen ref = reverse . dropWhile (`elem` " ,") .dropWhile (/=' ') . reverse $ ref 
                -- the article is everything but the law (and we also drop any trailing commas)
-               (sectionTitle, lawHeader, articleHeader) = 
+               (sectionTitle, lawHeader, articleHeader, separator) = 
                  case language flags of
-                   Dutch   -> ("Referentietabel", "Wet", "Artikel")
-                   English -> ("Reference table", "Law", "Article")
+                   Dutch   -> ("Referentietabel", "Wet", "Artikel", "en")
+                   English -> ("Reference table", "Law", "Article", "and")
+               allRefs = nub [ (getWet ref, trimSpaces art) 
+                             | refStr <- filter (not . null) . map explRefId $ explanations fSpec 
+                             , ref <- splitOn ";" refStr
+                             , art <- splitOn (" "++separator++" ") $ getArtikelen ref
+                             ]
+               
+               trimSpaces str = dropWhile (==' ') $ reverse (dropWhile (==' ') $ reverse str)
 
   dpIntro :: [Block]
   dpIntro = 
