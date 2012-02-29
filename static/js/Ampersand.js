@@ -292,6 +292,18 @@ function clearEditHandlers() {
   $('#AmpersandRoot .InsertStub').unbind('click');
 }
 
+// When an atom is modified, we disable editing on all of its ancestors to the root, and also on
+// all its descendents. Note that the atom itself, as well as its siblings and their descendents
+// remain editable.
+// This code only has an effect when atoms with subinterfaces are explicitly unhidden
+// during editing in a Custom.css.
+function disableEditingAncestorsDescendents($atom) {
+	var $ancestors = $atom.parents().filter('.Atom').find('>.AtomName'); 
+	var $descendents = $atom.find('>.InterfaceList .AtomName'); 
+	$ancestors.unbind('click');
+	$descendents.unbind('click');
+}
+
 function setEditHandlers() {
   setEditHandlersBelow($('#AmpersandRoot'));
 }
@@ -383,7 +395,6 @@ function updateNrOfAtoms($atomList) {
 // Create a form that contains a text field, put it after $atom, and hide $atom.
 function startAtomEditing($atom) {
   var $atomName = $atom.find('>.AtomName');
-  var atom = $atom.attr('atom');
   if ($atom.attr('status')=='deleted')
     return;
       
@@ -435,7 +446,7 @@ function stopAtomEditing($atom) {
   // todo if newAtom is keyed and has no atom, don't do anything
   var newAtom;
   if (conceptHasKey(concept)) { // if concept has a key, we map the key back onto an atom (todo: use autocomplete selection, so we don't need this lookup)
-    newAtom = getAtomForKey(newAtomText, concept)
+    newAtom = getAtomForKey(newAtomText, concept);
     
     if (!newAtom) { // If the entered key does not correspond to an atom, the edit operation is ignored.
       $atomName.attr('style',''); // Undo the hide() action from above. We don't use show, because that sets a style attribute on the div,
@@ -457,6 +468,8 @@ function stopAtomEditing($atom) {
       if (!$atom.attr('originalAtom')) { // first time we edit this field, set originalAtom to the old value 
         $atom.attr('originalAtom',atom);
         $atom.attr('status','modified');
+        
+        disableEditingAncestorsDescendents($atom);
       } else                            // the atom was edited before
           if ($atom.attr('originalAtom')==newAtom)
             $atom.attr('status','unchanged'); // apparently, it was changed back to its original value
