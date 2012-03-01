@@ -350,6 +350,7 @@ showKeyAtom fSpec mRel cncpt atom =
     []    -> atom
     key:_ -> if fmap ERel mRel `elem` justKeyRels then atom else concatMap showKeySegment $ kdats key 
      where showKeySegment (KeyText str) = str
+           showKeySegment (KeyHtml str) = str
            showKeySegment (KeyExp objDef) = 
              case [ tgtAtom | (srcAtom, tgtAtom) <- contents (objctx objDef), atom == srcAtom ] of
                []        -> ""

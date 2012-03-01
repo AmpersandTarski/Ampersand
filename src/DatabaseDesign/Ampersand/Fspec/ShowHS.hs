@@ -676,6 +676,7 @@ where
    
    instance ShowHS KeySegment where
     showHS _     _      (KeyText str) = "KeyText "++show str
+    showHS _     _      (KeyHtml str) = "KeyHtml "++show str
     showHS flags indent (KeyExp objDef) = "KeyExp ("++ showHS flags indent objDef ++ ")"
    
 -- \***********************************************************************
