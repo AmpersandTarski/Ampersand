@@ -823,6 +823,8 @@ where
                         ,"   , decprM  = " ++ show (decprM d)
                         ,"   , decprR  = " ++ show (decprR d)
                         ,"   , decMean = " ++ show (decMean d)
+                        ,"   , decSrcDef = " ++ show (decSrcDef d)
+                        ,"   , decTgtDef = " ++ show (decTgtDef d)
                         ,"   , decpopu = " ++ show (decpopu d)
                         ,"   , decfpos = " ++ showHS flags "" (decfpos d)
                         ,"   , deciss  = " ++ show (deciss d)

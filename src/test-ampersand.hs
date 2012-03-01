@@ -34,7 +34,7 @@ dummyTest = sort[8,7,4,5,3] @?= [3,4,5,7,8]
 test2 =         "OneFile" ~: do dataDir <- getDataDir 
                                 scriptText <- readFile (dataDir </> scriptName)
                                 verboseLn flags $ "Found file : "++ scriptName
-                                pCtx <- parseCtxM_ scriptText flags scriptName
+                                pCtx <- undefined -- parseCtxM_ scriptText flags scriptName
                                 assertEqual "Cannot parse this file" (parsedOk pCtx) shouldPass
                              
            where 
@@ -71,7 +71,7 @@ testAmpersandScript flags shouldPass scriptName =
        do scriptText <- readFile scriptName
           verboseLn flags $ "Found file : "++ scriptName
           verboseLn flags  $"Start parsing...." ++ "(NOT!)"
-          pCtx <- parseCtxM_ scriptText flags scriptName
+          pCtx <- undefined -- parseCtxM_ scriptText flags scriptName
           return (parsedOk pCtx @?= shouldPass)
      where
        parsedOk (Left _ ) = True
