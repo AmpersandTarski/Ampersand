@@ -52,7 +52,7 @@ genEntity_Interface interfaces interface = genEntity_ObjDef interfaces 0 (ifcObj
 
 genEntity_ObjDef :: [Interface] -> Int -> ObjectDef -> Entity
 genEntity_ObjDef interfaces dpth objDef = 
-    Entity { entName = name $ objDef
+    Entity { entName = name objDef
            , depth = dpth
            , cardinality = card $ objctx objDef
            , definition  = def $ objctx objDef 
@@ -65,8 +65,19 @@ genEntity_ObjDef interfaces dpth objDef =
            }
  where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
        
-       def (ERel (Rel{reldcl=Sgn{decMean=meaning}}))        = showMeaning meaning
-       def (EFlp (ERel (Rel{reldcl=Sgn{decMean=meaning}}))) = "~ "++showMeaning meaning
+       -- take the DEFINE SRC or DEFINE TGT definition for the target concept if it exists,
+       -- otherwise take the definition of the concept itself
+       def rel = if relTargetDef /= "" 
+                 then relTargetDef 
+                 else case cptdf $ target rel of
+                          Cd {cddef=def} : _ | def /= "" -> def
+                          _                              -> "** NO DEFINITION **"
+        where relTargetDef = case rel of -- target def of relation, or source def if relation is flipped
+                               (ERel (Rel{reldcl=Sgn{decTgtDef=def}}))        -> def
+                               (EFlp (ERel (Rel{reldcl=Sgn{decSrcDef=def}}))) -> def
+                               _                                              -> ""       
+                    
+       def (ERel (Rel{reldcl=Sgn{decMean=meaning, decTgtDef=""}}))        = showMeaning meaning
        def r                                                = 
          case cptdf $ target r of
            Cd{cddef = def}:_ -> def
@@ -109,7 +120,7 @@ layout lines =
 -- Modified version of Text.CSV.printCSV
 printSemicolonSeparated :: CSV -> String
 printSemicolonSeparated records = unlines (printRecord `map` records)
-    where printRecord = concat . intersperse ";" . map printField
+    where printRecord = intercalate ";" . map printField
           printField f = "\"" ++ concatMap escape f ++ "\""
           escape '"' = "\"\""
           escape x = [x]
