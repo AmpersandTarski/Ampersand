@@ -76,12 +76,6 @@ genEntity_ObjDef interfaces dpth objDef =
                                (ERel (Rel{reldcl=Sgn{decTgtDef=def}}))        -> def
                                (EFlp (ERel (Rel{reldcl=Sgn{decSrcDef=def}}))) -> def
                                _                                              -> ""       
-                    
-       def (ERel (Rel{reldcl=Sgn{decMean=meaning, decTgtDef=""}}))        = showMeaning meaning
-       def r                                                = 
-         case cptdf $ target r of
-           Cd{cddef = def}:_ -> def
-           _                 -> "Meaningless" 
        
        showMeaning meaning = concat [ aMarkup2String m | m@A_Markup{amLang=Dutch} <- ameaMrk meaning ]
 
