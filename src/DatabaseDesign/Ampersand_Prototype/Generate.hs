@@ -191,6 +191,7 @@ generateKeys fSpec opts =
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name concept)
+           , "        , 'isHtml' => "++if null [() | KeyHtml _ <-keySegs] then "False" else "True"
            , "        , 'segments' =>" -- a labeled list of sql queries for the key expressions 
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" "," $ map genKeySeg keySegs) ++  
@@ -198,6 +199,7 @@ generateKeys fSpec opts =
          | Kd _ label concept keySegs <- vkeys fSpec ])
        
  where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
+       genKeySeg (KeyHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                    , "      , 'label' => "++ (showPhpStr $ objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                    , "      , 'expSQL' =>"

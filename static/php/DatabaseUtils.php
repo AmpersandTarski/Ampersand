@@ -136,6 +136,8 @@ function showKeyAtom($atom, $concept) {
     foreach ($keyDef['segments'] as $keySegment) 
       if ($keySegment['segmentType'] == 'Text')
         $keyStrs[] = $keySegment['Text'];
+      elseif ($keySegment['segmentType'] == 'Html')
+        $keyStrs[] = $keySegment['Html'];
       else {
         $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
         $keyStrs[] = count($r) ? $r[0] : "<Key relation not total>";
