@@ -31,7 +31,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                       , "RELATION", "MEANING", "CONCEPT", "KEY", "TXT", "PRIMHTML"
+                       , "RELATION", "MEANING", "DEFINE", "CONCEPT", "KEY", "TXT", "PRIMHTML"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
@@ -247,12 +247,15 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                          <*> ((True <$ pKey "BYPLUG") `opt` False)
                          <*> (pPragma `opt` [])
                          <*> pList pMeaning
+                         <*> ((\s t -> Left (s,t))  <$> pDefine "SRC" <*> (pDefine "TGT" `opt` "") <|>
+                              (\t s -> Right (s,t)) <$> pDefine "TGT" <*> (pDefine "SRC" `opt` "")     `opt` Left ("",""))
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
-                       where rebuild nm pos' s fun' t bp1 props
-                               = rbd pos' nm (P_Sign [s,t]) bp1 props'
+                       where pDefine srcOrTgt = pKey "DEFINE" *> pKey srcOrTgt *> pString
+                             rebuild nm pos' s fun' t bp1 props bp2 pragma meanings srcTgtDefs content
+                               = rbd pos' nm (P_Sign [s,t]) bp1 props' bp2 pragma meanings srcTgtDefs content
                                  where props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
-                             rbd pos' nm sgn bp1 props bp2 pragma meanings content
+                             rbd pos' nm sgn bp1 props bp2 pragma meanings srcTgtDefs content
                                = P_Sgn { dec_nm   = nm
                                        , dec_sign = sgn
                                        , dec_prps = props
@@ -260,11 +263,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                                        , dec_prM  = pr!!1
                                        , dec_prR  = pr!!2
                                        , dec_Mean = meanings
+                                       , dec_srcDef = srcDef
+                                       , dec_tgtDef = tgtDef
                                        , dec_popu = content
                                        , dec_fpos = pos'
                                        , dec_plug = bp1 || bp2
                                        }
                                  where pr = pragma++["","",""]
+                                       (srcDef,tgtDef) = case srcTgtDefs of
+                                                           Left (s,t) -> (s,t)
+                                                           Right (t,s) -> (s,t)
                              pProps :: Parser Token [Prop]
                              pProps  = (f.concat) <$> (pSpec '[' *> pListSep (pSpec ',') pProp <* pSpec ']')
                                  where f ps = nub (ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)])

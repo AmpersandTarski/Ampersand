@@ -189,6 +189,8 @@ data Declaration =
       , decprM  :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR  :: String
       , decMean :: AMeaning   -- ^ the meaning of a declaration, for each language supported by Ampersand.
+      , decSrcDef :: String   -- ^ alternative definition for the source concept in the context of this relation
+      , decTgtDef :: String   -- ^ alternative definition for the target concept in the context of this relation
       , decpopu :: Pairs      -- ^ the list of tuples, of which the relation consists.
       , decfpos :: Origin     -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
       , deciss  :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
