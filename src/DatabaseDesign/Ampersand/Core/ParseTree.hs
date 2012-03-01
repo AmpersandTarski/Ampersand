@@ -164,6 +164,8 @@ where
                , dec_prM  :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , dec_prR  :: String
                , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
+               , dec_tgtDef :: String  -- ^ alternative definition for the target concept in the context of this relation
+               , dec_srcDef :: String  -- ^ alternative definition for the source concept in the context of this relation
                , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
                , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
