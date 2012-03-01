@@ -106,13 +106,14 @@ where
              ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
              ,"  $content = '"
              ,"  <?php"
+             ,"  require \"Generics.php\";"
              ,"  require \"php/DatabaseUtils.php\";"
              ,"  $dumpfile = fopen(\"dbdump.adl\",\"w\");"
              ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
              ]
              ++
              ["  fwrite($dumpfile, dumprel(\""++showADL rel++"\",\""++qry++"\"));" 
-             | d<-declarations fSpec
+             | d<-declarations fSpec, decusr d
              , let rel=makeRelation d
              , let dbrel = sqlRelPlugNames fSpec (ERel rel)
              , not(null dbrel)
@@ -124,7 +125,7 @@ where
              ,"  "
              ,"  function dumprel ($rel,$quer)"
              ,"  {"
-             ,"    $rows = DB_doquer(\""++dbName flags++"\", $quer);"
+             ,"    $rows = DB_doquer($quer);"
              ,"    $pop = \"\";"
              ,"    foreach ($rows as $row)"
              ,"      $pop = $pop.\";(\\\"\".escapedoublequotes($row[0]).\"\\\",\\\"\".escapedoublequotes($row[1]).\"\\\")\\n  \";"
