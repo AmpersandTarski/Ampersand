@@ -260,7 +260,7 @@ instance Identified KeyDef where
 instance Traced KeyDef where
   origin = kdpos
 
-data KeySegment = KeyExp ObjectDef | KeyText String deriving (Eq, Show)
+data KeySegment = KeyExp ObjectDef | KeyText String | KeyHtml String deriving (Eq, Show)
 
 data A_Gen = Gen { genfp  :: Origin         -- ^ the position of the GEN-rule
                  , gengen :: A_Concept      -- ^ generic concept

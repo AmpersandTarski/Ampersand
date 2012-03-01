@@ -31,7 +31,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                       , "RELATION", "MEANING", "CONCEPT", "KEY", "TXT"
+                       , "RELATION", "MEANING", "CONCEPT", "KEY", "TXT", "PRIMHTML"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
@@ -303,11 +303,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
                                           , kd_ats = [ case keySeg of
                                                           P_KeyExp x       -> if null (obj_nm x) then P_KeyExp $ x{obj_nm=show i} else P_KeyExp x 
                                                           P_KeyText _ -> keySeg 
+                                                          P_KeyHtml _ -> keySeg 
                                                      | (i,keySeg)<-zip [(1::Integer)..] ats]
                                           } -- nrs also count text segments but they're are not important anyway
              pKeySegment :: Parser Token P_KeySegment
              pKeySegment = P_KeyExp  <$> pKeyAtt <|> 
-                           P_KeyText <$ pKey "TXT" <*> pString
+                           P_KeyText <$ pKey "TXT" <*> pString <|>
+                           P_KeyHtml <$ pKey "PRIMHTML" <*> pString
              pKeyAtt :: Parser Token P_ObjectDef
              pKeyAtt = rebuild <$> optional pLabelProps <*> pExpr
                  where

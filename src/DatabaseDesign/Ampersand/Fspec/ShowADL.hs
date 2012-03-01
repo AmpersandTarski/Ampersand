@@ -207,6 +207,7 @@ instance ShowADL KeyDef where
 instance ShowADL KeySegment where
  showADL (KeyExp objDef) = (if null (name objDef) then "" else name objDef++":") ++ showADL (objctx objDef)
  showADL (KeyText str) = "TXT " ++ show str
+ showADL (KeyHtml str) = "PRIMHTML " ++ show str
                              
 
 -- showADL Relation only prints complete signatures to ensure unambiguity.
