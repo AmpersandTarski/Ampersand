@@ -266,10 +266,8 @@ pKDef2aKDef actx pkdef
        , kdcpt = c
        , kdats = segs
                     }
-   , CxeOrig (cxelist (nmchk:kdcxe:duplicateKeyErrs:multipleKeyErrs:segschk:segscxes)) "key definition" "" (origin pkdef) )
+   , CxeOrig (cxelist (nmchk:kdcxe:duplicateKeyErrs:multipleKeyErrs:segscxes)) "key definition" "" (origin pkdef) )
    where
-    segschk = newcxeif (not (null [() | KeyHtml _ <-segs] || null(filter (\x->case x of KeyHtml{} -> False; KeyExp{} -> False; _ -> True) segs))) $
-                       "PRIMHTML key segments can only be combined with relation expressions: \""++kd_lbl pkdef++"\" at "++show (origin pkdef)
     (segs, segscxes) = unzip . map (pKeySeg2aKeySeg actx c) $ kd_ats pkdef
     c  = pCpt2aCpt actx (kd_cpt pkdef)
     -- check equality
