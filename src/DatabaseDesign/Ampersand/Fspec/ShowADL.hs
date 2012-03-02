@@ -387,5 +387,7 @@ instance ShowADL PAclause where
         "REMOVE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
       showPAclause _ Nop{} = "Nop"
       showPAclause _ Blk{} = "Blk"
+      showPAclause _ (Let _ _ _) = fatal 390 "showPAclasue not defined for `Let`. Consult your dealer!"
+      showPAclause _ (Ref _)     = fatal 391 "showPAclasue not defined for `Ref`. Consult your dealer!"
       showConj rs
               = "(TO MAINTAIN"++intercalate ", " [name r | r<-rs]++")"

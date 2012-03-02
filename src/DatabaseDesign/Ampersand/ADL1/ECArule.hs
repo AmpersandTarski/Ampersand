@@ -11,6 +11,8 @@ where
 --import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
 --import DatabaseDesign.Ampersand.Basics 
 import DatabaseDesign.Ampersand.Fspec.Fspec
+import DatabaseDesign.Ampersand.Basics     (fatalMsg)
+
   --   Ampersand derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
   --   So how does Ampersand derive dynamic behaviour from static rules? An example may clarify this:
   --   Suppose you have large shoes that do not fit through your trousers in any way.
@@ -22,6 +24,9 @@ import DatabaseDesign.Ampersand.Fspec.Fspec
   --   This example ilustrates how the order of activities is restricted by an invariant property.
   --   So it is possible to derive some dynamic behaviour from static properties.
   --   The following datatypes form a process algebra.
+fatal :: Int -> String -> a
+fatal = fatalMsg "AbstractSyntaxTree.hs"
+
   
 
 isAll :: PAclause -> Bool
@@ -53,7 +58,8 @@ dos (p@New{}) = dos (paCl p "x")
 dos (p@Rmv{}) = dos (paCl p "x")
 dos (Nop{})   = []
 dos (Blk{})   = []
-
+dos (Let{})   = fatal 56 "dos not defined for `Let` constructor of PAclause"
+dos (Ref{})   = fatal 57 "dos not defined for `Ref` constructor of PAclause"
  
 
 

@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..))
+module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..),atomsOf)
 where
-   import DatabaseDesign.Ampersand.ADL1.Concept                    (atomsOf)
    import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg)   
@@ -110,3 +109,10 @@ Let cL = contents l
              compl (a) (sa) (ta) = [mkPair (fst x) (fst y) |x<-sa, y<-ta, mkPair (fst x) (fst y) `notElem` a]  -- complement van a
              cartesianProduct :: Pairs -> Pairs -> Pairs
              xs `cartesianProduct` ys = [ mkPair (fst x) (fst y) | x<-xs,y<-ys] 
+
+   -- | This function returns the atoms of a concept
+   atomsOf :: A_Concept -> [String]
+   atomsOf C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
+   atomsOf C{cptos=x} = x
+   atomsOf ONE = fatal 126 "Asking for the value of the universal singleton"
+  
