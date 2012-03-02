@@ -3,9 +3,13 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.Basics                       (Identified(..))
+   import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Identified(..))
    import DatabaseDesign.Ampersand.Fspec.ShowADL            (ShowADL(..))
    import Data.List (intercalate)
+
+   fatal :: Int -> String -> a
+   fatal = fatalMsg "ShowECA"
+
 
    class ECA a where 
     showECA :: Fspc -> String -> a -> String
@@ -52,5 +56,8 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
        = "DO NOTHING"++motivate indent "TO MAINTAIN" cj_ruls
       showPAclause indent (Blk cj_ruls)
        = "BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
+      showPAclause  _ (Let _ _ _)  = fatal 55 "showPAclause is missing for `Let`. Contact your dealer!"
+      showPAclause  _ (Ref _)      = fatal 56 "showPAclause is missing for `Ref`. Contact your dealer!"
+                     
       motivate indent motive motives = concat [ indent++showConj cj_rul | cj_rul<-motives ]
          where showConj (conj,rs) = "("++motive++" "++(showADL . disambiguate fSpec) conj++" FROM "++intercalate ", " (map name rs) ++")"

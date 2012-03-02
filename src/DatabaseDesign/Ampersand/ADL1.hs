@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Declaration(..), flpDecl, isSgn
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
-           , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR, newAcpt, atomsOf
+           , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR, newAcpt
            , RuleType(..)
            , Prop(..),allprops,endoprops,flipProps
            , isaRule
@@ -64,7 +64,7 @@ where
                                          ,showExpr,insParentheses
                                          ,makeDeclaration
                                          )
-   import DatabaseDesign.Ampersand.ADL1.Concept                    (newAcpt,atomsOf )
+   import DatabaseDesign.Ampersand.ADL1.Concept                    (newAcpt )
    import DatabaseDesign.Ampersand.ADL1.Expression                 (flp,isTypeable,subst,subsi,foldlMapExpression,foldrMapExpression
                                          ,isPos,isNeg,isECps,isERad,isEPrd,isEIsc,isEUni,notCpl, isCpl)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..)

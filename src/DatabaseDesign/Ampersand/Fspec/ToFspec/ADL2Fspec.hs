@@ -590,7 +590,8 @@ while maintaining all invariants.
      cascade rel (All ds m)       = (any (fst.cascade rel) ds, All (map (snd.cascade rel) ds) m)
      cascade  _  (Nop m)          = (False, Nop m)
      cascade  _  (Blk m)          = (False, Blk m)
-
+     cascade  _  (Let _ _ _)    = fatal 593 "Undefined cascade. Please contact your dealer!"
+     cascade  _  (Ref _)        = fatal 594 "Undefined cascade. Please contact your dealer!"
    conjuncts :: Rule -> [Expression]
    conjuncts = fiRule.conjNF.rrexp
     where fiRule (EIsc fis) = {- map disjuncts -} fis
@@ -627,6 +628,8 @@ while maintaining all invariants.
                              , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST "TODO: Doel van deze Delta relatie opschrijven")
                                                   , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
                                                   ]
+                             , decSrcDef = ""
+                             , decTgtDef = ""
                              , decpopu = []
                              , decfpos = Origin "generated relation (Delta)"
                              , deciss  = True

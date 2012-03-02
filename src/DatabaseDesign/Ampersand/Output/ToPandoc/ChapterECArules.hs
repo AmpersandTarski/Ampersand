@@ -5,7 +5,6 @@ where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
 

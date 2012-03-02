@@ -6,7 +6,7 @@ import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
-import DatabaseDesign.Ampersand.ADL1.Concept                 (atomsOf)
+import DatabaseDesign.Ampersand.Classes.Populated            (atomsOf)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
 import DatabaseDesign.Ampersand.Basics                       (Collection(..), Identified(..),eqClass)
 import DatabaseDesign.Ampersand.Misc.Explain
@@ -57,6 +57,8 @@ makeDecl g
                         [ A_Markup English ReST (string2Blocks ReST ("Every "++name (source g)++" must be a " ++ name(target g)++"."))
                         , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" moet een " ++ name(target g)++" zijn."))
                         ]
+         , decSrcDef = ""
+         , decTgtDef = ""
          , decpopu = [(a,b) | a <- (atomsOf.source) g, b <- (atomsOf.target) g, a==b]
          , decfpos = origin g
          , deciss  = True
@@ -124,6 +126,8 @@ rulesFromKey key = mkProductInjectivityRule keyExps :
                                                    [ A_Markup English ReST (string2Blocks ReST meaningEN)
                                                    , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
                                                    ]
+                                     , decSrcDef = ""
+                                     , decTgtDef = ""
                                      , decpopu = []
                                      , decfpos = origin key
                                      , deciss  = False
