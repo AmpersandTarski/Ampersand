@@ -171,18 +171,25 @@ generateRules fSpec opts =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          '" ++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" exp) $
-                                      (selectExpr fSpec 33 "src" "tgt" exp))++"' )"  ] 
+         , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" exp)
+                                      (selectExpr fSpec 33 "src" "tgt" exp)++"'"
+         , "      )"
+         ] 
        
    
 generateRoles fSpec opts =
   [ "$allRoles ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
+  , "  array" 
+  ] ++
+  addToLastLine ";" 
+    (indent 4 
+      (blockParenthesize  "(" ")" "," 
          [ [ "array ( 'name' => "++showPhpStr role
            , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rules) ++")"
            , "      )" ]
-         | (role,rules) <- rulesPerRole ])
+         | (role,rules) <- rulesPerRole ]
+    ) )
+        
  where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        
 generateKeys fSpec opts =
@@ -200,10 +207,12 @@ generateKeys fSpec opts =
  where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
-                                   , "      , 'label' => "++ (showPhpStr $ objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                                   , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                    , "      , 'expSQL' =>"
-                                   , "          '" ++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef)) $
-                                                (selectExpr fSpec 33 "src" "tgt" $ objctx objDef))++"' )"  ] 
+                                   , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef))
+                                                                (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)
+                                                   ++"' )"
+                                   ] 
                 
 generateInterfaces fSpec opts =
   [ "$allInterfaceObjects ="

@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}  
 module DatabaseDesign.Ampersand_Prototype.GenBericht where
 
 import Prelude hiding (writeFile)
@@ -11,7 +12,6 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Output.PandocAux (escapeNonAlphaNum)
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 
@@ -136,7 +136,7 @@ gegevensWb_Toc entities = unlines
 
 
 -- TODO: it's not the concept, but the interface name, yet refTp is a concept? or also an interface name?
-gegevensWB_Element entities (Entity concept _ card def refTp props) =
+gegevensWB_Element entities (Entity concept _ _ def refTp props) =
   wbElement_Header concept ++
   concatMap (wbElement_Element entities concept) props ++ 
   wbElement_Footer 

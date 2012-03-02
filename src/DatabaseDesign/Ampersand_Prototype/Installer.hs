@@ -96,11 +96,11 @@ where
           , "  $error=true; echo $err.'<br />';"
           , "}"
           , ""
-          , "//// Number of plugs: "++(show (length (plugInfos fSpec)))
+          , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
           , "if($existing==true){"
-          ] ++ indentBlock 2 (concat (map checkPlugexists (plugInfos fSpec)))
+          ] ++ indentBlock 2 (concatMap checkPlugexists (plugInfos fSpec))
           ++ ["}"]
-          ++ concat (map plugCode [p | InternalPlug p<-plugInfos fSpec])
+          ++ concatMap plugCode [p | InternalPlug p <- plugInfos fSpec]
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
              ,"if ($err=='') {"
              ,"  echo '<div id=\"ResetSuccess\"/>The database has been reset to its initial population.<br/><br/><button onclick=\"window.location.href = document.referrer;\">Ok</button>';"
@@ -118,7 +118,7 @@ where
              , let dbrel = sqlRelPlugNames fSpec (ERel rel)
              , not(null dbrel)
              , let (_,src,trg) = head dbrel
-             , let qry = maybe [] id (selectExprMorph fSpec (-1) src trg rel)]
+             , let qry = fromMaybe [] (selectExprMorph fSpec (-1) src trg rel)]
              ++
              ["  fwrite($dumpfile, \"ENDCONTEXT\");"
              ,"  fclose($dumpfile);"
@@ -140,7 +140,7 @@ where
         , "\n?></body></html>\n" ]
      ) 
     where plugCode plug
-           = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug)))
+           = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
              ++ indentBlock 17
@@ -148,20 +148,20 @@ where
                     | (f,comma)<-zip (tblfields plug) ('(':repeat ',') ]
              ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-             ++ (if (null $ tblcontents plug) then [] else
+             ++ if null $ tblcontents plug then [] else
                  [ "else"
                                  , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
                                  ]++ indentBlock 12
-                                                 ( [ comma++ " (" ++valuechain md++ ")"
+                                                   [ comma++ " (" ++valuechain md++ ")"
                                                    | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")
                                                    ]
-                                                 )
+                                                 
                                  ++ ["            \");"
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-             )
+             
           valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld |fld<-record]
           checkPlugexists plug
-           = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(name plug)++"`\")){"
-             , "  mysql_query(\"DROP TABLE `"++(name plug)++"`\");" --todo: incremental behaviour
+           = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++name plug++"`\")){"
+             , "  mysql_query(\"DROP TABLE `"++name plug++"`\");" --todo: incremental behaviour
              , "}" ]
    

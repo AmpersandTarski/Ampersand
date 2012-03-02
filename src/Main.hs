@@ -71,7 +71,7 @@ main
                                               do verbose opts "writing pictures for atlas... "
                                                  sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
                                                  verbose opts "pictures for atlas written... "
-                                                 myfiles <- getDirectoryContents fdir >>= return . filter (`notElem` [".", ".."])
+                                                 myfiles <- liftM (filter (`notElem` [".", ".."])) (getDirectoryContents fdir)
                                                  verboseLn opts "Generating pictures for atlas..."
                                                  sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
                                                  return (makeADL1Populations (declarations atlas) [fspec]

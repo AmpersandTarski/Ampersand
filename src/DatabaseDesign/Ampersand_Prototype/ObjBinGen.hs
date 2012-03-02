@@ -31,11 +31,11 @@ phpObjInterfaces fSpec opts =
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php if it doesn't exists, or if a host, login, or password has been specified
-    ; if not dbSettingsExists ||  any (isJust) [sqlHost opts, sqlLogin opts, sqlPwd opts]
-      then do { verboseLn opts $ "  Writing dbSettings.php."
+    ; if not dbSettingsExists ||  any isJust [sqlHost opts, sqlLogin opts, sqlPwd opts]
+      then do { verboseLn opts "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
-      else verboseLn opts $ "  Using existing dbSettings.php."
+      else verboseLn opts "  Using existing dbSettings.php."
 
     ; generateAll fSpec opts          
     ; when (genAtlas opts) $ doGenAtlas fSpec opts
@@ -55,7 +55,7 @@ phpObjInterfaces fSpec opts =
 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec opts =
- do { verboseLn opts ("Installing the Atlas application:")
+ do { verboseLn opts "Installing the Atlas application:"
     ; verboseLn opts ("Importing "++show (importfile opts)++" into namespace "++ show (namespace opts) ++" of the Atlas ...")
     ; verboseLn opts ("The atlas application should have been installed in " ++ show (dirPrototype opts) ++ ".")
     ; fillAtlas fSpec opts
@@ -65,9 +65,9 @@ writeStaticFiles :: Options -> IO()
 writeStaticFiles opts =  
  do {
 #ifdef MIN_VERSION_MissingH 
-      verboseLn opts $ "Updating static files"
+      verboseLn opts "Updating static files"
 #else
-      verboseLn opts $ "Writing static files"
+      verboseLn opts "Writing static files"
 #endif
     ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) | sf <- allStaticFiles ]
     }
@@ -107,11 +107,9 @@ writeStaticFile opts sf =
      ; setFileTimes (absFilePath opts sf) t t
 #endif
      }
- where write a b = case isBinary sf of
-                     True  -> Bin.writeFile a (toBin b)
-                     False ->     writeFile a b
-       toBin :: String -> Bin.ByteString
-       toBin x = read x
+ where write a b = if isBinary sf 
+                   then Bin.writeFile a (read b)
+                   else writeFile a b
 
 absFilePath :: Options -> StaticFile -> FilePath
 absFilePath opts sf = combine (dirPrototype opts) (filePath sf)

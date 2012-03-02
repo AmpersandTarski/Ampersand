@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}  
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wall #-}  
 --hdbc and hdbc-odbc must be installed (from hackage)
 --
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
@@ -21,6 +22,7 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Data.List  (intercalate)
+import Data.Maybe (fromMaybe)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 -- import DatabaseDesign.Ampersand.Version (fatalMsg)
 
@@ -63,12 +65,12 @@ selectconcept :: (IConnection conn) => conn -> Fspc -> A_Concept -> IO CptTbl
 selectconcept conn fSpec cpt
  = do rows <- quickQuery' conn stmt []
       return [fromSql x |[x]<-rows]
-   where  stmt = maybe [] id (selectExprMorph fSpec (-1) "fld1" "fld1" (I cpt))
+   where  stmt = fromMaybe [] (selectExprMorph fSpec (-1) "fld1" "fld1" (I cpt))
 selectdecl :: (IConnection conn) => conn -> Fspc -> Relation -> IO RelTbl
 selectdecl conn fSpec rel
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where stmt = maybe [] id (selectExprMorph fSpec (-1) "fld1" "fld2" rel)
+   where stmt = fromMaybe [] (selectExprMorph fSpec (-1) "fld1" "fld2" rel)
          
 --create atlas tables for this namespace
 creates :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
@@ -76,7 +78,7 @@ creates _ [] = return 1
 creates conn (tbl:tbls) = 
    do _ <- run conn stmt []
       creates conn tbls
-   where stmt = ("CREATE TABLE "++name tbl
+   where stmt =  "CREATE TABLE "++name tbl
                ++"("++intercalate "," 
                       ([createfld f |f<-tblfields tbl]
                      ++[" UNIQUE KEY (`"++fldname key++"`)"
@@ -89,7 +91,7 @@ creates conn (tbl:tbls) =
                        , flduniq kernelfld
                        , fldnull kernelfld
                        , fldtype kernelfld /= SQLBlob])
-               ++") ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin ")
+               ++") ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin "
          createfld fld = "`"++fldname fld++"` " 
                             --TODO -> A_Concepts should be attached to a SQL type. 
                             --        A concept::SQLText cannot be stored in a KEY or INDEX field i.e. the scalar plug cannot be created for such a concept
@@ -119,7 +121,7 @@ picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
    = [makePicture flags fSpec Plain_CG p | p <- patterns fSpec] ++
      [makePicture flags fSpec Plain_CG userRule | userRule <- rules fSpec]++
-     [makePicture flags fSpec Plain_CG cpt | cpt <- (concs fSpec)]
+     [makePicture flags fSpec Plain_CG cpt | cpt <- concs fSpec]
 
 ----------------------------------------------------
 
@@ -205,6 +207,7 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
          ctx_nm    = thehead cxs "no context found in Atlas DB"
        , ctx_lang  = Just lang
        , ctx_markup= Just LaTeX --ADLImportable writes LaTeX
+       , ctx_thms  = []
        , ctx_pats  = [atlas2pattern p rulpattern rls (Just lang) ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |p<-pats]
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
@@ -217,6 +220,7 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
+       , ctx_experimental = False -- is set in Components.hs
       }
 
 atlas2rule :: String -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> P_Rule
@@ -225,6 +229,8 @@ atlas2rule rulstr rls mlang ruldescribes
         , rr_exp  = geta rls rulstr  (error "while geta rls.")
         , rr_fps  = DBLoc "Atlas(Rule)"
         , rr_mean = [PMeaning $ P_Markup mlang Nothing (geta ruldescribes rulstr "")]
+        , rr_msg  = []
+        , rr_viol = Nothing
         }
 
 atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> RelTbl -> RelTbl
@@ -280,6 +286,8 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
          , dec_prM = [c |(rel,x)<-pragma2,relstr==rel,c<-x]
          , dec_prR = [c |(rel,x)<-pragma3,relstr==rel,c<-x]
          , dec_Mean = []
+         , dec_srcDef = ""
+         , dec_tgtDef = ""
          , dec_popu = []
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False

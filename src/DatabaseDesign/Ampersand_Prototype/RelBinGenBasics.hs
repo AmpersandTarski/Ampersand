@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
  ,addSlashes,zipnum,Concatable(..),(+++)
@@ -6,7 +7,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
  ,pDebug,indentBlockBetween,quote
  ,cChain,filterEmpty,phpIndent
  ) where
-   import Char(isAlphaNum,isDigit)
+   import Data.Char(isAlphaNum,isDigit)
    import Data.Maybe
    import Data.List
    import DatabaseDesign.Ampersand_Prototype.Version 
@@ -26,7 +27,7 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
      (+>+) :: String -> a -> a
      (+|+) :: a -> a -> a
    instance Concatable [Char] where
-     toM a = Just a
+     toM   = Just  
      (+<+) = (++)
      (+>+) = (++)
      (+|+) = (++)
@@ -45,27 +46,27 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
    (+++) a b = listToMaybe [a'++b' |Just a'<-[toM a],Just b'<-[toM b]]
    
    filterEmpty :: (Eq a) => [Maybe [a]] -> [Maybe [a]]
-   filterEmpty = (filter (\x->not ((==) (Just []) x)))
+   filterEmpty = filter (not . (==) (Just []))
    
    
-   cChain :: (Concatable t, Concatable a) => a -> [t] -> Maybe [Char]
+   cChain :: (Concatable t, Concatable a) => a -> [t] -> Maybe String
    cChain _ [] = Just []
    cChain _ [b] = toM b
-   cChain a (f:fs) = f+++a+++(cChain a fs)
+   cChain a (f:fs) = f+++a+++ cChain a fs
 
    quote :: String->String
    quote [] = []
-   quote ('`':s) = ('`':s)
+   quote ('`':s) = '`':s
    quote s = "`"++s++"`"
    
    commentBlock :: [String]->[String]
-   commentBlock ls = ["/*"++take lnth (repeat '*')++"*\\"]
-                        ++ ["* "++(strReplace "*/" "**" line)++take (lnth - length line) (repeat ' ')++" *" | line <- ls]
-                        ++ ["\\*"++take lnth (repeat '*')++"*/"]
+   commentBlock ls = ["/*"++replicate lnth '*'++"*\\"]
+                        ++ ["* "++strReplace "*/" "**" line++replicate (lnth - length line) ' '++" *" | line <- ls]
+                        ++ ["\\*"++replicate lnth '*'++"*/"]
       where
         lnth = foldl max 0 (map length ls)
    indentBlock :: Int -> [String] -> [String]
-   indentBlock i = map ((++) (take i (repeat ' ')))
+   indentBlock i = map (replicate i ' ' ++)
    
    -- | will put the block after the first string, and put the second after the block
    -- | If the block is just 1 line, indentBlockBetween will return just 1 line as well
@@ -91,10 +92,10 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
              | src `isPrefixOf` st = dst ++ process (drop n st)
              | otherwise           = c:process cs
    
-   phpIndent :: Int -> [Char] 
+   phpIndent :: Int -> String
    phpIndent i 
     | i < 0     = " " --space instead of \n
-    | otherwise = "\n"++take i (repeat ' ')
+    | otherwise = '\n':replicate i ' '
 
    -- | guarantees a valid identifier name. The function is NOT injective! 
    phpIdentifier :: String -> String
@@ -117,4 +118,4 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 
    addToLast :: [a] -> [[a]] -> [[a]]
    addToLast _ [] = fatal 109 "addToLast: empty list"
-   addToLast s as = (init as)++[last as++s]
+   addToLast s as = init as++[last as++s]
