@@ -22,8 +22,7 @@ main
         else do (ctx,err) <- parseAndTypeCheck opts
                 if nocxe err 
                   then let fspc = makeFspec opts ctx in
-                       do Prelude.putStrLn $ showADL ctx
-                          generate opts fspc
+                       generate opts fspc
                   else putStr (show err)
                   
   where
