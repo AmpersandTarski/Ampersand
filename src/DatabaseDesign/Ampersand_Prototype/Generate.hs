@@ -191,7 +191,6 @@ generateKeys fSpec opts =
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name concept)
-           , "        , 'isHtml' => "++if null [() | KeyHtml _ <-keySegs] then "False" else "True"
            , "        , 'segments' =>" -- a labeled list of sql queries for the key expressions 
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" "," $ map genKeySeg keySegs) ++  

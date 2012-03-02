@@ -125,7 +125,7 @@ function getKey($concept) {
   return null;
 }
 
-function showKeyAtom($atom, $concept) {
+function showKeyAtom($atom, $concept,$escapeTxt=False) {
   $keyDef = getKey($concept);
 
   if (!$keyDef || $atom == '') {
@@ -135,12 +135,13 @@ function showKeyAtom($atom, $concept) {
     $keyStrs = array ();
     foreach ($keyDef['segments'] as $keySegment) 
       if ($keySegment['segmentType'] == 'Text')
-        $keyStrs[] = $keySegment['Text'];
+        $keyStrs[] = $escapeTxt ? htmlSpecialChars($keySegment['Text']) : $keySegment['Text'];
       elseif ($keySegment['segmentType'] == 'Html')
         $keyStrs[] = $keySegment['Html'];
       else {
-        $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
-        $keyStrs[] = count($r) ? $r[0] : "<Key relation not total>";
+	$r = getCoDomainAtoms($atom, $keySegment['expSQL']);
+	$txt = count($r) ? $r[0] : "<Key relation not total>";
+        $keyStrs[] = $escapeTxt ? htmlSpecialChars($txt) : $txt;
         // this can happen in a create-new interface when the key fields have not yet been 
         // filled out, while the atom is shown (but hidden by css) at the top. 
       }

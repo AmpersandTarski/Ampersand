@@ -318,11 +318,10 @@ function generateAtomInterfaces($interface, $atom, $isTopLevelInterface=false) {
                              ' status='.($atom!==null?'unchanged':'new').
                              ' atomic='.showHtmlAttrBool(count($subInterfaces)==0).'>');
   
-  $atomName = showKeyAtom($atom, $interface['tgtConcept']); 
-  $keyDef = getKey($interface['tgtConcept']);
+  $atomName = showKeyAtom($atom, $interface['tgtConcept'],True); 
   // TODO: can be done more efficiently if we query the concept atoms once for each concept
 
-  emit($html, "<div class=AtomName>".($keyDef['isHtml'] ? $atomName : htmlSpecialChars($atomName)).'</div>');
+  emit($html, "<div class=AtomName>".$atomName.'</div>');
   if (count($subInterfaces) > 0) {
     emit($html, '<div class=InterfaceList>');
     foreach($subInterfaces as $interface) {
