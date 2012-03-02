@@ -173,7 +173,7 @@ purposes2Blocks :: Options -> [Purpose] -> [Block]
 purposes2Blocks flags ps
  = case ps of
     [] -> []
-    ps -> case concatMarkup [exp{amPandoc = amPandoc exp++ref purp} | purp<-ps, let exp=explMarkup purp] of
+    _  -> case concatMarkup [expl{amPandoc = amPandoc expl++ref purp} | purp<-ps, let expl=explMarkup purp] of
            Nothing -> []
            Just p  -> amPandoc p
    where   -- The reference information, if available for this purpose, is put

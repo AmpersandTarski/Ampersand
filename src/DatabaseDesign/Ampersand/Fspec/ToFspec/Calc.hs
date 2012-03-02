@@ -16,7 +16,6 @@ where
    import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Quad(..),ECArule(..),InsDel(..),PAclause(..))
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
---   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
@@ -57,10 +56,10 @@ where
         rels = nub (recur (ifcObj ifc))
          where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]
         vis        = nub (rels++map (I . target) rels)
-        visible r  = r `elem` vis
+   --     visible r  = r `elem` vis
         invs       = [rule | rule<-invariants fSpec, (not.null) (mors rule `isc` vis)]
-        qs         = vquads fSpec
-        ecaRs      = assembleECAs qs
+   --     qs         = vquads fSpec
+   --     ecaRs      = assembleECAs qs
 --        editable (ERel Rel{})  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
 --        editable _             = False
 --        editMph (ERel r@Rel{}) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
@@ -184,12 +183,12 @@ where
       [ LineBreak, Str "--------------", LineBreak]
       -}
       where 
-       visible _  = True -- We take all quads into account.
+  --     visible _  = True -- We take all quads into account.
        qs         = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
           --   assembleECAs :: (Relation Concept->Bool) -> [Quad] -> [ECArule]
        ecaRs      = assembleECAs qs  -- this creates all ECA rules from the available quads. They are still raw (unoptimized).
 
-       relEqCls = eqCl fst4 [(rel,shifts,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+  --     relEqCls = eqCl fst4 [(rel,shifts,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
 --  This is what ADL2Fpsec has to say about computing ECA rules:
 --       ecas
 --        = [ ECA (On ev rel) delt act
@@ -223,7 +222,7 @@ where
 --                          ]
 --                          [(conj,nub [r |(_,_,_,r)<-cl]) | cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
 --          ]
-       fst4 (w,_,_,_) = w
+--       fst4 (w,_,_,_) = w
 --       snd3 (_,y,_) = y
 --       thd3 (_,_,z) = z
 --       thd4 (_,_,z,_) = z
@@ -231,7 +230,7 @@ where
        derivation :: Rule -> [Inline]
        derivation rule 
          = [Str (showADL rule)]++
-           ( if e'==e
+           ( if exx'==e
              then [Str " is already in conjunctive normal form", LineBreak]
              else [LineBreak, Str "Convert into conjunctive normal form", LineBreak] ++ showProof (showADL . disambiguate fSpec) ((e,[],"<=>"):prf)
            )++
@@ -244,15 +243,15 @@ where
                      concat [ [LineBreak, Str "   Clause: ", Str (showADL (disambiguate fSpec clause)), Str " may be affected by the following events:",LineBreak]++
                              concat [ [Str "event = ", Str (show ev), Space, Str (showADL rel), Str " means doing the following substitution", LineBreak ] ++
                                       [Str (showADL clause++"["++showADL rel++":="++showADL (actSem ev rel (delta (sign rel)))++"] = clause'"), LineBreak ] ++
-                                      [Str ("clause' = "++showADL e'), LineBreak ] ++
-                                      concat [ [Str ("which has CNF: "++showADL e'), LineBreak] | clause'/=e'] ++
+                                      [Str ("clause' = "++showADL ex'), LineBreak ] ++
+                                      concat [ [Str ("which has CNF: "++showADL ex'), LineBreak] | clause'/=ex'] ++
                                       [Str ("Computing the violations means to negate the conjunct: "++showADL (notCpl clause)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notCpl clause/=viols] ++
                                       [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (EUni[ECpl clause,clause'])), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
                                     | rel<-nub (mors r)
                                     , ev<-[Ins,Del]
-                                    , let e'      =         subst (rel, actSem ev rel (delta (sign rel))) clause
-                                    , let clause' = conjNF e'
+                                    , let ex'      =         subst (rel, actSem ev rel (delta (sign rel))) clause
+                                    , let clause' = conjNF ex'
                                     , let step    = conjNF (EUni[ECpl clause,clause'])
                                     , let viols   = conjNF (notCpl clause)
                                     , let negs    = EUni [f | f<-fus, isNeg f]
@@ -261,9 +260,9 @@ where
                                                     then conjNF negs
                                                     else conjNF poss
                                     , rel `elem` mors frExpr
-                                    , let toExpr = if ev==Ins
-                                                   then conjNF poss
-                                                   else conjNF (notCpl negs)
+                        --            , let toExpr = if ev==Ins
+                        --                           then conjNF poss
+                        --                           else conjNF (notCpl negs)
                                     ]
                            | clause<-shifts
                            , if not (isEUni clause) then fatal 269 ("Clause "++showADL clause++" should be a disjunction") else True
@@ -307,19 +306,16 @@ where
 -}
               where e = rrexp rule
                     prf = cfProof showADL e
-                    (e',_,_) = last prf
-                    conjProof = showProof showADL . cfProof showADL
+                    (exx',_,_) = last prf
+               --     conjProof = showProof showADL . cfProof showADL
                     disjProof = showProof showADL . dfProof showADL
 --                    showPr    = showProof showADL  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
        commaEng :: String -> [String] -> String
-       commaEng  _  [] = ""
-       commaEng  _  [x] = x
-       commaEng str [x,y] = x++" "++str++" "++y
-       commaEng str xs = c xs
-        where
-          c [x,y]  = x++", "++str++" "++y
-          c (x:xs) = x++", "++c xs
+       commaEng  _  []       = ""
+       commaEng  _  [x]      = x
+       commaEng str [x,y]    = x++" "++str++" "++y
+       commaEng str (x:y:ys) = x++", "++commaEng str (y:ys)
 
 -- Stel we voeren een actie a uit, die een(1) van de volgende twee is:
 --        {r} INS rel INTO expr {r'}       ofwel
@@ -402,6 +398,8 @@ where
                                        , rrmean = AMeaning
                                                   [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 317)")
                                                   ,A_Markup English ReST (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 318)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
+                                       , rrmsg = []
+                                       , rrviol = Nothing
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , r_env = ""
@@ -415,6 +413,8 @@ where
                                        , rrmean = AMeaning
                                                   [A_Markup Dutch   ReST (string2Blocks ReST "Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 332)")
                                                   ,A_Markup English ReST (string2Blocks ReST "Why is this rule created? (In Calc.hs, line 333)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
+                                       , rrmsg = []
+                                       , rrviol = Nothing
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , r_env = ""

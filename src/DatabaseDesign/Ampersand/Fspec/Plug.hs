@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}  
 module DatabaseDesign.Ampersand.Fspec.Plug
-     (Plugable(..), PlugInfo(..), PlugInfos
+     (Plugable(..), PlugInfo(..)
      ,SqlField(..)
      ,SqlType(..)
      ,showSQL
@@ -38,8 +38,6 @@ fatal = fatalMsg "Fspec.Plug"
 --Plugs can currently be implemented in PHP or SQL.
 --type Plugs = [Plug]
 --data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
-
-type PlugInfos = [PlugInfo]   
 
 class (FPAble p, Identified p, Eq p, Show p) => Plugable p where
   makePlug :: PlugInfo -> p

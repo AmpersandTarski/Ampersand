@@ -141,7 +141,7 @@ where
       = case p of
            Chc{} -> wrap "Chc " (indent ++"    ") (showHS flags) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-           All{} -> "All [ "++intercalate (indent++"    , ") (map (showHS flags (indent++"      ")) (paCls p))++indent++"    ]"++
+           All{} -> wrap "All " (indent ++"    ") (showHS flags) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Do{}  ->  "Do "++show (paSrt p)++ " ("++showHS flags (indent++"        ") (paTo p)++indent++"       )"++
                             indent++"       ("++showHS flags (indent++"        ") (paDelta p)++indent++"       )"++
@@ -158,6 +158,10 @@ where
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
            Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
+           Let{} -> wrap "Let " (indent ++"    ") (showHS flags) (paCls p)++
+                    "TODO: paBody of Let clause"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms             
+           Ref{} -> "Ref "++paVar p
         where ms = paMotiv p
               showMotiv ind (conj,rs) = "("++showHS flags (ind++" ") conj++", "++showHSName rs++")"
 
@@ -627,7 +631,7 @@ where
     showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
    instance ShowHS Rule where
-    showHS flags indent r@(Ru nm e fps mean msg mviol typ dcl env usr sgl rel)
+    showHS flags indent (Ru nm e fps mean msg mviol typ dcl env usr sgl rel)
       = intercalate indent 
         ["Ru{ rrnm   = " ++ show nm
         ,"  , rrexp  = ("++ showHS flags "" e ++")"
@@ -733,7 +737,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS SubInterface where
-    showHS flags indent (InterfaceRef name) = "InterfaceRef "++show name 
+    showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n 
     showHS flags indent (Box objs) = "Box ("++showHS flags (indent++"  ") objs++")" 
 
 -- \***********************************************************************
@@ -991,24 +995,4 @@ where
    showL   :: [String] -> String
    showL xs = "["++intercalate "," xs++"]"
 
-
-{- Obsolete?
-   instance ShowHS P_Relation where
-    showHS flags _ rel 
-       = case rel of
-            P_Rel{} -> "P_Rel "++show (name rel)++" "++showPos
-            P_I{}   -> "P_I"
-            P_V{}   -> "P_V"
-            P_Mp1{} -> "P_Mp1 "++rel_1val rel
-  -- WHY is relval rel printed without quotes?
-  -- BECAUSE: relval rel will be bound by a lambda in the environment of Mp1. It is a Haskell identifier and not a Haskell string.
-  -- COMMENT: That cannot be correct, because the author of an Ampersand script may write an atom that is not a Haskell identifier. Then what?  TODO!
-           where showPos  = "("++showHS flags "" (origin rel)++")"
-
-   instance ShowHS P_Concept where
-    showHS _ _ c = case c of
-                       PCpt{}    -> "PCpt "++show (name c)
-                       P_Singleton -> "P_Singleton "
-
--}
 
