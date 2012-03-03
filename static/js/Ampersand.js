@@ -112,9 +112,9 @@ function commitEditing() {
   sendCommands(dbCommands);
 }
 
-function sendCommands(commandArray) {
+function sendCommands(dbCommands) {
   $.post('php/Database.php',  
-  { commands: JSON.stringify(commandArray), role: getSelectedRole() },
+  { commands: JSON.stringify(dbCommands), role: getSelectedRole() },
   function(data) {
     $results = $(data);
     $errors = $(data).find('.Error');
@@ -174,6 +174,59 @@ function getNonUniqueAtomLists() {
     return null;
   });
   return $nonUniqueAtomLists;
+}
+
+function preventNameClashes(dbCommands) {
+  var safeDbCommands = new Array();
+  var renameCommands = new Array();
+  var tempCounter = 1;
+  
+  while (dbCommands.length) {
+	  var dbCommand = dbCommands.shift();
+	  
+	  var safeDbCommand = dbCommand;
+	  
+	  if (dbCommand.dbCmd=='update' &&
+	  		isEditSourceTuple(dbCommand.relation, dbCommand.isFlipped, dbCommand.parentAtom, dbCommand.childAtom, dbCommands)) {
+	  	log('clash');
+      var tempAtom = mkUniqueAtomName('Temp'+tempCounter++);
+	  	if (dbCommand.parentOrChild=='parent') {
+	  		var finalAtom = safeDbCommand.parentAtom; 
+	  		safeDbCommand.parentAtom = tempAtom;
+      	renameCommands.push(mkDbCommandUpdate(dbCommand.relation, dbCommand.isFlipped, finalAtom, dbCommand.childAtom, 'parent', tempAtom));
+	  	}
+      else {
+	  		var finalAtom = safeDbCommand.childAtom; 
+      	safeDbCommand.childAtom = tempAtom;
+      	renameCommands.push(mkDbCommandUpdate(dbCommand.relation, dbCommand.isFlipped, dbCommand.parentAtom, finalAtom, 'child', tempAtom));
+      }
+	  }
+	  	
+	  safeDbCommands.push(safeDbCommand);
+  }
+
+	return Array.concat(safeDbCommands, renameCommands);
+}
+
+function isEditSourceTuple(relation, isFlipped, parentAtom, childAtom, dbCommands) {
+	log('checking: ' +relation +' '+ isFlipped+' '+ parentAtom+' '+childAtom);
+	for (var i=0; i<dbCommands.length; i++) {
+	  log(dbCommands[i].relation+' '+ dbCommands[i].isFlipped +' '+
+	  		dbCommands[i].parentAtom +' '+ dbCommands[i].childAtom);
+	  switch (dbCommands[i].dbCmd) {
+    case 'update':
+	    if (dbCommands[i].relation == relation && dbCommands[i].isFlipped == isFlipped &&
+		  		 ( dbCommands[i].parentOrChild == 'child' && dbCommands[i].parentAtom == parentAtom && dbCommands[i].originalAtom == childAtom 
+		  	  || dbCommands[i].parentOrChild == 'parent' && dbCommands[i].originalAtom == parentAtom && dbCommands[i].childAtom == childAtom))
+		    	return true;
+    case 'delete':
+	    if (dbCommands[i].relation == relation && dbCommands[i].isFlipped == isFlipped &&
+	  		dbCommands[i].parentAtom == parentAtom && dbCommands[i].childAtom == childAtom)
+	    	return true;
+	  }
+  }
+      
+	return false;
 }
 
 // Edit commands
@@ -270,8 +323,8 @@ function computeDbCommands() {
   } else {
     window.onbeforeunload = null;
   }
-
-  return dbCommands;
+  
+  return preventNameClashes(dbCommands);
 }
 
 function traceDbCommands() {
