@@ -35,7 +35,7 @@ import Data.List
 --       of the very few modules that imports it. (might require some refactoring due to shared stuff)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "P2A_Converter"
+fatal = fatalMsg "P2A_Converters"
 
 pCtx2aCtx :: P_Context -> (A_Context,CtxError)
 pCtx2aCtx pctx
@@ -817,7 +817,17 @@ inferUniIsc :: (ShowADL a,Language l, ConceptStructure l, Identified l) =>
 inferUniIsc _      _            _           []    _  = fatal 610 "Type checking (PUni []) or (Pisc []) should never occur."
 inferUniIsc contxt _            _           [p_e] ac = infer contxt p_e ac
 inferUniIsc contxt pconstructor constructor p_rs  ac  
- | null solutions && null messages = fatal 705 ("no solutions and no inferUniIsc for " ++ showADL (pconstructor p_rs))
+ | null solutions && null messages
+    = fatal 705 ("no solutions and no inferUniIsc for " ++ showADL (pconstructor p_rs)
+                 ++"\nac     = "++show ac
+                 ++"\nterms  = "++show terms
+                 ++"\ndetS   = "++show detS
+                 ++"\ndetT   = "++show detT
+                 ++"\nuc     = "++show uc  
+                 ++"\nterms' = "++show terms'
+                 ++"\naltss  = "++show altss
+                 ++"\nsolutions = "++show solutions
+                )
  | otherwise = (solutions,messages)
     where -- Step 1: do inference on all subexpressions,-- example: e = hoofdplaats[Gerecht*Plaats]~\/neven[Plaats*Rechtbank]
           terms     = [infer contxt p_e ac | p_e<-p_rs]        -- example: terms = [[hoofdplaats[Gerecht*Plaats]~],[neven[Plaats*Rechtbank]]]
@@ -862,7 +872,7 @@ inferUniIsc contxt pconstructor constructor p_rs  ac
           solutions = [pconstructor p_rs | (rs,ms)<-combs, null ms]        -- a combination without error messages is a potential solution
 -}
           -- Step 6: compute messages
-          deepMsgs  = [m | (_,msgs)<-terms, m<-msgs]           -- messages from within the terms
+          deepMsgs  = [m | (_,msgs)<-terms', m<-msgs]          -- messages from within the terms
           messages  = if null deepMsgs
                       then (if null solutions
                             then typeErrors                    -- the messages found by combining terms, from which an arbitrary wrong combination is taken
@@ -985,9 +995,7 @@ inferCpsRad contxt pconstructor constructor p_rs ac
                                   "\nsolutions="++show [ECps rs | (rs,ms)<-combs, null ms])
                        _ -> -} nub [constructor rs | (rs,ms)<-combs, null ms]        -- a combination without error messages is a potential solution
           -- Step 7: compute messages
-          deepMsgs  = let ms1 = [m | (_,msgs)<-terms , m<-msgs]   -- messages from within the terms
-                          ms2 = [m | (_,msgs)<-terms', m<-msgs]  -- messages from within the terms'
-                      in if null ms1 then ms2 else ms1
+          deepMsgs  = [m | (_,msgs)<-terms', m<-msgs]  -- messages from within the terms'
           combMsgs  = [ms | (_,ms)<-combs, not (null ms)]      -- messages from combinations that are wrong (i.e. that have messages)
           interMsgs = [ "The type between "++show (pconstructor lft)++" and "++show (pconstructor rht)++"is ambiguous,\nbecause it may be one of "++show is
                       | (is,(lft,rht))<-zip inter (splits p_rs), length is>1]   -- example: splits [1,2,3,4] = [([1],[2,3,4]),([1,2],[3,4]),([1,2,3],[4])]
