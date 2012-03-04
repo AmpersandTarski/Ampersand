@@ -74,7 +74,7 @@ instance Relational Relation where
                    Rel{} -> False
                    V{}   -> isEndo rel && isSingleton (source rel)
                    I{}   -> True
-                   Mp1{} -> True
+                   Mp1{} -> False
    
 
 flpDecl :: Declaration -> Declaration
