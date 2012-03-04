@@ -131,8 +131,14 @@ generateRules fSpec opts =
            , "        , 'message' => "++showPhpStr (showMessage rule)
            , "        , 'srcConcept' => "++showPhpStr (name (source $ rrexp rule))
            , "        , 'tgtConcept' => "++showPhpStr (name (target $ rrexp rule))
-           , "        // normalized complement (violations): "++ escapePhpStr (show violationsExpr)
-           , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
+           ] ++
+           ( if (ECpl . rrexp) rule /= violationsExpr && verboseP opts
+             then   ["        // original expression:"]
+                  ++["        // "++escapePhpStr ls | ls<-(showPrf showADL . cfProof showADL . ECpl . rrexp) rule]
+                  ++["        // which is the expression to transform to SQL, that computes violations."]
+             else   ["        // normalized complement (violations): "++ escapePhpStr (show violationsExpr)]
+           ) ++
+           [ "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
                                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
            ] ++
            ["        , 'contentsSQL' => '" ++
@@ -151,7 +157,7 @@ generateRules fSpec opts =
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" "," $ genMPairView $ rrviol rule) ++  
            [ "        )" ]
-         | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = conjNF . ECpl . rrexp $ rule ]) ++
+         | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = (conjNF . ECpl . rrexp) rule ]) ++
   [ ""
   , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");" ]
  where showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
