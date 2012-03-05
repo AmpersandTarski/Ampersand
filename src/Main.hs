@@ -9,10 +9,10 @@ import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
-import DatabaseDesign.Ampersand_Prototype.Apps.Atlas   (atlas2context)
+import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context)
+import DatabaseDesign.Ampersand_Prototype.Apps.RAPImport
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
-import DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable
 import DatabaseDesign.Ampersand_Prototype.GenBericht
  
 fatal :: Int -> String -> a
@@ -35,56 +35,23 @@ main
          thepCtx (Right pCtx) = pCtx
          thepCtx (Left err)   = error $ "Parse error:\n"++show err
      in
-     do ePCtxErr <- parseCtxM_ opts
+     do ePCtxErr <- parseCtxM_ opts fileName
         pPops <- if null fn then return [] else
                  do popsText <- readFile fn
                     case importformat opts of
                        Adl1PopFormat -> parsePopsM_ popsText opts fn
-                       Adl1Format -> do verbose opts ("Importing ADL1 file "++fn++"... ")
-                                        cx <- parseCtxM_ opts
+                       Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
+                                        cx <- parseCtxM_ opts importfile
                                         if nocxe (snd(typeCheck (thepCtx cx) [])) 
-                                         then let (atlas,_) = typeCheck (thepCtx ePCtxErr) [] -- the atlas without the import
-                                                  fspec = makeFspec opts (fst(typeCheck (thepCtx cx) [])) -- the fspec of the adl file to import as a pop of atlas.adl
-                                                  fnnxt = name fspec ++ "'" -- a name for a not yet existing next version
+                                         then let fspec = makeFspec opts (fst(typeCheck (thepCtx cx) [])) -- the fspec of the file to import in RAP
+                                                  pics = picturesForAtlas opts fspec
                                                   fdir = let d=dropFileName fn in if null d then "." else d
-                                                  usr= namespace opts
-                                                  getr r = if length r==1 then P_Rel {rel_nm = relnm (head r), rel_pos = relpos (head r)} else error "import error: no or multiple declarations for relvar"
-                                                  impctx = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
-                                                  impfil = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
-                                                  impupl = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
-                                                  usrfil = [makeRelation d |d<-declarations atlas,name d=="fileof"]
-                                                  --funrld = [makeRelation d |d<-declarations atlas,name d=="reload"]
-                                                  funfsp = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
-                                                  funrep = [makeRelation d |d<-declarations atlas,name d=="report"]
-                                                  funadl = [makeRelation d |d<-declarations atlas,name d=="showadl"]
-                                                  loadcontext r 
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair fn (name fspec),mkPair fnnxt fnnxt]}]
-                                                  loadedfile r
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair usr fn]         } | not (null usr)]
-                                                  -- uploadfile r        = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair usr "browse"]   } | not (null usr)]
-                                                  --TODO -> the user has more files, how do I get them in this population
-                                                  fileof r myfiles
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
-                                                  contextfunction r x
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair (name fspec) x] }]
                                               in
-                                              do verbose opts "writing pictures for atlas... "
-                                                 sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
-                                                 verbose opts "pictures for atlas written... "
+                                              do verbose opts "Writing pictures for RAP... "
+                                                 sequence_ [writePicture opts pict | pict <- pics]
+                                                 verbose opts "Getting files of user... "
                                                  myfiles <- liftM (filter (`notElem` [".", ".."])) (getDirectoryContents fdir)
-                                                 verboseLn opts "Generating pictures for atlas..."
-                                                 sequence_ [writePicture opts pict | pict <- picturesForAtlas opts fspec]
-                                                 return (makeADL1Populations (declarations atlas) [fspec]
-                                                       ++makeADL1Populations (declarations atlas) (picturesForAtlas opts fspec)
-                                                       ++loadcontext impctx
-                                                       ++loadedfile impfil
-                                                       ++contextfunction impupl "new context"
-                                                       ++fileof usrfil myfiles
-                                                       -- ++ contextfunction funrld (name fspec)
-                                                       ++ contextfunction funfsp (takeBaseName fn ++ ".pdf")
-                                                       ++ contextfunction funrep (name fspec)
-                                                       ++ contextfunction funadl fnnxt
-                                                        )
+                                                 return (makeRAPPops fspec myfiles pics)
                                          else error (show (snd(typeCheck (thepCtx cx) [])))
         verboseLn opts "Type checking..."
         return (typeCheck (thepCtx ePCtxErr) pPops)

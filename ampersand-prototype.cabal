@@ -43,8 +43,8 @@ Executable prototype
 
   other-modules: 
                  DatabaseDesign.Ampersand_Prototype.Apps ,
-                 DatabaseDesign.Ampersand_Prototype.Apps.Atlas ,
-                 DatabaseDesign.Ampersand_Prototype.Apps.ADL1Importable ,
+                 DatabaseDesign.Ampersand_Prototype.Apps.RAP ,
+                 DatabaseDesign.Ampersand_Prototype.Apps.RAPImport ,
                  DatabaseDesign.Ampersand_Prototype.CoreImporter ,
                  DatabaseDesign.Ampersand_Prototype.GenBericht ,
                  DatabaseDesign.Ampersand_Prototype.Generate ,
