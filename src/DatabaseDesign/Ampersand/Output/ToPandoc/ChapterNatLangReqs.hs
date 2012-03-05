@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
 
+import Data.Char hiding (Space)
 import Data.List
 import Data.List.Split
 import Data.Maybe
@@ -50,12 +51,33 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                  case language flags of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "en")
                    English -> ("Reference table", "Law", "Article", "and")
-               allRefs = nub [ (getWet ref, trimSpaces art) 
+               
+               sortedScannedRefs :: [(String, [Either String Int])]
+               sortedScannedRefs = sort . nub $
+                             [ (getWet ref, scanRef $ trimSpaces art) 
                              | refStr <- filter (not . null) . map explRefId $ explanations fSpec 
                              , ref <- splitOn ";" refStr
                              , art <- splitOn (" "++separator++" ") $ getArtikelen ref
                              ]
+                             
+               allRefs = map (\(w,a) -> (w, unscanRef a)) sortedScannedRefs
                
+               -- group string in number and text sequences, so "Art 12" appears after "Art 2" when sorting (unlike in normal lexicographic string sort)              
+               scanRef :: String -> [Either String Int]
+               scanRef "" = []
+               scanRef str@(c:_) | isDigit c = scanRefInt str
+                                 | otherwise = scanRefTxt str
+               scanRefTxt "" = []
+               scanRefTxt str = let (txt, rest) = break isDigit str
+                                in  Left txt : scanRefInt rest
+
+               scanRefInt "" = []
+               scanRefInt str = let (digits, rest) = break (not . isDigit) str
+                                in  Right (read digits) : scanRefTxt rest
+
+               unscanRef :: [Either String Int] -> String
+               unscanRef scannedRef = concat $ map (either id show) scannedRef
+
                trimSpaces str = dropWhile (==' ') $ reverse (dropWhile (==' ') $ reverse str)
 
   dpIntro :: [Block]
