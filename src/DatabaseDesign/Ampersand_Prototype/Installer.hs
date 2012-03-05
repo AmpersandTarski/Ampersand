@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Installer
-  (installer)
+  (installer,createplug)
 where
   import Data.List
   import Data.Maybe
@@ -140,14 +140,12 @@ where
         , "\n?></body></html>\n" ]
      ) 
     where plugCode plug
-           = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
-             ++
-             [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
-             ++ indentBlock 17
-                    [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
-                    | (f,comma)<-zip (tblfields plug) ('(':repeat ',') ]
-             ++ ["                  ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
-             , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
+           = let (crtbl,crflds,crengine) = createplug plug
+             in commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
+             ++ [ "mysql_query(\""++ crtbl]
+             ++ indentBlock 17 crflds
+             ++ [spaces 17 ++ crengine ++ "\");"
+                , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ if null $ tblcontents plug then [] else
                  [ "else"
                                  , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
@@ -160,8 +158,19 @@ where
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              
           valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld |fld<-record]
-          checkPlugexists plug
+          checkPlugexists (InternalPlug plug)
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++name plug++"`\")){"
-             , "  mysql_query(\"DROP TABLE `"++name plug++"`\");" --todo: incremental behaviour
+             , "  mysql_query(\""++ dropplug plug ++"\");" --todo: incremental behaviour
              , "}" ]
-   
+
+
+  -- (CREATE TABLE, fields, end)
+  createplug :: PlugSQL -> (String,[String],String)
+  createplug plug
+   = ( "CREATE TABLE `"++name plug++"`"
+     , [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
+       | (f,comma)<-zip (tblfields plug) ('(':repeat ',') ]
+     , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
+
+  dropplug :: PlugSQL -> String
+  dropplug plug = "DROP TABLE `"++name plug++"`"
