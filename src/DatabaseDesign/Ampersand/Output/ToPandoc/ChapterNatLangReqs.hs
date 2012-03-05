@@ -123,10 +123,10 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                 | c <-concs fSpec
                 , let pps = [p | p <- purposes fSpec (language flags) c, explUserdefd p]
                 , not (null (cptdf c)) || not (null pps)]           
-           allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
-                                          -- and only those declarations that have at least one userdefined purpose.
-              = [r | r@Rel{}<-mors fSpec
-                   , (not . null) ( purposes fSpec (language flags) r)
+           allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
+              = [ rel | d@Sgn{decusr=True} <- declarations fSpec
+                , let rel = makeRelation d
+                , not . null $ purposes fSpec (language flags) rel
                 ]
                  
       aThemeAtATime :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
@@ -146,8 +146,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
            thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name x ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
-           thisThemeRels     = [r | r<-still2doRelsPre, r `eleM` mors thisThemeRules] `uni`            -- all relations used in this theme's rules
-                               [ makeRelation d | d@Sgn{decusr=True} <- declarations x, (not.null) (multiplicities d)] -- all relations used in multiplicity rules
+           thisThemeRels     = [ r | r@Rel{reldcl=d} <- still2doRelsPre
+                               , decpat d == name x ||         -- all relations declared in this theme, combined
+                                 r `eleM` mors thisThemeRules] -- all relations used in this theme's rules
            rels2PrintLater   = still2doRelsPre >- thisThemeRels
            thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
