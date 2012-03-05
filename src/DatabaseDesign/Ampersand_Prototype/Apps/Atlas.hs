@@ -1,27 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}  
 {-# OPTIONS_GHC -Wall #-}  
 --hdbc and hdbc-odbc must be installed (from hackage)
---
---running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
---in IIS you can enable windows authentication
---
---like Installer.php
---thus:
--- 1) DROP IGNORE TABLES (sqlplugs fspec)
--- 2) CREATE TABLES (sqlplugs fspec)
--- 3) INSERT INTO TABLES (tblcontents sqlplug)
---the connection should be the same as the one in dbSettings.php
---dbSettings.php connects directly, this module through a DSN=atlas
---
---the atlas has two outputs: a database and pictures
---the database contains links to the pictures (see Main.hs)
 module DatabaseDesign.Ampersand_Prototype.Apps.Atlas 
    (fillAtlas,picturesForAtlas,atlas2context)
 where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
+import DatabaseDesign.Ampersand_Prototype.AutoInstaller (odbcinstall)
 import Database.HDBC.ODBC 
 import Database.HDBC
-import Data.List  (intercalate)
 import Data.Maybe (fromMaybe)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 -- import DatabaseDesign.Ampersand.Version (fatalMsg)
@@ -30,31 +16,20 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 --fatal = fatalMsg "Atlas"
 ------
 dsnatlas::String
-dsnatlas = "DSN=Atlasv2"
+dsnatlas = "DSN=RAPv1"
 
-------
---runMany IGNORES all SQL errors!!!
---used to DROP tables if exist
-runMany :: (IConnection conn) => conn -> [String] -> IO Integer
-runMany _ [] = return 1
-runMany conn (x:xs)  = 
-   do _ <- handleSql (\_ -> return 0) (run conn x [])
-      runMany conn xs
+----------------------------------------------------
 
-placeholders :: [a] -> String
-placeholders [] = []
-placeholders (_:[]) = "?"
-placeholders (_:xs) = "?," ++ placeholders xs
+fillAtlas :: Fspc -> Options -> IO()
+fillAtlas fSpec flags = odbcinstall flags fSpec dsnatlas
 
---insert population of this Ampersand script of this user
-inserts :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
-inserts _ [] = return 1
-inserts conn (tbl:tbls) = 
-   do stmt<- prepare conn
-             ("INSERT INTO "++name tbl++"("++intercalate "," ["`"++fldname f++"` " |f<-tblfields tbl]++")"
-                                ++" VALUES ("++placeholders(tblfields tbl)++")")
-      executeMany stmt (map (map toSql) (tblcontents tbl))
-      inserts conn tbls
+picturesForAtlas :: Options -> Fspc -> [Picture]
+picturesForAtlas flags fSpec
+   = [makePicture flags fSpec Plain_CG p | p <- patterns fSpec] ++
+     [makePicture flags fSpec Plain_CG userRule | userRule <- rules fSpec]++
+     [makePicture flags fSpec Plain_CG cpt | cpt <- concs fSpec]
+
+----------------------------------------------------
 
 --select population of concepts or declarations from the atlas of this user
 --REMARK quickQuery' is strict and needed to keep results for use after disconnecting
@@ -71,59 +46,7 @@ selectdecl conn fSpec rel
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
    where stmt = fromMaybe [] (selectExprMorph fSpec (-1) "fld1" "fld2" rel)
-         
---create atlas tables for this namespace
-creates :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
-creates _ [] = return 1
-creates conn (tbl:tbls) = 
-   do _ <- run conn stmt []
-      creates conn tbls
-   where stmt =  "CREATE TABLE "++name tbl
-               ++"("++intercalate "," 
-                      ([createfld f |f<-tblfields tbl]
-                     ++[" UNIQUE KEY (`"++fldname key++"`)"
-                       | key <- tblfields tbl
-                       , flduniq key
-                       , not (fldnull key)
-                       , fldtype key /= SQLBlob] --Blob cannot be a KEY or INDEX
-                     ++[" UNIQUE INDEX (`"++fldname kernelfld++"`)" 
-                       | kernelfld <- tblfields tbl
-                       , flduniq kernelfld
-                       , fldnull kernelfld
-                       , fldtype kernelfld /= SQLBlob])
-               ++") ENGINE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin "
-         createfld fld = "`"++fldname fld++"` " 
-                            --TODO -> A_Concepts should be attached to a SQL type. 
-                            --        A concept::SQLText cannot be stored in a KEY or INDEX field i.e. the scalar plug cannot be created for such a concept
-                            ++ showSQL (fldtype fld) --SQLText has decoding problems??
-                            ++ autoIncr fld ++ nul fld
-         nul fld = if fldnull fld then "" else " NOT NULL"
-         autoIncr fld = if fldauto fld then " AUTO_INCREMENT" else ""
-         --atlastxt fld = not (flduniq fld) && elem ((name.target.fldexpr) fld) ["CptPurpose","RelPurpose","Explanation","RulPurpose","PatPurpose","Description","Definition"]
 
-----------------------
-fillAtlas :: Fspc -> Options -> IO()
-fillAtlas fSpec flags = 
-   do verboseLn flags "Connecting to atlas..."
-      conn<-connectODBC dsnatlas
-      verboseLn flags "Connected."
---      _ <- error(show ["DROP TABLE "++name p | InternalPlug p<-plugInfos fSpec])
-      _ <- runMany conn ["DROP TABLE "++name p | InternalPlug p<-plugInfos fSpec]
-      verboseLn flags "Creating tables..."
-      _ <- creates conn [p |InternalPlug p<-plugInfos fSpec]
-      verboseLn flags "Populating tables..."
-      _ <- inserts conn [p |InternalPlug p<-plugInfos fSpec]
-      commit conn
-      verboseLn flags "Committed."
-      disconnect conn
-
-picturesForAtlas :: Options -> Fspc -> [Picture]
-picturesForAtlas flags fSpec
-   = [makePicture flags fSpec Plain_CG p | p <- patterns fSpec] ++
-     [makePicture flags fSpec Plain_CG userRule | userRule <- rules fSpec]++
-     [makePicture flags fSpec Plain_CG cpt | cpt <- concs fSpec]
-
-----------------------------------------------------
 
 theonly :: [t] -> String -> t
 theonly xs err

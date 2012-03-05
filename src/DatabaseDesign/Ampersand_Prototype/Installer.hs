@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Installer
-  (installer,createplug)
+  (installer,createplug,dropplug)
 where
   import Data.List
   import Data.Maybe
