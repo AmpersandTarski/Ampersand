@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}  
 {-# OPTIONS_GHC -Wall #-}  
 --hdbc and hdbc-odbc must be installed (from hackage)
 --
