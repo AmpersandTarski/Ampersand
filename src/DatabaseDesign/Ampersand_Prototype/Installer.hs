@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Installer
-  (installer,createplug,dropplug)
+  (installer,plug2tbl,dropplug,historytbl,sessiontbl,CreateTable)
 where
   import Data.List
   import Data.Maybe
@@ -68,11 +68,8 @@ where
           , "if($columns = mysql_query(\"SHOW COLUMNS FROM `__SessionTimeout__`\")){"
           , "    mysql_query(\"DROP TABLE `__SessionTimeout__`\");"
           , "}"
-          , "mysql_query(\"CREATE TABLE `__SessionTimeout__`"
-          , "                     ( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
-          , "                     , `lastAccess` BIGINT NOT NULL"
-          , "                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
-          , "if($err=mysql_error()) {"
+          ] ++ docreate 21 sessiontbl ++
+          [ "if($err=mysql_error()) {"
           , "  $error=true; echo $err.'<br />';"
           , "}"
           , "" 
@@ -80,11 +77,8 @@ where
           , "if($columns = mysql_query(\"SHOW COLUMNS FROM `__History__`\")){"
           , "    mysql_query(\"DROP TABLE `__History__`\");"
           , "}"
-          , "mysql_query(\"CREATE TABLE `__History__`"
-          , "                     ( `Seconds` VARCHAR(255) DEFAULT NULL"
-          , "                     , `Date` VARCHAR(255) DEFAULT NULL"
-          , "                      ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8\");"
-          , "if($err=mysql_error()) {"
+          ] ++ docreate 21 historytbl ++
+          [ "if($err=mysql_error()) {"
           , "  $error=true; echo $err.'<br />';"
           , "}"
           , "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
@@ -140,12 +134,9 @@ where
         , "\n?></body></html>\n" ]
      ) 
     where plugCode plug
-           = let (crtbl,crflds,crengine) = createplug plug
-             in commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
-             ++ [ "mysql_query(\""++ crtbl]
-             ++ indentBlock 17 crflds
-             ++ [spaces 17 ++ crengine ++ "\");"
-                , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
+           = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
+             ++ docreate 17 (plug2tbl plug)
+             ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ if null $ tblcontents plug then [] else
                  [ "else"
                                  , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
@@ -158,15 +149,22 @@ where
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              
           valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld |fld<-record]
+          checkPlugexists (ExternalPlug _) = []
           checkPlugexists (InternalPlug plug)
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++name plug++"`\")){"
              , "  mysql_query(\""++ dropplug plug ++"\");" --todo: incremental behaviour
              , "}" ]
+          docreate i (crtbl,crflds,crengine)
+           = [ "mysql_query(\""++ crtbl]
+             ++ indentBlock i crflds
+             ++ [spaces i ++ crengine ++ "\");"]
 
+  
+  -- (CREATE TABLE name, fields, engine)
+  type CreateTable = (String,[String],String)
 
-  -- (CREATE TABLE, fields, end)
-  createplug :: PlugSQL -> (String,[String],String)
-  createplug plug
+  plug2tbl :: PlugSQL -> CreateTable
+  plug2tbl plug
    = ( "CREATE TABLE `"++name plug++"`"
      , [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
        | (f,comma)<-zip (tblfields plug) ('(':repeat ',') ]
@@ -174,3 +172,17 @@ where
 
   dropplug :: PlugSQL -> String
   dropplug plug = "DROP TABLE `"++name plug++"`"
+
+  historytbl :: CreateTable
+  historytbl
+   = ( "CREATE TABLE `__History__`"
+     , [ "( `Seconds` VARCHAR(255) DEFAULT NULL"
+       , ", `Date` VARCHAR(255) DEFAULT NULL"]
+     , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
+
+  sessiontbl :: CreateTable
+  sessiontbl
+   = ( "CREATE TABLE `__SessionTimeout__`"
+     , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
+       , ", `lastAccess` BIGINT NOT NULL"]
+     , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
