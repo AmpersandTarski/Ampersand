@@ -29,7 +29,7 @@ main
       parseAndTypeCheck :: Options -> IO(A_Context, CtxError) 
       parseAndTypeCheck opts 
                         = do verboseLn opts "Start parsing...."
-                             pCtx <- parseCtxM_ opts fileName
+                             pCtx <- parseCtxM_ opts (fileName opts)
                              pPops <- case importfile opts of
                                          [] -> return []
                                          fn -> do popsText <- readFile fn
