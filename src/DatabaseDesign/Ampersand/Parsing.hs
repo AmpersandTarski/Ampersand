@@ -21,10 +21,10 @@ import DatabaseDesign.Ampersand.ADL1
 type ParseError = Message Token
 
 parseADL :: ParserVersion -- ^ The specific version of the parser to be used
-         -> String        -- ^ The name of the .adl file
+         -> FilePath      -- ^ The name of the .adl file
          -> IO (Either ParseError P_Context) -- ^ The result: Either some errors, or the parsetree.
-parseADL parserVersion filename =
- do { (result, _) <- readAndParseFile parserVersion [] Nothing "" filename
+parseADL parserVersion file =
+ do { (result, _) <- readAndParseFile parserVersion [] Nothing "" file
     ; return result
     }
 
@@ -33,13 +33,11 @@ parseADL parserVersion filename =
 -- Hence, include cycles do not cause an error.
 -- We don't distinguish between "INCLUDE SomeADL" and "INCLUDE SoMeAdL" to prevent errors on case-insensitive file systems.
 -- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
-upperCase :: String -> String
-upperCase str = map toUpper str
 
 readAndParseFile :: ParserVersion -> [String] -> Maybe String -> String -> String ->
                            IO (Either ParseError P_Context, [String])
 readAndParseFile parserVersion alreadyParsed mIncluderFilepath fileDir relativeFilepath =
- do { canonicFilepath <- fmap upperCase $ canonicalizePath filepath
+ do { canonicFilepath <- fmap (map toUpper) $ canonicalizePath filepath
     ; if canonicFilepath `elem` alreadyParsed 
       then return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles) 
       else do { fileContents <- readFile filepath
