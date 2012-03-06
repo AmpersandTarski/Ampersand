@@ -57,8 +57,7 @@ makeDecl g
                         [ A_Markup English ReST (string2Blocks ReST ("Every "++name (source g)++" must be a " ++ name(target g)++"."))
                         , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" moet een " ++ name(target g)++" zijn."))
                         ]
-         , decSrcDef = ""
-         , decTgtDef = ""
+         , decConceptDef = Nothing
          , decpopu = [(a,b) | a <- (atomsOf.source) g, b <- (atomsOf.target) g, a==b]
          , decfpos = origin g
          , deciss  = True
@@ -126,8 +125,7 @@ rulesFromKey key = mkProductInjectivityRule keyExps :
                                                    [ A_Markup English ReST (string2Blocks ReST meaningEN)
                                                    , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
                                                    ]
-                                     , decSrcDef = ""
-                                     , decTgtDef = ""
+                                     , decConceptDef = Nothing
                                      , decpopu = []
                                      , decfpos = origin key
                                      , deciss  = False

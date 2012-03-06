@@ -463,8 +463,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
                                        , dec_Mean = if mean == ""
                                                     then []
                                                     else [PMeaning (P_Markup Nothing Nothing mean)]
-                                       , dec_srcDef = ""
-                                       , dec_tgtDef = ""
+                                       , dec_conceptDef = Nothing
                                        , dec_popu = content
                                        , dec_fpos = pos'
                                        , dec_plug = False

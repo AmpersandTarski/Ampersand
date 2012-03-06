@@ -8,6 +8,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleType(..)
+ , RelConceptDef(..)
  , Declaration(..)
  , KeyDef(..)
  , KeySegment(..)
@@ -38,14 +39,14 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , aMarkup2String
  , concatMarkup
  , insParentheses
- , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have acutally become part of the Abstract Syntax Tree.
+ , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics.Auxiliaries (eqCl)
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
-import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt)
+import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), RelConceptDef(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc
@@ -189,8 +190,7 @@ data Declaration =
       , decprM  :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR  :: String
       , decMean :: AMeaning   -- ^ the meaning of a declaration, for each language supported by Ampersand.
-      , decSrcDef :: String   -- ^ alternative definition for the source concept in the context of this relation
-      , decTgtDef :: String   -- ^ alternative definition for the target concept in the context of this relation
+      , decConceptDef :: Maybe RelConceptDef -- ^ alternative definition for the source or target concept in the context of this relation
       , decpopu :: Pairs      -- ^ the list of tuples, of which the relation consists.
       , decfpos :: Origin     -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
       , deciss  :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.

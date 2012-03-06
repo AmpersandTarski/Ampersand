@@ -7,7 +7,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Pattern(..)
    
-   , P_Relation(..),P_Declaration(..)
+   , P_Relation(..), RelConceptDef(..), P_Declaration(..)
    
    , P_Expression(..)
    
@@ -155,7 +155,9 @@ where
     origin = cdpos
    instance Identified ConceptDef where
     name = cdcpt
-       
+   
+   data RelConceptDef = RelConceptDef SrcOrTgt String deriving (Eq, Show)
+   
    data P_Declaration = 
          P_Sgn { dec_nm   :: String    -- ^ the name of the declaration
                , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
@@ -164,8 +166,7 @@ where
                , dec_prM  :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , dec_prR  :: String
                , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
-               , dec_tgtDef :: String  -- ^ alternative definition for the target concept in the context of this relation
-               , dec_srcDef :: String  -- ^ alternative definition for the source concept in the context of this relation
+               , dec_conceptDef :: Maybe RelConceptDef -- ^ alternative definition for the source or target concept in the context of this relation
                , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
                , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
@@ -223,7 +224,7 @@ where
       | Prel P_Relation                    -- ^ simple relation
       deriving (Eq, Show) -- deriving only for debugging purposes
 
-   data SrcOrTgt = Src | Tgt deriving Show
+   data SrcOrTgt = Src | Tgt deriving (Show, Eq)
 
    data P_PairView = P_PairView [P_PairViewSegment]
 

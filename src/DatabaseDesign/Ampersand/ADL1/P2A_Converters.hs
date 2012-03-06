@@ -221,8 +221,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
                      , decprM = ""
                      , decprR = ""
                      , decMean = meanings (rr_mean prul)
-                     , decSrcDef = ""
-                     , decTgtDef = ""
+                     , decConceptDef = Nothing
                      , decpopu = []
                      , decfpos = rr_fps prul
                      , deciss = True
@@ -448,8 +447,7 @@ pDecl2aDecl actx pops patname pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
        , decMean = pMeanings2aMeaning (ctxlang actx) (ctxmarkup actx) (dec_Mean pd)
-       , decSrcDef = dec_srcDef pd
-       , decTgtDef = dec_tgtDef pd
+       , decConceptDef = dec_conceptDef pd
        , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
                    dec_popu pd ++ 
                    concat [popps pop | pop<-pops, let ad=popm pop

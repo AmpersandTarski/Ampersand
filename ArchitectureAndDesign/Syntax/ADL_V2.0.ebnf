@@ -41,7 +41,7 @@ RuleDef         ::= 'RULE' (ADLid ':')? Expr Meaning*
                     ('VIOLATION' (('TXT' | 'SRC' | 'TGT') String)(',' (('TXT' | 'SRC' | 'TGT') String))* )?
 RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->') ConceptRef) |
                      (RELATION Id Sign))
-                    'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String String*)? Meaning? ('=' Content )? ('DEFINE' 'SRC' String ('DEFINE' 'TGT' String)? | 'DEFINE' 'TGT' String ('DEFINE' 'SRC' String)?)? '.'?
+                    'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String String*)? Meaning? ('=' Content )? ('DEFINE' ('SRC' | 'TGT') String)? '.'?
 Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP')
                          (',' ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP'))*
                        )? ']'
