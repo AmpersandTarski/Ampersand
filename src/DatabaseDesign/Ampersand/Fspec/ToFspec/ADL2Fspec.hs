@@ -628,8 +628,7 @@ while maintaining all invariants.
                              , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST "TODO: Doel van deze Delta relatie opschrijven")
                                                   , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
                                                   ]
-                             , decSrcDef = ""
-                             , decTgtDef = ""
+                             , decConceptDef = Nothing
                              , decpopu = []
                              , decfpos = Origin "generated relation (Delta)"
                              , deciss  = True
