@@ -88,13 +88,13 @@ genEntity_ObjDef interfaces dpth objDef =
 
 allEntitiesToCSV :: [Entity] -> CSV
 allEntitiesToCSV entities = ["Naam", "Card.", "Definitie", "Type"] : 
-                            (intercalate [["","","",""]] $ map entityToCSV  entities)
+                            intercalate [["","","",""]] (map entityToCSV  entities)
 
 entityToCSV :: Entity -> CSV 
 entityToCSV (Entity nm dpth card def refTp props) =
   [ concat (replicate dpth ". ") ++ nm, card, def, refTp] : concatMap entityToCSV props
 
-indentHead i lines = [((concat $ replicate i ". ")++c1):line | (c1:line) <- lines]
+indentHead i lines = [(concat (replicate i ". ")++c1):line | (c1:line) <- lines]
 
 -- Utils
 

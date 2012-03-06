@@ -23,7 +23,7 @@ odbcinstall flags fSpec dsn =
       conn<-connectODBC dsn
       verboseLn flags "Connected."
       verboseLn flags "Dropping tables..."
-      _ <- drops conn (("DROP TABLE `__History__`"):("DROP TABLE `__SessionTimeout__`"):[dropplug p | InternalPlug p<-plugInfos fSpec])
+      _ <- drops conn ("DROP TABLE `__History__`":"DROP TABLE `__SessionTimeout__`":[dropplug p | InternalPlug p<-plugInfos fSpec])
       verboseLn flags "Creating tables..."
       _ <- creates conn (historytbl : sessiontbl : [plug2tbl p |InternalPlug p<-plugInfos fSpec])
       verboseLn flags "Populating tables..."

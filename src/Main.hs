@@ -35,13 +35,13 @@ main
          thepCtx (Right pCtx) = pCtx
          thepCtx (Left err)   = error $ "Parse error:\n"++show err
      in
-     do ePCtxErr <- parseCtxM_ opts fileName
+     do ePCtxErr <- parseCtxM_ opts (fileName opts)
         pPops <- if null fn then return [] else
                  do popsText <- readFile fn
                     case importformat opts of
                        Adl1PopFormat -> parsePopsM_ popsText opts fn
                        Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
-                                        cx <- parseCtxM_ opts importfile
+                                        cx <- parseCtxM_ opts (importfile opts)
                                         if nocxe (snd(typeCheck (thepCtx cx) [])) 
                                          then let fspec = makeFspec opts (fst(typeCheck (thepCtx cx) [])) -- the fspec of the file to import in RAP
                                                   pics = picturesForAtlas opts fspec
