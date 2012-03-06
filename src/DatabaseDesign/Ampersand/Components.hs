@@ -44,9 +44,9 @@ fatal = fatalMsg "Components"
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
 --   This parser is for parsing of a Context
 parseCtxM_  :: Options       -- ^ flags to be taken into account
-            -> (Options -> String) -- ^ the file location from the flags 
+            -> FilePath      -- ^ the full path to the file to parse 
             -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
-parseCtxM_ flags filename = tryAll versions2try
+parseCtxM_ flags file = tryAll versions2try
     where 
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion flags of
@@ -55,7 +55,7 @@ parseCtxM_ flags filename = tryAll versions2try
       
       try :: ParserVersion -> IO (Either ParseError P_Context)
       try pv = do { verbose flags $ "Parsing with "++show pv++"..."
-                  ; eRes <- parseADL pv (filename flags)
+                  ; eRes <- parseADL pv file
                   ; case eRes of 
                       Right ctx  -> verboseLn flags " successful"
                                 >> return (Right $ ctx{ctx_experimental = experimental flags}) -- set the experimental flag

@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleType(..)
- , RelConceptDef(..)
+-- , RelConceptDef(..)
  , Declaration(..)
  , KeyDef(..)
  , KeySegment(..)
