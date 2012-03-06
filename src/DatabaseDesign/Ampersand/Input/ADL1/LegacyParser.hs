@@ -4,7 +4,7 @@
 --IT HAS BEEN MODIFIED TO FIT CHANGES IN module Adl
 --THIS PARSER ENABLES STUDENTS TO LOAD SCRIPTS WITH SYNTAX OF THE PREVIOUS TOOL.
 --note: relations outside a pattern (context elements) are put in a dummy pattern
-module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keywordsops, specialchars, opchars) where
+module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner  ( Token(..),TokenType(..),noPos
                       , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing  (Parser
@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC664 (pContext, keywordstxt, keyword
    import Data.List (nub,sort)
    
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ADL1.CC664"
+   fatal = fatalMsg "ADL1.ParserLegacy"
 
 
    keywordstxt :: [String]
