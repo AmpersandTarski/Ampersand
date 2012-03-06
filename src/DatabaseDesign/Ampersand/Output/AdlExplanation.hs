@@ -77,6 +77,7 @@ instance Explainable Declaration where
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]
 --                   else decMean decl
+  explForObj d1 (ExplDeclaration d2) = d1 == d2 
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang d
