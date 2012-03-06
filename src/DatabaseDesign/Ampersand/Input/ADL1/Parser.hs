@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
-module DatabaseDesign.Ampersand.Input.ADL1.CCv221 
+module DatabaseDesign.Ampersand.Input.ADL1.Parser 
    (pContext, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
@@ -16,7 +16,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CCv221
    import DatabaseDesign.Ampersand.Core.ParseTree    
    import Data.List (nub,sort)
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ADL1.CCv221"
+   fatal = fatalMsg "ADL1.Parser"
 
 --  The Ampersand scanner takes the file name (String) for documentation and error messaging.
 --   scanner :: String -> String -> [Token]

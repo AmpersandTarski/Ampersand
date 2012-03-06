@@ -10,8 +10,8 @@ import Data.List
 import Data.Char
 import System.Directory
 import System.FilePath
-import DatabaseDesign.Ampersand.Input.ADL1.CCv221 (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
-import qualified DatabaseDesign.Ampersand.Input.ADL1.CC664 as CC664
+import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
+import qualified DatabaseDesign.Ampersand.Input.ADL1.LegacyParser as LegacyParser
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
@@ -82,7 +82,7 @@ readAndParseIncludeFiles :: [String] -> Maybe String -> String -> [String] ->
                             IO (Either ParseError [P_Context], [String])
 readAndParseIncludeFiles alreadyParsed mIncluderFilepath fileDir [] = return (Right [], alreadyParsed)
 readAndParseIncludeFiles alreadyParsed mIncluderFilepath fileDir (relativeFilepath:relativeFilepaths) = 
- do { (result, alreadyParsed') <- readAndParseFile PV211 alreadyParsed mIncluderFilepath fileDir relativeFilepath
+ do { (result, alreadyParsed') <- readAndParseFile Current alreadyParsed mIncluderFilepath fileDir relativeFilepath
     ; case result of
         Left err -> return (Left err, alreadyParsed')
         Right context ->
@@ -126,8 +126,8 @@ parseSingleADL :: ParserVersion -- ^ The specific version of the parser to be us
 
 parseSingleADL pv str fn =
   case pv of
-      PV211  -> runParser pv pContext                              fn str
-      PV664  -> runParser pv (addEmptyIncludes <$> CC664.pContext) fn str
+      Current  -> runParser pv pContext                              fn str
+      Legacy  -> runParser pv (addEmptyIncludes <$> LegacyParser.pContext) fn str
  where addEmptyIncludes parsedContext = (parsedContext, []) -- the old parsed does not support include filenames, so we add an empty list
 
 
@@ -156,8 +156,8 @@ parseExpr str fn pv =
 runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either ParseError res
 runParser parserVersion parser filename input = 
   let scanner = case parserVersion of 
-                  PV664  -> scan CC664.keywordstxt CC664.keywordsops CC664.specialchars CC664.opchars filename initPos
-                  PV211  -> scan       keywordstxt       keywordsops       specialchars       opchars filename initPos
+                  Legacy  -> scan LegacyParser.keywordstxt LegacyParser.keywordsops LegacyParser.specialchars LegacyParser.opchars filename initPos
+                  Current  -> scan       keywordstxt       keywordsops       specialchars       opchars filename initPos
       steps :: Steps (Pair res (Pair [Token] a)) Token
       steps = parse parser $ scanner input
   in  case  getMsgs steps of
