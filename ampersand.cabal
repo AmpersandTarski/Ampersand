@@ -114,8 +114,6 @@ library
                     DatabaseDesign.Ampersand.Fspec.ToFspec.Calc,
                     DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms,
                     DatabaseDesign.Ampersand.Input,
-                    DatabaseDesign.Ampersand.Input.ADL1.CC664,
-                    DatabaseDesign.Ampersand.Input.ADL1.CCv221,
                     DatabaseDesign.Ampersand.Input.ADL1.CtxError,
                     DatabaseDesign.Ampersand.Input.ADL1.FilePos,
                     DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees,
@@ -131,7 +129,9 @@ library
                     DatabaseDesign.Ampersand.Output.Fspec2Pandoc,
                     DatabaseDesign.Ampersand.Output.PandocAux,
                     DatabaseDesign.Ampersand.Output.PredLogic,
-                    DatabaseDesign.Ampersand.Output.Statistics
+                    DatabaseDesign.Ampersand.Output.Statistics,
+                    DatabaseDesign.Ampersand.Input.ADL1.Parser,
+                    DatabaseDesign.Ampersand.Input.ADL1.LegacyParser
   other-modules:    
                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
