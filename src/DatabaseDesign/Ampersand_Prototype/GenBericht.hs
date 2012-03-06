@@ -73,8 +73,8 @@ genEntity_ObjDef interfaces dpth objDef =
                           Cd {cddef=def} : _ | def /= "" -> def
                           _                              -> "** NO DEFINITION **"
         where relTargetDef = case rel of -- target def of relation, or source def if relation is flipped
-                               (ERel (Rel{reldcl=Sgn{decTgtDef=def}}))        -> def
-                               (EFlp (ERel (Rel{reldcl=Sgn{decSrcDef=def}}))) -> def
+                               (ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Tgt def)}}))        -> def
+                               (EFlp (ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Src def)}}))) -> def
                                _                                              -> ""       
        
        showMeaning meaning = concat [ aMarkup2String m | m@A_Markup{amLang=Dutch} <- ameaMrk meaning ]

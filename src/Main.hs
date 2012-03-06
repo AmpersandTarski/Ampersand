@@ -4,7 +4,7 @@ module Main where
 import Control.Monad
 import Data.List
 import Data.Function (on)
-import System.FilePath        (combine,dropFileName,takeBaseName)
+import System.FilePath        (combine,dropFileName)
 import System.Directory       (getDirectoryContents)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)

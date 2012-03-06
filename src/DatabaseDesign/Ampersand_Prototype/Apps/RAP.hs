@@ -209,8 +209,7 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
          , dec_prM = [c |(rel,x)<-pragma2,relstr==rel,c<-x]
          , dec_prR = [c |(rel,x)<-pragma3,relstr==rel,c<-x]
          , dec_Mean = []
-         , dec_srcDef = ""
-         , dec_tgtDef = ""
+         , dec_conceptDef = Nothing
          , dec_popu = []
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False
