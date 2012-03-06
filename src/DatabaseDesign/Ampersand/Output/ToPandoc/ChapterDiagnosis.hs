@@ -382,16 +382,16 @@ chpDiagnosis lev fSpec opts
     , Table [] (AlignLeft : replicate 6 AlignCenter) [0.0,0.0,0.0,0.0,0.0,0.0,0.0] 
             (map strCell [ themeStr, relationsStr, withRefStr, "%", rulesStr, withRefStr, "%"])
             (map mkTableRowPat (vpatterns fSpec) ++ map mkTableRowProc (vprocesses fSpec) ++ 
-            [[]] ++
-            [mkTableRow "context" (filter decusr $ vrels fSpec) (vrules fSpec)])
+            [[]] ++ -- empty row
+            [mkTableRow contextStr (filter decusr $ vrels fSpec) (vrules fSpec)])
     ]
     where mkTableRowPat p = mkTableRow (name p) (ptdcs p) (ptrls p)
           mkTableRowProc (FProc p _) = mkTableRow (name p) (prcDcls p) (prcRules p) 
-          mkTableRow nm decls rules = 
+          mkTableRow nm decls ruls = 
             let nrOfRels = length decls
                 nrOfRefRels = length $ filter hasRef decls
-                nrOfRules = length rules
-                nrOfRefRules = length $ filter hasRef rules
+                nrOfRules = length ruls
+                nrOfRefRules = length $ filter hasRef ruls
             in  map strCell [ nm
                             , show nrOfRels, show nrOfRefRels, showPercentage nrOfRels nrOfRefRels
                             , show nrOfRules, show nrOfRefRules, showPercentage nrOfRules nrOfRefRules 
@@ -403,15 +403,15 @@ chpDiagnosis lev fSpec opts
           
           strCell str = [Plain [Str str]]
           
-          (descriptionStr, themeStr, relationsStr, withRefStr, rulesStr) = 
+          (descriptionStr, themeStr, relationsStr, withRefStr, rulesStr, contextStr) = 
             case (language opts) of Dutch -> ( "Onderstaande tabel bevat per thema (dwz. proces of patroon) tellingen van het aantal relaties en regels, " ++
                                                "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
                                                "gedeclareerd worden, worden ook meerdere keren geteld."
-                                             , "Thema", "Relaties",  "Met referentie", "Regels")
+                                             , "Thema", "Relaties",  "Met referentie", "Regels", "Gehele context")
                                     _     -> ( "The table below shows for each theme (i.e. process or pattern) the number of relations and rules, followed " ++
                                                " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
                                                " times."
-                                             , "Theme", "Relations", "With reference", "Rules")
+                                             , "Theme", "Relations", "With reference", "Rules", "Entire context")
 
   locnm (FileLoc(FilePos(filename,_,_))) = filename
   locnm (DBLoc str) = str
