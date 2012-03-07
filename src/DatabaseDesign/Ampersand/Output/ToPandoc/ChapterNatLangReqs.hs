@@ -296,21 +296,21 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                                        meaning2Blocks (language flags) (makeDeclaration rel)
                                      ]
                                    )] ]++
-                 ( case (language flags, length dp) of
+                 ( case (language flags, length samplePop) of
                         (_      , 0) -> []
                         (Dutch  , 1) -> [Para [Str "Een zin die hiermee gemaakt kan worden is bijvoorbeeld:"]]
                         (English, 1) -> [Para [Str "A sentence that can be formed is for instance:"]]
                         (Dutch  , _) -> [Para [Str "Zinnen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
                         (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
                  )++
-                 [ Para $ applyM d srcKeyAtom tgtKeyAtom 
-                 | (a,b)<-dp
-                 , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) a 
-                 , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) b
+                 [ Para $ mkSentence d srcKeyAtom tgtKeyAtom 
+                 | (srcAtom,tgtAtom)<-samplePop
+                 , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) srcAtom 
+                 , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) tgtAtom
                  ]
-                 where purps = purposes fSpec (language flags) rel
-                       d     = makeDeclaration rel
-                       dp    = take 3 (decpopu d)
+                 where purps     = purposes fSpec (language flags) rel
+                       d         = makeDeclaration rel
+                       samplePop = take 3 (decpopu d)
               sctrs :: [Rule] -> [(Origin,Counter -> [Block])]
               sctrs = map (\rul -> (origin rul, ruleBlock rul))
               ruleBlock :: Rule -> Counter -> [Block]
@@ -330,38 +330,22 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                                                    ] | not (null$meaning2Blocks (language flags) rul)]
                                  where purps = purposes fSpec (language flags) rul
                       
-  applyM :: Declaration -> String -> String -> [Inline]
-  applyM decl a b
-   = if fspecFormat flags==FLatex
-     then let a'  = latexEscShw a
-              b'  = latexEscShw b
-              str = RawInline "latex"
-          in case decl of
-             Sgn{} | null (prL++prM++prR) 
-                        -> [str (upCap a'),Space,str "(",(str.latexEscShw.unCap.name.source) decl, str ")",str "corresponds",Space,str "to",Space,str b',Space,str "(",(str.latexEscShw.unCap.name.target) decl, str ")",str "in",Space,str "relation",Space,str (decnm decl),str "."]
-                   | null prL
-                        -> [str "(",(str.latexEscShw.name.source) decl, str ") ",str a',Space,str prM,Space,str "(",(str.latexEscShw.unCap.name.target) decl, str ") ",str b',Space,str prR,str "."]
-                   | otherwise 
-                        -> [str (upCap prL),Space,str "(",(str.latexEscShw.unCap.name.source) decl, str ") ",str a',Space,str prM,Space,str "(",(str.latexEscShw.unCap.name.target) decl, str ") ",str b']++if null prR then [str "."] else [Space,str prR,str "."]
-                          where prL = latexEscShw (decprL decl)
-                                prM = latexEscShw (decprM decl)
-                                prR = latexEscShw (decprR decl)
-             Isn{}     -> [str "(",(str.latexEscShw.name.source) decl, str ") ",str (upCap a'),Space,str "equals",Space,str b',str "."]
-             Iscompl{} -> [str "(",(str.latexEscShw.name.source) decl, str ") ",str (upCap a'),Space,str "differs",Space,str "from",Space,str b',str "."]
-             Vs{}      -> [str (show True)]
-     else case decl of
-             Sgn{} | null (prL++prM++prR) 
-                        -> [Str (upCap a),Space,Str "(",(Str .unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,Str b,Space,Str "(",(Str .unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,Str (decnm decl),Str "."]
-                   | null prL
-                        -> [Str "(",(Str .name.source) decl, Str ") ",Str a,Space,Str prM,Space,Str "(",(Str .unCap.name.target) decl, Str ") ",Str b,Space,Str prR,Str "."]
-                   | otherwise 
-                        -> [Str (upCap prL),Space,Str "(",(Str .unCap.name.source) decl, Str ") ",Str a,Space,Str prM,Space,Str "(",(Str .unCap.name.target) decl, Str ") ",Str b]++if null prR then [Str "."] else [Space,Str prR,Str "."]
-                          where prL = decprL decl
-                                prM = decprM decl
-                                prR = decprR decl
-             Isn{}     -> [Str "(",(Str .name.source) decl, Str ") ",Str (upCap a),Space,Str "equals",Space,Str b,Str "."]
-             Iscompl{} -> [Str "(",(Str .name.source) decl, Str ") ",Str (upCap a),Space,Str "differs",Space,Str "from",Space,Str b,Str "."]
-             Vs{}      -> [Str (show True)]
+  mkSentence :: Declaration -> String -> String -> [Inline]
+  mkSentence decl srcAtom tgtAtom
+   = let str = if fspecFormat flags==FLatex then RawInline "latex" . latexEscShw else Str 
+     in  case decl of
+           Sgn{} | null (prL++prM++prR) 
+                      -> [str (upCap srcAtom),Space,Str "(",(str.unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,str tgtAtom,Space,Str "(",(str.unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,str (decnm decl),Str "."]
+                 | null prL
+                      -> [Str "(",(str.name.source) decl, Str ") ",str srcAtom,Space,str prM,Space,Str "(",(str.unCap.name.target) decl, str ") ",str tgtAtom,Space,str prR,Str "."]
+                 | otherwise 
+                      -> [str (upCap prL),Space,Str "(r",(str.unCap.name.source) decl, str ") ",str srcAtom,Space,str prM,Space,Str "(",(str.unCap.name.target) decl, str ") ",str tgtAtom]++if null prR then [Str "."] else [Space,str prR,Str "."]
+                        where prL = decprL decl
+                              prM = decprM decl
+                              prR = decprR decl
+           Isn{}     -> [Str "(",(str.name.source) decl, Str ") ",str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
+           Iscompl{} -> [Str "(",(str.name.source) decl, Str ") ",str (upCap srcAtom),Space,Str "differs",Space,Str "from",Space,str tgtAtom,Str "."]
+           Vs{}      -> [Str "True"]
 
 
 -- TODO: fix showing/not showing based on relation
