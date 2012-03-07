@@ -173,13 +173,22 @@ purposes2Blocks :: Options -> [Purpose] -> [Block]
 purposes2Blocks flags ps
  = case ps of
     [] -> []
-    _  -> case concatMarkup [expl{amPandoc = amPandoc expl++ref purp} | purp<-ps, let expl=explMarkup purp] of
+          -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
+    _  -> case concatMarkup [expl{amPandoc = insertAfterFirstInline (ref purp) $ amPandoc expl} | purp<-ps, let expl=explMarkup purp] of
            Nothing -> []
            Just p  -> amPandoc p
    where   -- The reference information, if available for this purpose, is put
     ref purp = case fspecFormat flags of
-                FLatex -> [Plain [RawInline "latex" ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]  | (not.null.explRefId) purp]
-                _      -> []
+                FLatex | (not.null.explRefId) purp-> [RawInline "latex" ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]
+                _                                 -> []
+
+-- Insert an inline after the first inline in the list of blocks, if possible. 
+insertAfterFirstInline :: [Inline] -> [Block] -> [Block]
+insertAfterFirstInline inlines (            Plain (inl:inls):pblocks)        =             Plain (inl : (inlines++inls)) : pblocks
+insertAfterFirstInline inlines (            Para (inl:inls):pblocks)         =             Para (inl : (inlines++inls)) : pblocks
+insertAfterFirstInline inlines (BlockQuote (Para (inl:inls):pblocks):blocks) = BlockQuote (Para (inl : (inlines++inls)) : pblocks):blocks
+insertAfterFirstInline inlines blocks                                        = Plain inlines : blocks
+
 isMissing :: Maybe Purpose -> Bool
 isMissing mp =
   case mp of 
