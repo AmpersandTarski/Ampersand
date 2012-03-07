@@ -672,14 +672,18 @@ makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
 makeDefinition flags (i,cdnm,cd)
  = case fspecFormat flags of
     FLatex ->  [ Para ( [ RawInline "latex" (symDefLabel cd ++ "\n") | i == 0] ++
-                        [ RawInline "latex" ("\\marge{\\gls{"++escapeNonAlphaNum cdnm++"}}\n") ] ++
-                        [ RawInline "latex" (latexEscShw (cddef cd))] ++
+                        [ RawInline "latex" $ insertAfterFirstWord refStr defStr] ++
                         [ RawInline "latex" (latexEscShw (" ["++cdref cd++"]")) | not (null (cdref cd)) ]
                       )
                ]
     _      ->  [ Para ( Str (cddef cd) : [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ] )
                ]
-
+ where refStr = "\\marge{\\gls{"++escapeNonAlphaNum cdnm++"}}" 
+       defStr = latexEscShw (cddef cd)
+       -- by putting the ref after the first word of the definition, it aligns nicely with the definition
+       insertAfterFirstWord str wordsStr = let (fstWord, rest) = break (==' ') wordsStr
+                                           in  fstWord ++ str ++ rest
+ 
 commaEngPandoc :: Inline -> [Inline] -> [Inline]
 commaEngPandoc str [a,b,c]= [a,Str ", ",b,Str ", ",str, Str " ", c]
 commaEngPandoc str [a,b]  = [a,Str " ",str, Str " ", b]

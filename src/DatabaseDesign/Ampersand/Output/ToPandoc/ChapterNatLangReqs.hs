@@ -285,9 +285,10 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               sctds = map (\rel -> (origin (makeDeclaration rel), relBlock rel))
               relBlock :: Relation -> Counter -> [Block]
               relBlock rel cnt 
-               = purposes2Blocks flags purps
+               = Plain [RawInline "latex" "\\bigskip"] :
+                 purposes2Blocks flags purps
                  ++ 
-                 [DefinitionList [ ( [ Str (case language flags of
+                 [ DefinitionList [ ( [ Str (case language flags of
                                                       Dutch   -> "Eis "
                                                       English -> "Requirement ")
                                      , Str (show(getEisnr cnt))
@@ -302,20 +303,25 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                         (English, 1) -> [Para [Str "A sentence that can be formed is for instance:"]]
                         (Dutch  , _) -> [Para [Str "Zinnen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
                         (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
-                 )++
-                 [ Para $ mkSentence d srcKeyAtom tgtKeyAtom 
-                 | (srcAtom,tgtAtom)<-samplePop
-                 , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) srcAtom 
-                 , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) tgtAtom
-                 ]
+                 ) ++
+                 sampleSentences
                  where purps     = purposes fSpec (language flags) rel
                        d         = makeDeclaration rel
                        samplePop = take 3 (decpopu d)
+                       sampleSentences =
+                         [ Para $ mkSentence d srcKeyAtom tgtKeyAtom 
+                         | (srcAtom,tgtAtom)<-samplePop
+                         , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) srcAtom 
+                         , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) tgtAtom
+                         ] ++
+                         (if null samplePop then [] else [Plain [RawInline "latex" "\\medskip"]])
+                         
               sctrs :: [Rule] -> [(Origin,Counter -> [Block])]
               sctrs = map (\rul -> (origin rul, ruleBlock rul))
               ruleBlock :: Rule -> Counter -> [Block]
               ruleBlock rul cnt 
-               =  purposes2Blocks flags purps
+               =  Plain [RawInline "latex" "\\bigskip"] :
+                  purposes2Blocks flags purps
                   ++
                   [DefinitionList [ ( [Str (case language flags of
                                                                Dutch   -> "Eis"
