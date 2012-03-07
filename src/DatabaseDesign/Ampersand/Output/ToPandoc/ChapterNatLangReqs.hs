@@ -336,13 +336,15 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
      in  case decl of
            Sgn{} | null (prL++prM++prR) 
                       -> [str (upCap srcAtom),Space,Str "(",(str.unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,str tgtAtom,Space,Str "(",(str.unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,str (decnm decl),Str "."]
-                 | null prL
-                      -> [Str "(",(str.name.source) decl, Str ") ",str srcAtom,Space,str prM,Space,Str "(",(str.unCap.name.target) decl, str ") ",str tgtAtom,Space,str prR,Str "."]
                  | otherwise 
-                      -> [str (upCap prL),Space,Str "(r",(str.unCap.name.source) decl, str ") ",str srcAtom,Space,str prM,Space,Str "(",(str.unCap.name.target) decl, str ") ",str tgtAtom]++if null prR then [Str "."] else [Space,str prR,Str "."]
+                      -> leftHalf prL ++ rightHalf
                         where prL = decprL decl
                               prM = decprM decl
                               prR = decprR decl
+                              leftHalf ""    = [Str "(",(str.name.source) decl]
+                              leftHalf prLft = [str (upCap prLft),Space,Str "(",(str.unCap.name.source) decl]
+                              rightHalf = [Str ") ", str srcAtom,Space,str prM,Space,Str "(",(str.unCap.name.target) decl, str ") ",str tgtAtom]++(if null prR then [] else [Space,str prR]) ++ [Str "."]
+
            Isn{}     -> [Str "(",(str.name.source) decl, Str ") ",str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
            Iscompl{} -> [Str "(",(str.name.source) decl, Str ") ",str (upCap srcAtom),Space,Str "differs",Space,Str "from",Space,str tgtAtom,Str "."]
            Vs{}      -> [Str "True"]
