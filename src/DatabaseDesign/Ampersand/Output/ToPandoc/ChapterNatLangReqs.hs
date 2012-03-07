@@ -356,6 +356,7 @@ showKeyAtom fSpec mRel cncpt atom =
   case mapMaybe (getKey fSpec) (cncpt : getGeneralizations fSpec cncpt) of
     []    -> atom
     key:_ -> if fmap ERel mRel `elem` justKeyRels then atom else concatMap showKeySegment $ kdats key 
+             -- if we are showing one of the key relations, don't expand the key
      where showKeySegment (KeyText str) = str
            showKeySegment (KeyHtml str) = str
            showKeySegment (KeyExp objDef) = 
