@@ -191,7 +191,10 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                             ]
               
               -- sort the requirements by file position
-              reqs = sort' fst [((filenm org, linenr org,colnr org), bs) | (org,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs concs2print]
+              reqs = sort' fst [ ((i,filenm org, linenr org,colnr org), bs) 
+                               | (i,org,bs)<-addIndex 2 (sctds rels2print) ++ addIndex 3 (sctrs rules2print) ++ addIndex 0 (sctcs concs2print)]
+               where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
+              
               -- make blocks for requirements
               reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
               reqdefs = concatMap snd reqblocks
