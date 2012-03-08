@@ -186,13 +186,12 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                    )
            where
               -- the concepts for which one of the relations of this theme contains a source or target definition
-              relConcepts = [ (c,def)
+              relConcepts = [ (if isSrc srcOrTgt then source r else target r,def)
                             | r@Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef srcOrTgt def)}} <- rels2print 
-                            , if isSrc srcOrTgt then source r else target r
                             ]
               
               -- sort the requirements by file position
-              reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs concs2print]
+              reqs = sort' fst [((filenm org, linenr org,colnr org), bs) | (org,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs concs2print]
               -- make blocks for requirements
               reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
               reqdefs = concatMap snd reqblocks
@@ -223,9 +222,10 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
 
               sctcsIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String)] -> [Block]
               sctcsIntro [] [] = []
-              sctcsIntro ccds relConcepts
+              sctcsIntro ccds relConcpts
                 = case language opts of
-                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | (c,_)<-ccds], length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
+                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | c<-map fst ccds ++ map fst relConcpts]
+                                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
@@ -246,7 +246,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                                    (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
-                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-ccds], length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
+                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |c<-map fst ccds ++ map fst relConcpts]
+                                                       , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "At this point, the definitions of "]++
