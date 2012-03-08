@@ -12,6 +12,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
+import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
@@ -19,12 +20,13 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 fatal :: Int -> String -> a
 fatal = fatalMsg "ChapterNatLangReqs.hs"
 
+
 chpNatLangReqs :: Int -> Fspc -> Options ->  [Block]
-chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else []
+chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs opts then legalRefs else []
   where
   header :: [Block]
   header = labeledHeader lev (xLabel FunctionalRequirements)
-                                         (case language flags of
+                                         (case language opts of
                                              Dutch   ->  "Gemeenschappelijke taal"   
                                              English ->  "Shared Language"
                                          )
@@ -48,7 +50,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                getArtikelen ref = reverse . dropWhile (`elem` " ,") .dropWhile (/=' ') . reverse $ ref 
                -- the article is everything but the law (and we also drop any trailing commas)
                (sectionTitle, lawHeader, articleHeader, separator) = 
-                 case language flags of
+                 case language opts of
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "en")
                    English -> ("Reference table", "Law", "Article", "and")
                
@@ -82,7 +84,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
 
   dpIntro :: [Block]
   dpIntro = 
-    case language flags of
+    case language opts of
         Dutch   -> [ Para
                      [ Str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
                      , Quoted  SingleQuote [Str (name fSpec)]
@@ -111,8 +113,9 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
   dpRequirements = theBlocks
     where
       (theBlocks,_) = if null (themes fSpec)
-                      then aThemeAtATime toBeProcessedStuff (patterns fSpec) newCounter
-                      else aThemeAtATime toBeProcessedStuff [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] newCounter
+                      then aThemeAtATime toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
+                      else aThemeAtATime toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
+                                                                         [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
       toBeProcessedStuff = ( conceptsWith
                            , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
@@ -121,28 +124,28 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
            conceptsWith     -- All concepts that have at least one definition or one userdefined purpose. 
               = [(c, pps)
                 | c <-concs fSpec
-                , let pps = [p | p <- purposes fSpec (language flags) c, explUserdefd p]
+                , let pps = [p | p <- purposes fSpec (language opts) c, explUserdefd p]
                 , not (null (cptdf c)) || not (null pps)]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
               = [ rel | d@Sgn{decusr=True} <- declarations fSpec
                 , let rel = makeRelation d
-                , not . null $ purposes fSpec (language flags) rel
+                , not . null $ purposes fSpec (language opts) rel
                 ]
                  
       aThemeAtATime :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
                        , [Relation]                                 -- all relations to be processed into this section and the sections to come
                        , [Rule])                                    -- all rules to be processed into this section and the sections to come
-                    -> [Pattern]         -- the patterns that must be processed into this specification
                     -> Counter           -- unique definition counters
+                    -> [Theme]         -- the patterns that must be processed into this specification
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
-      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) pats iPre
+      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre pats 
            = case pats of
               []  -> printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (x:xs) = pats
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) thisThemeStuff iPre
-           (blocksOfThemes,iPost)        = aThemeAtATime stuff2PrintLater xs iPostFirst
+           (blocksOfThemes,iPost)        = aThemeAtATime stuff2PrintLater iPostFirst xs
            thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name x ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
@@ -169,14 +172,14 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
       -- | printOneTheme tells the story in natural language of a single theme.
       -- For this purpose, Ampersand authors should take care in composing explanations.
       -- Each explanation should state the purpose (and nothing else).
-      printOneTheme :: Maybe Pattern -- name of the theme to process (if any)
+      printOneTheme :: Maybe Theme -- name of the theme to process (if any)
                     -> ( [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
                        , [Relation]          -- Relations to print in this section
                        , [Rule])             -- Rules to print in this section
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
-      printOneTheme mPat (concs2print, rels2print, rules2print) counter0
-              = case (mPat, themes fSpec) of
+      printOneTheme mTheme (concs2print, rels2print, rules2print) counter0
+              = case (mTheme, themes fSpec) of
                  (Nothing, _:_) -> ( [], counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
                  _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ reqdefs
                                    , Counter (getEisnr counter0 + length reqs)
@@ -188,11 +191,13 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               reqblocks = [(pos,req (Counter cnt)) | (cnt,(pos,req))<-zip [(getEisnr counter0)..] reqs]
               reqdefs = concatMap snd reqblocks
 
-              themeName = case mPat of
+              themeName = case mTheme of
                            Nothing  -> ""
                            Just pat -> name pat
+                           --Just (PatternTheme pat) -> "Pattern "++name pat
+                           --Just (ProcessTheme prc) -> "Process "++name prc
               header' :: [Block]
-              header'  = [Header 1 [Str (case (mPat,language flags) of
+              header'  = [Header 1 [Str (case (mTheme,language opts) of
                                               (Nothing, Dutch  ) -> "Losse eindjes..."
                                               (Nothing, English) -> "Loose ends..."
                                               _                  -> themeName
@@ -200,21 +205,21 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                          ]         ]
               explainsPat :: [Block]
               explainsPat
-               = case mPat of
+               = case mTheme of
                          Nothing  -> [Para 
-                                      (case language flags of
+                                      (case language opts of
                                         Dutch   -> [Str "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."]
                                         English -> [Str "This paragraph shows remaining fact types and concepts "
                                                    ,Str "that have not been described in previous paragraphs."]
                                       )]
-                         Just pat -> purposes2Blocks flags purps
-                                     where purps = purposes fSpec (language flags) pat
+                         Just pat -> purposes2Blocks opts purps
+                                     where purps = purposes fSpec (language opts) pat
 
               sctcsIntro :: [(A_Concept, [Purpose])] -> [Block]
               sctcsIntro [] = []
               sctcsIntro ccds 
-                = case language flags of
-                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | (c,_)<-ccds], length [p |p <- vpatterns fSpec , name p == themeName]) of
+                = case language opts of
+                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | (c,_)<-ccds], length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "Nu volgen definities van de concepten "]++
@@ -231,11 +236,11 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "Eén daarvan, "++name c++", heeft meerdere definities. " ]
                                                    (_          , False) -> [ Str "Daarvan hebben "]++commaNLPandoc (Str "en") (map (Str . name . fst3) cs)++[Str " meerdere definities. "]
-                                                   ([(_,cds,_)], True ) -> [ Str $ "Deze heeft "++count flags (length cds) "definitie"++". " ]
+                                                   ([(_,cds,_)], True ) -> [ Str $ "Deze heeft "++count opts (length cds) "definitie"++". " ]
                                                    (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
-                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-ccds], length [p |p <- vpatterns fSpec , name p == themeName]) of
+                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |(c,_)<-ccds], length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
                                                        (cs ,1) -> [ Str "At this point, the definitions of "]++
@@ -252,7 +257,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                                                    ([]         ,   _  ) -> []
                                                    ([(c,_,_)]  , False) -> [ Str $ "One of these concepts, "++name c++", has multiple definitions. " ]
                                                    (_          , False) -> [ Str "Of those concepts "]++commaEngPandoc (Str "and") (map (Str . name . fst3) cs)++[Str " have multiple definitions. "]
-                                                   ([(_,cds,_)], True ) -> [ Str $ "It has "++count flags (length cds) "definition"++". " ]
+                                                   ([(_,cds,_)], True ) -> [ Str $ "It has "++count opts (length cds) "definition"++". " ]
                                                    (_          , True ) -> [ Str "Each one has several definitions. "]
                                                  )
                                           ]
@@ -273,12 +278,12 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               -- | make a block for a concept definition
               cdBlock :: ((Counter,String),(String,ConceptDef)) -> Block
               cdBlock ((cnt,xcnt),(cdnm,cd)) = DefinitionList 
-                                        [( [ Str (case language flags of
+                                        [( [ Str (case language opts of
                                                                  Dutch   -> "Definitie "
                                                                  English -> "Definition ")
                                            , Str (show (getEisnr cnt)++xcnt)
                                            , Str ":"]
-                                         , [ makeDefinition flags (getEisnr cnt,cdnm,cd) ])]
+                                         , [ makeDefinition opts (getEisnr cnt,cdnm,cd) ])]
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               sctds :: [Relation] -> [(Origin, Counter -> [Block])]
@@ -286,18 +291,18 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               relBlock :: Relation -> Counter -> [Block]
               relBlock rel cnt 
                = Plain [RawInline "latex" "\\bigskip"] :
-                 purposes2Blocks flags purps
+                 purposes2Blocks opts purps
                  ++ 
-                 [ DefinitionList [ ( [ Str (case language flags of
+                 [ DefinitionList [ ( [ Str (case language opts of
                                                       Dutch   -> "Eis "
                                                       English -> "Requirement ")
                                      , Str (show(getEisnr cnt))
                                      , Str ":"]
                                    , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
-                                       meaning2Blocks (language flags) (makeDeclaration rel)
+                                       meaning2Blocks (language opts) (makeDeclaration rel)
                                      ]
                                    )] ]++
-                 ( case (language flags, length samplePop) of
+                 ( case (language opts, length samplePop) of
                         (_      , 0) -> []
                         (Dutch  , 1) -> [Para [Str "Een zin die hiermee gemaakt kan worden is bijvoorbeeld:"]]
                         (English, 1) -> [Para [Str "A sentence that can be formed is for instance:"]]
@@ -305,7 +310,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                         (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
                  ) ++
                  sampleSentences
-                 where purps     = purposes fSpec (language flags) rel
+                 where purps     = purposes fSpec (language opts) rel
                        d         = makeDeclaration rel
                        samplePop = take 3 (decpopu d)
                        sampleSentences =
@@ -321,24 +326,24 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
               ruleBlock :: Rule -> Counter -> [Block]
               ruleBlock rul cnt 
                =  Plain [RawInline "latex" "\\bigskip"] :
-                  purposes2Blocks flags purps
+                  purposes2Blocks opts purps
                   ++
-                  [DefinitionList [ ( [Str (case language flags of
+                  [DefinitionList [ ( [Str (case language opts of
                                                                Dutch   -> "Eis"
                                                                English -> "Requirement")
                                                        ,Space
                                                        ,Str (show(getEisnr cnt))
                                                        ,if name rul=="" then Str ":" else Str (" ("++name rul++"):")]
                                                      , [ Plain [RawInline "latex" $ symReqLabel rul] :
-                                                         meaning2Blocks (language flags) rul
+                                                         meaning2Blocks (language opts) rul
                                                       ]
                                                      )
-                                                   ] | not (null$meaning2Blocks (language flags) rul)]
-                                 where purps = purposes fSpec (language flags) rul
+                                                   ] | not (null$meaning2Blocks (language opts) rul)]
+                                 where purps = purposes fSpec (language opts) rul
                       
   mkSentence :: Declaration -> String -> String -> [Inline]
   mkSentence decl srcAtom tgtAtom
-   = let str = if fspecFormat flags==FLatex then RawInline "latex" . latexEscShw else Str 
+   = let str = if fspecFormat opts==FLatex then RawInline "latex" . latexEscShw else Str 
      in  case decl of
            Sgn{} | null (prL++prM++prR) 
                       -> [str (upCap srcAtom),Space,Str "(",(str.unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,str tgtAtom,Space,Str "(",(str.unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,str (decnm decl),Str "."]

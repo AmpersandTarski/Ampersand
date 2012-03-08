@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
+ , Theme(..)
  , Process(..)
  , Pattern(..)
  , PairView(..)
@@ -84,7 +85,16 @@ instance Identified A_Context where
   name  = ctxnm 
 
 
+data Theme = PatternTheme Pattern | ProcessTheme Process
 
+instance Identified Theme where
+  name (PatternTheme pat) = name pat
+  name (ProcessTheme prc) = name prc
+  
+instance Traced Theme where
+  origin (PatternTheme pat) = origin pat
+  origin (ProcessTheme prc) = origin prc
+  
 data Process = Proc { prcNm    :: String
                     , prcPos   :: Origin
                     , prcEnd   :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
