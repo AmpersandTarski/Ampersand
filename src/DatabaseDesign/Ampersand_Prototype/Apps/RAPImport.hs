@@ -5,7 +5,9 @@
 module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (makeRAPPops)
 where
 import Data.List
+import Data.HashTable (hashString)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
+import System.FilePath        (takeFileName,dropFileName)
 
 --(relation name, source name, target name)
 type RAPRelation = (String,String,String)
@@ -15,244 +17,130 @@ class RAPImportable a where
 instance RAPImportable a => RAPImportable [a] where
  rappops xs = concat (map rappops xs)
 
-makepopu :: RAPRelation -> [(String,String)] -> P_Population
+makepopu :: RAPRelation -> [(ConceptIdentifier,ConceptIdentifier)] -> P_Population
 makepopu (r,src,trg) xys
  = P_Popu{ p_popm  = P_Rel r (Origin "RAPImport.hs")
          , p_type  = P_Sign [PCpt src, PCpt trg]
-         , p_popps = [mkPair (trim x) (trim y) |(x,y)<-xys, not(null x), not(null y) ]
+         , p_popps = [mkPair (trim x) (trim y) |(CID x,CID y)<-xys, not(null x), not(null y) ]
          }
 ----------------------------------------------------------------------------------
---comments on and additional functions for string identifiers for Atlas concepts--
+--these data types would force the developer to use the concept identifier and identifier namespace functions if they were abstract
+--now they help to remind the developer to use concept identifier and identifier namespace functions instead of functions like name or show
+data ConceptIdentifier = CID String
+getid (CID x) = x
+data IdentifierNamespace = CNS String
+
+--concept identifier functions (concepts of RAP)
+--there are no explicit concept identifier functions for the identifier of an atom x of a RAP concept on the outside of the conceptual model
+-- e.g. Blob, String, Varid. Just code (CID x)
+fsid fs = CID $ name fs
+cptid c = CID $ name c
+patid p = CID $ name p
+ruleid r = CID $ name r
+genid g = CID $ "(" ++ getid(cptid (source g)) ++ "," ++ getid(cptid (target g)) ++ ")"
+sgnid sgn = CID $ getid(cptid (source sgn)) ++ "*" ++ getid(cptid (target sgn))
+decid d = CID $ name d ++ "::" ++ getid(cptid (source d)) ++ "*" ++ getid(cptid (target d))
+relid nm sgn = CID $ nm ++ "[" ++ getid(cptid (source sgn)) ++ "*" ++ getid(cptid (target sgn)) ++ "]"
+expridid (CNS ns,expr) = CID $ ns ++ "#" ++ show expr
+atomidid x c  = CID $ show$hashString (x ++ "[" ++ getid(cptid c) ++ "]") --limit of data length in database is 256
+pairid (x,y) sgn = CID $ show$hashString (x  ++ "*" ++ y ++ "[" ++ getid(sgnid sgn) ++ "]") --limit of data length in database is 256
+pairidid (x,y) (CNS ns,r) = CID $ ns ++ "#" ++ getid(pairid (x,y) (sign r))
+imageid pic = CID$"Image_" ++ uniqueName pic
+fileid fn = CID fn
+usrid usr = CID usr
+gid g fn = CID (getid g++fn)
+
+--identifier namespace functions (namespaces for concept identifiers with a different namespace than CONTEXT)
+rulens r = CNS $ "Rule_" ++ getid(ruleid r)
+decns d  = CNS $ "Declaration_" ++ getid(decid d)
 ----------------------------------------------------------------------------------
---The string identifier of (Identified a) is (name a)
---EXAMPLES -> Concept,Rule,RelVar
---EXCEPTION -> Relation, Declaration (see relationid,declarationid)
---
---the string identifier of Paire x is (show x) (fst and snd of Paire are string identifiers of Atom elements)
---
---use #> to qualify an element::String of identified a
---in order to use the qualified element as an identifier
---EXAMPLES: Atom, Violation
---
---an element::String that does not need qualification is used as string identifier
---EXAMPLES: UAtom, Pragma1/2/3
---
---the identifier of Expression e is (show e)
---
---explainContent2String is used for Explanation,Purpose::[Block]
---
-(#>) :: (Identified a) => a -> String -> String
-(#>) a x = name a ++ "#" ++ x
---TODO -> generated ISA and isa relations have to be filtered from (declarations a).
-declarationid :: Declaration -> String
-declarationid x = name x ++ "::" ++ name(source x) ++ "*" ++ name(target x)
-relationid :: Relation -> String
-relationid x = name x ++ "::" ++ name(source x) ++ "*" ++ name(target x)
-----------------------------------------------------------------------------------
-{-
-ctxnm  ::Context->Conid [INJ]
-ctxpats::Context*Pattern
-ctxcs  ::Context*Concept
--}
-makeRAPPops :: Fspc -> [String] -> [Picture] -> [P_Population]
-makeRAPPops fs usrfiles pics
-   = makepopu ("ctxnm","Context","Conid") [(name fs, name fs)]
-    :makepopu ("ctxpats","Context","Pattern") [(name fs, name p) | p<-patterns fs]
-    :makepopu ("ctxcs","Context","Concept") [(name fs, name c) | c<-concs fs] 
-    :rappops pics
---     ++ rappops (concs fs) --the content of concepts 
---     ++ rappops (vConceptDefs fs) --the explanations of concepts
---     ++ rappops (declarations fs) --the property rules + content of relations
---     ++ rappops (rules fs) --the rules
---     ++ rappops (gens fs) --the details of gens
---     ++ rappops (patterns fs) --the rules + relations + gens of patterns
---     ++ rappops (explanations fs) --the purposes
+
+
+makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
+makeRAPPops fs opts usrfiles pics
+ = let usr = namespace opts
+       operations = [(CID "1",CID "laden")] -- ,(CID "2",CID ""),(CID "3",CID ""),(CID "4",CID ""),(CID "5",CID "")]
+   in
+     makepopu ("sourcefile","Context","File") [(fsid fs, fileid (takeFileName(importfile opts)))]
+    :makepopu ("filename","File","FileName") [(fileid fn, CID fn) | fn<-usrfiles]
+    :makepopu ("filepath","File","FilePath") [(fileid fn, CID(dropFileName (importfile opts))) | fn<-usrfiles]
+    :makepopu ("loaded","File","File") [(fileid (takeFileName(importfile opts)), fileid (takeFileName(importfile opts)))]
+    :makepopu ("uploaded","User","File") [(usrid usr, fileid fn) | fn<-usrfiles]
+    :makepopu ("applyto","G","File") [(gid op fn, fileid fn) | (op,_)<-operations, fn<-usrfiles]
+    :makepopu ("functionname","G","String") [(gid op fn, nm) | (op,nm)<-operations, fn<-usrfiles]
+    :makepopu ("operation","G","Int") [(gid op fn, op) | (op,_)<-operations, fn<-usrfiles]
+    :makepopu ("newfile","User","NewFile") [(usrid usr, CID "empty.adl")]
+    :makepopu ("countrules","Context","Int") [(fsid fs, CID (show (length (rules fs))))]
+    :makepopu ("countdecls","Context","Int") [(fsid fs, CID (show (length userdeclarations)))]
+    :makepopu ("countcpts","Context","Int") [(fsid fs, CID (show (length (concs fs))))]
+    :makepopu ("ctxnm","Context","Conid") [(fsid fs, CID (name fs))]
+    :makepopu ("ctxcs","Context","Concept") [(fsid fs, cptid c)       | c<-concs fs] 
+    :makepopu ("cptnm","Concept","Conid")   [(cptid c, CID (name c))  | c<-concs fs]
+    :makepopu ("cptos","Concept","AtomID")  [(cptid c, atomidid x c)  | c<-concs fs, x<-cptos c]
+    :makepopu ("atomvalue","AtomID","Atom") [(atomidid x c, CID x)    | c<-concs fs, x<-cptos c]
+    :makepopu ("cptpurpose","Concept","Blob") [(cptid c, CID (aMarkup2String (explMarkup ex))) | c<-concs fs, ex<-explanations fs, explForObj c (explObj ex)]
+    :makepopu ("cptdf","Concept","Blob")    [(cptid c, CID(cddef cd)) | c<-concs fs, cd<-cptdf c]
+    :makepopu ("gengen","Gen","Concept") [(genid g, cptid (target g)) | g<-gens fs]
+    :makepopu ("genspc","Gen","Concept") [(genid g, cptid (source g)) | g<-gens fs]
+    :makepopu ("ctxpats","Context","Pattern") [(fsid fs, patid p)      | p<-patterns fs]
+    :makepopu ("ptnm","Pattern","Conid")      [(patid p, CID (name p)) | p<-patterns fs]
+    :makepopu ("ptrls","Pattern","Rule")      [(patid p, ruleid r)     | p<-patterns fs, r<-rules p]
+    :makepopu ("ptgns","Pattern","Gen")       [(patid p, genid g)      | p<-patterns fs, g<-gens p]
+    :makepopu ("ptdcs","Pattern","Declaration") [(patid p, decid d)    | p<-patterns fs, d<-declarations p,decusr d]
+    :makepopu ("ptxps","Pattern","Blob") [(patid p, CID (aMarkup2String (explMarkup ex))) | p<-patterns fs, ex<-explanations fs, explForObj p (explObj ex)]
+    :makepopu ("decnm","Declaration","Varid") [(decid d, CID(name d))                   | d<-userdeclarations]
+    :makepopu ("decsgn","Declaration","Sign") [(decid d, sgnid (sign d))                | d<-userdeclarations]
+    :makepopu ("decprps","Declaration","PropertyRule") [(decid d, ruleid r) | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp userdeclarations p d]
+    :makepopu ("declaredthrough","PropertyRule","Property") [(ruleid r, CID(show p)) | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp userdeclarations p d]
+    :makepopu ("decprL","Declaration","String") [(decid d, CID(decprL d))              | d<-userdeclarations]
+    :makepopu ("decprM","Declaration","String") [(decid d, CID(decprM d))              | d<-userdeclarations]
+    :makepopu ("decprR","Declaration","String") [(decid d, CID(decprR d))              | d<-userdeclarations]
+    :makepopu ("decmean","Declaration","Blob") [(decid d, CID (aMarkup2String rdf))     | d<-userdeclarations, Just rdf <- meaning Dutch d:meaning English d:[]]
+    :makepopu ("decpurpose","Declaration","Blob") [(decid d, CID (aMarkup2String (explMarkup ex))) | d<-userdeclarations, ex<-explanations fs, explForObj d (explObj ex)]
+    :makepopu ("decpopu","Declaration","PairID") [(decid d, pairidid (x,y) (decns d,d)) | d<-userdeclarations, (x,y)<-contents d]
+    :makepopu ("reldcl","Relation","Declaration") [(relid (name d) (sign d), decid d)   | d<-userdeclarations]
+    :makepopu ("relnm","Relation","Varid") [(relid (name d) (sign d), CID(name d))      | d<-userdeclarations]
+    :makepopu ("relsgn","Relation","Sign") [(relid (name d) (sign d), sgnid (sign d))   | d<-userdeclarations]
+    :relsrc                          userdeclarations
+    :reltrg                          userdeclarations
+    :relpairvalue [(decns d, d) | d<-userdeclarations]
+    :relleft                         userdeclarations
+    :relright                        userdeclarations
+    :makepopu ("rrnm","Rule","ADLid") [(ruleid r, CID (name r))                              | r<-raprules]
+    :makepopu ("rrexp","Rule","ExpressionID") [(ruleid r, expridid (rulens r,rrexp r))       | r<-raprules]
+    :makepopu ("rrmean","Rule","Blob") [(ruleid r, CID (aMarkup2String rdf))                 | r<-raprules, Just rdf <- meaning Dutch r:meaning English r:[]]
+    :makepopu ("rrpurpose","Rule","Blob") [(ruleid r, CID (aMarkup2String (explMarkup ex)))  | r<-raprules, ex<-explanations fs, explForObj r (explObj ex)]
+    :makepopu ("exprvalue","ExpressionID","Expression") [(expridid (rulens r,rrexp r), CID (show(rrexp r))) | r<-raprules]
+    :relrels      [(rulens r,rrexp r) | r<-raprules]
+    :relrelnm     (map       rrexp                 (rules fs))
+    :relrelsgn    (map       rrexp                 (rules fs))
+    :relreldcl    (map       rrexp                 (rules fs))
+    :relpairvalue [(rulens r,violationsexpr r) | r<-raprules]
+    :relleft      (map       violationsexpr        (raprules))
+    :relright     (map       violationsexpr        (raprules))
+    :makepopu ("imageurl","Image","URL")   [(imageid pic, CID([if c=='\\' then '/' else c | c<-imgURL pic])) | pic<-pics]
+    :makepopu ("ptpic","Pattern","Image")  [(patid p, imageid pic)         | pic<-pics, pType pic==PTPattern, p<-patterns fs, name p==origName pic]
+    :makepopu ("rrpic","Rule","Image")     [(ruleid r, imageid pic)        | pic<-pics, pType pic==PTRule   , r<-rules fs   , name r==origName pic]
+    :makepopu ("cptpic","Concept","Image") [(cptid c, imageid pic)         | pic<-pics, pType pic==PTConcept, c<-concs fs   , name c==origName pic]
+    :[]
 --     ++ rappops (violations fs) --the violations
-
-{-
-                                                  fnnxt = name fspec ++ "'" -- a name for a not yet existing next version
-                                                  fdir = let d=dropFileName fn in if null d then "." else d
-                                                  usr= namespace opts
-                                                  getr r = if length r==1 then P_Rel {rel_nm = relnm (head r), rel_pos = relpos (head r)} else error "import error: no or multiple declarations for relvar"
-                                                  impctx = [makeRelation d |d<-declarations atlas,name d=="loadcontext"]
-                                                  impfil = [makeRelation d |d<-declarations atlas,name d=="loadedfile"]
-                                                  impupl = [makeRelation d |d<-declarations atlas,name d=="newcontext"]
-                                                  usrfil = [makeRelation d |d<-declarations atlas,name d=="fileof"]
-                                                  --funrld = [makeRelation d |d<-declarations atlas,name d=="reload"]
-                                                  funfsp = [makeRelation d |d<-declarations atlas,name d=="funcspec"]
-                                                  funrep = [makeRelation d |d<-declarations atlas,name d=="report"]
-                                                  funadl = [makeRelation d |d<-declarations atlas,name d=="showadl"]
-                                                  loadcontext r 
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair fn (name fspec),mkPair fnnxt fnnxt]}]
-                                                  loadedfile r
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair usr fn]         } | not (null usr)]
-                                                  -- uploadfile r        = [P_Popu{ p_popm=getr r, p_type=[], p_popps=[mkPair usr "browse"]   } | not (null usr)]
-                                                  --TODO -> the user has more files, how do I get them in this population
-                                                  fileof r myfiles
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair (combine fdir f) usr | f<-myfiles, not (null usr)] }]
-                                                  contextfunction r x
-                                                   = [P_Popu{ p_popm=getr r, p_type=P_Sign [], p_popps=[mkPair (name fspec) x] }]
-
-
-                                                       ++loadcontext impctx
-                                                       ++loadedfile impfil
-                                                       ++contextfunction impupl "new context"
-                                                       ++fileof usrfil myfiles
-                                                       -- ++ contextfunction funrld (name fspec)
-                                                       ++ contextfunction funfsp (takeBaseName fn ++ ".pdf")
-                                                       ++ contextfunction funrep (name fspec)
-                                                       ++ contextfunction funadl fnnxt
-                                                        
- -}
-instance RAPImportable Picture where
- rappops pic
-  = let imageid = "Image_" ++ uniqueName pic
-    in  makepopu ("imageurl","Image","URL") [(imageid, imgURL pic)]
-       :makepopu ("ptpic","Pattern","Image")  [(origName pic, imageid) | pType pic==PTPattern]
-       :makepopu ("rrpic","Rule","Image")     [(origName pic, imageid) | pType pic==PTRule]
-       :makepopu ("cptpic","Concept","Image") [(origName pic, imageid) | pType pic==PTConcept]
-       :[]
-
-{-
-instance RAPImportable A_Concept where
- rappops c 
-   = let cptaof = [makeRelation d |d<-rap_dcs,name d=="atomof"]
-         cptasx = [makeRelation d |d<-rap_dcs,name d=="atomsyntax"]
-     in  (makepopu [(c#>x,c) |c<-cs,x<-atomsOf c] fst cptaof (name.snd))
-        :(makepopu [(c#>x,x) |c<-cs,x<-atomsOf c] fst cptasx snd)
-        :[]
-
-instance RAPImportable ConceptDef where
- rappops cds 
-   = let cptxpl = [setRelats(makeRelation d) |d<-rap_dcs,name d=="describes",name(source d)=="Concept"] 
-     in  (makepopu cds cdcpt cptxpl cddef)
-        :[]
-
-instance RAPImportable Declaration where
- rappops ds' 
-   = let ds = [d |d<-ds',decusr d]
-         dclvar = [makeRelation d |d<-rap_dcs,name d=="rel"]
-         dclsrc = [makeRelation d |d<-rap_dcs,name d=="src"]
-         dcltrg = [makeRelation d |d<-rap_dcs,name d=="trg"]
-         dclpr1 = [makeRelation d |d<-rap_dcs,name d=="pragma1"]
-         dclpr2 = [makeRelation d |d<-rap_dcs,name d=="pragma2"]
-         dclpr3 = [makeRelation d |d<-rap_dcs,name d=="pragma3"]
-         --for every relation::generate all potential property rules
-         --but relate only those that are actual properties of relations
-         dpps = concat (map (dallpotentialproprulesof ds) ds)
-         dps = concat (map (dallproprulesof ds) ds)
-         dclpof = [makeRelation d |d<-rap_dcs,name d=="propertyof"]
-         dclpex = [makeRelation d |d<-rap_dcs,name d=="propexpr"]
-         dclpsc = [makeRelation d |d<-rap_dcs,name d=="source"]
-         dclptg = [makeRelation d |d<-rap_dcs,name d=="target"]
-         dclpus = [makeRelation d |d<-rap_dcs,name d=="uses"]
-         dclprp = [makeRelation d |d<-rap_dcs,name d=="propsyntax"]
-         --for every relation::relate to its content
-         dcs = concat(map dcontentof ds)
-         dprs = [(mkPair (source d#>x) (target d#>y),(x,y)) |d<-ds,(x,y)<-contents d]
-         dclcnt = [makeRelation d |d<-rap_dcs,name d=="content"]
-         dcldom = [makeRelation d |d<-rap_dcs,name d=="left"]
-         dclrng = [makeRelation d |d<-rap_dcs,name d=="right"]
-         dclupr = [makeRelation d |d<-rap_dcs,name d=="pairsyntax"]
-         --description
-         dcldcr = [setRelats(makeRelation d) |d<-rap_dcs,name d=="describes",name(source d)=="Relation"]
-     in  (makepopu ds declarationid dclvar name)
-        :(makepopu ds declarationid dclsrc (name.source))
-        :(makepopu ds declarationid dcltrg (name.target))
-        :(makepopu ds declarationid dclpr1 (dpragma 1))
-        :(makepopu ds declarationid dclpr2 (dpragma 2))
-        :(makepopu ds declarationid dclpr3 (dpragma 3))
-        --properties
-        :(makepopu dps (name.snd) dclpof (declarationid.fst.fst))
-        :(makepopu dpps (name.snd) dclpex (showADL.rrexp.snd))
-        :(makepopu dpps (showADL.snd) dclpsc (name.source.snd))
-        :(makepopu dpps (showADL.snd) dclptg (name.target.snd))
-        :(makepopu dpps (showADL.snd) dclpus (declarationid.fst.fst))
-        :(makepopu dpps (name.snd) dclprp (show.snd.fst))
-        --content
-        :(makepopu dcs (declarationid.fst) dclcnt (show.snd))
-        :(makepopu dcs (show.snd) dcldom (fst.snd))
-        :(makepopu dcs (show.snd) dclrng (snd.snd))
-        :(makepopu dprs (show.fst) dclupr (show.snd))
-        --description
-        :(makepopu ds declarationid dcldcr (\x -> maybe "" aMarkup2String (meaning Dutch x)))
-        :[]
-dpragma :: Integer -> Declaration -> String
-dpragma i (Sgn{decprL=x1,decprM=x2,decprR=x3})
-   | i==1 = x1 
-   | i==2 = x2
-   | i==3 = x3
-   | otherwise = ""
-dpragma _ _ = ""
-dallpotentialproprulesof :: [Declaration] -> Declaration -> [((Declaration,Prop),Rule)]
-dallpotentialproprulesof ds d = [((d,p),rulefromProp ds p d) |p<-allprops,not(elem p endoprops) || source d==target d]
-dallproprulesof :: [Declaration] -> Declaration -> [((Declaration,Prop),Rule)]
-dallproprulesof ds d = [((d,p),rulefromProp ds p d) |p<-multiplicities d]
-dcontentof :: (Populated a,Association a) => a -> [(a,Paire)]
-dcontentof d = [(d,mkPair (source d#>x) (target d#>y)) |(x,y)<-contents d]
-
-instance RAPImportable Rule where
- rappops rs 
-   = let rulexp = [makeRelation d |d<-rap_dcs,name d=="ruleexpr"] 
-         rulsrc = [makeRelation d |d<-rap_dcs,name d=="source"]
-         rultrg = [makeRelation d |d<-rap_dcs,name d=="target"]
-         ruluss = [makeRelation d |d<-rap_dcs,name d=="uses"]
-         ruldcr = [setRelats(makeRelation d) |d<-rap_dcs,name d=="describes",name(source d)=="UserRule"]  
-     in  (makepopu rs name rulexp (showADL.rrexp))
-        :(makepopu rs (showADL.rrexp) rulsrc (name.source))
-        :(makepopu rs (showADL.rrexp) rultrg (name.target))
-        :(makepopu [(rul,rel) |rul<-rs,rel@(Rel{})<-mors rul] (showADL.rrexp.fst) ruluss (relationid.snd))
-        :(makepopu rs name ruldcr (\x -> maybe "" aMarkup2String (meaning Dutch x)))
-        :[]
-
-instance RAPImportable Pattern where
- rappops ps 
-   = let patrel = [makeRelation d |d<-rap_dcs,name d=="relpattern"] 
-         patrul = [makeRelation d |d<-rap_dcs,name d=="rulpattern"] 
-         patgen = [makeRelation d |d<-rap_dcs,name d=="isapattern"] 
-         isaspc = [makeRelation d |d<-rap_dcs,name d=="spec"] 
-         isagen = [makeRelation d |d<-rap_dcs,name d=="gen"] 
-     in  (makepopu [(d,p) |p<-ps,d<-declarations p,decusr d] (declarationid.fst) patrel (name.snd))
-        :(makepopu [(r,p) |p<-ps,r<-rules p]        (name.fst) patrul (name.snd))
-        :(makepopu [(g,p) |p<-ps,g<-gens p]         (show.fst) patgen (name.snd))
-        :(makepopu [g     |p<-ps,g<-gens p]         show       isaspc (name.source))
-        :(makepopu [g     |p<-ps,g<-gens p]         show       isagen (name.target))
-        :[]
-
---instance RAPImportable (RuleRelation,Paire) where
---  rappops viols =[]
-
-instance RAPImportable (Rule,Paire) where
- rappops viols 
-   = let rulvio = [makeRelation d |d<-rap_dcs,name d=="violates"]
-         violpr = [makeRelation d |d<-rap_dcs,name d=="violationpair"]
-         viodom = [makeRelation d |d<-rap_dcs,name d=="left"]
-         viorng = [makeRelation d |d<-rap_dcs,name d=="right"]
-         vioupr = [makeRelation d |d<-rap_dcs,name d=="pairsyntax"]
-     in  (makepopu viols violationid rulvio (showADL.rrexp.fst))
-        :(makepopu viols violationid violpr violationpair)
-        :(makepopu viols violationpair viodom (\(r,(x,_))->source r#>x))
-        :(makepopu viols violationpair viorng (\(r,(_,y))->target r#>y))
-        :(makepopu viols violationpair vioupr (show.snd))
-        :[]
-violationid :: (Rule,Paire) -> String
-violationid (r,p) = r #> show p 
-violationpair :: (Rule,Paire) -> String
-violationpair (r,(x,y)) = show(mkPair (source r#>x) (target r#>y))
-
-instance RAPImportable Purpose where
- rappops es 
-   = let purcpt = [setRelats(makeRelation d) |d<-rap_dcs,name d=="purpose",name(source d)=="Concept"] 
-         purrul = [setRelats(makeRelation d) |d<-rap_dcs,name d=="purpose",name(source d)=="UserRule"]  
-         purpat = [setRelats(makeRelation d) |d<-rap_dcs,name d=="purpose",name(source d)=="Pattern"] 
-         purrel = [setRelats(makeRelation d) |d<-rap_dcs,name d=="purpose",name(source d)=="Relation"]  
-     in  (makepopu [((amPandoc . explMarkup) e,cdcpt cd) |e<-es, case explObj e of (ExplConceptDef _)->True;_ -> False,let ExplConceptDef cd = explObj e]
-                  snd purcpt ((blocks2String ReST False).fst))
-        :(makepopu [((amPandoc . explMarkup) e,r) |e<-es, case explObj e of (ExplRule _)->True;_ -> False,let ExplRule r = explObj e]
-                  (name.snd) purrul ((blocks2String ReST False).fst))
-        :(makepopu [((amPandoc . explMarkup) e,pstr) |e<-es, case explObj e of (ExplPattern _)->True;_ -> False,let ExplPattern pstr = explObj e]
-                  snd purpat ((blocks2String ReST False).fst))
-        :(makepopu [((amPandoc . explMarkup) e,d) |e<-es, case explObj e of (ExplDeclaration _)->True;_ -> False,let ExplDeclaration d = explObj e]
-                  (declarationid.snd) purrel ((blocks2String ReST False).fst))
-        :[]
--}
+   where 
+   --SPEC PropertyRule ISA Rule
+   raprules = rules fs ++ [rulefromProp userdeclarations p d | d<-userdeclarations, p<-multiplicities d]
+   userdeclarations = filter decusr (declarations fs)
+   relsrc,reltrg :: Association r => [r] -> P_Population
+   relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
+   reltrg rs = makepopu ("trg","Sign","Concept")      [(sgnid (sign r), cptid (target r)) | r<-rs]
+   relpairvalue :: (Populated r,Association r) => [(IdentifierNamespace,r)] -> P_Population
+   relpairvalue rs = makepopu ("pairvalue","PairID","Pair")      [(pairidid (x,y) (ns,r), pairid (x,y) (sign r)) | (ns,r)<-rs, (x,y)<-contents r]
+   --populate relleft and relright for populated and typed data structures
+   relleft,relright :: (Populated r,Association r) => [r] -> P_Population
+   relleft rs = makepopu ("left","Pair","AtomID")      [(pairid (x,y) (sign r), atomidid x (source r)) | r<-rs, (x,y)<-contents r]
+   relright rs = makepopu ("right","Pair","AtomID")    [(pairid (x,y) (sign r), atomidid y (target r)) | r<-rs, (x,y)<-contents r]
+   --populate relrels, relrelnm, relreldcl and relrelsgn for expressions
+   relrels :: [(IdentifierNamespace, Expression)] -> P_Population
+   relrels exprs = makepopu ("rels","ExpressionID","Relation") [(expridid (ns,expr), relid nm sgn) | (ns,expr)<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]
+   relrelnm, relreldcl, relrelsgn :: [Expression] -> P_Population
+   relrelnm exprs = makepopu ("relnm","Relation","Varid") [(relid nm sgn, CID nm) | expr<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]
+   relrelsgn exprs = makepopu ("relsgn","Relation","Sign") [(relid nm sgn, sgnid sgn) | expr<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]
+   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm sgn, decid d) | expr<-exprs, Rel{relnm=nm,relsgn=sgn,reldcl=d}<-mors expr]

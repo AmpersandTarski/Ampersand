@@ -51,7 +51,7 @@ main
                                                  sequence_ [writePicture opts pict | pict <- pics]
                                                  verbose opts "Getting files of user... "
                                                  myfiles <- liftM (filter (`notElem` [".", ".."])) (getDirectoryContents fdir)
-                                                 return (makeRAPPops fspec myfiles pics)
+                                                 return (makeRAPPops fspec opts myfiles pics)
                                          else error (show (snd(typeCheck (thepCtx cx) [])))
         verboseLn opts "Type checking..."
         return (typeCheck (thepCtx ePCtxErr) pPops)
