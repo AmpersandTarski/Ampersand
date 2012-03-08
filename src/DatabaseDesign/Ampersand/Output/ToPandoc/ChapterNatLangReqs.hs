@@ -186,13 +186,14 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                    )
            where
               -- the concepts for which one of the relations of this theme contains a source or target definition
-              relConcepts = [ (if isSrc srcOrTgt then source r else target r,def)
+              -- (these will be printed, regardless whether the concept was printed before)
+              relConcepts = [ (if isSrc srcOrTgt then source r else target r,def, origin r)
                             | r@Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef srcOrTgt def)}} <- rels2print 
                             ]
               
               -- sort the requirements by file position
               reqs = sort' fst [ ((i,filenm org, linenr org,colnr org), bs) 
-                               | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ 
+                               | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ addIndex 2 (printRelConcepts relConcepts) ++ 
                                               addIndex 2 (printRels rels2print) ++ addIndex 3 (printRules rules2print)]
                where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
               
@@ -224,11 +225,11 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                          Just pat -> purposes2Blocks opts purps
                                      where purps = purposes fSpec (language opts) pat
 
-              printIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String)] -> [Block]
+              printIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String, Origin)] -> [Block]
               printIntro [] [] = []
               printIntro ccds relConcpts
                 = case language opts of
-                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | c<-map fst ccds ++ map fst relConcpts]
+                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | c<-map fst ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
@@ -250,7 +251,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                                    (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
-                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |c<-map fst ccds ++ map fst relConcpts]
+                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |c<-map fst ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
@@ -282,19 +283,26 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
               -- | make a block for a c with all its purposes and definitions
               cptBlock :: (A_Concept, [Purpose]) -> Counter -> [Block]
               cptBlock (c,exps) cnt = concat [amPandoc (explMarkup e) | e<-exps] 
-                  ++ zipWith (curry cdBlock)
+                  ++ zipWith cdBlock
                        (if length (uniquecds c) == 1 then [(cnt, "")] else
                           [(cnt, '.' : show i) | i <- [(1 :: Int) ..]])
-                       (uniquecds c)
+                       [ (nm, symDefLabel cd, cddef cd, cdref cd) | (nm, cd) <- uniquecds c ]
               -- | make a block for a concept definition
-              cdBlock :: ((Counter,String),(String,ConceptDef)) -> Block
-              cdBlock ((cnt,xcnt),(cdnm,cd)) = DefinitionList 
+              cdBlock :: (Counter,String) -> (String,String,String,String) -> Block
+              cdBlock (cnt,xcnt) (nm,lbl,def,ref) = DefinitionList 
                                         [( [ Str (case language opts of
                                                                  Dutch   -> "Definitie "
                                                                  English -> "Definition ")
                                            , Str (show (getEisnr cnt)++xcnt)
                                            , Str ":"]
-                                         , [ makeDefinition opts (getEisnr cnt,cdnm,cd) ])]
+                                         , [ makeDefinition opts (getEisnr cnt)  nm lbl def ref ])]
+
+              printRelConcepts :: [(A_Concept, String, Origin)] -> [(Origin, Counter -> [Block])]
+              printRelConcepts relConcpts = map printRelConcept relConcpts
+              
+              printRelConcept (cncpt, def, org) = 
+                ( org, \cnt -> [cdBlock (cnt,"") (name cncpt, symDefLabel cncpt, def, "")]
+                )
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
               printRels :: [Relation] -> [(Origin, Counter -> [Block])]
