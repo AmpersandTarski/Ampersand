@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module DatabaseDesign.Ampersand.Output.AdlExplanation (Explainable(purpose,purposes,explanations), Meaning(..))
+module DatabaseDesign.Ampersand.Output.AdlExplanation (Explainable(purpose,purposes,explanations,explForObj), Meaning(..))
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
