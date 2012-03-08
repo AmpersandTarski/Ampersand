@@ -937,7 +937,22 @@ inferCpsRad :: (Show a,Language l, ConceptStructure l, Identified l) =>
 inferCpsRad _      _            _          []    _  = fatal 469 "Type checking (PRad []) or (PCps []) should never occur."
 inferCpsRad contxt _            _          [p_e] ac = infer contxt p_e ac
 inferCpsRad contxt pconstructor constructor p_rs ac 
- | null solutions && null messages = fatal 811 ("no solutions and no inferCpsRad for " ++ show (pconstructor p_rs))
+ | null solutions && null messages
+    = fatal 811 ("inferCpsRad: no solutions and no messages for " ++ show (pconstructor p_rs)
+                 ++"\nac          = "++show ac 
+                 ++"\ncastVector  = "++show castVector 
+                 ++"\nterms       = "++show terms      
+                 ++"\ninter       = "++show inter      
+                 ++"\ninter'      = "++show inter'     
+                 ++"\ncastVector' = "++show castVector'
+                 ++"\nterms'      = "++show terms'     
+                 ++"\ncombs       = "++show combs      
+                 ++"\nsolutions   = "++show solutions
+                 ++"\ndeepMsgs    = "++show deepMsgs 
+                 ++"\ncombMsgs    = "++show combMsgs 
+                 ++"\ninterMsgs   = "++show interMsgs
+                 ++"\nmessages    = "++show messages
+                )
  | otherwise = (solutions,messages)
     where -- Step 1: do inference on all subexpressions  -- example: PCps [Prel in,Prel zaak]
           castVector= case ac of                                         -- example: castVector=[SourceCast Document,TargetCast Zaak]
@@ -976,7 +991,11 @@ inferCpsRad contxt pconstructor constructor p_rs ac
           combs     = sort' (not.null.snd)                     -- The alternatives without errors will be up front
                       [ (rs,makeMessages rs)
                       | rs<-combinations [es | (es,_)<-terms'] -- example: combinations [[1,2,3],[10,20],[4]] = [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
-                      , ac <==> Cast (source (head rs)) (target (last rs))
+                      , case ac of
+                         Cast _ _     ->  ac <==> Cast (source (head rs)) (target (last rs))
+                         SourceCast _ ->  ac <==> SourceCast (source (head rs))
+                         TargetCast _ ->  ac <==> TargetCast (target (last rs))
+                         NoCast       ->  ac <==> NoCast
                       ]
           -- Step 6: determine solutions                       --  example: solutions=[in[Document*Dossier];zaak[Dossier*Zaak]]
           solutions = {- Possibly useful for debugging:
