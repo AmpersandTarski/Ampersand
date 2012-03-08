@@ -332,6 +332,12 @@ instance Explainable Rule where
 --           , explCont  = [Plain [RawInline "latex" (showPredLogic lang r++".")]] -- The actual explanation.
 --           } ] 
 
+instance Explainable Theme where
+  explForObj (PatternTheme pat) eo = explForObj pat eo
+  explForObj (ProcessTheme prc) eo = explForObj prc eo
+  explanations (PatternTheme pat) = explanations pat
+  explanations (ProcessTheme prc) = explanations prc
+  
 instance Explainable Pattern where
 --  meaning _ pat = fatal 324 ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
   explForObj x (ExplPattern str) = name x == str
