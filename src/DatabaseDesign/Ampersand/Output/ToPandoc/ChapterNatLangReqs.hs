@@ -113,9 +113,9 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
   dpRequirements = theBlocks
     where
       (theBlocks,_) = if null (themes fSpec)
-                      then aThemeAtATime toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
-                      else aThemeAtATime toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
-                                                                         [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
+                      then printThemes toBeProcessedStuff newCounter $ map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
+                      else printThemes toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
+                                                                       [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
       toBeProcessedStuff = ( conceptsWith
                            , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
@@ -132,20 +132,20 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                 , not . null $ purposes fSpec (language opts) rel
                 ]
                  
-      aThemeAtATime :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
+      printThemes :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
                        , [Relation]                                 -- all relations to be processed into this section and the sections to come
                        , [Rule])                                    -- all rules to be processed into this section and the sections to come
                     -> Counter           -- unique definition counters
                     -> [Theme]         -- the patterns that must be processed into this specification
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
-      aThemeAtATime  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre pats 
+      printThemes  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre pats 
            = case pats of
               []  -> printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (x:xs) = pats
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) thisThemeStuff iPre
-           (blocksOfThemes,iPost)        = aThemeAtATime stuff2PrintLater iPostFirst xs
+           (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst xs
            thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name x ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
@@ -181,10 +181,16 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
       printOneTheme mTheme (concs2print, rels2print, rules2print) counter0
               = case (mTheme, themes fSpec) of
                  (Nothing, _:_) -> ( [], counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print ++ reqdefs
+                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print relConcepts ++ reqdefs
                                    , Counter (getEisnr counter0 + length reqs)
                                    )
            where
+              -- the concepts for which one of the relations of this theme contains a source or target definition
+              relConcepts = [ (c,def)
+                            | r@Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef srcOrTgt def)}} <- rels2print 
+                            , if isSrc srcOrTgt then source r else target r
+                            ]
+              
               -- sort the requirements by file position
               reqs = sort' fst [((linenr a,colnr a), bs) | (a,bs)<-sctds rels2print ++ sctrs rules2print ++ sctcs concs2print]
               -- make blocks for requirements
@@ -215,9 +221,9 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                          Just pat -> purposes2Blocks opts purps
                                      where purps = purposes fSpec (language opts) pat
 
-              sctcsIntro :: [(A_Concept, [Purpose])] -> [Block]
-              sctcsIntro [] = []
-              sctcsIntro ccds 
+              sctcsIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String)] -> [Block]
+              sctcsIntro [] [] = []
+              sctcsIntro ccds relConcepts
                 = case language opts of
                               Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | (c,_)<-ccds], length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
