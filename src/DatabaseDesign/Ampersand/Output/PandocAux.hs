@@ -297,9 +297,9 @@ theTemplate flags gis
                , "\\usepackage{glossaries}\n"
                , "\\makeglossaries\n"
                ] ++
-               [ "\\newglossaryentry{"++escapeNonAlphaNum cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
-               | c<-gis, (cdnm,cd)<-uniquecds c]
-               ++
+-- disabled, because glossary entries are now created by makeDefinition
+--               [ "\\newglossaryentry{"++escapeNonAlphaNum cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
+--               | c<-gis, (cdnm,cd)<-uniquecds c] ++
                [ "\\begin{document}\n"
                , "$if(title)$\n"
                , "\\maketitle\n"
@@ -668,18 +668,20 @@ latexEscShw (c:str)      | isAlphaNum c && isAscii c = c:latexEscShw str
 
 uniquecds :: A_Concept -> [(String,ConceptDef)]
 uniquecds c = [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
-makeDefinition :: Options -> (Int, String,ConceptDef) -> [Block]
-makeDefinition flags (i,cdnm,cd)
- = case fspecFormat flags of
-    FLatex ->  [ Para ( [ RawInline "latex" (symDefLabel cd ++ "\n") | i == 0] ++
+
+makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
+makeDefinition flags i nm lbl def ref =
+  case fspecFormat flags of
+    FLatex ->  [ Para ( [ RawInline "latex" $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw def++"}}\n"] ++
+                        [ RawInline "latex" $ lbl ++ "\n" | i == 0] ++
                         [ RawInline "latex" $ insertAfterFirstWord refStr defStr] ++
-                        [ RawInline "latex" (latexEscShw (" ["++cdref cd++"]")) | not (null (cdref cd)) ]
+                        [ RawInline "latex" (latexEscShw (" ["++ref++"]")) | not (null ref) ]
                       )
                ]
-    _      ->  [ Para ( Str (cddef cd) : [ Str (" ["++cdref cd++"]") | not (null (cdref cd)) ] )
+    _      ->  [ Para ( Str def : [ Str (" ["++ref++"]") | not (null ref) ] )
                ]
- where refStr = "\\marge{\\gls{"++escapeNonAlphaNum cdnm++"}}" 
-       defStr = latexEscShw (cddef cd)
+ where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}" 
+       defStr = latexEscShw def
        -- by putting the ref after the first word of the definition, it aligns nicely with the definition
        insertAfterFirstWord str wordsStr = let (fstWord, rest) = break (==' ') wordsStr
                                            in  fstWord ++ str ++ rest
