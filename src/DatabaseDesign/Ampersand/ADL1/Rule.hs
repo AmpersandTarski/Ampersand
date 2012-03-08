@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.Rule    ( 
-                consequent, antecedent, rulefromProp, isaRule, ruleviolations, hasantecedent)     
+                consequent, antecedent, rulefromProp, isaRule, ruleviolations, violationsexpr, hasantecedent)     
 where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos             
@@ -38,13 +38,16 @@ where
         EImp (_,re) -> re
         x         -> x
                    
+   --WHY -> why isn't this implemented as contents (violationsexpr r)?
+   --ANSWER -> to avoid performance issues, probably only in most cases (ticket #319)
    ruleviolations :: Rule -> Pairs
-   ruleviolations r
-    = case rrexp r of
+   ruleviolations r = case rrexp r of
         EEqu {} -> (cra >- crc) ++ (crc >- cra)
         EImp {} -> cra >- crc
         _     -> contents (V (rrtyp r)) >- crc  --everything not in con
-      where cra = contents (antecedent r) ; crc = contents (consequent r)
+        where cra = contents (antecedent r) ; crc = contents (consequent r)
+   violationsexpr :: Rule -> Expression
+   violationsexpr r = EDif (ERel (V (rrtyp r)), rrexp r)
  
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all declarations is provided, in order to generate shorter names if possible. 

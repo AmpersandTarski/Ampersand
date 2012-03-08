@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand
    , Fspc(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Relation(..)
-   , Rule(..), ruleviolations
+   , Rule(..), ruleviolations, violationsexpr
    , Prop(..)
    , Lang(..)
    , Options(..), DocTheme(..)

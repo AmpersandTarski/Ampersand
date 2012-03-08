@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.ADL1
            , P_Pattern(..), Pattern(..)
            , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
            , SrcOrTgt(..)
-           , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations
+           , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations, violationsexpr
            , P_KeyDef(..), P_KeySegment(..), KeyDef(..), KeySegment(..)
            , P_Population(..), Population(..)
            , P_ObjectDef(..)
@@ -76,5 +76,5 @@ where
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
    import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops,flipProps)
    import DatabaseDesign.Ampersand.ADL1.Rule                       (
-                                          rulefromProp, isaRule, ruleviolations
+                                          rulefromProp, isaRule, ruleviolations, violationsexpr
                                          ,consequent,antecedent,hasantecedent)
