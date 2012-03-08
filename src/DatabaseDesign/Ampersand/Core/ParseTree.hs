@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Expression(..)
    
-   , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..)
+   , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..), isSrc
    
    , P_Rule(..)
    
@@ -226,6 +226,10 @@ where
 
    data SrcOrTgt = Src | Tgt deriving (Show, Eq)
 
+   isSrc :: SrcOrTgt -> Bool
+   isSrc Src = True
+   isSrc Tgt = False
+   
    data P_PairView = P_PairView [P_PairViewSegment]
 
    data P_PairViewSegment = P_PairViewText String
