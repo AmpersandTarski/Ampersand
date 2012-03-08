@@ -138,19 +138,19 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                     -> Counter           -- unique definition counters
                     -> [Theme]         -- the patterns that must be processed into this specification
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
-      printThemes  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre pats 
-           = case pats of
+      printThemes  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre allThemes 
+           = case allThemes of
               []  -> printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
-           (x:xs) = pats
-           (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) thisThemeStuff iPre
-           (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst xs
+           (thm:thms) = allThemes
+           (blocksOfOneTheme,iPostFirst) = printOneTheme (Just thm) thisThemeStuff iPre
+           (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst thms
            thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
-           thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name x ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
+           thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name thm ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ r | r@Rel{reldcl=d} <- still2doRelsPre
-                               , decpat d == name x ||         -- all relations declared in this theme, combined
+                               , decpat d == name thm ||         -- all relations declared in this theme, combined
                                  r `eleM` mors thisThemeRules] -- all relations used in this theme's rules
            rels2PrintLater   = still2doRelsPre >- thisThemeRels
            thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
@@ -181,7 +181,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
       printOneTheme mTheme (concs2print, rels2print, rules2print) counter0
               = case (mTheme, themes fSpec) of
                  (Nothing, _:_) -> ( [], counter0 )         -- The document is partial (because themes have been defined), so we don't print loose ends.
-                 _              -> ( header' ++ explainsPat ++ sctcsIntro concs2print relConcepts ++ reqdefs
+                 _              -> ( header' ++ explainsPat ++ printIntro concs2print relConcepts ++ reqdefs
                                    , Counter (getEisnr counter0 + length reqs)
                                    )
            where
@@ -192,7 +192,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
               
               -- sort the requirements by file position
               reqs = sort' fst [ ((i,filenm org, linenr org,colnr org), bs) 
-                               | (i,org,bs)<-addIndex 2 (sctds rels2print) ++ addIndex 3 (sctrs rules2print) ++ addIndex 0 (sctcs concs2print)]
+                               | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ 
+                                              addIndex 2 (printRels rels2print) ++ addIndex 3 (printRules rules2print)]
                where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
               
               -- make blocks for requirements
@@ -223,9 +224,9 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                          Just pat -> purposes2Blocks opts purps
                                      where purps = purposes fSpec (language opts) pat
 
-              sctcsIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String)] -> [Block]
-              sctcsIntro [] [] = []
-              sctcsIntro ccds relConcpts
+              printIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String)] -> [Block]
+              printIntro [] [] = []
+              printIntro ccds relConcpts
                 = case language opts of
                               Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | c<-map fst ccds ++ map fst relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
@@ -275,8 +276,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
 
               -- | the origin of c is the origin of the head of uniquecds c
               --   after sorting by origin the counter will be applied
-              sctcs :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
-              sctcs = let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
+              printConcepts :: [(A_Concept, [Purpose])] -> [(Origin, Counter -> [Block])]
+              printConcepts = let mborigin c = if null(uniquecds c) then OriginUnknown else (origin . snd . head . uniquecds) c
                       in map (\(c,exps) -> (mborigin c, cptBlock (c,exps)))
               -- | make a block for a c with all its purposes and definitions
               cptBlock :: (A_Concept, [Purpose]) -> Counter -> [Block]
@@ -296,10 +297,10 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                          , [ makeDefinition opts (getEisnr cnt,cdnm,cd) ])]
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
-              sctds :: [Relation] -> [(Origin, Counter -> [Block])]
-              sctds = map (\rel -> (origin (makeDeclaration rel), relBlock rel))
-              relBlock :: Relation -> Counter -> [Block]
-              relBlock rel cnt 
+              printRels :: [Relation] -> [(Origin, Counter -> [Block])]
+              printRels = map (\rel -> (origin (makeDeclaration rel), printRel rel))
+              printRel :: Relation -> Counter -> [Block]
+              printRel rel cnt 
                = Plain [RawInline "latex" "\\bigskip"] :
                  purposes2Blocks opts purps
                  ++ 
@@ -331,10 +332,10 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                          ] ++
                          (if null samplePop then [] else [Plain [RawInline "latex" "\\medskip"]])
                          
-              sctrs :: [Rule] -> [(Origin,Counter -> [Block])]
-              sctrs = map (\rul -> (origin rul, ruleBlock rul))
-              ruleBlock :: Rule -> Counter -> [Block]
-              ruleBlock rul cnt 
+              printRules :: [Rule] -> [(Origin,Counter -> [Block])]
+              printRules = map (\rul -> (origin rul, printRule rul))
+              printRule :: Rule -> Counter -> [Block]
+              printRule rul cnt 
                =  Plain [RawInline "latex" "\\bigskip"] :
                   purposes2Blocks opts purps
                   ++
