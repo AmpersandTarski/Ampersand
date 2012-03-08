@@ -35,8 +35,12 @@ where
 
    class Traced a where
     origin :: a -> Origin
+    filenm :: a -> String
     linenr :: a -> Int
     colnr :: a -> Int
+    filenm x = case origin x of 
+                     FileLoc (FilePos (nm, _, _)) -> nm
+                     _ -> ""
     linenr x = case origin x of 
                      FileLoc (FilePos (_,Pos l _,_)) -> l
                      _ -> 0
