@@ -41,6 +41,7 @@ makeRAPPops fs opts usrfiles pics
     :makepopu ("countrules","Context","Int")  [(fsid fs  , nonsid (show (length (rules fs))))]
     :makepopu ("countdecls","Context","Int")  [(fsid fs  , nonsid (show (length userdeclarations)))]
     :makepopu ("countcpts","Context","Int")   [(fsid fs  , nonsid (show (length (concs fs))))]
+    :makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | r<-raprules, (x,y)<-ruleviolations r]
     --see trunk/apps/Atlas/AST.adl
     :makepopu ("ctxnm","Context","Conid")     [(fsid fs  , nonsid (name fs))]
     :makepopu ("ctxcs","Context","Concept")   [(fsid fs     , cptid c)          | c<-concs fs] 
@@ -86,15 +87,18 @@ makeRAPPops fs opts usrfiles pics
     :makepopu ("rrpurpose","Rule","Blob")     [(ruleid r, nonsid (aMarkup2String (explMarkup ex)))   | r<-raprules, ex<-explanations fs, explForObj r (explObj ex)]
     :makepopu ("exprvalue","ExpressionID","Expression") 
                                               [(expridid (rulens r,rrexp r), nonsid (show(rrexp r))) | r<-raprules]
-    :relrels      [(rulens r,rrexp r)          | r<-raprules]
+     -- link an expression to its relation terms 
+     -- and create those of user-defined rules (those of property rules have already been created above).
+     -- multiple creations of the same relation terms is not harmfull, because p2aconverters nubs populations.
+    :relrels      [(rulens r,rrexp r)          | r<-raprules]    
     :relrelnm     (map       rrexp                 (rules fs))
     :relrelsgn    (map       rrexp                 (rules fs))
     :relreldcl    (map       rrexp                 (rules fs))
+     --create pairs for violations (see rrviols above)
     :relpairvalue [(rulens r,violationsexpr r) | r<-raprules]
     :relleft      (map       violationsexpr        (raprules))
     :relright     (map       violationsexpr        (raprules))
     :[]
---     ++ rappops (violations fs) --the violations
    where 
    --SPEC PropertyRule ISA Rule
    raprules = rules fs ++ [rulefromProp userdeclarations p d | d<-userdeclarations, p<-multiplicities d]
