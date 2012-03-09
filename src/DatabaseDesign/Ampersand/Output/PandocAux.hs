@@ -42,8 +42,8 @@ fatal = fatalMsg "Basics"
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
-writepandoc :: Options -> [GlossaryItem] -> Pandoc -> (String,IO(),IO())
-writepandoc flags gis thePandoc = (outputFile,makeOutput,postProcessMonad)
+writepandoc :: Options -> Pandoc -> (String,IO(),IO())
+writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
          outputFile = addExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
@@ -59,10 +59,10 @@ writepandoc flags gis thePandoc = (outputFile,makeOutput,postProcessMonad)
                             writeFile outputFile (writeNative defaultWriterOptions  thePandoc)
                             verboseLn flags "... done."
               FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
-                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags gis} thePandoc)
+                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
                             verboseLn flags "... done."
               FLatex  -> do verboseLn flags ("Generating to LaTeX: "++outputFile)
-                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags gis} thePandoc)
+                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
                             verboseLn flags "... done."
               FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
                             writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
@@ -138,16 +138,13 @@ writepandoc flags gis thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       -- even with --interaction=nonstopmode.
                _  -> return()            
 
--- | The definitions of concepts will be written in the glossary
-type GlossaryItem = A_Concept --change to a data type if you want more types of glossary items
-  
 -- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
 -- De onderstaande code is een vrij rauwe combinatie van de oude LaTeX header en het
 -- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
 -- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
 -- Wellicht wordt e.e.a. daardoor simpeler.
-theTemplate :: Options -> [GlossaryItem] -> String
-theTemplate flags gis 
+theTemplate :: Options -> String
+theTemplate flags 
   = case fspecFormat flags of
     FLatex ->  concat $
                [ "% This header is the default LaTeX template for generating documents with Ampersand.\n"
@@ -295,12 +292,8 @@ theTemplate flags gis
                   -  package should also be loaded after html, inputenc, babel and ngerman."
                   - http://ftp.snt.utwente.nl/pub/software/tex/macros/latex/contrib/glossaries/glossariesbegin.pdf -}
                , "\\usepackage{glossaries}\n"
-               , "\\makeglossaries\n"
-               ] ++
--- disabled, because glossary entries are now created by makeDefinition
---               [ "\\newglossaryentry{"++escapeNonAlphaNum cdnm ++"}{name={"++latexEscShw (name c)++"}, description={"++latexEscShw (cddef cd)++"}}\n" 
---               | c<-gis, (cdnm,cd)<-uniquecds c] ++
-               [ "\\begin{document}\n"
+               , "\\makeglossaries\n" -- The glossary entries are created by makeDefinition
+               , "\\begin{document}\n"
                , "$if(title)$\n"
                , "\\maketitle\n"
                , "$endif$\n"
