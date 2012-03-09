@@ -4,11 +4,9 @@ module Main where
 import Control.Monad
 import Data.List
 import Data.Function (on)
-import System.FilePath        (combine,dropFileName)
-import System.Directory       (getDirectoryContents)
+import System.FilePath        (combine)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
-import DatabaseDesign.Ampersand_Prototype.Apps         (picturesForAtlas)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPImport
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
@@ -43,15 +41,7 @@ main
                        Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
                                         cx <- parseCtxM_ opts (importfile opts)
                                         if nocxe (snd(typeCheck (thepCtx cx) [])) 
-                                         then let fspec = makeFspec opts (fst(typeCheck (thepCtx cx) [])) -- the fspec of the file to import in RAP
-                                                  pics = picturesForAtlas opts fspec
-                                                  fdir = let d=dropFileName fn in if null d then "." else d
-                                              in
-                                              do verbose opts "Writing pictures for RAP... "
-                                                 sequence_ [writePicture opts pict | pict <- pics]
-                                                 verbose opts "Getting files of user... "
-                                                 myfiles <- liftM (filter (`notElem` [".", ".."])) (getDirectoryContents fdir)
-                                                 return (makeRAPPops fspec opts myfiles pics)
+                                         then importfspec (makeFspec opts (fst(typeCheck (thepCtx cx) []))) opts
                                          else error (show (snd(typeCheck (thepCtx cx) [])))
         verboseLn opts "Type checking..."
         return (typeCheck (thepCtx ePCtxErr) pPops)

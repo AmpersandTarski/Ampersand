@@ -1,11 +1,24 @@
 {-# OPTIONS_GHC -Wall #-}
 --import an fspec into the RAP specification
 -- USE -> cmd: ampersand --importfile=some.adl --importformat=adl RAP.adl
-module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (makeRAPPops)
+module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec)
 where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
-import System.FilePath        (takeFileName,dropFileName)
+import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
+import System.FilePath        (takeFileName,dropFileName,combine)
+import System.Directory       (getDirectoryContents,doesDirectoryExist)
+import Control.Monad
+
+importfspec ::  Fspc -> Options -> IO [P_Population]
+importfspec fspec opts 
+ = let pics = picturesForAtlas opts fspec
+       fdir = let d=dropFileName (importfile opts) in if null d then "." else d
+   in  do verbose opts "Writing pictures for RAP... "
+          sequence_ [writePicture opts pict | pict <- pics]
+          verbose opts "Getting all uploaded source files of RAP user... "
+          myfiles <- getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x)))
+          return (makeRAPPops fspec opts myfiles pics)
 
 --a triple which should correspond to a declaration from RAP.adl: (relation name, source name, target name)
 --since the populations made by makeRAPPops will be added to the parsetree of RAP.adl, they will be checked and processed by p2aconverters
