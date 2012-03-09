@@ -28,14 +28,15 @@ where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Fspec
 --   import DatabaseDesign.Ampersand.Fspec.FPA     (FPA(..))
-   import Time                                   (ClockTime)
+   import Data.Time.Clock
+   import Data.Time.LocalTime () -- Show instance for UTCTime
    import DatabaseDesign.Ampersand.Fspec.Plug 
    import DatabaseDesign.Ampersand.Misc.TinyXML 
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowXMLtiny"
 
-   showXML :: Fspc -> ClockTime -> String
+   showXML :: Fspc -> UTCTime -> String
    showXML fSpec now 
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
               "<tns:ADL xmlns:tns=\"http://ampersand.sourceforge.net/ADL\" "++
