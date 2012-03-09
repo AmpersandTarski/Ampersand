@@ -4,8 +4,10 @@ module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtempla
 where
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Fspec
-import Text.Pandoc
+import Text.Pandoc hiding (Meta)
+import qualified Text.Pandoc as Pandoc
 import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis
@@ -69,7 +71,7 @@ import Data.Time.Format
 --TODO [Picture] should be separated from here. Now it is too much entangled, which makes it too complex (and hence errorprone). 
 fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
-    where meta = Meta titl authors date
+    where meta = Pandoc.Meta titl authors date
           titl = [ Str (case (language flags, diagnosisOnly flags) of
                         (Dutch  , False) -> "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
@@ -78,9 +80,11 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                        )
                  , Quoted SingleQuote [Str (name fSpec)]
                  ] 
-          authors = case language flags of
-                         Dutch   -> [[Str "Auteur(s) hier plaatsen"]]
-                         English -> [[Str "Put author(s) here"]]
+          authors = case [ val  | Meta _ ContextMeta "authors" val <- metas fSpec ] of
+                      authrs:_ -> [[Str authrs]]
+                      [] -> case language flags of
+                              Dutch   -> [[Str "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]]
+                              English -> [[Str "Specify authors in ADL with: META \"authors\" \"<author names>\""]]
           date = [ Str $ formatTime lclForLang "%-d %B %Y" (genTime flags) ]
           
           lclForLang | language flags == Dutch = defaultTimeLocale{ months = [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr"),
