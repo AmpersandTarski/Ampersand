@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
+ , Meta(..)
  , Theme(..)
  , Process(..)
  , Pattern(..)
@@ -47,10 +48,10 @@ import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics.Auxiliaries (eqCl)
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
-import DatabaseDesign.Ampersand.Core.ParseTree   (ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
+import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
 import DatabaseDesign.Ampersand.Misc
-import Text.Pandoc
+import Text.Pandoc hiding (Meta)
 import Data.List
 
 fatal :: Int -> String -> a
@@ -75,6 +76,7 @@ data A_Context
          , ctxsql    :: [ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp    :: [ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
+         , ctxmetas  :: [Meta]
          , ctxexperimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
@@ -84,6 +86,12 @@ instance Eq A_Context where
 instance Identified A_Context where
   name  = ctxnm 
 
+-- for declaring name/value pairs with information that is built in to the adl syntax yet
+data Meta = Meta { mtPos :: Origin
+                 , mtObj :: MetaObj
+                 , mtName :: String
+                 , mtVal :: String
+                 } deriving (Show)
 
 data Theme = PatternTheme Pattern | ProcessTheme Process
 

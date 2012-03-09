@@ -25,6 +25,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    keywordstxt :: [String]
    keywordstxt       = [ "INCLUDE"
                        , "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP", "THEMES"
+                       , "META"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"
                        , "INTERFACE", "FOR", "BOX", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE"
@@ -75,12 +76,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
                , ctx_ps    = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
                , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
+               , ctx_metas = [m | CMeta m <-ces]
                , ctx_experimental = False -- is set in Components.hs
                }
           , includeFileNames)
 
        pContextElement :: Parser Token ContextElement
-       pContextElement = CPat     <$> pPatternDef   <|>
+       pContextElement = CMeta    <$> pMeta         <|>
+                         CPat     <$> pPatternDef   <|>
                          CPrc     <$> pProcessDef   <|>
                          CRul     <$> pRuleDef      <|>
                          CRel     <$> pRelationDef  <|>
@@ -95,7 +98,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          CThm     <$> pPrintThemes
 
 
-   data ContextElement = CPat P_Pattern
+   data ContextElement = CMeta P_Meta
+                       | CPat P_Pattern
                        | CPrc P_Process
                        | CRul P_Rule
                        | CRel P_Declaration
@@ -123,6 +127,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  ( LaTeX    <$ pKey "LATEX"    ) <|>
                  ( Markdown <$ pKey "MARKDOWN" )
 
+   pMeta :: Parser Token P_Meta
+   pMeta = P_Meta <$> pKey_pos "META" <*> pMetaObj <*> pString <*> pString
+    where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
+    
    pPatternDef    :: Parser Token P_Pattern
    pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
                          <*> pList pPatElem
