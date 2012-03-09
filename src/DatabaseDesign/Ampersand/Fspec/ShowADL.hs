@@ -80,6 +80,13 @@ instance ShowADL ObjectDef where
                                ]++
            ind++"     ]"
 
+instance ShowADL Meta where
+ showADL (Meta _ metaObj nm val) = 
+   "META "++(if null $ showADL metaObj then "" else showADL metaObj++" ") ++show nm++" "++show val
+
+instance ShowADL MetaObj where
+ showADL ContextMeta = ""
+ 
 instance ShowADL Purpose where
  showADL expl = "PURPOSE "++showADL (explObj expl)
                 ++showADL (amLang (explMarkup expl))
@@ -262,6 +269,7 @@ instance ShowADL ConceptDef where
 instance ShowADL A_Context where
  showADL context
   = "CONTEXT " ++name context
+    ++ (if null (ctxmetas context) then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxmetas context))++ "\n")
     ++ (if null (ctxprocs context) then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxprocs context))++ "\n") -- All processes
     ++ (if null (ctxifcs context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxifcs context)) ++ "\n")
     ++ (if null (ctxpats context)  then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxpats context)) ++ "\n")
@@ -284,6 +292,7 @@ instance ShowADL Fspc where
     ++ (if null (map ifcObj [] {- map fsv_ifcdef (fActivities fSpec) -})     
         then "" 
         else "\n"++intercalate "\n\n" (map (showADL . ifcObj) [] {- map fsv_ifcdef (fActivities fSpec) -})     ++ "\n")
+    ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
     ++ (if null cds then "" else "\n"++intercalate "\n"   (map showADL cds) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec >- concatMap gens (patterns fSpec))) ++ "\n")

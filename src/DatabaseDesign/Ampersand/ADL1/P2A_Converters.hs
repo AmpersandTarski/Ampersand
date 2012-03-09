@@ -61,6 +61,7 @@ pCtx2aCtx pctx
              , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
+             , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas pctx ]
              , ctxexperimental = ctx_experimental pctx
              }
     cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk++themeschk

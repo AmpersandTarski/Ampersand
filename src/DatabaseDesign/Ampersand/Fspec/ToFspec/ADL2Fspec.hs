@@ -58,6 +58,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vConceptDefs = conceptDefs context
                  , fSexpls      = [ xpl { explObj = case explObj xpl of ExplContext str -> ExplFspc str; _ -> explObj xpl } -- All explanations are uses as-is. Only the context-explanations are relabeled to Fspc-explanations.
                                   | xpl<-ctxps context]
+                 , metas        = ctxmetas context
                  , vctxenv      = ctxenv context
                  }
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]

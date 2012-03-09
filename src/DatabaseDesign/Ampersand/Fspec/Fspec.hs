@@ -63,6 +63,7 @@ data Fspc = Fspc { fsName       :: String                -- ^ The name of the sp
                  , vpatterns    :: [Pattern]             -- ^ All patterns taken from the Ampersand script
                  , vConceptDefs :: [ConceptDef]          -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
                  , fSexpls      :: [Purpose]             -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
+                 , metas        :: [Meta]                -- ^ All meta declarations from the entire context      
                  , vctxenv :: ( Expression
                               , [(Declaration,String)])   -- an expression on the context with unbound relations, to be bound in this environment
                  }
