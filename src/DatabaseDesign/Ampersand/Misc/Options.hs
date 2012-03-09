@@ -13,7 +13,8 @@ import Data.Char (toUpper)
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory
-import Time
+import Data.Time.Clock
+import Data.Time.LocalTime () -- Show instance for UTCTime
 import Control.Monad
 import Data.Maybe
 import DatabaseDesign.Ampersand.Basics  
@@ -76,7 +77,7 @@ data Options = Options { showVersion   :: Bool
                        , fileName      :: FilePath --the file with the Ampersand context
                        , baseName      :: String
                        , logName       :: String
-                       , genTime       :: ClockTime
+                       , genTime       :: UTCTime
                        , interfacesG   :: Bool
                        , test          :: Bool
                        , pangoFont     :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
@@ -85,7 +86,7 @@ data Options = Options { showVersion   :: Bool
                        , sqlPwd        :: Maybe String  -- pass password on to the database server
                        , forcedParserVersion :: Maybe ParserVersion
                        } deriving Show
-    
+  
 defaultFlags :: Options 
 defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , dirOutput     = fatal 82 "No monadic options available."
@@ -155,7 +156,7 @@ getOptions =
   where 
      defaultOptionsM :: IO Options 
      defaultOptionsM  =
-           do clocktime <- getClockTime
+           do clocktime <- getCurrentTime
               progName <- getProgName
               exePath <- findExecutable progName
               env <- getEnvironment
