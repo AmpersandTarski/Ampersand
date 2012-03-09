@@ -92,11 +92,11 @@ readAndParseIncludeFiles alreadyParsed mIncluderFilepath fileDir (relativeFilepa
     }
  
 emptyContext :: P_Context
-emptyContext = PCtx "" Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] False
+emptyContext = PCtx "" Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] False
 
 mergeContexts :: P_Context -> P_Context -> P_Context
-mergeContexts (PCtx nm1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1 _)
-              (PCtx nm2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2 _) =
+mergeContexts (PCtx nm1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1 _)
+              (PCtx nm2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2 _) =
   PCtx{ ctx_nm = nm1
       , ctx_lang = lang1
       , ctx_markup = markup1
@@ -113,6 +113,7 @@ mergeContexts (PCtx nm1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifc
       , ctx_pops = pops1 ++ pops2
       , ctx_sql = sql1 ++ sql2
       , ctx_php = php1 ++ php2
+      , ctx_metas = metas1 ++ metas2
       , ctx_experimental = False -- is set in Components.hs
       }
 

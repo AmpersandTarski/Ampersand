@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Core.ParseTree (
      P_Context(..)
+   , P_Meta(..)
+   , MetaObj(..)
    , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
@@ -68,6 +70,7 @@ where
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
             , ctx_sql    :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php    :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_metas  :: [P_Meta]    -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
             , ctx_experimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
             }
 
@@ -79,6 +82,15 @@ where
 
    instance Identified P_Context where
      name = ctx_nm
+   
+   data P_Meta = P_Meta { mt_Pos  :: Origin
+                        , mt_Obj  :: MetaObj
+                        , mt_Name :: String
+                        , mt_Val  :: String
+                        } deriving Show
+
+   data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for the entire context  
+   
    -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
    data P_RoleRelation
       = P_RR { rr_Roles :: [String]                -- ^ name of a role

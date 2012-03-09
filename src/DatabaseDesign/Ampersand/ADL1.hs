@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1
            ( P_Context(..), A_Context(..)
+           , P_Meta(..), Meta(..)
+           , MetaObj(..)
            , Process(..), P_Process(..), P_RoleRelation(..),RoleRelation(..), RoleRule(..)
            , P_Pattern(..), Pattern(..)
            , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
@@ -40,6 +42,7 @@ where
    import DatabaseDesign.Ampersand.Core.ParseTree
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree         (
                                           A_Concept(..)
+                                         ,Meta(..)
                                          ,Sign(..),GenR()
                                          , (<==>),meet,order,join
                                          ,Signaling(..)

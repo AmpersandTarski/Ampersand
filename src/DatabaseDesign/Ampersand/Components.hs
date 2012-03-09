@@ -125,7 +125,7 @@ prove fSpec flags =
 
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags =
- do {  verboseLn flags $ "Generating Haskell source code for "++name fSpec
+ do { verboseLn flags $ "Generating Haskell source code for "++name fSpec
     ; writeFile outputFile (fSpec2Haskell fSpec flags) 
     ; verboseLn flags $ "Haskell written into " ++ outputFile ++ "."
     }
@@ -134,7 +134,7 @@ doGenHaskell fSpec flags =
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags =
  do { verboseLn flags "Generating XML..."
-    ;  writeFile outputFile $ showXML fSpec (genTime flags)   
+    ; writeFile outputFile $ showXML fSpec (genTime flags)   
     ; verboseLn flags $ "XML written into " ++ outputFile ++ "."
     }
    where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".xml"
