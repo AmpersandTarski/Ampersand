@@ -45,6 +45,7 @@ Executable prototype
                  DatabaseDesign.Ampersand_Prototype.Apps ,
                  DatabaseDesign.Ampersand_Prototype.Apps.RAP ,
                  DatabaseDesign.Ampersand_Prototype.Apps.RAPImport ,
+                 DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers ,
                  DatabaseDesign.Ampersand_Prototype.CoreImporter ,
                  DatabaseDesign.Ampersand_Prototype.GenBericht ,
                  DatabaseDesign.Ampersand_Prototype.Generate ,
