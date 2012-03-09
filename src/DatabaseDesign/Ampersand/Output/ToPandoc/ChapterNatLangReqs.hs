@@ -20,7 +20,10 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 fatal :: Int -> String -> a
 fatal = fatalMsg "ChapterNatLangReqs.hs"
 
-
+{- TODO: This module needs to be rewritten from scratch. Instead of deciding on the fly what should be included, 
+         a datastructure needs to be added to the fSpec, which contains per theme the concepts, rules and relations
+         that need to be printed.  
+-}
 chpNatLangReqs :: Int -> Fspc -> Options ->  [Block]
 chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs opts then legalRefs else []
   where
@@ -316,7 +319,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                                       Dutch   -> "Eis "
                                                       English -> "Requirement ")
                                      , Str (show(getEisnr cnt))
-                                     , Str ":"]
+                                     ,if development opts && name rel/="" then Str (" ("++name rel++"):") else Str ":"]
                                    , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
                                        meaning2Blocks (language opts) (makeDeclaration rel)
                                      ]
@@ -347,18 +350,18 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                =  Plain [RawInline "latex" "\\bigskip"] :
                   purposes2Blocks opts purps
                   ++
-                  [DefinitionList [ ( [Str (case language opts of
-                                                               Dutch   -> "Eis"
-                                                               English -> "Requirement")
-                                                       ,Space
-                                                       ,Str (show(getEisnr cnt))
-                                                       ,if name rul=="" then Str ":" else Str (" ("++name rul++"):")]
-                                                     , [ Plain [RawInline "latex" $ symReqLabel rul] :
-                                                         meaning2Blocks (language opts) rul
-                                                      ]
-                                                     )
-                                                   ] | not (null$meaning2Blocks (language opts) rul)]
-                                 where purps = purposes fSpec (language opts) rul
+                  [ DefinitionList [ ( [ Str (case language opts of
+                                                Dutch   -> "Eis "
+                                                English -> "Requirement ")
+                                       , Str (show(getEisnr cnt))
+                                       , if development opts && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
+                                     , [ Plain [ RawInline "latex" $ symReqLabel rul] :
+                                                   meaning2Blocks (language opts) rul
+                                       ]
+                                     )
+                                   ] 
+                  | not (null$meaning2Blocks (language opts) rul)]
+               where purps = purposes fSpec (language opts) rul
                       
   mkSentence :: Declaration -> String -> String -> [Inline]
   mkSentence decl srcAtom tgtAtom
