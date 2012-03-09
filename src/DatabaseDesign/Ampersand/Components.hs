@@ -167,6 +167,5 @@ doGenDocument fSpec flags =
  --                (ProofTheme, FLatex ) -> (texOnly_proofdoc fSpec,[])     --generate a proof document
                  (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
                  (_         , _      ) -> fSpec2Pandoc fSpec flags
-        (outputFile,makeOutput,postProcessor) = writepandoc flags gis thePandoc
-        gis = concs fSpec -- the glossary items
-
+        (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
+        
