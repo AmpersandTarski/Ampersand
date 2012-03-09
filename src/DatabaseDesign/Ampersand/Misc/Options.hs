@@ -14,7 +14,7 @@ import System.Console.GetOpt
 import System.FilePath
 import System.Directory
 import Data.Time.Clock
-import Data.Time.LocalTime () -- Show instance for UTCTime
+import Data.Time.LocalTime
 import Control.Monad
 import Data.Maybe
 import DatabaseDesign.Ampersand.Basics  
@@ -77,7 +77,7 @@ data Options = Options { showVersion   :: Bool
                        , fileName      :: FilePath --the file with the Ampersand context
                        , baseName      :: String
                        , logName       :: String
-                       , genTime       :: UTCTime
+                       , genTime       :: LocalTime
                        , interfacesG   :: Bool
                        , test          :: Bool
                        , pangoFont     :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
@@ -156,13 +156,15 @@ getOptions =
   where 
      defaultOptionsM :: IO Options 
      defaultOptionsM  =
-           do clocktime <- getCurrentTime
+           do utcTime <- getCurrentTime
+              timeZone <- getCurrentTimeZone
+              let localTime = utcToLocalTime timeZone utcTime
               progName <- getProgName
               exePath <- findExecutable progName
               env <- getEnvironment
               return
                defaultFlags
-                      { genTime       = clocktime
+                      { genTime       = localTime
                       , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
                       , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env)
                       , dbName        = fromMaybe ""        (lookup envdbName       env)
