@@ -7,6 +7,8 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
+import Locale
+import Data.Time.Format
 
 
 chpIntroduction :: Int -> Fspc -> Options ->  [Block]
@@ -18,10 +20,14 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                                                   )
         contextPurposes = purposes fSpec (language flags) fSpec
         --TODO: different intro for theme flags == "student"
+        date = formatTime defaultTimeLocale "%-d-%-m-%Y" (genTime flags)
+        time = formatTime defaultTimeLocale "%H:%M:%S" (genTime flags)
         introContents Dutch = 
           ( if null contextPurposes
             then [ Para 
-                        [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "
+                        [ Str "Dit document"
+                        , Note [Para [Str $ "Dit document is gegenereerd op "++date++" om "++time++", dmv. "++ampersandVersionStr++"."]]
+                        , Str " definieert de functionaliteit van een informatiesysteem genaamd "
                         , Quoted  SingleQuote [Str (name fSpec)], Str ". "
                         , Str "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken "
                         , Str "om afspraken na te leven. "
@@ -58,7 +64,9 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
 
         introContents English = 
          [ Para
-                [Str "This document defines the functionality of an information system called "
+                [ Str "This document"
+                , Note [Para [Str $ "This document was generated at "++date++" on "++time++", using "++ampersandVersionStr++"."]]
+                , Str " defines the functionality of an information system called "
                 , Quoted  SingleQuote [Str (name fSpec)], Str ". "
                 , Str "It defines business services in a system where people and applications work together "
                 , Str "in order to fullfill their commitments. "
