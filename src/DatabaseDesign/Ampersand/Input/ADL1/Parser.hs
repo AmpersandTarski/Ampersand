@@ -52,15 +52,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pPopulations = pList1 pPopulation
 
    pContext         :: Parser Token (P_Context, [String]) -- the result is the parsed context and a list of include filenames
-   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid
+   pContext  = rebuild <$> pKey_pos "CONTEXT" <*> pConid
                             <*> pList pIncludeStatement 
                             <*> optional pLanguageRef 
                             <*> optional pTextMarkup 
                             <*> pList pContextElement <* pKey "ENDCONTEXT"
      where
-       rebuild :: String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
-       rebuild nm includeFileNames lang fmt ces = 
+       rebuild :: Origin -> String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+       rebuild pos' nm includeFileNames lang fmt ces = 
           (PCtx{ ctx_nm    = nm
+               , ctx_pos   = [pos']
                , ctx_lang  = lang
                , ctx_markup= fmt
                , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)

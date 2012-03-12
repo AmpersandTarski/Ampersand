@@ -44,6 +44,7 @@ pCtx2aCtx pctx
    where
     actx = 
          ACtx{ ctxnm     = name pctx     -- The name of this context
+             , ctxpos    = ctx_pos pctx
              , ctxlang   = fromMaybe Dutch (ctx_lang pctx)
              , ctxmarkup = fromMaybe ReST  (ctx_markup pctx) -- The default markup format for free text in this context
              , ctxpo     = makePartialOrder hierarchy    -- The base hierarchy for the partial order of concepts (see makePartialOrder)

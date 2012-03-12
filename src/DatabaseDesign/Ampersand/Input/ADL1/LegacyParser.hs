@@ -61,6 +61,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
 --                       universe = (ERel(V (Anything,Anything)) ,[]) --default: the universe
                        rebuild nm ces = 
                           PCtx{ ctx_nm    = nm                            -- The name of this context
+                              , ctx_pos   = []
                               , ctx_lang  = Just Dutch
                               , ctx_markup= Just ReST
                               , ctx_thms  = []                            -- Names of patterns/processes to be printed in the functional specification. (not applicable in this version.)
