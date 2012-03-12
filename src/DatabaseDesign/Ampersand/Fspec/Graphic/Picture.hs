@@ -3,27 +3,32 @@
 module DatabaseDesign.Ampersand.Fspec.Graphic.Picture
     ( Picture(origName,uniqueName,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
     , Pictures,PictType(..),uniquePicName
-    , makePictureObj,writePicture)
+    , makePictureObj,writePicture
+    )
 where
-import System             (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
 import System.Directory
 import DatabaseDesign.Ampersand.Misc
 import Control.Monad
-import Data.GraphViz
 import DatabaseDesign.Ampersand.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+import qualified Data.Text as T
+import Data.GraphViz.Types.Canonical
+import Data.GraphViz.Commands
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Picture.hs"
 
 type Pictures = [Picture]
 data Picture = Pict { origName     :: String    -- ^ The original name of the object this picture was made for. (could include spaces!)
                     , pType        :: PictType  -- ^ the type of the picture
                     , uniqueName   :: String    -- ^ used to reference the picture in pandoc or tex
-                    , dotSource    :: String    -- ^ the string representing the .dot
+                    , dotSource    :: DotGraph String    -- ^ the string representing the .dot
                     , fullDot      :: FilePath  -- ^ the full file path where the .dot file resides
                     , fspecPath    :: FilePath  -- ^ the full file path where the .png file resides for functional specification
                     , atlasPath    :: FilePath  -- ^ the full file path where the .png and .map file resides for Atlas
-                    , imgURL       :: EscString -- ^ the URL that points to the generated .png imagefile, for use in the atlas
-                    , dotProgName  :: String    -- ^ the name of the program to use  ("dot" or "neato" )
+                    , imgURL       :: T.Text    -- ^ the URL that points to the generated .png imagefile, for use in the atlas
+                    , dotProgName  :: GraphvizCommand   -- ^ the name of the program to use  ("dot" or "neato" )
                     , caption      :: String    -- ^ a human readable name of this picture
                     }
 data PictType = PTClassDiagram -- a UML class diagram, or something that comes close
@@ -50,22 +55,22 @@ picType2prefix pt = case pt of
 makePictureObj :: Options
             -> String   -- Name of the picture
             -> PictType -- Type of the picture
-            -> String   -- The dot source. Should be canonnical.
+            -> DotGraph String  -- The dot source. Should be canonnical.
 
             -> Picture  -- The ADT of a picture
 makePictureObj flags nm pTyp dotsource
     = Pict { origName   = nm
            , uniqueName = cdName
            , dotSource  = dotsource
-           , fullDot    = absImgPath </> replaceExtension cdName "dot"
-           , fspecPath  = absImgPath </> System.FilePath.addExtension cdName "png"
-           , atlasPath  = absImgPath </> System.FilePath.addExtension cdName "png"
-           , imgURL     = relImgPath </> System.FilePath.addExtension cdName "png"
+           , fullDot    = absImgPath </> cdName 
+           , fspecPath  = absImgPath </> cdName 
+           , atlasPath  = absImgPath </> cdName 
+           , imgURL     = error "Picture.hs heeft geen fatal"-- fatal 65 $ "T.pack (relImgPath </> System.FilePath.addExtension cdName "++"png"++")"
            , pType      = pTyp
            , dotProgName = case pTyp of
-                     PTClassDiagram -> "dot"
-                     PTSwitchBoard  -> "dot"
-                     _              -> "neato"
+                     PTClassDiagram -> Dot
+                     PTSwitchBoard  -> Dot
+                     _              -> Neato
            , caption      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ nm
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
@@ -98,31 +103,30 @@ uniquePicName pt nm = escapeNonAlphaNum (picType2prefix pt++nm)
 writePicture :: Options -> Picture -> IO()
 writePicture flags pict
     = sequence_ (
-      [when (genAtlas flags ) (createDirectoryIfMissing True  (takeDirectory (atlasPath pict)))]++
-      [when (genFspec flags || genAtlas flags)
-                             (do verboseLn flags ("Generating "++fullDot pict)
-                                 writeFile (fullDot pict) (dotSource pict)
-                             )
-      ]++
-      [when (genFspec flags) (do verboseLn flags ("Generating figure: "++caption pict++" ... :")
-                                 verboseLn flags   (dotProgName pict++" -Tpng "++fullDot pict++" -o "++fspecPath pict)
-                                 result <- system $ dotProgName pict++" -Tpng "++fullDot pict++" -o "++fspecPath pict
-                                 case result of 
-                                   ExitSuccess   -> verboseLn flags (fspecPath pict++" written.")
-                                   ExitFailure x -> putStrLn ("Failure: " ++ show x)
-                             )
-      ]++
-      [when (genAtlas flags ) (do verboseLn flags ("Generating image: "++caption pict++" ... :")
-                                  verboseLn flags    (dotProgName pict++" -Tpng "++fullDot pict++" -o "++atlasPath pict)
-                                  result1 <- system $ dotProgName pict++" -Tpng "++fullDot pict++" -o "++atlasPath pict
-                                  case result1 of 
-                                    ExitSuccess   -> verboseLn flags (atlasPath pict++" written.")
-                                    ExitFailure x -> putStrLn ("Failure: " ++ show x)
-                                  result2 <- system $ dotProgName pict++" -Tcmapx "++fullDot pict++" -o "++mapfile 
-                                  case result2 of 
-                                    ExitSuccess   -> verboseLn flags (mapfile ++" written.")
-                                    ExitFailure x -> putStrLn ("Failure: " ++ show x)
-                              )
-      ])
+      [createDirectoryIfMissing True  (takeDirectory (atlasPath pict))     |                   genAtlas flags ]++
+      [writeDot (dotProgName pict) Canon (dotSource pict) (fullDot   pict) | genFspec flags || genAtlas flags ]++
+      [writeDot (dotProgName pict) Png   (dotSource pict) (fspecPath pict) | genFspec flags                   ]++
+      [writeDot (dotProgName pict) Png   (dotSource pict) (atlasPath pict) |                   genAtlas flags ]++
+      [writeDot (dotProgName pict) Cmapx (dotSource pict) (atlasPath pict) |                   genAtlas flags ]
+          )
    where 
-     mapfile = replaceExtension (atlasPath pict) "map"
+     writeDot :: GraphvizCommand
+              -> GraphvizOutput
+              -> DotGraph String
+              -> FilePath
+              -> IO ()
+     writeDot gvCommand gvOutput graph filePath = 
+         do verboseLn flags ("Generating "++show gvOutput++" using "++show gvCommand++".")
+            path <- runGraphvizCommand gvCommand graph gvOutput (replaceExtension filePath (extentionOf gvOutput))
+            verboseLn flags (path++" written.")
+       where extentionOf :: GraphvizOutput -> String
+             extentionOf x = case x of
+                Canon -> "dot"
+                Png   -> "png"     
+                Cmapx -> "map"
+                XDot  -> "xdot"
+                Svg   -> "svg"
+                Gif   -> "gif"
+                _     -> fatal 139 "GraphvizOutput has undefined extention"
+             
+       

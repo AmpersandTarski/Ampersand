@@ -175,7 +175,7 @@ chpProcessAnalysis lev fSpec flags
 
   picLangModel :: FProcess->Picture
   picLangModel fproc
-   = ((makePictureObj flags (name fproc) PTProcLang . printDotGraph . conceptualGraph fSpec flags Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
+   = ((makePictureObj flags (name fproc) PTProcLang . conceptualGraph fSpec flags Rel_CG) fproc)   -- the Picture that represents this process's knowledge graph with all user defined relations (controlled by Rel_CG)
                 {caption = case language flags of
                             Dutch   ->"Basiszinnen van "++name fproc
                             English ->"Basic sentences of "++name fproc}
