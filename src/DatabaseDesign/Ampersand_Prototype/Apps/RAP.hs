@@ -128,6 +128,7 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
    rawctx 
     = PCtx {
          ctx_nm    = thehead cxs "no context found in Atlas DB"
+       , ctx_pos   = [DBLoc "Atlas(Context)"]
        , ctx_lang  = Just lang
        , ctx_markup= Just LaTeX --ADLImportable writes LaTeX
        , ctx_thms  = []
@@ -143,6 +144,7 @@ makectx cxs lang pats rulpattern rls ruldescribes relpattern
        , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
        , ctx_sql   = []
        , ctx_php   = []
+       , ctx_metas = []
        , ctx_experimental = False -- is set in Components.hs
       }
 

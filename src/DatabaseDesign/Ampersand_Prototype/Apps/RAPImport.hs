@@ -34,13 +34,15 @@ makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
 makeRAPPops fs opts usrfiles pics
  = let usr = namespace opts
        operations = [(1,"laden")] -- ,(CID "2",CID ""),(CID "3",CID ""),(CID "4",CID ""),(CID "5",CID "")]
+       srcfile = takeFileName(importfile opts)
+       inclfiles = [fn | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn/=srcfile]
    in
      --see trunk/apps/Atlas/FSpec.adl
-     makepopu ("sourcefile","Context","File") [(fsid fs  , fileid (takeFileName(importfile opts)))]
-    :makepopu ("filename","File","FileName")  [(fileid fn, nonsid fn)                              | fn<-usrfiles]
-    :makepopu ("filepath","File","FilePath")  [(fileid fn, nonsid(dropFileName (importfile opts))) | fn<-usrfiles]
-    :makepopu ("loaded","File","File")        [(fileid (takeFileName(importfile opts))
-                                                         , fileid (takeFileName(importfile opts)))]
+     makepopu ("sourcefile","Context","File") [(fsid fs        , fileid srcfile)]
+    :makepopu ("loaded","File","File")        [(fileid srcfile , fileid srcfile)]
+    :makepopu ("includes","Context","File")   [(fsid fs        , fileid fn)                        | fn<-            inclfiles] 
+    :makepopu ("filename","File","FileName")  [(fileid fn, nonsid fn)                              | fn<-usrfiles ++ inclfiles]
+    :makepopu ("filepath","File","FilePath")  [(fileid fn, nonsid(dropFileName (importfile opts))) | fn<-usrfiles ++ inclfiles]
     :makepopu ("uploaded","User","File")      [(usrid usr, fileid fn)                              | fn<-usrfiles]
     :makepopu ("applyto","G","File")          [(gid op fn, fileid fn)                              | fn<-usrfiles, (op,_ )<-operations]
     :makepopu ("functionname","G","String")   [(gid op fn, nonsid nm)                              | fn<-usrfiles, (op,nm)<-operations]
