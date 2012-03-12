@@ -55,6 +55,7 @@ where
    
    data P_Context
       = PCtx{ ctx_nm     :: String          -- ^ The name of this context
+            , ctx_pos    :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
             , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
             , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
             , ctx_thms   :: [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)

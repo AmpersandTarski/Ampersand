@@ -60,6 +60,7 @@ fatal = fatalMsg "AbstractSyntaxTree.hs"
 
 data A_Context
    = ACtx{ ctxnm     :: String        -- ^ The name of this context
+         , ctxpos    :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang   :: Lang          -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat  -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxthms   :: [String]      -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)

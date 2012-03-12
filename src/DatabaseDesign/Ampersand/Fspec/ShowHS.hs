@@ -260,6 +260,7 @@ where
     showHS flags indent fspec
      = intercalate (indent ++"    ") 
            [ "Fspc{ fsName = " ++ show (name fspec)
+           ,wrap ", fspos  = " indentA (showHS flags) (fspos fspec)
            ,     ", fsLang        = " ++ show (fsLang fspec) ++ "  -- the default language for this specification"
            ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
            ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)

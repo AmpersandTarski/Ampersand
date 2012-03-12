@@ -28,6 +28,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         allQuads = quads flags (\_->True) (rules context++multrules context++keyrules context)
         fSpec =
             Fspc { fsName       = name context
+                 , fspos        = ctxpos context
                    -- interfaceS contains the interfaces defined in the Ampersand script.
                    -- interfaces are meant to create user interfaces, programming interfaces and messaging interfaces.
                    -- A generic user interface (the Lonneker interface) is already available.
