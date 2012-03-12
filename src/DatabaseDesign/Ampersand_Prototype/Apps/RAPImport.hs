@@ -48,7 +48,7 @@ makeRAPPops fs opts usrfiles pics
     :makepopu ("functionname","G","String")   [(gid op fn, nonsid nm)                              | fn<-usrfiles, (op,nm)<-operations]
     :makepopu ("operation","G","Int")         [(gid op fn, nonsid (show op))                       | fn<-usrfiles, (op,_ )<-operations]
     :makepopu ("newfile","User","NewFile")    [(usrid usr, nonsid "empty.adl")]
-    :makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid([if c=='\\' then '/' else c | c<-imgURL pic]))
+    :makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-show(imgURL pic)])
                                                                        | pic<-pics]
     :makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fs, name p==origName pic]
     :makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-rules fs   , name r==origName pic]
