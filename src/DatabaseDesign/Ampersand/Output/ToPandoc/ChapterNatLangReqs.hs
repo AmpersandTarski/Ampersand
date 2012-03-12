@@ -336,7 +336,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                        d         = makeDeclaration rel
                        samplePop = take 3 (decpopu d)
                        sampleSentences =
-                         [ Para $ mkSentence d srcKeyAtom tgtKeyAtom 
+                         [ Para $ mkSentence (development opts) d srcKeyAtom tgtKeyAtom 
                          | (srcAtom,tgtAtom)<-samplePop
                          , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) srcAtom 
                          , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) tgtAtom
@@ -363,25 +363,26 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                   | not (null$meaning2Blocks (language opts) rul)]
                where purps = purposes fSpec (language opts) rul
                       
-  mkSentence :: Declaration -> String -> String -> [Inline]
-  mkSentence decl srcAtom tgtAtom
-   = let str = if fspecFormat opts==FLatex then RawInline "latex" . latexEscShw else Str 
-     in  case decl of
-           Sgn{} | null (prL++prM++prR) 
-                      -> [str (upCap srcAtom),Space,Str "(",(str.unCap.name.source) decl, Str ")",Str "corresponds",Space,Str "to",Space,str tgtAtom,Space,Str "(",(str.unCap.name.target) decl, Str ")",Str "in",Space,Str "relation",Space,str (decnm decl),Str "."]
-                 | otherwise 
-                      -> leftHalf prL ++ rightHalf
-                        where prL = decprL decl
-                              prM = decprM decl
-                              prR = decprR decl
-                              leftHalf ""    = [Str "(",(str.name.source) decl]
-                              leftHalf prLft = [str (upCap prLft),Space,Str "(",(str.unCap.name.source) decl]
-                              rightHalf = [Str ") ", str srcAtom,Space,str prM,Space,Str "(",(str.unCap.name.target) decl, str ") ",str tgtAtom]++(if null prR then [] else [Space,str prR]) ++ [Str "."]
+  mkSentence :: Bool -> Declaration -> String -> String -> [Inline]
+  mkSentence isDev decl srcAtom tgtAtom
+   = case decl of
+       Sgn{} | null (prL++prM++prR) 
+                  -> [str (upCap srcAtom), Space] ++ devShow (source decl) ++ [Str "corresponds",Space,Str "to",Space,str tgtAtom, Space] ++ devShow (target decl) ++[Str "in",Space,Str "relation",Space,str (decnm decl),Str "."]
+             | otherwise 
+                  -> leftHalf prL ++ rightHalf
+                    where prL = decprL decl
+                          prM = decprM decl
+                          prR = decprR decl
+                          leftHalf ""    = devShow (source decl)
+                          leftHalf prLft = [str (upCap prLft), Space] ++ devShow (source decl)
+                          rightHalf = [str srcAtom,Space,str prM, Space] ++ devShow (target decl) ++ [str tgtAtom]++(if null prR then [] else [Space,str prR]) ++ [Str "."]
 
-           Isn{}     -> [Str "(",(str.name.source) decl, Str ") ",str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
-           Iscompl{} -> [Str "(",(str.name.source) decl, Str ") ",str (upCap srcAtom),Space,Str "differs",Space,Str "from",Space,str tgtAtom,Str "."]
-           Vs{}      -> [Str "True"]
-
+       Isn{}     -> devShow (source decl) ++ [str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
+       Iscompl{} -> devShow (source decl) ++ [str (upCap srcAtom),Space,Str "differs",Space,Str "from",Space,str tgtAtom,Str "."]
+       Vs{}      -> [Str "True"]
+   where str = if fspecFormat opts==FLatex then RawInline "latex" . latexEscShw else Str
+         devShow c | isDev     = [Str "(", str $ name c, Str ") "] -- only show the concept when --dev option is given
+                   | otherwise = []
 
 -- TODO: fix showing/not showing based on relation
 -- TODO: what about relations in the target key?
