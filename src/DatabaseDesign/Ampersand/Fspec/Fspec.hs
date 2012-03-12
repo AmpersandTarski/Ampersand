@@ -38,6 +38,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
 
 data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the Ampersand script
+                 , fspos        :: [Origin]              -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
                  , themes       :: [String]              -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                  , fsLang       :: Lang                  -- ^ The default language for this specification, if specified at all.
                  , vprocesses   :: [FProcess]            -- ^ All processes defined in the Ampersand script
