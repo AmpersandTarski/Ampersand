@@ -4,6 +4,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
 -- Go to  http://hackage.haskell.org/package/graphviz  for Graphviz bindings for Haskell.
  
    import Data.GraphViz
+   import Data.GraphViz.Attributes.Complete
    import Data.List
    import DatabaseDesign.Ampersand.Basics        (fatalMsg,Collection(..),Identified(..))
    import DatabaseDesign.Ampersand.ADL1
@@ -11,11 +12,12 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
+   import Data.String
+   
 --   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) -- for testing purposes
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Switchboard"
-
 
    data SwitchBdDiagram
     = SBdgrm { sbName     :: String
@@ -28,7 +30,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    processModel fp
     = DotGraph { strictGraph = False
                , directedGraph = True
-               , graphID = Just (Str "Process Model")
+               , graphID = Just (Str (fromString "Process Model"))
                , graphStatements 
                   = DotStmts { attrStmts = [GraphAttrs [{-Splines SplineEdges,-} RankDir FromLeft]]
                              , subGraphs = []
@@ -38,14 +40,13 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                }
       where
          activityNodes = [ DotNode { nodeID         = "act_"++name a
-                                   , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color Orange), Label (StrLabel (name a))]
+                                   , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color Orange), Label (StrLabel (fromString (name a)))]
                                    }
                          | a<-fpActivities fp]
          edges         = nub
-                         [ DotEdge { edgeFromNodeID = "act_"++name from
-                                   , edgeToNodeID   = "act_"++name to
-                                   , edgeAttributes = [Len 2, Label (StrLabel (show e++" "++name r))]
-                                   , directedEdge   = True
+                         [ DotEdge { fromNode = "act_"++name from
+                                   , toNode   = "act_"++name to
+                                   , edgeAttributes = [Len 2, Label (StrLabel (fromString (show e++" "++name r))), Dir Forward]
                                    }
                          | (from,to,e,r) <- allEdges
                          ]
@@ -66,7 +67,6 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
          evIn r (ERel rel) = [Ins | r==rel]
          evIn _ _        = fatal 66 "evIn can only be called on a disjunctive normal form."
          
-
    colorRule :: Rule -> X11Color
    colorRule r  | isSignal r = Orange
                 | otherwise  = Green
@@ -78,7 +78,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
         , sbdotGraph
            = DotGraph { strictGraph = False
                       , directedGraph = True
-                      , graphID = Just (Str "Switchboard")
+                      , graphID = Just (Str (fromString "Switchboard"))
                       , graphStatements 
                          = DotStmts { attrStmts = [GraphAttrs [Splines SplineEdges, RankDir FromLeft]]
                                     , subGraphs = []
@@ -90,48 +90,45 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
       where
         --DESCR -> The relations from which changes can come
         inEvNodes = [ DotNode { nodeID         = nameINode eventsIn ev
-                              , nodeAttributes = [Label (StrLabel (show (eSrt ev)++" "++(showADL . disambiguate fSpec . ERel) (eRel ev)))]
+                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++(showADL . disambiguate fSpec . ERel) (eRel ev))))]
                               }
                     | ev<-eventsIn
                     ]
         --DESCR -> All conjuncts
         conjNodes = [ DotNode { nodeID         = nameCNode (fsbConjs fsb) (rul,c)
-                              , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color (colorRule rul)), (Label . StrLabel . name) rul]
+                              , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color (colorRule rul)), (Label . StrLabel . fromString . name) rul]
                               }
                     | (rul,c)<-fsbConjs fsb]
 
         --DESCR -> All ECA rules
         ecaNodes  = [ DotNode { nodeID         = nameENode (fsbECAs fsb) eca
                               , nodeAttributes = if isBlk (ecaAction eca)
-                                                 then [Style [SItem Filled []], FillColor (X11Color Red), (Label . StrLabel) ("ERR #"++show (ecaNum eca))]
-                                                 else [(Label . StrLabel . showADL) eca]
+                                                 then [Style [SItem Filled []], FillColor (X11Color Red), (Label . StrLabel . fromString) ("ERR #"++show (ecaNum eca))]
+                                                 else [(Label . StrLabel . fromString. showADL) eca]
                               }
                     | eca<-fsbECAs fsb, not (isBlk (ecaAction eca))]
 
         --DESCR -> The relations to which changes are made
         outEvNods = [ DotNode { nodeID         = nameONode eventsOut ev
-                              , nodeAttributes = [Label (StrLabel (show (eSrt ev)++" "++(showADL . disambiguate fSpec . ERel) (eRel ev)))]
+                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++(showADL . disambiguate fSpec . ERel) (eRel ev))))]
                               }
                     | ev<-eventsOut
                     ]
         --DESCR -> Each edge represents an insert relation between a morphism on the left and a term on the right to which the relation contributes to an insert.
-        edgesEvCj = [ DotEdge { edgeFromNodeID = nameINode eventsIn ev
-                              , edgeToNodeID   = nameCNode (fsbConjs fsb) (rul,c)
-                              , edgeAttributes = []
-                              , directedEdge   = True
+        edgesEvCj = [ DotEdge { fromNode = nameINode eventsIn ev
+                              , toNode   = nameCNode (fsbConjs fsb) (rul,c)
+                              , edgeAttributes = [Dir Forward]
                               }
                     | (rul,c)<-fsbConjs fsb, ev<-eventsIn, eRel ev `elem` mors c]
-        edgesCjEc = [ DotEdge { edgeFromNodeID = nameCNode (fsbConjs fsb) (rul,c)
-                              , edgeToNodeID   = nameENode (fsbECAs fsb) eca
-                              , edgeAttributes = []
-                              , directedEdge   = True
+        edgesCjEc = [ DotEdge { fromNode = nameCNode (fsbConjs fsb) (rul,c)
+                              , toNode   = nameENode (fsbECAs fsb) eca
+                              , edgeAttributes = [Dir Forward]
                               }
                     | (rul,c)<-fsbConjs fsb, eca<-fsbECAs fsb, not (isBlk (ecaAction eca)), rul `elem` concat [r | (_,r)<-paMotiv (ecaAction eca)] ]
         edgesEcEv = nub
-                    [ DotEdge { edgeFromNodeID = nameENode (fsbECAs fsb) eca
-                              , edgeToNodeID   = nameONode eventsOut (On tOp rel)
-                              , edgeAttributes = []
-                              , directedEdge   = True
+                    [ DotEdge { fromNode = nameENode (fsbECAs fsb) eca
+                              , toNode   = nameONode eventsOut (On tOp rel)
+                              , edgeAttributes = [Dir Forward]
                               }
                     | eca<-fsbECAs fsb, not (isBlk (ecaAction eca))
                     , Do tOp (ERel rel) _ _<-dos (ecaAction eca)
@@ -163,7 +160,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
         , sbdotGraph
            = DotGraph { strictGraph = False
                       , directedGraph = True
-                      , graphID = Just (Str "Switchboard")
+                      , graphID = Just (Str (fromString "Switchboard"))
                       , graphStatements 
                          = DotStmts { attrStmts = [GraphAttrs [Splines SplineEdges, RankDir FromLeft]]
                                     , subGraphs = []
@@ -179,41 +176,43 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
                            | Quad _ ccrs<-actQuads act, (c,_)<-cl_conjNF ccrs]
         --DESCR -> The relations from which changes can come
         inMorNodes    = [ DotNode { nodeID         = nameINode fromRels r
-                                  , nodeAttributes = [Label (StrLabel ((showADL . disambiguate fSpec . ERel) r))]
+                                  , nodeAttributes = [Label (StrLabel (fromString ((showADL . disambiguate fSpec . ERel) r)))]
                                   }
                         | r<-fromRels
-                        , (not.null) [e |e<-edgesIn, edgeFromNodeID e==nameINode fromRels r]
+                                                  --TODOHAN        , (not.null) [e |e<-edgesIn, (nodeID  (fromNode e))==nameINode fromRels r]
                         ]
 
         --DESCR -> The relations to which changes are made
         outMorNodes   = [ DotNode { nodeID         = nameONode toRels r
-                                  , nodeAttributes = [Label (StrLabel ((showADL . disambiguate fSpec . ERel) r))]
+                                  , nodeAttributes = [Label (StrLabel (fromString ((showADL . disambiguate fSpec . ERel) r)))]
                                   }
                         | r<-toRels
-                        , (not.null) [e |e<-edgesOut, edgeToNodeID e==nameONode toRels r ]
+                  --TODOHAN     , (not.null) [e |e<-edgesOut, (nodeID . toNode) e==nameONode toRels r ]
                         ]
 
         --DESCR -> All conjuncts
         conjunctNodes = [ DotNode { nodeID         = nameCNode conjuncts (rul,c)
-                                  , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color (colorRule rul)), Label (StrLabel (name rul))]
+                                  , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color (colorRule rul)), Label (StrLabel (fromString (name rul)))]
                                   }
                         | (rul,c)<-conjuncts]
 
         --DESCR -> Each edge represents an insert relation between a morphism on the left and a term on the right to which the relation contributes to an insert.
-        edgesIn       = [ DotEdge { edgeFromNodeID = nameINode fromRels r
-                                  , edgeToNodeID   = nameCNode conjuncts (rul,c)
-                                  , edgeAttributes = [Label (StrLabel (if or (positiveIn c r) then "-" else
+        edgesIn       = [ DotEdge { fromNode       = nameINode fromRels r
+                                  , toNode         = nameCNode conjuncts (rul,c)
+                                  , edgeAttributes = [Label (StrLabel (fromString 
+                                                                      (if or (positiveIn c r) then "-" else
                                                                        if or [not b |b<-positiveIn c r] then "+" else
-                                                                       "+-"))]
-                                  , directedEdge   = True
+                                                                       "+-")))
+                                                     ,Dir Forward]
                                   }
                         | (rul,c)<-conjuncts, r<-(nub.mors) c, r `elem` fromRels]
-        edgesOut      = [ DotEdge { edgeFromNodeID = nameCNode conjuncts (rul,c)
-                                  , edgeToNodeID   = nameONode toRels r
-                                  , edgeAttributes = [Label (StrLabel (if or (positiveIn c r) then "+" else
+        edgesOut      = [ DotEdge { fromNode       = nameCNode conjuncts (rul,c)
+                                  , toNode         = nameONode toRels r
+                                  , edgeAttributes = [Label (StrLabel (fromString
+                                                                      (if or (positiveIn c r) then "+" else
                                                                        if or [not b |b<-positiveIn c r] then "-" else
-                                                                       "+-"))]
-                                  , directedEdge   = True
+                                                                       "+-")))
+                                                     ,Dir Forward]
                                   }
                         | (rul,c)<-conjuncts, r<-(nub.mors) c]
         nameINode = nmLkp fSpec "in_"

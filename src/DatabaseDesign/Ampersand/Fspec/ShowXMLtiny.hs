@@ -28,7 +28,6 @@ where
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Fspec.Fspec
 --   import DatabaseDesign.Ampersand.Fspec.FPA     (FPA(..))
-   import Data.Time.Clock
    import Data.Time.LocalTime
    import DatabaseDesign.Ampersand.Fspec.Plug 
    import DatabaseDesign.Ampersand.Misc.TinyXML 
