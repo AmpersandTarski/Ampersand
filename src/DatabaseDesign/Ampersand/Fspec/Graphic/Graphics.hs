@@ -16,7 +16,9 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics (fatalMsg,eqCl,Collection(..),Identified(..))
 import DatabaseDesign.Ampersand.Fspec.Graphic.Picture
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (ClassDiag,classdiagram2dot)
+import Data.GraphViz.Attributes.Complete
 import Data.List (nub)
+import Data.String
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Graphic.Graphics"
@@ -26,10 +28,11 @@ class Identified a => Navigatable a where
    itemstring :: a -> String 
    theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
    theURL flags x 
-     = "Atlas.php?content=" ++ interfacename x
-            ++  "&User=" ++ user
-            ++  "&Script=" ++ script
-            ++  "&"++interfacename x ++"="++qualify++itemstring x
+     = fromString ("Atlas.php?content=" ++ interfacename x
+                   ++  "&User=" ++ user
+                   ++  "&Script=" ++ script
+                   ++  "&"++interfacename x ++"="++qualify++itemstring x
+                  )
       where --copied from atlas.hs
       script = fileName flags
       user = namespace flags
@@ -87,7 +90,7 @@ instance Dotable A_Concept where
                      , not (isProp r)    -- r is not a property
                      ]
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTConcept . printDotGraph . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (name x) PTConcept . conceptualGraph fSpec flags variant) x
 
 instance Dotable Pattern where
    -- | The Plain_CG of pat makes a picture of at least the mors within pat; 
@@ -133,7 +136,7 @@ instance Dotable Pattern where
                  f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
                                      where result' = result++new
    makePicture flags fSpec variant pat =
-          (makePictureObj flags (name pat) PTPattern . printDotGraph . conceptualGraph fSpec flags variant) pat
+          (makePictureObj flags (name pat) PTPattern . conceptualGraph fSpec flags variant) pat
 
 instance Dotable FProcess where
    conceptualGraph fSpec flags _ fproc = conceptual2Dot flags (name fproc) cpts rels idgs
@@ -147,7 +150,7 @@ instance Dotable FProcess where
                      , not (isProp r)    -- r is not a property
                      ]
    makePicture flags _ _ x =
-          (makePictureObj flags (name x) PTProcess . printDotGraph . processModel) x
+          (makePictureObj flags (name x) PTProcess . processModel) x
 {- inspired by:
    makePicture flags _ _ cd =
           makePictureObj flags (name cd) PTClassDiagram (classdiagram2dot flags cd) -}
@@ -168,12 +171,12 @@ instance Dotable Activity where
                     , not (isProp r)    -- r is not a property
                     ]
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTFinterface . printDotGraph . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (name x) PTFinterface . conceptualGraph fSpec flags variant) x
 
 instance Dotable SwitchBdDiagram where
    conceptualGraph _ _ _ = sbdotGraph
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTSwitchBoard . printDotGraph . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (name x) PTSwitchBoard . conceptualGraph fSpec flags variant) x
 
 instance Dotable Rule where
    conceptualGraph fSpec flags _ r = conceptual2Dot flags (name r) cpts rels idgs
@@ -185,7 +188,7 @@ instance Dotable Rule where
                , not (isProp d)    -- d is not a property
                ]
    makePicture flags fSpec variant x =
-          (makePictureObj flags (name x) PTRule . printDotGraph . conceptualGraph fSpec flags variant) x
+          (makePictureObj flags (name x)  PTRule . conceptualGraph fSpec flags variant) x
 
 -- Chapter 2: Formation of a conceptual graph as a DotGraph data structure.
 conceptual2Dot :: Options                   -- ^ the flags 
@@ -197,7 +200,7 @@ conceptual2Dot :: Options                   -- ^ the flags
 conceptual2Dot flags graphName cpts' rels idgs
      = DotGraph { strictGraph = False
                 , directedGraph = True
-                , graphID = Just (Str graphName)
+                , graphID = Just (Str (fromString graphName))
                 , graphStatements 
                       = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture flags)]
                                  , subGraphs = []
@@ -239,10 +242,10 @@ constrNode nodeId pObj flags
             }
 constrEdge :: a -> a -> PictureObject -> Bool -> Options -> DotEdge a
 constrEdge nodeFrom nodeTo pObj isDirected' flags 
-  = DotEdge { edgeFromNodeID = nodeFrom
-            , edgeToNodeID   = nodeTo
+  = DotEdge { fromNode = nodeFrom
+            , toNode   = nodeTo
             , edgeAttributes = handleFlags pObj flags
-            , directedEdge   = isDirected'
+          --  , directedEdge   = isDirected'
             }
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept
@@ -268,28 +271,33 @@ handleFlags po flags =
       CptConnectorNode c 
          -> if crowfoot flags
             then defaultNodeAtts flags++ 
-                 [ Label$StrLabel (name c)
+                 [ Label$StrLabel (fromString(name c))
                  , Shape PlainText
-                 , filled --Style$Stl Filled Nothing
+                 , Style [filled]
                  , URL (theURL flags c)
                  ]
-            else [Shape PointShape, filled]--Style$Stl Filled Nothing,Width 0.1] --used to be something like: if crowfoot flags then doosje flags c else bolletje
+            else [ Shape PointShape
+                 , Style [filled]
+                 ]
       CptNameNode c  -> if crowfoot flags
-                        then [Shape PointShape, invisible]--Style$Stl Invisible Nothing,Width 0.1]
+                        then [ Shape PointShape
+                             , Style [invis]]
                         else defaultNodeAtts flags++
-                             [ Label$StrLabel (name c)
+                             [ Label (StrLabel (fromString(name c)))
                              , Shape PlainText
-                             , filled --Style$Stl Filled Nothing
+                             , Style [filled]
                              , URL (theURL flags c)
                              ]
-      CptEdge    -> [Len 0.4, invisible]
+      CptEdge    -> [ Len 0.4
+                    , Style [invis]
+                    ]
       CptOnlyOneNode c -> defaultNodeAtts flags++
-                          [Label (StrLabel (name c))
+                          [Label (StrLabel (fromString(name c)))
                           , Shape PlainText
-                          , filled 
+                          , Style [filled] 
                           , URL (theURL flags c)
                           ]
-      RelOnlyOneEdge r -> [ Label (StrLabel (name r))
+      RelOnlyOneEdge r -> [ Label (StrLabel (fromString(name r)))
                           , ArrowHead (if crowfoot flags
                                        then crowfootArrowType True r
                                        else plainArrowType True r
@@ -330,15 +338,15 @@ handleFlags po flags =
                       ,TailClip False
                       ] 
       RelNameNode r -> defaultNodeAtts flags++ 
-                       [ Label (StrLabel (name r))
+                       [ Label (StrLabel (fromString(name r)))
                        , Shape PlainText
-                       , BgColor (X11Color White)
+                       , bgColor White
                        , URL (theURL flags r) 
                        ]
       IsaOnlyOneEdge-> [ Len 1.5
                        , ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow
-                       , if blackWhite flags then dotted else cRed
+                       , if blackWhite flags then Style [dotted] else penColor Red
                        ]
       TotalPicture -> [  Overlap RemoveOverlaps ]
 
@@ -347,19 +355,19 @@ isInvFunction d = isInj d && isSur d
 
 --DESCR -> default Node attributes
 defaultNodeAtts :: Options -> [Attribute]
-defaultNodeAtts flags = [FontSize 12, FontName (pangoFont flags)]
+defaultNodeAtts flags = [FontSize 12, FontName (fromString(pangoFont flags))]
 
-invisible :: Attribute
-invisible = Style [SItem Invisible []]
+--invisible :: Attribute
+--invisible = Style [SItem Invisible []]
 
-dotted :: Attribute
-dotted = Style [SItem Dotted []]
+--dotted :: Attribute
+--dotted = Style [SItem Dotted []]
 
 --dashed :: Attribute
 --dashed = Style [SItem Dashed []]
 
-filled :: Attribute
-filled = Style [SItem Filled []]
+--filled :: Attribute
+--filled = Style [SItem Filled []]
 
 crowfootArrowType :: Bool -> Declaration -> ArrowType
 crowfootArrowType isHead r 
@@ -396,24 +404,3 @@ noMod = ArrMod { arrowFill = FilledArrow
 open  :: ArrowModifier
 open  = noMod {arrowFill = OpenArrow}
 
---makeLabelTable :: String -> String
---makeLabelTable n
---  = n
-
--- hulpfuncties, voor tijdelijk. TODO, opschonen
---transparent :: Attribute
---transparent = Color [X11Color Transparent]
---orange :: Attribute
---orange = Color [X11Color  Orange]
---yellow :: Attribute
---yellow = Color [X11Color  Yellow]
---purple :: Attribute
---purple = Color [X11Color  Purple]
---cyan :: Attribute
---cyan = Color [X11Color  Cyan]
---brown :: Attribute
---brown = Color [X11Color  Brown]
---cgreen :: Attribute
---cgreen = Color [X11Color  Green]
-cRed :: Attribute
-cRed = Color [X11Color  Red]

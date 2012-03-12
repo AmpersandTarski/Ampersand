@@ -7,27 +7,21 @@ module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
           Multiplicities(..), MinValue(..), MaxValue(..),
           clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
 where
-   import Data.Char (isAlphaNum,ord,isUpper,toUpper)
    import Data.List
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.ADL1  hiding (Association)
+   import DatabaseDesign.Ampersand.ADL1  hiding (Association,Box)
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.Fspec
+   import Data.String
+   import Data.GraphViz.Types.Canonical
+   import Data.GraphViz.Types
+   import Data.GraphViz.Attributes.Complete hiding (Attribute)
+   import Data.GraphViz.Attributes hiding (Attribute)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
-
---   import Data.ClassDiag  
-   --TODO -> copied from Auxiliaries because disabled (why disabled?)
-   enc :: Bool -> String -> String
-   enc upper (c:cs) | not (isAlphaNum c) = '_': htmlEnc c ++ enc upper cs
-                    | isUpper c==upper   = c: enc upper cs
-                    | otherwise          = '_': c: enc (not upper) cs
-     where 
-        htmlEnc = reverse . take 3 . (++"00") . reverse . show . ord
-   enc _ "" = ""
 
    class CdNode a where
     nodes :: a->[String]
@@ -172,192 +166,172 @@ where
                     | r<-rs, not (isPropty r)]
        isPropty r = null([Sym,Asy]>-multiplicities r)
 
-   classdiagram2dot :: Options -> ClassDiag -> String
-   classdiagram2dot flags cd@(OOclassdiagram cs' as' rs' gs' (_, concspat))
-            = "digraph G {rankdir=LR;bgcolor=transparent\n" ++        
-              "    edge [ \n" ++
-              "            fontsize = 11"++(if layout=="neato" then ", len = 3" else "")++" \n" ++
-              "    ]\n" ++
-              classes2dot cs' (nodes cd>-nodes cs')++ "\n" ++
-              associations2dot as' ++ "\n" ++
-              aggregations2dot rs' ++ "\n" ++
-              generalizations2dot gs' ++
-              "\n}\n"
+   classdiagram2dot :: Options -> ClassDiag -> DotGraph String
+   classdiagram2dot flags cd
+    = DotGraph { strictGraph   = False
+               , directedGraph = True
+               , graphID       = Nothing
+               , graphStatements = dotstmts
+               }
+        where
+         dotstmts = DotStmts
+           { attrStmts =  [ GraphAttrs [ RankDir FromLeft
+                                       , bgColor White]
+                          ]
+                   --    ++ [NodeAttrs  [ ]]
+                       ++ [EdgeAttrs  [ FontSize 11
+                                      , MinLen 4
+                          ]           ]
+           , subGraphs = []
+           , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
+           , edgeStmts = (map association2edge (assocs cd))  ++
+                         (map aggregation2edge (aggrs cd))  ++
+                         (concatMap generalization2edges (geners cd))
+           }
+        
+        
           where
-          layout = "dot"
-          classes2dot :: [Class] -> [String] -> String
-          classes2dot cs os
-           = defaultclass ++
-             (if null cs then "" else '\n': intercalate "\n" (map class2dot cs))++
-             (if null os then "" else '\n': intercalate "\n" (map clas2dot os))
-             where defaultclass = "    Node [shape = box] \n"
-          clas2dot :: String -> String
-          clas2dot n = spaces 5 ++ alias n ++ " [shape=box label=\""++n++"\"]"
-          class2dot :: Class -> String
-          class2dot (OOClass n' as'' ms') = spaces 5 ++ alias n' ++ " [\n" ++
-                                           spaces 7 ++ "shape=plaintext \n" ++
-                                                    classlabel n' as'' ms' ++
-                                                    "\n     ]"
-            where
-              classlabel n as ms = spaces 7 ++ "label =<" ++
-                                     indent 10 (dottable tableopts tablecontent) ++ "\n" ++
-                                   spaces 7 ++ ">"
-                    where
-                      tableopts = " BGCOLOR=\"white\" BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\""
-                      tablecontent =  dotrow "" (dotcell " BGCOLOR=\"lightgray\" ALIGN=\"center\""
-                                                          (dotfont (if blackWhite flags then "" else " COLOR=\"red\"")
-                                                                   n)) ++
-                                      (if null as && null ms then "" else dotrow "" (dotcell "" (attribs2dot as))) ++
-                                      (if null ms then "" else dotrow "" (dotcell "" (methods2dot ms)))
-
-              attribs2dot :: [Attribute] -> String
-              attribs2dot [] = emptydottable notableborderopts
-              attribs2dot as = dottable notableborderopts (intercalate "" (map attrib2dot as))
- 
-              attrib2dot :: Attribute -> String
-              attrib2dot (OOAttr n t fNull) = dotrow "" (dotcell " ALIGN=\"left\"" ((if fNull then "o " else "+ ") ++ n ++ " : " ++ t))
-
-              methods2dot :: [Method] -> String
-              methods2dot [] = emptydottable notableborderopts
-              methods2dot ms = dottable notableborderopts (intercalate "" (map method2dot ms))
-
-              method2dot :: Method -> String
-              method2dot m =  dotrow "" (dotcell " ALIGN=\"left\"" ("+ " ++ show m ))
-
+          allNodes :: [Class] -> [String] -> [DotNode String]
+          allNodes cs others = 
+             map class2node cs ++ 
+             map nonClass2node others
+          
+          class2node :: Class -> DotNode String
+          class2node cl = DotNode 
+            { nodeID         = name cl
+            , nodeAttributes = [ Shape PlainText
+                               , Color [(X11Color Purple)]
+                               , Label (HtmlLabel (HtmlTable htmlTable))
+                               ]
+            } where 
+             htmlTable = HTable { tableFontAttrs = Nothing
+                                , tableAttrs     = [ HtmlBGColor (X11Color White)
+                                                   , HtmlColor (X11Color Black) -- the color used for all cellborders
+                                                   , HtmlBorder 0  -- 0 = no border
+                                                   , HtmlCellBorder 1  
+                                                   , HtmlCellSpacing 0
+                                                   ]
+                                , tableRows      = [ HtmlRow -- Header row, containing the name of the class
+                                                      [ HtmlLabelCell 
+                                                            [ HtmlBGColor (X11Color Gray10)
+                                                            , HtmlColor   (X11Color Black)
+                                                            ]
+                                                            (HtmlText [ HtmlFont [ HtmlColor   (X11Color White)
+                                                                                 ]                                                            
+                                                                                 [HtmlStr (fromString (name cl))]
+                                                                      ]
+                                                            )
+                                                      ]
+                                                   ]++ 
+                                                   map attrib2row (clAtts cl) ++
+                                                   map method2row (clMths cl) 
+                                                   
+                                                   
+                                } 
+                 where
+                   attrib2row a = HtmlRow
+                                    [ HtmlLabelCell [ HtmlAlign HLeft] 
+                                         ( HtmlText [ HtmlStr (fromString (if attOptional a then "o " else "+ "))
+                                                    , HtmlStr (fromString (name a))
+                                                    , HtmlStr (fromString " : ")
+                                                    , HtmlStr (fromString (attTyp a))
+                                                    ]
+                                         ) 
+                                    ]
+                   method2row m = HtmlRow
+                                    [ HtmlLabelCell [ HtmlAlign HLeft] 
+                                         ( HtmlText [ HtmlStr (fromString "+ ")
+                                                    , HtmlStr (fromString (show m))
+                                                    ]
+                                         ) 
+                                    ]
+                    
+          nonClass2node :: String -> DotNode String
+          nonClass2node str = DotNode { nodeID = str
+                                      , nodeAttributes = [ Shape Box3D
+                                                         , Label (StrLabel (fromString str))
+                                                         ]
+                                      }
+          
   -------------------------------
   --        ASSOCIATIONS:      --
   -------------------------------
-          alias nm
-           = if map toUpper nm `elem` ["NODE", "EDGE"]
-             then (enc True . head) [ nm++show (i::Int) | i<-[1..], nm++show i `notElem` map name concspat]
-             else enc True nm
-          associations2dot :: [Association] -> String
-          associations2dot as = intercalate "\n" (map association2dot as) ++ "\n"
-          association2dot :: Association -> String
-          association2dot (OOAssoc from m1 _ to m2 n2) =
-              "      edge [ \n" ++
-              "              arrowhead = \"none\" \n" ++
-              "              arrowtail = \"none\" \n" ++
-              (if null (nametable $ mult2Str m2) then "" else "              headlabel = " ++ nametable (mult2Str m2) ++ "\n") ++
-              (if null (nametable $ mult2Str m1) then "" else "              taillabel = " ++ nametable (mult2Str m1) ++ "\n") ++
-              "              label = \"" ++ n2 ++ "\" \n" ++
-              "      ]\n" ++
-              "       " ++ alias from ++ " -> " ++ alias to
+          association2edge :: Association -> DotEdge String
+          association2edge ass = 
+             DotEdge { fromNode       = assSrc ass
+                     , toNode         = assTrg ass
+                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
+                                        , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
+                                        , HeadLabel (mult2Lable (assrhm ass))
+                                        , TailLabel (mult2Lable (asslhm ass))
+                                        , Label     (StrLabel (fromString (assrhr ass)))
+                                        , LabelFloat True
+                                        ]
+                     }
               where
+                 mult2Lable = StrLabel . fromString . mult2Str
                  mult2Str (Mult MinZero MaxOne)  = "[0..1]"
                  mult2Str (Mult MinZero MaxMany) = "[0..n]"
                  mult2Str (Mult MinOne  MaxOne)  = "[1..1]"
                  mult2Str (Mult MinOne  MaxMany) = "[1..n]"
                   
-                 nametable "" = "\"\""
-                 nametable name' = dothtml (dottable notableborderopts 
-                                              (dotrow "" (dotcell "" name')))
-
-
   -------------------------------
   --        AGGREGATIONS:      --
   -------------------------------
-          aggregations2dot :: [Aggregation] -> String
-          aggregations2dot rs = intercalate "\n" (map aggregation2dot rs) ++ "\n"
-          aggregation2dot :: Aggregation -> String
+          aggregation2edge :: Aggregation -> DotEdge String
+          aggregation2edge agg =
+             DotEdge { fromNode       = aggSrc agg
+                     , toNode         = aggTrg agg
+                     , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
+                                        , ArrowTail (AType [(ArrMod (case aggDel agg of 
+                                                                      Open -> OpenArrow
+                                                                      Close -> FilledArrow
+                                                                    ) BothSides , Diamond)
+                                                           ]) 
+                                        ]
+                     }
+                 
  
-          aggregation2dot (OOAggr del from to) =
-              "      edge [ \n" ++
-              "              headlabel = \"\"\n"    ++
-              "              taillabel = \"\"\n"    ++
-              "              arrowtail = " ++ aTail del ++" \n" ++
-              "              arrowhead = \"none\" \n" ++
-              "              label =\"\"" ++
-              "      ]\n" ++
-              "       " ++ alias from ++ " -> " ++ alias to
-              where
-                 aTail Open  = "\"odiamond\""
-                 aTail Close = "\"diamond\""
- 
-
  
   -------------------------------
   --        GENERALIZATIONS:   --       -- Ampersand statements such as "GEN Dolphin ISA Animal" are called generalization.
   --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead 
   -------------------------------
-          generalizations2dot :: [Generalization] -> String
-          generalizations2dot gs = intercalate "\n" (map generalization2dot gs) ++ "\n"
- 
-          generalization2dot :: Generalization -> String
-          generalization2dot (OOGener _ []) = ""
-          generalization2dot (OOGener a subs) = genEdge a firstsub ++ generalization2dot (OOGener a restsubs)
+          generalization2edges :: Generalization -> [DotEdge String]
+          generalization2edges ooGen = map (sub2edge (genGen ooGen)) (genSubs ooGen)
            where
-             firstsub = head subs
-             restsubs = tail subs
-             genEdge a' b =
-              "      edge [ \n" ++
-              "              headlabel = \"\"\n"    ++
-              "              taillabel = \"\"\n"    ++
-              "              arrowtail = \"none\" \n" ++
-              "              arrowhead = onormal \n" ++
-              "              arrowsize = 2.0 \n" ++
-              "              " ++( if blackWhite flags
-                                   then "              style = dashed"
-                                   else "              color = red"
-                                 ) ++
-              "              label =\"\"" ++
-              "      ]\n" ++
-              "       " ++ alias a' ++ " -> " ++ alias b ++ "\n"
+             sub2edge g s = DotEdge
+                              { fromNode = g
+                              , toNode   = s
+                              , edgeAttributes 
+                                         = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
+                                           , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
+                                           , ArrowSize  2.0
+                                           ] ++
+                                           ( if blackWhite flags
+                                             then [Style [SItem Dashed []]]
+                                             else [Color [X11Color Red]]
+                                           )
+                              }
+             
 
-   dothtml :: String -> String
-   dothtml content = "<\n  " ++ content ++ "\n>"
-
-   dottable :: String -> String -> String
+   htmlTable :: HtmlAttributes -> String -> HtmlTable
      -- This function is designed to keep in mind that Graphviz does not cope with
      -- empty tables. In case the table has no content, the TABEL taggs are filled
      -- with a single dotrow with no contents.
-   dottable opts a = "\n<TABLE" ++ opts ++">" ++ indent 2 trya ++ "\n</TABLE>"
+   htmlTable atts str =
+     HTable
+       { tableFontAttrs = Nothing
+       , tableAttrs     = atts
+       , tableRows      = [HtmlRow [HtmlLabelCell [] 
+                             (HtmlText [HtmlStr (fromString mindWhiteSpaceOnly)])
+                          ]        ]
+       }
      where
-       trya :: String
-       trya  = if onlyignorechars a then dotrow "" "" else a
-
-   dotrow :: String -> String -> String
-     -- This function is designed to keep in mind that Graphviz does not cope with
-     -- empty rows. In case the row has no content, the taggs are filled
-     -- with a single dotcell with no contents.
-   dotrow opts a   = "\n<TR"    ++ opts ++">" ++ indent 2 trya ++ "\n</TR>"
-     where
-       trya :: String
-       trya  = if onlyignorechars a then dotcell "" "" else a
-
-   dotcell :: String -> String -> String
-   dotcell opts a  = "\n<TD"    ++ opts ++">" ++ indent 2 trya ++ "\n</TD>"
-     where
-       trya :: String
-       trya = if onlyignorechars a then "### Error: Empty cell not allowed in dot!" else a
-
-
-   dotfont :: String -> String -> String
-   dotfont _ a  = a --"\n<FONT"  ++ opts ++">" ++ (indent 2 trya) ++ "</FONT>"   ??? DIT WERKT NIET???
-
-   emptydottable :: String -> String
-   emptydottable opts =  "\n<TABLE" ++ opts ++ "><TR><TD BGCOLOR=\"white\"><FONT COLOR=\"white\">.</FONT></TD></TR></TABLE>"
-   notableborderopts :: String
-   notableborderopts  = " BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\""
-   indent :: Int -> String -> String
-   indent _ "" = ""
-   indent n ('\n':str) = "\n" ++ spaces n ++ indent n str
-   indent n (c:str) = c : indent n str
-
-   onlyignorechars:: String -> Bool
-   onlyignorechars "" = True
-   onlyignorechars (c:cs) =
-     case c of
-       ' '  -> onlyignorechars cs
-       '\n' -> onlyignorechars cs
-       _    -> False
-
-   -- cellen :: Int -> [(String, String)]
-   -- cellen n = [ cel i | i <- [1..n]]
-
+       mindWhiteSpaceOnly  =
+         if all (`elem` " \n") str then " " else str
    
 
- 
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {classes     :: [Class]            --
@@ -370,35 +344,40 @@ where
       name cd = n
         where (n,_) = nameandcpts cd
         
-   data Class          = OOClass        String             --
-                                        [Attribute]        --
-                                        [Method]           --
-                                    deriving Show
-   data Attribute      = OOAttr         String             -- name of the attribute
-                                        String             -- type of the attribute (Concept name or built-in type)
-                                        Bool               -- fNull:  says whether the attribute is optional
-                                    deriving Show
-   
+   data Class          = OOClass  { clNm        :: String      -- ^ name of the class
+                                  , clAtts      :: [Attribute] -- ^ Attributes of the class
+                                  , clMths      :: [Method]    -- ^ Methods of the class
+                                  } deriving Show
+   instance Identified Class where
+      name = clNm
+   data Attribute      = OOAttr   { attNm       :: String      -- ^ name of the attribute
+                                  , attTyp      :: String      -- ^ type of the attribute (Concept name or built-in type)
+                                  , attOptional :: Bool        -- ^ says whether the attribute is optional
+                                  } deriving Show
+   instance Identified Attribute where
+      name = attNm
    data MinValue = MinZero | MinOne deriving (Show, Eq)
    
    data MaxValue = MaxOne | MaxMany deriving (Show, Eq)
    
    data Multiplicities = Mult MinValue MaxValue deriving Show
    
-   data Association    = OOAssoc        String             -- source: the left hand side class
-                                        Multiplicities     -- left hand side multiplicities
-                                        String             -- left hand side role
-                                        String             -- target: the right hand side class
-                                        Multiplicities     -- right hand side multiplicities
-                                        String             -- right hand side role
-                                    deriving Show
-   data Aggregation    = OOAggr         Deleting           --
-                                        String             --
-                                        String             --
-                                    deriving (Show, Eq)
-   data Generalization = OOGener        String             --
-                                        [String]           --
-                                    deriving (Show, Eq)
+   data Association    = OOAssoc  { assSrc :: String           -- ^ source: the left hand side class
+                                  , asslhm :: Multiplicities   -- ^ left hand side multiplicities
+                                  , asslhr :: String           -- ^ left hand side role
+                                  , assTrg :: String           -- ^ target: the right hand side class
+                                  , assrhm :: Multiplicities   -- ^ right hand side multiplicities
+                                  , assrhr :: String           -- ^ right hand side role
+                                  }  deriving Show
+   data Aggregation    = OOAggr   { aggDel :: Deleting         -- 
+                                  , aggSrc :: String           --
+                                  , aggTrg :: String           --
+                                  } deriving (Show, Eq)
+   data Generalization = OOGener  { genGen :: String             --
+                                  , genSubs:: [String]           --
+                                  } deriving (Show, Eq)
+
+
 
    data Deleting       = Open | Close                      --
                                     deriving (Show, Eq)
