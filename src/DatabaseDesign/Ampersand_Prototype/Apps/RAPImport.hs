@@ -6,7 +6,7 @@ where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
-import System.FilePath        (takeFileName,dropFileName,combine)
+import System.FilePath        (takeFileName,dropFileName,combine,addExtension)
 import System.Directory       (getDirectoryContents,doesDirectoryExist)
 import Control.Monad
 
@@ -48,7 +48,7 @@ makeRAPPops fs opts usrfiles pics
     :makepopu ("functionname","G","String")   [(gid op fn, nonsid nm)                              | fn<-usrfiles, (op,nm)<-operations]
     :makepopu ("operation","G","Int")         [(gid op fn, nonsid (show op))                       | fn<-usrfiles, (op,_ )<-operations]
     :makepopu ("newfile","User","NewFile")    [(usrid usr, nonsid "empty.adl")]
-    :makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-show(imgURL pic)])
+    :makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])
                                                                        | pic<-pics]
     :makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fs, name p==origName pic]
     :makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-rules fs   , name r==origName pic]
