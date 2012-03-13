@@ -124,11 +124,11 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
                            , [r | r<-vrules fSpec, r_usr r ] )  -- All user declared rules
          where
-           conceptsWith     -- All concepts that have at least one definition or one userdefined purpose. 
-              = [(c, pps)
-                | c <-concs fSpec
+           conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
+              = [ (c, pps)
+                | c@C{cptdf = Cd{cddef=_:_}:_ } <-concs fSpec
                 , let pps = [p | p <- purposes fSpec (language opts) c, explUserdefd p]
-                , not (null (cptdf c)) || not (null pps)]           
+                ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
               = [ rel | d@Sgn{decusr=True} <- declarations fSpec
                 , let rel = makeRelation d
