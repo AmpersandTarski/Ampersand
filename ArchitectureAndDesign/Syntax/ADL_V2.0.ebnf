@@ -41,7 +41,7 @@ ProcessDef      ::= 'PROCESS' Id LanguageRef?
 RuleDef         ::= 'RULE' (ADLid ':')? Expr Meaning* 
                     ('MESSAGE' LanguageRef? TextMarkup? String)* 
                     ('VIOLATION' (('TXT' | 'SRC' | 'TGT') String)(',' (('TXT' | 'SRC' | 'TGT') String))* )?
-RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->') ConceptRef) |
+RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->' | ('[' ('0'| '1') '..' ('1'|'N') '|' ('0'| '1') '..' ('1'|'N') ']'  ) ) ConceptRef) |
                      (RELATION Id Sign))
                     'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String String*)? Meaning? ('=' Content )? ('DEFINE' ('SRC' | 'TGT') String)? '.'?
 Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP')
