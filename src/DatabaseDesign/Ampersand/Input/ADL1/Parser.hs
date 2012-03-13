@@ -15,6 +15,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    import DatabaseDesign.Ampersand.Basics  (fatalMsg,Collection(..),trim)
    import DatabaseDesign.Ampersand.Core.ParseTree    
    import Data.List (nub,sort)
+   import Data.Maybe
+   
    fatal :: Int -> String -> a
    fatal = fatalMsg "ADL1.Parser"
 
@@ -41,7 +43,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "ROLE", "EDITS", "MAINTAINS"
                        ]
    keywordsops :: [String]
-   keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>" ]
+   keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
+                       , "..", "0", "1", "N" ,"|"]
    specialchars :: String
    specialchars      = "()[].,{}"
    opchars :: String
@@ -217,9 +220,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                       <*> optional pViolation
                  where
                    rebuild po mn rexp mean msg mViolation
-                     = P_Ru { rr_nm   = case mn of 
-                                          Just lbl -> lbl
-                                          Nothing  -> rulid po
+                     = P_Ru { rr_nm   = fromMaybe (rulid po) mn
                             , rr_exp  = rexp
                             , rr_fps  = po
                             , rr_mean = mean
@@ -248,7 +249,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
 
    pRelationDef     :: Parser Token P_Declaration
-   pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*> (pKey "*" <|> pKey "->" )  <*> pConceptRef
+   pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*> pFun  <*> pConceptRef
                          <|>
                          rbd <$> pKey_pos "RELATION" <*> pVarid  <*> pSign
                        )
@@ -260,9 +261,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          <*> ((\st d -> Just $ RelConceptDef st d) <$ pKey "DEFINE" <*> pSrcOrTgt <*> pString `opt` Nothing)
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
-                       where rebuild nm pos' s fun' t bp1 props bp2 pragma meanings conceptDef content
-                               = rbd pos' nm (P_Sign [s,t]) bp1 props' bp2 pragma meanings conceptDef content
-                                 where props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
+                       where rebuild nm pos' s fun' t bp1 props --bp2 pragma meanings conceptDef content
+                               = rbd pos' nm (P_Sign [s,t]) bp1 props' --bp2 pragma meanings conceptDef content
+                                 where props'= nub (props `uni` fun')
                              rbd pos' nm sgn bp1 props bp2 pragma meanings conceptDef content
                                = P_Sgn { dec_nm   = nm
                                        , dec_sign = sgn
@@ -288,7 +289,22 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                  where k obj str = f <$> pKey str where f _ = obj
                              pPragma :: Parser Token [String]
                              pPragma = pKey "PRAGMA" *> pList1 pString
-
+                             pFun    :: Parser Token [Prop]
+                             pFun    = []        <$ pKey "*"  <|> 
+                                       [Uni,Tot] <$ pKey "->" <|>
+                                       (rbld     <$  pKey "["  
+                                                 <*> (( [] <$ pKey "0") <|> ([Tot] <$ pKey "1") ) 
+                                                 <*  pKey ".."
+                                                 <*> (( [Uni] <$ pKey "1") <|> ([] <$ pKey "N" ))
+                                                 <*  pKey "|"
+                                                 <*> (( [] <$ pKey "0") <|> ([Sur] <$ pKey "1" ))
+                                                 <*  pKey ".."
+                                                 <*> (( [Inj] <$ pKey "1") <|> ([] <$ pKey "N" ))
+                                                 <*  pKey "]"
+                                       )       
+                                 where 
+                                       rbld a b c d = a++b++c++d  
+                                       
    pConceptDef      :: Parser Token ConceptDef
    pConceptDef       = Cd <$> pKey_pos "CONCEPT"
                           <*> (pConid <|> pString)   -- the concept name
@@ -404,7 +420,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pPopulation :: Parser Token P_Population
    pPopulation = ppop <$ pKey "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
        where
-         ppop (r,sgn) c = P_Popu r sgn c
+         ppop (r,sgn) = P_Popu r sgn
          
    pRoleRelation    :: Parser Token P_RoleRelation
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
