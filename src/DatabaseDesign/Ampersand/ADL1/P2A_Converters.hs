@@ -30,6 +30,7 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.TypeCheck
 import Data.Maybe
 import Data.List
+import Data.Char
 
 -- TODO: this module should import Database.Ampersand.Core.ParseTree directly, and it should be one 
 --       of the very few modules that imports it. (might require some refactoring due to shared stuff)
@@ -65,7 +66,7 @@ pCtx2aCtx pctx
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas pctx ]
              , ctxexperimental = ctx_experimental pctx
              }
-    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++xplcxes++declnmchk++themeschk
+    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk ++ cyclicInterfaces
     hierarchy = 
@@ -78,8 +79,8 @@ pCtx2aCtx pctx
                        ,cptdf = fatal 66 "do not refer to this concept"
                        }
     acds = ctx_cs pctx++concatMap pt_cds (ctx_pats pctx)++concatMap procCds (ctx_PPrcs pctx)
-    adecs = map (pDecl2aDecl actx allpops "NoPattern") (ctx_ds pctx)
     agens = map (pGen2aGen actx "NoPattern") (ctx_gs pctx)
+    (adecs,   deccxes)   = (unzip . map (pDecl2aDecl actx allpops "NoPattern") . ctx_ds) pctx
     (apurp,   xplcxes)   = (unzip . map (pPurp2aPurp actx)             . ctx_ps   ) pctx
     (pats,    patcxes)   = (unzip . map (pPat2aPat   actx allpops)     . ctx_pats ) pctx
     (procs,   proccxes)  = (unzip . map (pProc2aProc actx allpops)     . ctx_PPrcs) pctx
@@ -137,14 +138,14 @@ pPat2aPat actx pops ppat
           , ptkds = keys         -- The key definitions defined in this pattern
           , ptxps = xpls         -- The explanations of elements defined in this pattern
           }
-   ,CxeOrig (cxelist (rulecxes++keycxes++xplcxes)) "pattern" (name ppat) (origin ppat) )
+   ,CxeOrig (cxelist (rulecxes++keycxes++deccxes++xplcxes)) "pattern" (name ppat) (origin ppat) )
    where
     (prules,rulecxes) = unzip arls
     arls  = map (pRul2aRul actx (name ppat)) (pt_rls ppat)
     agens = map (pGen2aGen actx (name ppat)) (pt_gns ppat)
-    adecs = map (pDecl2aDecl actx pops (name ppat)) (pt_dcs ppat)
     (keys,keycxes) = unzip akds
     akds  = map (pKDef2aKDef actx) (pt_kds ppat)
+    (adecs,deccxes) = (unzip . map (pDecl2aDecl actx pops (name ppat)) . pt_dcs) ppat
     (xpls,xplcxes) = (unzip . map (pPurp2aPurp actx) . pt_xps) ppat
 
 pProc2aProc :: A_Context -> [Population] -> P_Process -> (Process,CtxError)
@@ -160,14 +161,14 @@ pProc2aProc actx pops pproc
          , prcKds   = keys           -- The key definitions defined in this process
          , prcXps   = expls          -- The pre-explanations of elements defined in this process
          }
-   ,CxeOrig (cxelist (rulecxes++keycxes++rrcxes++editcxes++explcxes)) "process" (name pproc) (origin pproc) )
+   ,CxeOrig (cxelist (rulecxes++keycxes++deccxes++rrcxes++editcxes++explcxes)) "process" (name pproc) (origin pproc) )
    where
     (prules,rulecxes) = (unzip . map (pRul2aRul actx (name pproc)) . procRules) pproc
     arrels = [(rol,rel) |rr<-rrels, rol<-rrRoles rr, rel<-rrRels rr]
     (rrels,editcxes)  = (unzip . map (pRRel2aRRel actx)            . procRRels) pproc
     agens  = map (pGen2aGen actx (name pproc)) (procGens pproc)
-    adecs  = map (pDecl2aDecl actx pops (name pproc)) (procDcls pproc)
     arruls = [(rol,rul) |rul<-rules actx, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
+    (adecs,deccxes)   = (unzip . map (pDecl2aDecl actx pops (name pproc)) . procDcls) pproc
     (rruls,rrcxes)    = (unzip . map (pRRul2aRRul actx)            . procRRuls) pproc
     (keys,keycxes)    = (unzip . map (pKDef2aKDef actx)            . procKds) pproc
     (expls,explcxes)  = (unzip . map (pPurp2aPurp actx)            . procXps) pproc
@@ -439,9 +440,9 @@ pCpt2aCpt contxt pc
             ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
             }
 
-pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> Declaration
-pDecl2aDecl actx pops patname pd
- = Sgn { decnm   = dec_nm pd
+pDecl2aDecl :: A_Context -> [Population] -> String -> P_Declaration -> (Declaration, CtxError)
+pDecl2aDecl actx pops patname pd =
+ ( Sgn { decnm   = dec_nm pd
        , decsgn  = pSign2aSign actx (dec_sign pd)
        , decprps = dec_prps pd
        , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
@@ -462,7 +463,17 @@ pDecl2aDecl actx pops patname pd
        , decpat  = patname
        , decplug = dec_plug pd
        }
-
+  , case dec_conceptDef pd of 
+      Just (RelConceptDef srcOrTgt _) | relConceptName (dec_nm pd) `elem` map name (concs actx) -> 
+        CxeOrig (newcxe ("Illegal DEFINE "++showSRCorTGT++" for relation "++show (dec_nm pd)++". Concept "++
+                         relConceptName (dec_nm pd)++" already exists."))
+                "declaration" "" (origin pd)
+         where showSRCorTGT = if srcOrTgt == Src then "SRC" else "TGT"
+               relConceptName ""     = fatal 472 "empty concept"
+               relConceptName (c:cs) = toUpper c : cs
+      _ -> cxenone
+  )
+  
 -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in an expression.
 pRel2aRel :: (Language l, ConceptStructure l, Identified l) => l -> [P_Concept] -> P_Relation -> (Relation,CtxError)
 pRel2aRel contxt sgn P_V 
