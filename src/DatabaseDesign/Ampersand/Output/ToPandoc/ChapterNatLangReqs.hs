@@ -190,8 +190,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
            where
               -- the concepts for which one of the relations of this theme contains a source or target definition
               -- (these will be printed, regardless whether the concept was printed before)
-              relConcepts = [ (if isSrc srcOrTgt then source r else target r,def, origin r)
-                            | r@Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef srcOrTgt def)}} <- rels2print 
+              relConcepts = [ (upCap $ name r,def, origin r)
+                            | r@Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef _ def)}} <- rels2print 
                             ]
               
               -- sort the requirements by file position
@@ -228,11 +228,11 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                          Just pat -> purposes2Blocks opts purps
                                      where purps = purposes fSpec (language opts) pat
 
-              printIntro :: [(A_Concept, [Purpose])] -> [(A_Concept, String, Origin)] -> [Block]
+              printIntro :: [(A_Concept, [Purpose])] -> [(String, String, Origin)] -> [Block]
               printIntro [] [] = []
               printIntro ccds relConcpts
                 = case language opts of
-                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap (name c)] | c<-map fst ccds ++ map fst3 relConcpts]
+                              Dutch   ->  [Para$ (case ([Emph [Str $ unCap cname] | cname<-map (name . fst) ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "In het volgende wordt de taal geïntroduceerd ten behoeve van "++themeName++". " | themeName/=""]
@@ -254,7 +254,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                                    (_          , True ) -> [ Str "Elk daarvan heeft meerdere definities. "]
                                                  )
                                           ]
-                              English ->  [Para$ (case ([Emph [Str $ unCap (name c)] |c<-map fst ccds ++ map fst3 relConcpts]
+                              English ->  [Para$ (case ([Emph [Str $ unCap cname] |cname<-map (name . fst) ccds ++ map fst3 relConcpts]
                                                        , length [p |p <- map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec), name p == themeName]) of
                                                        ([] ,_) -> []
                                                        ([_],1) -> [ Str $ "The sequel introduces the language of "++themeName++". " | themeName/=""]
@@ -300,11 +300,11 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                            , Str ":"]
                                          , [ makeDefinition opts (getEisnr cnt)  nm lbl def ref ])]
 
-              printRelConcepts :: [(A_Concept, String, Origin)] -> [(Origin, Counter -> [Block])]
+              printRelConcepts :: [(String, String, Origin)] -> [(Origin, Counter -> [Block])]
               printRelConcepts relConcpts = map printRelConcept relConcpts
               
-              printRelConcept (cncpt, def, org) = 
-                ( org, \cnt -> [cdBlock (cnt,"") (name cncpt, symDefLabel cncpt, def, "")]
+              printRelConcept (relcncpt, def, org) = 
+                ( org, \cnt -> [cdBlock (cnt,"") (relcncpt, "", def, "")]
                 )
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
