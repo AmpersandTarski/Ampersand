@@ -49,8 +49,8 @@ pairidid :: Association r => (String,String) -> (IdentifierNamespace, r) -> Conc
 pairidid (x,y) (CNS ns,r) = CID $ ns ++ "#" ++ getid(pairid (x,y) (sign r))
 imageid :: Picture -> ConceptIdentifier
 imageid pic = CID$"Image_" ++ uniqueName pic
-fileid :: String -> ConceptIdentifier
-fileid fn = CID fn
+fileid :: (String,String) -> ConceptIdentifier
+fileid (path,fn) = CID (path++fn)
 usrid :: String -> ConceptIdentifier
 usrid usr = CID usr
 gid :: Int -> String -> ConceptIdentifier
