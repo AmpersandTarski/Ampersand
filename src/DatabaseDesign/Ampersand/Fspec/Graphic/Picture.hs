@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 -- This module is for the definition of Picture and PictureList.
 module DatabaseDesign.Ampersand.Fspec.Graphic.Picture
-    ( Picture(origName,uniqueName,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
+    ( Picture(origName,uniqueName,caption,relPng,pType) -- Other fields are hidden, for there is no need for them outside this module...
     , Pictures,PictType(..),uniquePicName
     , makePictureObj,writePicture
     )
@@ -12,7 +12,6 @@ import DatabaseDesign.Ampersand.Misc
 import Control.Monad
 import DatabaseDesign.Ampersand.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-import qualified Data.Text as T
 import Data.GraphViz.Types.Canonical
 import Data.GraphViz.Commands
 
@@ -24,10 +23,8 @@ data Picture = Pict { origName     :: String    -- ^ The original name of the ob
                     , pType        :: PictType  -- ^ the type of the picture
                     , uniqueName   :: String    -- ^ used to reference the picture in pandoc or tex
                     , dotSource    :: DotGraph String    -- ^ the string representing the .dot
-                    , fullDot      :: FilePath  -- ^ the full file path where the .dot file resides
-                    , fspecPath    :: FilePath  -- ^ the full file path where the .png file resides for functional specification
-                    , atlasPath    :: FilePath  -- ^ the full file path where the .png and .map file resides for Atlas
-                    , imgURL       :: T.Text    -- ^ the URL that points to the generated .png imagefile, for use in the atlas
+                    , fullPath      :: FilePath  -- ^ the full file path where the .dot and .png file resides
+                    , relPng       :: FilePath  -- ^ the relative file path where the .png file resides
                     , dotProgName  :: GraphvizCommand   -- ^ the name of the program to use  ("dot" or "neato" )
                     , caption      :: String    -- ^ a human readable name of this picture
                     }
@@ -62,10 +59,8 @@ makePictureObj flags nm pTyp dotsource
     = Pict { origName   = nm
            , uniqueName = cdName
            , dotSource  = dotsource
-           , fullDot    = absImgPath </> cdName 
-           , fspecPath  = absImgPath </> cdName 
-           , atlasPath  = absImgPath </> cdName 
-           , imgURL     = error "Picture.hs heeft geen fatal"-- fatal 65 $ "T.pack (relImgPath </> System.FilePath.addExtension cdName "++"png"++")"
+           , fullPath    = absImgPath </> cdName 
+           , relPng     = relImgPath </> cdName
            , pType      = pTyp
            , dotProgName = case pTyp of
                      PTClassDiagram -> Dot
@@ -103,11 +98,10 @@ uniquePicName pt nm = escapeNonAlphaNum (picType2prefix pt++nm)
 writePicture :: Options -> Picture -> IO()
 writePicture flags pict
     = sequence_ (
-      [createDirectoryIfMissing True  (takeDirectory (atlasPath pict))     |                   genAtlas flags ]++
-      [writeDot (dotProgName pict) Canon (dotSource pict) (fullDot   pict) | genFspec flags || genAtlas flags ]++
-      [writeDot (dotProgName pict) Png   (dotSource pict) (fspecPath pict) | genFspec flags                   ]++
-      [writeDot (dotProgName pict) Png   (dotSource pict) (atlasPath pict) |                   genAtlas flags ]++
-      [writeDot (dotProgName pict) Cmapx (dotSource pict) (atlasPath pict) |                   genAtlas flags ]
+      [createDirectoryIfMissing True  (takeDirectory (fullPath pict))     |                   genAtlas flags ]++
+      [writeDot (dotProgName pict) Canon (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
+      [writeDot (dotProgName pict) Png   (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
+      [writeDot (dotProgName pict) Cmapx (dotSource pict) (fullPath pict) |                   genAtlas flags ]
           )
    where 
      writeDot :: GraphvizCommand
