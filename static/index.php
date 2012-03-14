@@ -34,14 +34,13 @@ initSession();
 function init() {
         initialize();
 	
-	$('.Atom[hasinterface]').children(".InterfaceList").children(".Interface:odd").css("clear", "both");
 	var label;
 	var value;
 	label = $('div[label~="Ingelogde"]').attr('label');
 	value = $('div[label~="Ingelogde"]').find('.Atom').first().attr('atom');
 	if(label != undefined){
   		$('div[label~="Ingelogde"]').remove();
-		$('<div id="LoginInfo">' + label + ':<b> ' + value + '</b></div>').css({'float':'right', 'color':'#000000','font-size':'14px','margin':'10px' }).insertBefore('#ScrollPane');
+		$('<div id="LoginInfo">' + label + ':<b> ' + value + '</b></div>').insertBefore('#ScrollPane');
 	}
 	// alert(value);
 }
