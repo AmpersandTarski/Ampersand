@@ -128,10 +128,12 @@ if ($err) {
   echo '<div class=LogWindow id=PhpLog minimized=false><div class=MinMaxButton></div><div class=Title>Php log </div></div>';
   genSignalLogWindow($selectedRoleNr);
   echo '</div>';
-  
-  echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
-  echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
-  echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
+
+  if  (!empty($allInterfaceObjects[$interface]['editableConcepts'])){
+       echo '<button class="Button EditButton" onclick="startEditing()">Edit</button>';
+       echo '<button class="Button SaveButton" onclick="commitEditing()">Save</button>';
+       echo '<button class="Button CancelButton" onclick="cancelEditing()">Cancel</button>';
+  }
 
   // If the atom is not in the concept, this means that a new atom was be created (and $atom is a time-based unique name).
   // We cannot use a url-encoded command for Create new, since such a url causes problems in the browser history. (pressing back
