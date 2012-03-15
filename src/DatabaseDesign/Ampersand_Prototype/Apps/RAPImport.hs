@@ -10,23 +10,42 @@ import System.FilePath        (takeFileName,dropFileName,combine,addExtension,re
 import System.Directory       (getDirectoryContents,doesDirectoryExist)
 import Control.Monad
 
+-----------------------------------------------------------------------------
+--exported functions---------------------------------------------------------
+-----------------------------------------------------------------------------
 importfspec ::  Fspc -> Options -> IO [P_Population]
 importfspec fspec opts 
  = let pics = picturesForAtlas opts fspec
-       fdir = let d=dropFileName (importfile opts) in if null d then "." else d
    in  do verbose opts "Writing pictures for RAP... "
           sequence_ [writePicture opts pict | pict <- pics]
           verbose opts "Getting all uploaded adl-files of RAP user... "
-          usrfiles <- getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
+          usrfiles <- getUsrFiles opts
           return (makeRAPPops fspec opts usrfiles pics)
 
 importfailed :: String -> Options -> IO [P_Population]
 importfailed imperr opts 
- = let fdir = let d=dropFileName (importfile opts) in if null d then "." else d
-   in  do verbose opts "Getting all uploaded adl-files of RAP user... "
-          usrfiles <- getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
-          return (makeFailedPops imperr opts usrfiles)
+ = do verbose opts "Getting all uploaded adl-files of RAP user... "
+      usrfiles <- getUsrFiles opts
+      return (makeFailedPops imperr opts usrfiles)
 
+-----------------------------------------------------------------------------
+--common local functions-----------------------------------------------------
+-----------------------------------------------------------------------------
+getUsrFiles :: Options -> IO [String]
+getUsrFiles opts = let fdir = let d=dropFileName (importfile opts) in if null d then "." else d
+                   in  getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
+operations :: [(Int,String)]
+operations = [(1,"laden")]
+usr :: Options -> String
+usr = namespace
+srcfile :: Options -> (String,String)
+srcfile opts = (dropFileName(importfile opts),takeFileName(importfile opts))
+rapfiles :: Options -> [String] -> ([(String,String)],[(String,String)],(String,String))
+rapfiles opts usrfiles 
+ = ( [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".adl"] --adlfiles, server files of user with a .adl extension
+   , [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".pop"] --popfiles, server files of user with a .pop extension
+   , ("","empty.adl")                                                             --newfile, a copy of empty.adl, it contains an empty context
+   )
 --a triple which should correspond to a declaration from RAP.adl: (relation name, source name, target name)
 --since the populations made by makeRAPPops will be added to the parsetree of RAP.adl, they will be checked and processed by p2aconverters
 type RAPRelation = (String,String,String)
@@ -37,22 +56,29 @@ makepopu (r,src,trg) xys
          , p_popps = [mkPair (trim (getid x)) (trim (getid y)) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
          }
 
+-----------------------------------------------------------------------------
+--make population functions--------------------------------------------------
+-----------------------------------------------------------------------------
+--make population for the import that failed due to a parse or type error
 makeFailedPops :: String -> Options -> [String] -> [P_Population]
 makeFailedPops imperr opts usrfiles 
- = let usr = namespace opts
-       operations = [(1,"laden")]
-       srcfile = (dropFileName(importfile opts),takeFileName(importfile opts))
-       specfiles@[newfile]
-               = [("","empty.adl")] -- a new file is a copy of empty.adl, it contains an empty context
-       adlfiles  = [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".adl"]
-       popfiles  = [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".pop"]
+ =   --see trunk/apps/Atlas/RAP.adl
+     makepopu ("compilererror","File","ErrorMessage")    [(fileid (srcfile opts)  , nonsid imperr)]
+    :makeFilePops opts usrfiles []
+
+--make population for the user files on the server
+--flags for file names and user name -> file names in the upload directory of the user
+--                                   -> files that do not exist yet, but are reserved upfront e.g. files to save to
+makeFilePops :: Options -> [String] -> [(String,String)] -> [P_Population]
+makeFilePops opts usrfiles savefiles
+ = let (adlfiles,popfiles,newfile) = rapfiles opts usrfiles
    in
      --see trunk/apps/Atlas/FSpec.adl
-     makepopu ("compilererror","File","ErrorMessage")    [(fileid srcfile , nonsid imperr)]
-    :makepopu ("newfile","User","NewAdlFile")            [(usrid usr      , fileid newfile)]
-    :makepopu ("filename","File","FileName")             [(fileid f, nonsid fn)         | f@(_   ,fn)<-adlfiles ++ specfiles ++ popfiles]
-    :makepopu ("filepath","File","FilePath")             [(fileid f, nonsid path)       | f@(path,_ )<-adlfiles ++ specfiles ++ popfiles]
-    :makepopu ("uploaded","User","File")                 [(usrid usr, fileid f)         | f          <-adlfiles ++ popfiles]
+     makepopu ("newfile","User","NewAdlFile")            [(usrid (usr opts), fileid newfile)]
+     --note that: 'srcfile' \/ inclfiles |- adlfiles \/ popfiles
+    :makepopu ("filename","File","FileName")             [(fileid f, nonsid fn)         | f@(_   ,fn)<-adlfiles ++ popfiles ++ newfile:savefiles ]
+    :makepopu ("filepath","File","FilePath")             [(fileid f, nonsid path)       | f@(path,_ )<-adlfiles ++ popfiles ++ newfile:savefiles ]
+    :makepopu ("uploaded","User","File")                 [(usrid (usr opts), fileid f)  | f          <-adlfiles ++ popfiles]
     :makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid f)         | f@(_   ,fn)<-adlfiles, (op,_ )<-operations]
     :makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)        |   (_   ,fn)<-adlfiles, (op,nm)<-operations]
     :makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op)) |   (_   ,fn)<-adlfiles, (op,_ )<-operations]
@@ -61,29 +87,19 @@ makeFailedPops imperr opts usrfiles
 --the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
 makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
 makeRAPPops fs opts usrfiles pics
- = let usr = namespace opts
-       operations = [(1,"laden")]
-       srcfile = (dropFileName(importfile opts),takeFileName(importfile opts))
-       specfiles@[newfile,savepopfile,savectxfile]
-               = [("","empty.adl") -- a new file is a copy of empty.adl, it contains an empty context
-                 ,(fst srcfile, replaceExtension (snd srcfile) ".pop") -- .pop is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
-                 ,(combine (fst srcfile) "temp/", replaceExtension (snd srcfile) ".adl")] -- .adl is a SaveAdlFile in uploads/temp/ which should be renamed, moved, and loaded immediately to become an uploaded adl-file
-       inclfiles = [(fst srcfile,fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd srcfile]
-       adlfiles  = [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".adl"]
-       popfiles  = [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".pop"]
+ = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
+       savepopfile = (fst (srcfile opts), replaceExtension (snd (srcfile opts)) ".pop") 
+       -- savectxfile is a SaveAdlFile in uploads/temp/ which should be renamed, moved, and loaded immediately to become an uploaded adl-file
+       savectxfile = (combine (fst (srcfile opts)) "temp/", replaceExtension (snd (srcfile opts)) ".adl") 
+       inclfiles = [(fst (srcfile opts),fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd (srcfile opts)]
    in
      --see trunk/apps/Atlas/FSpec.adl
-     makepopu ("sourcefile","Context","AdlFile")         [(fsid fs        , fileid srcfile)]
-    :makepopu ("savepopulation","Context","SavePopFile") [(fsid fs        , fileid savepopfile)]
-    :makepopu ("savecontext","Context","SaveAdlFile")    [(fsid fs        , fileid savectxfile)]
-    :makepopu ("newfile","User","NewAdlFile")            [(usrid usr      , fileid newfile)]
-    :makepopu ("includes","Context","File")              [(fsid fs        , fileid f)   | f          <-            inclfiles] 
-    :makepopu ("filename","File","FileName")             [(fileid f, nonsid fn)         | f@(_   ,fn)<-adlfiles ++ inclfiles ++ specfiles ++ popfiles]
-    :makepopu ("filepath","File","FilePath")             [(fileid f, nonsid path)       | f@(path,_ )<-adlfiles ++ inclfiles ++ specfiles ++ popfiles]
-    :makepopu ("uploaded","User","File")                 [(usrid usr, fileid f)         | f          <-adlfiles ++ popfiles]
-    :makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid f)         | f@(_   ,fn)<-adlfiles, (op,_ )<-operations]
-    :makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)        |   (_   ,fn)<-adlfiles, (op,nm)<-operations]
-    :makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op)) |   (_   ,fn)<-adlfiles, (op,_ )<-operations]
+     makeFilePops opts usrfiles [savepopfile,savectxfile]
+     ++ 
+     makepopu ("sourcefile","Context","AdlFile")         [(fsid fs         , fileid (srcfile opts))]
+    :makepopu ("includes","Context","File")              [(fsid fs         , fileid f)  | f<-inclfiles] 
+    :makepopu ("savepopulation","Context","SavePopFile") [(fsid fs         , fileid savepopfile)]
+    :makepopu ("savecontext","Context","SaveAdlFile")    [(fsid fs         , fileid savectxfile)]
     :makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])
                                                                        | pic<-pics]
     :makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fs, name p==origName pic]
