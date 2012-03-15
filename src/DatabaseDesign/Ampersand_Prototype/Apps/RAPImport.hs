@@ -69,6 +69,7 @@ makeRAPPops fs opts usrfiles pics
     :makepopu ("ctxcs","Context","Concept")   [(fsid fs     , cptid c)          | c<-concs fs] 
     :makepopu ("cptnm","Concept","Conid")     [(cptid c     , nonsid (name c))  | c<-concs fs]
     :makepopu ("cptos","Concept","AtomID")    [(cptid c     , atomidid x c)     | c<-concs fs, x<-cptos c]
+    :makepopu ("inios","Concept","AtomID")    [(cptid c     , atomidid x c)     | c<-concs fs, x<-cptos c]
     :makepopu ("atomvalue","AtomID","Atom")   [(atomidid x c, nonsid x)         | c<-concs fs, x<-cptos c]
     :makepopu ("cptpurpose","Concept","Blob") [(cptid c     , nonsid (aMarkup2String (explMarkup ex)))
                                                                                 | c<-concs fs, ex<-explanations fs, explForObj c (explObj ex)]
@@ -94,6 +95,8 @@ makeRAPPops fs opts usrfiles pics
     :makepopu ("decpurpose","Declaration","Blob")           [(decid d , nonsid (aMarkup2String (explMarkup ex)))
                                                                                           | d<-userdeclarations, ex<-explanations fs, explForObj d (explObj ex)]
     :makepopu ("decpopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
+                                                                                          | d<-userdeclarations, (x,y)<-contents d]
+    :makepopu ("inipopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
                                                                                           | d<-userdeclarations, (x,y)<-contents d]
     :makepopu ("reldcl","Relation","Declaration") [(relid (name d) (sign d), decid d)        | d<-userdeclarations]
     :makepopu ("relnm","Relation","Varid")        [(relid (name d) (sign d), nonsid(name d)) | d<-userdeclarations]
