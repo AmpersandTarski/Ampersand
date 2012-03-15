@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 --import an fspec into the RAP specification
 -- USE -> cmd: ampersand --importfile=some.adl --importformat=adl RAP.adl
-module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec)
+module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
@@ -20,6 +20,13 @@ importfspec fspec opts
           usrfiles <- getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
           return (makeRAPPops fspec opts usrfiles pics)
 
+importfailed :: String -> Options -> IO [P_Population]
+importfailed imperr opts 
+ = let fdir = let d=dropFileName (importfile opts) in if null d then "." else d
+   in  do verbose opts "Getting all uploaded adl-files of RAP user... "
+          usrfiles <- getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
+          return (makeFailedPops imperr opts usrfiles)
+
 --a triple which should correspond to a declaration from RAP.adl: (relation name, source name, target name)
 --since the populations made by makeRAPPops will be added to the parsetree of RAP.adl, they will be checked and processed by p2aconverters
 type RAPRelation = (String,String,String)
@@ -29,6 +36,28 @@ makepopu (r,src,trg) xys
          , p_type  = P_Sign [PCpt src, PCpt trg]
          , p_popps = [mkPair (trim (getid x)) (trim (getid y)) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
          }
+
+makeFailedPops :: String -> Options -> [String] -> [P_Population]
+makeFailedPops imperr opts usrfiles 
+ = let usr = namespace opts
+       operations = [(1,"laden")]
+       srcfile = (dropFileName(importfile opts),takeFileName(importfile opts))
+       specfiles@[newfile]
+               = [("","empty.adl")] -- a new file is a copy of empty.adl, it contains an empty context
+       adlfiles  = [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".adl"]
+       popfiles  = [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".pop"]
+   in
+     --see trunk/apps/Atlas/FSpec.adl
+     makepopu ("compilererror","File","ErrorMessage")    [(fileid srcfile , nonsid imperr)]
+    :makepopu ("newfile","User","NewAdlFile")            [(usrid usr      , fileid newfile)]
+    :makepopu ("filename","File","FileName")             [(fileid f, nonsid fn)         | f@(_   ,fn)<-adlfiles ++ specfiles ++ popfiles]
+    :makepopu ("filepath","File","FilePath")             [(fileid f, nonsid path)       | f@(path,_ )<-adlfiles ++ specfiles ++ popfiles]
+    :makepopu ("uploaded","User","File")                 [(usrid usr, fileid f)         | f          <-adlfiles ++ popfiles]
+    :makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid f)         | f@(_   ,fn)<-adlfiles, (op,_ )<-operations]
+    :makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)        |   (_   ,fn)<-adlfiles, (op,nm)<-operations]
+    :makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op)) |   (_   ,fn)<-adlfiles, (op,_ )<-operations]
+    :[]
+
 --the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
 makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
 makeRAPPops fs opts usrfiles pics

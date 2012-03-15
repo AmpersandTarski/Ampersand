@@ -31,20 +31,22 @@ main
   parseAndTypeCheck opts 
    = let fn = importfile opts
          thepCtx (Right pCtx) = pCtx
-         thepCtx (Left err)   = error $ "Parse error:\n"++show err
+         thepCtx (Left pErr)   = error $ "Parse error:\n"++show pErr
      in
-     do ePCtxErr <- parseCtxM_ opts (fileName opts)
+     do pCtxOrErr <- parseCtxM_ opts (fileName opts)
         pPops <- if null fn then return [] else
                  do popsText <- readFile fn
                     case importformat opts of
                        Adl1PopFormat -> parsePopsM_ popsText opts fn
                        Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
-                                        cx <- parseCtxM_ opts (importfile opts)
-                                        if nocxe (snd(typeCheck (thepCtx cx) [])) 
-                                         then importfspec (makeFspec opts (fst(typeCheck (thepCtx cx) []))) opts
-                                         else error (show (snd(typeCheck (thepCtx cx) [])))
+                                        imppCtxOrErr <- parseCtxM_ opts (importfile opts)
+                                        case imppCtxOrErr of
+                                           (Right imppcx) -> if nocxe (snd(typeCheck imppcx [])) 
+                                                             then importfspec  (makeFspec opts (fst(typeCheck imppcx []))) opts
+                                                             else importfailed (show (snd(typeCheck imppcx []))) opts 
+                                           (Left impperr) ->      importfailed (show impperr) opts 
         verboseLn opts "Type checking..."
-        return (typeCheck (thepCtx ePCtxErr) pPops)
+        return (typeCheck (thepCtx pCtxOrErr) pPops)
     
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec =
