@@ -44,7 +44,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        ]
    keywordsops :: [String]
    keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
-                       , "..", "0", "1", "N" ,"|"]
+                       , "..", "0", "1"]
    specialchars :: String
    specialchars      = "()[].,{}"
    opchars :: String
@@ -293,17 +293,19 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                              pFun    = []        <$ pKey "*"  <|> 
                                        [Uni,Tot] <$ pKey "->" <|>
                                        (rbld     <$  pKey "["  
-                                                 <*> (( [] <$ pKey "0") <|> ([Tot] <$ pKey "1") ) 
-                                                 <*  pKey ".."
-                                                 <*> (( [Uni] <$ pKey "1") <|> ([] <$ pKey "N" ))
-                                                 <*  pKey "|"
-                                                 <*> (( [] <$ pKey "0") <|> ([Sur] <$ pKey "1" ))
-                                                 <*  pKey ".."
-                                                 <*> (( [Inj] <$ pKey "1") <|> ([] <$ pKey "N" ))
+                                                 <*> (pMult (Tot,Uni) `opt` [])
+                                                 <*  pKey "-"
+                                                 <*> (pMult (Sur,Inj) `opt` [])
                                                  <*  pKey "]"
                                        )       
                                  where 
-                                       rbld a b c d = a++b++c++d  
+                                   pMult :: (Prop,Prop) -> Parser Token [Prop]
+                                   pMult (ts,ui) = rbld  <$> (( []   <$ pKey "0") <|> ([ts] <$ pKey "1") ) 
+                                                         <*  pKey ".."
+                                                         <*> (( [ui] <$ pKey "1") <|> ([]   <$ pKey "*" )) <|>
+                                                   [] <$ pKey "*"  <|>
+                                                   [ts,ui] <$ pKey "1"
+                                   rbld a b = a++b 
                                        
    pConceptDef      :: Parser Token ConceptDef
    pConceptDef       = Cd <$> pKey_pos "CONCEPT"
