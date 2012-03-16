@@ -15,8 +15,7 @@ where
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Data.String
-   import Data.GraphViz.Types.Canonical
-   import Data.GraphViz.Types
+   import Data.GraphViz.Types.Canonical hiding (attrs)
    import Data.GraphViz.Attributes.Complete hiding (Attribute)
    import Data.GraphViz.Attributes hiding (Attribute)
    
@@ -315,22 +314,6 @@ where
                               }
              
 
-   htmlTable :: HtmlAttributes -> String -> HtmlTable
-     -- This function is designed to keep in mind that Graphviz does not cope with
-     -- empty tables. In case the table has no content, the TABEL taggs are filled
-     -- with a single dotrow with no contents.
-   htmlTable atts str =
-     HTable
-       { tableFontAttrs = Nothing
-       , tableAttrs     = atts
-       , tableRows      = [HtmlRow [HtmlLabelCell [] 
-                             (HtmlText [HtmlStr (fromString mindWhiteSpaceOnly)])
-                          ]        ]
-       }
-     where
-       mindWhiteSpaceOnly  =
-         if all (`elem` " \n") str then " " else str
-   
 
 
 -------------- Class Diagrams ------------------
