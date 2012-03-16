@@ -232,7 +232,7 @@ conceptual2Dot flags graphName cpts' rels idgs
                )
           where
         --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
-            relNameNode    = constrNode ("relName_"++show n) (RelNameNode r) flags
+            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
             
                                    
 constrNode :: a -> PictureObject -> Options -> DotNode a
@@ -261,7 +261,7 @@ data PictureObject = CptOnlyOneNode A_Concept    -- ^ Node of a concept that ser
                    | RelOnlyOneEdge Declaration  -- ^ Edge of a relation that connects to the source and the target
                    | RelSrcEdge     Declaration  -- ^ Edge of a relation that connects to the source
                    | RelTgtEdge     Declaration  -- ^ Edge of a relation that connects to the target
-                   | RelNameNode    Declaration  -- ^ Node of a relation that shows the name
+                   | RelIntermediateNode    Declaration  -- ^ Intermediate node, as a hindge for the relation edges
                    | IsaOnlyOneEdge              -- ^ Edge of an ISA relation without a hinge node
                    | TotalPicture                -- ^ Graph attributes
          
@@ -324,6 +324,7 @@ handleFlags po flags =
                       , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ]
       RelTgtEdge r -> [Len 1.2
+                      , Label (StrLabel (fromString(name r)))
                       , ArrowHead ( if crowfoot flags  then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
                                     if isInvFunction r then noArrow                   else
@@ -337,8 +338,8 @@ handleFlags po flags =
                       , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ,TailClip False
                       ] 
-      RelNameNode r -> defaultNodeAtts flags++ 
-                       [ Label (StrLabel (fromString(name r)))
+      RelIntermediateNode r -> defaultNodeAtts flags++ 
+                       [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White
                        , URL (theURL flags r) 
