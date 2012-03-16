@@ -218,8 +218,8 @@ function checkRules($ruleNames) {
 
   foreach ($ruleNames as $ruleName) {
     $ruleSql = $allRulesSql[$ruleName];
-    $rows = queryDb($ruleSql['violationsSQL'], $error);
-    if ($error) error($error);
+    $rows = DB_doquerErr($ruleSql['violationsSQL'], $error);
+    if ($error) error("While evaluating rule '$ruleName': ".$error);
     
     if (count($rows) > 0) {
       // if the rule has an associated message, we show that instead of the name and the meaning
