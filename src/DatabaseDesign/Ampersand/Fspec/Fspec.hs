@@ -124,7 +124,6 @@ data Finterface = Fifc
                   , fsv_creating  :: [A_Concept]              -- All concepts of which this interface can create new instances
                   , fsv_deleting  :: [A_Concept]              -- All concepts of which this interface can delete instances
 --                  , fsv_fpa       :: FPA                    -- function point assessment of this interface
---                  , fsv_expls     :: Explanations           -- The explanations of everything that is used in this interface.
                   }
    
 

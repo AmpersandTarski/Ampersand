@@ -25,7 +25,6 @@ import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Input
 import Text.Pandoc 
 import Text.Pandoc.Builder

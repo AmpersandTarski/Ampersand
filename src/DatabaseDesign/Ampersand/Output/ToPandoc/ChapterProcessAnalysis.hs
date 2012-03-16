@@ -61,7 +61,7 @@ chpProcessAnalysis lev fSpec flags
                   , Str ""
                   ]
      | null (fRoleRels fSpec)]
-     where purps = purposes fSpec (language flags) fSpec
+     where purps = purposesDefinedIn fSpec (language flags) fSpec
 
   roleRuleBlocks :: [Block]
   roleRuleBlocks
@@ -145,7 +145,7 @@ chpProcessAnalysis lev fSpec flags
        where
          sctMotivation
           = purposes2Blocks flags purps
-         purps = purposes fSpec (language flags) fproc
+         purps = purposesDefinedIn fSpec (language flags) fproc
          sctRules  :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (fpProc fproc)) i seenConcepts seenDeclarations
 

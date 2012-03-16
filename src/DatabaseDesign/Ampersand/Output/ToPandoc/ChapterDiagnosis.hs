@@ -153,7 +153,7 @@ chpDiagnosis lev fSpec opts
                      ]
    where missing = [c | c <-ccs
                       , cd <- cptdf c
-                      , null (purposes fSpec (language opts) cd)
+                      , null (purposesDefinedIn fSpec (language opts) cd)
                    ]++
                    [c | c <-ccs
                       , null (cptdf c)
@@ -190,7 +190,7 @@ chpDiagnosis lev fSpec opts
                                    else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                                         mors [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
-                     , null (purposes fSpec (language opts) r)
+                     , null (purposesDefinedIn fSpec (language opts) r)
                      ]
 
   relsNotUsed :: [Block]
@@ -359,7 +359,7 @@ chpDiagnosis lev fSpec opts
      where missingPurp
             = nub [ r
                   | r<-ruls
-                  , null (purposes fSpec (language opts) r)
+                  , null (purposesDefinedIn fSpec (language opts) r)
                   ]
            missingMeaning
             = nub [ r
@@ -397,7 +397,7 @@ chpDiagnosis lev fSpec opts
                             , show nrOfRules, show nrOfRefRules, showPercentage nrOfRules nrOfRefRules 
                             ]
         
-          hasRef x = maybe False ((/="").explRefId) $ purpose fSpec (language opts) x
+          hasRef x = maybe False (any  ((/="").explRefId)) (purposeOf fSpec (language opts) x)
           
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%" 
           

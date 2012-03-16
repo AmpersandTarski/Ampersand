@@ -31,7 +31,7 @@ interfaceChap lev fSpec flags act
    = purposes2Blocks flags purps
      ++ifcAutoRules++
      (if genEcaDoc flags then ifcEcaRules else [])
-     where purps = purposes fSpec (language flags) fSpec
+     where purps = purposesDefinedIn fSpec (language flags) fSpec
 
 {-
   ifcInsDelConcepts :: [Block]
