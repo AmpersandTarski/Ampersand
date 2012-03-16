@@ -241,8 +241,8 @@ selectExpr fSpec i src trg (ECpl e )
                                              ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
                         ) +++ ")"
                      )
-                     where src' = quote$sqlAttConcept fSpec (source e) 
-                           trg' = noCollide [src'] (sqlAttConcept fSpec (target e))
+                     where src' = quote $ sqlAttConcept fSpec (source e) 
+                           trg' = quote $ noCollide [src'] (sqlAttConcept fSpec (target e))
                            src2 = sqlExprSrc fSpec e
                            trg2 = noCollideUnlessTm' e [src2] (sqlExprTrg fSpec e)
 selectExpr _ i _ _ (EKl0 _)
