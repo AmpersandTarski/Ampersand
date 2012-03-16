@@ -7,8 +7,8 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , Xreferencable(..)
     , xrefFigure1
     , Purpose(..)
-    , purpose
-    , purposes
+    , purposeOf
+    , purposesDefinedIn
     , purposes2Blocks
     , meaning2Blocks
     , amPandoc
@@ -27,9 +27,10 @@ import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), show
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
+import Data.List             (intercalate)
 
---fatal :: Int -> String -> a
---fatal = fatalMsg "SharedAmongChapters.hs"
+fatal :: Int -> String -> a
+fatal = fatalMsg "SharedAmongChapters.hs"
 
 data Chapter = Intro 
              | NatLangReqs
@@ -75,9 +76,9 @@ dpRule fSpec flags = dpR
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
      = ( ( [Str (name r)]
-         , [ let purps = purposes fSpec (language flags) r in            -- Als eerste de uitleg van de betreffende regel..
+         , [ let purps = purposesDefinedIn fSpec (language flags) r in            -- Als eerste de uitleg van de betreffende regel..
              purposes2Blocks flags purps ++
-             purposes2Blocks flags [p | d<-nds, p<-purposes fSpec (language flags) d] ++  -- Dan de uitleg van de betreffende relaties
+             purposes2Blocks flags [p | d<-nds, p<-purposesDefinedIn fSpec (language flags) d] ++  -- Dan de uitleg van de betreffende relaties
              [ Plain text1 | not (null nds)] ++
              pandocEqnArray [ ( texOnly_Id(name d)
                               , ":"
@@ -181,6 +182,18 @@ purposes2Blocks flags ps
     ref purp = case fspecFormat flags of
                 FLatex | (not.null.explRefId) purp-> [RawInline "latex" ("\\marge{"++latexEscShw (explRefId purp)++"}\n")]
                 _                                 -> []
+concatMarkup :: [A_Markup] -> Maybe A_Markup
+concatMarkup es
+ = case eqCl f es of
+    []   -> Nothing
+    [cl] -> Just A_Markup { amLang   = amLang (head cl)
+                          , amFormat = amFormat (head cl)
+                          , amPandoc = concatMap amPandoc es
+                          }
+    cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
+                      intercalate "\n   " [(show.f.head) cl | cl<-cls])
+   where f e = (amLang e, amFormat e)
+
 
 -- Insert an inline after the first inline in the list of blocks, if possible. 
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]

@@ -35,7 +35,7 @@ module DatabaseDesign.Ampersand
    , SubInterface(..)
    , Object(..)
    , Plugable(..)
-   , Explainable(..)
+   , Motivated(..)
    , Traced(..)
    , Language(..)
    , Dotable(..)

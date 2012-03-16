@@ -127,12 +127,12 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
               = [ (c, pps)
                 | c@C{cptdf = Cd{cddef=_:_}:_ } <-concs fSpec
-                , let pps = [p | p <- purposes fSpec (language opts) c, explUserdefd p]
+                , let pps = [p | p <- purposesDefinedIn fSpec (language opts) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
               = [ rel | d@Sgn{decusr=True} <- declarations fSpec
                 , let rel = makeRelation d
-                , not . null $ purposes fSpec (language opts) rel
+                , not . null $ purposesDefinedIn fSpec (language opts) rel
                 ]
                  
       printThemes :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
@@ -226,7 +226,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                                    ,Str "that have not been described in previous paragraphs."]
                                       )]
                          Just pat -> purposes2Blocks opts purps
-                                     where purps = purposes fSpec (language opts) pat
+                                     where purps = purposesDefinedIn fSpec (language opts) pat
 
               printIntro :: [(A_Concept, [Purpose])] -> [(String, String, Origin)] -> [Block]
               printIntro [] [] = []
@@ -332,7 +332,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                         (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
                  ) ++
                  sampleSentences
-                 where purps     = purposes fSpec (language opts) rel
+                 where purps     = purposesDefinedIn fSpec (language opts) rel
                        d         = makeDeclaration rel
                        samplePop = take 3 (decpopu d)
                        sampleSentences =
@@ -361,7 +361,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                      )
                                    ] 
                   | not (null$meaning2Blocks (language opts) rul)]
-               where purps = purposes fSpec (language opts) rul
+               where purps = purposesDefinedIn fSpec (language opts) rul
                       
   mkSentence :: Bool -> Declaration -> String -> String -> [Inline]
   mkSentence isDev decl srcAtom tgtAtom

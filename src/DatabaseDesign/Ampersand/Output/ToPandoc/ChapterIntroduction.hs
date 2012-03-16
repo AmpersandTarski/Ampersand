@@ -18,7 +18,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                                                      Dutch   ->  "Inleiding"   
                                                      English ->  "Introduction"
                                                   )
-        contextPurposes = purposes fSpec (language flags) fSpec
+        contextPurposes = purposesDefinedIn fSpec (language flags) fSpec
         --TODO: different intro for theme flags == "student"
         date = formatTime defaultTimeLocale "%-d-%-m-%Y" (genTime flags)
         time = formatTime defaultTimeLocale "%H:%M:%S" (genTime flags)

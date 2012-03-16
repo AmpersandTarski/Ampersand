@@ -39,7 +39,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , makeDeclaration
  , showExpr
  , aMarkup2String
- , concatMarkup
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
@@ -113,7 +112,7 @@ data Process = Proc { prcNm    :: String
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
                     , prcRRels :: [(String,Relation)] -- ^ The assignment of roles to Relations.
                     , prcKds   :: [KeyDef]            -- ^ The key definitions defined in this process
-                    , prcXps   :: [Purpose]           -- ^ The pre-explanations of elements defined in this process
+                    , prcXps   :: [Purpose]           -- ^ The motivations of elements defined in this process
                     }
 instance Identified Process where
   name = prcNm
@@ -151,18 +150,6 @@ data A_Markup =
              , amFormat :: PandocFormat
              , amPandoc :: [Block]
              } deriving Show
-concatMarkup :: [A_Markup] -> Maybe A_Markup
-concatMarkup es
- = case eqCl f es of
-    []   -> Nothing
-    [cl] -> Just A_Markup { amLang   = amLang (head cl)
-                          , amFormat = amFormat (head cl)
-                          , amPandoc = concatMap amPandoc es
-                          }
-    cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
-                      intercalate "\n   " [(show.f.head) cl | cl<-cls])
-   where f e = (amLang e, amFormat e)
-
 
 data PairView = PairView [PairViewSegment] deriving Show
 
@@ -173,7 +160,7 @@ data Rule =
      Ru { rrnm      :: String                  -- ^ Name of this rule
         , rrexp     :: Expression              -- ^ The rule expression
         , rrfps     :: Origin                  -- ^ Position in the Ampersand file
-        , rrmean    :: AMeaning                -- ^ Ampersand generated explanations (MEANINGs) (for all known languages)
+        , rrmean    :: AMeaning                -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg     :: [A_Markup]              -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol    :: Maybe PairView          -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp     :: Sign                    -- ^ Allocated type

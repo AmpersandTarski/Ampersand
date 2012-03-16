@@ -59,7 +59,7 @@ pCtx2aCtx pctx
              , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
              , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
              , ctxifcs   = ifcs          -- The interfaces defined in this context, outside the scope of patterns
-             , ctxps     = apurp         -- The purposespre-explanations defined in this context, outside the scope of patterns
+             , ctxps     = apurp         -- The purposes defined in this context, outside the scope of patterns
              , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
@@ -136,7 +136,7 @@ pPat2aPat actx pops ppat
           , ptgns = agens        -- The generalizations defined in this pattern
           , ptdcs = adecs        -- The declarations declared in this pattern
           , ptkds = keys         -- The key definitions defined in this pattern
-          , ptxps = xpls         -- The explanations of elements defined in this pattern
+          , ptxps = xpls         -- The purposes of elements defined in this pattern
           }
    ,CxeOrig (cxelist (rulecxes++keycxes++deccxes++xplcxes)) "pattern" (name ppat) (origin ppat) )
    where
@@ -159,7 +159,7 @@ pProc2aProc actx pops pproc
          , prcRRuls = arruls         -- The assignment of roles to rules.
          , prcRRels = arrels         -- The assignment of roles to Relations.
          , prcKds   = keys           -- The key definitions defined in this process
-         , prcXps   = expls          -- The pre-explanations of elements defined in this process
+         , prcXps   = expls          -- The purposes of elements defined in this process
          }
    ,CxeOrig (cxelist (rulecxes++keycxes++deccxes++rrcxes++editcxes++explcxes)) "process" (name pproc) (origin pproc) )
    where
@@ -206,7 +206,7 @@ pRul2aRul actx patname prul        -- for debugging the parser, this is a good p
  = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
        , rrexp = aexpr                      -- The rule expression
        , rrfps = rr_fps prul                -- Position in the Ampersand file
-       , rrmean = meanings (rr_mean prul)   -- Ampersand generated explanations (for all known languages)
+       , rrmean = meanings (rr_mean prul)   -- Ampersand generated meaning (for all known languages)
        , rrmsg = map (pMarkup2aMarkup (ctxlang actx) (ctxmarkup actx)) $ rr_msg prul
        , rrviol = mviol
        , rrtyp = sign aexpr                 -- Allocated type
