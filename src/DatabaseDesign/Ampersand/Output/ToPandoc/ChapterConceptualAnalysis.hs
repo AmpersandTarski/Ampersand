@@ -39,7 +39,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
                   , Str "and each principle is then translated in a rule. "
                   ]]
    ) where
-      purps = purposes fSpec (language flags) fSpec
+      purps = purposesDefinedIn fSpec (language flags) fSpec
 
   (caBlocks,pictures) = ( [b | (blocks,_)<-ca, b<-blocks], [picture | (_,picture)<-ca] )
                         where ca=if null (themes fSpec)
@@ -73,7 +73,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , picture
          blocks = sctRules ++ sctSignals
          sctMotivation
           = purposes2Blocks flags purps
-            where purps = purposes fSpec (language flags) pat
+            where purps = purposesDefinedIn fSpec (language flags) pat
          (sctRules,   i',  seenCrs, seenDrs) = dpRule fSpec flags (invariants pat) i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule fSpec flags (processRules pat) i' seenCrs seenDrs
 

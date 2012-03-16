@@ -67,7 +67,7 @@ where
             , ctx_ks     :: [P_KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
             , ctx_gs     :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps     :: [PPurpose]      -- ^ The pre-explanations defined in this context, outside the scope of patterns
+            , ctx_ps     :: [PPurpose]      -- ^ The purposes defined in this context, outside the scope of patterns
             , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
             , ctx_sql    :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php    :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
@@ -111,7 +111,7 @@ where
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
                           , procCds   :: [ConceptDef]     -- ^ The concept definitions defined in this process
                           , procKds   :: [P_KeyDef]       -- ^ The key definitions defined in this process
-                          , procXps   :: [PPurpose]       -- ^ The pre-explanations of elements defined in this process
+                          , procXps   :: [PPurpose]       -- ^ The purposes of elements defined in this process
                           , procPop   :: [P_Population]   -- ^ The populations that are local to this process
                           } 
 
