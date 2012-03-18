@@ -199,19 +199,19 @@ conceptual2Dot :: Options                   -- ^ the flags
                -> DotGraph String           -- ^ The resulting DotGraph
 conceptual2Dot flags graphName cpts' rels idgs
      = DotGraph { strictGraph = False
-                , directedGraph = True
+                , directedGraph = False
                 , graphID = Just (Str (fromString graphName))
                 , graphStatements 
                       = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture flags)]
                                  , subGraphs = []
-                                 , nodeStmts = conceptNodes ++ declarationNodes
-                                 , edgeStmts = declarationEdges ++ isaEdges
+                                 , nodeStmts = conceptNodes ++ relationNodes
+                                 , edgeStmts = relationEdges ++ isaEdges
                                  }
                 }
        where
         cpts = cpts' `uni` concs rels `uni` concs idgs
         conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) flags | c<-cpts]
-        (declarationNodes,declarationEdges) = (concat a, concat b) 
+        (relationNodes,relationEdges) = (concat a, concat b) 
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
         isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge True  flags | (s,g)<-idgs]
               
@@ -226,26 +226,41 @@ conceptual2Dot flags graphName cpts' rels idgs
              (Declaration,Int)           -- ^ tuple contains the declaration and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
-             = (  [ relNameNode ]    -- node to place the name of the relation
-               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) True flags     -- edge to connect the source with the hinge
-                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) True flags]     -- edge to connect the hinge to the target
-               )
-          where
-        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
-            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
-            
+--             = (  [ relNameNode ]    -- node to place the name of the relation
+--               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) True flags     -- edge to connect the source with the hinge
+--                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) True flags]     -- edge to connect the hinge to the target
+--               )
+--          where
+--        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
+--            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
+               = ( [] --No intermediate node
+                 , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r) True  flags]
+                 )
                                    
 constrNode :: a -> PictureObject -> Options -> DotNode a
 constrNode nodeId pObj flags
   = DotNode { nodeID = nodeId
-            , nodeAttributes = handleFlags pObj flags
+            , nodeAttributes = [ FontSize 8
+                               , FontName (fromString(pangoFont flags))
+                               , Width 0.1
+                               , Height  0.1
+                               ]++handleFlags pObj flags
             }
+
 constrEdge :: a -> a -> PictureObject -> Bool -> Options -> DotEdge a
 constrEdge nodeFrom nodeTo pObj isDirected' flags 
   = DotEdge { fromNode = nodeFrom
             , toNode   = nodeTo
-            , edgeAttributes = handleFlags pObj flags
-          --  , directedEdge   = isDirected'
+            , edgeAttributes = [ FontSize 8
+                               , FontName (fromString(pangoFont flags))
+                               , Dir (if isDirected' then Forward else NoDir)
+                               , LabelAngle (-25.0)
+                               , Color [X11Color Gray30]
+                               , LabelFontColor (X11Color Black)
+                               , LabelFloat True
+                            --   , LabelDistance 2.0
+                            --   , (HeadLabel . StrLabel . fromString) "Test"
+                               ]++handleFlags pObj flags
             }
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept
@@ -270,8 +285,8 @@ handleFlags po flags =
     case po of
       CptConnectorNode c 
          -> if crowfoot flags
-            then defaultNodeAtts flags++ 
-                 [ Label$StrLabel (fromString(name c))
+            then 
+                 [ (Label . StrLabel . fromString . name) c
                  , Shape PlainText
                  , Style [filled]
                  , URL (theURL flags c)
@@ -282,22 +297,21 @@ handleFlags po flags =
       CptNameNode c  -> if crowfoot flags
                         then [ Shape PointShape
                              , Style [invis]]
-                        else defaultNodeAtts flags++
-                             [ Label (StrLabel (fromString(name c)))
+                        else 
+                             [ (Label . StrLabel . fromString . name) c
                              , Shape PlainText
                              , Style [filled]
                              , URL (theURL flags c)
                              ]
-      CptEdge    -> [ Len 0.4
-                    , Style [invis]
+      CptEdge    -> [Style [invis]
                     ]
-      CptOnlyOneNode c -> defaultNodeAtts flags++
-                          [Label (StrLabel (fromString(name c)))
-                          , Shape PlainText
+      CptOnlyOneNode c -> 
+                          [(Label . StrLabel . fromString . name) c
+                          , Shape BoxShape
                           , Style [filled] 
                           , URL (theURL flags c)
                           ]
-      RelOnlyOneEdge r -> [ Label (StrLabel (fromString(name r)))
+      RelOnlyOneEdge r -> [ (Label . StrLabel . fromString . name) r
                           , ArrowHead (if crowfoot flags
                                        then crowfootArrowType True r
                                        else plainArrowType True r
@@ -309,8 +323,7 @@ handleFlags po flags =
                           , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                           , URL (theURL flags r)
                           ]
-      RelSrcEdge r -> [Len 1.2
-                      , ArrowHead ( if crowfoot flags  then noArrow                   else
+      RelSrcEdge r -> [ ArrowHead ( if crowfoot flags  then noArrow                   else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then noArrow                   else
                                     noArrow
@@ -323,8 +336,7 @@ handleFlags po flags =
                       ,HeadClip False
                       , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ]
-      RelTgtEdge r -> [Len 1.2
-                      , Label (StrLabel (fromString(name r)))
+      RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot flags  then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
                                     if isInvFunction r then noArrow                   else
@@ -338,37 +350,24 @@ handleFlags po flags =
                       , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ,TailClip False
                       ] 
-      RelIntermediateNode r -> defaultNodeAtts flags++ 
+      RelIntermediateNode r -> 
                        [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White
                        , URL (theURL flags r) 
                        ]
-      IsaOnlyOneEdge-> [ Len 1.5
-                       , ArrowHead (AType [(open,Normal)])
+      IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow
+                       , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                        , if blackWhite flags then Style [dotted] else penColor Red
                        ]
-      TotalPicture -> [  Overlap RemoveOverlaps ]
+      TotalPicture -> [ Overlap RemoveOverlaps
+                      , Landscape False
+                      ]
 
 isInvFunction :: Declaration -> Bool
 isInvFunction d = isInj d && isSur d
 
---DESCR -> default Node attributes
-defaultNodeAtts :: Options -> [Attribute]
-defaultNodeAtts flags = [FontSize 12, FontName (fromString(pangoFont flags))]
-
---invisible :: Attribute
---invisible = Style [SItem Invisible []]
-
---dotted :: Attribute
---dotted = Style [SItem Dotted []]
-
---dashed :: Attribute
---dashed = Style [SItem Dashed []]
-
---filled :: Attribute
---filled = Style [SItem Filled []]
 
 crowfootArrowType :: Bool -> Declaration -> ArrowType
 crowfootArrowType isHead r 
@@ -394,10 +393,13 @@ crowfootArrowType isHead r
 
 plainArrowType :: Bool -> Declaration -> ArrowType
 plainArrowType isHead r
-   = if isHead then
-       (if isFunction r then noArrow else AType [(open, Normal)]) else
-       noArrow
-
+   = if isHead 
+     then (if isFunction r 
+           then noArrow 
+           else AType [(noMod, Normal)]
+          )
+     else noArrow
+      --    AType [(ArrMod FilledArrow BothSides,NoArrow),(ArrMod OpenArrow LeftSide, Inv)]
 noMod :: ArrowModifier
 noMod = ArrMod { arrowFill = FilledArrow
                , arrowSide = BothSides
