@@ -12,7 +12,8 @@ import DatabaseDesign.Ampersand_Prototype.Apps.RAPImport
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import DatabaseDesign.Ampersand_Prototype.GenBericht
- 
+import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
@@ -52,8 +53,10 @@ generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec =
  do { verboseLn opts "Generating..."
     ; when (genPrototype opts) $ doGenProto fSpec opts
-    ; when (genBericht opts)   $ doGenBericht fSpec opts 
-    ; sequence_ [ ruleTest fSpec opts ruleName | Just ruleName <- [testRule opts]] 
+    ; when (genBericht opts)   $ doGenBericht fSpec opts
+    ; when (validateSQL opts)  $ validateRuleSQL fSpec opts
+    ; case testRule opts of Just ruleName -> ruleTest fSpec opts ruleName
+                            Nothing       -> return ()
     ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
         verboseLn opts "\nWARNING: There are rule violations (see above)."
     ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning

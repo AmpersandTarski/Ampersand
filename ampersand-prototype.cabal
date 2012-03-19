@@ -42,15 +42,16 @@ Executable prototype
       MissingH == 1.1.*
 
   other-modules: 
-                 DatabaseDesign.Ampersand_Prototype.Apps ,
-                 DatabaseDesign.Ampersand_Prototype.Apps.RAP ,
-                 DatabaseDesign.Ampersand_Prototype.Apps.RAPImport ,
-                 DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers ,
-                 DatabaseDesign.Ampersand_Prototype.CoreImporter ,
-                 DatabaseDesign.Ampersand_Prototype.GenBericht ,
-                 DatabaseDesign.Ampersand_Prototype.Generate ,
-                 DatabaseDesign.Ampersand_Prototype.Installer ,
-                 DatabaseDesign.Ampersand_Prototype.ObjBinGen ,
-                 DatabaseDesign.Ampersand_Prototype.RelBinGenBasics ,
-                 DatabaseDesign.Ampersand_Prototype.RelBinGenSQL ,
-                 DatabaseDesign.Ampersand_Prototype.Version
+                 DatabaseDesign.Ampersand_Prototype.Apps,
+                 DatabaseDesign.Ampersand_Prototype.Apps.RAP,
+                 DatabaseDesign.Ampersand_Prototype.Apps.RAPImport,
+                 DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers,
+                 DatabaseDesign.Ampersand_Prototype.CoreImporter,
+                 DatabaseDesign.Ampersand_Prototype.GenBericht,
+                 DatabaseDesign.Ampersand_Prototype.Generate,
+                 DatabaseDesign.Ampersand_Prototype.Installer,
+                 DatabaseDesign.Ampersand_Prototype.ObjBinGen,
+                 DatabaseDesign.Ampersand_Prototype.RelBinGenBasics,
+                 DatabaseDesign.Ampersand_Prototype.RelBinGenSQL,
+                 DatabaseDesign.Ampersand_Prototype.Version,
+                 DatabaseDesign.Ampersand_Prototype.ValidateSQL
