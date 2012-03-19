@@ -168,8 +168,8 @@ instance Language A_Context where
                                                              }]
   rules        context = concatMap rules (ctxpats context) ++ concatMap rules (ctxprocs context) ++ ctxrs context  -- all user defined rules
   invariants   context = [r | r<-rules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
-  keyDefs      context = nub$(concatMap keyDefs (ctxpats context)) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
-  gens         context = concatMap gens (ctxpats context) `uni` ctxgs context
+  keyDefs      context = concatMap keyDefs (ctxpats context) ++ concatMap keyDefs (ctxprocs context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
+  gens         context = concatMap gens (ctxpats context) `uni` concatMap gens (ctxprocs context) `uni` ctxgs context
   patterns             = ctxpats
   cExperimental        = ctxexperimental
 
