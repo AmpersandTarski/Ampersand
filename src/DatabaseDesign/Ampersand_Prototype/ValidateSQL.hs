@@ -1,10 +1,12 @@
 module DatabaseDesign.Ampersand_Prototype.ValidateSQL where
 
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec
+import Data.Maybe
 import System.Process
 import System.IO
-
+import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Fspec
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
+import DatabaseDesign.Ampersand_Prototype.Installer
 
 -- TODO: fail with error code if validation fails or something goes wrong along the way
 {-
@@ -16,13 +18,42 @@ therefore most likely to be correct in case of discrepancies.
 validateRuleSQL :: Fspc -> Options -> IO ()
 validateRuleSQL fSpec opts =
  do { res <- executePHP "<?php echo 'PHP says hi'; ?>"
-    ; putStrLn $ "php results: "++res
+    ; removeTempDatabase opts -- in case it exists when we start, just drop it
+    ; createTempDatabase fSpec opts
+    ; removeTempDatabase opts
     ; return ()
     }
-    
+
+tempDbName = "TemporaryValidationDatabase"
+       
+removeTempDatabase :: Options -> IO ()
+removeTempDatabase opts =
+ do { executePHP . showPHP $ 
+        ["@mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
+                           ++",'"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
+                           ++",'"++addSlashes (fromMaybe "" $ sqlPwd opts)++"');"] ++
+        ["mysql_query('DROP DATABASE "++tempDbName++"');"]
+    ; return ()
+    }
+
+createTempDatabase :: Fspc -> Options -> IO ()
+createTempDatabase fSpec opts =
+ do { executePHP php
+    ; return ()
+    }
+ where php = showPHP $
+               ["@mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
+                                     ++",'"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
+                                     ++",'"++addSlashes (fromMaybe "" $ sqlPwd opts)++"');"] ++
+               createDatabasePHP tempDbName ++
+               ["@mysql_select_db('"++tempDbName++"');"] ++
+               createTablesPHP fSpec ++
+               ["echo 'done creating tables';"]
+ 
 executePHP :: String -> IO String
 executePHP phpStr =
- do { (mStdIn, mStdOut, mStdErr, procHandle) <- createProcess cp 
+ do { putStrLn $ "Executing PHP:\n" ++ phpStr
+    ; (mStdIn, mStdOut, mStdErr, procHandle) <- createProcess cp 
     ; case (mStdIn, mStdOut, mStdErr) of
         (Nothing, _, _) -> error "no input handle"
         (_, Nothing, _) -> error "no output handle"
@@ -37,6 +68,7 @@ executePHP phpStr =
             ; seq (length errStr) $ return ()
             ; hClose stdOutH
             ; hClose stdErrH -- TODO: read stdErr
+            ; putStrLn $ "Results:\n" ++ outputStr
             ; return outputStr
             }
     }
@@ -49,3 +81,5 @@ executePHP phpStr =
               , std_err      = CreatePipe
               , close_fds    = False -- don't close all other file descr.
               }
+              
+showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
