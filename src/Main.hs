@@ -50,11 +50,14 @@ main
         return (typeCheck (thepCtx pCtxOrErr) pPops)
     
 generateProtoStuff :: Options -> Fspc -> IO ()
-generateProtoStuff opts fSpec =
+generateProtoStuff opts fSpec | validateSQL opts =
+ do { verboseLn opts "Validating SQL expressions..."
+    ; validateRuleSQL fSpec opts
+    }
+generateProtoStuff opts fSpec | otherwise        =
  do { verboseLn opts "Generating..."
     ; when (genPrototype opts) $ doGenProto fSpec opts
     ; when (genBericht opts)   $ doGenBericht fSpec opts
-    ; when (validateSQL opts)  $ validateRuleSQL fSpec opts
     ; case testRule opts of Just ruleName -> ruleTest fSpec opts ruleName
                             Nothing       -> return ()
     ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
