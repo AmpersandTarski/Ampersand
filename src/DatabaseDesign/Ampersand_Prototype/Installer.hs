@@ -131,6 +131,8 @@ createTablesPHP fSpec =
         , "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
         , "$microseconds = substr($time[0], 2,6);"
         , "$seconds =$time[1].$microseconds;"
+        , "date_default_timezone_set(\"Europe/Amsterdam\");" 
+        -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones 
         , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;" 
         , "mysql_query(\"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
         , "if($err=mysql_error()) {"
