@@ -114,5 +114,5 @@ Let cL = contents l
    atomsOf :: A_Concept -> [String]
    atomsOf C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
    atomsOf C{cptos=x} = x
-   atomsOf ONE = fatal 126 "Asking for the value of the universal singleton"
+   atomsOf ONE = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
   
