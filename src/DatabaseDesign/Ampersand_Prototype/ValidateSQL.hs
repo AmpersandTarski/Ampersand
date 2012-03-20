@@ -35,16 +35,23 @@ validateRuleSQL fSpec opts =
  do { removeTempDatabase opts -- in case it exists when we start, just drop it
     ; putStrLn "Initializing temporary database"
     ; createTempDatabase fSpec opts
-    ; 
-    ; results <- mapM (validateExp fSpec opts) $ 
-                   getAllInterfaceExps fSpec ++ 
-                   getAllRuleExps fSpec ++
-                   getAllPairViewExps fSpec ++
-                   getAllKeyExps fSpec
-    ; case [ ve | (ve, False) <- results] of
-        [] -> return ()
-        ves -> error $ "\n\nERROR: The following expressions failed validation:\n" ++
-                (unlines [ origin++", expression: "++showADL exp | (exp,origin) <- ves ]) 
+     
+    ; let allExps = getAllInterfaceExps fSpec ++ 
+                    getAllRuleExps fSpec ++
+                    getAllPairViewExps fSpec ++
+                    getAllKeyExps fSpec
+                    
+    ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
+    ; results <- mapM (validateExp fSpec opts) allExps 
+                   
+    
+    ; putStrLn "\nRemoving temporary database"
+    ; removeTempDatabase opts
+    
+     ; case [ ve | (ve, False) <- results] of
+        [] -> putStrLn "With the provided populations, all generated SQL code has passed validation!"
+        ves -> error $ "\n\nValidation error. The following expressions failed validation:\n" ++
+                         (unlines $ map showVExp ves) 
     }
 
 -- functions for extracting all expressions from the context
@@ -75,22 +82,24 @@ getAllKeyExps fSpec = concatMap getKeyExps $ vkeys fSpec
 type ValidationExp = (Expression, String) 
 -- a ValidationExp is an expression together with the place in the context where we 
 -- obtained it from (e.g. rule/interface/..)
- 
+showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
+
 -- validate a single expression and report the results
 validateExp :: Fspc -> Options -> ValidationExp -> IO (ValidationExp, Bool)
 validateExp _     _    vExp@(ERel _, _)   = return (vExp, True) -- skip all simple relations
 validateExp fSpec opts vExp@(exp, origin) =
- do { putStr $ "Checking "++origin ++": expression = "++showADL exp
+ do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec opts $ exp
     ; let violationsAmp = sort $ contents exp
     
     ; if violationsSQL == violationsAmp 
       then 
-       do { putStrLn $ " (pass)\n" -- ++show violationsSQL
+       do { putStr $ "." -- ++show violationsSQL
           ; return (vExp, True)
           }    
       else
-       do { putStrLn "(fail)\nMismatch between SQL and Ampersand"
+       do { putStrLn "\nMismatch between SQL and Ampersand"
+          ; putStrLn $ showVExp vExp
           ; putStrLn $ "SQL violations:\n"++show violationsSQL
           ; putStrLn $ "Ampersand violations:\n" ++ show violationsAmp
           ; return (vExp, False)
@@ -146,9 +155,9 @@ createTempDatabase fSpec opts =
  where php = showPHP $
                connectToServer opts ++
                createDatabasePHP tempDbName ++
-               ["mysql_select_db('"++tempDbName++"');"] ++
-               createTablesPHP fSpec ++
-               ["echo 'done creating tables';"]
+               [ "mysql_select_db('"++tempDbName++"');"
+               , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
+               createTablesPHP fSpec
 
 connectToServer :: Options -> [String]
 connectToServer opts =
@@ -193,13 +202,3 @@ executePHP phpStr =
 
 
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
-
-
-
-testQuery = "/* case: ETyp x _" ++
-            "                 ETyp ( \"V\" ) _ */" ++
-            "              /* case: (ERel (V (Sign s t)))" ++
-            "                 ERel [ \"V[Klant]\" ] */" ++
-            "              SELECT DISTINCT cfst0.`Klant` AS src, cfst1.`Klant` AS tgt" ++
-            "              FROM `Klant` AS cfst0, `Klant` AS cfst1" 
-            
