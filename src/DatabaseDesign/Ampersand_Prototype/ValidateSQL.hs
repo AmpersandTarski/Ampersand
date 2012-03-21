@@ -43,7 +43,7 @@ validateRuleSQL fSpec opts =
     ; results <- mapM (validateExp fSpec opts) allExps 
                    
     ; putStrLn "\nRemoving temporary database"
- --   ; removeTempDatabase opts
+    ; removeTempDatabase opts
     
      ; case [ ve | (ve, False) <- results] of
         [] -> putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
@@ -140,15 +140,6 @@ performQuery opts queryStr =
         _            -> fatal 143 $ "Parse error on php result: "++show queryResult
     }
 
- 
-removeTempDatabase :: Options -> IO ()
-removeTempDatabase opts =
- do { executePHP . showPHP $ 
-        connectToServer opts ++
-        ["mysql_query('DROP DATABASE "++tempDbName++"');"]
-    ; return ()
-    }
-
 createTempDatabase :: Fspc -> Options -> IO ()
 createTempDatabase fSpec opts =
  do { executePHP php
@@ -161,13 +152,21 @@ createTempDatabase fSpec opts =
                , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
                createTablesPHP fSpec
 
+removeTempDatabase :: Options -> IO ()
+removeTempDatabase opts =
+ do { executePHP . showPHP $ 
+        connectToServer opts ++
+        ["mysql_query('DROP DATABASE "++tempDbName++"');"]
+    ; return ()
+    }
+
 connectToServer :: Options -> [String]
 connectToServer opts =
   ["mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
               ++",'"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
               ++",'"++addSlashes (fromMaybe "" $ sqlPwd opts)++"');"] 
                
-
+-- call the command-line php with phpStr as input
 executePHP :: String -> IO String
 executePHP phpStr =
  do { --putStrLn $ "Executing PHP:\n" ++ phpStr
