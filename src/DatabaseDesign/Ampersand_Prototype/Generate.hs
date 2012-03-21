@@ -133,12 +133,13 @@ generateRules fSpec opts =
            , "        , 'tgtConcept' => "++showPhpStr (name (target $ rrexp rule))
            ] ++
            ( if (ECpl . rrexp) rule /= violationsExpr && verboseP opts
-             then   ["        // original expression:"]
+             then   ["        // Normalization steps:"]
                   ++["        // "++escapePhpStr ls | ls<-(showPrf showADL . cfProof showADL . ECpl . rrexp) rule]
-                  ++["        // which is the expression to transform to SQL, that computes violations."]
-             else   ["        // normalized complement (violations): "++ escapePhpStr (show violationsExpr)]
+                  ++["        // "]
+             else   []
            ) ++
-           [ "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
+           [ "        // Normalized complement (== violationsSQL): "++ escapePhpStr (show violationsExpr)
+           , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
                                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
            ] ++
            ["        , 'contentsSQL' => '" ++
@@ -239,11 +240,12 @@ genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int ->
 genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if objctx object /= normalizedInterfaceExp && verboseP opts
-      then   ["      // original expression:"]
+      then   ["      // Normalization steps:"]
            ++["      // "++escapePhpStr ls | ls<-showPrf showADL (cfProof showADL (objctx object))] -- escape for the pathological case that one of the names in the relation contains a newline
-           ++["      // which is the expression to transform to SQL"]
-      else   ["      // original expression: "++escapePhpStr (show normalizedInterfaceExp)]  -- escape for the pathological case that one of the names in the relation contains a newline
+           ++["      //"]      
+      else   []
      )
+  ++["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (show normalizedInterfaceExp) ] -- escape for the pathological case that one of the names in the relation contains a newline
   ++ case mInterfaceRoles of -- interfaceRoles is present iff this is a top-level interface
        Just interfaceRoles -> [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map showPhpStr interfaceRoles) ++")" 
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
