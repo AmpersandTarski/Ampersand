@@ -14,10 +14,6 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import DatabaseDesign.Ampersand_Prototype.Installer
 import DatabaseDesign.Ampersand_Prototype.Version 
 
--- TODO: fail with error code if validation fails or something goes wrong along the way
--- TODO: get rid of read
--- TODO: escaping?
-
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -33,6 +29,8 @@ tempDbName = "TemporaryValidationDatabase"
 validateRuleSQL :: Fspc -> Options -> IO ()
 validateRuleSQL fSpec opts =
  do { removeTempDatabase opts -- in case it exists when we start, just drop it
+    ; hSetBuffering stdout NoBuffering
+    
     ; putStrLn "Initializing temporary database"
     ; createTempDatabase fSpec opts
      
@@ -44,12 +42,11 @@ validateRuleSQL fSpec opts =
     ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
     ; results <- mapM (validateExp fSpec opts) allExps 
                    
-    
     ; putStrLn "\nRemoving temporary database"
-    ; removeTempDatabase opts
+ --   ; removeTempDatabase opts
     
      ; case [ ve | (ve, False) <- results] of
-        [] -> putStrLn "With the provided populations, all generated SQL code has passed validation!"
+        [] -> putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
         ves -> error $ "\n\nValidation error. The following expressions failed validation:\n" ++
                          (unlines $ map showVExp ves) 
     }
@@ -86,7 +83,10 @@ showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
 
 -- validate a single expression and report the results
 validateExp :: Fspc -> Options -> ValidationExp -> IO (ValidationExp, Bool)
-validateExp _     _    vExp@(ERel _, _)   = return (vExp, True) -- skip all simple relations
+validateExp _     _    vExp@(ERel _, _)   = -- skip all simple relations 
+ do { putStr $ "."
+    ; return (vExp, True)
+    }
 validateExp fSpec opts vExp@(exp, origin) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec opts $ exp
@@ -131,11 +131,13 @@ performQuery opts queryStr =
         , "echo '[';"
         , "for ($i = 0; $i < count($rows); $i++) {"
         , "  if ($i==0) echo ''; else echo ',';"
-        , "  echo '(\"'.$rows[$i]['src'].'\", \"'.$rows[$i]['tgt'].'\")';"
+        , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
         , "}"
         , "echo ']';"
         ]
-    ; return $ read queryResult -- ugh.. read
+    ; case reads queryResult of
+        [(pairs,"")] -> return pairs
+        _            -> fatal 143 $ "Parse error on php result: "++show queryResult
     }
 
  
