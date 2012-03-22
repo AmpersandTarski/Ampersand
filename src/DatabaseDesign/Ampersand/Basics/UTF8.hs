@@ -33,8 +33,8 @@ module DatabaseDesign.Ampersand.Basics.UTF8
             , getContents
             , putStr
             , putStrLn
-        --    , hPutStr
-        --    , hPutStrLn
+            , hPutStr
+            , hPutStrLn
             )
 
 where
