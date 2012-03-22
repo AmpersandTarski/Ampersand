@@ -76,6 +76,7 @@ module DatabaseDesign.Ampersand
    , eqCl
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
    , DatabaseDesign.Ampersand.Basics.putStr
+   , DatabaseDesign.Ampersand.Basics.hGetContents
    , DatabaseDesign.Ampersand.Basics.hPutStr
    , DatabaseDesign.Ampersand.Basics.hPutStrLn
    , DatabaseDesign.Ampersand.Basics.readFile
