@@ -33,6 +33,7 @@ module DatabaseDesign.Ampersand.Basics.UTF8
             , getContents
             , putStr
             , putStrLn
+            , hGetContents
             , hPutStr
             , hPutStrLn
             )
@@ -65,6 +66,9 @@ putStr = B.putStr . fromString
 
 putStrLn :: String -> IO ()
 putStrLn = B.putStrLn . fromString
+
+hGetContents :: Handle -> IO String
+hGetContents h = liftM (toString . stripBOM) $ B.hGetContents h
 
 hPutStr :: Handle -> String -> IO ()
 hPutStr h = B.hPutStr h . fromString
