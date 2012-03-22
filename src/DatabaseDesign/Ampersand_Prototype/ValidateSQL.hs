@@ -4,7 +4,7 @@ import Data.List
 import Data.Maybe
 import Control.Monad
 import System.Process
-import System.IO hiding (hPutStr)
+import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec
