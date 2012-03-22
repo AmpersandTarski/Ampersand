@@ -159,7 +159,7 @@ createTablesPHP fSpec =
                                ++ ["            \");"
                                , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
            
-        valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld |fld<-record]
+        valuechain record = intercalate ", " [if null fld then "NULL" else "'"++escapePhpDoubleQuoteStr (addSlashes fld) ++"'"|fld<-record]
         checkPlugexists (ExternalPlug _) = []
         checkPlugexists (InternalPlug plug)
          = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++name plug++"`\")){"
@@ -200,3 +200,5 @@ sessiontbl
    , [ "( `SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , ", `lastAccess` BIGINT NOT NULL"]
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
+
+escapePhpDoubleQuoteStr cs = concat [fromMaybe [c] $ lookup c [('\\', "\\\\"),('"', "\\\""),('\n', "\\n")] | c<-cs ]
