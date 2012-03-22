@@ -21,33 +21,33 @@ function initSession() {
 	// when using $_SESSION, we get a nonsense warning if not declared global, however here
 	// we only do isset, so no need for global
   global $conceptTableInfo;
-  
-  if (isset($conceptTableInfo['SESSION']) && !isset($_SESSION)) {
-  	// only execute session code when concept SESSION is used by adl script
+  if (!isset($conceptTableInfo['SESSION'])) 
+  	$sessionAtom = "_SESSION"; // doesn't matter what we put here, since no substitution will take place
+ 	else // only execute session code if concept SESSION is used by adl source
+  	if (!isset($_SESSION)) { // if the session has not been initialized yet
     
-  	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
-    //       This way, errors during initSession do not prevent the reset-database link from being visible.
-    DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
-    if ($error) return;
-    
-    session_start();
-    cleanupExpiredSessions();
-    
-    $sessionAtom = $_SESSION['sessionAtom'];
-    
-    // create a new session if $sessionAtom is not set (browser started a new session) 
-    // or $sessionAtom is not in SESSIONS (previous session expired)
-    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
-      $sessionAtom = mkUniqueAtomByTime('SESSION');
-      $_SESSION['sessionAtom']  = $sessionAtom;
-      addAtomToConcept($sessionAtom, 'SESSION');
+	  	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+	    //       This way, errors during initSession do not prevent the reset-database link from being visible.
+	    DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
+	    if ($error) return;
+	    
+	    session_start();
+	    cleanupExpiredSessions();
+	    $sessionAtom = isset($_SESSION['sessionAtom']) ? $_SESSION['sessionAtom'] : null;
+	    
+	    // create a new session if $sessionAtom is not set (browser started a new session) 
+	    // or $sessionAtom is not in SESSIONS (previous session expired)
+	    if (!$sessionAtom || !isAtomInConcept($sessionAtom, 'SESSION')) {
+	      $sessionAtom = mkUniqueAtomByTime('SESSION');
+	      $_SESSION['sessionAtom']  = $sessionAtom;
+	      addAtomToConcept($sessionAtom, 'SESSION');
+	    }
+	    
+	    $timeInSeconds = time();
+	    DB_doquer("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
+	              "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
+	    //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
     }
-    
-    $timeInSeconds = time();
-    DB_doquer("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
-              "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
-    //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
-  }
 }
 
 function resetSession() {
@@ -85,13 +85,13 @@ function DB_doquer($quer) {
 }
 
 function DB_doquerErr($quer, &$error) {
-  global $_SESSION; // when using $_SESSION, we get a nonsense warning if not declared global  
-  global $dbName;
+  global $sessionAtom;
+	global $dbName;
   global $DB_link;
   global $DB_errs;
   
   //Replace the special atom value _SESSION by the current sessionAtom
-  $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
+  $quer =  str_replace("_SESSION", $sessionAtom, $quer);
   
   $DB_slct = mysql_select_db($dbName, $DB_link);
     
