@@ -5,6 +5,7 @@ import Data.Maybe
 import Control.Monad
 import System.Process
 import System.IO
+import System.Directory
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.ADL1.Rule
@@ -170,36 +171,42 @@ connectToServer opts =
 executePHP :: String -> IO String
 executePHP phpStr =
  do { --putStrLn $ "Executing PHP:\n" ++ phpStr
-    ; (mStdIn, mStdOut, mStdErr, procHandle) <- createProcess cp 
-    ; case (mStdIn, mStdOut, mStdErr) of
-        (Nothing, _, _) -> fatal 104 "no input handle"
-        (_, Nothing, _) -> fatal 105 "no output handle"
-        (_, _, Nothing) -> fatal 106 "no error handle"
-        (Just stdInH, Just stdOutH, Just stdErrH) ->
-         do { --putStrLn "done"
-            ; hPutStr stdInH phpStr -- feed php script into the input pipe
-            ; hClose stdInH
-            ; errStr <- hGetContents stdErrH
-            ; seq (length errStr) $ return ()
-            ; hClose stdErrH
-            ; when (not $ null errStr) $
-                putStrLn $ "Error during PHP execution:\n" ++ errStr 
-            ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
-            ; seq (length outputStr) $ return ()
-            ; hClose stdOutH
-            --; putStrLn $ "Results:\n" ++ outputStr
-            ; return outputStr
-            }
-    }
- where cp = CreateProcess
-              { cmdspec      = RawCommand "php" []
-              , cwd          = Nothing -- path
-              , env          = Nothing -- environment
-              , std_in       = CreatePipe 
-              , std_out      = CreatePipe
-              , std_err      = CreatePipe
-              , close_fds    = False -- no need to close all other file descriptors
+    ; tempdir <- catch (getTemporaryDirectory) (\_ -> return ".")
+    ; (tempfile, temph) <- openTempFile tempdir "phpInput"
+    ; hPutStr temph phpStr
+    ; hClose temph
+     
+    ; let cp = CreateProcess
+                { cmdspec      = RawCommand "php" [tempfile]
+                , cwd          = Nothing -- path
+                , env          = Nothing -- environment
+                , std_in       = Inherit 
+                , std_out      = CreatePipe
+                , std_err      = CreatePipe
+                , close_fds    = False -- no need to close all other file descriptors
+                }
+    
+            
+    ; (_, mStdOut, mStdErr, procHandle) <- createProcess cp 
+    ; outputStr <-
+        case (mStdOut, mStdErr) of
+          (Nothing, _) -> fatal 105 "no output handle"
+          (_, Nothing) -> fatal 106 "no error handle"
+          (Just stdOutH, Just stdErrH) ->
+           do { --putStrLn "done"
+              ; errStr <- hGetContents stdErrH
+              ; seq (length errStr) $ return ()
+              ; hClose stdErrH
+              ; when (not $ null errStr) $
+                  putStrLn $ "Error during PHP execution:\n" ++ errStr 
+              ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
+              ; seq (length outputStr) $ return ()
+              ; hClose stdOutH
+              --; putStrLn $ "Results:\n" ++ outputStr
+              ; return outputStr
               }
-
+    ; removeFile tempfile
+    ; return outputStr
+    }
 
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
