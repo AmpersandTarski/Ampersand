@@ -23,7 +23,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
 import Data.Char hiding (Space)
 import Text.Pandoc
-import DatabaseDesign.Ampersand.Basics
+import DatabaseDesign.Ampersand.Basics hiding (hPutStrLn)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
 import System                 (system, ExitCode(ExitSuccess,ExitFailure))
