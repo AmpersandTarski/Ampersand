@@ -2,14 +2,8 @@
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 -- 
 module DatabaseDesign.Ampersand.Components 
-  ( -- * Parsing
-    -- ** Pure parsers
-    -- ** Monadic parsers
-     parseCtxM_
-   , parsePopsM_
-   , parseADL1pExpr
-    -- * Type checking and calculus
-   , typeCheck
+  ( -- * Type checking and calculus
+     typeCheck
    , makeFspec
     -- * Generators of output
    , interfaceGen
@@ -35,60 +29,9 @@ import DatabaseDesign.Ampersand.Output
 import Control.Monad
 import System.FilePath
 import DatabaseDesign.Ampersand.Parsing
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Components"
-
-
--- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
---   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
---   This parser is for parsing of a Context
-parseCtxM_  :: Options       -- ^ flags to be taken into account
-            -> FilePath      -- ^ the full path to the file to parse 
-            -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
-parseCtxM_ flags file = tryAll versions2try
-    where 
-      versions2try :: [ParserVersion]
-      versions2try = case forcedParserVersion flags of
-         Just pv  -> [pv]
-         Nothing  -> [Legacy,Current]
-      
-      try :: ParserVersion -> IO (Either ParseError P_Context)
-      try pv = do { verbose flags $ "Parsing with "++show pv++"..."
-                  ; eRes <- parseADL pv file
-                  ; case eRes of 
-                      Right ctx  -> verboseLn flags " successful"
-                                >> return (Right $ ctx{ctx_experimental = experimental flags}) -- set the experimental flag
-                      Left err -> verboseLn flags "...failed"
-                                 >> return (Left err)
-                  }
-                  
-      tryAll :: [ParserVersion] -> IO (Either ParseError P_Context)
-      tryAll [] = fatal 76 "tryAll must not be called with an empty list. Consult your dealer."
-      tryAll [pv] = try pv 
-      tryAll (pv:pvs) = do mCtx <- try pv 
-                           case mCtx of
-                            Right ctx  -> return (Right ctx)
-                            Left _     -> tryAll pvs
-
-                         
--- | Same as parseCtxM_ , however this one is for a list of populations
-parsePopsM_   :: String            -- ^ The string to be parsed
-              -> Options           -- ^ flags to be taken into account
-              -> String            -- ^ The name of the .pop file (used for error messages)
-              -> IO [P_Population] -- ^ The IO monad with the populations. 
-parsePopsM_ popsstring flags fn =
- do { verboseLn flags "Parsing populations."
-    ; case parsePops popsstring fn Current of
-        Right res -> return res
-        Left err -> error err
-    }
-                    
--- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> IO P_Expression
-parseADL1pExpr pexprstr fn = 
-  case parseExpr pexprstr fn Current of
-    Right res -> return res
-    Left err -> error err
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   Apply nocxe on the error object to determine whether there are errors.

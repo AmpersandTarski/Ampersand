@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC  -XScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Parsing ( parseADL
-                                        , parsePops
-                                        , parseExpr
+module DatabaseDesign.Ampersand.Parsing ( parseContext
+                                        , parsePopulations
+                                        , parseADL1pExpr
                                         , ParseError)
 where
 
 import Prelude hiding (putStr,readFile,writeFile)
+import Control.Monad
 import Data.List
 import Data.Char
 import System.Directory
@@ -20,11 +21,69 @@ import DatabaseDesign.Ampersand.ADL1
 
 type ParseError = Message Token
 
-parseADL :: ParserVersion -- ^ The specific version of the parser to be used
+fatal :: Int -> String -> a
+fatal = fatalMsg "Parsing"
+
+-- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
+--   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
+--   This parser is for parsing of a Context
+parseContext  :: Options       -- ^ flags to be taken into account
+            -> FilePath      -- ^ the full path to the file to parse 
+            -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
+parseContext opts file = tryAll versions2try
+    where 
+      versions2try :: [ParserVersion]
+      versions2try = case forcedParserVersion opts of
+         Just pv  -> [pv]
+         Nothing  -> [Current,Legacy]
+      
+      try :: ParserVersion -> IO (Either ParseError P_Context)
+      try pv = do { verboseLn opts $ "Parsing with "++show pv++"..."
+                  ; eRes <- parseADL opts pv file
+                  ; case eRes of 
+                      Right ctx  -> verboseLn opts "Parsing successful"
+                                >> return (Right $ ctx{ctx_experimental = experimental opts}) -- set the experimental flag
+                      Left err -> verboseLn opts "Parsing failed"
+                                 >> return (Left err)
+                  }
+                  
+      tryAll :: [ParserVersion] -> IO (Either ParseError P_Context)
+      tryAll [] = fatal 76 "tryAll must not be called with an empty list. Consult your dealer."
+      tryAll [pv] = try pv 
+      tryAll (pv:pvs) = do mCtx <- try pv 
+                           case mCtx of
+                            Right ctx  -> return (Right ctx)
+                            Left _     -> tryAll pvs
+
+                         
+-- | Same as parseContext , however this one is for a list of populations
+parsePopulations   :: String            -- ^ The string to be parsed
+                   -> Options           -- ^ flags to be taken into account
+                   -> String            -- ^ The name of the .pop file (used for error messages)
+                   -> IO [P_Population] -- ^ The IO monad with the populations. 
+parsePopulations popsstring flags fn =
+ do { verboseLn flags "Parsing populations."
+    ; case parsePops popsstring fn Current of
+        Right res -> return res
+        Left err -> error err
+    }
+                    
+-- | Parse isolated ADL1 expression strings
+parseADL1pExpr :: String -> String -> IO P_Expression
+parseADL1pExpr pexprstr fn = 
+  case parseExpr pexprstr fn Current of
+    Right res -> return res
+    Left err -> error err
+
+
+parseADL :: Options
+         -> ParserVersion -- ^ The specific version of the parser to be used
          -> FilePath      -- ^ The name of the .adl file
          -> IO (Either ParseError P_Context) -- ^ The result: Either some errors, or the parsetree.
-parseADL parserVersion file =
- do { (result, _) <- readAndParseFile parserVersion [] Nothing "" file
+parseADL opts parserVersion file =
+ do { when (parserVersion==Current) $ verboseLn opts $ "Files read:"
+    ; (result, parsedFiles) <- readAndParseFile opts parserVersion 0 [] Nothing "" file
+    ; when (parserVersion==Current) $ verboseLn opts $ "\n"
     ; return result
     }
 
@@ -34,16 +93,20 @@ parseADL parserVersion file =
 -- We don't distinguish between "INCLUDE SomeADL" and "INCLUDE SoMeAdL" to prevent errors on case-insensitive file systems.
 -- (on a case-sensitive file system you do need to keep your includes with correct capitalization though)
 
-readAndParseFile :: ParserVersion -> [String] -> Maybe String -> String -> String ->
-                           IO (Either ParseError P_Context, [String])
-readAndParseFile parserVersion alreadyParsed mIncluderFilepath fileDir relativeFilepath =
+readAndParseFile :: Options -> ParserVersion -> Int -> [String] -> Maybe String -> String -> String ->
+                    IO (Either ParseError P_Context, [String])
+readAndParseFile opts parserVersion depth alreadyParsed mIncluderFilepath fileDir relativeFilepath =
  do { canonicFilepath <- fmap (map toUpper) $ canonicalizePath filepath
+      -- Legacy parser has no includes, so no need to print here
+
     ; if canonicFilepath `elem` alreadyParsed 
-      then return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles) 
+      then do { when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
+              ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
+              } 
       else do { fileContents <- readFile filepath
-              --; Prelude.putStrLn $ "read " ++ filepath
-              ; parseFileContents parserVersion (canonicFilepath:alreadyParsed) fileContents
-                                  newFileDir newFilename     
+              ; when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ filepath
+              ; parseFileContents opts parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
+                                  fileContents newFileDir newFilename     
               }
     }
  `catch` (\exc -> do { error $ case mIncluderFilepath of
@@ -56,19 +119,21 @@ readAndParseFile parserVersion alreadyParsed mIncluderFilepath fileDir relativeF
        newFileDir = let dir = takeDirectory filepath in if dir == "." then "" else dir
        newFilename = takeFileName filepath
 
-parseFileContents :: ParserVersion -- ^ The specific version of the parser to be used
+parseFileContents :: Options -- ^ command-line options 
+         -> ParserVersion -- ^ The specific version of the parser to be used
+         -> Int           -- ^ The include depth
          -> [String]      -- ^ Already parsed files (canonicalized) 
          -> String        -- ^ The string to be parsed
          -> String        -- ^ The path to the .adl file 
          -> String        -- ^ The name of the .adl file
          -> IO (Either ParseError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
-parseFileContents parserVersion alreadyParsed fileContents fileDir filename =
+parseFileContents opts parserVersion depth alreadyParsed fileContents fileDir filename =
   do { let filepath = combine fileDir filename
      ; case parseSingleADL parserVersion fileContents filepath of
            Left err -> return (Left err, alreadyParsed)
            Right (parsedContext, includeFilenames) ->
              do { (includeParseResults, alreadyParsed') <-
-                     readAndParseIncludeFiles alreadyParsed (Just $ combine fileDir filename) fileDir includeFilenames
+                     readAndParseIncludeFiles opts alreadyParsed depth (Just $ combine fileDir filename) fileDir includeFilenames
                 ; return ( case includeParseResults of
                              Left err              -> Left err
                              Right includeContexts -> Right $ foldl mergeContexts parsedContext includeContexts
@@ -76,15 +141,15 @@ parseFileContents parserVersion alreadyParsed fileContents fileDir filename =
                 }     
     }
 
-readAndParseIncludeFiles :: [String] -> Maybe String -> String -> [String] ->
+readAndParseIncludeFiles :: Options -> [String] -> Int -> Maybe String -> String -> [String] ->
                             IO (Either ParseError [P_Context], [String])
-readAndParseIncludeFiles alreadyParsed mIncluderFilepath fileDir [] = return (Right [], alreadyParsed)
-readAndParseIncludeFiles alreadyParsed mIncluderFilepath fileDir (relativeFilepath:relativeFilepaths) = 
- do { (result, alreadyParsed') <- readAndParseFile Current alreadyParsed mIncluderFilepath fileDir relativeFilepath
-    ; case result of
+readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir [] = return (Right [], alreadyParsed)
+readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir (relativeFilepath:relativeFilepaths) = 
+ do { (result, alreadyParsed') <- readAndParseFile opts Current depth alreadyParsed mIncluderFilepath fileDir relativeFilepath
+    ; case result of                               -- Include is only implemented in Current parser
         Left err -> return (Left err, alreadyParsed')
         Right context ->
-         do { (results, alreadyParsed'') <- readAndParseIncludeFiles alreadyParsed' mIncluderFilepath fileDir relativeFilepaths
+         do { (results, alreadyParsed'') <- readAndParseIncludeFiles opts alreadyParsed' depth mIncluderFilepath fileDir relativeFilepaths
             ; case results of
                 Left err -> return (Left err, alreadyParsed'')
                 Right contexts -> return (Right $ context : contexts, alreadyParsed'') 
