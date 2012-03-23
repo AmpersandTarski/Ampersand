@@ -54,8 +54,8 @@ module DatabaseDesign.Ampersand
    , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff
    , CtxError, nocxe, cxes
-   , parseCtxM_
-   , parsePopsM_
+   , parseContext
+   , parsePopulations
    , parseADL1pExpr
     -- * Type checking and calculus
    , typeCheck
@@ -98,6 +98,7 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Input
 import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components 
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Output.AdlExplanation
