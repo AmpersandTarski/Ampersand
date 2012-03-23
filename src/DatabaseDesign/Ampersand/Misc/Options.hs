@@ -24,7 +24,8 @@ import Data.List
 fatal :: Int -> String -> a
 fatal = fatalMsg "Misc.Options"
 
-data ParserVersion = Current | Legacy
+data ParserVersion = Current | Legacy deriving Eq
+
 instance Show ParserVersion where
   show Current = "syntax since Ampersand 2.1.1."
   show Legacy = "syntax664"

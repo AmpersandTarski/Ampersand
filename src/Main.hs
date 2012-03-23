@@ -6,6 +6,7 @@ import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
+import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
@@ -29,11 +30,11 @@ main
       parseAndTypeCheck :: Options -> IO(A_Context, CtxError) 
       parseAndTypeCheck opts 
                         = do verboseLn opts "Start parsing...."
-                             pCtx <- parseCtxM_ opts (fileName opts)
+                             pCtx <- parseContext opts (fileName opts)
                              pPops <- case importfile opts of
                                          [] -> return []
                                          fn -> do popsText <- readFile fn
-                                                  parsePopsM_ popsText opts fn
+                                                  parsePopulations popsText opts fn
                              verboseLn opts "Type checking..."
                              return (case pCtx of
                                         Right ctx -> typeCheck ctx pPops
@@ -55,6 +56,6 @@ generate opts fSpec =
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
-    ; verbose opts "Done."
+    ; verboseLn opts "Done."
     }
 
