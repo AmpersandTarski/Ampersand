@@ -34,13 +34,13 @@ main
          thepCtx (Right pCtx) = pCtx
          thepCtx (Left pErr)   = error $ "Parse error:\n"++show pErr
      in
-     do pCtxOrErr <- parseCtxM_ opts (fileName opts)
+     do pCtxOrErr <- parseContext opts (fileName opts)
         pPops <- if null fn then return [] else
                  do popsText <- readFile fn
                     case importformat opts of
-                       Adl1PopFormat -> parsePopsM_ popsText opts fn
+                       Adl1PopFormat -> parsePopulations popsText opts fn
                        Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
-                                        imppCtxOrErr <- parseCtxM_ opts (importfile opts)
+                                        imppCtxOrErr <- parseContext opts (importfile opts)
                                         case imppCtxOrErr of
                                            (Right imppcx) -> if nocxe (snd(typeCheck imppcx [])) 
                                                              then importfspec  (makeFspec opts (fst(typeCheck imppcx []))) opts
