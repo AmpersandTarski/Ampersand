@@ -35,7 +35,7 @@ parseContext opts file = tryAll versions2try
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion opts of
          Just pv  -> [pv]
-         Nothing  -> [Current,Legacy]
+         Nothing  -> [Current,Legacy,Current] --the errors of the last will be printed on the output stream
       
       try :: ParserVersion -> IO (Either ParseError P_Context)
       try pv = do { verboseLn opts $ "Parsing with "++show pv++"..."
