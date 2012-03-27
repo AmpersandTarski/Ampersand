@@ -103,7 +103,7 @@ instance ShowADL PandocFormat where
 instance ShowADL A_Markup where
  showADL m 
      = "IN " ++showADL (amLang m) 
-    ++ " TEXTMARKUP "++showADL (amFormat m) 
+    ++ " "++showADL (amFormat m) 
     ++ "{+"++aMarkup2String m++"-}"
     
 instance ShowADL Lang where
