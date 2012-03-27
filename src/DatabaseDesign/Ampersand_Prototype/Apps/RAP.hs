@@ -34,13 +34,7 @@ picturesForAtlas flags fSpec
 --select population of concepts or declarations from the atlas of this user
 --REMARK quickQuery' is strict and needed to keep results for use after disconnecting
 type AtomVal = String
-type CptTbl = [AtomVal]
 type RelTbl = [(AtomVal,AtomVal)]
-selectconcept :: (IConnection conn) => conn -> Fspc -> A_Concept -> IO CptTbl
-selectconcept conn fSpec cpt
- = do rows <- quickQuery' conn stmt []
-      return [fromSql x |[x]<-rows]
-   where  stmt = fromMaybe [] (selectExprMorph fSpec (-1) "fld1" "fld1" (I cpt))
 selectdecl :: (IConnection conn) => conn -> Fspc -> Relation -> IO RelTbl
 selectdecl conn fSpec rel
  = do rows <- quickQuery' conn stmt []
@@ -60,7 +54,13 @@ therel fSpec relname relsource reltarget
                           ,null relsource || relsource==name(source d)
                           ,null reltarget || reltarget==name(target d)]
            ("when searching for the relation x with searchpattern (name,source,target)" ++ show (relname,relsource,reltarget))
-
+geta :: [(String,b)] -> String -> b -> b
+geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
+makerel :: String -> P_Relation
+makerel relstr
+ = P_Rel  { rel_nm = relstr
+          , rel_pos = DBLoc "Atlas(Relation)"
+          }
 
 atlas2populations :: Fspc -> Options -> IO String
 atlas2populations fSpec flags =
@@ -89,6 +89,7 @@ atlas2populations fSpec flags =
       verboseLn flags "Disconnected."
       makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
 
+makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
 makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
  = return ("CONTEXT "++cxnm++"\n"++concat (map showADL pops)++"\nENDCONTEXT")
    where
@@ -173,6 +174,12 @@ atlas2context fSpec flags =
        = do xs <- sequence [parseADL1pExpr x "Atlas(Rule)"|(_,x)<-r_exprvalue]
             return (zip (map fst r_exprvalue) xs)
 
+makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,P_Expression)] -> IO (A_Context,CtxError)
 makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
                      r_gengen r_genspc
                      r_cptnm r_cptpurpose r_cptdf r_atomvalue      
@@ -189,7 +196,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_markup= Just LaTeX --ADLImportable writes LaTeX
        , ctx_thms  = []
        , ctx_pats  = [atlas2pattern p lang
-                                    r_ptrls r_ptdcs r_ptgns r_ptxps          
+                                    r_ptrls r_ptdcs r_ptgns          
                                     r_gengen r_genspc
                                     r_cptnm
                                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
@@ -217,7 +224,11 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_experimental = False -- is set in Components.hs
       }
 
-atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns r_ptxps          
+atlas2pattern :: (AtomVal,AtomVal) -> Lang -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,P_Expression)] -> P_Pattern 
+atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns          
                              r_gengen r_genspc
                              r_cptnm
                              r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
@@ -227,7 +238,12 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns r_ptxps
          , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
                     | (pid',rid)<-r_ptrls, pid==pid']
-         , pt_gns = []
+         , pt_gns = [PGen (DBLoc "Atlas(Gen)") (PCpt gnm) (PCpt snm)
+                    | (pid',genid)<-r_ptgns, pid'==pid
+                    , let gid = geta r_gengen genid (error "while geta r_gengen.")
+                    , let sid = geta r_genspc genid (error "while geta r_genspc.")
+                    , let gnm = geta r_cptnm gid (error "while geta r_cptnm for gen.")
+                    , let snm = geta r_cptnm sid (error "while geta r_cptnm for spc.")]
          , pt_dcs = [atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
                     |(i,(pid',rid))<-zip [1..] r_ptdcs, pid==pid']
          , pt_cds = []
@@ -244,6 +260,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns r_ptxps
          , pt_pop = []
          }
 
+atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,P_Expression)] -> P_Rule
 atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
  = P_Ru { rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
         , rr_exp  = geta r_exprvalue eid (error "while geta r_exprvalue.")
@@ -254,6 +271,7 @@ atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
         }
    where eid = geta r_rrexp rid (error "while geta r_rrexp.")
 
+atlas2sign :: AtomVal -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> P_Sign
 atlas2sign rid r_decsgn r_src r_trg r_cptnm
  = P_Sign [PCpt srcnm , PCpt trgnm]
    where sid = geta r_decsgn rid (error "while geta r_decsgn.")
@@ -262,6 +280,7 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
          srcnm = geta r_cptnm srcid (error "while geta r_cptnm of srcid.")
          trgnm = geta r_cptnm trgid (error "while geta r_cptnm of trgid.")
 
+atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
 atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue 
  = [P_Popu (makerel rnm) rsgn rpop           
    | (rid,rnm)<-r_decnm
@@ -276,6 +295,8 @@ atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_r
                lval = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
                rval = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
 
+atlas2decl :: AtomVal -> Int -> Lang 
+              -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> P_Declaration
 atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
  = P_Sgn { dec_nm = geta r_decnm rid (error "while geta r_decnm.")
          , dec_sign = atlas2sign rid r_decsgn r_src r_trg r_cptnm
@@ -300,12 +321,3 @@ atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredt
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False
          }    
-
-geta :: [(String,b)] -> String -> b -> b
-geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
-
-makerel :: String -> P_Relation
-makerel relstr
- = P_Rel  { rel_nm = relstr
-          , rel_pos = DBLoc "Atlas(Relation)"
-          }
