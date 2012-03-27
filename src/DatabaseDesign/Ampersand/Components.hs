@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Components
      typeCheck
    , makeFspec
     -- * Generators of output
-   , interfaceGen
+   , doGenADL
    , prove
    , doGenHaskell
    , doGenXML
@@ -46,12 +46,12 @@ typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aC
 --    Or do we assume a correct implementation with unambiguous expressions only?
 -- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
 --    So the answer is: we assume a correct implementation with unambiguous expressions only.
-interfaceGen :: Fspc -> Options -> IO()
-interfaceGen    fSpec flags =
+doGenADL :: Fspc -> Options -> IO()
+doGenADL    fSpec flags =
  do { writeFile outputFile (showADL fSpec) 
-    ; verboseLn flags $ "Ampersand-script written to " ++ outputFile ++ "."
+    ; verboseLn flags $ ".adl-file written to " ++ outputFile ++ "."
     }
- where outputFile = combine (dirOutput flags) "Generated.adl"
+ where outputFile = combine (dirOutput flags) (outputfile flags)
 
 prove :: Fspc -> Options -> IO()
 prove fSpec flags =

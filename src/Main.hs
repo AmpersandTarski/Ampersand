@@ -50,7 +50,7 @@ generate opts fSpec =
     ; when (genXML opts)      $ doGenXML      fSpec opts
     ; when (genUML opts)      $ doGenUML      fSpec opts 
     ; when (haskell opts)     $ doGenHaskell  fSpec opts 
-    ; when (interfacesG opts) $ interfaceGen  fSpec opts
+    ; when (export2adl opts)  $ doGenADL      fSpec opts
     ; when (genFspec opts)    $ doGenDocument fSpec opts 
     ; when (proofs opts)      $ prove         fSpec opts
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)

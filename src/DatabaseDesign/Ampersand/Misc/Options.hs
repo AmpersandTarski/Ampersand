@@ -3,7 +3,7 @@
 module DatabaseDesign.Ampersand.Misc.Options 
         (Options(..),getOptions,defaultFlags,usageInfo'
         ,ParserVersion(..)
-        ,verboseLn,verbose,FspecFormat(..),ImportFormat(..)
+        ,verboseLn,verbose,FspecFormat(..),FileFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
 import System                (getArgs, getProgName)
@@ -53,7 +53,7 @@ data Options = Options { showVersion   :: Bool
                        , customCssFile :: Maybe FilePath                       
                        , importfile    :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
-                       , importformat  :: ImportFormat --file format that can be parsed to some b to populate some Populated a 
+                       , fileformat  :: FileFormat --file format e.g. of importfile or export2adl
                        , theme         :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML        :: Bool
                        , genFspec      :: Bool   -- if True, generate a functional specification
@@ -80,7 +80,7 @@ data Options = Options { showVersion   :: Bool
                        , baseName      :: String
                        , logName       :: String
                        , genTime       :: LocalTime
-                       , interfacesG   :: Bool
+                       , export2adl   :: Bool
                        , test          :: Bool
                        , pangoFont     :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
                        , sqlHost       :: Maybe String  -- do database queries to the specified host
@@ -116,7 +116,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , testRule      = Nothing
                       , customCssFile = Nothing
                       , importfile    = []
-                      , importformat  = fatal 101 "--importformat is required for --import."
+                      , fileformat  = fatal 101 "--fileformat is required for --import."
                       , genXML        = False
                       , genFspec      = False 
                       , diag          = False 
@@ -137,7 +137,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , progrName     = fatal 118 "No monadic options available."
                       , fileName      = fatal 119 "no default value for fileName."
                       , baseName      = fatal 120 "no default value for baseName."
-                      , interfacesG   = False
+                      , export2adl    = False
                       , test          = False
                       , pangoFont     = "Sans"
                       , sqlHost       = Nothing
@@ -203,10 +203,10 @@ getOptions =
                                         , dbName      = case dbName flags of
                                                             ""  -> takeBaseName fName
                                                             str -> str
-                                        , genAtlas = not (null(importfile flags)) && importformat flags==Adl1Format
+                                        , genAtlas = not (null(importfile flags)) && fileformat flags==Adl1Format
                                         , importfile  = if null(importfile flags) || hasExtension(importfile flags)
                                                         then importfile flags
-                                                        else case importformat flags of 
+                                                        else case fileformat flags of 
                                                                 Adl1Format -> addExtension (importfile flags) "adl"
                                                                 Adl1PopFormat -> addExtension (importfile flags) "pop"
                                         }
@@ -229,7 +229,7 @@ getOptions =
             
 data DisplayMode = Public | Hidden 
 data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
-data ImportFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
+data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
               | StudentTheme   -- An adjusted func spec for students of the business rules course
@@ -261,14 +261,14 @@ options = map pp
                                                                            ++ envdbName ++ ", defaults to filename)"), Public)
           , (Option []      ["theme"]       (ReqArg themeOpt "theme")   "differentiate between certain outputs e.g. student", Public)
           , (Option "x"     ["interfaces"]  (NoArg maxInterfacesOpt)    "generate interfaces.", Public)
-          , (Option "e"     ["export"]      (OptArg interfacesOpt "file") "export as ASCII Ampersand syntax.", Public)
+          , (Option "e"     ["export"]      (OptArg exportOpt "file") "export as ASCII Ampersand syntax.", Public)
           , (Option "o"     ["outputDir"]   (ReqArg outputDirOpt "dir") ("output directory (dir overwrites environment variable "
                                                                            ++ envdirOutput ++ ")."), Public)
           , (Option []      ["log"]         (ReqArg logOpt "name")      ("log file name (name overwrites environment variable "
                                                                            ++ envlogName  ++ ")."), Hidden)
           , (Option []      ["import"]      (ReqArg importOpt "file")   "import this file as the population of the context.", Public)
-          , (Option []      ["importformat"](ReqArg iformatOpt "format")("format of import file (format="
-                                                                           ++allImportFormats++")."), Public)
+          , (Option []      ["fileformat"](ReqArg formatOpt "format")("format of import file (format="
+                                                                           ++allFileFormats++")."), Public)
           , (Option []      ["namespace"]   (ReqArg namespaceOpt "ns")  "places the population in this namespace within the context.", Public)
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
@@ -342,12 +342,12 @@ prototypeOpt nm opts
 importOpt     :: String -> Options -> Options
 importOpt nm opts 
   = opts { importfile = nm }
-iformatOpt :: String -> Options -> Options
-iformatOpt f opts = case map toUpper f of
-     "ADL" -> opts{importformat = Adl1Format}
-     "ADL1"-> opts{importformat = Adl1Format}
-     "POP" -> opts{importformat = Adl1PopFormat}
-     "POP1"-> opts{importformat = Adl1PopFormat}
+formatOpt :: String -> Options -> Options
+formatOpt f opts = case map toUpper f of
+     "ADL" -> opts{fileformat = Adl1Format}
+     "ADL1"-> opts{fileformat = Adl1Format}
+     "POP" -> opts{fileformat = Adl1PopFormat}
+     "POP1"-> opts{fileformat = Adl1PopFormat}
      _     -> opts
 maxInterfacesOpt :: Options -> Options
 maxInterfacesOpt  opts = opts{allInterfaces  = True}                            
@@ -378,17 +378,17 @@ fspecRenderOpt w opts = opts{ genFspec=True
                             }
 allFspecFormats :: String
 allFspecFormats                     = "Pandoc, Rtf, OpenDocument, Latex, Html"
-allImportFormats :: String
-allImportFormats                    = "ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)"
+allFileFormats :: String
+allFileFormats                    = "ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)"
 noGraphicsOpt :: Options -> Options
 noGraphicsOpt opts                  = opts{genGraphics   = False}
 genEcaDocOpt :: Options -> Options
 genEcaDocOpt opts                   = opts{genEcaDoc     = True}
 proofsOpt :: Options -> Options
 proofsOpt opts                      = opts{proofs        = True}
-interfacesOpt :: Maybe String -> Options -> Options
-interfacesOpt mbnm opts             = opts{interfacesG   = True
-                                          ,outputfile=fromMaybe "Generated.adl" mbnm}
+exportOpt :: Maybe String -> Options -> Options
+exportOpt mbnm opts                 = opts{export2adl    = True
+                                          ,outputfile    = fromMaybe "Export.adl" mbnm}
 haskellOpt :: Options -> Options
 haskellOpt opts                     = opts{haskell       = True}
 outputDirOpt :: String -> Options -> Options
