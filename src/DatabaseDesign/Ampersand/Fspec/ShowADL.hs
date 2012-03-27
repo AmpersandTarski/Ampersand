@@ -320,13 +320,18 @@ instance ShowADL Event where
 instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
+instance ShowADL P_Population where
+ showADL (P_Popu pr (P_Sign rtp) pairs)
+  = "POPULATION "++name pr++(if null rtp then [] else "["++name(head rtp)++"*"++name(last rtp)++"]")++" CONTAINS\n"++
+    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
+    where indent = "   "
 instance ShowADL Population where
- showADL (Popu r ps)
+ showADL (Popu r pairs)
   = "POPULATION "++showADL r++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) ps)++indent++"]"
+    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
     where indent = "   "
 showatom :: String -> String
-showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
+showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
 
 --used to compose error messages at p2a time
 instance ShowADL P_Expression where
