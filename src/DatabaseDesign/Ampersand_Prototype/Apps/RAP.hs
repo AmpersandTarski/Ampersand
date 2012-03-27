@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wall #-}  
 --hdbc and hdbc-odbc must be installed (from hackage)
 module DatabaseDesign.Ampersand_Prototype.Apps.RAP 
-   (fillAtlas,picturesForAtlas,atlas2context)
+   (fillAtlas,picturesForAtlas,atlas2context,atlas2populations)
 where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.AutoInstaller (odbcinstall)
@@ -69,6 +69,36 @@ parseexprs :: RelTbl -> IO [(String,P_Expression)]
 parseexprs ruleexpr
  = do xs <- sequence [parseADL1pExpr x "Atlas(Rule)"|(_,x)<-ruleexpr]
       return (zip (map fst ruleexpr) xs)
+
+atlas2populations :: Fspc -> Options -> IO String
+atlas2populations fSpec flags =
+   do verboseLn flags "Connecting to atlas..."
+      conn<-connectODBC dsnatlas
+      verboseLn flags "Connected."
+      -----------
+      --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
+      --Context--
+      cxs <- selectconcept conn fSpec (newAcpt "Context" [])
+      --Relation
+      relname <- selectdecl conn fSpec (therel fSpec "rel" [] [])
+      relsc <- selectdecl conn fSpec (therel fSpec "src" [] [])
+      reltg <- selectdecl conn fSpec (therel fSpec "trg" [] [])
+      --P_Population--
+      relcontent <- selectdecl conn fSpec (therel fSpec "content" [] [])
+      pairleft <- selectdecl conn fSpec (therel fSpec "left" [] [])
+      pairright <- selectdecl conn fSpec (therel fSpec "right" [] [])
+      atomsyntax <- selectdecl conn fSpec (therel fSpec "atomsyntax" [] [])
+      -----------
+      disconnect conn
+      verboseLn flags "Disconnected."
+      makepops cxs relname relsc reltg relcontent pairleft pairright atomsyntax
+
+makepops :: CptTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
+makepops cxs relname relsc reltg relcontent pairleft pairright atomsyntax
+ = return ("CONTEXT "++cxnm++"\n"++concat (map showADL pops)++"\nENDCONTEXT")
+   where
+   cxnm    = thehead cxs "no context found in Atlas DB"
+   pops    = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
 
 atlas2context :: Fspc -> Options -> IO A_Context
 atlas2context fSpec flags =

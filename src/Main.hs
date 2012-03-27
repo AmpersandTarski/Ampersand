@@ -7,7 +7,7 @@ import Data.Function (on)
 import System.FilePath        (combine)
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
-import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context)
+import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPImport
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
@@ -37,7 +37,7 @@ main
      do pCtxOrErr <- parseContext opts (fileName opts)
         pPops <- if null fn then return [] else
                  do popsText <- readFile fn
-                    case importformat opts of
+                    case fileformat opts of
                        Adl1PopFormat -> parsePopulations popsText opts fn
                        Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
                                         imppCtxOrErr <- parseContext opts (importfile opts)
@@ -54,6 +54,18 @@ generateProtoStuff opts fSpec | validateSQL opts =
  do { verboseLn opts "Validating SQL expressions..."
     ; validateRuleSQL fSpec opts
     }
+generateProtoStuff opts fSpec | export2adl opts && fileformat opts==Adl1Format =
+ do { verboseLn opts "Exporting Atlas DB content to .adl-file..."
+    ; cx<-atlas2context fSpec opts
+    ; writeFile (combine (dirOutput opts) (outputfile opts)) (showADL cx)
+    ; verboseLn opts $ "Context written to " ++ combine (dirOutput opts) (outputfile opts) ++ "."
+    }
+generateProtoStuff opts fSpec | export2adl opts && fileformat opts==Adl1PopFormat =
+ do { verboseLn opts "Exporting Atlas DB content to .pop-file..."
+    ; cxstr<-atlas2populations fSpec opts
+    ; writeFile (combine (dirOutput opts) (outputfile opts)) cxstr
+    ; verboseLn opts $ "Population of context written to " ++ combine (dirOutput opts) (outputfile opts) ++ "."
+    }
 generateProtoStuff opts fSpec | otherwise        =
  do { verboseLn opts "Generating..."
     ; when (genPrototype opts) $ doGenProto fSpec opts
@@ -64,15 +76,6 @@ generateProtoStuff opts fSpec | otherwise        =
         verboseLn opts "\nWARNING: There are rule violations (see above)."
     ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
-
-exportProto :: Fspc -> Options -> IO ()
-exportProto fSpec opts =
- do { cx<-atlas2context fSpec opts
-    ; writeFile outputFile $ showADL cx
-    ; verboseLn opts $ "Ampersand-script written to " ++ outputFile ++ "."
-    }
- where outputFile = combine (dirOutput opts) (outputfile opts)
-
                
 doGenProto :: Fspc -> Options -> IO ()
 doGenProto fSpec opts =
