@@ -53,10 +53,6 @@ theonly xs err
  | length xs==1 = head xs
  | null xs = error ("no x: " ++ err)
  | otherwise = error ("more than one x: " ++ err)
-thehead :: [t] -> String -> t
-thehead xs err
- | not(null xs) = head xs
- | otherwise = error ("no x:" ++ err)
 therel :: Fspc -> String -> String -> String -> Relation
 therel fSpec relname relsource reltarget 
  = theonly [makeRelation d |d<-declarations fSpec
@@ -65,10 +61,6 @@ therel fSpec relname relsource reltarget
                           ,null reltarget || reltarget==name(target d)]
            ("when searching for the relation x with searchpattern (name,source,target)" ++ show (relname,relsource,reltarget))
 
-parseexprs :: RelTbl -> IO [(String,P_Expression)]
-parseexprs ruleexpr
- = do xs <- sequence [parseADL1pExpr x "Atlas(Rule)"|(_,x)<-ruleexpr]
-      return (zip (map fst ruleexpr) xs)
 
 atlas2populations :: Fspc -> Options -> IO String
 atlas2populations fSpec flags =
@@ -76,29 +68,32 @@ atlas2populations fSpec flags =
       conn<-connectODBC dsnatlas
       verboseLn flags "Connected."
       -----------
-      --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
+      --select (strict) everything you need, then disconnect, then assemble it into a context with populations only
       --Context--
-      cxs <- selectconcept conn fSpec (newAcpt "Context" [])
-      --Relation
-      relname <- selectdecl conn fSpec (therel fSpec "rel" [] [])
-      relsc <- selectdecl conn fSpec (therel fSpec "src" [] [])
-      reltg <- selectdecl conn fSpec (therel fSpec "trg" [] [])
+      r_ctxnm           <- selectdecl conn fSpec (therel fSpec "ctxnm" [] []) --ctxnm  ::Context->Conid
+      --Concept--
+      r_cptnm           <- selectdecl conn fSpec (therel fSpec "cptnm" [] []) --cptnm :: Concept->Conid
+      r_atomvalue       <- selectdecl conn fSpec (therel fSpec "atomvalue" [] []) --atomvalue::AtomID->Atom
+      --Relation--
+      r_decnm           <- selectdecl conn fSpec (therel fSpec "decnm" [] []) --decnm   ::Declaration->Varid
+      r_decsgn          <- selectdecl conn fSpec (therel fSpec "decsgn" [] []) --decsgn ::Declaration->Sign
+      r_src             <- selectdecl conn fSpec (therel fSpec "src" [] []) --src::Sign->Concept
+      r_trg             <- selectdecl conn fSpec (therel fSpec "trg" [] []) --trg::Sign->Concept
       --P_Population--
-      relcontent <- selectdecl conn fSpec (therel fSpec "content" [] [])
-      pairleft <- selectdecl conn fSpec (therel fSpec "left" [] [])
-      pairright <- selectdecl conn fSpec (therel fSpec "right" [] [])
-      atomsyntax <- selectdecl conn fSpec (therel fSpec "atomsyntax" [] [])
+      r_decpopu         <- selectdecl conn fSpec (therel fSpec "decpopu" [] []) --decpopu ::Declaration*PairID
+      r_pairvalue       <- selectdecl conn fSpec (therel fSpec "pairvalue" [] []) --pairvalue::PairID->Pair
+      r_left            <- selectdecl conn fSpec (therel fSpec "left" [] []) --left::Pair->AtomID
+      r_right           <- selectdecl conn fSpec (therel fSpec "right" [] []) --right::Pair->AtomID
       -----------
       disconnect conn
       verboseLn flags "Disconnected."
-      makepops cxs relname relsc reltg relcontent pairleft pairright atomsyntax
+      makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
 
-makepops :: CptTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
-makepops cxs relname relsc reltg relcontent pairleft pairright atomsyntax
+makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
  = return ("CONTEXT "++cxnm++"\n"++concat (map showADL pops)++"\nENDCONTEXT")
    where
-   cxnm    = thehead cxs "no context found in Atlas DB"
-   pops    = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
+   cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
+   pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
 
 atlas2context :: Fspc -> Options -> IO A_Context
 atlas2context fSpec flags =
@@ -109,122 +104,182 @@ atlas2context fSpec flags =
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
       --Context--
-      cxs <- selectconcept conn fSpec (newAcpt "Context" [])
-      pats <- selectconcept conn fSpec (newAcpt "Pattern" [])
-      --Relation
-      relname <- selectdecl conn fSpec (therel fSpec "rel" [] [])
-      relsc <- selectdecl conn fSpec (therel fSpec "src" [] [])
-      reltg <- selectdecl conn fSpec (therel fSpec "trg" [] [])
-      relprp <- selectdecl conn fSpec (therel fSpec "propertyof" [] [])
-      propsyntax <- selectdecl conn fSpec (therel fSpec "propsyntax" [] [])
-      pragma1 <- selectdecl conn fSpec (therel fSpec "pragma1" [] [])
-      pragma2 <- selectdecl conn fSpec (therel fSpec "pragma2" [] [])
-      pragma3 <- selectdecl conn fSpec (therel fSpec "pragma3" [] [])
-      --P_Population--
-      relcontent <- selectdecl conn fSpec (therel fSpec "content" [] [])
-      pairleft <- selectdecl conn fSpec (therel fSpec "left" [] [])
-      pairright <- selectdecl conn fSpec (therel fSpec "right" [] [])
-      atomsyntax <- selectdecl conn fSpec (therel fSpec "atomsyntax" [] [])
-      --Rule--
-      ruleexpr <- selectdecl conn fSpec (therel fSpec "ruleexpr" [] [])
+      r_ctxnm           <- selectdecl conn fSpec (therel fSpec "ctxnm" [] []) --ctxnm  ::Context->Conid
+      --not needed because there is only one context
+      --ctxpats::Context*Pattern
+      --ctxcs  ::Context*Concept
       --Pattern--
-      rulpattern <- selectdecl conn fSpec (therel fSpec "rulpattern" [] [])
-      relpattern <- selectdecl conn fSpec (therel fSpec "relpattern" [] [])
-      --PReferencable--
-      patpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Pattern" [])
-      rulpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "UserRule" [])
-      relpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Relation" [])
-      cptpurpose <- selectdecl conn fSpec (therel fSpec "purpose" "Concept" [])
-      cptdescribes <- selectdecl conn fSpec (therel fSpec "describes" "Concept" [])
-      ruldescribes <- selectdecl conn fSpec (therel fSpec "describes" "UserRule" [])
+      r_ptnm            <- selectdecl conn fSpec (therel fSpec "ptnm" [] []) --ptnm  :: Pattern->Conid
+      r_ptrls           <- selectdecl conn fSpec (therel fSpec "ptrls" [] []) --ptrls :: Pattern*Rule
+      r_ptdcs           <- selectdecl conn fSpec (therel fSpec "ptdcs" [] []) --ptdcs :: Pattern*Declaration
+      r_ptgns           <- selectdecl conn fSpec (therel fSpec "ptgns" [] []) --ptgns :: Pattern*Gen
+      r_ptxps           <- selectdecl conn fSpec (therel fSpec "ptxps" [] []) --ptxps :: Pattern*Blob
+      --Gen--
+      r_gengen          <- selectdecl conn fSpec (therel fSpec "gengen" [] []) --gengen :: Gen->Concept
+      r_genspc          <- selectdecl conn fSpec (therel fSpec "genspc" [] []) --genspc :: Gen->Concept
+      --Concept--
+      r_cptnm           <- selectdecl conn fSpec (therel fSpec "cptnm" [] []) --cptnm :: Concept->Conid
+      r_cptpurpose      <- selectdecl conn fSpec (therel fSpec "cptpurpose" [] []) --cptpurpose:: Concept*Blob
+      r_cptdf           <- selectdecl conn fSpec (therel fSpec "cptdf" [] []) --cptdf :: Concept*Blob
+      --not needed
+      --cptos :: Concept*AtomID
+      r_atomvalue       <- selectdecl conn fSpec (therel fSpec "atomvalue" [] []) --atomvalue::AtomID->Atom
+      --Relation--
+      r_decnm           <- selectdecl conn fSpec (therel fSpec "decnm" [] []) --decnm   ::Declaration->Varid
+      r_decsgn          <- selectdecl conn fSpec (therel fSpec "decsgn" [] []) --decsgn ::Declaration->Sign
+      r_src             <- selectdecl conn fSpec (therel fSpec "src" [] []) --src::Sign->Concept
+      r_trg             <- selectdecl conn fSpec (therel fSpec "trg" [] []) --trg::Sign->Concept
+      r_decprps         <- selectdecl conn fSpec (therel fSpec "decprps" [] []) --decprps::Declaration*PropertyRule
+      r_declaredthrough <- selectdecl conn fSpec (therel fSpec "declaredthrough" [] []) --declaredthrough::PropertyRule*Property
+      r_decprL          <- selectdecl conn fSpec (therel fSpec "decprL" [] []) --decprL  ::Declaration*String
+      r_decprM          <- selectdecl conn fSpec (therel fSpec "decprM" [] []) --decprM  ::Declaration*String
+      r_decprR          <- selectdecl conn fSpec (therel fSpec "decprR" [] []) --decprR  ::Declaration*String
+      r_decmean         <- selectdecl conn fSpec (therel fSpec "decmean" [] []) --decmean ::Declaration * Blob
+      r_decpurpose      <- selectdecl conn fSpec (therel fSpec "decpurpose" [] []) --decpurpose::Declaration * Blob
+      --P_Population--
+      r_decpopu         <- selectdecl conn fSpec (therel fSpec "decpopu" [] []) --decpopu ::Declaration*PairID
+      r_pairvalue       <- selectdecl conn fSpec (therel fSpec "pairvalue" [] []) --pairvalue::PairID->Pair
+      r_left            <- selectdecl conn fSpec (therel fSpec "left" [] []) --left::Pair->AtomID
+      r_right           <- selectdecl conn fSpec (therel fSpec "right" [] []) --right::Pair->AtomID
+      --Rule--
+      r_rrnm            <- selectdecl conn fSpec (therel fSpec "rrnm" [] []) --rrnm  :: Rule -> ADLid
+      r_rrexp           <- selectdecl conn fSpec (therel fSpec "rrexp" [] []) --rrexp :: Rule -> ExpressionID
+      r_rrmean          <- selectdecl conn fSpec (therel fSpec "rrmean" [] []) --rrmean:: Rule * Blob
+      r_rrpurpose       <- selectdecl conn fSpec (therel fSpec "rrpurpose" [] []) --rrpurpose:: Rule * Blob
+      --Expression--
+      r_exprvalue'      <- selectdecl conn fSpec (therel fSpec "exprvalue" [] []) --exprvalue :: ExpressionID->Expression
+      --not needed
+      --rels  :: ExpressionID*Relation
+      --relnm :: Relation -> Varid
+      --relsgn:: Relation -> Sign
+      --reldcl:: Relation -> Declaration
       -----------
       disconnect conn
       verboseLn flags "Disconnected."
-      rls <-parseexprs ruleexpr
+      r_exprvalue <-parseexprs r_exprvalue' --parsing is the safest way to get the P_Expression
       --verboseLn flags (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
-      (actx,errs)<-makectx cxs (language flags) pats rulpattern rls ruldescribes relpattern
-                     relname relsc reltg relcontent pairleft pairright atomsyntax relprp propsyntax pragma1 pragma2 pragma3
-                     patpurpose rulpurpose relpurpose cptpurpose cptdescribes
-      if nocxe errs then return actx else error (show errs)
+      (actx,errs)<-makectx r_ctxnm (language flags)
+                     r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
+                     r_gengen r_genspc
+                     r_cptnm r_cptpurpose r_cptdf r_atomvalue      
+                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
+                     r_decpopu r_pairvalue r_left r_right          
+                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
 
-makectx :: CptTbl -> Lang -> CptTbl -> RelTbl -> [(String,P_Expression)] -> RelTbl -> RelTbl ->
-           RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl ->
-           RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO (A_Context, CtxError)
-makectx cxs lang pats rulpattern rls ruldescribes relpattern 
-        relname relsc reltg relcontent pairleft pairright atomsyntax relprp propsyntax pragma1 pragma2 pragma3
-        patpurpose rulpurpose relpurpose cptpurpose cptdescribes
+      if nocxe errs then return actx else error (show errs)
+      where
+      parseexprs :: RelTbl -> IO [(String,P_Expression)]
+      parseexprs r_exprvalue
+       = do xs <- sequence [parseADL1pExpr x "Atlas(Rule)"|(_,x)<-r_exprvalue]
+            return (zip (map fst r_exprvalue) xs)
+
+makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
+                     r_gengen r_genspc
+                     r_cptnm r_cptpurpose r_cptdf r_atomvalue      
+                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
+                     r_decpopu r_pairvalue r_left r_right          
+                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = return (typeCheck rawctx [])
    where
    rawctx 
     = PCtx {
-         ctx_nm    = thehead cxs "no context found in Atlas DB"
+         ctx_nm    = snd(theonly r_ctxnm "not one context in Atlas DB")
        , ctx_pos   = [DBLoc "Atlas(Context)"]
        , ctx_lang  = Just lang
        , ctx_markup= Just LaTeX --ADLImportable writes LaTeX
        , ctx_thms  = []
-       , ctx_pats  = [atlas2pattern p rulpattern rls (Just lang) ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |p<-pats]
+       , ctx_pats  = [atlas2pattern p lang
+                                    r_ptrls r_ptdcs r_ptgns r_ptxps          
+                                    r_gengen r_genspc
+                                    r_cptnm
+                                    r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
+                                    r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
+                     |p<-r_ptnm]
        , ctx_PPrcs = []
        , ctx_rs    = [] --in pattern:(atlas2rules fSpec tbls)
        , ctx_ds    = [] --in pattern:(atlas2decls fSpec tbls)
-       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") x False y [] [] |(x,y)<-cptdescribes,not(null y)]
+       , ctx_cs    = [Cd (DBLoc "Atlas(A_ConceptDef)") cnm False cdf [] [] 
+                     | (cid,cdf)<-r_cptdf, not(null cdf) 
+                     , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")]
        , ctx_ks    = []
        , ctx_gs    = []
        , ctx_ifcs  = []
-       , ctx_ps    = atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
-       , ctx_pops  = atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax
+       , ctx_ps    = [PRef2 (DBLoc "Atlas(PatPurpose)") (PRef2Pattern pnm) (P_Markup Nothing Nothing ppurp) []
+                     | (pid,ppurp)<-r_ptxps, not(null ppurp) 
+                     , let pnm = geta r_ptnm pid (error "while geta r_ptnm for ppurp.")]
+                  ++ [PRef2 (DBLoc "Atlas(CptPurpose)") (PRef2ConceptDef cnm) (P_Markup Nothing Nothing cpurp) []
+                     | (cid,cpurp)<-r_cptpurpose, not(null cpurp) 
+                     , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cpurp.")]
+       , ctx_pops  = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
        , ctx_sql   = []
        , ctx_php   = []
        , ctx_metas = []
        , ctx_experimental = False -- is set in Components.hs
       }
 
-atlas2rule :: String -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> P_Rule
-atlas2rule rulstr rls mlang ruldescribes
- = P_Ru { rr_nm   = rulstr
-        , rr_exp  = geta rls rulstr  (error "while geta rls.")
-        , rr_fps  = DBLoc "Atlas(Rule)"
-        , rr_mean = [PMeaning $ P_Markup mlang Nothing (geta ruldescribes rulstr "")]
-        , rr_msg  = []
-        , rr_viol = Nothing
-        }
-
-atlas2pattern :: AtomVal -> RelTbl -> [(String,P_Expression)] -> Maybe Lang -> RelTbl -> RelTbl -> RelTbl
-                         -> RelTbl -> RelTbl -> RelTbl
-                         -> RelTbl -> RelTbl
-                         -> RelTbl -> RelTbl -> P_Pattern
-atlas2pattern p rulpattern rls mlang ruldescribes relpattern relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
- = P_Pat { pt_nm  = p
+atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns r_ptxps          
+                             r_gengen r_genspc
+                             r_cptnm
+                             r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
+                             r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
+ = P_Pat { pt_nm  = pnm
          , pt_pos = DBLoc "Atlas(Pattern)"
          , pt_end = DBLoc "Atlas(Pattern)"
-         , pt_rls = [atlas2rule rulstr rls mlang ruldescribes|(rulstr,p')<-rulpattern,p==p']
+         , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
+                    | (pid',rid)<-r_ptrls, pid==pid']
          , pt_gns = []
-         , pt_dcs = [atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3 |(i,(relstr,p'))<-zip [1..] relpattern,p==p']
+         , pt_dcs = [atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
+                    |(i,(pid',rid))<-zip [1..] r_ptdcs, pid==pid']
          , pt_cds = []
          , pt_kds = []
-         , pt_xps = []
+         , pt_xps = [PRef2 (DBLoc "Atlas(RulPurpose)") (PRef2Rule rnm) (P_Markup Nothing Nothing rpurp) []
+                    | (pid',rid)<-r_ptrls, pid==pid'
+                    , (rid',rpurp)<-r_rrpurpose, rid==rid', not(null rpurp)
+                    , let rnm = geta r_rrnm rid (error "while geta r_rrnm for rpurp.")]
+                 ++ [PRef2 (DBLoc "Atlas(RelPurpose)") 
+                           (PRef2Declaration (makerel rnm, atlas2sign rid r_decsgn r_src r_trg r_cptnm)) (P_Markup Nothing Nothing rpurp) []
+                    | (pid',rid)<-r_ptdcs, pid==pid'
+                    , (rid',rpurp)<-r_decpurpose, rid==rid', not(null rpurp)
+                    , let rnm = geta r_decnm rid (error "while geta r_decnm for rpurp.")]
          , pt_pop = []
          }
 
-geta :: [(String,b)] -> String -> b -> b
-geta f x notfound = (\xs-> if null xs then notfound else head xs) [y |(x',y)<-f,x==x']
-atlas2pops :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [P_Population]
-atlas2pops relcontent relname relsc reltg pairleft pairright atomsyntax 
- = [P_Popu r (P_Sign [s,t]) (map (makepair.snd) cl)
-   |cl<-eqCl fst relcontent,not(null cl)
-   , let r = makerel (fst(head cl)) relname
-   , let s = PCpt(geta relsc (fst(head cl)) (error "while geta relsc1."))
-   , let t = PCpt(geta reltg (fst(head cl)) (error "while geta reltg1."))]
-   where
-   makepair xystr = (geta atomsyntax (geta pairleft xystr  (error "while pairleft relsc."))  (error "while geta atomsyntax1.")
-                    ,geta atomsyntax (geta pairright xystr (error "while pairright relsc.")) (error "while geta atomsyntax2."))
+atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
+ = P_Ru { rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
+        , rr_exp  = geta r_exprvalue eid (error "while geta r_exprvalue.")
+        , rr_fps  = DBLoc "Atlas(Rule)"
+        , rr_mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_rrmean rid ""))]
+        , rr_msg  = []
+        , rr_viol = Nothing
+        }
+   where eid = geta r_rrexp rid (error "while geta r_rrexp.")
 
-atlas2decl :: String -> Int -> [(String,String)] -> [(String,String)] -> [(String,String)]
-                            -> [(String,String)] -> [(String,String)] -> [(String,String)]
-                            -> [(String,String)] -> [(String,String)] -> P_Declaration
-atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma3
- = P_Sgn { dec_nm = geta relname relstr (error "while geta relname1.")
-         , dec_sign = P_Sign [PCpt(geta relsc relstr (error "while geta relsc2.")),PCpt(geta reltg relstr (error "while geta reltg2."))]
-         , dec_prps = [case geta propsyntax prp  (error "while geta propsyntax.") of 
+atlas2sign rid r_decsgn r_src r_trg r_cptnm
+ = P_Sign [PCpt srcnm , PCpt trgnm]
+   where sid = geta r_decsgn rid (error "while geta r_decsgn.")
+         srcid = geta r_src sid (error ("while geta r_src."++sid++show r_src))
+         trgid = geta r_trg sid (error "while geta r_trg.")
+         srcnm = geta r_cptnm srcid (error "while geta r_cptnm of srcid.")
+         trgnm = geta r_cptnm trgid (error "while geta r_cptnm of trgid.")
+
+atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue 
+ = [P_Popu (makerel rnm) rsgn rpop           
+   | (rid,rnm)<-r_decnm
+   , let rsgn = atlas2sign rid r_decsgn r_src r_trg r_cptnm
+   , let rpop = [makepair pid | (rid',pid)<-r_decpopu, rid==rid']
+   ]
+   where 
+   makepair pid = (lval,rval) 
+         where pvid = geta r_pairvalue pid (error "while geta r_pairvalue.")
+               lid = geta r_left pvid (error "while geta r_left.")
+               rid = geta r_right pvid (error "while geta r_right.")
+               lval = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
+               rval = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
+
+atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
+ = P_Sgn { dec_nm = geta r_decnm rid (error "while geta r_decnm.")
+         , dec_sign = atlas2sign rid r_decsgn r_src r_trg r_cptnm
+         , dec_prps = [case geta r_declaredthrough prp (error "while geta r_declaredthrough.") of 
                         "UNI"->Uni
                         "TOT"->Tot
                         "INJ"->Inj
@@ -235,34 +290,22 @@ atlas2decl relstr i relname relsc reltg relprp propsyntax pragma1 pragma2 pragma
                         "SYM"->Sym
                         "ASY"->Asy
                         _ -> error "unknown prop in atlas"
-                      |(prp,rel)<-relprp,relstr==rel
-                      ]
-         , dec_prL = [c |(rel,x)<-pragma1,relstr==rel,c<-x]
-         , dec_prM = [c |(rel,x)<-pragma2,relstr==rel,c<-x]
-         , dec_prR = [c |(rel,x)<-pragma3,relstr==rel,c<-x]
-         , dec_Mean = []
+                      | (rid',prp)<-r_decprps, rid'==rid]
+         , dec_prL = geta r_decprL rid ""
+         , dec_prM = geta r_decprM rid ""
+         , dec_prR = geta r_decprR rid ""
+         , dec_Mean = [PMeaning (P_Markup (Just lang) Nothing (geta r_decmean rid ""))]
          , dec_conceptDef = Nothing
          , dec_popu = []
          , dec_fpos = DBLoc$"Atlas(Declaration)"++show i
          , dec_plug = False
-         }
+         }    
 
-atlas2pexpls :: [(String,String)] -> [(String,String)] -> [(String,String)] -> [(String,String)]
-                                  -> [(String,String)] -> [(String,String)] -> [(String,String)] -> [PPurpose]
-atlas2pexpls patpurpose rulpurpose relpurpose cptpurpose relname relsc reltg
- = --error(show (patpurpose, rulpurpose, relpurpose, cptpurpose)) ++
-     [PRef2 (DBLoc "Atlas(PatPurpose)") (PRef2Pattern x) (P_Markup Nothing Nothing y) []
-     |(x,y)<-patpurpose]
-  ++ [PRef2 (DBLoc "Atlas(RulPurpose)") (PRef2Rule x) (P_Markup Nothing Nothing y) []
-     |(x,y)<-rulpurpose]
-  ++ [PRef2 (DBLoc "Atlas(RelPurpose)") (PRef2Declaration (r, P_Sign [PCpt(geta relsc x (error "while geta relsc3."))
-                                                                     ,PCpt(geta reltg x (error "while geta reltg3."))])) (P_Markup Nothing Nothing y) []
-     |(x,y)<-relpurpose, let r=makerel x relname]
-  ++ [PRef2 (DBLoc "Atlas(CptPurpose)") (PRef2ConceptDef x) (P_Markup Nothing Nothing y) []
-     |(x,y)<-cptpurpose]
+geta :: [(String,b)] -> String -> b -> b
+geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
 
-makerel :: String -> [(String, String)] -> P_Relation
-makerel relstr relname
- = P_Rel  { rel_nm = geta relname relstr  (error "while geta relname2.")
+makerel :: String -> P_Relation
+makerel relstr
+ = P_Rel  { rel_nm = relstr
           , rel_pos = DBLoc "Atlas(Relation)"
           }
