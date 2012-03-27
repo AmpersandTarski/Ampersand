@@ -61,7 +61,7 @@ module DatabaseDesign.Ampersand
    , typeCheck
    , makeFspec
     -- * Generators of output
-   , interfaceGen
+   , doGenADL
    , prove
    , doGenHaskell
    , doGenXML
@@ -71,7 +71,7 @@ module DatabaseDesign.Ampersand
    -- * Functions with Options
    , getOptions
    , verboseLn, verbose
-   , ImportFormat(..),helpNVersionTexts
+   , FileFormat(..),helpNVersionTexts
    -- * Other functions
    , eqCl
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr

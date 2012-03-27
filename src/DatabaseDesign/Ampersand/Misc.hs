@@ -5,6 +5,6 @@ import DatabaseDesign.Ampersand.Misc.Languages as X
 import DatabaseDesign.Ampersand.Misc.Options as X
        (getOptions, Options(..), defaultFlags, ParserVersion(..),
         verboseLn, verbose, DocTheme(..), FspecFormat(..),
-        ImportFormat(..), helpNVersionTexts)
+        FileFormat(..), helpNVersionTexts)
 import DatabaseDesign.Ampersand.Misc.Explain as X
        (string2Blocks, blocks2String, PandocFormat(..))
