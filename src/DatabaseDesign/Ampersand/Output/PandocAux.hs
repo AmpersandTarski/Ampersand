@@ -157,6 +157,8 @@ theTemplate flags
                , "\\parskip 12pt plus 2.5pt minus 4pt                % Extra vertical space between paragraphs.\n"
                , "\\parindent 0em                                    % Width of paragraph indentation.\n\n"
                , "% -- packages used for several purposes:\n"
+               , "\\usepackage{ucs}             % Provides various features for UTF8 (internationalization) stuff\n"
+               , "\\usepackage[utf8x]{inputenc} %\n"
                , "\\usepackage{float}\n"
                , "\\usepackage{ctable}\n"
                , "\\usepackage{theorem}\n"
@@ -165,8 +167,6 @@ theTemplate flags
                , "\\usepackage{breqn}\n"
                , "\\usepackage{colonequals}\n"
             --   , "\\usepackage{hyperref}\n"
-               , "\\usepackage{ucs}             % Provides various features for UTF8 (internationalization) stuff\n"
-               , "\\usepackage[utf8x]{inputenc} %\n"
                ] ++
                ( case theme flags of
                   ProofTheme -> [ "\\usepackage[landscape]{geometry}\n"
