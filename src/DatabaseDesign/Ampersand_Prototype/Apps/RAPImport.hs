@@ -37,7 +37,7 @@ getUsrFiles :: Options -> IO [String]
 getUsrFiles opts = let fdir = let d=dropFileName (importfile opts) in if null d then "." else d
                    in  getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
 operations :: [(Int,String)]
-operations = [(1,"laden")]
+operations = [(1,"laden"),(5,"genereer func.spec.(pdf)")]
 usr :: Options -> String
 usr = namespace
 srcfile :: Options -> (String,String)
