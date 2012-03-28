@@ -6,9 +6,11 @@ where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
-import System.FilePath        (takeFileName,dropFileName,combine,addExtension,replaceExtension, takeExtension)
+import System.FilePath        (takeFileName,dropFileName,combine,addExtension,replaceExtension, takeExtension, dropExtension)
 import System.Directory       (getDirectoryContents,doesDirectoryExist)
 import Control.Monad
+import Data.List (intercalate)
+import Data.List.Split (splitOn)
 
 -----------------------------------------------------------------------------
 --exported functions---------------------------------------------------------
@@ -88,9 +90,21 @@ makeFilePops opts usrfiles savefiles
 makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
 makeRAPPops fs opts usrfiles pics
  = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
-       savepopfile = (fst (srcfile opts), replaceExtension (snd (srcfile opts)) ".pop") 
+       savepopfile = (tempdir, replaceExtension nextversion ".pop") 
        -- savectxfile is a SaveAdlFile in uploads/temp/ which should be renamed, moved, and loaded immediately to become an uploaded adl-file
-       savectxfile = (combine (fst (srcfile opts)) "temp/", replaceExtension (snd (srcfile opts)) ".adl") 
+       savectxfile = (tempdir, replaceExtension nextversion ".adl")
+       --files will be saved in a temp dir first and moved next to check at the last moment that the file name does not exist yet
+       tempdir =  combine (fst (srcfile opts)) "temp/"
+       mkversion i fn = intercalate "." [case chunk of
+                                               ('v':istr) -> let ri = (reads istr)::[(Int,String)]
+                                                             in if null ri || (not . null . snd . head) ri
+                                                                then chunk
+                                                                else 'v':show i
+                                               _ -> chunk
+                                          | chunk<-splitOn "." fn] 
+       nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) opts)
+                                            , not(elem (dropExtension (mkversion i fn)) (map dropExtension usrfiles))]
+                     in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
        inclfiles = [(fst (srcfile opts),fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd (srcfile opts)]
    in
      --see trunk/apps/Atlas/FSpec.adl
