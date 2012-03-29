@@ -5,6 +5,7 @@ import Control.Monad
 import Data.List
 import Data.Function (on)
 import System.FilePath        (combine)
+import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
@@ -17,42 +18,55 @@ import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
+-- TODO: should be cleaned up
 main :: IO ()
 main
  = do opts <- getOptions
       if showVersion opts || showHelp opts
        then mapM_ putStr (helpNVersionTexts prototypeVersionStr opts)
-       else do (cx,err) <- parseAndTypeCheck opts
-               if nocxe err 
-                 then let fspc = makeFspec opts cx
-                      in  generateProtoStuff opts fspc
-                 else putStr (show err) 
+       else do aCtx <- parseAndTypeCheck opts
+               let fspc = makeFspec opts aCtx
+               generateProtoStuff opts fspc
   where
-  parseAndTypeCheck :: Options -> IO(A_Context,CtxError) 
+  parseAndTypeCheck :: Options -> IO A_Context 
   parseAndTypeCheck opts 
-   = let fn = importfile opts
-         thepCtx (Right pCtx) = pCtx
-         thepCtx (Left pErr)   = error $ "Parse error:\n"++show pErr
-     in
-     do pCtxOrErr <- parseContext opts (fileName opts)
-        pPops <- if null fn then return [] else
-                 do popsText <- readFile fn
-                    case fileformat opts of
-                       Adl1PopFormat -> parsePopulations popsText opts fn
-                       Adl1Format -> do verbose opts ("Importing "++fn++" in RAP... ")
-                                        imppCtxOrErr <- parseContext opts (importfile opts)
-                                        case imppCtxOrErr of
-                                           (Right imppcx) -> if nocxe (snd(typeCheck imppcx [])) 
-                                                             then importfspec  (makeFspec opts (fst(typeCheck imppcx []))) opts
-                                                             else importfailed (show (snd(typeCheck imppcx []))) opts 
-                                           (Left impperr) ->      importfailed (show impperr) opts 
-        verboseLn opts "Type checking..."
-        return (typeCheck (thepCtx pCtxOrErr) pPops)
-    
+   = do pCtxOrErr <- parseContext opts (fileName opts)
+        case pCtxOrErr of
+          Left pErr ->
+           do { Prelude.putStrLn $ "Parse error:"
+              ; Prelude.putStrLn $ show pErr
+              ; exitWith $ ExitFailure 10 
+              }
+          Right pCtx ->  
+           do { let importFilename = importfile opts
+              ; pPops <- if null importFilename then return [] 
+                         else 
+                          do popsText <- readFile importFilename
+                             case fileformat opts of
+                               Adl1PopFormat -> parsePopulations popsText opts importFilename
+                               Adl1Format -> do verbose opts ("Importing "++importFilename++" in RAP... ")
+                                                imppCtxOrErr <- parseContext opts (importfile opts)
+                                                case imppCtxOrErr of
+                                                  (Right imppcx) -> if nocxe (snd(typeCheck imppcx [])) 
+                                                                    then importfspec  (makeFspec opts (fst(typeCheck imppcx []))) opts
+                                                                    else importfailed (show (snd(typeCheck imppcx []))) opts 
+                                                  (Left impperr) ->      importfailed (show impperr) opts 
+              ; verboseLn opts "Type checking..."
+              ; let (actx,err) = typeCheck pCtx pPops
+              ; if nocxe err 
+                then return actx
+                else do { Prelude.putStrLn $ "Type error:"
+                        ; Prelude.putStrLn $ show err
+                        ; exitWith $ ExitFailure 20
+                        }
+              }
+              
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec | validateSQL opts =
  do { verboseLn opts "Validating SQL expressions..."
-    ; validateRuleSQL fSpec opts
+    ; isValid <- validateRuleSQL fSpec opts
+    ; when (not isValid) $
+        exitWith $ ExitFailure 30
     }
 generateProtoStuff opts fSpec | export2adl opts && fileformat opts==Adl1Format =
  do { verboseLn opts "Exporting Atlas DB content to .adl-file..."
@@ -84,7 +98,9 @@ doGenProto fSpec opts =
     ; reportViolations allViolations
     
     ; if (not . null) allViolations && not (development opts) && theme opts/=StudentTheme 
-      then putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)" 
+      then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
+              ; exitWith $ ExitFailure 40
+              } 
       else do { verboseLn opts "Generating prototype..."
               ; phpObjInterfaces fSpec opts  
               ; verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts ++ "."

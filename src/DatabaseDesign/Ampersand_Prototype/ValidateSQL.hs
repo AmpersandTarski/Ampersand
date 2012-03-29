@@ -27,7 +27,7 @@ fatal = fatalMsg "ValidateSQL"
 tempDbName :: String
 tempDbName = "TemporaryValidationDatabase"
 
-validateRuleSQL :: Fspc -> Options -> IO ()
+validateRuleSQL :: Fspc -> Options -> IO Bool
 validateRuleSQL fSpec opts =
  do { removeTempDatabase opts -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
@@ -46,10 +46,14 @@ validateRuleSQL fSpec opts =
     ; putStrLn "\nRemoving temporary database"
     ; removeTempDatabase opts
     
-     ; case [ ve | (ve, False) <- results] of
-        [] -> putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
-        ves -> error $ "\n\nValidation error. The following expressions failed validation:\n" ++
-                         (unlines $ map showVExp ves) 
+    ; case [ ve | (ve, False) <- results] of
+        [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+                 ; return True
+                 }
+        ves -> do { putStrLn $ "\n\nValidation error. The following expressions failed validation:\n" ++
+                                (unlines $ map showVExp ves)
+                  ; return False
+                  } 
     }
 
 -- functions for extracting all expressions from the context
