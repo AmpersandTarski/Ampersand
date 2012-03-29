@@ -6,6 +6,7 @@ import Test.Framework.Providers.HUnit
 import Test.HUnit
 import Prelude hiding (putStr,readFile,writeFile,putStrLn)
 import DatabaseDesign.Ampersand.Misc -- hiding (test)
+import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
@@ -50,7 +51,7 @@ testADLFiles flags xs
                                       -- (maybe do some logging?) and returns True iff the script 
                                       -- is handled as expected.
      testAmpersandScript shouldPass scriptName = 
-         do pCtx <- parseCtxM_ flags scriptName
+         do pCtx <- parseContext flags scriptName
             parsedAndTypesOk (check pCtx) @?= shouldPass
        where
          check pCtx = case pCtx of
