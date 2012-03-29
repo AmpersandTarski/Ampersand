@@ -121,9 +121,10 @@ performQuery :: Options -> String -> IO [(String,String)]
 performQuery opts queryStr =
  do { queryResult <- executePHP . showPHP $ 
         connectToServer opts ++
-        ["mysql_query('"++queryStr++"');"
-        , "mysql_select_db('"++tempDbName++"');"
+        [ "mysql_select_db('"++tempDbName++"');"
         , "$result=mysql_query('"++queryStr++"');"
+        , "if(!$result)"
+        , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
         , "$rows=Array();"
         , "  while (($row = @mysql_fetch_array($result))!==false) {"
         , "    $rows[]=$row;"
@@ -136,9 +137,11 @@ performQuery opts queryStr =
         , "}"
         , "echo ']';"
         ]
-    ; case reads queryResult of
-        [(pairs,"")] -> return pairs
-        _            -> fatal 143 $ "Parse error on php result: "++show queryResult
+    ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
+      then fatal 141 $ "PHP/SQL problem: "++queryResult
+      else case reads queryResult of
+             [(pairs,"")] -> return pairs
+             _            -> fatal 143 $ "Parse error on php result: "++show queryResult
     }
 
 createTempDatabase :: Fspc -> Options -> IO ()
@@ -163,9 +166,9 @@ removeTempDatabase opts =
 
 connectToServer :: Options -> [String]
 connectToServer opts =
-  ["mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
-              ++",'"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
-              ++",'"++addSlashes (fromMaybe "" $ sqlPwd opts)++"');"] 
+  ["$DB_link = mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
+                         ++",'"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
+                         ++",'"++addSlashes (fromMaybe "" $ sqlPwd opts)++"');"] 
                
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String
@@ -185,7 +188,6 @@ executePHP phpStr =
                 , std_err      = CreatePipe
                 , close_fds    = False -- no need to close all other file descriptors
                 }
-    
             
     ; (_, mStdOut, mStdErr, procHandle) <- createProcess cp 
     ; outputStr <-
