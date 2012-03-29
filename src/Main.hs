@@ -2,6 +2,7 @@
 module Main where
 
 import Control.Monad
+import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
@@ -15,31 +16,45 @@ import DatabaseDesign.Ampersand.Fspec
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
+-- TODO: this should be cleaned up more. Also, type checking should return Either.
 main :: IO ()
-main
- = do opts <- getOptions
-      if showVersion opts || showHelp opts
+main =
+ do { opts <- getOptions
+    ; if showVersion opts || showHelp opts
         then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
-        else do (ctx,err) <- parseAndTypeCheck opts
-                if nocxe err 
-                  then let fspc = makeFspec opts ctx in
-                       generate opts fspc
-                  else putStr (show err)
-                  
+        else do { actx <- parseAndTypeCheck opts
+                ; let fspc = makeFspec opts actx
+                ; generate opts fspc
+                }
+    }             
   where
-      parseAndTypeCheck :: Options -> IO(A_Context, CtxError) 
-      parseAndTypeCheck opts 
-                        = do verboseLn opts "Start parsing...."
-                             pCtx <- parseContext opts (fileName opts)
-                             pPops <- case importfile opts of
-                                         [] -> return []
-                                         fn -> do popsText <- readFile fn
-                                                  parsePopulations popsText opts fn
-                             verboseLn opts "Type checking..."
-                             return (case pCtx of
-                                        Right ctx -> typeCheck ctx pPops
-                                        Left msg  -> (fatal 38 "There are errors that should have been presented!",PE [msg])
-                                    )   
+      parseAndTypeCheck :: Options -> IO A_Context 
+      parseAndTypeCheck opts =
+       do { verboseLn opts "Start parsing...."
+          ; pCtx <- parseContext opts (fileName opts)
+          ; case pCtx of
+              Left msg ->
+               do { Prelude.putStrLn $ "Parse error:"
+                  ; Prelude.putStrLn $ show msg
+                  ; exitWith $ ExitFailure 10 
+                  }
+              Right pctx -> 
+               do { pPops <- case importfile opts of
+                               [] -> return []
+                               fn -> do { popsText <- readFile fn
+                                        ; parsePopulations popsText opts fn
+                                        }
+                  ; verboseLn opts "Type checking..."
+                  ; let (actx,err) = typeCheck pctx pPops
+                  ; if nocxe err 
+                    then return actx
+                    else do { Prelude.putStrLn $ "Type error:"
+                            ; Prelude.putStrLn $ show err
+                            ; exitWith $ ExitFailure 20
+                            }
+                  }
+          }
+             
 
 
 --  | The Fspc is the datastructure that contains everything to generate the output. This monadic function
