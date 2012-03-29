@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
        (ConceptIdentifier, getid
                          , nonsid, fsid, cptid, patid, ruleid, genid, sgnid, decid, relid, expridid, atomidid, pairid, pairidid, imageid, fileid, usrid, gid
         --abstract data type IdentifierNamespace with constructor functions for RAP concept identifiers requiring a different namespace than the default
-       ,IdentifierNamespace, rulens, decns)
+       ,IdentifierNamespace, ctxns, rulens, decns)
         --the default namespace for RAPv1 (March 2012) is a CONTEXT, because each CONTEXT will be inserted in its own set of SQL tables.
         --this is done because one big RAP requires a database cleanup procedure to prevent performance issues on the production environment of March 2012
         --the entire RAP as the default namespace would require all concept identifiers to be qualified with a namespace like the identifier of a CONTEXT
@@ -23,8 +23,8 @@ data IdentifierNamespace = CNS String
 --use nonsid :: String -> ConceptIdentifier for those concepts
 nonsid :: String -> ConceptIdentifier
 nonsid x = CID x
-fsid :: Fspc -> ConceptIdentifier
-fsid fs = CID $ name fs
+fsid :: (IdentifierNamespace,Fspc) -> ConceptIdentifier
+fsid (CNS ns,fs) = CID $ ns ++ "#" ++ name fs
 cptid :: A_Concept -> ConceptIdentifier
 cptid c = CID $ name c
 patid :: Pattern -> ConceptIdentifier
@@ -56,7 +56,13 @@ usrid usr = CID usr
 gid :: Int -> String -> ConceptIdentifier
 gid op fn = CID (show op++"("++fn++")")
 
-{- identifier namespace functions (namespaces for concept identifiers with a different namespace than CONTEXT) -}
+{- identifier namespace functions
+ - ctxns is the namespace of the CONTEXT, only the fsid is qualified, because it is also used in the part of the RAP DB shared by all students
+ - at Mar'12 each student gets its own set of tables for CONTEXT content.
+ - when the rest of the CONTEXT content is put in one big RAP DB, then that content needs to be qualified with ctxns too.
+ -}
+ctxns :: (String,String) -> IdentifierNamespace
+ctxns (path,fn) = CNS (path++fn)
 rulens :: Rule -> IdentifierNamespace
 rulens r = CNS $ "Rule_" ++ getid(ruleid r)
 decns :: Declaration -> IdentifierNamespace
