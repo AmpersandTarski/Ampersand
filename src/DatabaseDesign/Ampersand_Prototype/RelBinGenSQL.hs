@@ -245,10 +245,10 @@ selectExpr fSpec i src trg (ECpl e )
                            trg' = quote $ noCollide [src'] (sqlAttConcept fSpec (target e))
                            src2 = sqlExprSrc fSpec e
                            trg2 = noCollideUnlessTm' e [src2] (sqlExprTrg fSpec e)
-selectExpr _ i _ _ (EKl0 _)
-   = sqlcomment i "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
-selectExpr _ i _ _ (EKl1 _)
-   = sqlcomment i "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
+selectExpr _ _ _ _ (EKl0 _)
+   = fatal 249 "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
+selectExpr _ _ _ _ (EKl1 _)
+   = fatal 249 "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
 selectExpr fSpec i src trg (EDif (ERel V{},x)) = sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" )") $
                                                  selectExpr fSpec i src trg (ECpl x) 
 
@@ -269,7 +269,7 @@ selectExpr fSpec i src trg (ERrs (l,r))
 selectExpr fSpec i src trg (ELrs (l,r))
  =  sqlcomment i ("case: (ELrs (l,r))"++phpIndent (i+3)++"ELrs ("++showADL l++", "++showADL r++")") $
     selectExpr fSpec i src trg (ERad [l,ECpl (EFlp r)])
-selectExpr _     _ _   _   (ERad [] )  = fatal 310 "Cannot create query for ERad []. This should never occur."
+selectExpr _     _ _   _   (ERad [] )  = fatal 272 "Cannot create query for ERad []. This should never occur."
 selectExpr fSpec i src trg (ERad [e])  = selectExpr fSpec i src trg e
 selectExpr fSpec i src trg (ERad es)   = sqlcomment i ("case: ERad es@(_:_:_)"++phpIndent (i+3)++"ERad "++show (map showADL es)) $
                                          (selectExpr fSpec i src trg . ECpl . ECps . map notCpl) es
