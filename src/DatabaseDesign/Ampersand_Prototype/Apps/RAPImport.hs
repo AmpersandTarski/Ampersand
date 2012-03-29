@@ -6,7 +6,7 @@ where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
-import System.FilePath        (takeFileName,dropFileName,combine,addExtension,replaceExtension, takeExtension, dropExtension)
+import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
 import System.Directory       (getDirectoryContents,doesDirectoryExist)
 import Control.Monad
 import Data.List (intercalate)
@@ -90,20 +90,25 @@ makeFilePops opts usrfiles savefiles
 makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
 makeRAPPops fs opts usrfiles pics
  = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
-       savepopfile = (tempdir, replaceExtension nextversion ".pop") 
+       savepopfile = (tempdir, addExtension nextversion ".pop") 
        -- savectxfile is a SaveAdlFile in uploads/temp/ which should be renamed, moved, and loaded immediately to become an uploaded adl-file
-       savectxfile = (tempdir, replaceExtension nextversion ".adl")
+       savectxfile = (tempdir, addExtension nextversion ".adl")
        --files will be saved in a temp dir first and moved next to check at the last moment that the file name does not exist yet
        tempdir =  combine (fst (srcfile opts)) "temp/"
-       mkversion i fn = intercalate "." [case chunk of
-                                               ('v':istr) -> let ri = (reads istr)::[(Int,String)]
-                                                             in if null ri || (not . null . snd . head) ri
-                                                                then chunk
-                                                                else 'v':show i
-                                               _ -> chunk
-                                          | chunk<-splitOn "." fn] 
+       --mkversion drops extension
+       mkversion i fnext 
+         = let fn = dropExtension fnext
+               revchunks = reverse(splitOn "." fn) --reverse to get the last at the head
+               mkvchunk ('v':istr) = let ri = (reads istr)::[(Int,String)]
+                                     in if null ri || (not . null . snd . head) ri --check whether ri is an integer or not
+                                        then ('v':istr)++".v"++show i --add the version chunk to the non-version chunk which starts with a v
+                                        else 'v':show i --replace the old version chunk with the new version chunk
+               mkvchunk novchunk   = novchunk++".v"++show i --add the version chunk to the non-version chunk
+           in if null revchunks then error "RAPImport.hs: no file name?"
+              else intercalate "."$reverse(mkvchunk (head revchunks) : tail revchunks) --the last (head of reverse) should be a v(ersion)chunk
+       --nextversion drops extension because mkversion does
        nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) opts)
-                                            , not(elem (dropExtension (mkversion i fn)) (map dropExtension usrfiles))]
+                                            , not(elem (mkversion i fn) (map dropExtension usrfiles))]
                      in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
        inclfiles = [(fst (srcfile opts),fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd (srcfile opts)]
    in
