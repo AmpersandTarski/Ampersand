@@ -1,4 +1,4 @@
-x{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Misc.TinyXML where
 
    -----------------some new data types for simple XML structures--------
