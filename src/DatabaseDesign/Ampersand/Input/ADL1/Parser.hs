@@ -46,7 +46,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
                        , "..", "0", "1"]
    specialchars :: String
-   specialchars      = "()[].,{}"
+   specialchars      = "()[],{}"
    opchars :: String
    opchars           = nub (sort (concat keywordsops))
 
@@ -292,11 +292,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                              pFun    :: Parser Token [Prop]
                              pFun    = []        <$ pKey "*"  <|> 
                                        [Uni,Tot] <$ pKey "->" <|>
-                                       (rbld     <$  pKey "["  
+                                       (rbld     <$  pSpec '['  
                                                  <*> (pMult (Tot,Uni) `opt` [])
                                                  <*  pKey "-"
                                                  <*> (pMult (Sur,Inj) `opt` [])
-                                                 <*  pKey "]"
+                                                 <*  pSpec ']'
                                        )       
                                  where 
                                    pMult :: (Prop,Prop) -> Parser Token [Prop]
