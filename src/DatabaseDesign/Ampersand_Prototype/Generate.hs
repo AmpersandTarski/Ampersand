@@ -200,7 +200,8 @@ generateRoles fSpec opts =
  where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        
 generateKeys fSpec opts =
-  [ "$allKeys ="
+  [ "//$allKeys is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getKey())."
+  , "$allKeys ="
   , "  array" ] ++
        (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
          [ [ "  array ( 'label' => "++showPhpStr label
@@ -209,8 +210,7 @@ generateKeys fSpec opts =
            , "            array" ]++
                 (indent 14 $ blockParenthesize "(" ")" "," $ map genKeySeg keySegs) ++  
            [ "      )" ]           
-         | Kd _ label concept keySegs <- vkeys fSpec ])
-       
+         | Kd _ label concept keySegs <- sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec) ]) --sort from spec to gen
  where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"

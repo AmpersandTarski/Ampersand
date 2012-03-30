@@ -117,16 +117,10 @@ function getSpecializations($concept) {
 
 function getKey($concept) {
   global $allKeys;
-
-  //first try to get an exact match  
-  foreach ($allKeys as $key)
-    if ($concept == $key['concept'])
-      return $key;
   
-  //else the first specialization you can find, which is arbitrary. 
-  //Is there a way to get the most specialized existing key? In other words, is the ordering of concepts available in PHP?
+  //allKeys is assumed to be ordered from spec to gen, such that the most spec key available is returned here
   foreach ($allKeys as $key)
-    if (in_array($concept, getSpecializations($key['concept'])))
+    if ($concept == $key['concept'] || in_array($concept, getSpecializations($key['concept'])))
       return $key;
 
   return null;
