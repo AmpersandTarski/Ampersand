@@ -35,7 +35,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Association(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
- , (<==>),join,order,meet,greatest,least,maxima,minima 
+ , (<==>),join,order,meet,greatest,least,maxima,minima,sortWith 
  , makeDeclaration
  , showExpr
  , aMarkup2String
@@ -48,7 +48,7 @@ import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics.Auxiliaries (eqCl)
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
 import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima)
+import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.List

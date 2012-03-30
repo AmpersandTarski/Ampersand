@@ -18,7 +18,7 @@
 -- UndecidableInstances extensions -- it remains to be seen if problems occur
 -- as a result of this.
 module DatabaseDesign.Ampersand.Core.Poset (
-    Poset(..), Sortable(..), Ordering(..), Ord, makePartialOrder,comparableClass,greatest,least,maxima,minima
+    Poset(..), Sortable(..), Ordering(..), Ord, makePartialOrder,comparableClass,greatest,least,maxima,minima,sortWith
 ) where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
@@ -100,6 +100,17 @@ sort = sortBy compare
 -- | Apply a function to values before comparing.
 comparing :: Poset b => (a -> b) -> a -> a -> Ordering
 comparing = on compare
+
+-- example where b=A_Concept: sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec)
+sortWith :: (Show b,Poset b) => (b -> [[b]], [b]) -> (a -> b) -> [a] -> [a]
+sortWith _   _  [] = [] 
+sortWith (tos,allb) f xs 
+ = let xtos = [ [x | x<-xs, elem (f x) to] --group xs such that each elem of (map f xtos) is a total order
+              | to<-(tos . f . head) xs --non-trivial total orders
+                    ++ [[b] | b<-allb, not( elem b (concat((tos . f . head) xs))) ] --trivial total orders
+              ] 
+       sortwith = List.sortBy (\x y -> comparableClass(compare (f x) (f y))) --sortwith of Poset, which should be a total order
+   in  concat(map sortwith xtos) --sortwith each total order and concat them         
 
 -- | Elements can be arranged into classes of comparable elements, not necessarily a total order
 --   It makes sense to sort such a class.
