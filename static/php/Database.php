@@ -2,6 +2,7 @@
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
+if ( !defined('__DIR__') ) define('__DIR__', dirname(__FILE__)); //is.cs.ou.nl runs php 5.2.6 where __DIR__ is not defined
 require __DIR__.'/../Generics.php'; 
 require_once __DIR__.'/DatabaseUtils.php';
 

@@ -1,4 +1,5 @@
 <?php
+if ( !defined('__DIR__') ) define('__DIR__', dirname(__FILE__)); //is.cs.ou.nl runs php 5.2.6 where __DIR__ is not defined
 require __DIR__.'/../dbSettings.php';
 // We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
@@ -117,10 +118,16 @@ function getSpecializations($concept) {
 
 function getKey($concept) {
   global $allKeys;
-  
-  //allKeys is assumed to be ordered from spec to gen, such that the most spec key available is returned here
+
+  //first try to get an exact match  
   foreach ($allKeys as $key)
-    if ($concept == $key['concept'] || in_array($concept, getSpecializations($key['concept'])))
+    if ($concept == $key['concept'])
+      return $key;
+  
+  //else the first specialization you can find, which is arbitrary. 
+  //Is there a way to get the most specialized existing key? In other words, is the ordering of concepts available in PHP?
+  foreach ($allKeys as $key)
+    if (in_array($concept, getSpecializations($key['concept'])))
       return $key;
 
   return null;
