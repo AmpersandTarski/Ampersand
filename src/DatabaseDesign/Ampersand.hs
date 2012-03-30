@@ -42,7 +42,7 @@ module DatabaseDesign.Ampersand
    , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
-   , (<==>),meet,order,join
+   , (<==>),meet,order,join,sortWith
    -- * Functions on declarations
    , makeRelation
    -- * Functions on rules
