@@ -17,7 +17,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
 
 -- TODO: this should be cleaned up more. Also, type checking should return Either.
-mainx :: IO ()
+main :: IO ()
 main =
  do { opts <- getOptions
     ; if showVersion opts || showHelp opts
