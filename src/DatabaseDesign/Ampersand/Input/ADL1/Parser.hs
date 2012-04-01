@@ -44,7 +44,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        ]
    keywordsops :: [String]
    keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
-                       , "..", "0", "1"]
+                       , "..", "." , "0", "1"]
    specialchars :: String
    specialchars      = "()[],{}"
    opchars :: String
@@ -260,7 +260,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          <*> pList pMeaning
                          <*> ((\st d -> Just $ RelConceptDef st d) <$ pKey "DEFINE" <*> pSrcOrTgt <*> pString `opt` Nothing)
                          <*> ((pKey "=" *> pContent) `opt` [])
-                         <* (pSpec '.' `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
+                         <* (pKey "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
                        where rebuild nm pos' s fun' t bp1 props --bp2 pragma meanings conceptDef content
                                = rbd pos' nm (P_Sign [s,t]) bp1 props' --bp2 pragma meanings conceptDef content
                                  where props'= nub (props `uni` fun')
