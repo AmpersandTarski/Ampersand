@@ -293,9 +293,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                              pFun    = []        <$ pKey "*"  <|> 
                                        [Uni,Tot] <$ pKey "->" <|>
                                        (rbld     <$  pSpec '['  
-                                                 <*> (pMult (Tot,Uni) `opt` [])
-                                                 <*  pKey "-"
                                                  <*> (pMult (Sur,Inj) `opt` [])
+                                                 <*  pKey "-"
+                                                 <*> (pMult (Tot,Uni) `opt` [])
                                                  <*  pSpec ']'
                                        )       
                                  where 
