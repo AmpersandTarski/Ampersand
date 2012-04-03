@@ -380,8 +380,8 @@ crowfootArrowType isHead r
          getCrowfootShape a b =
            case (a,b) of
             (True ,True ) -> [my_tee          ]
-            (True ,False) -> [my_crow, my_tee ]
-            (False,True ) -> [my_odot, my_tee ]
+            (False,True ) -> [my_crow, my_tee ]
+            (True ,False) -> [my_odot, my_tee ]
             (False,False) -> [my_crow, my_odot]
              
          my_tee :: ( ArrowModifier , ArrowShape )
