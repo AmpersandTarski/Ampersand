@@ -7,7 +7,9 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
 import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
-import System.Directory       (getDirectoryContents,doesDirectoryExist)
+import System.Directory       (getDirectoryContents,doesDirectoryExist,getModificationTime)
+import System.Time
+import qualified GHC.Exts (sortWith)
 import Control.Monad
 import Data.List (intercalate)
 import Data.List.Split (splitOn)
@@ -33,19 +35,24 @@ importfailed imperr opts
 -----------------------------------------------------------------------------
 --common local functions-----------------------------------------------------
 -----------------------------------------------------------------------------
-getUsrFiles :: Options -> IO [String]
+getUsrFiles :: Options -> IO [(String,ClockTime)]
 getUsrFiles opts = let fdir = let d=dropFileName (importfile opts) in if null d then "." else d
-                   in  getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
+                   in  do {fns<-getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
+                          ;times<-sequence (map (getModificationTime . combine fdir) fns)
+                          ;if length fns==length times
+                           then return (reverse$GHC.Exts.sortWith snd (zip fns times))
+                           else return (zip fns (repeat (toClockTime $ CalendarTime 1980 February 27 16 15 0 0 Wednesday 0 "UTC" 0 False)))
+                          }
 operations :: [(Int,String)]
 operations = [(1,"laden"),(5,"genereer func.spec.(pdf)")]
 usr :: Options -> String
 usr = namespace
 srcfile :: Options -> (String,String)
 srcfile opts = (dropFileName(importfile opts),takeFileName(importfile opts))
-rapfiles :: Options -> [String] -> ([(String,String)],[(String,String)],(String,String))
+rapfiles :: Options -> [(String,ClockTime)] -> ([(String,String,ClockTime)],[(String,String,ClockTime)],(String,String))
 rapfiles opts usrfiles 
- = ( [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".adl"] --adlfiles, server files of user with a .adl extension
-   , [(dropFileName(importfile opts),fn) | fn<-usrfiles,takeExtension fn==".pop"] --popfiles, server files of user with a .pop extension
+ = ( [(dropFileName(importfile opts),fn,time) | (fn,time)<-usrfiles,takeExtension fn==".adl"] --adlfiles, server files of user with a .adl extension
+   , [(dropFileName(importfile opts),fn,time) | (fn,time)<-usrfiles,takeExtension fn==".pop"] --popfiles, server files of user with a .pop extension
    , ("","empty.adl")                                                             --newfile, a copy of empty.adl, it contains an empty context
    )
 --a triple which should correspond to a declaration from RAP.adl: (relation name, source name, target name)
@@ -62,7 +69,7 @@ makepopu (r,src,trg) xys
 --make population functions--------------------------------------------------
 -----------------------------------------------------------------------------
 --make population for the import that failed due to a parse or type error
-makeFailedPops :: String -> Options -> [String] -> [P_Population]
+makeFailedPops :: String -> Options -> [(String,ClockTime)] -> [P_Population]
 makeFailedPops imperr opts usrfiles 
  =   --see trunk/apps/Atlas/RAP.adl
      makepopu ("compilererror","File","ErrorMessage")    [(fileid (srcfile opts)  , nonsid imperr)]
@@ -71,23 +78,25 @@ makeFailedPops imperr opts usrfiles
 --make population for the user files on the server
 --flags for file names and user name -> file names in the upload directory of the user
 --                                   -> files that do not exist yet, but are reserved upfront e.g. files to save to
-makeFilePops :: Options -> [String] -> [(String,String)] -> [P_Population]
+makeFilePops :: Options -> [(String,ClockTime)] -> [(String,String)] -> [P_Population]
 makeFilePops opts usrfiles savefiles
  = let (adlfiles,popfiles,newfile) = rapfiles opts usrfiles
    in
      --see trunk/apps/Atlas/FSpec.adl
     [makepopu ("newfile","User","NewAdlFile")            [(usrid (usr opts), fileid newfile)]
      --note that: 'srcfile' \/ inclfiles |- adlfiles \/ popfiles
-    ,makepopu ("filename","File","FileName")             [(fileid f, nonsid fn)         | f@(_   ,fn)<-adlfiles ++ popfiles ++ newfile:savefiles ]
-    ,makepopu ("filepath","File","FilePath")             [(fileid f, nonsid path)       | f@(path,_ )<-adlfiles ++ popfiles ++ newfile:savefiles ]
-    ,makepopu ("uploaded","User","File")                 [(usrid (usr opts), fileid f)  | f          <-adlfiles ++ popfiles]
-    ,makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid f)         | f@(_   ,fn)<-adlfiles, (op,_ )<-operations]
-    ,makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)        |   (_   ,fn)<-adlfiles, (op,nm)<-operations]
-    ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op)) |   (_   ,fn)<-adlfiles, (op,_ )<-operations]
+    ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)        | (path,fn, _)<-adlfiles ++ popfiles]
+    ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)        | (path,fn   )<-newfile:savefiles ]
+    ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)      | (path,fn, _)<-adlfiles ++ popfiles]
+    ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)      | (path,fn   )<-newfile:savefiles ]
+    ,makepopu ("uploaded","User","File")                 [(usrid (usr opts), fileid (path,fn)) | (path,fn, _)<-adlfiles ++ popfiles]
+    ,makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid (path,fn))        | (path,fn, _)<-adlfiles, (op,_ )<-operations]
+    ,makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)               | (_   ,fn, _)<-adlfiles, (op,nm)<-operations]
+    ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op))        | (_   ,fn, _)<-adlfiles, (op,_ )<-operations]
     ]
 
 --the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
-makeRAPPops :: Fspc -> Options -> [String] -> [Picture] -> [P_Population]
+makeRAPPops :: Fspc -> Options -> [(String,ClockTime)] -> [Picture] -> [P_Population]
 makeRAPPops fs opts usrfiles pics
  = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
        savepopfile = (tempdir, addExtension nextversion ".pop") 
@@ -108,7 +117,7 @@ makeRAPPops fs opts usrfiles pics
               else intercalate "."$reverse(mkvchunk (head revchunks) : tail revchunks) --the last (head of reverse) should be a v(ersion)chunk
        --nextversion drops extension because mkversion does
        nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) opts)
-                                            , not(elem (mkversion i fn) (map dropExtension usrfiles))]
+                                            , not(elem (mkversion i fn) (map (dropExtension . fst) usrfiles))]
                      in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
        inclfiles = [(fst (srcfile opts),fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd (srcfile opts)]
        cns = ctxns (srcfile opts)
