@@ -139,6 +139,8 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("countdecls","Context","Int")  [(fsid (cns,fs), nonsid (show (length userdeclarations)))]
     ,makepopu ("countcpts","Context","Int")   [(fsid (cns,fs), nonsid (show (length (concs fs))))]
     ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | r<-raprules, (x,y)<-ruleviolations r]
+    ,makepopu ("decexample","Declaration","PragmaSentence") [(decid d , nonsid (decprL d++x++decprM d++y++decprR d))
+                                                            | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(contents d++[("...","...")])]
     --see trunk/apps/Atlas/AST.adl
     ,makepopu ("ctxnm","Context","Conid")     [(fsid (cns,fs), nonsid (name fs))]
     ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fs) , cptid c)          | c<-concs fs] 
