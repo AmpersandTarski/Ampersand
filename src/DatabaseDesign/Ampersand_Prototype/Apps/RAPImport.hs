@@ -85,14 +85,15 @@ makeFilePops opts usrfiles savefiles
      --see trunk/apps/Atlas/FSpec.adl
     [makepopu ("newfile","User","NewAdlFile")            [(usrid (usr opts), fileid newfile)]
      --note that: 'srcfile' \/ inclfiles |- adlfiles \/ popfiles
-    ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)        | (path,fn, _)<-adlfiles ++ popfiles]
-    ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)        | (path,fn   )<-newfile:savefiles ]
-    ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)      | (path,fn, _)<-adlfiles ++ popfiles]
-    ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)      | (path,fn   )<-newfile:savefiles ]
-    ,makepopu ("uploaded","User","File")                 [(usrid (usr opts), fileid (path,fn)) | (path,fn, _)<-adlfiles ++ popfiles]
-    ,makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid (path,fn))        | (path,fn, _)<-adlfiles, (op,_ )<-operations]
-    ,makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)               | (_   ,fn, _)<-adlfiles, (op,nm)<-operations]
-    ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op))        | (_   ,fn, _)<-adlfiles, (op,_ )<-operations]
+    ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)          | (path,fn, _  )<-adlfiles ++ popfiles]
+    ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)          | (path,fn     )<-newfile:savefiles ]
+    ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)        | (path,fn, _  )<-adlfiles ++ popfiles]
+    ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)        | (path,fn     )<-newfile:savefiles ]
+    ,makepopu ("filetime","File","CalendarTime")         [(fileid (path,fn), nonsid (show time)) | (path,fn,time)<-adlfiles ++ popfiles]
+    ,makepopu ("uploaded","User","File")                 [(usrid (usr opts), fileid (path,fn))   | (path,fn, _  )<-adlfiles ++ popfiles]
+    ,makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid (path,fn))          | (path,fn, _  )<-adlfiles, (op,_ )<-operations]
+    ,makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)                 | (_   ,fn, _  )<-adlfiles, (op,nm)<-operations]
+    ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op))          | (_   ,fn, _  )<-adlfiles, (op,_ )<-operations]
     ]
 
 --the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
