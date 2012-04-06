@@ -226,16 +226,18 @@ conceptual2Dot flags graphName cpts' rels idgs
              (Declaration,Int)           -- ^ tuple contains the declaration and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
---             = (  [ relNameNode ]    -- node to place the name of the relation
---               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) True flags     -- edge to connect the source with the hinge
---                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) True flags]     -- edge to connect the hinge to the target
---               )
---          where
---        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
---            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
+          | altGraphics flags
                = ( [] --No intermediate node
                  , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r) True  flags]
                  )
+          | otherwise
+             = (  [ relNameNode ]    -- node to place the name of the relation
+               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) True flags     -- edge to connect the source with the hinge
+                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) True flags]     -- edge to connect the hinge to the target
+               )
+          where
+        --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
+            relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
                                    
 constrNode :: a -> PictureObject -> Options -> DotNode a
 constrNode nodeId pObj flags
@@ -323,7 +325,7 @@ handleFlags po flags =
                           , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                           , URL (theURL flags r)
                           ]
-      RelSrcEdge r -> [ ArrowHead ( if crowfoot flags  then noArrow                   else
+      RelSrcEdge r -> [ ArrowHead ( if crowfoot flags  then normal                    else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then noArrow                   else
                                     noArrow
@@ -363,6 +365,7 @@ handleFlags po flags =
                        ]
       TotalPicture -> [ Overlap RemoveOverlaps
                       , Landscape False
+                      , Model Circuit
                       ]
 
 isInvFunction :: Declaration -> Bool

@@ -65,7 +65,7 @@ makePictureObj flags nm pTyp dotsource
            , dotProgName = case pTyp of
                      PTClassDiagram -> Dot
                      PTSwitchBoard  -> Dot
-                     _              -> Dot --Neato
+                     _              -> Neato
            , caption      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ nm
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
@@ -100,7 +100,7 @@ writePicture flags pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (fullPath pict))     |                   genAtlas flags ]++
       [writeDot (dotProgName pict) Canon (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
-      [writeDot (dotProgName pict) XDot  (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
+--      [writeDot (dotProgName pict) XDot  (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
       [writeDot (dotProgName pict) Png   (dotSource pict) (fullPath pict) | genFspec flags || genAtlas flags ]++
       [writeDot (dotProgName pict) Cmapx (dotSource pict) (fullPath pict) |                   genAtlas flags ]
           )
