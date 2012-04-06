@@ -53,16 +53,7 @@ where
 -- The table of all declarations is provided, in order to generate shorter names if possible. 
    rulefromProp :: [Declaration] -> Prop -> Declaration -> Rule
    rulefromProp ds prp d@(Sgn{})
-      = Ru { rrnm  = case prp of
-                        Uni-> "uni " ++name d++typ2
-                        Tot-> "tot " ++name d++typ2
-                        Inj-> "inj " ++name d++typ2
-                        Sur-> "sur " ++name d++typ2
-                        Sym-> "sym " ++name d++typ1
-                        Asy-> "asy " ++name d++typ1
-                        Trn-> "trn " ++name d++typ1
-                        Rfx-> "rfx " ++name d++typ1
-                        Irf-> "irf " ++name d++typ1
+      = Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
            , rrexp = case prp of
                         Uni-> EImp (ECps [EFlp r,r] ,       i$sign$ECps [EFlp r,r] )
                         Tot-> EImp (i$sign$ECps [r,EFlp r], ECps [r,EFlp r]        )
@@ -100,12 +91,6 @@ where
                    | otherwise = fatal 239 "Bad multiplicity rule, the source and target of an identity must be identical."
            h sgn   | isEndo sgn = sgn
                    | otherwise = fatal 241 "Bad rule, the source and target of the relation must be identical."
-           typ2 = if length [name d' |d'<-ds, d'==d]>1
-                  then "["++s++ if s==t then "]" else "*"++t++"]"
-                  else ""
-           typ1 = if length [name d' |d'<-ds, d'==d]>1
-                  then "["++s++"]"
-                  else ""
            r:: Expression
            r = ERel (makeRelation d) 
            
