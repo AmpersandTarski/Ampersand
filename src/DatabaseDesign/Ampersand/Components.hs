@@ -28,7 +28,6 @@ import DatabaseDesign.Ampersand.Fspec.GenerateUML
 import DatabaseDesign.Ampersand.Output
 import Control.Monad
 import System.FilePath
-import DatabaseDesign.Ampersand.Parsing
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Components"
