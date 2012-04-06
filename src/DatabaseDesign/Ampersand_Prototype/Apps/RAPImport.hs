@@ -156,6 +156,7 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), patid p)         | p<-patterns fs]
     ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fs]
     ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, r<-rules p]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp userdeclarations pr d]
     ,makepopu ("ptgns","Pattern","Gen")         [(patid p      , genid g)         | p<-patterns fs, g<-gens p]
     ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fs, d<-declarations p,decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(patid p, nonsid (aMarkup2String (explMarkup ex)))
