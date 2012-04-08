@@ -45,7 +45,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
-import DatabaseDesign.Ampersand.Basics.Auxiliaries (eqCl)
 import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
 import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima,sortWith)
@@ -228,7 +227,7 @@ instance Show Declaration where
            where 
               showMeaning m = "MEANING"
                              : ["IN", show (amLang m)]
-                            ++ ["TEXTMARKUP",show (amFormat m)]
+                            ++ [show (amFormat m)]
                             ++ ["{+",aMarkup2String m,"-}"]                
                             -- then [] else ["MEANING",show (decMean d)] ))
 
