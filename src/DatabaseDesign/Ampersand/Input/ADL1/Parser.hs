@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
    keywordstxt :: [String]
    keywordstxt       = [ "INCLUDE"
-                       , "CONTEXT", "ENDCONTEXT", "EXTENDS", "TEXTMARKUP", "THEMES"
+                       , "CONTEXT", "ENDCONTEXT", "EXTENDS", "THEMES"
                        , "META"
                        , "PATTERN", "ENDPATTERN"
                        , "PROCESS", "ENDPROCESS"

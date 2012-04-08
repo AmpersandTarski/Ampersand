@@ -16,7 +16,7 @@ ContextDef      ::= 'CONTEXT' Id IncludeStatement* LanguageRef? TextMarkup?
                    )* 'ENDCONTEXT'
 IncludeStatement ::= 'INCLUDE' FilePath
 LanguageRef     ::= 'IN' ('DUTCH' | 'ENGLISH')
-TextMarkup      ::= 'TEXTMARKUP' ('REST' | 'HTML' | 'LATEX' | 'MARKDOWN')
+TextMarkup      ::= 'REST' | 'HTML' | 'LATEX' | 'MARKDOWN'
 Meta            ::= 'META' String String
 PatternDef      ::= 'PATTERN' Id LanguageRef?
                   ( RuleDef      |
