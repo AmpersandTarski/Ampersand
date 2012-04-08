@@ -3,7 +3,7 @@
 module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     (phpIdentifier,commentBlock,strReplace
  ,addSlashes,zipnum,Concatable(..),(+++)
- ,indentBlock,phpShow,addToLast
+ ,indentBlock,addToLast
  ,pDebug,indentBlockBetween,quote
  ,cChain,filterEmpty,phpIndent
  ) where
@@ -104,9 +104,6 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
     | isDigit s = 'I':s:g str
     | otherwise = g (s:str)
       where g xs = [c | c<-xs, isAlphaNum c]
-
-   phpShow :: String -> String
-   phpShow str = "'" ++ addSlashes str ++ "'"
 
    addSlashes :: String -> String
    addSlashes ('\'': cs) = "\\'"++addSlashes cs

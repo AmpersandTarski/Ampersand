@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand_Prototype.Installer
 import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprMorph,sqlRelPlugNames)
   
 --  import Debug.Trace
@@ -201,4 +201,5 @@ sessiontbl
      , ", `lastAccess` BIGINT NOT NULL"]
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
+escapePhpDoubleQuoteStr :: String -> String
 escapePhpDoubleQuoteStr cs = concat [fromMaybe [c] $ lookup c [('\\', "\\\\"),('"', "\\\""),('\n', "\\n")] | c<-cs ]
