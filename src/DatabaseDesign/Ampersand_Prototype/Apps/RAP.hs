@@ -237,7 +237,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_pos = DBLoc "Atlas(Pattern)"
          , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
-                    | (pid',rid)<-r_ptrls, pid==pid']
+                    | (pid',rid)<-r_ptrls, pid==pid', not(elem rid (map fst r_declaredthrough))]
          , pt_gns = [PGen (DBLoc "Atlas(Gen)") (PCpt gnm) (PCpt snm)
                     | (pid',genid)<-r_ptgns, pid'==pid
                     , let gid = geta r_gengen genid (error "while geta r_gengen.")
