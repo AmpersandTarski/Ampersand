@@ -205,7 +205,7 @@ function preventNameClashes(dbCommands) {
 	  safeDbCommands.push(safeDbCommand);
   }
 
-	return Array.concat(safeDbCommands, renameCommands);
+	return safeDbCommands.concat(renameCommands);
 }
 
 function isEditSourceTuple(relation, isFlipped, parentAtom, childAtom, dbCommands) {
