@@ -44,7 +44,7 @@ chpDiagnosis lev fSpec opts
   diagIntro = 
     case language opts of
       Dutch   -> [Para
-                  [ Str "Dit hoofdstuk geeft een analysis van het Ampersand-script van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
+                  [ Str "Dit hoofdstuk geeft een analyse van het Ampersand-script van ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
                   , Str "Deze analyse is bedoeld voor de auteurs van dit script. "
                   , Str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren. "
                   ]]
