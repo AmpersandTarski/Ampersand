@@ -10,7 +10,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
                       ,(<??>), (<**>), Sequence((<$>), (<$), (<*>), (<*), (*>), pSucceed )
                       ,Alternative(..)
                       ,IsParser
-                      ,Message)
+                      ,Message(..))
 --   (
 --   Result,
 --   mapOnePars,
