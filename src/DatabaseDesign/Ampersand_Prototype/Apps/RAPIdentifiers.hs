@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
         --abstract data type ConceptIdentifier with one getter and constructor functions for atom identifiers of RAP concepts
        (ConceptIdentifier, getid
-                         , nonsid, fsid, cptid, patid, ruleid, genid, sgnid, decid, relid, expridid, atomidid, pairid, pairidid, imageid, fileid, usrid, gid
+                         , nonsid, fsid, cptid, patid, ruleid, genid, sgnid, decid, relid, expridid, atomidid, pairid, pairidid, imageid, fileid, usrid, gid, errid
         --abstract data type IdentifierNamespace with constructor functions for RAP concept identifiers requiring a different namespace than the default
        ,IdentifierNamespace, ctxns, rulens, decns)
         --the default namespace for RAPv1 (March 2012) is a CONTEXT, because each CONTEXT will be inserted in its own set of SQL tables.
@@ -55,6 +55,8 @@ usrid :: String -> ConceptIdentifier
 usrid usr = CID usr
 gid :: Int -> String -> ConceptIdentifier
 gid op fn = CID (show op++"("++fn++")")
+errid :: ConceptIdentifier -> ConceptIdentifier
+errid (CID fid) = CID ("ERROR_"++fid)
 
 {- identifier namespace functions
  - ctxns is the namespace of the CONTEXT, only the fsid is qualified, because it is also used in the part of the RAP DB shared by all students

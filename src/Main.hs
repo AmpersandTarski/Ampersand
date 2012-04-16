@@ -49,8 +49,8 @@ main
                                                 case imppCtxOrErr of
                                                   (Right imppcx) -> if nocxe (snd(typeCheck imppcx [])) 
                                                                     then importfspec  (makeFspec opts (fst(typeCheck imppcx []))) opts
-                                                                    else importfailed (show (snd(typeCheck imppcx []))) opts 
-                                                  (Left impperr) ->      importfailed (show impperr) opts 
+                                                                    else importfailed (Right (imppcx, snd(typeCheck imppcx []))) opts 
+                                                  (Left impperr) ->      importfailed (Left impperr) opts 
               ; verboseLn opts "Type checking..."
               ; let (actx,err) = typeCheck pCtx pPops
               ; if nocxe err 

@@ -4,6 +4,8 @@
 module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(..))
+import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)
 import System.FilePath        (takeFileName,dropFileName,combine,addExtension, takeExtension, dropExtension)
@@ -26,7 +28,7 @@ importfspec fspec opts
           usrfiles <- getUsrFiles opts
           return (makeRAPPops fspec opts usrfiles pics)
 
-importfailed :: String -> Options -> IO [P_Population]
+importfailed :: Either ParseError (P_Context,CtxError) -> Options -> IO [P_Population]
 importfailed imperr opts 
  = do verbose opts "Getting all uploaded adl-files of RAP user... "
       usrfiles <- getUsrFiles opts
@@ -69,11 +71,53 @@ makepopu (r,src,trg) xys
 --make population functions--------------------------------------------------
 -----------------------------------------------------------------------------
 --make population for the import that failed due to a parse or type error
-makeFailedPops :: String -> Options -> [(String,ClockTime)] -> [P_Population]
+makeFailedPops :: Either ParseError (P_Context,CtxError) -> Options -> [(String,ClockTime)] -> [P_Population]
 makeFailedPops imperr opts usrfiles 
  =   --see trunk/apps/Atlas/RAP.adl
-     makepopu ("compilererror","File","ErrorMessage")    [(fileid (srcfile opts)  , nonsid imperr)]
-    :makeFilePops opts usrfiles []
+     (case imperr of 
+         Left (Msg (a, pos, exp)) ->  [makepopu ("parseerror","File","ParseError")          [(fid      , errid fid)]
+                                      ,makepopu ("pe_action","ParseError","String")         [(errid fid, nonsid a)]
+                                      ,makepopu ("pe_position","ParseError","String")       [(errid fid, nonsid pos)]
+                                      ,makepopu ("pe_expecting","ParseError","String")      [(errid fid, nonsid (show exp))]
+                                      ]
+         Right (c,x) ->  makepopu ("typeerror","File","TypeError")    [(fid, errid fid)]
+                    :makeCtxErrorPops opts usrfiles (errid fid) c (cxes x)
+     )
+    ++makeFilePops opts usrfiles []
+    where fid = fileid (srcfile opts)
+{-
+compilererror::File*CompilerError[UNI]
+parseerror   :: CompilerError * ParseError[UNI]
+pe_action    :: ParseError -> String
+pe_position  :: ParseError -> String
+pe_expecting :: ParseError -> String
+typeerror   :: CompilerError * TypeError
+te_message  :: TypeError * String [UNI]
+te_nested   :: TypeError * TypeError
+te_position :: TypeError * String [UNI]
+te_origtype :: TypeError * String [UNI]
+te_origname :: TypeError * String [UNI]
+ - -}
+makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> CtxError -> [P_Population]
+makeCtxErrorPops opts usrfiles eid c x 
+ = if nocxe es 
+   then makepopu ("te_message","TypeError","String")    [(eid,nonsid (show x))]
+       :makeRAPPops (makeFspec opts cx) opts usrfiles []
+   else []
+   where (cx,es) = typeCheck nc []
+         nc = PCtx (ctx_nm c) (ctx_pos c) (ctx_lang c) (ctx_markup c) [] 
+                   [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats c]
+                   [] [] [] [] [] [] [] [] [] [] [] [] False
+{-makeCtxErrorPops eid c (Cxes xs) = []
+makeCtxErrorPops eid c (CxeOrig cxe t nm o)
+   | nocxe cxe                                    = []
+   | t `elem` ["pattern", "process", "interface"] = []
+   | otherwise                                    = []
+makeCtxErrorPops eid c (Cxe cxe x) = []
+makeCtxErrorPops eid c CxeNone = []
+makeCtxErrorPops eid c (PE msg) = []
+-}
+
 
 --make population for the user files on the server
 --flags for file names and user name -> file names in the upload directory of the user
