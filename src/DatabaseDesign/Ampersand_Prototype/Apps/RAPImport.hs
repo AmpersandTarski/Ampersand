@@ -46,7 +46,7 @@ getUsrFiles opts = let fdir = let d=dropFileName (importfile opts) in if null d 
                            else return (zip fns (repeat (toClockTime $ CalendarTime 1980 February 27 16 15 0 0 Wednesday 0 "UTC" 0 False)))
                           }
 operations :: [(Int,String)]
-operations = [(1,"laden"),(5,"genereer func.spec.(pdf)")]
+operations = [(1,"load into Atlas"),(5,"generate func.spec.(pdf)"),(6,"generate prototype for students")]
 usr :: Options -> String
 usr = namespace
 srcfile :: Options -> (String,String)
@@ -220,14 +220,17 @@ makeRAPPops fs opts usrfiles pics
                                                                                           | d<-userdeclarations, (x,y)<-contents d]
     ,makepopu ("inipopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
                                                                                           | d<-userdeclarations, (x,y)<-contents d]
+    ,makepopu ("inileft","PairID","Atom")                   [(pairidid (x,y) (decns d,d), nonsid x) 
+                                                                                          | d<-userdeclarations, (x,y)<-contents d]
+    ,makepopu ("iniright","PairID","Atom")                   [(pairidid (x,y) (decns d,d), nonsid y) 
+                                                                                          | d<-userdeclarations, (x,y)<-contents d]
     ,makepopu ("reldcl","Relation","Declaration") [(relid (name d) (sign d), decid d)        | d<-userdeclarations]
     ,makepopu ("relnm","Relation","Varid")        [(relid (name d) (sign d), nonsid(name d)) | d<-userdeclarations]
     ,makepopu ("relsgn","Relation","Sign")        [(relid (name d) (sign d), sgnid (sign d)) | d<-userdeclarations]
     ,relsrc                          userdeclarations
     ,reltrg                          userdeclarations
-    ,relpairvalue [(decns d, d) | d<-userdeclarations]
-    ,relleft                         userdeclarations
-    ,relright                        userdeclarations
+    ,relleft  [(decns d, d)     | d<-userdeclarations]
+    ,relright [(decns d, d)     | d<-userdeclarations]
     ,makepopu ("rrnm","Rule","ADLid")         [(ruleid r, nonsid (name r))                           | r<-raprules]
     ,makepopu ("rrexp","Rule","ExpressionID") [(ruleid r, expridid (rulens r,rrexp r))               | r<-raprules]
     ,makepopu ("rrmean","Rule","Blob")        [(ruleid r, nonsid (aMarkup2String rdf))               | r<-raprules, Just rdf <- [meaning Dutch r, meaning English r]]
@@ -242,9 +245,8 @@ makeRAPPops fs opts usrfiles pics
     ,relrelsgn    (map       rrexp                 (rules fs))
     ,relreldcl    (map       rrexp                 (rules fs))
      --create pairs for violations (see rrviols above)
-    ,relpairvalue [(rulens r,violationsexpr r) | r<-raprules]
-    ,relleft      (map       violationsexpr         raprules )
-    ,relright     (map       violationsexpr         raprules )
+    ,relleft  [(rulens r,violationsexpr r) | r<-raprules]
+    ,relright [(rulens r,violationsexpr r) | r<-raprules]
     ]
    where 
    --SPEC PropertyRule ISA Rule
@@ -255,13 +257,10 @@ makeRAPPops fs opts usrfiles pics
    relsrc,reltrg :: Association r => [r] -> P_Population
    relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
    reltrg rs = makepopu ("trg","Sign","Concept")      [(sgnid (sign r), cptid (target r)) | r<-rs]
-   --make pair identifiers for populated and typed data structures r with a namespace restricted to r
-   relpairvalue :: (Populated r,Association r) => [(IdentifierNamespace,r)] -> P_Population
-   relpairvalue rs = makepopu ("pairvalue","PairID","Pair")      [(pairidid (x,y) (ns,r), pairid (x,y) (sign r)) | (ns,r)<-rs, (x,y)<-contents r]
    --populate relleft and relright for populated and typed data structures
-   relleft,relright :: (Populated r,Association r) => [r] -> P_Population
-   relleft rs = makepopu ("left","Pair","AtomID")                [(pairid (x,y) (sign r), atomidid x (source r)) |      r<-rs, (x,y)<-contents r]
-   relright rs = makepopu ("right","Pair","AtomID")              [(pairid (x,y) (sign r), atomidid y (target r)) |      r<-rs, (x,y)<-contents r]
+   relleft,relright :: (Populated r,Association r) => [(IdentifierNamespace,r)] -> P_Population
+   relleft rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (source r)) | (ns,r)<-rs, (x,y)<-contents r]
+   relright rs = makepopu ("right","PairID","AtomID")              [(pairidid (x,y) (ns,r), atomidid y (target r)) | (ns,r)<-rs, (x,y)<-contents r]
    --populate relrels, relrelnm, relreldcl and relrelsgn for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
    relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm sgn) | (ns,expr)<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]

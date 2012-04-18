@@ -81,20 +81,19 @@ atlas2populations fSpec flags =
       r_trg             <- selectdecl conn fSpec (therel fSpec "trg" [] []) --trg::Sign->Concept
       --P_Population--
       r_decpopu         <- selectdecl conn fSpec (therel fSpec "decpopu" [] []) --decpopu ::Declaration*PairID
-      r_pairvalue       <- selectdecl conn fSpec (therel fSpec "pairvalue" [] []) --pairvalue::PairID->Pair
       r_left            <- selectdecl conn fSpec (therel fSpec "left" [] []) --left::Pair->AtomID
       r_right           <- selectdecl conn fSpec (therel fSpec "right" [] []) --right::Pair->AtomID
       -----------
       disconnect conn
       verboseLn flags "Disconnected."
-      makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
+      makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_atomvalue
 
-makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
-makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
+makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
+makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_atomvalue
  = return ("CONTEXT "++cxnm++"\n"++concat (map showADL pops)++"\nENDCONTEXT")
    where
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
-   pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
+   pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_atomvalue
 
 atlas2context :: Fspc -> Options -> IO A_Context
 atlas2context fSpec flags =
@@ -139,9 +138,8 @@ atlas2context fSpec flags =
       r_decpurpose      <- selectdecl conn fSpec (therel fSpec "decpurpose" [] []) --decpurpose::Declaration * Blob
       --P_Population--
       r_decpopu         <- selectdecl conn fSpec (therel fSpec "decpopu" [] []) --decpopu ::Declaration*PairID
-      r_pairvalue       <- selectdecl conn fSpec (therel fSpec "pairvalue" [] []) --pairvalue::PairID->Pair
-      r_left            <- selectdecl conn fSpec (therel fSpec "left" [] []) --left::Pair->AtomID
-      r_right           <- selectdecl conn fSpec (therel fSpec "right" [] []) --right::Pair->AtomID
+      r_left            <- selectdecl conn fSpec (therel fSpec "left" [] []) --left::PairID->AtomID
+      r_right           <- selectdecl conn fSpec (therel fSpec "right" [] []) --right::PairID->AtomID
       --Rule--
       r_rrnm            <- selectdecl conn fSpec (therel fSpec "rrnm" [] []) --rrnm  :: Rule -> ADLid
       r_rrexp           <- selectdecl conn fSpec (therel fSpec "rrexp" [] []) --rrexp :: Rule -> ExpressionID
@@ -164,7 +162,7 @@ atlas2context fSpec flags =
                      r_gengen r_genspc
                      r_cptnm r_cptpurpose r_cptdf r_atomvalue      
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
-                     r_decpopu r_pairvalue r_left r_right          
+                     r_decpopu r_left r_right          
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
 
       if nocxe errs then return actx else error (show errs)
@@ -179,12 +177,12 @@ makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,P_Expression)] -> IO (A_Context,CtxError)
+                  -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,P_Expression)] -> IO (A_Context,CtxError)
 makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
                      r_gengen r_genspc
                      r_cptnm r_cptpurpose r_cptdf r_atomvalue      
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
-                     r_decpopu r_pairvalue r_left r_right          
+                     r_decpopu r_left r_right          
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = return (typeCheck rawctx [])
    where
@@ -217,7 +215,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                   ++ [PRef2 (DBLoc "Atlas(CptPurpose)") (PRef2ConceptDef cnm) (P_Markup Nothing Nothing cpurp) []
                      | (cid,cpurp)<-r_cptpurpose, not(null cpurp) 
                      , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cpurp.")]
-       , ctx_pops  = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue
+       , ctx_pops  = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_atomvalue
        , ctx_sql   = []
        , ctx_php   = []
        , ctx_metas = []
@@ -280,8 +278,8 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
          srcnm = geta r_cptnm srcid (error "while geta r_cptnm of srcid.")
          trgnm = geta r_cptnm trgid (error "while geta r_cptnm of trgid.")
 
-atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
-atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_right r_atomvalue 
+atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
+atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_atomvalue 
  = [P_Popu (makerel rnm) rsgn rpop           
    | (rid,rnm)<-r_decnm
    , let rsgn = atlas2sign rid r_decsgn r_src r_trg r_cptnm
@@ -289,9 +287,8 @@ atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_pairvalue r_left r_r
    ]
    where 
    makepair pid = (lval,rval) 
-         where pvid = geta r_pairvalue pid (error "while geta r_pairvalue.")
-               lid = geta r_left pvid (error "while geta r_left.")
-               rid = geta r_right pvid (error "while geta r_right.")
+         where lid = geta r_left pid (error "while geta r_left.")
+               rid = geta r_right pid (error "while geta r_right.")
                lval = geta r_atomvalue lid (error "while geta r_atomvalue of lid.")
                rval = geta r_atomvalue rid (error "while geta r_atomvalue of rid.")
 
