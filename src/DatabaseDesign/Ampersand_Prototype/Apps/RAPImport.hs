@@ -106,7 +106,7 @@ te_origname :: TypeError * String [UNI]
 makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> CtxError -> [P_Population]
 makeCtxErrorPops opts usrfiles eid c x 
  = if nocxe es 
-   then makepopu ("te_message","TypeError","String")    [(eid,nonsid (show x))]
+   then makepopu ("te_message","TypeError","ErrorMessage")    [(eid,nonsid (show x))]
        :makeRAPPops (makeFspec opts cx) opts usrfiles []
    else []
    where (cx,es) = typeCheck nc []
