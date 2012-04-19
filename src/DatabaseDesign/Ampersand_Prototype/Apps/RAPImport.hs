@@ -4,6 +4,7 @@
 module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfailed)
 where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
+import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(..))
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
@@ -45,8 +46,12 @@ getUsrFiles opts = let fdir = let d=dropFileName (importfile opts) in if null d 
                            then return (reverse$GHC.Exts.sortWith snd (zip fns times))
                            else return (zip fns (repeat (toClockTime $ CalendarTime 1980 February 27 16 15 0 0 Wednesday 0 "UTC" 0 False)))
                           }
-operations :: [(Int,String)]
-operations = [(1,"load into Atlas"),(5,"generate func.spec.(pdf)"),(6,"generate prototype for students")]
+operations :: Options -> [(Int,String)]
+operations opts
+ | theme opts == StudentTheme = [(1,"load into Atlas"),(5,"generate func.spec.(pdf)")]
+ | theme opts == StudentDesignerTheme = [(1,"load into Atlas"),(5,"generate func.spec.(pdf)"),(6,"generate prototype for students")]
+ | theme opts == DesignerTheme = [(1,"load into Atlas"),(5,"generate func.spec.(pdf)"),(8,"generate prototype")]
+ | otherwise = [(1,"load into Atlas")]
 usr :: Options -> String
 usr = namespace
 srcfile :: Options -> (String,String)
@@ -81,7 +86,7 @@ makeFailedPops imperr opts usrfiles
                                       ,makepopu ("pe_expecting","ParseError","String")      [(errid fid, nonsid (show exp))]
                                       ]
          Right (c,x) ->  makepopu ("typeerror","File","TypeError")    [(fid, errid fid)]
-                    :makeCtxErrorPops opts usrfiles (errid fid) c (cxes x)
+                        :makeCtxErrorPops opts usrfiles (errid fid) c (cxes x)
      )
     ++makeFilePops opts usrfiles []
     where fid = fileid (srcfile opts)
@@ -128,6 +133,7 @@ makeFilePops opts usrfiles savefiles
    in
      --see trunk/apps/Atlas/FSpec.adl
     [makepopu ("newfile","User","NewAdlFile")            [(usrid (usr opts), fileid newfile)]
+    ,makepopu ("userrole","User","Role")                 [(usrid (usr opts), nonsid (case theme opts of StudentTheme->"Student";StudentDesignerTheme->"StudentDesigner";DesignerTheme->"Designer";_->"Student"))]
      --note that: 'srcfile' \/ inclfiles |- adlfiles \/ popfiles
     ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)          | (path,fn, _  )<-adlfiles ++ popfiles]
     ,makepopu ("filename","File","FileName")             [(fileid (path,fn), nonsid fn)          | (path,fn     )<-newfile:savefiles ]
@@ -135,9 +141,9 @@ makeFilePops opts usrfiles savefiles
     ,makepopu ("filepath","File","FilePath")             [(fileid (path,fn), nonsid path)        | (path,fn     )<-newfile:savefiles ]
     ,makepopu ("filetime","File","CalendarTime")         [(fileid (path,fn), nonsid (show time)) | (path,fn,time)<-adlfiles ++ popfiles]
     ,makepopu ("uploaded","User","File")                 [(usrid (usr opts), fileid (path,fn))   | (path,fn, _  )<-adlfiles ++ popfiles]
-    ,makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid (path,fn))          | (path,fn, _  )<-adlfiles, (op,_ )<-operations]
-    ,makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)                 | (_   ,fn, _  )<-adlfiles, (op,nm)<-operations]
-    ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op))          | (_   ,fn, _  )<-adlfiles, (op,_ )<-operations]
+    ,makepopu ("applyto","G","AdlFile")                  [(gid op fn, fileid (path,fn))          | (path,fn, _  )<-adlfiles, (op,_ )<-operations opts]
+    ,makepopu ("functionname","G","String")              [(gid op fn, nonsid nm)                 | (_   ,fn, _  )<-adlfiles, (op,nm)<-operations opts]
+    ,makepopu ("operation","G","Int")                    [(gid op fn, nonsid (show op))          | (_   ,fn, _  )<-adlfiles, (op,_ )<-operations opts]
     ]
 
 --the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
@@ -169,9 +175,10 @@ makeRAPPops fs opts usrfiles pics
    in
      --see trunk/apps/Atlas/FSpec.adl
      makeFilePops opts usrfiles [savepopfile,savectxfile]
-     ++ 
+     ++      
     [makepopu ("sourcefile","Context","AdlFile")         [(fsid (cns,fs), fileid (srcfile opts))]
     ,makepopu ("includes","Context","File")              [(fsid (cns,fs), fileid f)  | f<-inclfiles] 
+    ,makepopu ("firstloadedwith","AdlFile","AdlVersion") [(fileid (srcfile opts), nonsid prototypeVersionStr)]
     ,makepopu ("savepopulation","Context","SavePopFile") [(fsid (cns,fs), fileid savepopfile)]
     ,makepopu ("savecontext","Context","SaveAdlFile")    [(fsid (cns,fs), fileid savectxfile)]
     ,makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])
