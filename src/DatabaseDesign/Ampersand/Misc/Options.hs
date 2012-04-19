@@ -234,7 +234,9 @@ data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Sh
 data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
-              | StudentTheme   -- An adjusted func spec for students of the business rules course
+              | StudentTheme   -- Output for normal students of the business rules course
+              | StudentDesignerTheme   -- Output for advanced students of the business rules course
+              | DesignerTheme   -- Output for non-students
                  deriving (Show, Eq)
     
 usageInfo' :: Options -> String
@@ -357,6 +359,8 @@ maxInterfacesOpt  opts = opts{allInterfaces  = True}
 themeOpt :: String -> Options -> Options
 themeOpt t opts = opts{theme = case map toUpper t of 
                                     "STUDENT" -> StudentTheme
+                                    "STUDENTDESIGNER" -> StudentDesignerTheme
+                                    "DESIGNER" -> DesignerTheme
                                     "PROOF"   -> ProofTheme
                                     _         -> DefaultTheme}
 dbNameOpt :: String -> Options -> Options
