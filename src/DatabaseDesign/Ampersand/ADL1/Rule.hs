@@ -51,8 +51,8 @@ where
  
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all declarations is provided, in order to generate shorter names if possible. 
-   rulefromProp :: [Declaration] -> Prop -> Declaration -> Rule
-   rulefromProp _ prp d@(Sgn{})
+   rulefromProp :: Prop -> Declaration -> Rule
+   rulefromProp prp d@(Sgn{})
       = Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
            , rrexp = case prp of
                         Uni-> EImp (ECps [EFlp r,r] ,       i$sign$ECps [EFlp r,r] )
@@ -124,4 +124,4 @@ where
            state False English left right = left ++ " is not " ++ right
            state False Dutch   left right = left ++ " is niet " ++ right
            
-   rulefromProp _ _ _ = fatal 252 "Properties can only be set on user-defined declarations."
+   rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined declarations."
