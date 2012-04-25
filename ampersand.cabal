@@ -7,7 +7,7 @@ description:    You can define your business processes by means of rules, writte
 homepage:       ampersand.sourceforge.net
 category:       Database Design
 stability:      alpha
-cabal-version:  >= 1.8
+cabal-version:  >= 1.14
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
@@ -54,21 +54,21 @@ library
   hs-source-dirs:   src
   build-depends:
   -- common dependencies for library, executable and test-suite (copy when changed)
-                    ghc >= 7.0 && < 8.0,
+                    ghc >= 7.0 && <= 7.0.4,
                     graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
-                    text >= 0.11 && <= 0.11.1.9,
+                    text >= 0.11 && < 0.12,
                     pandoc-types == 1.8.*,
                     pandoc >= 1.8.2.1 && < 1.9,
-                    bytestring >= 0.9.1.10 && <= 0.9.1.10,
-                    utf8-string >= 0.3.6 && <= 0.3.7,
-                    filepath >= 1.2.0.0 && <= 1.2.0.0,
-                    haskell98 >= 1.1.0.1 && <= 1.1.0.1,
-                    base >= 4.3.1.0 && <= 4.3.1.0,
-                    directory >= 1.1.0.0 && <= 1.1.0.0,
-                    containers >= 0.4 && <= 0.4.0.0,
-                    mtl        >= 2.0 && <= 2.0.1.0,
-                    split      >= 0.1 && <= 0.1.4.2,
-                    time       >= 1.2 && <= 1.2.0.3
+                    bytestring >= 0.9.1.10 && < 0.10,
+                    utf8-string >= 0.3.6 && < 0.4,
+                    filepath >= 1.2.0.0 && < 1.3,
+                    haskell98 >= 1.1.0.1 && < 1.2,
+                    base >= 4.3.1.0 && < 4.4,
+                    directory >= 1.1.0.0 && < 1.2,
+                    containers >= 0.4 && < 0.5,
+                    mtl        >= 2.0 && < 2.1,
+                    split      >= 0.1 && < 0.2,
+                    time       >= 1.2 && < 1.3
   -- end of common dependencies
 
   exposed-modules:  
@@ -162,21 +162,21 @@ executable ampersand
   hs-source-dirs:   src
   build-depends:    
 -- common dependencies for library, executable and test-suite (copy when changed)
-                    ghc >= 7.0 && < 8.0,
+                    ghc >= 7.0 && <= 7.0.4,
                     graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
-                    text >= 0.11 && <= 0.11.1.9,
+                    text >= 0.11 && < 0.12,
                     pandoc-types == 1.8.*,
                     pandoc >= 1.8.2.1 && < 1.9,
-                    bytestring >= 0.9.1.10 && <= 0.9.1.10,
-                    utf8-string >= 0.3.6 && <= 0.3.7,
-                    filepath >= 1.2.0.0 && <= 1.2.0.0,
-                    haskell98 >= 1.1.0.1 && <= 1.1.0.1,
-                    base >= 4.3.1.0 && <= 4.3.1.0,
-                    directory >= 1.1.0.0 && <= 1.1.0.0,
-                    containers >= 0.4 && <= 0.4.0.0,
-                    mtl        >= 2.0 && <= 2.0.1.0,
-                    split      >= 0.1 && <= 0.1.4.2,
-                    time       >= 1.2 && <= 1.2.0.3
+                    bytestring >= 0.9.1.10 && < 0.10,
+                    utf8-string >= 0.3.6 && < 0.4,
+                    filepath >= 1.2.0.0 && < 1.3,
+                    haskell98 >= 1.1.0.1 && < 1.2,
+                    base >= 4.3.1.0 && < 4.4,
+                    directory >= 1.1.0.0 && < 1.2,
+                    containers >= 0.4 && < 0.5,
+                    mtl        >= 2.0 && < 2.1,
+                    split      >= 0.1 && < 0.2,
+                    time       >= 1.2 && < 1.3
 -- end of common dependencies
  
   if flag(executable)
@@ -194,21 +194,21 @@ test-suite AmpersandTests
                     test-framework-quickcheck2,
                     test-framework-hunit,
  -- common dependencies for library, executable and test-suite (copy when changed)
-                    ghc >= 7.0 && < 8.0,
+                    ghc >= 7.0 && <= 7.0.4,
                     graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
-                    text >= 0.11 && <= 0.11.1.9,
+                    text >= 0.11 && < 0.12,
                     pandoc-types == 1.8.*,
                     pandoc >= 1.8.2.1 && < 1.9,
-                    bytestring >= 0.9.1.10 && <= 0.9.1.10,
-                    utf8-string >= 0.3.6 && <= 0.3.7,
-                    filepath >= 1.2.0.0 && <= 1.2.0.0,
-                    haskell98 >= 1.1.0.1 && <= 1.1.0.1,
-                    base >= 4.3.1.0 && <= 4.3.1.0,
-                    directory >= 1.1.0.0 && <= 1.1.0.0,
-                    containers >= 0.4 && <= 0.4.0.0,
-                    mtl        >= 2.0 && <= 2.0.1.0,
-                    split      >= 0.1 && <= 0.1.4.2,
-                    time       >= 1.2 && <= 1.2.0.3
+                    bytestring >= 0.9.1.10 && < 0.10,
+                    utf8-string >= 0.3.6 && < 0.4,
+                    filepath >= 1.2.0.0 && < 1.3,
+                    haskell98 >= 1.1.0.1 && < 1.2,
+                    base >= 4.3.1.0 && < 4.4,
+                    directory >= 1.1.0.0 && < 1.2,
+                    containers >= 0.4 && < 0.5,
+                    mtl        >= 2.0 && < 2.1,
+                    split      >= 0.1 && < 0.2,
+                    time       >= 1.2 && < 1.3
 -- end of common dependencies
 
   hs-source-dirs:  src
