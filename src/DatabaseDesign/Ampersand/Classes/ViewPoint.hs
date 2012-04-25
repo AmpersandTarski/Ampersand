@@ -31,7 +31,7 @@ class Language a where
   invariants   :: a -> [Rule] -- ^ all rules that are not maintained by users will be maintained by the computer.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
   multrules    :: a -> [Rule] -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = [rulefromProp (declarations x) p d |d<-declarations x, p<-multiplicities d]
+  multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
   keyrules     :: a -> [Rule] -- all key rules that are maintained within this viewpoint.
   keyrules x    = concatMap rulesFromKey $ keyDefs x
   keyDefs      :: a -> [KeyDef]      -- ^ all keys that are defined in a
