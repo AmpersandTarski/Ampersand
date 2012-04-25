@@ -207,15 +207,15 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), patid p)         | p<-patterns fs]
     ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fs]
     ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, r<-rules p]
-    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp userdeclarations pr d]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp pr d]
     ,makepopu ("ptgns","Pattern","Gen")         [(patid p      , genid g)         | p<-patterns fs, g<-gens p]
     ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fs, d<-declarations p,decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(patid p, nonsid (aMarkup2String (explMarkup ex)))
                                                                                   | p<-patterns fs, ex<-explanations fs, explForObj p (explObj ex)]
     ,makepopu ("decnm","Declaration","Varid")               [(decid d , nonsid(name d))   | d<-userdeclarations]
     ,makepopu ("decsgn","Declaration","Sign")               [(decid d , sgnid (sign d))   | d<-userdeclarations]
-    ,makepopu ("decprps","Declaration","PropertyRule")      [(decid d , ruleid r)         | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp userdeclarations p d]
-    ,makepopu ("declaredthrough","PropertyRule","Property") [(ruleid r, nonsid(show p))   | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp userdeclarations p d]
+    ,makepopu ("decprps","Declaration","PropertyRule")      [(decid d , ruleid r)         | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp p d]
+    ,makepopu ("declaredthrough","PropertyRule","Property") [(ruleid r, nonsid(show p))   | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp p d]
     ,makepopu ("decprL","Declaration","String")             [(decid d , nonsid(decprL d)) | d<-userdeclarations]
     ,makepopu ("decprM","Declaration","String")             [(decid d , nonsid(decprM d)) | d<-userdeclarations]
     ,makepopu ("decprR","Declaration","String")             [(decid d , nonsid(decprR d)) | d<-userdeclarations]
@@ -257,7 +257,7 @@ makeRAPPops fs opts usrfiles pics
     ]
    where 
    --SPEC PropertyRule ISA Rule
-   raprules = rules fs ++ [rulefromProp userdeclarations p d | d<-userdeclarations, p<-multiplicities d]
+   raprules = rules fs ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
    userdeclarations = filter decusr (declarations fs)
    --populate relsrc and reltrg for typed data structures
