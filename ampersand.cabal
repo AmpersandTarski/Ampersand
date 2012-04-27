@@ -159,7 +159,23 @@ executable ampersand
   main-is:          Main.hs
   hs-source-dirs:   src
   build-depends:    
-                    ampersand == 2.2.0
+                    ampersand == 2.2.0,
+                    ghc >= 7.0 && <= 7.0.4,
+                    graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
+                    text >= 0.11 && < 0.12,
+                    pandoc-types == 1.8.*,
+                    pandoc >= 1.8.2.1 && < 1.9,
+                    bytestring >= 0.9.1.10 && < 0.10,
+                    utf8-string >= 0.3.6 && < 0.4,
+                    filepath >= 1.2.0.0 && < 1.3,
+                    haskell98 >= 1.1.0.1 && < 1.2,
+                    base >= 4.3.1.0 && < 4.4,
+                    directory >= 1.1.0.0 && < 1.2,
+                    containers >= 0.4 && < 0.5,
+                    mtl        >= 2.0 && < 2.1,
+                    split      >= 0.1 && < 0.2,
+                    time       >= 1.2 && < 1.3
+
  
   if flag(executable)
     buildable:  True
@@ -170,12 +186,12 @@ test-suite AmpersandTests
   type:            exitcode-stdio-1.0
   x-uses-tf:       true
   build-depends:   
-                    ampersand == 2.2.0
+                    ampersand == 2.2.0,
                     HUnit >= 1.2 && < 2,
                     QuickCheck >= 2.4,
                     test-framework >= 0.4.1,
                     test-framework-quickcheck2,
-                    test-framework-hunit,
+                    test-framework-hunit
   hs-source-dirs:  src
   ghc-options:     -rtsopts
   main-is:         test-ampersand.hs
