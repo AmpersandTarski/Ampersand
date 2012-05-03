@@ -12,6 +12,7 @@ module DatabaseDesign.Ampersand.Components
    , doGenXML
    , doGenUML
    , doGenDocument
+   , doGenExcel
     -- * etc...
   )
 where
@@ -109,4 +110,11 @@ doGenDocument fSpec flags =
                  (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
                  (_         , _      ) -> fSpec2Pandoc fSpec flags
         (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
-        
+
+-- | This function will generate an Excel workbook file, containing an extract from the Fspc
+doGenExcel :: Fspc -> Options -> IO()
+doGenExcel fSpec flags =
+ do { verboseLn flags "Generating Excel..."
+    ; writeFile outputFile (showSpreadsheet (fspec2Workbook fSpec flags))
+    }
+   where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".xls"

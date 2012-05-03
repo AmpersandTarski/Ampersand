@@ -67,6 +67,7 @@ generate opts fSpec =
     ; when (haskell opts)     $ doGenHaskell  fSpec opts 
     ; when (export2adl opts)  $ doGenADL      fSpec opts
     ; when (genFspec opts)    $ doGenDocument fSpec opts 
+    ; when (genExcel opts)    $ doGenExcel    fSpec opts
     ; when (proofs opts)      $ prove         fSpec opts
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
