@@ -65,6 +65,7 @@ pCtx2aCtx pctx
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas pctx ]
              , ctxexperimental = ctx_experimental pctx
+             , ctxatoms  = allexplicitatoms
              }
     cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -89,7 +90,9 @@ pCtx2aCtx pctx
     (ifcs,interfacecxes) = (unzip . map (pIFC2aIFC   actx)             . ctx_ifcs ) pctx
     (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef actx [] NoCast)   . ctx_sql  ) pctx
     (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef actx [] NoCast)   . ctx_php  ) pctx
-    (allpops, popcxes)   = (unzip . map (pPop2aPop   actx)             . pops ) pctx
+    (allmbpops, popcxes) = (unzip . map (pPop2aPop   actx)             . pops ) pctx
+    allpops    = [pop | Just pop<-allmbpops]
+    allexplicitatoms = [cptos' | P_CptPopu cptos'<-pops pctx]
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
@@ -403,11 +406,12 @@ pExOb2aExOb actx (PRef2Context str     ) = (ExplContext str,   newcxeif(name act
 pExOb2aExOb actx (PRef2Fspc str        ) = (ExplFspc str,      newcxeif( name actx/=str)("No specification named '"++str++"'") )
 
 
-pPop2aPop :: (Language l, ConceptStructure l, Identified l) => l -> P_Population -> (Population,CtxError)
-pPop2aPop contxt p
- = ( Popu { popm  = prel
-          , popps = p_popps p
-          }
+pPop2aPop :: (Language l, ConceptStructure l, Identified l) => l -> P_Population -> (Maybe Population,CtxError)
+pPop2aPop _        (P_CptPopu{}) = (Nothing,cxenone)
+pPop2aPop contxt p@(P_Popu{})
+ = ( Just (Popu { popm  = prel
+                , popps = p_popps p
+                })
    , relcxe
    )
    where (prel,relcxe) = pRel2aRel contxt ((psign.p_type) p) (p_popm p)
@@ -436,6 +440,7 @@ pCpt2aCpt contxt pc
             ,cptos = nub$[srcPaire p | d<-declarations contxt,decusr d,p<-contents d, source d <= c]
                        ++[trgPaire p | d<-declarations contxt,decusr d,p<-contents d, target d <= c]
                        ++[v | r<-rules contxt,Mp1 v c'<-mors r,c'<=c]
+                       ++[x | (cnm,xs)<-initialatoms contxt, cnm==p_cptnm pc, x<-xs]
             ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
             ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
             }

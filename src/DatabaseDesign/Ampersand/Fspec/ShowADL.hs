@@ -325,6 +325,10 @@ instance ShowADL P_Population where
   = "POPULATION "++name pr++(if null rtp then [] else "["++name(head rtp)++"*"++name(last rtp)++"]")++" CONTAINS\n"++
     indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
     where indent = "   "
+ showADL (P_CptPopu (cnm, xs))
+  = "POPULATION "++cnm++" CONTAINS\n"++
+    indent++"[ "++intercalate ("\n"++indent++", ") (map showatom xs) ++indent++"]"
+    where indent = "   "
 instance ShowADL Population where
  showADL (Popu r pairs)
   = "POPULATION "++showADL r++" CONTAINS\n"++
