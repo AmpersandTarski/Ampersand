@@ -42,6 +42,8 @@ class Language a where
   violations x = [(r,viol) |r<-invariants x++multrules x++keyrules x, viol<-ruleviolations r]
   cExperimental :: a -> Bool 
   cExperimental _ = False
+  initialatoms :: a -> [(String,[String])] -- ^ all atoms explicitly mentioned to be in the initial population of a concept
+  initialatoms _ = []
   
 -- | In a language, a declaration must be made for each gen.
 makeDecl :: A_Gen -> Declaration
@@ -172,6 +174,7 @@ instance Language A_Context where
   gens         context = concatMap gens (ctxpats context) `uni` concatMap gens (ctxprocs context) `uni` ctxgs context
   patterns             = ctxpats
   cExperimental        = ctxexperimental
+  initialatoms         = ctxatoms
 
 instance ProcessStructure A_Context where
   processes            = ctxprocs

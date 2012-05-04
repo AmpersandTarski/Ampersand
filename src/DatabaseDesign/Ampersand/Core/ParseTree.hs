@@ -273,6 +273,7 @@ where
               , p_type   :: P_Sign
               , p_popps  :: Pairs
               }
+     | P_CptPopu (String,[String]) --(the name of a concept,atoms in the initial population of that concept)
 
    data P_Interface = 
         P_Ifc { ifc_Name   :: String                 -- ^ the name of the interface
