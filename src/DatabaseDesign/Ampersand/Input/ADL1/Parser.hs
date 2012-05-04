@@ -420,9 +420,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                      PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
    pPopulation :: Parser Token P_Population
-   pPopulation = ppop <$ pKey "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
+   pPopulation = prelpop <$ pKey "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent <|>
+                 pcptpop <$ pKey "POPULATION" <*> (pConid <|> pString) <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
        where
-         ppop (r,sgn) = P_Popu r sgn
+         prelpop (r,sgn) = P_Popu r sgn
+         pcptpop cnm xs = P_CptPopu (cnm,xs)
+
+                 
          
    pRoleRelation    :: Parser Token P_RoleRelation
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
@@ -618,8 +622,9 @@ and the grammar must be disambiguated in order to get a performant parser...
                    <|> pSpec '[' *> pListSep (pKey ";") pRecordObs <* pSpec ']' --obsolete
        where
        pRecord = mkPair<$> pValue <* pKey "*" <*> pValue
-       pValue  = pAtom <|> pConid <|> pVarid <|> pInteger <|> ((++)<$>pInteger<*>pConid) <|> ((++)<$>pInteger<*>pVarid)
        pRecordObs = mkPair<$ pSpec '(' <*> (trim <$> pString)  <* pComma   <*> (trim <$> pString)  <* pSpec ')' --obsolete
+   pValue :: Parser Token String
+   pValue  = pAtom <|> pConid <|> pVarid <|> pInteger <|> ((++)<$>pInteger<*>pConid) <|> ((++)<$>pInteger<*>pVarid)
 
 
 

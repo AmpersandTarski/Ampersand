@@ -77,6 +77,7 @@ data A_Context
          , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
          , ctxmetas  :: [Meta]
          , ctxexperimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
+         , ctxatoms :: [(String,[String])] -- ^ (the name of a concept, explicit initial population of that concept)
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
