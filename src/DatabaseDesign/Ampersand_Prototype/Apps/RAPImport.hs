@@ -5,6 +5,8 @@ module DatabaseDesign.Ampersand_Prototype.Apps.RAPImport   (importfspec,importfa
 where
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
+import DatabaseDesign.Ampersand.Core.Poset (Poset(..),maxima)
+import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(..))
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
@@ -194,14 +196,16 @@ makeRAPPops fs opts usrfiles pics
                                                             | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(contents d++[("...","...")])]
     --see trunk/apps/Atlas/AST.adl
     ,makepopu ("ctxnm","Context","Conid")     [(fsid (cns,fs), nonsid (name fs))]
-    ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fs) , cptid c)          | c<-concs fs] 
-    ,makepopu ("cptnm","Concept","Conid")     [(cptid c       , nonsid (name c))  | c<-concs fs]
-    ,makepopu ("cptos","Concept","AtomID")    [(cptid c       , atomidid x c)     | c<-concs fs, x<-cptos c]
-    ,makepopu ("inios","Concept","AtomID")    [(cptid c       , atomidid x c)     | c<-concs fs, x<-cptos c]
-    ,makepopu ("atomvalue","AtomID","Atom")   [(atomidid x c  , nonsid x)         | c<-concs fs, x<-cptos c]
-    ,makepopu ("cptpurpose","Concept","Blob") [(cptid c       , nonsid (aMarkup2String (explMarkup ex)))
-                                                                                  | c<-concs fs, ex<-explanations fs, explForObj c (explObj ex)]
-    ,makepopu ("cptdf","Concept","Blob")      [(cptid c       , nonsid(cddef cd)) | c<-concs fs, cd<-cptdf c]
+    ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fs), cptid c)                | c<-concs fs] 
+    ,makepopu ("cptnm","Concept","Conid")     [(cptid c      , nonsid (name c))        | c<-concs fs]
+    ,makepopu ("cptos","Concept","AtomID")    [(cptid c      , atomidid x (isanm isa)) | c<-concs fs, (isa, c',x)<-atoms, c==c']
+    ,makepopu ("inios","Concept","AtomID")    [(cptid c      , atomidid x (isanm isa)) | c<-concs fs, (isa, c',x)<-atoms, c==c']
+    ,makepopu ("atomvalue","AtomID","Atom")   [(atomidid x (isanm isa) , nonsid x)                  | (isa, _ ,x)<-atoms]
+    ,makepopu ("cptpurpose","Concept","Blob") [(cptid c      , nonsid (aMarkup2String (explMarkup ex)))
+                                                                                       | c<-concs fs, ex<-explanations fs, explForObj c (explObj ex)]
+    ,makepopu ("cptdf","Concept","Blob")      [(cptid c      , nonsid(cddef cd))       | c<-concs fs, cd<-cptdf c]
+    ,makepopu ("ordername","Order","String")  [(nonsid (isanm isa) , nonsid (isanm isa)) | isa<-isas]
+    ,makepopu ("order","Concept","Order")     [(cptid c            , nonsid (isanm isa)) | isa<-isas, c<-isa]
     ,makepopu ("gengen","Gen","Concept") [(genid g, cptid (target g)) | g<-gens fs]
     ,makepopu ("genspc","Gen","Concept") [(genid g, cptid (source g)) | g<-gens fs]
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), patid p)         | p<-patterns fs]
@@ -260,14 +264,24 @@ makeRAPPops fs opts usrfiles pics
    raprules = rules fs ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
    userdeclarations = filter decusr (declarations fs)
+   --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (isa,x)
+   atoms = [(isa , c , x) 
+           | isa<-isas, c<-isa, x<-cptos c
+           , not (elem x (concat [cptos s | s<-isa, s < c]))]
+   --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
+   isanm isa = intercalate "/" (map name (maxima isa))
+   --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
+   isas = let isas' = [[c' | not (null (concs fs)), c<-isa, c'<-concs fs, c==c'] | isa<-(snd . order . head . concs) fs] 
+          in [[c] | c<-concs fs, not(elem c (concat isas'))] ++ isas'
    --populate relsrc and reltrg for typed data structures
    relsrc,reltrg :: Association r => [r] -> P_Population
    relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
    reltrg rs = makepopu ("trg","Sign","Concept")      [(sgnid (sign r), cptid (target r)) | r<-rs]
    --populate relleft and relright for populated and typed data structures
    relleft,relright :: (Populated r,Association r) => [(IdentifierNamespace,r)] -> P_Population
-   relleft rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (source r)) | (ns,r)<-rs, (x,y)<-contents r]
-   relright rs = makepopu ("right","PairID","AtomID")              [(pairidid (x,y) (ns,r), atomidid y (target r)) | (ns,r)<-rs, (x,y)<-contents r]
+   relleft rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (ns,r)<-rs, (x,y)<-contents r]
+   relright rs = makepopu ("right","PairID","AtomID")              [(pairidid (x,y) (ns,r), atomidid y (getisa$target r)) | (ns,r)<-rs, (x,y)<-contents r]
+   getisa c = concat [isanm isa | isa<-isas, elem c isa]
    --populate relrels, relrelnm, relreldcl and relrelsgn for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
    relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm sgn) | (ns,expr)<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]

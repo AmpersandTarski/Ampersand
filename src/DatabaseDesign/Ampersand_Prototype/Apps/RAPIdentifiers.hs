@@ -41,8 +41,8 @@ relid :: String -> Sign -> ConceptIdentifier
 relid nm sgn = CID $ nm ++ "[" ++ getid(cptid (source sgn)) ++ "*" ++ getid(cptid (target sgn)) ++ "]"
 expridid :: (IdentifierNamespace, Expression) -> ConceptIdentifier
 expridid (CNS ns,expr) = CID $ ns ++ "#" ++ show expr
-atomidid :: String -> A_Concept -> ConceptIdentifier
-atomidid x c  = CID $ show$hashString (x ++ "[" ++ getid(cptid c) ++ "]") --limit of data length in database is 256
+atomidid :: String -> String -> ConceptIdentifier
+atomidid x isaname  = CID $ show$hashString (x ++ "[" ++ isaname ++ "]") --limit of data length in database is 256
 pairid :: (String,String) -> Sign -> ConceptIdentifier
 pairid (x,y) sgn = CID $ show$hashString (x  ++ "*" ++ y ++ "[" ++ getid(sgnid sgn) ++ "]") --limit of data length in database is 256
 pairidid :: Association r => (String,String) -> (IdentifierNamespace, r) -> ConceptIdentifier
