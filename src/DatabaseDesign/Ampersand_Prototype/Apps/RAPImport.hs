@@ -60,8 +60,10 @@ srcfile :: Options -> (String,String)
 srcfile opts = (dropFileName(importfile opts),takeFileName(importfile opts))
 rapfiles :: Options -> [(String,ClockTime)] -> ([(String,String,ClockTime)],[(String,String,ClockTime)],(String,String))
 rapfiles opts usrfiles 
- = ( [(dropFileName(importfile opts),fn,time) | (fn,time)<-usrfiles,takeExtension fn==".adl"] --adlfiles, server files of user with a .adl extension
-   , [(dropFileName(importfile opts),fn,time) | (fn,time)<-usrfiles,takeExtension fn==".pop"] --popfiles, server files of user with a .pop extension
+--take 30 because of performance issue of prototype, takes too long to query the file overview pages
+--the CONTEXT files page fired a query of over 500.000 chars to get an overview of 70 files, which took the browser 34secs using a localhost server
+ = ( take 30 [(dropFileName(importfile opts),fn,time) | (fn,time)<-usrfiles,takeExtension fn==".adl"] --adlfiles, server files of user with a .adl extension
+   , take 30 [(dropFileName(importfile opts),fn,time) | (fn,time)<-usrfiles,takeExtension fn==".pop"] --popfiles, server files of user with a .pop extension
    , ("","empty.adl")                                                             --newfile, a copy of empty.adl, it contains an empty context
    )
 --a triple which should correspond to a declaration from RAP.adl: (relation name, source name, target name)
