@@ -88,23 +88,21 @@ function cancelEditing() {
 }
 
 function commitEditing() {
-  $('button.SaveButton').text('Saving...');
   log('1');
   $editedAtom = getEnclosingAtom( $('#atomEditor') );
   if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
   
   if (getEmptyAtomsNotInTemplates().length > 0) {
-    $('button.SaveButton').text('Save');
     alert('Please fill out all <new> atoms first.');
     return;
   }
   if (getNonUniqueAtomLists().length > 0) {
-    $('button.SaveButton').text('Save');
     alert('Please resolve duplicate atom names.');
     return;
   }
   
+  $('button.SaveButton').text('Saving...');
   var dbCommands = computeDbCommands();
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
 
@@ -121,6 +119,7 @@ function sendCommands(dbCommands) {
   $.post('php/Database.php',  
   { commands: JSON.stringify(dbCommands), role: getSelectedRole() },
   function(data) {
+    $('button.SaveButton').text('Save');
     $results = $(data);
     $errors = $(data).find('.Error');
     $logMessages = $(data).find('.LogMsg');
@@ -148,7 +147,6 @@ function sendCommands(dbCommands) {
         $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
         $('#AmpersandRoot').attr('isNew', $newPage.find('#AmpersandRoot').attr('isNew') );
         $('#AmpersandRoot').attr('editing','false');
-        $('button.SaveButton').text('Save');
 
         // we ignore the signals from $newPage, since we have just set them.
         
