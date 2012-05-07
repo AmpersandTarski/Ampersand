@@ -82,11 +82,14 @@ function cancelEditing() {
     clearLogItems($('#PhpLog'));
     
     $('#AmpersandRoot').attr('editing','false');
+    $('button.SaveButton').text('Save');
     $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
   }
 }
 
 function commitEditing() {
+  $('button.SaveButton').text('Saving...');
+  log('1');
   $editedAtom = getEnclosingAtom( $('#atomEditor') );
   if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
@@ -143,6 +146,7 @@ function sendCommands(dbCommands) {
         $('#AmpersandRoot').attr('timestamp', $newPage.find('#AmpersandRoot').attr('timestamp') );
         $('#AmpersandRoot').attr('isNew', $newPage.find('#AmpersandRoot').attr('isNew') );
         $('#AmpersandRoot').attr('editing','false');
+        $('button.SaveButton').text('Save');
 
         // we ignore the signals from $newPage, since we have just set them.
         
