@@ -95,10 +95,12 @@ function commitEditing() {
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
   
   if (getEmptyAtomsNotInTemplates().length > 0) {
+    $('button.SaveButton').text('Save');
     alert('Please fill out all <new> atoms first.');
     return;
   }
   if (getNonUniqueAtomLists().length > 0) {
+    $('button.SaveButton').text('Save');
     alert('Please resolve duplicate atom names.');
     return;
   }
