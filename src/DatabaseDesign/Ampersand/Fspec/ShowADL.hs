@@ -284,6 +284,7 @@ instance ShowADL A_Context where
     ++ "\n\nENDCONTEXT"
     where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
                         | d<-declarations context, decusr d, not (null (decpopu d))]
+                        ++ [showADL (P_CptPopu (name c,atomsOf c)) | c<-concs context, c/=ONE, not(null (atomsOf c))]
           cds = conceptDefs context >- (concatMap conceptDefs (ctxpats context) ++ concatMap conceptDefs (ctxprocs context))
 
 instance ShowADL Fspc where
@@ -305,6 +306,7 @@ instance ShowADL Fspc where
     ++ "\n\nENDCONTEXT"
     where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
                         | d<-declarations fSpec, decusr d, not (null (decpopu d))]
+                        ++ [showADL (P_CptPopu (name c,atomsOf c)) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
           cds = vConceptDefs fSpec >- (concatMap conceptDefs patts ++ concatMap (conceptDefs.fpProc) procs)
           patts = if null (themes fSpec)
                   then patterns fSpec
