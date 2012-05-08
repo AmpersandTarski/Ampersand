@@ -51,9 +51,8 @@ flag library
   default:      True
 
 library
-  hs-source-dirs:   src
+  hs-source-dirs:   src/lib
   build-depends:
-  -- common dependencies for library, executable and test-suite (copy when changed)
                     ghc >= 7.0 && <= 7.0.4,
                     graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
                     text >= 0.11 && < 0.12,
@@ -70,7 +69,6 @@ library
                     split >= 0.1 && < 0.2,
                     time >= 1.2 && < 1.3,
                     SpreadsheetML >= 0.1 && < 0.2
-  -- end of common dependencies
 
   exposed-modules:  
                     DatabaseDesign.Ampersand,
@@ -136,7 +134,8 @@ library
                     DatabaseDesign.Ampersand.Output.Fspec2Pandoc,
                     DatabaseDesign.Ampersand.Output.PandocAux,
                     DatabaseDesign.Ampersand.Output.PredLogic,
-                    DatabaseDesign.Ampersand.Output.Statistics
+                    DatabaseDesign.Ampersand.Output.Statistics,
+                    DatabaseDesign.Ampersand.Parsing
   other-modules:    
                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
@@ -150,7 +149,6 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    DatabaseDesign.Ampersand.Parsing,
                     DatabaseDesign.Ampersand.Fspec.GenerateUML,
                     DatabaseDesign.Ampersand.ADL1.TypeCheck
 
@@ -161,27 +159,11 @@ library
 
 executable ampersand
   main-is:          Main.hs
-  hs-source-dirs:   src
+  hs-source-dirs:   src/exec
   build-depends:    
-  -- common dependencies for library, executable and test-suite (copy when changed)
-                    ghc >= 7.0 && <= 7.0.4,
-                    graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
-                    text >= 0.11 && < 0.12,
-                    pandoc-types == 1.8.*,
-                    pandoc >= 1.8.2.1 && < 1.9,
-                    bytestring >= 0.9.1.10 && < 0.10,
-                    utf8-string >= 0.3.6 && < 0.4,
-                    filepath >= 1.2.0.0 && < 1.3,
-                    haskell98 >= 1.1.0.1 && < 1.2,
-                    base >= 4.3.1.0 && < 4.4,
-                    directory >= 1.1.0.0 && < 1.2,
-                    containers >= 0.4 && < 0.5,
-                    mtl        >= 2.0 && < 2.1,
-                    split      >= 0.1 && < 0.2,
-                    time       >= 1.2 && < 1.3,
-                    SpreadsheetML >= 0.1 && < 0.2
-  -- end of common dependencies
- 
+                    ampersand == 2.2.0,
+                    base >= 4.3.1.0 && < 4.4
+  
   if flag(executable)
     buildable:  True
   else
@@ -191,31 +173,17 @@ test-suite AmpersandTests
   type:            exitcode-stdio-1.0
   x-uses-tf:       true
   build-depends:   
+                    ampersand == 2.2.0,
                     HUnit >= 1.2 && < 2,
                     QuickCheck >= 2.4,
                     test-framework >= 0.4.1,
                     test-framework-quickcheck2,
                     test-framework-hunit,
-  -- common dependencies for library, executable and test-suite (copy when changed)
-                    ghc >= 7.0 && <= 7.0.4,
-                    graphviz >= 2999.12.0.0 && <= 2999.12.0.4,
-                    text >= 0.11 && < 0.12,
-                    pandoc-types == 1.8.*,
-                    pandoc >= 1.8.2.1 && < 1.9,
-                    bytestring >= 0.9.1.10 && < 0.10,
-                    utf8-string >= 0.3.6 && < 0.4,
-                    filepath >= 1.2.0.0 && < 1.3,
-                    haskell98 >= 1.1.0.1 && < 1.2,
                     base >= 4.3.1.0 && < 4.4,
-                    directory >= 1.1.0.0 && < 1.2,
-                    containers >= 0.4 && < 0.5,
-                    mtl        >= 2.0 && < 2.1,
-                    split      >= 0.1 && < 0.2,
-                    time       >= 1.2 && < 1.3,
-                    SpreadsheetML >= 0.1 && < 0.2
-  -- end of common dependencies
-
-  hs-source-dirs:  src
+                    haskell98 >= 1.1.0.1 && < 1.2,
+                    filepath >= 1.2.0.0 && < 1.3
+ 
+  hs-source-dirs:  src/test
   ghc-options:     -rtsopts
   main-is:         test-ampersand.hs
 
