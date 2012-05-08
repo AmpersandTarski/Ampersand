@@ -32,7 +32,7 @@ generateBuildInfoHook pd  lbi uh bf =
     ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
                          show (ctHour calendarTime) ++ ":" ++ showPadded (ctMin calendarTime) ++ "." ++ showPadded (ctSec calendarTime) 
     
-    ; writeFile "src/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
+    ; writeFile "src/lib/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
