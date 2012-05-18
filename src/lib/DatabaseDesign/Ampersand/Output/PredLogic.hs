@@ -293,7 +293,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 --       in which ivs is a list of variables that are used inside the resulting expression,
 --       ics contains their types, and frels s t the subexpressions that
 --       are used in the resulting conjuct (at the right of the quantifier).
-      fC exclVars []  (a,b) = f exclVars (ERel (I (snd a `join` snd b))) (a,b)
+      fC exclVars []  (a,b) = if snd a <==> snd b then f exclVars (ERel (I (snd a `join` snd b))) (a,b) else
+                              fatal 297 ("function fC has illegal type for a="++show (snd a)++" and b="++show (snd b)++".")
       fC exclVars [e] (a,b) = f exclVars e (a,b)
       fC exclVars es  (a,b)
         | and [isCpl e | e<-es] = f exclVars (ECpl (ERad [notCpl e | e<-es])) (a,b)
@@ -307,17 +308,19 @@ module DatabaseDesign.Ampersand.Output.PredLogic
          frels s' t' = [r v' w | ((r,_,_),v',w)<-zip3 res (s': ivs) (ivs++[t']) ]
         -- Step 3: compute the intermediate variables and their types
          ivs       = mkVar exclVars ics
-         ics       = [ if v' <==> w then v' `join` w else fatal 275 "assembleF"
+         ics       = [ if v' <==> w then v' `join` w else
+                       fatal 312 ("within ics there is an illegal type for v'="++show v'++" and w="++show w++".")
                      | (v',w)<-zip [s' |(_,s',_)<-tail res] [t' |(_,_,t')<-init res]]
 
-      fD exclVars []  (a,b) = Not (f exclVars (ERel (I (snd a `join` snd b))) (a,b))
+      fD exclVars []  (a,b) = if snd a <==> snd b then Not (f exclVars (ERel (I (snd a `join` snd b))) (a,b)) else
+                              fatal 316 ("function fD has illegal type for a="++show (snd a)++" and b="++show (snd b)++".")
       fD exclVars [e] (a,b) = f exclVars e (a,b)
       fD exclVars es (a,b) 
         | and [isCpl e |e<-es] = f exclVars (ECpl (ECps (map notCpl es))) (a,b)   -- e.g.  -r!-s!-t
-        | isCpl (head es)      = f exclVars (ERrs (ECps antr,ERad conr)) (a,b)     -- e.g.  -r!-s! t
-        | isCpl (last es)      = f exclVars (ELrs (ERad conl,ECps antl)) (a,b)     -- e.g.   r!-s!-t
-        | or [isCpl e |e<-es]  = Forall ivs (Disj alls)                      -- e.g.   r!-s! t
-        | otherwise            = Forall ivs (Disj alls)                      -- e.g.   r! s! t
+        | isCpl (head es)      = f exclVars (ERrs (ECps antr,ERad conr)) (a,b)    -- e.g.  -r!-s! t
+        | isCpl (last es)      = f exclVars (ELrs (ERad conl,ECps antl)) (a,b)    -- e.g.   r!-s!-t
+        | or [isCpl e |e<-es]  = Forall ivs (Disj alls)                           -- e.g.   r!-s! t
+        | otherwise            = Forall ivs (Disj alls)                           -- e.g.   r! s! t
         where
          conr = dropWhile isCpl es
          antr = (map flp.reverse.takeWhile isCpl) es
@@ -325,7 +328,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
          antl = (map flp.takeWhile isCpl.reverse) es
          alls = [f (exclVars++ivs) e (sv,tv) | (e,(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
          ivs  = mkVar exclVars ics
-         ics  = [ if target e <==> source e' then target e `join` source e' else fatal 275 "assembleF"
+         ics  = [ if target e <==> source e' then target e `join` source e' else
+                  fatal 332 ("within ics there is an illegal type for e="++show e++" and e'="++show e'++".")
                 | (e,e')<-zip (init es) (tail es)]
 
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic

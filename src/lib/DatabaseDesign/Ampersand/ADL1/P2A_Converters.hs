@@ -635,7 +635,7 @@ pExpr2aExpr contxt cast pexpr
                  else fatal 393 ("expression "++show x++" contains untypeable elements.")
    (xs ,[])   -> ( fatal 394 ("Illegal reference to expression '"++showADL pexpr++".")
                  , newcxe ("Ambiguous expression: "++showADL pexpr++"\nPossible types are: "++ show (map sign xs)++"."))
-   (_  ,errs) -> ( fatal 396 ("Illegal reference to expression '"++showADL pexpr++".")
+   (_  ,errs) -> ( fatal 396 ("Illegal reference to expression '"++showADL pexpr++".\nerrs: "++intercalate "\n      " errs)
                  , cxelist (map newcxe errs))
 
 -- | p2a for p_relations in a p_expression. Returns all (ERel arel) expressions matching the p_relation and AutoCast within a certain context.
@@ -790,18 +790,17 @@ infer contxt (PLrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else de
                         "\n  Possible types of "++showADL p_r++": "++ (show.nub) (map target rAlts)++"."
                       | null alts]
 infer contxt e@(PDif (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
-    where -- Step 1: infer contxt types of left hand side and right hand sides
-           terms     = [infer contxt p_e ac | p_e<-[p_l,p_r]]
+    where -- Step 1: infer types of left hand side and right hand sides
+           [(lAlts,_),(rAlts,_)] = [infer contxt p_e ac | p_e<-[p_l,p_r]]
           -- Step 2: find the most general type that is determined.
-           detS   = [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
-           detT   = [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
-           uc     = if (not.and) ([s<==>s'|s<-detS,s'<-detS] ++ [s<==>s'|s<-detT,s'<-detT]) --check whether join exists at all
-                    then NoCast
-                    else case (detS,detT) of
-                     (_:_,_:_) -> Cast (foldr1 join detS) (foldr1 join detT)
-                     (_:_, []) -> SourceCast (foldr1 join detS)
-                     ( [],_:_) -> TargetCast (foldr1 join detT)
-                     ( [], []) -> NoCast
+           possibles = [ (lAlt,rAlt) | lAlt<-lAlts, rAlt<-rAlts, source lAlt<==>source rAlt, target lAlt<==>target rAlt ]
+           possibleSources = (nub . map (foldr1 join) . eqClass (<==>) . map source . map fst) possibles
+           possibleTargets = (nub . map (foldr1 join) . eqClass (<==>) . map target . map snd) possibles
+           uc     = case (possibleSources,possibleTargets) of
+                     ([s],[t]) -> Cast s t
+                     ([s], _ ) -> SourceCast s
+                     ( _ ,[t]) -> TargetCast t
+                     ( _ , _ ) -> NoCast
           -- Step 3: redo inference with tightened types
            (lAlts',lMsgs)=infer contxt p_l uc
            (rAlts',rMsgs)=infer contxt p_r uc
@@ -848,7 +847,7 @@ inferUniIsc contxt pconstructor constructor p_rs  ac
     where -- Step 1: do inference on all subexpressions,-- example: e = hoofdplaats[Gerecht*Plaats]~\/neven[Plaats*Rechtbank]
           terms     = [infer contxt p_e ac | p_e<-p_rs]        -- example: terms = [[hoofdplaats[Gerecht*Plaats]~],[neven[Plaats*Rechtbank]]]
           -- Step 2: find the most generic type that is determined.
-          detS   = [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]
+          detS   = [s | (es,_)<-terms, [s]<-[nub (map source es)] ]
           detT   = [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]
           uc     = if (not.and) ([s<==>s'|s<-detS,s'<-detS] ++ [s<==>s'|s<-detT,s'<-detT])  --check whether join exists at all
                    then NoCast
@@ -911,17 +910,16 @@ inferEquImp :: (ShowADL a1, Eq a,Language l, ConceptStructure l, Identified l) =
                -> ([a], [String])
 inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
     where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps [Prel beslissing,Prel van,Prel jurisdictie],Prel bevoegd)
-           terms     = [infer contxt p_e ac | p_e<-[p_l,p_r]]                    -- example: [[beslissing[Zaak*Beslissing];van[Beslissing*Orgaan];jurisdictie[Orgaan*Rechtbank]],[bevoegd[Zaak*Gerecht]]]
+           [(lAlts,_),(rAlts,_)] = [infer contxt p_e ac | p_e<-[p_l,p_r]]                    -- example: [[beslissing[Zaak*Beslissing];van[Beslissing*Orgaan];jurisdictie[Orgaan*Rechtbank]],[bevoegd[Zaak*Gerecht]]]
           -- Step 2: find the most general type that is determined.
-           detS   = [s |SourceCast s<-ds] where ds = [detSrc es | (es,_)<-terms]  -- example: [Zaak,Zaak]
-           detT   = [t |TargetCast t<-ds] where ds = [detTrg es | (es,_)<-terms]  -- example: [Gerecht,Rechtbank]
-           uc     = if (not.and) ([s<==>s'|s<-detS,s'<-detS] ++ [s<==>s'|s<-detT,s'<-detT])
-                    then NoCast
-                    else case (detS,detT) of                                                -- example: Cast Zaak Gerecht
-                     (_:_,_:_) -> Cast (foldr1 join detS) (foldr1 join detT)  --check whether join exists at all
-                     (_:_, []) -> SourceCast (foldr1 join detS)
-                     ( [],_:_) -> TargetCast (foldr1 join detT)
-                     ( [], []) -> NoCast
+           possibles = [ (lAlt,rAlt) | lAlt<-lAlts, rAlt<-rAlts, source lAlt<==>source rAlt, target lAlt<==>target rAlt ]
+           possibleSources = (nub . map (foldr1 join) . eqClass (<==>) . map source . map fst) possibles
+           possibleTargets = (nub . map (foldr1 join) . eqClass (<==>) . map target . map snd) possibles
+           uc     = case (possibleSources,possibleTargets) of
+                     ([s],[t]) -> Cast s t
+                     ([s], _ ) -> SourceCast s
+                     ( _ ,[t]) -> TargetCast t
+                     ( _ , _ ) -> NoCast
           -- Step 3: redo inference with tightened types
            (lAlts',lMsgs)=infer contxt p_l uc
            (rAlts',rMsgs)=infer contxt p_r uc
@@ -929,10 +927,11 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
            alts = {- Possibly useful for debugging: 
                   if  "nodig" `elem` map name (p_mors p_l)  -- p_l==PTyp (Prel P_I) (P_Sign [PCpt "Bericht"])
                   then error (show (pconstructor (p_l,p_r))++
-                              "\nterms: "++show [es | (es,_)<-terms]++
-                              "\nlAlts': "++show lAlts'++
-                              "\nRAlts': "++show rAlts'++
-                              "\ndetS, detT, uc: "++show detS++"    "++show detT++"    "++show uc++
+                              "\nac="++show ac++
+                              "\npossibles: "++show possibles++
+                              "\npossibleSources: "++show possibleSources++
+                              "\npossibleTargets: "++show possibleTargets++
+                              "\nuc: "++show uc++
                               "\nalts: "++show (nub [EImp (l,r) |l<-lAlts',r<-rAlts',sign r <= sign l])) else -}
                   nub [constructor (l,r) |l<-lAlts',r<-rAlts',sign r <==> sign l]
           -- Step 5: compute messages
@@ -1103,13 +1102,13 @@ showCast _ = ""
 
 -- The following function can be used to determine how much of a set of alternative expression is already determined
 detSrc :: [Expression] -> AutoCast
-detSrc alts = case (alts, nub (map source alts)) of
-      ( _ ,[s])     -> SourceCast s                 -- if the alternatives have the same source, the type is source-determined.
-      _             -> NoCast                       -- in other cases the type is not yet determined.
+detSrc alts = case nub (map source alts) of
+      [s]     -> SourceCast s                 -- if the alternatives have the same source, the type is source-determined.
+      _       -> NoCast                       -- in other cases the type is not yet determined.
 detTrg :: [Expression] -> AutoCast
-detTrg alts = case (alts, nub (map target alts)) of
-      ( _ ,[t])     -> TargetCast t                 -- if the alternatives have the same target, the type is target-determined.
-      _             -> NoCast                       -- in other cases the type is not yet determined.
+detTrg alts = case nub (map target alts)) of
+      [t]     -> TargetCast t                 -- if the alternatives have the same target, the type is target-determined.
+      _       -> NoCast                       -- in other cases the type is not yet determined.
 
 -- The purpose of "typeable" is to know whether a type has to be provided from the environment (as in I, V, and Mp1), or the type can be enumerated from the content
 srcTypeable :: P_Expression -> Bool

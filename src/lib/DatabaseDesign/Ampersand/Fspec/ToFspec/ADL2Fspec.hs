@@ -420,15 +420,15 @@ while maintaining all invariants.
        srcA
         | null antss =
           fatal 514 $ "empty antecedent in shiftL (" ++ showADL r ++ ")"
-        | length (eqClass (<==>) [source (head ants) | ants <- antss]) > 1 =
+        | length (eqClass (<==>) [source (head ants) | ants <- antss]) > 1 =   -- make sure that foldr1 join [source (head ants) | ants <- antss] is defined...
           fatal 515 $ "shiftL (" ++ showADL r ++ ")\nin calculation of srcA\n" ++ show (eqClass (<==>) [source (head ants) | ants <- antss])
         | otherwise = foldr1 join [source (head ants) | ants <- antss]
        id' ass = if all null (take 1 ass ++ take 1 (reverse ass))
                  then fatal 474 "It is imperative that ass is not empty"
                  else [ERel (I c) ]
         where a = (source.head.head) ass
-              c = if not (a <==> b) then fatal 519 $ "shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b else
-                  a `join` b
+              c = if a <==> b then a `join` b else
+                  fatal 519 $ "shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b
               b = (target.last.last) ass
      -- It is imperative that both ass and css are not empty.
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
@@ -472,15 +472,14 @@ while maintaining all invariants.
        srcA 
         | null conss =
            fatal 554 $ "empty consequent in shiftR ("++showADL r++")"
-        | length (eqClass (<==>) [ source (head cons) | cons<-conss]) > 1 =
+        | length (eqClass (<==>) [ source (head cons) | cons<-conss]) > 1 =   -- make sure that foldr1 join [ source (head cons) | cons<-conss] is defined
            fatal 556 $ "shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass (<==>) [ source (head cons) | cons<-conss])
         | otherwise = foldr1 join [ source (head cons) | cons<-conss]
        id' css = if all null css then fatal 518 "It is imperative that css is not empty" else
                  [ERel (I c) ]
         where a = (source.head.head) css
-              c = if not (a <==> b)
-                  then fatal 561 $ "shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b ++ ". "
-                  else a `join` b
+              c = if a <==> b then a `join` b
+                  else fatal 561 $ "shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b ++ ". "
               b = (target.last.last) css
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
        move [] css = [([],css)]
@@ -651,6 +650,8 @@ while maintaining all invariants.
    genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1 motive
     where
       genPAcl deltaX tOp exprX motiv =
+        let err i str = fatal i ("genPAcl ("++showADL deltaX++") "++show tOp++str++
+                                 "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").") in
         case (tOp, exprX) of
           (_ ,  EFlp x)   -> genPAcl (flp deltaX) tOp x motiv
           (_ ,  EBrk x)   -> genPAcl deltaX tOp x motiv
@@ -658,12 +659,9 @@ while maintaining all invariants.
                              fatal 691 "TODO: implement narrowing."
           (_ ,  EUni [])  -> Blk motiv
           (_ ,  EIsc [])  -> Nop motiv
-          (_ ,  ECps [])  -> fatal 681 $ "genPAcl ("++showADL deltaX++") "++show tOp++" ECps [],\n"++
-                                        "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
-          (_ ,  ERad [])  -> fatal 683 $ "genPAcl ("++showADL deltaX++") "++show tOp++" ERad [],\n"++
-                                        "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
-          (_ ,  EPrd [])  -> fatal 697 $ "genPAcl ("++showADL deltaX++") "++show tOp++" EPrd [],\n"++
-                                        "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++")."
+          (_ ,  ECps [])  -> err 681 " ECps [],\n"
+          (_ ,  ERad [])  -> err 683 " ERad [],\n"
+          (_ ,  EPrd [])  -> err 697 " EPrd [],\n"
           (_ ,  EUni [t]) -> genPAcl deltaX tOp t motiv
           (_ ,  EIsc [t]) -> genPAcl deltaX tOp t motiv
           (_ ,  ECps [t]) -> genPAcl deltaX tOp t motiv
@@ -690,11 +688,12 @@ while maintaining all invariants.
                                             , Sel c (ECps ls) fLft motiv
                                             , Sel c (flp(ECps rs)) fRht motiv
                                             ] motiv
-                                | (ls,rs)<-chop ts
-                                , let c = source (ECps rs) `join` target (ECps ls)
-                                , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
-                                , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
-                                ] motiv
+                                 | (ls,rs)<-chop ts
+                                 , if source (ECps rs) <==> target (ECps ls) then True else err 690 " ECps ts,\n" -- ensure that 'join' on the following line may be called
+                                 , let c = source (ECps rs) `join` target (ECps ls)
+                                 , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
+                                 , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
+                                 ] motiv
 {- Problem: how to insert Delta into r;s
 This corresponds with:  genPAclause editAble Ins (ECps [r,s]) Delta motive
 Let us solve it mathematically,  and gradually transform via pseudo-code into Haskell code.
@@ -853,6 +852,7 @@ Sequence [ Assign d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                            , Sel c (disjNF (EIsc [ECps ls,flp(ECps rs)])) fRht motiv
                                            ] motiv
                                 | (ls,rs)<-chop ts
+                                , if source (ECps rs) <==> target (ECps ls) then True else err 855 " ECps ts,\n" -- ensure that 'join' on the following line may be called
                                 , let c = source (ECps rs) `join` target (ECps ls)
                                 , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
                                 , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
