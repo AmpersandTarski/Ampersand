@@ -87,7 +87,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
            Dutch   -> [Header (lev+2) [Str "Formele regels"]
                       ,Plain [Str "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."]]
            English -> [Header (lev+2) [Str "Formal rules"]
-                      ,Plain [Str "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of tracebility."]])
+                      ,Plain [Str "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."]])
      ++ [DefinitionList blocks | let blocks = map caRule     (invariants   pat), not(null blocks)]
 
   caRelation :: Declaration -> ([Inline], [[Block]])
