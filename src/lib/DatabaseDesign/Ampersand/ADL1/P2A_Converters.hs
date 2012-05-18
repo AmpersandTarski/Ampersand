@@ -1106,7 +1106,7 @@ detSrc alts = case nub (map source alts) of
       [s]     -> SourceCast s                 -- if the alternatives have the same source, the type is source-determined.
       _       -> NoCast                       -- in other cases the type is not yet determined.
 detTrg :: [Expression] -> AutoCast
-detTrg alts = case nub (map target alts)) of
+detTrg alts = case nub (map target alts) of
       [t]     -> TargetCast t                 -- if the alternatives have the same target, the type is target-determined.
       _       -> NoCast                       -- in other cases the type is not yet determined.
 
