@@ -158,20 +158,16 @@ instance ShowADL (String,Relation) where
 
 instance ShowADL (String,Interface) where
  showADL (role,ifc) = "ROLE "++role++" USES "++show (name ifc)
-
--- The declarations of the pattern are supplemented by all declarations needed to define the rules.
--- Thus, the resulting pattern is self-contained with respect to declarations.
+ 
 instance ShowADL Pattern where
  showADL pat
   = "PATTERN " ++ showstr (name pat) ++ "\n"
     ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
-    ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL ds         ) ++ "\n")
+    ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
     ++ (if null (conceptDefs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs pat)) ++ "\n")
     ++ (if null (ptkds pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptkds pat)) ++ "\n")
     ++ "ENDPATTERN"
-    where ds = ptdcs pat++[d | d@Sgn{}<-declarations pat `uni` nub [makeDeclaration r | r<-mors (ptrls pat) `uni` mors (ptkds pat)]
-                             , decusr d, d `notElem` ptdcs pat]
 
 instance ShowADL PairViewSegment where
  showADL (PairViewText str)         = "TXT " ++ show str
