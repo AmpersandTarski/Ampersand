@@ -150,6 +150,7 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Fspec.GenerateUML,
+                    DatabaseDesign.Ampersand.Fspec.Requierments,
                     DatabaseDesign.Ampersand.ADL1.TypeCheck
 
   if flag(library)
