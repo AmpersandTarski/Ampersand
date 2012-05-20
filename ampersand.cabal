@@ -150,8 +150,7 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Fspec.GenerateUML,
-                    DatabaseDesign.Ampersand.Fspec.Requierments,
-                    DatabaseDesign.Ampersand.ADL1.TypeCheck
+                    DatabaseDesign.Ampersand.Fspec.Requierments
 
   if flag(library)
     buildable:  True

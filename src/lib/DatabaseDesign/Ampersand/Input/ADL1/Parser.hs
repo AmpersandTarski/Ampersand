@@ -489,14 +489,14 @@ In practice, we have it a little different.
    pExpr  =  fEequ <$> pExp1  <*  pKey "="   <*>  pExp1   <|>
              fEimp <$> pExp1  <*  pKey "|-"  <*>  pExp1   <|>
              pExp1
-             where fEequ lExp rExp = Pequ (lExp, rExp)
-                   fEimp lExp rExp = Pimp (lExp, rExp)
+             where fEequ lExp rExp = Pequ lExp rExp
+                   fEimp lExp rExp = Pimp lExp rExp
 -- However elegant, this solution needs to be left-factored in order to get a performant parser.
 -}
    pExpr  :: Parser Token P_Expression
    pExpr  =  pExp1 <??> (f <$>  (pKey "=" <|> pKey "|-") <*> pExp1 )
-             where f "="  rExp lExp = Pequ (lExp, rExp)
-                   f _    rExp lExp = Pimp (lExp, rExp)
+             where f "="  rExp lExp = Pequ lExp rExp
+                   f _    rExp lExp = Pimp lExp rExp
              
 {- The union and intersect are parsed as lists. The obvious thing to do might be:
    pExp1  :: Parser Token P_Expression
@@ -525,13 +525,13 @@ and the grammar must be disambiguated in order to get a performant parser...
 -- The left factored version of difference:
    pExp2  :: Parser Token P_Expression
    pExp2   = pExp3 <??> (f <$> pKey "-" <*> pExp3)
-             where f _ rExp lExp = PDif (lExp, rExp)
+             where f _ rExp lExp = PDif lExp rExp
 
 -- The left factored version of right- and left residuals:
    pExp3  :: Parser Token P_Expression
    pExp3  =  pExp4 <??> (f <$>  (pKey "\\" <|> pKey "/") <*> pExp4 )
-             where f "\\" rExp lExp = PRrs (lExp, rExp)
-                   f _    rExp lExp = PLrs (lExp, rExp)
+             where f "\\" rExp lExp = PRrs lExp rExp
+                   f _    rExp lExp = PLrs lExp rExp
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
    pExp4  :: Parser Token P_Expression

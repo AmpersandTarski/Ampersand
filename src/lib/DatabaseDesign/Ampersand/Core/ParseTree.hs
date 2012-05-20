@@ -218,23 +218,23 @@ where
       _       -> OriginUnknown
    
    data P_Expression 
-      = Pequ (P_Expression,P_Expression)   -- ^ equivalence             =
-      | Pimp (P_Expression,P_Expression)   -- ^ implication             |-
-      | Pisc [P_Expression]                -- ^ intersection            /\
-      | PUni [P_Expression]                -- ^ union                   \/
-      | PDif (P_Expression,P_Expression)   -- ^ difference              -
-      | PLrs (P_Expression,P_Expression)   -- ^ left residual           /
-      | PRrs (P_Expression,P_Expression)   -- ^ right residual          \
-      | PCps [P_Expression]                -- ^ composition             ;
-      | PRad [P_Expression]                -- ^ relative addition       !
-      | PPrd [P_Expression]                -- ^ cartesian product       *
-      | PKl0 P_Expression                  -- ^ Rfx.Trn closure         *  (Kleene star)
-      | PKl1 P_Expression                  -- ^ Transitive closure      +  (Kleene plus)
-      | PFlp P_Expression                  -- ^ conversion (flip, wok)  ~
-      | PCpl P_Expression                  -- ^ Complement
-      | PBrk P_Expression                  -- ^ bracketed expression ( ... )
-      | PTyp P_Expression P_Sign           -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | Prel P_Relation                    -- ^ simple relation
+      = Pequ P_Expression P_Expression   -- ^ equivalence             =
+      | Pimp P_Expression P_Expression   -- ^ implication             |-
+      | Pisc [P_Expression]              -- ^ intersection            /\
+      | PUni [P_Expression]              -- ^ union                   \/
+      | PDif P_Expression P_Expression   -- ^ difference              -
+      | PLrs P_Expression P_Expression   -- ^ left residual           /
+      | PRrs P_Expression P_Expression   -- ^ right residual          \
+      | PCps [P_Expression]              -- ^ composition             ;
+      | PRad [P_Expression]              -- ^ relative addition       !
+      | PPrd [P_Expression]              -- ^ cartesian product       *
+      | PKl0 P_Expression                -- ^ Rfx.Trn closure         *  (Kleene star)
+      | PKl1 P_Expression                -- ^ Transitive closure      +  (Kleene plus)
+      | PFlp P_Expression                -- ^ conversion (flip, wok)  ~
+      | PCpl P_Expression                -- ^ Complement
+      | PBrk P_Expression                -- ^ bracketed expression ( ... )
+      | PTyp P_Expression P_Sign         -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
+      | Prel P_Relation                  -- ^ simple relation
       deriving (Eq, Show) -- deriving only for debugging purposes
 
    data SrcOrTgt = Src | Tgt deriving (Show, Eq)

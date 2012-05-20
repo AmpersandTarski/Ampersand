@@ -27,7 +27,6 @@ import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
-import DatabaseDesign.Ampersand.ADL1.TypeCheck
 import Data.Maybe
 import Data.List
 import Data.Char
@@ -590,13 +589,13 @@ disambiguate fSpec x
  where
    (expr,errs) = pExpr2aExpr fSpec{vrels=vrels fSpec++deltas} NoCast (f x)
    -- f transforms x to a P_Expression using full relation signatures
-   f (EEqu (l,r)) = Pequ (f l,f r)
-   f (EImp (l,r)) = Pimp (f l,f r)
+   f (EEqu (l,r)) = Pequ (f l) (f r)
+   f (EImp (l,r)) = Pimp (f l) (f r)
    f (EIsc es)    = Pisc (map f es)
    f (EUni es)    = PUni (map f es)
-   f (EDif (l,r)) = PDif (f l,f r)
-   f (ELrs (l,r)) = PLrs (f l,f r)
-   f (ERrs (l,r)) = PRrs (f l,f r)
+   f (EDif (l,r)) = PDif (f l) (f r)
+   f (ELrs (l,r)) = PLrs (f l) (f r)
+   f (ERrs (l,r)) = PRrs (f l) (f r)
    f (ECps es)    = PCps (map f es)
    f (ERad es)    = PRad (map f es)
    f (EPrd es)    = PPrd (map f es)
@@ -627,7 +626,7 @@ it removes some of the redundant ones i.e. (PTyp e sgn) for which the isolated e
 -}
 pExpr2aExpr :: (Language l, ConceptStructure l, Identified l) => l -> AutoCast -> P_Expression -> (Expression, CtxError)
 pExpr2aExpr contxt cast pexpr
- = case let ampRes = infer contxt pexpr cast in if cExperimental contxt then inferType contxt ampRes pexpr else ampRes of
+ = case let ampRes = infer contxt pexpr cast in {- if cExperimental contxt then inferType contxt ampRes pexpr else -} ampRes of
    ([] ,[])   -> ( fatal 389 ("Illegal reference to expression '"++showADL pexpr++".")
                  , newcxe ("Unknown type error in "++showADL pexpr++".")) --should not be possible
    ([x],[])   -> if isTypeable x
@@ -704,15 +703,15 @@ infer :: (Language l, ConceptStructure l, Identified l) => l
          -> ( [Expression], [TErr])   -- ^ all interpretations of e that are possible in this context AND
                                       --   the error messages. If there are error messages, the result may be undefined. If there are no error messages, there is precisely one interpretation, which is the result.
 
-infer contxt (Pequ (p_l,p_r)) ac = inferEquImp contxt Pequ EEqu (p_l,p_r) ac
-infer contxt (Pimp (p_l,p_r)) ac = inferEquImp contxt Pimp EImp (p_l,p_r) ac
-infer contxt (PUni p_rs) ac      = inferUniIsc contxt PUni EUni p_rs ac
-infer contxt (Pisc p_rs) ac      = inferUniIsc contxt Pisc EIsc p_rs ac
-infer contxt (PCps p_es) ac      = inferCpsRad contxt PCps ECps p_es ac
-infer contxt (PRad p_es) ac      = inferCpsRad contxt PRad ERad p_es ac   
-infer contxt (PPrd p_es) ac      = inferPrd    contxt p_es ac   
-infer contxt (Prel rel) ac       = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
-infer contxt (PTyp p_r psgn) _   = (alts, take 1 msgs)
+infer contxt (Pequ p_l p_r) ac = inferEquImp contxt Pequ EEqu (p_l,p_r) ac
+infer contxt (Pimp p_l p_r) ac = inferEquImp contxt Pimp EImp (p_l,p_r) ac
+infer contxt (PUni p_rs) ac    = inferUniIsc contxt PUni EUni p_rs ac
+infer contxt (Pisc p_rs) ac    = inferUniIsc contxt Pisc EIsc p_rs ac
+infer contxt (PCps p_es) ac    = inferCpsRad contxt PCps ECps p_es ac
+infer contxt (PRad p_es) ac    = inferCpsRad contxt PRad ERad p_es ac   
+infer contxt (PPrd p_es) ac    = inferPrd    contxt p_es ac   
+infer contxt (Prel rel) ac     = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
+infer contxt (PTyp p_r psgn) _ = (alts, take 1 msgs)
     where uc = pSign2aSign contxt psgn
           (candidates,messages) = infer contxt p_r (Cast (source uc)(target uc))
           alts = {- Possibly useful for debugging:
@@ -745,7 +744,7 @@ infer contxt (PKl0 r) ac      = (alts, if null deepMsgs then combMsgs else deepM
                         "\n  Possible types of "++showADL r++": "++ (show.nub) (map sign eAlts)++"."
                       | null alts]
 infer contxt (PKl1 r) ac      = ([EKl1 e |e<-alts], messages) where (alts,messages) = infer contxt r ac
-infer contxt (PRrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
+infer contxt (PRrs p_l p_r) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
     where -- Step 1: infer contxt types of left hand side and right hand sides
            lc = case ac of
               NoCast       -> NoCast
@@ -767,7 +766,7 @@ infer contxt (PRrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else de
                         "\n  Possible types of "++showADL p_l++": "++ (show.nub) (map source lAlts)++"."++
                         "\n  Possible types of "++showADL p_r++": "++ (show.nub) (map source rAlts)++"."
                       | null alts]
-infer contxt (PLrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
+infer contxt (PLrs p_l p_r) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
     where -- Step 1: infer contxt types of left hand side and right hand sides
            lc = case ac of
               NoCast       -> NoCast
@@ -789,7 +788,7 @@ infer contxt (PLrs (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else de
                         "\n  Possible types of "++showADL p_l++": "++ (show.nub) (map target lAlts)++"."++
                         "\n  Possible types of "++showADL p_r++": "++ (show.nub) (map target rAlts)++"."
                       | null alts]
-infer contxt e@(PDif (p_l,p_r)) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
+infer contxt e@(PDif p_l p_r) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
     where -- Step 1: infer types of left hand side and right hand sides
            [(lAlts,_),(rAlts,_)] = [infer contxt p_e ac | p_e<-[p_l,p_r]]
           -- Step 2: find the most general type that is determined.
@@ -903,13 +902,13 @@ inferUniIsc contxt pconstructor constructor p_rs  ac
 -- | the inference procedure for = and |-  (i.e. equivalence  and  implication/subset)
 inferEquImp :: (ShowADL a1, Eq a,Language l, ConceptStructure l, Identified l) =>
                l
-               -> ((P_Expression, P_Expression) -> a1)
+               -> (P_Expression ->  P_Expression -> a1)
                -> ((Expression, Expression) -> a)
                -> (P_Expression, P_Expression)
                -> AutoCast
                -> ([a], [String])
 inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
-    where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps [Prel beslissing,Prel van,Prel jurisdictie],Prel bevoegd)
+    where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps [Prel beslissing,Prel van,Prel jurisdictie]) (Prel bevoegd)
            [(lAlts,_),(rAlts,_)] = [infer contxt p_e ac | p_e<-[p_l,p_r]]                    -- example: [[beslissing[Zaak*Beslissing];van[Beslissing*Orgaan];jurisdictie[Orgaan*Rechtbank]],[bevoegd[Zaak*Gerecht]]]
           -- Step 2: find the most general type that is determined.
            possibles = [ (lAlt,rAlt) | lAlt<-lAlts, rAlt<-rAlts, source lAlt<==>source rAlt, target lAlt<==>target rAlt ]
@@ -926,7 +925,7 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
           -- Step 4: compute the viable alternatives 
            alts = {- Possibly useful for debugging: 
                   if  "nodig" `elem` map name (p_mors p_l)  -- p_l==PTyp (Prel P_I) (P_Sign [PCpt "Bericht"])
-                  then error (show (pconstructor (p_l,p_r))++
+                  then error (show (pconstructor p_l p_r)++
                               "\nac="++show ac++
                               "\npossibles: "++show possibles++
                               "\npossibleSources: "++show possibleSources++
@@ -936,11 +935,11 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
                   nub [constructor (l,r) |l<-lAlts',r<-rAlts',sign r <==> sign l]
           -- Step 5: compute messages
            deepMsgs = lMsgs++rMsgs
-           combMsgs = [ "Left and right types must be equal in: "++showADL (pconstructor (p_l,p_r))++"."++
+           combMsgs = [ "Left and right types must be equal in: "++showADL (pconstructor p_l p_r)++"."++
                         "\n  Possible types of "++showADL p_l++": "++ show (map sign lAlts')++"."++show rMsgs++
                         "\n  Possible types of "++showADL p_r++": "++ show (map sign rAlts')++"."
                       | null alts]++
-                      [ "expression "++showADL (pconstructor (p_l,p_r))++" cannot be typed."
+                      [ "expression "++showADL (pconstructor p_l p_r)++" cannot be typed."
                       | not (srcTypeable p_l)&&not (srcTypeable p_r) || not (trgTypeable p_r)&&not (trgTypeable p_l) ]
 
 -- | the inference procedure for ; and ! (i.e. composition and relational addition)
@@ -1112,13 +1111,13 @@ detTrg alts = case nub (map target alts) of
 
 -- The purpose of "typeable" is to know whether a type has to be provided from the environment (as in I, V, and Mp1), or the type can be enumerated from the content
 srcTypeable :: P_Expression -> Bool
-srcTypeable (Pequ (l,_))   = ls||rs where ls = srcTypeable l; rs = srcTypeable l
-srcTypeable (Pimp (l,_))   = ls||rs where ls = srcTypeable l; rs = srcTypeable l
+srcTypeable (Pequ l _)     = ls||rs where ls = srcTypeable l; rs = srcTypeable l
+srcTypeable (Pimp l _)     = ls||rs where ls = srcTypeable l; rs = srcTypeable l
 srcTypeable (PUni es)      = any srcTypeable es
 srcTypeable (Pisc es)      = any srcTypeable es
-srcTypeable (PDif (l,_))   = ls||rs where ls = srcTypeable l; rs = srcTypeable l
-srcTypeable (PLrs (l,_))   = srcTypeable l
-srcTypeable (PRrs (l,_))   = trgTypeable l
+srcTypeable (PDif l _)     = ls||rs where ls = srcTypeable l; rs = srcTypeable l
+srcTypeable (PLrs l _)     = srcTypeable l
+srcTypeable (PRrs l _)     = trgTypeable l
 srcTypeable (PRad [])      = False
 srcTypeable (PRad es)      = srcTypeable (head es)
 srcTypeable (PPrd [])      = False
@@ -1136,13 +1135,13 @@ srcTypeable (Prel _      ) = False
 
 
 trgTypeable :: P_Expression -> Bool
-trgTypeable (Pequ (_,r))   = lt||rt where lt = trgTypeable r; rt = trgTypeable r
-trgTypeable (Pimp (_,r))   = lt||rt where lt = trgTypeable r; rt = trgTypeable r
+trgTypeable (Pequ _ r)     = lt||rt where lt = trgTypeable r; rt = trgTypeable r
+trgTypeable (Pimp _ r)     = lt||rt where lt = trgTypeable r; rt = trgTypeable r
 trgTypeable (PUni es)      = any trgTypeable es                            
 trgTypeable (Pisc es)      = any trgTypeable es                            
-trgTypeable (PDif (_,r))   = lt||rt where lt = trgTypeable r; rt = trgTypeable r
-trgTypeable (PLrs (_,r))   = srcTypeable r
-trgTypeable (PRrs (_,r))   = trgTypeable r
+trgTypeable (PDif _ r)     = lt||rt where lt = trgTypeable r; rt = trgTypeable r
+trgTypeable (PLrs _ r)     = srcTypeable r
+trgTypeable (PRrs _ r)     = trgTypeable r
 trgTypeable (PRad [])      = False
 trgTypeable (PRad es)      = trgTypeable (last es)
 trgTypeable (PPrd [])      = False
@@ -1161,13 +1160,13 @@ trgTypeable (Prel _      ) = False
 {- for debugging only:
 p_mors :: P_Expression -> [P_Relation]
 p_mors expr = case expr of 
-       Pequ (e,e')  ->  p_mors e `uni` p_mors e'     -- rs  ^ equivalence              =
-       Pimp (e,e')  ->  p_mors e `uni` p_mors e'     -- rs  ^ implication              |-
+       Pequ e e'    ->  p_mors e `uni` p_mors e'     -- rs  ^ equivalence              =
+       Pimp e e'    ->  p_mors e `uni` p_mors e'     -- rs  ^ implication              |-
        Pisc es      ->  foldr uni [] (map p_mors es) -- bs  ^ intersection             /\
        PUni es      ->  foldr uni [] (map p_mors es) -- bs  ^ union                    \/
-       PDif (e,e')  ->  p_mors e `uni` p_mors e'     -- rs  ^ difference               -
-       PLrs (e,e')  ->  p_mors e `uni` p_mors e'     -- rs  ^ left residual            /
-       PRrs (e,e')  ->  p_mors e `uni` p_mors e'     -- rs  ^ right residual           \
+       PDif e e'    ->  p_mors e `uni` p_mors e'     -- rs  ^ difference               -
+       PLrs e e'    ->  p_mors e `uni` p_mors e'     -- rs  ^ left residual            /
+       PRrs e e'    ->  p_mors e `uni` p_mors e'     -- rs  ^ right residual           \
        PCps es      ->  foldr uni [] (map p_mors es) -- ts  ^ composition              ;
        PRad es      ->  foldr uni [] (map p_mors es) -- ts  ^ relative addition        !
        PRad es      ->  foldr uni [] (map p_mors es) -- ts  ^ cartesian product        *
