@@ -219,12 +219,10 @@ requirements opts fSpec
    ++[rule2req r | r <- vrules fSpec]
   where
     decl2req d = Req { reqId = name d
-                   --  , reqRef = "DeRef--TODO" --TODO 
                      , reqOrig = Right d
                      , reqPurposes = purposesDefinedIn fSpec (language opts) d
                      }
     rule2req r = Req { reqId = name r
-                   --  , reqRef = "DeRef--TODO" --TODO 
                      , reqOrig = Left r
                      , reqPurposes = purposesDefinedIn fSpec (language opts) r
                      }
