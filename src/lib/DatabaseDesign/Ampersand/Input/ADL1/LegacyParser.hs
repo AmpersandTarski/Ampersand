@@ -193,7 +193,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                         rulid _ = fatal 179 "rulid is expecting a file location."
                         hc _ (lbl,po) antc po' cons expl
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
-                                 , rr_exp  = Pimp(antc,cons)
+                                 , rr_exp  = Pimp antc cons
                                  , rr_fps  = rulepos (lbl,po) po'
                                  , rr_mean = meaning expl
                                  , rr_msg = []
@@ -202,7 +202,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                         kc isSg (lbl,po) cons po' antc = hc isSg (lbl,po) antc po' cons
                         dc _ (lbl,po) defd po' expr expl
                           = P_Ru { rr_nm   = if null lbl then rulid po' else lbl
-                                 , rr_exp  = Pequ (defd,expr)
+                                 , rr_exp  = Pequ defd expr
                                  , rr_fps  = rulepos (lbl,po) po'
                                  , rr_mean = meaning expl
                                  , rr_msg = []
