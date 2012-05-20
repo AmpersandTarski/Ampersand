@@ -342,15 +342,15 @@ instance ShowADL P_Expression where
     showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr)
      = showchar
       where
-       showchar (Pequ (l,r))          = showchar l++equi++showchar r
-       showchar (Pimp (l,r))          = showchar l++impl++showchar r
+       showchar (Pequ l r)            = showchar l++equi++showchar r
+       showchar (Pimp l r)            = showchar l++impl++showchar r
        showchar (Pisc [])             = "V"
        showchar (Pisc es)             = intercalate inter  [showchar e | e<-es]
        showchar (PUni [])             = "-V"
        showchar (PUni es)             = intercalate union' [showchar e | e<-es]
-       showchar (PDif (l,r))          = showchar l++diff ++showchar r
-       showchar (PLrs (l,r))          = showchar l++lresi++showchar r
-       showchar (PRrs (l,r))          = showchar l++rresi++showchar r
+       showchar (PDif l r)            = showchar l++diff ++showchar r
+       showchar (PLrs l r)            = showchar l++lresi++showchar r
+       showchar (PRrs l r)            = showchar l++rresi++showchar r
        showchar (PCps [])             = "I"
        showchar (PCps es)             = intercalate rMul [showchar e | e<-es]
        showchar (PRad [])             = "-I"
