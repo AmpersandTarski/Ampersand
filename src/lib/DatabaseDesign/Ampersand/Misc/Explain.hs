@@ -50,7 +50,9 @@ makePrefix format = ":"++show format++":"
 blocks2String :: PandocFormat -> Bool -> [Block] -> String
 blocks2String format writeprefix ec 
  = [c | c<-makePrefix format,writeprefix]
-   ++ unwords ( lines $ writer defaultWriterOptions (Pandoc (Meta [][][]) ec))
+   --you cannot unwords lines for all writers, because white lines have a meaning in LaTeX i.e. \par
+   --if your application of blocks2String may not have line breaks, then unwords lines there
+   ++ {- unwords -} ( {-lines $ -} writer defaultWriterOptions (Pandoc (Meta [][][]) ec))
    where writer = case format of
             Markdown  -> writeMarkdown
             ReST      -> writeRST
