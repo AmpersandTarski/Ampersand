@@ -596,9 +596,9 @@ disambiguate fSpec x
    f (EDif (l,r)) = PDif (f l) (f r)
    f (ELrs (l,r)) = PLrs (f l) (f r)
    f (ERrs (l,r)) = PRrs (f l) (f r)
-   f (ECps es)    = PCps (map f es)
-   f (ERad es)    = PRad (map f es)
-   f (EPrd es)    = PPrd (map f es)
+   f (ECps es)    = foldr1 PCps (map f es)
+   f (ERad es)    = foldr1 PRad (map f es)
+   f (EPrd es)    = foldr1 PPrd (map f es)
    f (EKl0 e)     = PKl0 (f e)
    f (EKl1 e)     = PKl1 (f e)
    f (EFlp e)     = PFlp (f e)
@@ -703,14 +703,26 @@ infer :: (Language l, ConceptStructure l, Identified l) => l
          -> ( [Expression], [TErr])   -- ^ all interpretations of e that are possible in this context AND
                                       --   the error messages. If there are error messages, the result may be undefined. If there are no error messages, there is precisely one interpretation, which is the result.
 
+infer contxt (Pid c) _         = ([ERel (I (pCpt2aCpt contxt c))], [])
+infer contxt (Pnid c) _        = ([ECpl (ERel (I (pCpt2aCpt contxt c)))], [])
+infer contxt Pnull ac
+ = (alts, ["The context has no concepts" |null alts])
+   where
+   alts = case ac of
+     NoCast       -> [ECpl (ERel (V (Sign a b))) |a<-minima(concs contxt),b<-minima(concs contxt)]
+     SourceCast s -> [ECpl (ERel (V (Sign s b))) |b<-minima(concs contxt)]
+     TargetCast t -> [ECpl (ERel (V (Sign a t))) |a<-minima(concs contxt)]
+     Cast s t     -> [ECpl (ERel (V (Sign s t))) ]
+infer contxt (Pfull a b) _     = ([ERel(V (Sign (pCpt2aCpt contxt a) (pCpt2aCpt contxt b)))], [])
+infer contxt (Prel rel) ac     = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
+infer contxt (Pflp rel) ac     = (map EFlp alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
 infer contxt (Pequ p_l p_r) ac = inferEquImp contxt Pequ EEqu (p_l,p_r) ac
 infer contxt (Pimp p_l p_r) ac = inferEquImp contxt Pimp EImp (p_l,p_r) ac
 infer contxt (PUni p_rs) ac    = inferUniIsc contxt PUni EUni p_rs ac
 infer contxt (Pisc p_rs) ac    = inferUniIsc contxt Pisc EIsc p_rs ac
-infer contxt (PCps p_es) ac    = inferCpsRad contxt PCps ECps p_es ac
-infer contxt (PRad p_es) ac    = inferCpsRad contxt PRad ERad p_es ac   
-infer contxt (PPrd p_es) ac    = inferPrd    contxt p_es ac   
-infer contxt (Prel rel) ac     = (nub alts, msgs) where (alts,msgs) = pRel2aExpr rel contxt ac
+infer contxt (PCps p_l p_r) ac = inferCpsRad contxt PCps ECps (p_l,p_r) ac
+infer contxt (PRad p_l p_r) ac = inferCpsRad contxt PRad ERad (p_l,p_r) ac
+infer contxt (PPrd p_l p_r) ac = inferPrd    contxt           (p_l,p_r) ac
 infer contxt (PTyp p_r psgn) _ = (alts, take 1 msgs)
     where uc = pSign2aSign contxt psgn
           (candidates,messages) = infer contxt p_r (Cast (source uc)(target uc))
@@ -908,7 +920,7 @@ inferEquImp :: (ShowADL a1, Eq a,Language l, ConceptStructure l, Identified l) =
                -> AutoCast
                -> ([a], [String])
 inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMsgs then combMsgs else deepMsgs)
-    where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps [Prel beslissing,Prel van,Prel jurisdictie]) (Prel bevoegd)
+    where -- Step 1: infer contxt types of left hand side and right hand sides   -- example: Pimp (PCps (Prel beslissing) (PCps (Prel van) (Prel jurisdictie))) (Prel bevoegd)
            [(lAlts,_),(rAlts,_)] = [infer contxt p_e ac | p_e<-[p_l,p_r]]                    -- example: [[beslissing[Zaak*Beslissing];van[Beslissing*Orgaan];jurisdictie[Orgaan*Rechtbank]],[bevoegd[Zaak*Gerecht]]]
           -- Step 2: find the most general type that is determined.
            possibles = [ (lAlt,rAlt) | lAlt<-lAlts, rAlt<-rAlts, source lAlt<==>source rAlt, target lAlt<==>target rAlt ]
@@ -945,16 +957,14 @@ inferEquImp contxt pconstructor constructor (p_l,p_r) ac = (alts, if null deepMs
 -- | the inference procedure for ; and ! (i.e. composition and relational addition)
 inferCpsRad :: (Show a,Language l, ConceptStructure l, Identified l) =>
                l                       -- ^ The context, from which the declarations and concepts are used.
-               -> ([P_Expression] -> a)        -- ^ The constructor, which is either PCps or Rad
+               -> (P_Expression -> P_Expression -> a)        -- ^ The constructor, which is either PCps or Rad
                -> ([Expression] -> Expression)
-               -> [P_Expression]
+               -> (P_Expression, P_Expression)
                -> AutoCast
                -> ([Expression], [TErr])
-inferCpsRad _      _            _          []    _  = fatal 469 "Type checking (PRad []) or (PCps []) should never occur."
-inferCpsRad contxt _            _          [p_e] ac = infer contxt p_e ac
-inferCpsRad contxt pconstructor constructor p_rs ac 
+inferCpsRad contxt pconstructor constructor (p_l,p_r) ac 
  | null solutions && null messages
-    = fatal 811 ("inferCpsRad: no solutions and no messages for " ++ show (pconstructor p_rs)
+    = fatal 811 ("inferCpsRad: no solutions and no messages for " ++ show (pconstructor p_l p_r)
                  ++"\nac          = "++show ac 
                  ++"\ncastVector  = "++show castVector 
                  ++"\nterms       = "++show terms      
@@ -972,11 +982,11 @@ inferCpsRad contxt pconstructor constructor p_rs ac
  | otherwise = (solutions,messages)
     where -- Step 1: do inference on all subexpressions  -- example: PCps [Prel in,Prel zaak]
           castVector= case ac of                                         -- example: castVector=[SourceCast Document,TargetCast Zaak]
-                       Cast s t     -> SourceCast s : [NoCast | _<-(init.tail) p_rs] ++ [TargetCast t]
-                       SourceCast s -> SourceCast s : [NoCast | _<-tail p_rs]
-                       TargetCast t -> [NoCast | _<-init p_rs] ++ [TargetCast t]
-                       NoCast       -> [NoCast | _<-p_rs]
-          terms     = [ infer contxt p_e ec | (p_e,ec)<-zip p_rs castVector ]   -- example: terms=[[in[Document*Dossier]],[zaak[Dossier*Zaak],zaak[Beslissing*Zaak]]]
+                       Cast s t     -> SourceCast s : [NoCast | _<-(init.tail) [p_l,p_r]] ++ [TargetCast t]
+                       SourceCast s -> SourceCast s : [NoCast | _<-tail [p_l,p_r]]
+                       TargetCast t -> [NoCast | _<-init [p_l,p_r]] ++ [TargetCast t]
+                       NoCast       -> [NoCast | _<-[p_l,p_r]]
+          terms     = [ infer contxt p_e ec | (p_e,ec)<-zip [p_l,p_r] castVector ]   -- example: terms=[[in[Document*Dossier]],[zaak[Dossier*Zaak],zaak[Beslissing*Zaak]]]
           -- Step 2: determine the intermediate types, if determined
           inter                                                          -- example: inter=[[Dossier]]
            = [ case (detTrg lAlts, detSrc rAlts) of
@@ -1002,7 +1012,7 @@ inferCpsRad contxt pconstructor constructor p_rs ac
                 ( _ ,  _ ) -> NoCast      
              | (ls,rs)<-zip (init inter') (tail inter') ]
           -- Step 4: redo inference on all subexpressions
-          terms'    = [ infer contxt p_e ec | (p_e,ec)<-zip p_rs castVector' ]  -- example: terms'=[[in[Document*Dossier]],[zaak[Dossier*Zaak]]]
+          terms'    = [ infer contxt p_e ec | (p_e,ec)<-zip [p_l,p_r] castVector' ]  -- example: terms'=[[in[Document*Dossier]],[zaak[Dossier*Zaak]]]
           -- Step 5: combine all possibilities                           -- example: combs=[([in[Document*Dossier],zaak[Dossier*Zaak]],[])]
           combs     = sort' (not.null.snd)                     -- The alternatives without errors will be up front
                       [ (rs,makeMessages rs)
@@ -1015,9 +1025,9 @@ inferCpsRad contxt pconstructor constructor p_rs ac
                       ]
           -- Step 6: determine solutions                       --  example: solutions=[in[Document*Dossier];zaak[Dossier*Zaak]]
           solutions = {- Possibly useful for debugging:
-                      case (p_rs, ac) of
+                      case ([p_l,p_r], ac) of
                        ( [_, PFlp (Prel (P_Rel "type" _)) , _] , _ ) ->
-                           error (show (pconstructor p_rs)++
+                           error (show (pconstructor (p_l,p_r))++
                                   "\ncastVector="++show castVector++
                                   "\nterms="++show [es | (es,_)<-terms]++
                                   "\ninter="++show inter++
@@ -1030,8 +1040,8 @@ inferCpsRad contxt pconstructor constructor p_rs ac
           -- Step 7: compute messages
           deepMsgs  = [m | (_,msgs)<-terms', m<-msgs]  -- messages from within the terms'
           combMsgs  = [ms | (_,ms)<-combs, not (null ms)]      -- messages from combinations that are wrong (i.e. that have messages)
-          interMsgs = [ "The type between "++show (pconstructor lft)++" and "++show (pconstructor rht)++"is ambiguous,\nbecause it may be one of "++show is
-                      | (is,(lft,rht))<-zip inter (splits p_rs), length is>1]   -- example: splits [1,2,3,4] = [([1],[2,3,4]),([1,2],[3,4]),([1,2,3],[4])]
+          interMsgs = [ "The type between "++show p_l++" and "++show p_r++"is ambiguous,\nbecause it may be one of "++show is
+                      | is<-inter, length is>1]   -- example: splits [1,2,3,4] = [([1],[2,3,4]),([1,2],[3,4]),([1,2,3],[4])]
              where
                -- | 'splits' makes pairs of a list of things. Example : splits [1,2,3,4,5] = [([1],[2,3,4,5]),([1,2],[3,4,5]),([1,2,3],[4,5]),([1,2,3,4],[5])]
                splits :: [a] -> [([a], [a])]
@@ -1048,17 +1058,15 @@ inferCpsRad contxt pconstructor constructor p_rs ac
            = [ "incomparable types between "++showADL l++showCast typ++" and "++showADL r++showCast typ++":\n   "++showADL (target l)++" does not match "++showADL (source r)
              | (l,r,typ) <- zip3 (init rs) (tail rs) castVector', not (target l <==> source r)]
 
-inferPrd :: (Language l, ConceptStructure l, Identified l) => l -> [P_Expression] -> AutoCast -> ([Expression], [TErr])
-inferPrd _      []    _  = fatal 469 "Type checking (PPrd []) should never occur."
-inferPrd contxt [p_e] ac = infer contxt p_e ac
-inferPrd contxt p_rs  ac = (solutions,messages)
-    where -- Step 1: do inference on all subexpressions  -- example: PCps [Prel in,Prel zaak]
+inferPrd :: (Language l, ConceptStructure l, Identified l) => l -> (P_Expression, P_Expression) -> AutoCast -> ([Expression], [TErr])
+inferPrd contxt (p_l,p_r) ac = (solutions,messages)
+    where -- Step 1: do inference on all subexpressions
           castVector= case ac of                                         -- example: castVector=[SourceCast Document,TargetCast Zaak]
-                       Cast s t     -> SourceCast s : [NoCast | _<-(init.tail) p_rs] ++ [TargetCast t]
-                       SourceCast s -> SourceCast s : [NoCast | _<-tail p_rs]
-                       TargetCast t -> [NoCast | _<-init p_rs] ++ [TargetCast t]
-                       NoCast       -> [NoCast | _<-p_rs]
-          terms     = [ infer contxt p_e ec | (p_e,ec)<-zip p_rs castVector ]   -- example: terms=[[in[Document*Dossier]],[zaak[Dossier*Zaak],zaak[Beslissing*Zaak]]]
+                       Cast s t     -> SourceCast s : [NoCast | _<-(init.tail) [p_l,p_r]] ++ [TargetCast t]
+                       SourceCast s -> SourceCast s : [NoCast | _<-tail [p_l,p_r]]
+                       TargetCast t -> [NoCast | _<-init [p_l,p_r]] ++ [TargetCast t]
+                       NoCast       -> [NoCast | _<-[p_l,p_r]]
+          terms     = [ infer contxt p_e ec | (p_e,ec)<-zip [p_l,p_r] castVector ]   -- example: terms=[[in[Document*Dossier]],[zaak[Dossier*Zaak],zaak[Beslissing*Zaak]]]
           -- Step 2: determine the intermediate types, if determined
           inter                                                          -- example: inter=[[Dossier]]
            = [ case (detTrg lAlts, detSrc rAlts) of
@@ -1084,7 +1092,7 @@ inferPrd contxt p_rs  ac = (solutions,messages)
                 ( _ ,  _ ) -> NoCast      
              | (ls,rs)<-zip (init inter') (tail inter') ]
           -- Step 4: redo inference on all subexpressions
-          terms'    = [ infer contxt p_e ec | (p_e,ec)<-zip p_rs castVector' ]  -- example: terms'=[[in[Document*Dossier]],[zaak[Dossier*Zaak]]]
+          terms'    = [ infer contxt p_e ec | (p_e,ec)<-zip [p_l,p_r] castVector' ]  -- example: terms'=[[in[Document*Dossier]],[zaak[Dossier*Zaak]]]
           -- Step 5: combine all possibilities                           -- example: combs=[([in[Document*Dossier],zaak[Dossier*Zaak]],[])]
           combs     = [ rs
                       | rs<-combinations [es | (es,_)<-[head terms', last  terms']] -- example: combinations [[1,2,3],[10,20],[4]] = [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
@@ -1118,12 +1126,9 @@ srcTypeable (Pisc es)      = any srcTypeable es
 srcTypeable (PDif l _)     = ls||rs where ls = srcTypeable l; rs = srcTypeable l
 srcTypeable (PLrs l _)     = srcTypeable l
 srcTypeable (PRrs l _)     = trgTypeable l
-srcTypeable (PRad [])      = False
-srcTypeable (PRad es)      = srcTypeable (head es)
-srcTypeable (PPrd [])      = False
-srcTypeable (PPrd es)      = srcTypeable (head es)
-srcTypeable (PCps [])      = False
-srcTypeable (PCps es)      = srcTypeable (head es)
+srcTypeable (PRad l _)     = srcTypeable l
+srcTypeable (PPrd l _)     = srcTypeable l
+srcTypeable (PCps l _)     = srcTypeable l
 srcTypeable (PKl0 e)       = srcTypeable e
 srcTypeable (PKl1 e)       = srcTypeable e
 srcTypeable (PFlp e)       = trgTypeable e
@@ -1142,12 +1147,9 @@ trgTypeable (Pisc es)      = any trgTypeable es
 trgTypeable (PDif _ r)     = lt||rt where lt = trgTypeable r; rt = trgTypeable r
 trgTypeable (PLrs _ r)     = srcTypeable r
 trgTypeable (PRrs _ r)     = trgTypeable r
-trgTypeable (PRad [])      = False
-trgTypeable (PRad es)      = trgTypeable (last es)
-trgTypeable (PPrd [])      = False
-trgTypeable (PPrd es)      = trgTypeable (last es)
-trgTypeable (PCps [])      = False
-trgTypeable (PCps es)      = trgTypeable (last es)
+trgTypeable (PCps _ r)     = trgTypeable r
+trgTypeable (PRad _ r)     = trgTypeable r
+trgTypeable (PPrd _ r)     = trgTypeable r
 trgTypeable (PKl0 e)       = trgTypeable e
 trgTypeable (PKl1 e)       = trgTypeable e
 trgTypeable (PFlp e)       = srcTypeable e
@@ -1169,7 +1171,7 @@ p_mors expr = case expr of
        PRrs e e'    ->  p_mors e `uni` p_mors e'     -- rs  ^ right residual           \
        PCps es      ->  foldr uni [] (map p_mors es) -- ts  ^ composition              ;
        PRad es      ->  foldr uni [] (map p_mors es) -- ts  ^ relative addition        !
-       PRad es      ->  foldr uni [] (map p_mors es) -- ts  ^ cartesian product        *
+       PPrd es      ->  foldr uni [] (map p_mors es) -- ts  ^ cartesian product        *
        PKl0 e       ->  p_mors e                     -- e   ^ Rfx.Trn closure          *
        PKl1 e       ->  p_mors e                     -- e   ^ Transitive closure       +
        PFlp e       ->  p_mors e                     -- e   ^ conversion               ~

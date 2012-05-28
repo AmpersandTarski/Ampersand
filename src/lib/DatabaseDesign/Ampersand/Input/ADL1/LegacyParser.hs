@@ -240,17 +240,17 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pFactor          :: Parser Token P_Expression
    pFactor           = f <$> pList1Sep (pKey "!") pTermD
                        where f [t]     = t
-                             f ts      = PRad ts
+                             f (t:ts)  = PRad t (f ts)
 
    pTermD           :: Parser Token P_Expression
    pTermD            = f <$> pList1Sep (pKey ";") pTermP
                        where f [t]     = t
-                             f ts      = PCps ts
+                             f (t:ts)  = PCps t (f ts)
 
    pTermP           :: Parser Token P_Expression
    pTermP            = f <$> pList1Sep (pKey "*") pTerm
                        where f [t]     = t
-                             f ts      = PPrd ts
+                             f (t:ts)  = PPrd t (f ts)
 
    pTerm            :: Parser Token P_Expression
    pTerm             = tm <$> (preStr `opt` []) <*> pRelation <*> optional pSign <*> (postStr `opt` [])                            <|>

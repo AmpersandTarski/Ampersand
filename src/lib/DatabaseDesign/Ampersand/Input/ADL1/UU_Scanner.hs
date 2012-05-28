@@ -30,7 +30,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
    type Line = Int
    type Column = Int
 
-   data Pos = Pos{line:: !Line, column:: !Column} deriving Eq
+   data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord)
    type Filename   = String
 
    data Token = Tok { tp   :: TokenType

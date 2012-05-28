@@ -196,7 +196,7 @@ where
         | P_I
         | P_V
         | P_Mp1 { rel_1val :: String }          -- ^ the value of the one morphism
-        deriving Eq
+        deriving (Eq, Ord)
         
    instance Show P_Relation where
     showsPrec _ r = case r of
@@ -218,24 +218,33 @@ where
       _       -> OriginUnknown
    
    data P_Expression 
-      = Pequ P_Expression P_Expression   -- ^ equivalence             =
-      | Pimp P_Expression P_Expression   -- ^ implication             |-
-      | Pisc [P_Expression]              -- ^ intersection            /\
-      | PUni [P_Expression]              -- ^ union                   \/
-      | PDif P_Expression P_Expression   -- ^ difference              -
-      | PLrs P_Expression P_Expression   -- ^ left residual           /
-      | PRrs P_Expression P_Expression   -- ^ right residual          \
-      | PCps [P_Expression]              -- ^ composition             ;
-      | PRad [P_Expression]              -- ^ relative addition       !
-      | PPrd [P_Expression]              -- ^ cartesian product       *
-      | PKl0 P_Expression                -- ^ Rfx.Trn closure         *  (Kleene star)
-      | PKl1 P_Expression                -- ^ Transitive closure      +  (Kleene plus)
-      | PFlp P_Expression                -- ^ conversion (flip, wok)  ~
-      | PCpl P_Expression                -- ^ Complement
-      | PBrk P_Expression                -- ^ bracketed expression ( ... )
-      | PTyp P_Expression P_Sign         -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | Prel P_Relation                  -- ^ simple relation
-      deriving (Eq, Show) -- deriving only for debugging purposes
+      = Pid  P_Concept                  -- ^ identity element restricted to a type; This must be the first in the data declaration
+                                        --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
+                                        --   to know whether an eqClass represents a concept, we only look at its witness
+                                        --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
+      | Pnid P_Concept                  -- ^ unidentity element restricted to a type; the dual of Pid
+      | Pnull                           -- ^ the empty relation
+      | Pfull P_Concept P_Concept       -- ^ the complete relation, restricted to a type
+      | Prel P_Relation                 -- ^ we expect expressions in flip-normal form
+      | Pflp P_Relation                 -- ^ flip / relational inverse
+      | Pequ P_Expression P_Expression  -- ^ equivalence             =
+      | Pimp P_Expression P_Expression  -- ^ implication             |-
+      | Pisc [P_Expression]             -- ^ intersection            /\
+      | PUni [P_Expression]             -- ^ union                   \/
+      | PDif P_Expression P_Expression  -- ^ difference              -
+      | PLrs P_Expression P_Expression  -- ^ left residual           /
+      | PRrs P_Expression P_Expression  -- ^ right residual          \
+      | PCps P_Expression P_Expression  -- ^ composition             ;
+      | PRad P_Expression P_Expression  -- ^ relative addition       !
+      | PPrd P_Expression P_Expression  -- ^ cartesian product       *
+      | PKl0 P_Expression               -- ^ Rfx.Trn closure         *  (Kleene star)
+      | PKl1 P_Expression               -- ^ Transitive closure      +  (Kleene plus)
+      | PFlp P_Expression               -- ^ conversion (flip, wok)  ~
+      | PCpl P_Expression               -- ^ Complement
+      | PBrk P_Expression               -- ^ bracketed expression ( ... )
+      | PTyp P_Expression P_Sign        -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
+      deriving (Eq, Ord, Show) -- deriving Show only for debugging purposes
+                               -- deriving Ord for the purpose of getting Pid up front when sorting P_Expressions.
 
    data SrcOrTgt = Src | Tgt deriving (Show, Eq)
 
@@ -372,6 +381,7 @@ where
 
 
    data P_Sign = P_Sign {psign :: [P_Concept] }  -- will contain no more than two elements
+                 deriving Ord
 
    instance Eq P_Sign  where
      P_Sign [] == P_Sign _  = fatal 122 "Equality on P_Sign requires defined types."
