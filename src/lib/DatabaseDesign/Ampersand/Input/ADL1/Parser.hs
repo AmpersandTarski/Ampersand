@@ -495,8 +495,8 @@ In practice, we have it a little different.
 -}
    pExpr  :: Parser Token P_Expression
    pExpr  =  pExp1 <??> (f <$>  (pKey "=" <|> pKey "|-") <*> pExp1 )
-             where f "="  rExp lExp = Pequ lExp rExp
-                   f _    rExp lExp = Pimp lExp rExp
+             where f "=" rExp lExp = Pequ lExp rExp
+                   f _   rExp lExp = Pimp lExp rExp
              
 {- The union and intersect are parsed as lists. The obvious thing to do might be:
    pExp1  :: Parser Token P_Expression
@@ -535,17 +535,12 @@ and the grammar must be disambiguated in order to get a performant parser...
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
    pExp4  :: Parser Token P_Expression
-   pExp4   = f <$> pExp5 <*> (pLrad <|> pLcps <|> pLprd)
-             where f x (PCps []) = x
-                   f x (PRad []) = x
-                   f x (PPrd []) = x
-                   f x (PCps xs) = PCps (x:xs)
-                   f x (PRad xs) = PRad (x:xs)
-                   f x (PPrd xs) = PPrd (x:xs)
-                   f _ _ = fatal 301 "PRad PCps expected"
-                   pLrad = PRad <$> pList1 (pKey "!" *> pExp5)
-                   pLcps = PCps <$> pList1 (pKey ";" *> pExp5)
-                   pLprd = PPrd <$> pList  (pKey "*" *> pExp5)
+   pExp4   = f <$> pExp5 <*> (pLcps <|> pLrad <|> pLprd)
+             where f x (_, []) = x
+                   f x (constructor, t:ts) = constructor x (f t (constructor, ts))
+                   pLcps = g <$> pList1 (pKey ";" *> pExp5) where g ts = (PCps,ts)
+                   pLrad = g <$> pList1 (pKey "!" *> pExp5) where g ts = (PRad,ts)
+                   pLprd = g <$> pList  (pKey "*" *> pExp5) where g ts = (PPrd,ts)
 
    pExp5  :: Parser Token P_Expression
    pExp5  =  f <$> pList (pKey "-") <*> pExp6  <*> pList ( pKey "~" <|> pKey "*" <|> pKey "+" )
