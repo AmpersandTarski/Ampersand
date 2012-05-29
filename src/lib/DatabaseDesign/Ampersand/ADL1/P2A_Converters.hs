@@ -17,6 +17,8 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters
      , disambiguate
      )
 where
+import qualified Data.Graph as Graph
+import qualified Data.Tree as Tree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics
@@ -27,6 +29,7 @@ import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
+import Data.GraphViz hiding (addExtension, C)
 import Data.Maybe
 import Data.List
 import Data.Char
@@ -36,6 +39,279 @@ import Data.Char
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "P2A_Converters"
+
+unord :: (Type,Type) -> (Type,Type)
+unord (a@(TypExpr e), b@(TypExpr e')    )
+    | showADL e > showADL e' = (a,b)
+    | otherwise              = (b,a)
+
+data Type = TypExpr P_Expression deriving (Eq, Show)
+
+
+p_flp :: P_Expression -> P_Expression
+p_flp (Pid a)      = Pid a
+p_flp (Pnid a)     = Pnid a
+p_flp Pnull        = Pnull
+p_flp (Pfull a b)  = Pfull b a
+p_flp (Prel a)     = Pflp a
+p_flp (Pflp a)     = Prel a
+p_flp (Pequ a b)   = Pequ (p_flp a) (p_flp b)
+p_flp (Pimp a b)   = Pimp (p_flp a) (p_flp b)
+p_flp (Pisc as)    = Pisc (map p_flp as)
+p_flp (PUni as)    = PUni (map p_flp as)
+p_flp (PDif a b)   = PDif (p_flp a) (p_flp b)
+p_flp (PLrs a b)   = PRrs (p_flp b) (p_flp a)
+p_flp (PRrs a b)   = PLrs (p_flp b) (p_flp a)
+p_flp (PCps a b)   = PCps (p_flp b) (p_flp a)
+p_flp (PRad a b)   = PRad (p_flp b) (p_flp a)
+p_flp (PPrd a b)   = PPrd (p_flp b) (p_flp a)
+p_flp (PKl0 a)     = PKl0 (p_flp a)
+p_flp (PKl1 a)     = PKl1 (p_flp a)
+p_flp (PFlp a)     = p_flp (p_flp a) -- ensures that inner PFlp is removed too
+p_flp (PCpl a)     = PCpl (p_flp a)
+p_flp (PBrk a)     = PBrk (p_flp a)
+p_flp (PTyp a sgn) = PTyp (p_flp a) (let P_Sign cs=sgn in P_Sign (reverse cs))
+
+complement :: P_Expression -> P_Expression
+complement (Pid a)      = Pnid a
+complement (Pnid a)     = Pid a
+complement Pnull        = PCpl Pnull
+complement (Pfull _ _)  = Pnull
+complement (Prel a)     = PCpl (Prel a)
+complement (Pflp a)     = PCpl (Pflp a)
+complement (Pequ a b)   = complement (Pisc [Pimp a b,Pimp b a])
+complement (Pimp a b)   = Pisc [a,complement b]
+complement (Pisc as)    = PUni (map complement as)
+complement (PUni as)    = Pisc (map complement as)
+complement (PDif a b)   = PUni [complement a, b]
+complement (PLrs a b)   = PCps (p_flp a) (complement b)
+complement (PRrs a b)   = PCps (complement a) (p_flp b)
+complement (PCps a b)   = PRad (complement b) (complement a)
+complement (PRad a b)   = PCps (complement b) (complement a)
+complement (PPrd a b)   = PPrd (complement b) (complement a)
+complement (PKl0 a)     = PCpl (PKl0 a)
+complement (PKl1 a)     = PCpl (PKl1 a)
+complement (PFlp a)     = p_flp (complement a) -- ensures that inner PFlp is removed too
+complement (PCpl a)     = a
+complement (PBrk a)     = PBrk (complement a)
+complement (PTyp a sgn) = PTyp (complement a) sgn
+
+typing :: [P_Expression] -> [(Type, Type)] -- subtypes (.. is subset of ..)
+typing exprs = stypes [] exprs []
+   where
+     stypes seen -- expressions that have been seen (info is in "derived") and need not be checked again
+            unseen -- expressions that are known to be relevant, but have not been seen yet
+            derived -- subset information already derived
+            = if null unseen then derived else
+              stypes newlyseen (newunseen>-newlyseen) (derived `uni` newlyderived)
+              where
+                newlyseen = seen `uni` unseen
+                (newlyderived,newunseen) = foldr (.+.) doNothing (map uType unseen)
+     uType   (Pid _)      = doNothing
+     uType   (Pnid _)     = doNothing
+     uType    Pnull       = doNothing
+     uType o@(Pfull s t)  = dom o.=.dom (Pid s) .+. cod o.=.cod (Pid t)
+     uType   (Prel _)     = doNothing
+     uType   (Pflp _)     = doNothing
+     uType   (Pequ a b)   = dom a.=.dom b .+. cod a.=.cod b
+     uType   (Pimp a b)   = uType (Pequ b (PUni [a,b]))
+     uType o@(Pisc as)    = foldr (.+.) doNothing [dom o.<.dom a .+.cod o.<.cod a| a<-as]
+     uType o@(PUni as)    = foldr (.+.) doNothing [dom a.<.dom o .+.cod a.<.cod o| a<-as]
+     uType o@(PDif a _)   = dom o.<.dom a .+. cod o.<.cod a
+     uType o@(PLrs a b)   = dom b.<.dom a .+. cod b.<.cod o
+     uType o@(PRrs a b)   = dom b.<.dom o .+. cod b.<.cod a
+     uType o@(PCps a@(Pid _) b) = dom o.<.dom b .+. dom o.<.dom a .+. cod o.<.cod b
+     uType o@(PCps a b) = dom o.<.dom a .+. cod o.<.cod b
+     uType o@(PRad a@(Pnid _) b) = dom b.<.dom o .+. dom a.<.dom o .+. cod b.<.cod o
+     uType o@(PRad a b)   = dom a.<.dom o .+. cod b.<.cod o
+     uType o@(PPrd a b)   = dom a.=.dom o .+. cod b.=.cod o
+     uType o@(PKl0 e)     = dom e.=.dom o .+. cod e.=.cod o
+     uType o@(PKl1 e)     = dom e.=.dom o .+. cod e.=.cod o
+     uType o@(PFlp e)     = cod e.=.dom o .+. dom e.=.cod o
+     uType o@(PCpl a)     = let o'=complement a in dom o.=.dom o'.+. cod o.=.cod o'
+     uType   (PBrk e)     = uType e
+     uType   (PTyp e sgn) = let P_Sign cs=sgn; s=head cs; t=last cs; v=Pfull s t in
+                            dom e.<.dom v .+. cod e.<.cod v
+     doNothing = ([],[])
+     infixl 2 .+.   -- concatenate two lists of types
+     infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
+     infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
+     (.<.) a b = ([(fst a,fst b)],snd a `uni` snd b) -- a tuple meaning that a is a subset of b, and both a and b should be checked for subexpressions
+     (.=.) a b = ([(fst a,fst b),(fst b,fst a)],snd a `uni` snd b) -- a tuple meaning that a is a subset of b and b is a subset of a (so a==b), and both a and b should be checked for subexpressions
+     (.+.) a b = (fst a `uni` fst b, snd a `uni` snd b) -- take the union of the tuples previously described
+     dom x     = (TypExpr x,[x]) -- the domain of x, and make sure to check subexpressions of x as well
+     cod x     = dom (p_flp x)
+
+{-
+printTypes :: IO ()
+printTypes = foldr1 (>>) (map Prelude.putStrLn lnes) >> writeEqGraph eqDotGraph "eqGraph.png" >> writeStGraph stDotGraph "stGraph.png"
+    where
+      (typeErrors,conceptTree,typedRels,eqDotGraph,stDotGraph) = calcTypes sampleInput
+      lnes = ["Type errors:"]++typeErrors
+                    ++["","Concept tree:"]++conceptTree
+                    ++["","Relations:"]++typedRels
+-}
+
+calcTypes :: [P_Expression] -> ([String],[String],[String],DotGraph String,DotGraph String)
+calcTypes sentences = (typeErrors,conceptTree,typedRels,eqDotGraph,stDotGraph)
+   where
+{- The set st contains the essence of the type analysis. It contains tuples (t,t'),
+   each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
+    st :: [(Type, Type)]
+    st = typing sentences
+    eq :: [(Type, Type)]
+    eq = nub (map unord (map swap st `isc` st)) where swap (a,b) = (b,a)
+{- For some reason, the nodes of graphs are Int. (module Graph defines Vertex :: Int)
+   That is why Int are added to the graphs. -}
+    eqVerts :: [(Int,Type)]
+    eqVerts
+     = zip [0..] (nub (map fst eq `uni` map snd eq))
+    stVerts :: [(Int,Type)]
+    stVerts
+     = zip [0..] (map getEqClass (nub (map fst st ++ map snd st ++ map (\x -> snd (fst x)) eqClasses)))
+    eqGraph    :: Graph.Graph
+    eqGraph    = makegraph eqVerts eq
+    stGraph    :: Graph.Graph
+    stGraph    = makegraph stVerts [(getEqClass x,getEqClass y)| (x,y)<-st]
+    eqClasses
+     = forestToClasses eqVerts $ Graph.components eqGraph
+    getEqClass:: Type -> Type
+    getEqClass vert = head ([a | ((_,a),as)<-eqClasses, vert `elem` as]++[vert])
+    stClasses
+     = forestToClasses stVerts $ Graph.scc stGraph
+    makegraph :: [(Graph.Vertex, Type)] -> [(Type, Type)] -> Graph.Graph
+    makegraph verts tuples
+     = Graph.buildG (0,length verts - 1) 
+         [(i',j) | (k,l)<-tuples,(i',k')<-verts,k==k',(j,l')<-verts,l==l']
+    forestToClasses :: [(Int,Type)]       -- The vertices
+                    -> [Tree.Tree Int]    -- the trees in which to search 
+                    -> [((Int, Type), [Type])]
+    forestToClasses verts forest
+     = map (\xs->( verts !! (foldr1 min xs)
+                 , nub [snd (verts !! x) | x<-xs] ))
+{- was:
+     = map (\xs->(verts !! (foldr1 min xs)
+                 , Set.fromList $ map (\x->(snd (verts !! x))) xs))
+-}
+        $ map Tree.flatten forest
+        where
+         min x y   | x <= y      = x
+                   | otherwise   = y
+    -- type errors come in three kinds:
+    -- 1. Two named types are equal.
+    --    This is usually unintended: user should give equal types equal names.
+    -- 2. The type of a relation cannot be determined.
+    --    This means that there is no named type in which it is contained.
+    -- 3. The type of a term has no name??
+    --    I don't know if these can be considered as type-errors
+    --    perhaps if this type is too high up, or too low under
+    typeErrors
+     = [ "1. These nodes are trivially equal: " ++ intercalate ", " (map show concepts)
+       | (_,as)<-eqClasses, let concepts = [c|TypExpr (Pid c) <- as], length concepts>1]
+        ++
+       [ "1. These nodes are derived to be equal: " ++ intercalate ", " (map show concepts)
+       | (_,as)<-stClasses, let concepts = [c|TypExpr (Pid c) <- as], length concepts>1]
+    conceptTree
+     = [show src ++ " ISA " ++ intercalate ", " trgs
+         | ((i',TypExpr (Pid src)),_) <- stClasses
+         , let trgs= [show tn | (_,TypExpr (Pid tn))<-(map ((!!) stVerts) $ Graph.reachable stGraph i')]
+         ]
+    typedRels
+     = [rel_nm rel++"[ "++srcnames++" * "++trgnames++" ]"
+       | rel <- relations sentences
+       , let srcnames = nametree (Prel rel)
+       , let trgnames = nametree (Pflp rel)]
+    nametree :: P_Expression -> String
+    nametree e
+     = wrisects [s | Just s <- map getName $ Graph.dfs stGraph [i'|(i',tp)<-stVerts,tp==(getEqClass $ TypExpr e)]]
+    getName :: Tree.Tree Int -> Maybe String
+    getName a
+     = prefer (snd (stVerts !! Tree.rootLabel a)) ([n | Just n <- map getName $ Tree.subForest a])
+    prefer :: Type -> [String] -> Maybe String
+    prefer (TypExpr (Pid c)) _ = Just (show c)
+    prefer _ [] = Nothing
+    prefer _ as = Just $ wrisects as
+    wrisects [] = "??"
+    wrisects as = foldr1 (\x y-> x ++ " /\\ " ++ y) as
+{- For the purpose of drawing, the graphs are transformed to DotGraphs. Since we do not want to
+   see the internal integers in the result, we need a function showVertex that transforms a Vertex
+   into something that makes more sense. -}
+    eqDotGraph :: DotGraph String
+    eqDotGraph = toDotGraph (showVertex eqVerts) False eqGraph  -- False indicates: undirected graph
+    stDotGraph :: DotGraph String
+    stDotGraph = toDotGraph (showVertex stVerts) True  stGraph  -- True  indicates:   directed graph
+    showVertex :: [(Int,Type)] -> Int -> String
+    showVertex verts n = head ([show t | (i,t)<-verts, n==i]++["fatal: No Vertex!!"])
+
+relations :: [P_Expression] -> [P_Relation]
+relations x = (nub . concat . map erels) x
+   where 
+     erels (Pid _)     = []
+     erels (Pnid _)    = []
+     erels Pnull       = []
+     erels (Pfull _ _) = []
+     erels (Prel a)    = [a]
+     erels (Pflp a)    = [a]
+     erels (Pequ a b)  = erels a ++ erels b
+     erels (Pimp a b)  = erels a ++ erels b
+     erels (Pisc as)   = [r| a<-as, r<-erels a]
+     erels (PUni as)   = [r| a<-as, r<-erels a]
+     erels (PDif a b)  = erels a ++ erels b
+     erels (PLrs a b)  = erels a ++ erels b
+     erels (PRrs a b)  = erels a ++ erels b
+     erels (PCps a b)  = erels a ++ erels b
+     erels (PRad a b)  = erels a ++ erels b
+     erels (PPrd a b)  = erels a ++ erels b
+     erels (PKl0 a)    = erels a
+     erels (PKl1 a)    = erels a
+     erels (PFlp a)    = erels (p_flp a)
+     erels (PCpl a)    = erels a
+     erels (PBrk a)    = erels a
+     erels (PTyp a _)  = erels a
+
+
+--  The following is for drawing graphs.
+
+toDotGraph :: (Graph.Vertex->String) -- ^ a show-function for printing vertices.
+             -> Bool                   -- ^ True if it is a directed graph
+             -> Graph.Graph
+             -> DotGraph String        -- ^ The resulting DotGraph
+toDotGraph showVertex directed graph
+       = DotGraph { strictGraph = False
+                  , directedGraph = directed
+                  , graphID = Nothing
+                  , graphStatements 
+                        = DotStmts { attrStmts = []
+                                   , subGraphs = []
+                                   , nodeStmts = map constrNode (Graph.vertices graph)
+                                   , edgeStmts = map constrEdge (Graph.edges graph)
+                                   }
+                  }
+   where
+    constrNode :: Graph.Vertex -> DotNode String
+    constrNode v
+      = DotNode { nodeID = showVertex v
+                , nodeAttributes = []
+                }
+ 
+    constrEdge :: Graph.Edge -> DotEdge String
+    constrEdge (t, t')
+      = DotEdge { fromNode = showVertex t
+                , toNode   = showVertex t'
+                , edgeAttributes = []
+                }
+ 
+writeEqGraph :: DotGraph String -> String -> IO()
+writeEqGraph dotgraph filename
+    = do path<-runGraphvizCommand Neato dotgraph Png filename
+         Prelude.putStr (path++" written.")
+
+writeStGraph :: DotGraph String -> String -> IO()
+writeStGraph dotgraph filename
+    = do path<-runGraphvizCommand Dot dotgraph Png filename
+         Prelude.putStr (path++" written.")
+
+
 
 pCtx2aCtx :: P_Context -> (A_Context,CtxError)
 pCtx2aCtx pctx
