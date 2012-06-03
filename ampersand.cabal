@@ -15,7 +15,24 @@ copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
 tested-with:    GHC == 7.0.4
 
-data-files:     testData/fail/test_error_contexts_extloop.adl, 
+data-files:     
+                outputTemplates/default.context, 
+                outputTemplates/default.docbook, 
+                outputTemplates/default.html, 
+                outputTemplates/default.latex, 
+                outputTemplates/default.man, 
+                outputTemplates/default.markdown, 
+                outputTemplates/default.mediawiki, 
+                outputTemplates/default.opendocument, 
+                outputTemplates/default.org, 
+                outputTemplates/default.plain, 
+                outputTemplates/default.rst, 
+                outputTemplates/default.rtf, 
+                outputTemplates/default.s5, 
+                outputTemplates/default.slidy, 
+                outputTemplates/default.texinfo, 
+                outputTemplates/default.textile, 
+                testData/fail/test_error_contexts_extloop.adl, 
                 testData/fail/test_error_contexts_unique.adl, 
                 testData/fail/test_error_declarations_namingconventions.adl, 
                 testData/fail/test_error_keydefs.adl, 
@@ -135,7 +152,8 @@ library
                     DatabaseDesign.Ampersand.Output.PandocAux,
                     DatabaseDesign.Ampersand.Output.PredLogic,
                     DatabaseDesign.Ampersand.Output.Statistics,
-                    DatabaseDesign.Ampersand.Parsing
+                    DatabaseDesign.Ampersand.Parsing,
+                    Paths_ampersand
   other-modules:    
                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
