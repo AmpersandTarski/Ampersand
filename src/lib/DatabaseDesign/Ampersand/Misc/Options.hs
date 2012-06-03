@@ -232,7 +232,23 @@ getOptions =
           checkProtoOpts f = when (genPrototype f) (createDirectoryIfMissing True (dirPrototype f))
             
 data DisplayMode = Public | Hidden 
-data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
+data FspecFormat = FPandoc -- | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
+                 | Fasciidoc 
+                 | Fcontext
+                 | Fdocbook
+                 | Fhtml
+                 | FLatex
+                 | Fman
+                 | Fmarkdown
+                 | Fmediawiki
+                 | Fopendocument
+                 | Forg
+                 | Fplain
+                 | Frst
+                 | Frtf
+                 | Ftexinfo
+                 | Ftextile
+                deriving (Show, Eq)
 data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
@@ -379,11 +395,11 @@ xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
 fspecRenderOpt w opts = opts{ genFspec=True
                             , fspecFormat= case map toUpper w of
-                                                 ('R': _ ) -> FRtf
+                                                 ('R': _ ) -> Frtf
                                                  ('L': _ ) -> FLatex
-                                                 ('H': _ ) -> FHtml
+                                                 ('H': _ ) -> Fhtml
                                                  ('P': _ ) -> FPandoc
-                                                 ('O': _ ) -> FOpenDocument
+                                                 ('O': _ ) -> Fopendocument
                                                  _         -> fspecFormat opts
                                                 
                             }
