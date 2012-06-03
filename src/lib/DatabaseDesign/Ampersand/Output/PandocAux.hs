@@ -28,15 +28,15 @@ import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
 import System                 (system, ExitCode(ExitSuccess,ExitFailure))
 import System.IO              (hPutStrLn, stderr)
---import System.Process
-import System.FilePath        (combine,addExtension,replaceExtension)
+import Paths_ampersand
+import System.FilePath       -- (combine,addExtension,replaceExtension)
 import System.Directory
 import System.Info (os)
 import Data.List              (isInfixOf,intercalate)
 import Control.Monad
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Basics"
+fatal = fatalMsg "PandocAux"
 
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
@@ -48,38 +48,103 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
          outputFile = addExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
                                                  FPandoc       -> ".pandoc"
-                                                 FRtf          -> ".rtf"
+                                                 Frtf          -> ".rtf"
                                                  FLatex        -> ".tex"
-                                                 FHtml         -> ".html"
-                                                 FOpenDocument -> ".odt"
+                                                 Fhtml         -> ".html"
+                                                 Fopendocument -> ".odt"
                                        )
          makeOutput
-          =  case fspecFormat flags of
-              FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
-                            writeFile outputFile (writeNative defaultWriterOptions  thePandoc)
-                            verboseLn flags "... done."
-              FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
-                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
-                            verboseLn flags "... done."
-              FLatex  -> do verboseLn flags ("Generating to LaTeX: "++outputFile)
-                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
-                            verboseLn flags "... done."
-              FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
-                            writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
-                            verboseLn flags "... done."
-              FOpenDocument 
-                      -> do verboseLn flags ("Generating to Open Document Format: "++outputFile)
-                            writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
-                            verboseLn flags "... done."
+            = if (fspecFormat flags == FLatex && not (test flags)) -- temporary still support old LaTeX version 
+              then 
+               do verboseLn flags ("Generating to LaTeX: "++outputFile)
+                  writeFile outputFile (writeLaTeX (writerOptions(theOldTemplate flags)) thePandoc)
+                  verboseLn flags "... done." 
+              else 
+               do template <- readDefaultTemplate fSpecFormatString
+                  verboseLn flags ("Generating "++fSpecFormatString++" to : "++outputFile)
+                  writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
+                  verboseLn flags "... done."
+--          =  case fspecFormat flags of
+--              FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
+--                            writeFile outputFile (writeNative defaultWriterOptions  thePandoc)
+--                            verboseLn flags "... done."
+--              FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
+--                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
+--                            verboseLn flags "... done."
+--              FLatex  -> do verboseLn flags ("Generating to LaTeX: "++outputFile)
+--                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
+--                            verboseLn flags "... done."
+--              FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
+--                            writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
+--                            verboseLn flags "... done."
+--              FOpenDocument 
+--                      -> do verboseLn flags ("Generating to Open Document Format: "++outputFile)
+--                            writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
+--                            verboseLn flags "... done."
            where 
-              ourDefaultWriterOptions = case theme flags of
-                          ProofTheme -> defaultWriterOptions
-                                          { writerStandalone=True }
-                          _          -> defaultWriterOptions
-                                          { writerStandalone=True
-                                          , writerTableOfContents=True
-                                          , writerNumberSections=True
-                                          }
+              pandocWriter :: WriterOptions -> Pandoc -> String
+              pandocWriter =
+                case fspecFormat flags of
+                  FPandoc   -> writeNative 
+                  Fcontext  -> writeConTeXt
+                  Fdocbook  -> writeDocbook 
+                  Fhtml     -> writeHtmlString
+                  FLatex    -> writeLaTeX
+                  Fman      -> writeMan
+                  Fmarkdown -> writeMarkdown 
+                  Fmediawiki -> writeMediaWiki 
+                  Fopendocument -> writeOpenDocument
+                  Forg -> writeOrg
+                  Fplain -> writePlain
+                  Frst -> writeRST
+                  Frtf -> writeRTF
+                  Ftexinfo -> writeTexinfo
+                  Ftextile -> writeTextile
+              fSpecFormatString :: String
+              fSpecFormatString =
+                case fspecFormat flags of
+                  Fasciidoc -> "asciidoc"
+                  Fcontext  -> "context"
+                  Fdocbook  -> "docbook"
+                  Fhtml     -> "html"
+                  FLatex    -> "latex"
+                  Fman      -> "man"
+                  Fmarkdown -> "markdown"
+                  Fmediawiki -> "mediawiki"
+                  Fopendocument -> "opendocument"
+                  Forg -> "org"
+                  Fplain -> "plain"
+                  Frst -> "rst"
+                  Frtf -> "rtf"
+                  Ftexinfo -> "texinfo"
+                  Ftextile -> "textile"                  
+              readDefaultTemplate :: String -> IO(String)
+              readDefaultTemplate  str = 
+                do { dataDir <- getDataDir
+                   ; let fp = dataDir </> "outputTemplates" </> "default."++str
+                   ; exists <- doesFileExist fp
+                   ; (if exists 
+                      then do contents <- readFile fp
+                              return contents 
+                      else do fatal 108 ("File not found: "++fp++"\n" ++
+                                         "Is Ampersand installed in the right way?"
+                                        )
+                     )
+                   } 
+              writerOptions :: String -> WriterOptions
+              writerOptions template = case theme flags of
+                          ProofTheme -> ampersandDefaultWriterOptions 
+                                           { writerTableOfContents=False
+                                           , writerNumberSections=False
+                                           }
+                          _          -> ampersandDefaultWriterOptions
+                     where
+                       ampersandDefaultWriterOptions =
+                         defaultWriterOptions
+                            { writerStandalone=True
+                            , writerTableOfContents=True
+                            , writerNumberSections=True
+                            , writerTemplate=template}
          postProcessMonad :: IO()
          postProcessMonad = 
            case fspecFormat flags of   
@@ -143,8 +208,8 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
 -- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
 -- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
 -- Wellicht wordt e.e.a. daardoor simpeler.
-theTemplate :: Options -> String
-theTemplate flags 
+theOldTemplate :: Options -> String
+theOldTemplate flags 
   = case fspecFormat flags of
     FLatex ->  concat $
                [ "% This header is the default LaTeX template for generating documents with Ampersand.\n"
@@ -238,10 +303,6 @@ theTemplate flags
                , "\\usepackage[mathletters]{ucs}\n"
                , "\\usepackage[utf8x]{inputenc}\n"
                , "$endif$\n" -}
-               , "$if(lhs)$\n"
-               , "\\usepackage{listings}\n"
-               , "\\lstnewenvironment{code}{\\lstset{language=Haskell,basicstyle=\\small\\ttfamily}}{}\n"
-               , "$endif$\n"
                , "\\setlength{\\parindent}{0pt}\n"
                , "\\setlength{\\parskip}{6pt plus 2pt minus 1pt}\n"
                , "$if(verbatim-in-note)$\n"
@@ -309,7 +370,7 @@ theTemplate flags
                [ "$body$\n"
                , "\\end{document}\n"
                ]
-    FRtf ->    concat
+    Frtf ->    concat
                [ "$if(legacy-header)$\n"
                , "$legacy-header$\n"
                , "$else$\n"
@@ -341,9 +402,6 @@ theTemplate flags
                , "$endfor$\n"
                , "latex}\n"
                ]
-    FPandoc       -> fatal 320 "No template defined for Pandoc output"
-    FOpenDocument -> fatal 321 "No template defined for ODF output"
-    FHtml         -> fatal 322 "No template defined for HTML output"
  
 -----Linguistic goodies--------------------------------------
 
