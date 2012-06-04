@@ -47,17 +47,28 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
          outputFile = addExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
+                                                 Fasciidoc     -> ".txt"
+                                                 Fcontext      -> ".context"
+                                                 Fdocbook      -> ".docbook"
+                                                 Fman          -> ".man"
+                                                 Fmarkdown     -> ".md"
+                                                 Fmediawiki    -> ".mediawiki"
+                                                 Forg          -> ".org"
+                                                 Fplain        -> ".plain"
+                                                 Frst          -> ".rst"
                                                  FPandoc       -> ".pandoc"
                                                  Frtf          -> ".rtf"
                                                  FLatex        -> ".tex"
                                                  Fhtml         -> ".html"
                                                  Fopendocument -> ".odt"
+                                                 Ftexinfo      -> ".texinfo"
+                                                 Ftextile      -> ".textile"
                                        )
          makeOutput
             = if (fspecFormat flags == FLatex && not (test flags)) -- temporary still support old LaTeX version 
               then 
                do verboseLn flags ("Generating to LaTeX: "++outputFile)
-                  writeFile outputFile (writeLaTeX (writerOptions(theOldTemplate flags)) thePandoc)
+                  writeFile outputFile (writeLaTeX (writerOptions(theOldLatexTemplate flags)) thePandoc)
                   verboseLn flags "... done." 
               else 
                do template <- readDefaultTemplate fSpecFormatString
@@ -85,6 +96,7 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
               pandocWriter :: WriterOptions -> Pandoc -> String
               pandocWriter =
                 case fspecFormat flags of
+                  Fasciidoc -> fatal 99 "No current support for asciidoc" 
                   FPandoc   -> writeNative 
                   Fcontext  -> writeConTeXt
                   Fdocbook  -> writeDocbook 
@@ -103,6 +115,7 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
               fSpecFormatString :: String
               fSpecFormatString =
                 case fspecFormat flags of
+                  FPandoc   -> "pandoc"
                   Fasciidoc -> "asciidoc"
                   Fcontext  -> "context"
                   Fdocbook  -> "docbook"
@@ -208,10 +221,9 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
 -- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
 -- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
 -- Wellicht wordt e.e.a. daardoor simpeler.
-theOldTemplate :: Options -> String
-theOldTemplate flags 
-  = case fspecFormat flags of
-    FLatex ->  concat $
+theOldLatexTemplate :: Options -> String
+theOldLatexTemplate flags 
+  = concat $
                [ "% This header is the default LaTeX template for generating documents with Ampersand.\n"
                , "% It was generated with "++ampersandVersionStr++"\n"
                , "% You can modify this file to make it fit your needs. However, the required knowledge of \n"
@@ -369,38 +381,6 @@ theOldTemplate flags
                       ] ) ++
                [ "$body$\n"
                , "\\end{document}\n"
-               ]
-    Frtf ->    concat
-               [ "$if(legacy-header)$\n"
-               , "$legacy-header$\n"
-               , "$else$\n"
-               , "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 \\fswiss Helvetica;}{\\f1 Courier;}}\n"
-               , "{\\colortbl;\\red255\\green0\\blue0;\\red0\\green0\\blue255;}\n"
-               , "\\widowctrl\\hyphauto\n"
-               , "$endif$\n"
-               , "$for(header-includes)$\n"
-               , "$header-includes$\n"
-               , "$endfor$\n"
-               , "\n"
-               , "$if(title)$\n"
-               , "{\\pard \\qc \\f0 \\sa180 \\li0 \\fi0 \\b \\fs36 $title$\\par}\n"
-               , "$endif$\n"
-               , "$for(author)$\n"
-               , "$endfor$\n"
-               , "$if(date)$\n"
-               , "{\\pard \\qc \\f0 \\sa180 \\li0 \\fi0  $date$\\par}\n"
-               , "$endif$\n"
-               , "$if(spacer)$\n"
-               , "{\\pard \\ql \\f0 \\sa180 \\li0 \\fi0 \\par}\n"
-               , "$endif$\n"
-               , "$for(include-before)$\n"
-               , "$include-before$\n"
-               , "$endfor$\n"
-               , "$body$\n"
-               , "$for(include-after)$\n"
-               , "$include-after$\n"
-               , "$endfor$\n"
-               , "latex}\n"
                ]
  
 -----Linguistic goodies--------------------------------------
