@@ -232,23 +232,11 @@ getOptions =
           checkProtoOpts f = when (genPrototype f) (createDirectoryIfMissing True (dirPrototype f))
             
 data DisplayMode = Public | Hidden 
-data FspecFormat = FPandoc -- | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
-                 | Fasciidoc 
-                 | Fcontext
-                 | Fdocbook
-                 | Fhtml
-                 | FLatex
-                 | Fman
-                 | Fmarkdown
-                 | Fmediawiki
-                 | Fopendocument
-                 | Forg
-                 | Fplain
-                 | Frst
-                 | Frtf
-                 | Ftexinfo
-                 | Ftextile
-                deriving (Show, Eq)
+
+data FspecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
+allFspecFormats :: String
+allFspecFormats = show (map (tail . show) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument, Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile])
+
 data FileFormat = Adl1Format | Adl1PopFormat  deriving (Show, Eq) --file format that can be parsed to some b to populate some Populated a
 data DocTheme = DefaultTheme   -- Just the functional specification
               | ProofTheme     -- A document with type inference proofs
@@ -289,7 +277,7 @@ options = map pp
           , (Option []      ["log"]         (ReqArg logOpt "name")      ("log file name (name overwrites environment variable "
                                                                            ++ envlogName  ++ ")."), Hidden)
           , (Option []      ["import"]      (ReqArg importOpt "file")   "import this file as the population of the context.", Public)
-          , (Option []      ["fileformat"](ReqArg formatOpt "format")("format of import file (format="
+          , (Option []      ["fileformat"]  (ReqArg formatOpt "format")("format of import file (format="
                                                                            ++allFileFormats++")."), Public)
           , (Option []      ["namespace"]   (ReqArg namespaceOpt "ns")  "places the population in this namespace within the context.", Public)
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
@@ -395,16 +383,26 @@ xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
 fspecRenderOpt w opts = opts{ genFspec=True
                             , fspecFormat= case map toUpper w of
-                                                 ('R': _ ) -> Frtf
-                                                 ('L': _ ) -> FLatex
-                                                 ('H': _ ) -> Fhtml
-                                                 ('P': _ ) -> FPandoc
-                                                 ('O': _ ) -> Fopendocument
-                                                 _         -> fspecFormat opts
+                                  ('A': _ )         -> Fasciidoc
+                                  ('C': _ )         -> Fcontext
+                                  ('D': _ )         -> Fdocbook
+                                  ('H': _ )         -> Fhtml
+                                  ('L': _ )         -> FLatex
+                                  ('M':'A':'N': _ ) -> Fman
+                                  ('M':'A': _ )     -> Fmarkdown
+                                  ('M':'E': _ )     -> Fmediawiki
+                                  ('O':'P': _ )     -> Fopendocument
+                                  ('O':'R': _ )     -> Forg
+                                  ('P':'A': _ )     -> FPandoc
+                                  ('P':'L': _ )     -> Fplain
+                                  ('R':'S': _ )     -> Frst
+                                  ('R':'T': _ )     -> Frtf
+                                  ('T':'E':'X':'I': _ ) -> Ftexinfo
+                                  ('T':'E':'X':'T': _ ) -> Ftextile
+                                  _         -> fspecFormat opts
+
                                                 
                             }
-allFspecFormats :: String
-allFspecFormats                     = "Pandoc, Rtf, OpenDocument, Latex, Html"
 allFileFormats :: String
 allFileFormats                    = "ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)"
 noGraphicsOpt :: Options -> Options
