@@ -146,8 +146,8 @@ $endfor$
 \usepackage{breqn}
 \usepackage{colonequals}
 \usepackage[dutch]{babel}
-\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{definition}{Definitie}[section]
-\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{designrule}[definition]{Functionele eis}
+%\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{definition}{Definitie}[section]
+%\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{designrule}[definition]{Functionele eis}
 \def\id#1{\mbox{\em #1\/}}
 \newcommand{\marge}[1]{\marginpar{\begin{minipage}[t]{3cm}{\noindent\small\em #1}\end{minipage}}}
 \def\define#1{\label{dfn:#1}\index{#1}{\em #1}}
@@ -181,7 +181,7 @@ $endfor$
 % == Many options are available to customize the behaviour of the hyperref           ==
 % == package. See http://ctan.tug.org/tex-archive/info/lshort/english/lshort.pdf     ==
 % =====================================================================================
-\usepackage[pdftex,colorlinks=false]{hyperref}
+%\usepackage[pdftex,colorlinks=false]{hyperref}
 
 % ============Ampersand specific End=================
 

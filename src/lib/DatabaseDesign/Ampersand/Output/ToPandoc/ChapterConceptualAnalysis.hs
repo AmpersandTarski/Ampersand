@@ -62,7 +62,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
   caSection :: Pattern -> [Block]
   caSection pat
    =    -- new section to explain this pattern  
-        [Header (lev+1) [Str (name pat)]]   
+        labeledHeader (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat)
         -- The section starts with the reason why this pattern exists 
      ++ purposes2Blocks flags (purposesDefinedIn fSpec (language flags) pat)
         -- followed by a conceptual model for this pattern
@@ -77,17 +77,21 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
         -- now provide the text of this pattern.
      ++ (case language flags of
            Dutch   -> [Para [Str "De definities van concepten zijn te vinden in de index."]
-                      ,Header (lev+2) [Str "Gedeclareerde relaties"]
-                      ,Para [Str "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en een betekenis."]]
+                      ]++
+                      labeledHeader (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties"
+                      ++
+                      [Para [Str "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en een betekenis."]]
            English -> [Para [Str "The definitions of concepts can be found in the glossary."]
-                      ,Header (lev+2) [Str "Declared relations"]
-                      ,Para [Str "This section itemizes the declared relations with properties and a meaning."]])
+                      ]++
+                      labeledHeader (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations"
+                      ++
+                      [Para [Str "This section itemizes the declared relations with properties and a meaning."]])
      ++ [DefinitionList blocks | let blocks = map caRelation (declarations pat), not(null blocks)]
      ++ (case language flags of
-           Dutch   -> [Header (lev+2) [Str "Formele regels"]
-                      ,Plain [Str "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."]]
-           English -> [Header (lev+2) [Str "Formal rules"]
-                      ,Plain [Str "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."]])
+           Dutch   -> labeledHeader (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels"++
+                      [Plain [Str "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."]]
+           English -> labeledHeader (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules"++
+                      [Plain [Str "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."]])
      ++ [DefinitionList blocks | let blocks = map caRule     (invariants   pat), not(null blocks)]
 
   caRelation :: Declaration -> ([Inline], [[Block]])
@@ -161,30 +165,4 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
                ])
 
 
-  caSections :: [Pattern] -> [[Block]]
-  caSections pats = iterat pats 1 [] []
-   where
-    iterat :: [Pattern] -> Int -> [A_Concept] -> [Declaration] -> [[Block]]
-    iterat [] _ _ _ = []
-    iterat (pat:ps) i seenConcepts seenDeclarations
-     = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
-       ++ sctMotivation                       -- The section startss with the reason why this theme exists,
-                                              -- followed by a conceptual model for this theme
-       ++ ( case (genGraphics flags, language flags) of             -- announce the conceptual diagram
-                 (True,Dutch  ) -> [Para [Str "Figuur ", xrefReference (pict pat), Str " geeft een conceptueel diagram van dit thema."]
-                                   ,Plain (xrefFigure1 (pict pat))]          -- draw the conceptual diagram
-                 (True,English) -> [Para [Str "Figure ", xrefReference (pict pat), Str " shows a conceptual diagram of this theme."]
-                                   ,Plain (xrefFigure1 (pict pat))]          -- draw the conceptual diagram
-                 _              -> []
-          )                                   -- now provide the text of this theme.
-       ++ (if null blocks then [] else [DefinitionList blocks])
-       ):  iterat ps i'' seenCss seenDss
-       where
-         blocks  :: [([Inline], [[Block]])]
-         blocks = sctRules ++ sctSignals
-         sctMotivation
-          = purposes2Blocks flags purps
-            where purps = purposesDefinedIn fSpec (language flags) pat
-         (sctRules,   i',  seenCrs, seenDrs) = dpRule fSpec flags (invariants pat) i seenConcepts seenDeclarations
-         (sctSignals, i'', seenCss, seenDss) = dpRule fSpec flags (processRules pat) i' seenCrs seenDrs
 
