@@ -38,6 +38,27 @@ import Control.Monad
 fatal :: Int -> String -> a
 fatal = fatalMsg "PandocAux"
 
+
+-- | Default key-value pairs for use with the Pandoc template
+defaultWriterVariables :: Options -> [(String , String)]
+defaultWriterVariables flags
+  = [ ("title", case (language flags, diagnosisOnly flags) of
+                        (Dutch  , False) -> "Functionele Specificatie van "
+                        (English, False) -> "Functional Specification of "
+                        (Dutch  ,  True) -> "Diagnose van "
+                        (English,  True) -> "Diagnosis of " )
+ --   , ("mainfont",
+ --   , ("sansfont",
+ --   , ("monofont",
+ --   , ("mathfont",
+    , ("fontsize", "10pt,a4paper")
+    , ("lang"    , case language flags of
+                       Dutch   -> "dutch"
+                       English -> "english")
+    , ("documentclass","report")
+    ] ++
+    [ ("toc" , "True") | not (diagnosisOnly flags)]
+     
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
@@ -74,6 +95,8 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                do template <- readDefaultTemplate fSpecFormatString
                   verboseLn flags ("Generating "++fSpecFormatString++" to : "++outputFile)
                   writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
+                  verboseLn flags "Variables to set in the template:"
+                  verboseLn flags (intercalate "\n   " (map show (writerVariables (writerOptions template))))
                   verboseLn flags "... done."
 --          =  case fspecFormat flags of
 --              FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
@@ -157,7 +180,8 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                             { writerStandalone=True
                             , writerTableOfContents=True
                             , writerNumberSections=True
-                            , writerTemplate=template}
+                            , writerTemplate=template
+                            , writerVariables=defaultWriterVariables flags}
          postProcessMonad :: IO()
          postProcessMonad = 
            case fspecFormat flags of   
@@ -451,10 +475,10 @@ instance SymRef PlugInfo where
 --         We do not know yet how this relates to other formats like rtf.
 
 labeledHeader :: Int -> String -> String -> [Block]
-labeledHeader 0 lbl str =
-                 [Para [RawInline "latex" ("\\chapter{"++latexEscShw str++"}"), xrefLabel lbl]]
+--labeledHeader 0 lbl str =
+--                 [Para [RawInline "latex" ("\\chapter{"++latexEscShw str++"}"), xrefLabel lbl]]
 labeledHeader lev lbl str =
-                 Header lev [Str str]
+                 Header (lev+1) [Str str]
                  : [Para [xrefLabel lbl]]
  
 xrefLabel :: String -> Inline        -- uitbreidbaar voor andere rendering dan LaTeX

@@ -38,14 +38,7 @@ chpDataAnalysis lev fSpec flags
                        ]) ++
      daAssociations remainingRels ++
      [b | p<-entities, b<-daPlug p]
-{- The switchboard should probably not be in the chapter "Data analysis" 
-     ++ [Header (lev+1) [Str $ case language flags of
-                                 Dutch   ->  "Schakelpaneel"   
-                                 English ->  "Switchboard"
-                        ]]
-     ++ txtSwitchboard
--}
-   , [ classificationPicture | Just _<-[classification]] ++ [ classDiagramPicture {- , picSwitchboard -} ] )
+   , [ classificationPicture | Just _<-[classification]] ++ [ classDiagramPicture  ] )
  where
  -- The declarations that are used in entities need not be drawn in pictures, because they are attributes.
   remainingRels = if null (themes fSpec)

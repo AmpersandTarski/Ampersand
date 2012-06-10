@@ -34,9 +34,9 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                              English ->  "Shared Language"
                                          )
                                          
-  legalRefs = [ Header 1 [Str sectionTitle
-                         ]   
-              ,  Plain [ RawInline "latex" $  unlines $
+  legalRefs :: [Block]
+  legalRefs = labeledHeader (lev+1) "LegalRefs" sectionTitle ++
+              [  Plain [ RawInline "latex" $  unlines $
                          [ "\\begin{longtable}{lp{10cm}}"
                          , "\\hline "
                          , "{\\bf "++lawHeader ++ "} & {\\bf " ++ articleHeader ++"} \\\\"
@@ -210,12 +210,12 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                            --Just (PatternTheme pat) -> "Pattern "++name pat
                            --Just (ProcessTheme prc) -> "Process "++name prc
               header' :: [Block]
-              header'  = [Header 1 [Str (case (mTheme,language opts) of
+              header' = labeledHeader (lev+1) (xLabel DataAnalysis++"_LooseEnds")
+                                          (case (mTheme,language opts) of
                                               (Nothing, Dutch  ) -> "Losse eindjes..."
                                               (Nothing, English) -> "Loose ends..."
                                               _                  -> themeName
-                                        )
-                         ]         ]
+                                          )
               explainsPat :: [Block]
               explainsPat
                = case mTheme of
