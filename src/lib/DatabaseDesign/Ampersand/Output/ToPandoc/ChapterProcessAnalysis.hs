@@ -136,7 +136,7 @@ chpProcessAnalysis lev fSpec flags
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [([Block],[Picture])]
     iterat [] _ _ _ = []
     iterat (fproc:fps) i seenConcepts seenDeclarations
-     = ( [Header (lev+1) [Str (name fproc)]]    -- new section to explain this theme
+     = (  labeledHeader (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc)    -- new section to explain this theme
        ++ sctMotivation                       -- The section startss with the reason why this process exists,
        ++ txtProcessModel fproc
        ++ txtLangModel fproc
