@@ -40,31 +40,70 @@ fatal = fatalMsg "PandocAux"
 
 
 -- | Default key-value pairs for use with the Pandoc template
-defaultWriterVariables :: Options -> [(String , String)]
-defaultWriterVariables flags
-  = [ ("title", case (language flags, diagnosisOnly flags) of
+defaultWriterVariables :: Options -> Fspc -> [(String , String)]
+defaultWriterVariables flags fSpec
+  = [ ("title", (case (language flags, diagnosisOnly flags) of
                         (Dutch  , False) -> "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
                         (Dutch  ,  True) -> "Diagnose van "
-                        (English,  True) -> "Diagnosis of " )
+                        (English,  True) -> "Diagnosis of " 
+                )++name fSpec)
  --   , ("mainfont",
  --   , ("sansfont",
  --   , ("monofont",
  --   , ("mathfont",
-    , ("fontsize", "10pt,a4paper")
+    , ("fontsize", "10pt,a4paper")   --can be overridden by geometry package (see below)
     , ("lang"    , case language flags of
+                       Dutch   -> "dutch"
+                       English -> "english")
+    , ("mainlang", case language flags of
                        Dutch   -> "dutch"
                        English -> "english")
     , ("documentclass","report")
     ] ++
-    [ ("toc" , "True") | not (diagnosisOnly flags)]
+    [ ("toc" , "<<TheTableOfContentsShouldGoHere>>") | not (diagnosisOnly flags)]++
+    [ ("header-includes", unlines 
+         [ "% ============Ampersand specific Begin================="
+         , "\\usepackage[toc]{glossaries}    % package used to define terms"
+         , "\\usepackage{breqn}"
+         , "\\usepackage{colonequals}"
+         , "\\def\\id#1{\\mbox{\\em #1\\/}}"
+         , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
+         , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
+         , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
+         , "\\newcommand{\\iden}{\\mathbb{I}}"
+         , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+         , "\\newcommand{\\full}{\\mathbb{V}}"
+         , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
+         , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
+         , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+         , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+         , "\\newcommand{\\asterisk}{*}"
+         , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
+         , "\\newcommand{\\subs}{\\vdash}"
+         , "\\newcommand{\\rel}{\\times}"
+         , "\\newcommand{\\fun}{\\rightarrow}"
+         , "\\newcommand{\\isa}{\\sqsubseteq}"
+         , "\\newcommand{\\N}{\\mbox{\\msb N}}"
+         , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
+         , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\fun\\id{#3}}"
+         , "\\newcommand{\\signat}[3]{\\id{#1}:\\id{#2}\\rel\\id{#3}}"
+         , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
+         , "\\newcommand{\\declare}[3]{\\id{#1}:\\ \\id{#2}\\rel\\id{#3}}"
+         , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
+         , "\\selectlanguage{dutch}"
+         , "% ============Ampersand specific End==================="
+         ])
+--    , ("geometry", "margin=2cm, a4paper")
+    ]
+         
      
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
-writepandoc :: Options -> Pandoc -> (String,IO(),IO())
-writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
+writepandoc :: Options -> Fspc -> Pandoc -> (String,IO(),IO())
+writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
          outputFile = addExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
@@ -181,7 +220,7 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                             , writerTableOfContents=True
                             , writerNumberSections=True
                             , writerTemplate=template
-                            , writerVariables=defaultWriterVariables flags}
+                            , writerVariables=defaultWriterVariables flags fSpec}
          postProcessMonad :: IO()
          postProcessMonad = 
            case fspecFormat flags of   
