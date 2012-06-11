@@ -210,12 +210,16 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                            --Just (PatternTheme pat) -> "Pattern "++name pat
                            --Just (ProcessTheme prc) -> "Process "++name prc
               header' :: [Block]
-              header' = labeledHeader (lev+1) (xLabel DataAnalysis++"_LooseEnds")
+              header' = labeledHeader (lev+1) (xLabel DataAnalysis++case mTheme of
+                                                                       Nothing ->  "_LooseEnds"
+                                                                       _       -> themeName
+                                              )
                                           (case (mTheme,language opts) of
                                               (Nothing, Dutch  ) -> "Losse eindjes..."
                                               (Nothing, English) -> "Loose ends..."
                                               _                  -> themeName
                                           )
+                                          
               explainsPat :: [Block]
               explainsPat
                = case mTheme of
