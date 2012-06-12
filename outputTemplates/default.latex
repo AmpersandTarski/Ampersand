@@ -141,49 +141,6 @@ $endif$
 $for(header-includes)$
 $header-includes$
 $endfor$
-% ============Ampersand specific Begin=================
-\usepackage[toc]{glossaries}    % package used to define terms
-\usepackage{breqn}
-\usepackage{colonequals}
-\usepackage[dutch]{babel}
-%\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{definition}{Definitie}[section]
-%\theoremstyle{plain}\theorembodyfont{\rmfamily}\newtheorem{designrule}[definition]{Functionele eis}
-\def\id#1{\mbox{\em #1\/}}
-\newcommand{\marge}[1]{\marginpar{\begin{minipage}[t]{3cm}{\noindent\small\em #1}\end{minipage}}}
-\def\define#1{\label{dfn:#1}\index{#1}{\em #1}}
-\def\defmar#1{\label{dfn:#1}\index{#1}\marge{#1}{\em #1}}
-\newcommand{\iden}{\mathbb{I}}
-\newcommand{\ident}[1]{\mathbb{I}_{#1}}
-\newcommand{\full}{\mathbb{V}}
-\newcommand{\fullt}[1]{\mathbb{V}_{[#1]}}
-\newcommand{\flip}[1]{{#1}^\smallsmile} %formerly:  {#1}^\backsim
-\newcommand{\kleeneplus}[1]{{#1}^{+}}
-\newcommand{\kleenestar}[1]{{#1}^{*}}
-\newcommand{\asterisk}{*}
-\newcommand{\cmpl}[1]{\overline{#1}}
-\newcommand{\subs}{\vdash}
-\newcommand{\rel}{\times}
-\newcommand{\fun}{\rightarrow}
-\newcommand{\isa}{\sqsubseteq}
-\newcommand{\N}{\mbox{\msb N}}
-\newcommand{\disjn}[1]{\id{disjoint}(#1)}
-\newcommand{\fsignat}[3]{\id{#1}:\id{#2}\fun\id{#3}}
-\newcommand{\signat}[3]{\id{#1}:\id{#2}\rel\id{#3}}
-\newcommand{\signt}[2]{\mbox{\({#1}_{[{#2}]}\)}}
-\newcommand{\declare}[3]{\id{#1}:\ \id{#2}\rel\id{#3}}
-\newcommand{\fdeclare}[3]{\id{#1}:\ \id{#2}\fun\id{#3}}
-\selectlanguage{dutch}
-% =====================================================================================
-% == The hyperref package will take care of turning all internal references of your  ==
-% == document into hyperlinks. For this to work properly some magic is necessary,    ==
-% == so you have to put \usepackage[pdftex]{hyperref} as the last command            ==
-% == into the preamble of your document.                                             ==
-% == Many options are available to customize the behaviour of the hyperref           ==
-% == package. See http://ctan.tug.org/tex-archive/info/lshort/english/lshort.pdf     ==
-% =====================================================================================
-%\usepackage[pdftex,colorlinks=false]{hyperref}
-
-% ============Ampersand specific End=================
 
 $if(title)$
 \title{$title$}
