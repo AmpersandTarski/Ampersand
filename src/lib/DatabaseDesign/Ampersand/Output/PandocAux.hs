@@ -34,6 +34,7 @@ import System.Directory
 import System.Info (os)
 import Data.List              (isInfixOf,intercalate)
 import Control.Monad
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "PandocAux"
@@ -67,6 +68,8 @@ defaultWriterVariables flags fSpec
          , "\\usepackage[toc]{glossaries}    % package used to define terms"
          , "\\usepackage{breqn}"
          , "\\usepackage{colonequals}"
+         , "% == [all]{hypcap} after {hyperref} shows the ref'd picture i.o. the caption @ click =="
+         , "\\usepackage[all]{hypcap}"
          , "\\def\\id#1{\\mbox{\\em #1\\/}}"
          , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
          , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
@@ -128,7 +131,7 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
             = if (fspecFormat flags == FLatex && not (test flags)) -- temporary still support old LaTeX version 
               then 
                do verboseLn flags ("Generating to LaTeX: "++outputFile)
-                  writeFile outputFile (writeLaTeX (writerOptions(theOldLatexTemplate flags)) thePandoc)
+                  writeFile outputFile (writeLaTeX (writerOptions(Just (theOldLatexTemplate flags))) thePandoc)
                   verboseLn flags "... done." 
               else 
                do template <- readDefaultTemplate fSpecFormatString
@@ -193,20 +196,20 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Frtf -> "rtf"
                   Ftexinfo -> "texinfo"
                   Ftextile -> "textile"                  
-              readDefaultTemplate :: String -> IO(String)
+              readDefaultTemplate :: String -> IO(Maybe String)
               readDefaultTemplate  str = 
                 do { dataDir <- getDataDir
                    ; let fp = dataDir </> "outputTemplates" </> "default."++str
                    ; exists <- doesFileExist fp
                    ; (if exists 
                       then do contents <- readFile fp
-                              return contents 
-                      else do fatal 108 ("File not found: "++fp++"\n" ++
-                                         "Is Ampersand installed in the right way?"
-                                        )
+                              return $ Just contents 
+                      else do verboseLn flags $ "Template file does not exist: "++fp
+                              verboseLn flags "...trying without template...(but you might want to reinstall ampersand...)" 
+                              return Nothing 
                      )
                    } 
-              writerOptions :: String -> WriterOptions
+              writerOptions :: Maybe String -> WriterOptions
               writerOptions template = case theme flags of
                           ProofTheme -> ampersandDefaultWriterOptions 
                                            { writerTableOfContents=False
@@ -216,10 +219,10 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                      where
                        ampersandDefaultWriterOptions =
                          defaultWriterOptions
-                            { writerStandalone=True
+                            { writerStandalone=isJust template
                             , writerTableOfContents=True
                             , writerNumberSections=True
-                            , writerTemplate=template
+                            , writerTemplate=fromMaybe "" template
                             , writerVariables=defaultWriterVariables flags fSpec}
          postProcessMonad :: IO()
          postProcessMonad = 
