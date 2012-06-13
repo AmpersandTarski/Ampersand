@@ -202,7 +202,7 @@ chpDataAnalysis lev fSpec flags
   -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
   daBasics :: [Declaration] -> [Block]
   daBasics rs
-    = [ Table [] [AlignLeft,AlignCenter,AlignCenter] [0.0,0.0,0.0]
+    = [ Table [] [AlignLeft,AlignCenter,AlignCenter] [0.4,0.4,0.2]
               ( case language flags of
                 Dutch   ->
                      [ [Plain [Str "Relatie"]]
