@@ -43,7 +43,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "ROLE", "EDITS", "MAINTAINS"
                        ]
    keywordsops :: [String]
-   keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
+   keywordsops       = [ "-|", "|-", "-", "->", "<-", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>"
                        , "..", "." , "0", "1"]
    specialchars :: String
    specialchars      = "()[],{}"
@@ -292,6 +292,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                              pFun    :: Parser Token [Prop]
                              pFun    = []        <$ pKey "*"  <|> 
                                        [Uni,Tot] <$ pKey "->" <|>
+                                       [Sur,Inj] <$ pKey "<-" <|>
                                        (rbld     <$  pSpec '['  
                                                  <*> (pMult (Sur,Inj) `opt` [])
                                                  <*  pKey "-"

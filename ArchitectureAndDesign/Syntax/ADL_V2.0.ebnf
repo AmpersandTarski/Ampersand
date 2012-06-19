@@ -41,14 +41,14 @@ ProcessDef      ::= 'PROCESS' Id LanguageRef?
 RuleDef         ::= 'RULE' (ADLid ':')? Expr Meaning* 
                     ('MESSAGE' LanguageRef? TextMarkup? String)* 
                     ('VIOLATION' (('TXT' | 'SRC' | 'TGT') String)(',' (('TXT' | 'SRC' | 'TGT') String))* )?
-RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->' | ('[' (('0'| '1') '..' ('1'|'*') | '1' | '*')? '-' (('0'| '1') '..' ('1'|'*') | '1' | '*')? ']'  ) ) ConceptRef) |
+RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->' | '<-' | ('[' (('0'| '1') '..' ('1'|'*') | '1' | '*')? '-' (('0'| '1') '..' ('1'|'*') | '1' | '*')? ']'  ) ) ConceptRef) |
                      (RELATION Id Sign))
                     'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String String*)? Meaning? ('=' Content )? ('DEFINE' ('SRC' | 'TGT') String)? '.'?
 Props           ::= '['(      ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP')
                          (',' ('UNI'|'INJ'|'SUR'|'TOT'|'SYM'|'ASY'|'TRN'|'RFX'|'IRF'|'PROP'))*
                        )? ']'
 ConceptDef      ::= 'CONCEPT' Id 'BYPLUG'? String ('TYPE' String)? String?
-GenDef          ::= 'GEN' Id 'ISA' Id
+GenDef          ::= 'SPEC' Id 'ISA' Id
 KeyDef          ::= 'KEY' LabelProps ConceptRef '(' 
                        ( ('PRIMHTML' String)
                        | ( ( ('TXT' String)
