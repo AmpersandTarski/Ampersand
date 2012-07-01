@@ -1,0 +1,61 @@
+{-
+The correct processing and signing of expressions is tested by comparing with old typechecker.
+The correct processing and signing of rules is tested by comparing with old typechecker.
+TODO -> How do I express a Truth, Fr, or Gc rule? I have seen ALWAYS on expressions in ObjectDef, but that does not cause differences between Typechecker and AGtry
+TODO -> Only errors from the type checker are displayed to the user, and not a correcty processed [Context]. To test a correct [Context]
+        I should be able to serialize a correct [Context] resulting from the typechecker, and do a regression test on this expected output
+        instead of a regression test on the output of an old typechecker.
+-}
+CONTEXT Test
+
+PATTERN PatA
+GEN Aa ISA Ba
+GEN Aa ISA Ca
+GEN Ba ISA Da
+GEN Ba ISA Ca
+GEN Ca ISA Da
+ra :: Ba * Ea.
+sa :: Aa * Ba.
+sa1 :: Ba * Aa.
+sa2 :: Da * Ea.
+sa3 :: Ba * Da.
+
+--Testing signal rule.
+--TODO -> Why is this added to Declarations of the context by AGtry, while it cannot be used in an expression as a relation?
+SIGNAL signA ON sa |- sa1
+
+--Testing Implication / Equality rule
+--Testing Antecedent and consequent expressions are processed
+sa=sa1
+sa|-sa1
+RULE ra
+
+--Testing Complement
+-sa = sa
+
+--Testing Flip
+sa~ = sa
+
+--Testing Union / Disjunction
+sa \/ sa1 \/ sa3 = sa
+-sa \/ -sa1 \/ -sa3 = -sa
+sa /\ sa1 /\ sa3 = sa
+-sa /\ -sa1 /\ -sa3 = -sa
+
+--Testing Composition including I[Anything]
+ra~;sa3;I;sa1;sa2 = I[Ea]
+ra~!sa3!I!sa1!sa2 = I[Ea]
+-ra~!-sa3!I!-sa1!-sa2 = I[Ea]
+
+--Testing I[Anything] becomes I [something]
+I=I[Ea]
+
+--Testing I[Spc] stays I [Spc]
+I[Ba]=I[Da]
+
+--Testing I[Gen] becomes I [Gen / Spc]
+I[Ba]=I[Aa]
+
+ENDPATTERN
+
+ENDCONTEXT
