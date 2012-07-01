@@ -1,0 +1,23 @@
+{-
+Only tests the fatal error of non-unique context names. Test2 has been declared twice.
+-}
+
+CONTEXT Test
+EXTENDS Test2
+
+ENDCONTEXT
+
+
+CONTEXT Test2
+EXTENDS Test3, Test4
+ENDCONTEXT
+
+CONTEXT Test3
+ENDCONTEXT
+
+CONTEXT Test4
+EXTENDS Test5
+ENDCONTEXT
+
+CONTEXT Test2
+ENDCONTEXT
