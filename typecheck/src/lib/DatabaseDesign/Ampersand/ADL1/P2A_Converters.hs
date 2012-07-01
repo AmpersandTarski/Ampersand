@@ -308,6 +308,9 @@ tableOfTypes st = (table, stGraph, sccGraph) -- to debug:  error (intercalate "\
         where edges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
         --    verts = nub [n | (c,c')<-edges, n<-[c,c']]
      classNrs = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
+     {- the following function, table,  merges exprTable and classNrs into one table.
+     In this case it might be done simply with zip, because the left column of classNrs is identical to the left column of exprTable.
+     However, the following (more elaborate) way has been chosen to make sure that future mistakes will be caught..-}
      table = f exprTable classNrs
        where f [(i,typeExpr)] [(j,classNr)]
               | i==j = [(i,classNr,typeExpr)]
