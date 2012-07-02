@@ -176,7 +176,7 @@ computePredicates :: [P_Declaration] ->             -- A list of all declaration
                      [(P_Expression,P_Expression)]  -- a list of term-tuples of the form (x@(PTyp (PRel oX relNameX) [srcX, trgX]),y@(PTyp (PRel oY relNameY) [srcY, trgY]))
                                                     --   each of which represents a predicate x=y.
 computePredicates decls expr
- = predics
+ = [(x,y) |(x,y)<-predics, x/=y]
    where
      (_,_,predics) = preds expr
      preds :: P_Expression -> ( [P_Expression]                 -- a list of terms of the form PTyp (PRel o relName) [src, trg], being the untyped relations on the left hand side, typed with a possible type
@@ -250,12 +250,13 @@ computePredicates decls expr
             )
      preds (Pflp o nm) = preds (PFlp o (Prel o nm))                   -- r~     a flipped relation
 
-typing :: [P_Declaration] -> [P_Expression] -> [(Type, Type)] -- subtypes (.. is subset of ..)
-typing decls exprs
- = nub [ tuple 
-       | expr<-map p_simplify exprs
-       , tuple<-uType anything anything expr
-       ]
+typing :: [P_Gen] -> [P_Declaration] -> [P_Expression] -> [(Type, Type)] -- subtypes (.. is subset of ..)
+typing isas decls exprs
+ = nub ([ tuple 
+        | expr<-map p_simplify exprs
+        , tuple<-uType anything anything expr
+        ]++
+        [ st| g<-isas, st<-dom (Pid (origin g) [gen_spc g]).<.dom (Pid (origin g) [gen_gen g]) ])
    where
      anything = TypExpr (Pfull OriginUnknown [])
      declarations = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
@@ -364,16 +365,16 @@ tableOfTypes st = (table, stGraph, sccGraph) -- to debug:  error (intercalate "\
         each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
      typeExpressions   :: [Type]     -- a list of all type expressions in st.
      typeExpressions = nub (map fst st++map snd st)
-     {-
-     eqExpressions = eqClass t_eq typeExpressions -- all occurrences of the same (w.r.t. t_eq) expression in one equivalence class.
      exprTable :: [(Int, Type)]
-     exprTable = [(i,typeExpr) | (i,cl)<-zip [0..] eqExpressions, typeExpr<-cl ]
-     -}
-     exprTable = zip [0..] typeExpressions
+     (exprTable,numberOfNodes) = ([(i,typeExpr) | (i,cl)<-zip [0..] eqExpressions, typeExpr<-cl ], length eqExpressions)
+      where eqExpressions = eqClass t_eq typeExpressions
+            TypExpr (Pid   _ cs) `t_eq` TypExpr (Pid   _ cs')  =  cs==cs'
+            TypExpr (Pfull _ cs) `t_eq` TypExpr (Pfull _ cs')  =  cs==cs'
+            x `t_eq` y                                         =   x==y
      expressionNr   :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-exprTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
      stGraph :: Graph.Graph
-     stGraph = Graph.buildG (0, length typeExpressions-1) stEdges
+     stGraph = Graph.buildG (0, numberOfNodes-1) stEdges
      stEdges :: [(Int,Int)]
      stEdges = nub [(i,i') | (t,t')<-st, let i=expressionNr t, let i'=expressionNr t', i/=i']
      {- sccGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
@@ -475,11 +476,17 @@ typeGraphs st = (stDotGraph,condensedGraph)
      where showVertex n = intercalate "\n" ([showType t | (_, classNr, t)<-typeTable, n==classNr ])
 
 class Expr a where
+  p_gens :: a -> [P_Gen]
+  p_gens _ = []
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
   expressions :: a -> [P_Expression]
 
 instance Expr P_Context where
+ p_gens pContext
+  = concat [ p_gens pat | pat<-ctx_pats  pContext] ++
+    concat [ p_gens prc | prc<-ctx_PPrcs pContext] ++
+    ctx_gs pContext
  p_declarations pContext
   = concat [ p_declarations pat | pat<-ctx_pats  pContext] ++
     concat [ p_declarations prc | prc<-ctx_PPrcs pContext] ++
@@ -490,31 +497,30 @@ instance Expr P_Context where
          expressions (ctx_rs    pContext) ++
          expressions (ctx_ds    pContext) ++
          expressions (ctx_ks    pContext) ++
-         expressions (ctx_gs    pContext) ++
          expressions (ctx_ifcs  pContext) ++
          expressions (ctx_sql   pContext) ++
          expressions (ctx_php   pContext)
         )
 instance Expr P_Pattern where
+ p_gens pPattern
+  = pt_gns pPattern
  p_declarations pPattern
   = pt_dcs pPattern
  expressions pPattern
   = nub (expressions (pt_rls pPattern) ++
-         expressions (pt_gns pPattern) ++
          expressions (pt_dcs pPattern) ++
          expressions (pt_kds pPattern)
         )
 instance Expr P_Process where
+ p_gens pProcess
+  = procGens pProcess
  p_declarations pProcess
   = procDcls pProcess
  expressions pProcess
   = nub (expressions (procRules pProcess) ++
-         expressions (procGens  pProcess) ++
          expressions (procDcls  pProcess) ++
          expressions (procKds   pProcess)
         )
-instance Expr P_Gen where
- expressions g = [Pimp orig (Pid orig [gen_gen g]) (Pid orig [gen_spc g])] where orig = origin g
 instance Expr P_Rule where
  expressions r = [rr_exp r]
 instance Expr P_Expression where
@@ -624,14 +630,14 @@ pCtx2aCtx p_context
              , ctxexperimental = ctx_experimental p_context
              , ctxatoms  = allexplicitatoms
              }
-    st = typing (p_declarations p_context) (expressions p_context)
+    st = typing (p_gens p_context) (p_declarations p_context) (expressions p_context)
     (typeErrors) = calcTypes p_context st
     (stDotGraph,condensedGraph) = typeGraphs st
     cxerrs = typeErrors++patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk ++ cyclicInterfaces
     hierarchy = 
-        let ctx_gens = ctx_gs p_context `uni` concatMap pt_gns (ctx_pats p_context) `uni` concatMap procGens (ctx_PPrcs p_context)
+        let ctx_gens = p_gens p_context
         in [(a (gen_spc g),a (gen_gen g)) | g<-ctx_gens]
         where a pc = C {cptnm = p_cptnm pc
                        ,cptgE = fatal 63 "do not refer to this concept"
