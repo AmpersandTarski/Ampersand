@@ -46,6 +46,7 @@ data Type =  TypExpr P_Expression
            | TypGlb Type Type
             deriving (Eq, Show)
 
+showType :: Type -> String
 showType (TypExpr e)  = showADL e
 showType (TypLub a b) = showType a++" ./\\. "++showType b
 showType (TypGlb a b) = showType a++" .\\/. "++showType b
@@ -104,7 +105,7 @@ p_flp (PRad o a b)   = PRad o (p_flp b) (p_flp a)
 p_flp (PPrd o a b)   = PPrd o (p_flp b) (p_flp a)
 p_flp (PKl0 o a)     = PKl0 o (p_flp a)
 p_flp (PKl1 o a)     = PKl1 o (p_flp a)
-p_flp (PFlp o a)     = p_flp (p_flp a) -- ensures that inner PFlp is removed too
+p_flp (PFlp _ a)     = p_flp (p_flp a) -- ensures that inner PFlp is removed too
 p_flp (PCpl o a)     = PCpl o (p_flp a)
 p_flp (PBrk o a)     = PBrk o (p_flp a)
 p_flp (PTyp o a sgn) = PTyp o (p_flp a) (let P_Sign cs=sgn in P_Sign (reverse cs))
@@ -130,7 +131,7 @@ complement (PPrd o a b)   = PPrd o (complement b) (complement a)
 complement a@(PKl0{})     = PCpl (origin a) a
 complement a@(PKl1{})     = PCpl (origin a) a
 complement (PFlp o a)     = PFlp o (complement a)
-complement (PCpl o a)     = a
+complement (PCpl _ a)     = a
 complement (PBrk o a)     = PBrk o (complement a)
 complement (PTyp o a sgn) = PTyp o (complement a) sgn
 
@@ -158,13 +159,96 @@ p_simplify (PKl1 _ (PKl1 o a)) = PKl1 o (p_simplify a)
 p_simplify (PKl0 o a)          = PKl0 o (p_simplify a)
 p_simplify (PKl1 o a)          = PKl1 o (p_simplify a)
 p_simplify (PCpl o a)          = PCpl o (p_simplify a)
-p_simplify (PBrk o a)          = PBrk o (p_simplify a)
 p_simplify (PTyp o a sgn)      = PTyp o (p_simplify a) sgn
 p_simplify a                   = a
           
 mSpecific, mGeneric :: Type -> Type -> Type
 mSpecific = TypLub
 mGeneric  = TypGlb
+
+-- The following function, computepredicates, computes a number of predicates to be resolved with a simplex method,
+-- for the purpose of disambiguating relations in P_Expressions.
+-- This function only computes the predicates.
+-- Linking a declaration (PTyp oD (PRel oD' relNameD) [s,t]) to an occurrence (PRel o relName) is denoted as:  (PTyp o (PRel o relName) [s,t]), which has type P_Expression
+-- correspondence between two such links is denoted as a pair (of type (P_Expression,P_Expression))
+computePredicates :: [P_Declaration] ->             -- A list of all declarations in this script
+                     P_Expression ->                -- an expression that must be disambiguated.
+                     [(P_Expression,P_Expression)]  -- a list of term-tuples of the form (x@(PTyp (PRel oX relNameX) [srcX, trgX]),y@(PTyp (PRel oY relNameY) [srcY, trgY]))
+                                                    --   each of which represents a predicate x=y.
+computePredicates decls expr
+ = predics
+   where
+     (_,_,predics) = preds expr
+     preds :: P_Expression -> ( [P_Expression]                 -- a list of terms of the form PTyp (PRel o relName) [src, trg], being the untyped relations on the left hand side, typed with a possible type
+                              , [P_Expression]                 -- a list of terms of the form PTyp (PRel o relName) [src, trg], being the untyped relations on the right hand side, typed with a possible type
+                              , [(P_Expression,P_Expression)]  -- a list of term-tuples of the form PTyp (PRel o relName) [src, trg],
+                              )                                --   each of which represents a predicate
+     preds (Pequ _ a b)                                                      -- a=b    equality
+          = ( nub [e| (x,y)<-tuplesL,e<-[x,y]]
+            , nub [e| (x,y)<-tuplesR,e<-[x,y]]
+            , tuplesL++tuplesR++predicatesA++predicatesB                                 
+            )
+            where (lTermsA,rTermsA,predicatesA) = preds a; (lTermsB,rTermsB,predicatesB) = preds b
+                  tuplesL = [(x,y) | x@(PTyp _ _ (P_Sign [xSrc, _]))<-lTermsA, y@(PTyp _ _ (P_Sign [ySrc, _]))<-lTermsB, xSrc==ySrc]
+                  tuplesR = [(x,y) | x@(PTyp _ _ (P_Sign [_, xTrg]))<-rTermsA, y@(PTyp _ _ (P_Sign [_, yTrg]))<-rTermsB, xTrg==yTrg]
+     preds (Pimp o a b)            = preds (Pequ o a (PIsc o a b))           -- a|-b    (subset)
+     preds (PIsc _ (Pfull _ []) b) = preds b                                 -- V/\b    (intersection with full relation)
+     preds (PIsc _ a (Pfull _ [])) = preds a                                 -- a/\V    (intersection with full relation)
+     preds (PIsc o a b)            = preds (Pequ o a b)                      -- a/\b    (intersection)
+     preds (PUni _ Pnull b)        = preds b                                 -- emptySet\/b    (union)
+     preds (PUni _ a Pnull)        = preds a                                 -- a\/emptySet    (union)
+     preds (PUni o a b)            = preds (Pequ o a b)                      -- a\/b    (union)
+     preds (PDif o a b)            = preds (Pequ o a b)                      -- a-b     (difference)
+     preds (PLrs o a b)            = preds (PRad o a (complement (p_flp b))) -- a/b     (left residual)      
+     preds (PRrs o a b)            = preds (PRad o (complement (p_flp a)) b) -- a\b     (right residual) 
+     preds (PCps _ (Pid _ []) b)   = preds b                                 -- I;b      composition
+     preds (PCps _ a (Pid _ []))   = preds a                                 -- a;I      composition
+     preds (PCps _ a b)                                                      -- a;b      composition
+          = ( lTermsA>-thrownOutA
+            , rTermsB>-thrownOutB
+            , tuples++predicatesA++predicatesB                                 
+            )
+            where (lTermsA,rTermsA,predicatesA) = preds a; (lTermsB,rTermsB,predicatesB) = preds b
+                  tuples = [(l,r) | l@(PTyp _ _ (P_Sign [_, lTrg]))<-rTermsA, r@(PTyp _ _ (P_Sign [rSrc, _]))<-lTermsB, lTrg==rSrc]
+                  thrownOutA = rTermsA>-[l | (l,_)<-tuples]                    -- the relation-declaration assignments from rTermsA that were not used
+                  thrownOutB = lTermsB>-[r | (_,r)<-tuples]                    -- the relation-declaration assignments from lTermsB that were not used
+     preds (PRad o a b) = preds (PCps o a b)                                 -- a!b relative addition (dagger)
+     preds (PRad o a b) = preds (PCps o a b)                                 -- a!b relative addition (dagger)
+     preds (PPrd _ a b)                                                      -- a*b cartesian product
+          = ( lTermsA                                                       
+            , rTermsB
+            , predicatesA++predicatesB                                 
+            )
+            where (lTermsA,_,predicatesA) = preds a; (_,rTermsB,predicatesB) = preds b
+     preds (PKl0 _ e)   = preds e
+     preds (PKl1 _ e)   = preds e
+     preds (PFlp _ e)                                                 -- e~ inverse (wok, flip)
+          = ( map p_flp rTerms
+            , map p_flp lTerms
+            , predicates
+            )
+            where (lTerms,rTerms,predicates) = preds e
+     preds (PCpl _ e)             = preds e                           -- -e  complement
+     preds (PBrk _ e)             = preds e                           -- (e) brackets
+     preds (PTyp _ e (P_Sign [])) = preds e
+     preds (PTyp _ e (P_Sign cs))                                     -- e[A*B]  type-annotation
+          = ( [l | l@(PTyp _ _ (P_Sign [lSrc, _]))<-lTerms, lSrc==head cs]                            -- the untyped terms at the left of x
+            , [r | r@(PTyp _ _ (P_Sign [_, rTrg]))<-rTerms, rTrg==last cs]                            -- the untyped terms at the right of x
+            , predicates
+            )
+            where (lTerms,rTerms,predicates) = preds e
+     preds (Pid _ _)      = ( [], [], [])                             -- I[C]
+     preds (Pnid _)       = ( [], [], [])                             -- -I[C]
+     preds (Patm _ _ _)   = ( [], [], [])                             -- 'Piet'   (an untyped singleton)
+     preds  Pnull         = ( [], [], [])                             -- -V     (the empty set)
+     preds (Pfull _ [])   = ( [], [], [])                             -- V     (the untyped full set)
+     preds (Pfull _ _ )   = ( [], [], [])                             -- V[A*B] (the typed full set)
+     preds x@(Prel o relName)                                           -- r      a relation
+          = ( [PTyp o x (dec_sign d)| d<-decls, relName==dec_nm d]  -- the untyped terms at the left of x, with possible types
+            , [PTyp o x (dec_sign d)| d<-decls, relName==dec_nm d]  -- the untyped terms at the right of x, with possible types
+            , []                                                    -- no predicates can be derived from x                                
+            )
+     preds (Pflp o nm) = preds (PFlp o (Prel o nm))                   -- r~     a flipped relation
 
 typing :: [P_Declaration] -> [P_Expression] -> [(Type, Type)] -- subtypes (.. is subset of ..)
 typing decls exprs
@@ -324,6 +408,7 @@ calcTypes :: P_Context -> [(Type, Type)] -> ([CtxError])
 calcTypes p_context st = (typeErrors)
    where
     (typeTable,_,sccGraph) = tableOfTypes st
+    predics = [pred | expr<-expressions p_context, pred<-computePredicates (p_declarations p_context) expr ]
     conceptTypes :: [(Int,Int,Type)]
     conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{})))<-typeTable ]
 {- The expressions with constructor Pid are basic types. Each one should be in precisely one equivalence class.
@@ -360,7 +445,8 @@ calcTypes p_context st = (typeErrors)
     typeErrors
      = [newcxe ("Equal concepts:\n  "++intercalate ",\n  " [show orig ++": "++ show c| TypExpr (Pid orig c)<-cl]) | cl<-derivedEquals ] ++
        [newcxe ("SPEC "++showType spc++" ISA "++showType gen)                       | (spc,gen)<-derivedIsas ] ++
-       [newcxe (origin++":  "++relName++"[ "++srcnames++" * "++trgnames++" ]")      | (origin,relName,srcnames,trgnames)<-typedRels ]
+       [newcxe (origin++":  "++relName++"[ "++srcnames++" * "++trgnames++" ]")      | (origin,relName,srcnames,trgnames)<-typedRels ] ++
+       [newcxe ("Predicate: "++show l++"="++show r) | (l,r)<-predics]
     nametree :: Type -> String
     nametree t
      = case [s | types <- map mostGeneralTypes $ Graph.dfs sccGraph [classNr|(_, classNr, e)<-typeTable,e==t] , s<-types] of
@@ -389,14 +475,14 @@ typeGraphs st = (stDotGraph,condensedGraph)
      where showVertex n = intercalate "\n" ([showType t | (_, classNr, t)<-typeTable, n==classNr ])
 
 class Expr a where
-  delarations :: a -> [P_Declaration]
-  delarations _ = []
+  p_declarations :: a -> [P_Declaration]
+  p_declarations _ = []
   expressions :: a -> [P_Expression]
 
 instance Expr P_Context where
- delarations pContext
-  = concat [ delarations pat | pat<-ctx_pats  pContext] ++
-    concat [ delarations prc | prc<-ctx_PPrcs pContext] ++
+ p_declarations pContext
+  = concat [ p_declarations pat | pat<-ctx_pats  pContext] ++
+    concat [ p_declarations prc | prc<-ctx_PPrcs pContext] ++
     ctx_ds pContext
  expressions pContext
   = nub (expressions (ctx_pats  pContext) ++
@@ -410,7 +496,7 @@ instance Expr P_Context where
          expressions (ctx_php   pContext)
         )
 instance Expr P_Pattern where
- delarations pPattern
+ p_declarations pPattern
   = pt_dcs pPattern
  expressions pPattern
   = nub (expressions (pt_rls pPattern) ++
@@ -419,7 +505,7 @@ instance Expr P_Pattern where
          expressions (pt_kds pPattern)
         )
 instance Expr P_Process where
- delarations pProcess
+ p_declarations pProcess
   = procDcls pProcess
  expressions pProcess
   = nub (expressions (procRules pProcess) ++
@@ -538,7 +624,7 @@ pCtx2aCtx p_context
              , ctxexperimental = ctx_experimental p_context
              , ctxatoms  = allexplicitatoms
              }
-    st = typing (delarations p_context) (expressions p_context)
+    st = typing (p_declarations p_context) (expressions p_context)
     (typeErrors) = calcTypes p_context st
     (stDotGraph,condensedGraph) = typeGraphs st
     cxerrs = typeErrors++patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++declnmchk++themeschk
