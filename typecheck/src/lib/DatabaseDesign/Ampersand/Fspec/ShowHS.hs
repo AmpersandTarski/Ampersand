@@ -580,6 +580,7 @@ where
      = case peObj of 
             PRef2ConceptDef str                       -> "PRef2ConceptDef " ++show str
             PRef2Declaration (PTyp _ (Prel _ nm) sgn) -> "PRef2Declaration "++show nm++if null (psign sgn) then "" else show sgn
+            PRef2Declaration expr                     -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
             PRef2Rule str                             -> "PRef2Rule "       ++show str
             PRef2KeyDef str                           -> "PRef2KeyDef "     ++show str
             PRef2Pattern str                          -> "PRef2Pattern "    ++show str
