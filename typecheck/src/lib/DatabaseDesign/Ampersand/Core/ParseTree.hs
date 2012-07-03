@@ -393,7 +393,7 @@ where
    instance Identified PRef2Obj where
      name pe = case pe of 
         PRef2ConceptDef str -> str
-        PRef2Declaration (PTyp _ (Prel _ nm) _) -> nm
+        PRef2Declaration (PTyp _ (Prel _ nm) sgn) -> nm++if null (psign sgn) then "" else show sgn
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
         PRef2Rule str -> str
         PRef2KeyDef str -> str

@@ -221,7 +221,8 @@ instance ShowADL Relation where
  showADL rel = showADL (ETyp (ERel rel) (sign rel))
 
 instance ShowADL Expression where
- showADL = showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+ showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+-- NOTE: retain space after \\, because of unexpected side effects if it is used just before an 'r' or 'n'....
 
 instance ShowADL Declaration where
  showADL decl = 
@@ -337,10 +338,10 @@ showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
 --used to compose error messages at p2a time
 instance ShowADL P_Expression where
- showADL = showPExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
+ showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
    where
     showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr) expr
-     = showchar expr' ++"("++ show (origin expr)++")"
+     = showchar expr'
       where
        expr' = insP_Parentheses expr
        showchar (Pid _ [])     = "I"

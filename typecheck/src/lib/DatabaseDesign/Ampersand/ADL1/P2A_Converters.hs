@@ -42,20 +42,27 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "P2A_Converters"
 
 data Type =  TypExpr P_Expression
-           | TypLub Type Type
-           | TypGlb Type Type
+           | TypLub Origin Type Type
+           | TypGlb Origin Type Type
             deriving (Eq, Show)
 
 showType :: Type -> String
-showType (TypExpr e)  = showADL e
-showType (TypLub a b) = showType a++" ./\\. "++showType b
-showType (TypGlb a b) = showType a++" .\\/. "++showType b
+showType (TypExpr expr@(Pid _ []))  = showADL expr ++"("++ show (origin expr)++")"
+showType (TypExpr expr@(Pid _ cs))  = showADL expr
+showType (TypExpr expr)  = showADL expr ++"("++ show (origin expr)++")"
+showType (TypLub _ a b) = showType a++" ./\\. "++showType b
+showType (TypGlb _ a b) = showType a++" .\\/. "++showType b
 
-{-
+instance Traced Type where
+  origin (TypExpr e)  = origin e
+  origin (TypLub o _ _) = o
+  origin (TypGlb o _ _) = o
+
+
 t_eq :: Type -> Type -> Bool
 t_eq (TypExpr x)  (TypExpr y)    = x `p_eq` y
-t_eq (TypLub l r) (TypLub l' r') =  l `t_eq` l' && r `t_eq` r'
-t_eq (TypGlb l r) (TypGlb l' r') =  l `t_eq` l' && r `t_eq` r'
+t_eq (TypLub _ l r) (TypLub _ l' r') =  l `t_eq` l' && r `t_eq` r'
+t_eq (TypGlb _ l r) (TypGlb _ l' r') =  l `t_eq` l' && r `t_eq` r'
 t_eq _ _ = False
 
 p_eq :: P_Expression -> P_Expression -> Bool
@@ -83,7 +90,7 @@ p_eq (PCpl _ a)     (PCpl _ a')      = p_eq a a'
 p_eq (PBrk _ a)     (PBrk _ a')      = p_eq a a'
 p_eq (PTyp _ a sgn) (PTyp _ a' sgn') = p_eq a a' && sgn==sgn'
 p_eq _ _ = False
--}
+
 
 p_flp :: P_Expression -> P_Expression
 p_flp a@(Pid{})    = a
@@ -125,9 +132,9 @@ complement (PUni o a b)   = PIsc o (complement a) (complement b)
 complement (PDif o a b)   = PUni o (complement a) b
 complement (PLrs o a b)   = PCps o (complement a) (p_flp b)
 complement (PRrs o a b)   = PCps o (p_flp a) (complement b)
-complement (PCps o a b)   = PRad o (complement b) (complement a)
-complement (PRad o a b)   = PCps o (complement b) (complement a)
-complement (PPrd o a b)   = PPrd o (complement b) (complement a)
+complement (PCps o a b)   = PRad o (complement a) (complement b)
+complement (PRad o a b)   = PCps o (complement a) (complement b)
+complement (PPrd o a b)   = PCpl o (PPrd o a b)
 complement a@(PKl0{})     = PCpl (origin a) a
 complement a@(PKl1{})     = PCpl (origin a) a
 complement (PFlp o a)     = PFlp o (complement a)
@@ -162,7 +169,7 @@ p_simplify (PCpl o a)          = PCpl o (p_simplify a)
 p_simplify (PTyp o a sgn)      = PTyp o (p_simplify a) sgn
 p_simplify a                   = a
           
-mSpecific, mGeneric :: Type -> Type -> Type
+mSpecific, mGeneric :: Origin -> Type -> Type -> Type
 mSpecific = TypLub
 mGeneric  = TypGlb
 
@@ -282,14 +289,14 @@ typing isas decls exprs
 -}
 -- A more indirect way, which requires no proof
      uType uLft uRt x@(Pimp o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType uLft uRt e                 --  a|-b   implication (aka: subset)
-                                              where e = PUni o (complement a) b
+                                              where e = Pequ o a (PIsc o a b)
 --
-     uType uLft uRt x@(PIsc _ a b)          = dom x.<.dom a .+. cod x.<.cod a .+. dom x.<.dom b .+. cod x.<.cod b  --  intersect ( /\ )
-                                              .+. uType (dom a `mSpecific` dom b) (cod a `mSpecific` cod b) a
-                                              .+. uType (dom a `mSpecific` dom b) (cod a `mSpecific` cod b) b
-     uType uLft uRt x@(PUni _ a b)          = dom a.<.dom x .+. cod a.<.cod x .+. dom b.<.dom x .+. cod b.<.cod x  --  union     ( \/ )
-                                              .+. uType (dom a `mGeneric` dom b) (cod a `mGeneric` cod b) a
-                                              .+. uType (dom a `mGeneric` dom b) (cod a `mGeneric` cod b) b
+     uType uLft uRt x@(PIsc o a b)          = dom x.<.dom a .+. cod x.<.cod a .+. dom x.<.dom b .+. cod x.<.cod b  --  intersect ( /\ )
+                                              .+. uType (mSpecific o (dom a) (dom b)) (mSpecific o (cod a) (cod b)) a
+                                              .+. uType (mSpecific o (dom a) (dom b)) (mSpecific o (cod a) (cod b)) b
+     uType uLft uRt x@(PUni o a b)          = dom a.<.dom x .+. cod a.<.cod x .+. dom b.<.dom x .+. cod b.<.cod x  --  union     ( \/ )
+                                              .+. uType (mGeneric o (dom a) (dom b)) (mGeneric o (cod a) (cod b)) a
+                                              .+. uType (mGeneric o (dom a) (dom b)) (mGeneric o (cod a) (cod b)) b
      uType uLft uRt x@(PDif _ a b)          = dom x.<.dom a .+. cod x.<.cod a                                      --  a-b    (difference)
                                                .+. uType uLft uRt a .+. uType (dom a) (cod a) b
      uType uLft uRt x@(PLrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType uLft uRt e                 -- a!b      relative addition
@@ -297,48 +304,50 @@ typing isas decls exprs
      uType uLft uRt x@(PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType uLft uRt e                 -- a!b      relative addition
                                               where e = PRad o (complement (p_flp a)) b
      uType uLft uRt   (PCps _ (Pid _ []) b) = uType uLft uRt b                                                     -- I;b
-     uType uLft uRt x@(PCps _ a@(Pid{}) b)  = dom x.=.(cod a `mSpecific` dom b) .+. cod x.<.cod b .+.              -- I[C];b   composition
-                                              uType (cod a `mSpecific` dom b) uRt b
+     uType uLft uRt x@(PCps o a@(Pid{}) b)  = dom x.=.(mSpecific o (cod a) (dom b)) .+. cod x.<.cod b .+.              -- I[C];b   composition
+                                              uType (mSpecific o (cod a) (dom b)) uRt b
      uType uLft uRt   (PCps _ a (Pid _ [])) = uType uLft uRt a                                                     -- a;I      composition
-     uType uLft uRt x@(PCps _ a b@(Pid{}))  = dom x.<.dom a .+. cod x.=.(cod a `mSpecific` dom b) .+.              -- a;I[C]   composition
-                                              uType uLft (cod a `mSpecific` dom b) a
-     uType uLft uRt x@(PCps _ a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                  -- a;b      composition
-                                              (cod a `mSpecific` dom b).<.cod a .+.
-                                              (cod a `mSpecific` dom b).<.dom b .+.
-                                              uType uLft (cod a `mSpecific` dom b) a .+. uType (cod a `mSpecific` dom b) uRt b
+     uType uLft uRt x@(PCps o a b@(Pid{}))  = dom x.<.dom a .+. cod x.=.mSpecific o (cod a) (dom b) .+.              -- a;I[C]   composition
+                                              uType uLft (mSpecific o (cod a) (dom b)) a
+     uType uLft uRt x@(PCps o a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                  -- a;b      composition
+                                              mSpecific o (cod a) (dom b).<.cod a .+.
+                                              mSpecific o (cod a) (dom b).<.dom b .+.
+                                              uType uLft (mSpecific o (cod a) (dom b)) a .+. uType (mSpecific o (cod a) (dom b)) uRt b
      uType uLft uRt x@(PRad o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType uLft uRt e                 -- a!b      relative addition
                                               where e = PCps o (complement a) (complement b)
 {- the elaborated version of uType for PRad
-     uType uLft uRt x@(PRad _ a@(Pnid{}) b) = dom x.=.(cod a `mGeneric` dom b) .+. cod x.<.cod b .+. st_b            -- -I[C]!b  relative addition
-                                              where st_b = uType (cod a `mGeneric` dom b) uRt a
-     uType uLft uRt x@(PRad _ a b@(Pnid{})) = dom x.<.dom a .+. cod x.=.(cod a `mGeneric` dom b) .+. st_a          -- a!-I[C]  relative addition
-                                              where st_a = uType uLft (cod a `mGeneric` dom b) a
-     uType uLft uRt x@(PRad _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                      -- a!b      relative addition
-                                              (cod a `mGeneric` dom b).<.cod a .+.
-                                              (cod a `mGeneric` dom b).<.dom b .+.
-                                              .+. st_a .+. st_b
-                                              where st_a = uType uLft (cod a `mGeneric` dom b) a; st_b = uType (cod a `mGeneric` dom b) uRt b
+     uType uLft uRt x@(PRad _ a@(Pnid{}) b) = dom x.=.mGeneric o (cod a) (dom b) .+. cod x.<.cod b .+. st_b          -- -I[C]!b  relative addition
+                                              where st_b = uType (mGeneric o (cod a) (dom b)) uRt a
+     uType uLft uRt x@(PRad _ a b@(Pnid{})) = dom x.<.dom a .+. cod x.=.mGeneric o (cod a) (dom b) .+. st_a          -- a!-I[C]  relative addition
+                                              where st_a = uType uLft (mGeneric o (cod a) (dom b)) a
+     uType uLft uRt x@(PRad o a b)          = dom x.<.dom a .+. cod x.<.cod b                                      -- a!b      relative addition
+                                              mGeneric o (cod a) (dom b).<.cod a .+.
+                                              mGeneric o (cod a) (dom b).<.dom b .+.
+                                              uType uLft (mGeneric o (cod a) (dom b)) a .+.
+                                              uType (mGeneric o (cod a) (dom b)) uRt b
 -}
      uType uLft uRt x@(PPrd _ a b)          = dom a.=.dom x .+. cod b.=.cod x                                      -- a*b cartesian product
                                               .+. uType uLft anything a .+. uType anything uRt b
      uType uLft uRt x@(PKl0 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType uLft uRt e
      uType uLft uRt x@(PKl1 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType uLft uRt e
-     uType uLft uRt   (PFlp o (Prel _ nm))  = uType uLft uRt (Pflp o nm)                                            -- r~  flip
-     uType uLft uRt   (PFlp o (Pflp _ nm))  = uType uLft uRt (Prel o nm)                                            -- r~~
+     uType uLft uRt   (PFlp _ (Prel o nm))  = uType uLft uRt (Pflp o nm)                                            -- r~  flip
+     uType uLft uRt   (PFlp _ (Pflp o nm))  = uType uLft uRt (Prel o nm)                                            -- r~~
      uType uLft uRt x@(PFlp _ e)            = cod e.=.dom x .+. dom e.=.cod x .+. uType uRt uLft e
 {- the abstract version of uType for PCpl
      uType uLft uRt x@(PCpl o e)            = dom x.=.dom e .+. cod x.=.cod e .+. uType uLft uRt e                 -- -a  complement
                                               where e = PDif o (Pfull o [uLft, uRt]) b
 -}
-     uType uLft uRt x@(PCpl o e)            = dom x.<.uLft .+. cod x.<.uRt .+.                                     -- -e  complement
+     uType uLft uRt x@(PCpl _ e)            = dom x.<.uLft .+. cod x.<.uRt .+.                                     -- -e  complement
                                               dom e.<.uLft .+. cod e.<.uRt .+.
                                               uType uLft uRt e
      uType uLft uRt   (PBrk _ e)            = uType uLft uRt e                                                     -- (e) brackets
      uType uLft uRt x@(PTyp o e (P_Sign []))= fatal 196 "P_Sign is empty"
-     uType uLft uRt x@(PTyp o e (P_Sign cs))= dom x.<.dom e .+. cod x.<.cod e .+.                                  -- e[A*B]  type-annotation
-                                              dom x.<.iSrc  .+. cod x.<.iTrg  .+.
-                                              iSrc .<.uLft  .+. iTrg .<.uRt
-                                               .+. uType iSrc iTrg e
+     uType uLft uRt x@(PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                  -- e[A*B]  type-annotation
+                                              iSrc .<.uLft  .+. iTrg .<.uRt .+.
+                                              if o `elem` [origin d| d<-decls]
+                                              then nothing
+                                              else dom x.<.dom e .+. cod x.<.cod e .+.
+                                                   uType iSrc iTrg e
                                               where iSrc = TypExpr (Pid o [head cs])
                                                     iTrg = TypExpr (Pid o [last cs])
      nothing :: [(Type,Type)]
@@ -373,6 +382,7 @@ tableOfTypes st = (table, stGraph, sccGraph) -- to debug:  error (intercalate "\
             x `t_eq` y                                         =   x==y
      expressionNr   :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-exprTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
+     -- stGraph is computed for debugging purposes. It shows precisely which edges are computed by uType.
      stGraph :: Graph.Graph
      stGraph = Graph.buildG (0, numberOfNodes-1) stEdges
      stEdges :: [(Int,Int)]
@@ -385,8 +395,14 @@ tableOfTypes st = (table, stGraph, sccGraph) -- to debug:  error (intercalate "\
      eqClasses = map Tree.flatten stronglyConnected    -- We are only interested in the elements of each component.
       where stronglyConnected :: [Tree.Tree Int] -- For that reason we flatten the trees.
             stronglyConnected = Graph.scc stGraph    -- Each equivalence class contains integers, each of which represents a type expression.
+     origGraph = Graph.buildG (0, length origNumbers-1) origEdges
+     origEdges = nub [(i,i') | (t,t')<-st, let i=origNr t, let i'=origNr t', i/=i']
+     origNumbers :: [(Int, Origin)]
+     origNumbers = zip [0..] ((sort.nub) [origin e | e<-typeExpressions])
+     origNr   :: Type -> Int
+     origNr t  = head ([i | (i,v)<-origNumbers, origin t == v]++[fatal 392 ("Type Expression "++show t++" not found by origNr")])
      exprClass  :: Int -> Int
-     exprClass i = head ([classNr | (exprNr,classNr,_)<-table, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
+     exprClass i = head ([classNr | (exprNr,classNr)<-classNrs, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
      sccGraph :: Graph.Graph
      sccGraph
       = Graph.buildG (0, length eqClasses-1) edges
@@ -425,34 +441,43 @@ calcTypes p_context st = (typeErrors)
     --    perhaps if this type is too high up, or too low under
     derivedEquals :: [[Type]]
     derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the expressions derived from the script).
-     = [ [head diffs]
-       | cl<-eqCl (\(_,classNr,_)->classNr) conceptTypes
-       , diffs<-eqClass (==) [e|(exprNr, classNr, e)<-cl]
+     = [ [t | (_,_,t)<-diffs]
+       | diffs<-eqCl (\(_,classNr,_) -> classNr) (map head (eqClass tripleEq conceptTypes))
        , length diffs>1]
-    derivedIsas :: [(Type,Type)]
-    derivedIsas     -- These pairs can be proven to be subsets, based on st (= typing sentences, i.e. the expressions derived from the script).
-     = [ (typeSpec, typeGen)
-       | (_,classNrSpec,typeSpec)<-conceptTypes
-       , vertex<-[ v | v<-Graph.reachable sccGraph classNrSpec ]
-       , (_,classNrGen,typeGen)<-conceptTypes, classNrGen==vertex -- look whether there are reachable vertices from this expression (equivalence class).
-       ]
-    typedRels :: [(String, String, String, String)]
-    typedRels
-     = [ (show o,relName,srcnames,trgnames)
-       | (o,relName) <- relations exprs
-       , let srcnames = nametree (TypExpr (Prel o relName))
-       , let trgnames = nametree (TypExpr (Pflp o relName))]
+       where (_,_,t) `tripleEq` (_,_,t') = t `t_eq` t'
+    ambiguousAndUntypableRelations :: [CtxError]
+    ambiguousAndUntypableRelations
+     = [ CxeOrig (newcxe (case cs of
+                              []  -> "Relation \""++relName++"\" is not declared."
+                              ds  -> "Relation \""++relName++"\" is ambiguous. It can be typed by:\n   "++intercalate "\n   " ["declaration ("++show (origin d)++") of \""++showADL d++"\"" | d<-ds]
+                 )       )
+                 "relation"
+                 relName
+                 orig
+       | (_,classNr,TypExpr (Prel orig relName))<-typeTable, orig `notElem` pDecls
+       , let cs=(nub.map head.eqClass p_eq)
+                 ( [      decl | (_,classNr',TypExpr decl@(PTyp o (Prel _ rnm) _))<-typeTable, relName==rnm, o `elem` pDecls]++
+                   [p_flp decl | (_,classNr',TypExpr decl@(PTyp o (Pflp _ rnm) _))<-typeTable, relName==rnm, o `elem` pDecls])
+       , length cs/=1
+       ] where pDecls = [origin d| d<-p_declarations p_context]
+
+    classGraph = Graph.buildG (0, length concList-1) edges
+      where edgesC   = nub [(s,g) | gen<-p_gens p_context, let g=gen_gen gen, let s=gen_spc gen]
+            concs    = nub [c | (c',c'')<-edgesC, c<-[c',c'']]
+            concList = zip [0..] concs
+            concNr c = head ([i | (i,c')<-concList, c==c']++fatal 468 ("Concept "++show c++" not found by concNr"))
+            edges    = [(concNr c, concNr c') | (c,c')<-edgesC]
+    
     typeErrors :: [CtxError]
     typeErrors
-     = [newcxe ("Equal concepts:\n  "++intercalate ",\n  " [show orig ++": "++ show c| TypExpr (Pid orig c)<-cl]) | cl<-derivedEquals ] ++
-       [newcxe ("SPEC "++showType spc++" ISA "++showType gen)                       | (spc,gen)<-derivedIsas ] ++
-       [newcxe (origin++":  "++relName++"[ "++srcnames++" * "++trgnames++" ]")      | (origin,relName,srcnames,trgnames)<-typedRels ] ++
-       [newcxe ("Predicate: "++show l++"="++show r) | (l,r)<-predics]
+     = [ newcxe ("The following concepts were proven equal:\n  "++intercalate ", " [show c| TypExpr (Pid orig [c])<-cl])
+       | cl<-derivedEquals ] ++
+       ambiguousAndUntypableRelations
     nametree :: Type -> String
     nametree t
      = case [s | types <- map mostGeneralTypes $ Graph.dfs sccGraph [classNr|(_, classNr, e)<-typeTable,e==t] , s<-types] of
         [] -> "??"
-        as -> intercalate "/\\" as
+        as -> intercalate " /\\ " as
        where
         mostGeneralTypes :: Tree.Tree Int -> [String]
         mostGeneralTypes a
@@ -460,8 +485,8 @@ calcTypes p_context st = (typeErrors)
             [] -> [n | cs <- map mostGeneralTypes (Tree.subForest a), n<-cs]
             cs -> cs
 
-typeGraphs :: [(Type, Type)] -> (DotGraph String,DotGraph String)
-typeGraphs st = (stDotGraph,condensedGraph)
+typeGraphs :: P_Context -> [(Type, Type)] -> (DotGraph String,DotGraph String)
+typeGraphs p_context st = (stDotGraph,condensedGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
@@ -473,7 +498,46 @@ typeGraphs st = (stDotGraph,condensedGraph)
      where showVertex i = head ([ showType e | (exprNr, _, e)<-typeTable, i==exprNr ]++fatal 307 ("No expression numbered "++show i++" found by showVertex"))
     condensedGraph :: DotGraph String
     condensedGraph = toDotGraph showVertex sccGraph
-     where showVertex n = intercalate "\n" ([showType t | (_, classNr, t)<-typeTable, n==classNr ])
+     where showVertex n = (intercalate "\n".nub.map showType.nub) [findOriginal p_context t | (_, classNr, t)<-typeTable, n==classNr ]
+
+
+findOriginal :: P_Context -> Type -> Type
+findOriginal p_context typExpr
+ = case typExpr of
+    TypExpr x@(Pid _ [_]) -> TypExpr x
+    TypExpr expr -> TypExpr (if p_flp expr `p_eq` expr'
+                             then p_flp expr'
+                             else       expr')
+    TypLub o a b -> TypLub o (findOriginal p_context a) (findOriginal p_context b)
+    TypGlb o a b -> TypGlb o (findOriginal p_context a) (findOriginal p_context b)
+   where
+     orig = origin typExpr
+     exprs = expressions p_context
+     expr' = head (concat (map find exprs)++fatal 494 ("showOriginal cannot find an expression on location "++show orig))
+     find :: P_Expression -> [P_Expression]
+     find e@(Pid{})      = [e|orig==origin e]
+     find   (Pnid{})     = []
+     find e@(Patm{})     = [e|orig==origin e]
+     find   Pnull        = []
+     find e@(Pfull{})    = [e|orig==origin e]
+     find e@(Prel{})     = [e|orig==origin e]
+     find e@(Pflp{})     = [e|orig==origin e]
+     find e@(Pequ _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(Pimp _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PIsc _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PUni _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PDif _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PLrs _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PRrs _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PCps _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PRad _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PPrd _ a b) = if orig==origin e then [e] else find a++find b
+     find e@(PKl0 _ a)   = if orig==origin e then [e] else find a
+     find e@(PKl1 _ a)   = if orig==origin e then [e] else find a
+     find e@(PFlp _ a)   = if orig==origin e then [e] else find a
+     find e@(PCpl _ a)   = if orig==origin e then [e] else find a
+     find e@(PBrk _ a)   = find a
+     find e@(PTyp _ a _) = if orig==origin e then [e] else find a
 
 class Expr a where
   p_gens :: a -> [P_Gen]
@@ -632,7 +696,7 @@ pCtx2aCtx p_context
              }
     st = typing (p_gens p_context) (p_declarations p_context) (expressions p_context)
     (typeErrors) = calcTypes p_context st
-    (stDotGraph,condensedGraph) = typeGraphs st
+    (stDotGraph,condensedGraph) = typeGraphs p_context st
     cxerrs = typeErrors++patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++declnmchk++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk ++ cyclicInterfaces
@@ -965,6 +1029,13 @@ pPurp2aPurp contxt pexpl
 pExOb2aExOb :: A_Context -> PRef2Obj -> (ExplObj, CtxError)
 pExOb2aExOb contxt (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
                                              where cds = [cd | cd<-conceptDefs contxt, cdcpt cd==str ]
+pExOb2aExOb contxt (PRef2Declaration x@(PTyp o (Prel _ nm) sgn))
+                                           = ( ExplDeclaration (head decls)
+                                             , if null decls
+                                               then CxeOrig (newcxe ("No declaration for '"++showADL x++"'")) "relation" nm o
+                                               else CxeNone
+                                             )
+                                             where decls = [d | d<-declarations contxt, name d==nm, sign d==pSign2aSign contxt sgn ]
 pExOb2aExOb contxt (PRef2Rule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
                                              where ruls = [rul | rul<-rules contxt, name rul==str ]
 pExOb2aExOb contxt (PRef2KeyDef str      ) = (ExplKeyDef (head kds), newcxeif(null kds)("No key definition named '"++str++"'") )
@@ -974,7 +1045,6 @@ pExOb2aExOb contxt (PRef2Process str     ) = (ExplProcess str,   newcxeif(null[p
 pExOb2aExOb contxt (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-interfaces contxt, name ifc==str])  ("No interface named '"++str++"'") )
 pExOb2aExOb contxt (PRef2Context str     ) = (ExplContext str,   newcxeif(name contxt/=str) ("No context named '"++str++"'") )  
 pExOb2aExOb contxt (PRef2Fspc str        ) = (ExplFspc str,      newcxeif( name contxt/=str)("No specification named '"++str++"'") )
-
 
 pPop2aPop :: (Language l, ConceptStructure l, Identified l) => l -> P_Population -> (Maybe Population,CtxError)
 pPop2aPop _        (P_CptPopu{}) = (Nothing,cxenone)
@@ -1053,8 +1123,7 @@ pRel2aRel :: (Language l, ConceptStructure l, Identified l) => l -> [P_Concept] 
 pRel2aRel contxt _ (Pfull orig pConcepts)
  = case pConcepts of
     [] -> (fatal 326 "Ambiguous universal relation."
-                          , CxeOrig (newcxe
-                                    "Ambiguous universal relation.") 
+                          , CxeOrig (newcxe "Ambiguous universal relation.") 
                                     "relation" "" orig )
     [c] -> (V (Sign (pCpt2aCpt contxt c) (pCpt2aCpt contxt c)), CxeOrig cxenone "relation" "" orig)
     [s,t] -> (V (Sign (pCpt2aCpt contxt s) (pCpt2aCpt contxt t)), CxeOrig cxenone "relation" "" orig)
