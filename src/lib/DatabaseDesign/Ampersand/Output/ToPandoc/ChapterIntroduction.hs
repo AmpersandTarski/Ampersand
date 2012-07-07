@@ -7,7 +7,7 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
-import Locale
+import System.Locale
 import Data.Time.Format
 
 
