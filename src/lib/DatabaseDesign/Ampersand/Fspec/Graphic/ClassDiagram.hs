@@ -3,7 +3,7 @@
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
 module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
-         (ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
+         (ClassDiag(..), Class(..), CdAttribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..), MinValue(..), MaxValue(..),
           clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
 where
@@ -16,8 +16,9 @@ where
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Data.String
    import Data.GraphViz.Types.Canonical hiding (attrs)
-   import Data.GraphViz.Attributes.Complete hiding (Attribute)
-   import Data.GraphViz.Attributes hiding (Attribute)
+   import Data.GraphViz.Attributes.Complete as GVcomp
+   import Data.GraphViz.Attributes as GVatt
+   import Data.GraphViz.Attributes.HTML as Html
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
@@ -34,7 +35,7 @@ where
    instance CdNode a => CdNode [a] where
     nodes = concatMap nodes
 
-   instance CdNode Attribute where
+   instance CdNode CdAttribute where
     nodes (OOAttr _ t _) = [t]
 
    instance CdNode Method where
@@ -199,25 +200,25 @@ where
           class2node cl = DotNode 
             { nodeID         = name cl
             , nodeAttributes = [ Shape PlainText
-                               , Color [(X11Color Purple)]
-                               , Label (HtmlLabel (HtmlTable htmlTable))
+                               , GVcomp.Color [(X11Color Purple)]
+                               , Label (HtmlLabel (Table htmlTable))
                                ]
             } where 
              htmlTable = HTable { tableFontAttrs = Nothing
-                                , tableAttrs     = [ HtmlBGColor (X11Color White)
-                                                   , HtmlColor (X11Color Black) -- the color used for all cellborders
-                                                   , HtmlBorder 0  -- 0 = no border
-                                                   , HtmlCellBorder 1  
-                                                   , HtmlCellSpacing 0
+                                , tableAttrs     = [ Html.BGColor (X11Color White)
+                                                   , Html.Color (X11Color Black) -- the color used for all cellborders
+                                                   , Html.Border 0  -- 0 = no border
+                                                   , CellBorder 1  
+                                                   , CellSpacing 0
                                                    ]
-                                , tableRows      = [ HtmlRow -- Header row, containing the name of the class
-                                                      [ HtmlLabelCell 
-                                                            [ HtmlBGColor (X11Color Gray10)
-                                                            , HtmlColor   (X11Color Black)
+                                , tableRows      = [ Cells -- Header row, containing the name of the class
+                                                      [ LabelCell 
+                                                            [ Html.BGColor (X11Color Gray10)
+                                                            , Html.Color   (X11Color Black)
                                                             ]
-                                                            (HtmlText [ HtmlFont [ HtmlColor   (X11Color White)
+                                                            (Html.Text [ Html.Font [ Html.Color   (X11Color White)
                                                                                  ]                                                            
-                                                                                 [HtmlStr (fromString (name cl))]
+                                                                                 [Html.Str (fromString (name cl))]
                                                                       ]
                                                             )
                                                       ]
@@ -228,20 +229,20 @@ where
                                                    
                                 } 
                  where
-                   attrib2row a = HtmlRow
-                                    [ HtmlLabelCell [ HtmlAlign HLeft] 
-                                         ( HtmlText [ HtmlStr (fromString (if attOptional a then "o " else "+ "))
-                                                    , HtmlStr (fromString (name a))
-                                                    , HtmlStr (fromString " : ")
-                                                    , HtmlStr (fromString (attTyp a))
-                                                    ]
+                   attrib2row a = Cells
+                                    [ Html.LabelCell [ Html.Align HLeft] 
+                                         ( Html.Text [ Html.Str (fromString (if attOptional a then "o " else "+ "))
+                                                     , Html.Str (fromString (name a))
+                                                     , Html.Str (fromString " : ")
+                                                     , Html.Str (fromString (attTyp a))
+                                                     ]
                                          ) 
                                     ]
-                   method2row m = HtmlRow
-                                    [ HtmlLabelCell [ HtmlAlign HLeft] 
-                                         ( HtmlText [ HtmlStr (fromString "+ ")
-                                                    , HtmlStr (fromString (show m))
-                                                    ]
+                   method2row m = Cells
+                                    [ Html.LabelCell [ Html.Align HLeft] 
+                                         ( Html.Text [ Html.Str (fromString "+ ")
+                                                     , Html.Str (fromString (show m))
+                                                     ]
                                          ) 
                                     ]
                     
@@ -309,7 +310,7 @@ where
                                            ] ++
                                            ( if blackWhite flags
                                              then [Style [SItem Dashed []]]
-                                             else [Color [X11Color Red]]
+                                             else [GVcomp.Color [X11Color Red]]
                                            )
                               }
              
@@ -327,17 +328,17 @@ where
       name cd = n
         where (n,_) = nameandcpts cd
         
-   data Class          = OOClass  { clNm        :: String      -- ^ name of the class
-                                  , clAtts      :: [Attribute] -- ^ Attributes of the class
-                                  , clMths      :: [Method]    -- ^ Methods of the class
+   data Class          = OOClass  { clNm        :: String        -- ^ name of the class
+                                  , clAtts      :: [CdAttribute] -- ^ Attributes of the class
+                                  , clMths      :: [Method]      -- ^ Methods of the class
                                   } deriving Show
    instance Identified Class where
       name = clNm
-   data Attribute      = OOAttr   { attNm       :: String      -- ^ name of the attribute
+   data CdAttribute    = OOAttr   { attNm       :: String      -- ^ name of the attribute
                                   , attTyp      :: String      -- ^ type of the attribute (Concept name or built-in type)
                                   , attOptional :: Bool        -- ^ says whether the attribute is optional
                                   } deriving Show
-   instance Identified Attribute where
+   instance Identified CdAttribute where
       name = attNm
    data MinValue = MinZero | MinOne deriving (Show, Eq)
    
@@ -365,16 +366,16 @@ where
    data Deleting       = Open | Close                      --
                                     deriving (Show, Eq)
    data Method         = OOMethodC      String             -- name of this method, which creates a new object (producing a handle)
-                                        [Attribute]        -- list of parameters: attribute names and types
+                                        [CdAttribute]      -- list of parameters: attribute names and types
                        | OOMethodR      String             -- name of this method, which yields the attribute values of an object (using a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
+                                        [CdAttribute]      -- list of parameters: attribute names and types
                        | OOMethodS      String             -- name of this method, which selects an object using key attributes (producing a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
+                                        [CdAttribute]      -- list of parameters: attribute names and types
                        | OOMethodU      String             -- name of this method, which updates an object (using a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
+                                        [CdAttribute]      -- list of parameters: attribute names and types
                        | OOMethodD      String             -- name of this method, which deletes an object (using nothing but a handle).
                        | OOMethod       String             -- name of this method, which deletes an object (using nothing but a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
+                                        [CdAttribute]      -- list of parameters: attribute names and types
                                         String             -- result: a type
 
    instance Show Method where

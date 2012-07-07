@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Output.AdlExplanation
 import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map
-import Control.Monad.State
+import Control.Monad.State.Lazy
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "UML"
@@ -113,7 +113,7 @@ genUMLClass (OOClass nm attrs _) =
                [ "    </packagedElement>"]
     }
 
-genUMAttribute :: Attribute -> UML
+genUMAttribute :: CdAttribute -> UML
 genUMAttribute  (OOAttr nm attrType optional) =
  do { attrId <- mkUnlabeledId "Attr"
     ; lIntId <- mkUnlabeledId "Int"
