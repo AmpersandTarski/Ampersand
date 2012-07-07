@@ -9,7 +9,7 @@ import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                  ,cChain,addSlashes,phpIndent)
 import Data.Maybe
-import Char(isDigit,digitToInt,intToDigit)
+import Data.Char(isDigit,digitToInt,intToDigit)
 import Data.List
 import DatabaseDesign.Ampersand_Prototype.Version 
 
