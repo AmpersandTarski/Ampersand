@@ -1,5 +1,5 @@
 name:           ampersand
-version:        2.2.0
+version:        2.2.1
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -7,7 +7,7 @@ description:    You can define your business processes by means of rules, writte
 homepage:       ampersand.sourceforge.net
 category:       Database Design
 stability:      alpha
-cabal-version:  >= 1.8
+cabal-version:  >= 1.14
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
@@ -178,7 +178,7 @@ executable ampersand
   main-is:          Main.hs
   hs-source-dirs:   src/exec
   build-depends:    
-                    ampersand == 2.2.0,
+                    ampersand == 2.2.1,
                     base >= 4.5.0.0 && < 4.6
   
   if flag(executable)
@@ -190,7 +190,7 @@ test-suite AmpersandTests
   type:            exitcode-stdio-1.0
   x-uses-tf:       true
   build-depends:   
-                    ampersand == 2.2.0,
+                    ampersand == 2.2.1,
                     directory >= 1.1.0.2 && < 1.2,
                     HUnit >= 1.2 && < 2,
                     test-framework >= 0.6,
