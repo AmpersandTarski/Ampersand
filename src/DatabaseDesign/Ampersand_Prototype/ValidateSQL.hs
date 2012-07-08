@@ -191,6 +191,7 @@ executePHP phpStr =
                 , std_out      = CreatePipe
                 , std_err      = CreatePipe
                 , close_fds    = False -- no need to close all other file descriptors
+                , create_group = False
                 }
             
     ; (_, mStdOut, mStdErr, procHandle) <- createProcess cp 
