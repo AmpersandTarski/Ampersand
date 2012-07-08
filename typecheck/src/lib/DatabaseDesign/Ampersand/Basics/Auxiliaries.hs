@@ -6,6 +6,8 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    , sort'
    , getCycles
    , combinations
+   , commaEng
+   , commaNL
    )
   where
    import Data.List
@@ -60,3 +62,15 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    combinations []       = [[]]
    combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
                               
+   commaEng :: String -> [String] -> String
+   commaEng str [a,b,c] = a++", "++b++", "++str++" "++c
+   commaEng str [a,b]   = a++" "++str++" "++b
+   commaEng _   [a]     = a
+   commaEng str (a:as)  = a++", "++commaEng str as
+   commaEng _   []      = ""
+
+   commaNL :: String -> [String] -> String
+   commaNL str [a,b]  = a++" "++str++" "++b
+   commaNL  _  [a]    = a
+   commaNL str (a:as) = a++", "++commaNL str as
+   commaNL  _  []     = ""
