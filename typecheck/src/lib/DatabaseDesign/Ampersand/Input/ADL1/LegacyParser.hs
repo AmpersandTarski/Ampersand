@@ -6,7 +6,7 @@
 --note: relations outside a pattern (context elements) are put in a dummy pattern
 module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner  ( Token(..),TokenType(..),noPos
-                      , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
+                      , pKey,pConid,pString,pSpec,pExpl,pVarid,pComma)
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing  (Parser
                       , (<$>) , (<$), (<*>), (<*) , (*>), (<|>), (<??>)
                       ,pList,pListSep,pList1,pList1Sep,pSym
@@ -135,6 +135,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                                              , p_orig   = orig
                                                              , p_popps  = content
                                                              }
+         ppop _ x _ = fatal 138 ("ppop must have an argument of the form PTyp _ (Prel _ nm) sgn, but has been called with\n"++show x)
 
    pPattern         :: Parser Token P_Pattern
    pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
@@ -276,7 +277,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
 
    pRelSign         :: Parser Token P_Expression
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
-                       where prel (nm,orig) Nothing = PTyp orig (Prel orig nm) []
+                       where prel (nm,orig) Nothing = Prel orig nm
                              prel (nm,pos') (Just (sgn,orig)) = PTyp orig (Prel pos' nm) sgn
 
    pSign :: Parser Token (P_Sign,Origin)
