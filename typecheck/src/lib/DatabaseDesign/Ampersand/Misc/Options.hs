@@ -33,6 +33,7 @@ instance Show ParserVersion where
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like Ampersand to do. 
 data Options = Options { showVersion   :: Bool
+                       , typeGraphs    :: Bool   -- draw a diagram of the type analysis, for educational or debugging purposes.
                        , preVersion    :: String
                        , postVersion   :: String  --built in to aid DOS scripting... 8-(( Bummer. 
                        , showHelp      :: Bool
@@ -53,7 +54,7 @@ data Options = Options { showVersion   :: Bool
                        , customCssFile :: Maybe FilePath                       
                        , importfile    :: FilePath --a file with content to populate some (Populated a)
                                                    --class Populated a where populate::a->b->a
-                       , fileformat  :: FileFormat --file format e.g. of importfile or export2adl
+                       , fileformat    :: FileFormat --file format e.g. of importfile or export2adl
                        , theme         :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML        :: Bool
                        , genFspec      :: Bool   -- if True, generate a functional specification
@@ -104,6 +105,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , postVersion   = fatal 89 "No monadic options available."
                       , theme         = DefaultTheme
                       , showVersion   = False
+                      , typeGraphs    = False
                       , showHelp      = False
                       , verboseP      = False
                       , development   = False
@@ -260,6 +262,7 @@ each opts = [o |(o,_) <- opts]
 options :: [(OptDescr (Options -> Options), DisplayMode) ]
 options = map pp
           [ (Option "v"     ["version"]     (NoArg versionOpt)          "show version and exit.", Public)
+          , (Option ""      ["typing"]      (NoArg typeGraphsOpt)       "show the analysis of types in graphical (.png) form.", Hidden)
           , (Option "h?"    ["help"]        (NoArg helpOpt)             "get (this) usage information.", Public)
           , (Option ""      ["verbose"]     (NoArg verboseOpt)          "verbose error message format.", Public)
           , (Option ""      ["dev"]         (NoArg developmentOpt)      "Report and generate extra development information", Hidden)
@@ -337,12 +340,14 @@ envdbName="CCdbName"
 envlogName :: String
 envlogName="CClogName"
 
-versionOpt :: Options -> Options
-versionOpt      opts = opts{showVersion  = True}            
-helpOpt :: Options -> Options
-helpOpt         opts = opts{showHelp     = True}            
-verboseOpt :: Options -> Options
-verboseOpt      opts = opts{ verboseP     = True} 
+versionOpt    :: Options -> Options
+versionOpt       opts = opts{showVersion  = True}            
+typeGraphsOpt :: Options -> Options
+typeGraphsOpt    opts = opts{typeGraphs  = True}            
+helpOpt       :: Options -> Options
+helpOpt          opts = opts{showHelp     = True}            
+verboseOpt    :: Options -> Options
+verboseOpt       opts = opts{ verboseP     = True} 
 developmentOpt :: Options -> Options
 developmentOpt opts = opts{ development   = True}
 autoRefreshOpt :: Maybe String -> Options -> Options
