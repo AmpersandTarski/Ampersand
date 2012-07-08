@@ -251,29 +251,29 @@ where
 
    instance Traced P_Expression where
     origin e = case e of
-      Pid orig _      -> orig
-      Pnid _          -> OriginUnknown
-      Patm orig _ _   -> orig
-      Pnull           -> OriginUnknown
-      Pfull orig _    -> orig
-      Prel orig _     -> orig
-      Pflp orig _     -> orig
-      Pequ orig _ _   -> orig
-      Pimp orig _ _   -> orig
-      PIsc orig _ _   -> orig
-      PUni orig _ _   -> orig
-      PDif orig _ _   -> orig
-      PLrs orig _ _   -> orig
-      PRrs orig _ _   -> orig
-      PCps orig _ _   -> orig
-      PRad orig _ _   -> orig
-      PPrd orig _ _   -> orig
-      PKl0 orig _     -> orig
-      PKl1 orig _     -> orig
-      PFlp orig _     -> orig
-      PCpl orig _     -> orig
-      PBrk orig _     -> orig
-      PTyp orig _ _   -> orig
+      Pid orig _     -> orig
+      Pnid _         -> OriginUnknown
+      Patm orig _ _  -> orig
+      Pnull          -> OriginUnknown
+      Pfull orig _   -> orig
+      Prel orig _    -> orig
+      Pflp orig _    -> orig
+      Pequ orig _ _  -> orig
+      Pimp orig _ _  -> orig
+      PIsc orig _ _  -> orig
+      PUni orig _ _  -> orig
+      PDif orig _ _  -> orig
+      PLrs orig _ _  -> orig
+      PRrs orig _ _  -> orig
+      PCps orig _ _  -> orig
+      PRad orig _ _  -> orig
+      PPrd orig _ _  -> orig
+      PKl0 orig _    -> orig
+      PKl1 orig _    -> orig
+      PFlp orig _    -> orig
+      PCpl orig _    -> orig
+      PBrk orig _    -> orig
+      PTyp orig _ _  -> orig
 
    data SrcOrTgt = Src | Tgt deriving (Show, Eq)
 
