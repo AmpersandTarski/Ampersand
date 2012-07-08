@@ -51,12 +51,12 @@ testADLFiles flags xs
                                       -- (maybe do some logging?) and returns True iff the script 
                                       -- is handled as expected.
      testAmpersandScript shouldPass scriptName = 
-         do pCtx <- parseContext flags scriptName
-            parsedAndTypesOk (check pCtx) @?= shouldPass
+         do p_context <- parseContext flags scriptName
+            parsedAndTypesOk (check p_context) @?= shouldPass
        where
-         check pCtx = case pCtx of
-                       Right ctx -> typeCheck ctx []
-                       Left msg  -> (fatal 38 "There are errors that should have been presented!",PE [msg],fatal 59 "No eq Graph",fatal 59 "No st Graph")
+         check p_context = case p_context of
+                            Right ctx -> typeCheck ctx []
+                            Left msg  -> (fatal 38 "There are errors that should have been presented!",PE [msg],fatal 59 "No eq Graph",fatal 59 "No st Graph")
          parsedAndTypesOk (_,errs,_,_) = errs == CxeNone
                      
    

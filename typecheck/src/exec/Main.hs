@@ -47,11 +47,14 @@ main =
                                         ; parsePopulations popsText opts fn
                                         }
                   ; verboseLn opts "Type checking..."
-                  ; let (actx,type_errors,stDotGraph,condensedGraph) = typeCheck p_context pPops
-                  ; stDotGraphPath<-runGraphvizCommand Dot stDotGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
-                  ; putStr ("\n"++stDotGraphPath++" written.")
-                  ; condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
-                  ; putStr ("\n"++condensedGraphPath++" written.")
+                  ; let (actx,type_errors,stTypeGraph,condensedGraph) = typeCheck p_context pPops
+                  ; if typeGraphs opts
+                    then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
+                            ; putStr ("\n"++condensedGraphPath++" written.")
+                            ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
+                            ; putStr ("\n"++stDotGraphPath++" written.")
+                            }
+                    else do { putStr "" }
                   ; if nocxe type_errors 
                     then return actx
                     else do { Prelude.putStrLn $ "Type error:"

@@ -38,8 +38,8 @@ fatal = fatalMsg "Components"
 --   Apply nocxe on the error object to determine whether there are errors.
 --   If the list of populations is not empty, then it overwrites the one included in the parsed context
 typeCheck :: P_Context -> [P_Population] -> (A_Context, CtxError,DotGraph String,DotGraph String)
-typeCheck pCtx []   = let (aCtx,ctxcheck,eqDotGraph,stDotGraph)=pCtx2aCtx pCtx                  in (aCtx,cxes ctxcheck,eqDotGraph,stDotGraph)
-typeCheck pCtx pops = let (aCtx,ctxcheck,eqDotGraph,stDotGraph)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aCtx,cxes ctxcheck,eqDotGraph,stDotGraph)
+typeCheck p_context []   = let (aCtx,ctxcheck,condensedTypeGraph,stTypeGraph)=pCtx2aCtx p_context                  in (aCtx,cxes ctxcheck,condensedTypeGraph,stTypeGraph)
+typeCheck p_context pops = let (aCtx,ctxcheck,condensedTypeGraph,stTypeGraph)=pCtx2aCtx (p_context{ctx_pops=pops}) in (aCtx,cxes ctxcheck,condensedTypeGraph,stTypeGraph)
   
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.

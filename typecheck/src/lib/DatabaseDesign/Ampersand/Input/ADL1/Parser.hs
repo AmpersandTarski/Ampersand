@@ -601,7 +601,7 @@ In practice, we have it a little different.
 
    pRelSign         :: Parser Token P_Expression
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
-                       where prel (nm,pos') Nothing = Prel pos' nm
+                       where prel (nm,orig) Nothing = PTyp orig (Prel orig nm) []
                              prel (nm,pos') (Just (sgn,orig)) = PTyp orig (Prel pos' nm) sgn
                                                                  
    pSign :: Parser Token (P_Sign,Origin)
