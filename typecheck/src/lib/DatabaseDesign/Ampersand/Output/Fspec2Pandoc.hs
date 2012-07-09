@@ -18,7 +18,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
-import Locale
+import System.Locale
 import Data.Time.Format
 
 --DESCR ->
