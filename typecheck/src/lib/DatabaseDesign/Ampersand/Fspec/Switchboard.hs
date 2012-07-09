@@ -40,7 +40,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                }
       where
          activityNodes = [ DotNode { nodeID         = "act_"++name a
-                                   , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color Orange), Label (StrLabel (fromString (name a)))]
+                                   , nodeAttributes = [Style [SItem Filled []], FillColor [X11Color Orange], Label (StrLabel (fromString (name a)))]
                                    }
                          | a<-fpActivities fp]
          edges         = nub
@@ -96,14 +96,14 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                     ]
         --DESCR -> All conjuncts
         conjNodes = [ DotNode { nodeID         = nameCNode (fsbConjs fsb) (rul,c)
-                              , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color (colorRule rul)), (Label . StrLabel . fromString . name) rul]
+                              , nodeAttributes = [Style [SItem Filled []], FillColor [X11Color (colorRule rul)], (Label . StrLabel . fromString . name) rul]
                               }
                     | (rul,c)<-fsbConjs fsb]
 
         --DESCR -> All ECA rules
         ecaNodes  = [ DotNode { nodeID         = nameENode (fsbECAs fsb) eca
                               , nodeAttributes = if isBlk (ecaAction eca)
-                                                 then [Style [SItem Filled []], FillColor (X11Color Red), (Label . StrLabel . fromString) ("ERR #"++show (ecaNum eca))]
+                                                 then [Style [SItem Filled []], FillColor [X11Color Red], (Label . StrLabel . fromString) ("ERR #"++show (ecaNum eca))]
                                                  else [(Label . StrLabel . fromString. showADL) eca]
                               }
                     | eca<-fsbECAs fsb, not (isBlk (ecaAction eca))]
@@ -192,7 +192,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
 
         --DESCR -> All conjuncts
         conjunctNodes = [ DotNode { nodeID         = nameCNode conjuncts (rul,c)
-                                  , nodeAttributes = [Style [SItem Filled []], FillColor (X11Color (colorRule rul)), Label (StrLabel (fromString (name rul)))]
+                                  , nodeAttributes = [Style [SItem Filled []], FillColor [X11Color (colorRule rul)], Label (StrLabel (fromString (name rul)))]
                                   }
                         | (rul,c)<-conjuncts]
 
@@ -246,4 +246,3 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
      f (EBrk e)       = f e
      f (ETyp e _)     = f e
      f (ERel r)       = [ True | r==rel ]
-     

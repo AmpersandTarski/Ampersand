@@ -5,7 +5,7 @@ import Control.Monad
 import System.FilePath (replaceExtension)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
-import Data.GraphViz hiding (addExtension, C)
+import Data.GraphViz --hiding (addExtension, C)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError

@@ -392,7 +392,7 @@ insP_Parentheses = insPar 0
        insPar _ (PKl1 o e)   = PKl1 o (insPar 10 e)
        insPar _ (PFlp o e)   = PFlp o (insPar 10 e)
        insPar _ (PCpl o e)   = PCpl o (insPar 10 e)
-       insPar i (PBrk o e)   = insPar i e
+       insPar i (PBrk _ e)   = insPar i e
        insPar _ (PTyp o e t) = PTyp o (insPar 10 e) t
        insPar _ x            = x
 

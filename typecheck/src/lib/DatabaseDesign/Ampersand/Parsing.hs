@@ -5,7 +5,6 @@ module DatabaseDesign.Ampersand.Parsing ( parseContext
                                         , ParseError)
 where
 
-import Prelude hiding (putStr,readFile,writeFile)
 import Control.Monad
 import Data.List
 import Data.Char
@@ -103,7 +102,7 @@ readAndParseFile opts parserVersion depth alreadyParsed mIncluderFilepath fileDi
       then do { when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
               ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
               } 
-      else do { fileContents <- readFile filepath
+      else do { fileContents <- DatabaseDesign.Ampersand.Basics.readFile filepath
               ; when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ filepath
               ; parseFileContents opts parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
                                   fileContents newFileDir newFilename     

@@ -498,5 +498,5 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""
    pKey_val_pos        ::  IsParser p Token => String -> p (String,Origin)
    pKey_val_pos keyword = gsym_val_pos TkKeyword   keyword   keyword
-   pSpec_val_pos       ::  IsParser p Token => Char -> p (String,Origin)
-   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]
+--   pSpec_val_pos       ::  IsParser p Token => Char -> p (String,Origin)
+--   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]
