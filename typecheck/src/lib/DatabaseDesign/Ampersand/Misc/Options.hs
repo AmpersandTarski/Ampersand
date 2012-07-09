@@ -6,8 +6,7 @@ module DatabaseDesign.Ampersand.Misc.Options
         ,verboseLn,verbose,FspecFormat(..),FileFormat(..)
         ,DocTheme(..),allFspecFormats,helpNVersionTexts)
 where
-import System                (getArgs, getProgName)
-import System.Environment    (getEnvironment)
+import System.Environment    (getArgs, getProgName,getEnvironment)
 import DatabaseDesign.Ampersand.Misc.Languages (Lang(..))
 import Data.Char (toUpper)
 import System.Console.GetOpt

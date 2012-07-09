@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module DatabaseDesign.Ampersand.ADL1.Pair
                     ( Paire,Pairs
                     , kleenejoin
