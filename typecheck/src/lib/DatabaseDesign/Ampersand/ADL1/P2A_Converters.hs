@@ -50,14 +50,31 @@ origExpr (in conjunction with Origin o) is kept for the purpose of generating me
 data Type =  TypExpr P_Expression Bool Origin P_Expression
            | TypLub Type Type Origin P_Expression
            | TypGlb Type Type Origin P_Expression
-            deriving (Eq, Show)
+            deriving (Show)
+
+-- Equality of type expressions is based on occurrence. Only I[c] and V[a,b] have equality irrespective of their occurrence.
+instance Eq Type where
+ TypExpr (Pid   _ []) _ o _ == TypExpr (Pid   _ [])  _ o' _  =  o==o'
+ TypExpr (Pid   _ cs) _ o _ == TypExpr (Pid   _ cs') _ o' _  =  cs==cs' && o==o'
+ TypExpr (Pfull _ []) _ o _ == TypExpr (Pfull _ [])  _ o' _  =  o==o'
+ TypExpr (Pfull _ cs) _ o _ == TypExpr (Pfull _ cs') _ o' _  =  cs==cs' && o==o'
+ TypExpr p _ o _ == TypExpr p' _  o' _  =  p==p'          && o==o'
+ TypLub  a b o _ == TypLub  a' b' o' _  =  a==a' && b==b' && o==o'
+ TypGlb  a b o _ == TypGlb  a' b' o' _  =  a==a' && b==b' && o==o'
+ _ == _ = False
 
 showType :: Type -> String
-showType (TypExpr _ orig _       origExpr@(Pid _ [])) = showADL origExpr
-showType (TypExpr _ orig _       origExpr@(Pid _ _))  = showADL origExpr
-showType (TypExpr _ flipped orig expr)                = showADL (if flipped then PFlp orig expr else expr) ++"("++ show (origin expr)++")"
-showType (TypLub a b orig _)                          = showType a++" ./\\. "++showType b
-showType (TypGlb a b orig _)                          = showType a++" .\\/. "++showType b
+showType (TypExpr _ _       orig origExpr@(Pid _ []))   = showADL origExpr ++"("++ show orig++")"
+showType (TypExpr expr@(Pid _ []) _ orig _)             = showADL expr     ++"("++ show orig++")"
+showType (TypExpr expr@(Pid _ cs) _ _ _)                = showADL expr
+showType (TypExpr _ _       orig origExpr@(Pid _ _))    = showADL origExpr
+showType (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ show orig++")"
+showType (TypExpr expr@(Pfull _ []) _ orig _)           = showADL expr     ++"("++ show orig++")"
+showType (TypExpr expr@(Pfull _ cs) _ _ _)              = showADL expr
+showType (TypExpr _ _       orig origExpr@(Pfull _ _))  = showADL origExpr
+showType (TypExpr _ flipped orig origExpr)              = showADL (if flipped then p_flp origExpr else origExpr) ++"("++ show orig++")"
+showType (TypLub a b orig _)                            = showType a++" ./\\. "++showType b
+showType (TypGlb a b orig _)                            = showType a++" .\\/. "++showType b
 
 instance Traced Type where
   origin (TypExpr _ _ o _) = o
@@ -381,8 +398,8 @@ typing isas decls exprs
      (.+.) :: [(Type,Type)] -> [(Type,Type)] -> [(Type,Type)]
      a .+. b  = a `uni` b
      dom, cod :: P_Expression -> P_Expression -> Type
-     dom e x    = TypExpr x         False (origin x) e -- the domain of x, and make sure to check subexpressions of x as well
-     cod e x    = TypExpr (p_flp x) True  (origin x) e 
+     dom origExpr x    = TypExpr x         False (origin x) origExpr -- the domain of x, and make sure to check subexpressions of x as well
+     cod origExpr x    = TypExpr (p_flp x) True  (origin x) origExpr 
 
 {- The following table is a data structure that is meant to facilitate drawing type graphs and creating the correct messages for users.
 This table is organized as follows:
