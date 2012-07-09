@@ -455,7 +455,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                    }
          prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
          pcptpop :: Origin -> String -> [String] -> P_Population
-         pcptpop orig cnm contents = P_CptPopu (cnm,contents)
+         pcptpop _ cnm contents = P_CptPopu (cnm,contents)
 
    pRoleRelation    :: Parser Token P_RoleRelation
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
@@ -675,5 +675,5 @@ In practice, we have it a little different.
    pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""
    pKey_val_pos        ::  IsParser p Token => String -> p (String,Origin)
    pKey_val_pos keyword = gsym_val_pos TkKeyword   keyword   keyword
-   pSpec_val_pos       ::  IsParser p Token => Char -> p (String,Origin)
-   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]
+--   pSpec_val_pos       ::  IsParser p Token => Char -> p (String,Origin)
+--   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]
