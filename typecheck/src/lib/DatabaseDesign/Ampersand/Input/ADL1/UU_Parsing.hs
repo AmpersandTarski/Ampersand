@@ -381,16 +381,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
     splitState  :: state s            -> ({-L-} s, state s {-R-})
     firstState  :: state s            -> Maybe s
     getPosition :: state s            -> String
-    {-# INLINE splitStateE #-}
-    {-# INLINE splitState  #-}
+--    {-# INLINE splitStateE #-}
+--    {-# INLINE splitState  #-}
 
    class OutputState r  where
      acceptR      ::                              v             -> rest        -> r v rest
      nextR        ::  (a ->     rest -> rest') -> (b -> a)      -> r b rest  -> rest'
      dollarR      ::  (a -> r c rest -> rest') -> (b -> a) -> b -> r c rest  -> rest'
-     {-# INLINE acceptR #-}
-     {-# INLINE nextR   #-}
-     {-# INLINE dollarR #-}
+--     {-# INLINE acceptR #-}
+--     {-# INLINE nextR   #-}
+--     {-# INLINE dollarR #-}
 
    class (Ord s, Show s) => Symbol s where
     deleteCost :: s -> Int{-I-}

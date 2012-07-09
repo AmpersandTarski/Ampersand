@@ -26,7 +26,8 @@ import Text.Pandoc
 import DatabaseDesign.Ampersand.Basics hiding (hPutStrLn)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
-import System                 (system, ExitCode(ExitSuccess,ExitFailure))
+import System.Process      (system)
+import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.IO              (hPutStrLn, stderr)
 import Paths_ampersand
 import System.FilePath       -- (combine,addExtension,replaceExtension)
