@@ -275,7 +275,12 @@ typing isas decls exprs
         | expr<-map p_simplify exprs
         , tuple<-uType anything anything expr
         ]++
-        [ st| g<-isas, st<-dom x (Pid (origin g) [gen_spc g]).<.dom x (Pid (origin g) [gen_gen g]) ])
+        [ st| g<-isas
+            , let spc=Pid (origin g) [gen_spc g]
+            , let gen=Pid (origin g) [gen_gen g]
+            , let x=Pimp (origin g) spc gen
+            , st<-dom x spc.<.dom x gen
+        ])
    where
      anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnknown [])
      pDecls = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]

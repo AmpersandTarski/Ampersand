@@ -363,7 +363,7 @@ handleFlags po flags =
                        , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                        , if blackWhite flags then Style [dotted] else penColor Red
                        ]
-      TotalPicture -> [ Overlap RemoveOverlaps
+      TotalPicture -> [ Overlap ScaleOverlaps 
                       , Landscape False
                       , Model Circuit
                       ]
@@ -409,4 +409,3 @@ noMod = ArrMod { arrowFill = FilledArrow
                }
 open  :: ArrowModifier
 open  = noMod {arrowFill = OpenArrow}
-
