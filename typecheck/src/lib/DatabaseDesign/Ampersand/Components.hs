@@ -37,9 +37,9 @@ fatal = fatalMsg "Components"
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   Apply nocxe on the error object to determine whether there are errors.
 --   If the list of populations is not empty, then it overwrites the one included in the parsed context
-typeCheck :: P_Context -> [P_Population] -> (A_Context, CtxError,DotGraph String,DotGraph String)
-typeCheck p_context []   = let (aCtx,ctxcheck,condensedTypeGraph,stTypeGraph)=pCtx2aCtx p_context                  in (aCtx,cxes ctxcheck,condensedTypeGraph,stTypeGraph)
-typeCheck p_context pops = let (aCtx,ctxcheck,condensedTypeGraph,stTypeGraph)=pCtx2aCtx (p_context{ctx_pops=pops}) in (aCtx,cxes ctxcheck,condensedTypeGraph,stTypeGraph)
+typeCheck :: P_Context -> [P_Population] -> (A_Context, CtxError,DotGraph String,DotGraph String,DotGraph String)
+typeCheck p_context []   = let (aCtx,ctxcheck,stTypeGraph,condensedGraph,ambiguityGraph)=pCtx2aCtx p_context                  in (aCtx,cxes ctxcheck,stTypeGraph,condensedGraph,ambiguityGraph)
+typeCheck p_context pops = let (aCtx,ctxcheck,stTypeGraph,condensedGraph,ambiguityGraph)=pCtx2aCtx (p_context{ctx_pops=pops}) in (aCtx,cxes ctxcheck,stTypeGraph,condensedGraph,ambiguityGraph)
   
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.

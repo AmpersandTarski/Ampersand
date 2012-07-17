@@ -7,7 +7,7 @@ module DatabaseDesign.Ampersand.ADL1.Pair
                     , srcPaire,trgPaire
                     , flipPair,mkPair
                     , closPair
-                  --  , clos1
+                    , clos1
                     ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
@@ -56,8 +56,8 @@ where
 ----------------------------------------------------
 --  Warshall's transitive closure algorithm in Haskell:
 ----------------------------------------------------
-       clos1 :: (Eq a) => [(a,a)] -> [(a,a)]     -- e.g. a list of pairs
-       clos1 xs
-         = foldl f xs (nub (map fst xs) `isc` nub (map snd xs))
-           where
-            f q x = q `uni` [(a, b') | (a, b) <- q, b == x, (a', b') <- q, a' == x]
+   clos1 :: (Eq a) => [(a,a)] -> [(a,a)]     -- e.g. a list of pairs
+   clos1 xs
+     = foldl f xs (nub (map fst xs) `isc` nub (map snd xs))
+       where
+        f q x = q `uni` [(a, b') | (a, b) <- q, b == x, (a', b') <- q, a' == x]
