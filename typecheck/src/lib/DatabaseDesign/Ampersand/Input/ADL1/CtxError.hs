@@ -5,21 +5,31 @@ where
 import DatabaseDesign.Ampersand.Input.ADL1.FilePos
 import DatabaseDesign.Ampersand.Parsing 
 import DatabaseDesign.Ampersand.Basics
-import Data.List (intercalate)
+import DatabaseDesign.Ampersand.Core.ParseTree
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "CtxError"
+data CtxError = Cxes          {cxesibls :: [CtxError]}    -- ^ any number of errors
+              | CxeAmbExpr    {cxeExpr  :: P_Expression   -- ^ an erroneous expression, which is ambiguous
+                              ,cxeSrcT  :: [P_Concept]    -- ^ The applicable types for the source (length must be >1)
+                              ,cxeTrgT  :: [P_Concept]    -- ^ The applicable types for the target (length must be >1)
+                              ,cxeSign  :: [P_Sign]       -- ^ The applicable types for the expression (length must be >1)
+                              }
+              | CxeAmbBetween {cxeExpr  :: P_Expression
+                              ,cxeSrcE  :: P_Expression
+                              ,cxeSrcB  :: Bool
+                              ,cxeTrgE  :: P_Expression
+                              ,cxeTrgB  :: Bool
+                              ,cxeCpts  :: [P_Concept]
+                              }       
+              | CxeOrig       {cxechild :: CtxError       -- ^ context information of an error   
+                              ,cxetype  :: String         -- ^ the type of context e.g. a rule
+                              ,cxename  :: String         -- ^ its name
+                              ,cxeorigin:: Origin}        -- ^ the origin of the context e.g. a file position
+              | Cxe           {cxechild :: CtxError       -- ^ lower level errors
+                              ,cxemsg   :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
+              | CxeNone                                   -- ^ indicates the absence of an error
+              | PE            {cxeMsgs  :: [ParseError]}  -- ^ list of parse-time messages 
 
-data CtxError = Cxes    {cxesibls::[CtxError]} -- ^ any number of errors
-              | CxeOrig {cxechild::CtxError    -- ^ context information of an error   
-                        ,cxetype::String       -- ^ the type of context e.g. a rule
-                        ,cxename::String       -- ^ its name
-                        ,cxeorigin::Origin}    -- ^ the origin of the context e.g. a file position
-              | Cxe     {cxechild::CtxError    -- ^ lower level errors
-                        ,cxemsg::String}       -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
-              | CxeNone                        -- ^ indicates the absence of an error
-              | PE      {cxeMsgs :: [ParseError]} -- ^ list of parse-time messages 
-          --    deriving (Eq)
+
 instance Eq CtxError where
   Cxes es == Cxes es' = es == es'
   CxeOrig e t n o == CxeOrig e' t' n' o' = e == e' && t == t' && n == n' && o == o'
@@ -27,17 +37,7 @@ instance Eq CtxError where
   CxeNone == CxeNone = True
   _ == _ = False
 
-instance Show CtxError where
-  showsPrec _ (Cxes xs) = showString( intercalate "\n" (map show xs))
-  showsPrec _ (CxeOrig cxe t nm o)
-   | nocxe cxe                                    = showString ("The " ++ t ++ " at "++ show o ++ " is correct.")
-   | t `elem` ["pattern", "process", "interface"] = showString ("The " ++ t ++ " named "++ show nm ++ " contains errors " ++ show cxe)
-   | otherwise                                    = showString ("in the " ++ t ++ " at line "++ show o ++ ":\n" ++ show cxe)
-  showsPrec _ (Cxe cxe x) = showString (x ++ "\n" ++ show cxe)
-  showsPrec _ CxeNone = showString ""
-  showsPrec _ (PE msg) = showString $ "Parse error:\n"++ show (case msg of 
-                                                              [] -> fatal 35 "No messages??? The impossible happened!" 
-                                                              x:_ -> x)
+
 newcxe :: String -> CtxError
 newcxe = Cxe CxeNone
 newcxeif :: Bool -> String -> CtxError
@@ -58,10 +58,13 @@ cxenone = CxeNone
 -- | nocxe checks whether there are no errors
 nocxe :: CtxError -> Bool
 nocxe cxe = cxes cxe==CxeNone
+
 -- | cxes filters all redundant CxeNone, Cxes and CxeOrig
 cxes :: CtxError -> CtxError
 cxes (Cxe    {cxechild=ccxe,cxemsg=msg})
                    = Cxe (cxes ccxe) msg
+cxes (cxe@CxeAmbExpr{}) = cxe
+cxes (cxe@CxeAmbBetween{}) = cxe
 cxes (cxe@CxeOrig{})
  | nocxe (cxechild cxe) = CxeNone
  | otherwise       = cxe{cxechild=cxes (cxechild cxe)}

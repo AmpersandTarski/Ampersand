@@ -47,10 +47,12 @@ main =
                                         ; parsePopulations popsText opts fn
                                         }
                   ; verboseLn opts "Type checking..."
-                  ; let (actx,type_errors,stTypeGraph,condensedGraph) = typeCheck p_context pPops
+                  ; let (actx,type_errors,stTypeGraph,condensedGraph,ambiguityGraph) = typeCheck p_context pPops
                   ; if typeGraphs opts
                     then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
                             ; putStr ("\n"++condensedGraphPath++" written.")
+                            ; ambiguityGraphPath<-runGraphvizCommand Dot ambiguityGraph Png (replaceExtension ("Ambiguity_Graph_of_"++baseName opts) ".png")
+                            ; putStr ("\n"++ambiguityGraphPath++" written.")
                             ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
                             ; putStr ("\n"++stDotGraphPath++" written.")
                             }
