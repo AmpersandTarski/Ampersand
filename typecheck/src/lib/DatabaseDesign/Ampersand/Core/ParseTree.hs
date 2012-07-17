@@ -97,7 +97,8 @@ where
       = P_RR { rr_Roles :: [String]         -- ^ name of a role
              , rr_Rels  :: [P_Expression]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
              , rr_Pos   :: Origin           -- ^ position in the Ampersand script
-             } deriving (Eq, Show)       -- just for debugging
+             } deriving (Show)       -- just for debugging
+   instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
    instance Traced P_RoleRelation where
     origin = rr_Pos
 
@@ -246,8 +247,7 @@ where
       | PCpl Origin P_Expression               -- ^ Complement
       | PBrk Origin P_Expression               -- ^ bracketed expression ( ... )
       | PTyp Origin P_Expression P_Sign        -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      deriving (Eq, Ord, Show) -- deriving Show only for debugging purposes
-                               -- deriving Ord for the purpose of getting Pid up front when sorting P_Expressions.
+      deriving (Eq, Show) -- deriving Show only for debugging purposes
 
    instance Traced P_Expression where
     origin e = case e of
@@ -352,7 +352,8 @@ where
               , obj_ctx  :: P_Expression   -- ^ this expression describes the instances of this object, related to their context. 
               , obj_msub :: Maybe P_SubInterface  -- ^ the attributes, which are object definitions themselves.
               , obj_strs :: [[String]]     -- ^ directives that specify the interface.
-              }  deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
+              }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
+   instance Eq P_ObjectDef where od==od' = origin od==origin od'
    instance Identified P_ObjectDef where
     name = obj_nm
    instance Traced P_ObjectDef where
@@ -363,9 +364,10 @@ where
                  , kd_lbl :: String         -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                  , kd_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
                  , kd_ats :: [P_KeySegment] -- ^ the constituent segments of this key.
-                 } deriving (Eq,Show)
+                 } deriving (Show)
    instance Identified P_KeyDef where
     name = kd_lbl
+   instance Eq P_KeyDef where kd==kd' = origin kd==origin kd'
 
    instance Traced P_KeyDef where
     origin = kd_pos
