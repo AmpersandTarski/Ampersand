@@ -96,7 +96,13 @@ instance Traced Type where
 instance Eq Type where
   t==t' = t `t_eq` t'
 t_eq :: Type -> Type -> Bool
-t_eq (TypExpr x _ _ _) (TypExpr y _ _ _) = x `p_eq` y
+t_eq (TypExpr (Pid _ [c])    _ _ _) (TypExpr (Pid _ [c'])     _ _ _) = c==c'
+t_eq (TypExpr (Pnid c)       _ _ _) (TypExpr (Pnid c')        _ _ _) = c==c'
+t_eq (TypExpr (Patm _ x [c]) _ _ _) (TypExpr (Patm _ x' [c']) _ _ _) = x==x' && c==c'
+t_eq (TypExpr (Pfull _ cs)   _ _ _) (TypExpr (Pfull _ cs')    _ _ _) = cs==cs'
+t_eq e@(TypExpr (PTyp _ _ (P_Sign [])) _ _ _) e'@(TypExpr (PTyp _ _ (P_Sign [])) _ _ _) = e==e'
+t_eq (TypExpr (PTyp _ a sgn) _ _ _) (TypExpr (PTyp _ a' sgn') _ _ _) | sgn==sgn' = a `p_eq` a'
+t_eq (TypExpr x _ _ _) (TypExpr y _ _ _) = x == y
 t_eq (TypLub l r _ _) (TypLub l' r' _ _) =  l `t_eq` l' && r `t_eq` r'
 t_eq (TypGlb l r _ _) (TypGlb l' r' _ _) =  l `t_eq` l' && r `t_eq` r'
 t_eq _ _ = False
@@ -152,6 +158,11 @@ p_flp (PCpl o a)     = PCpl o (p_flp a)
 p_flp (PBrk o a)     = PBrk o (p_flp a)
 p_flp (PTyp o a sgn) = PTyp o (p_flp a) (let P_Sign cs=sgn in P_Sign (reverse cs))
 
+t_complement :: Type -> Type
+t_complement (TypExpr e flipped orig origExpr) = TypExpr (complement e) flipped orig (PCpl (origin origExpr) origExpr)
+t_complement (TypLub a b orig origExpr)        = TypGlb (t_complement a) (t_complement b) orig (PCpl (origin origExpr) origExpr)
+t_complement (TypGlb a b orig origExpr)        = TypLub (t_complement a) (t_complement b) orig (PCpl (origin origExpr) origExpr)
+
 complement :: P_Expression -> P_Expression
 complement a@(Pid o _)    = PCpl o a
 complement (Pnid a)       = Pid OriginUnknown [a]
@@ -189,8 +200,8 @@ p_simplify (Pimp o a b)        = Pimp o (p_simplify a) (p_simplify b)
 p_simplify (PIsc o a b)        = PIsc o (p_simplify a) (p_simplify b)
 p_simplify (PUni o a b)        = PUni o (p_simplify a) (p_simplify b)
 p_simplify (PDif o a b)        = PDif o (p_simplify a) (p_simplify b)
-p_simplify (PLrs o a b)        = PRrs o (p_simplify a) (p_simplify b)
-p_simplify (PRrs o a b)        = PLrs o (p_simplify a) (p_simplify b)
+p_simplify (PLrs o a b)        = PLrs o (p_simplify a) (p_simplify b)
+p_simplify (PRrs o a b)        = PRrs o (p_simplify a) (p_simplify b)
 p_simplify (PCps o a b)        = PCps o (p_simplify a) (p_simplify b)
 p_simplify (PRad o a b)        = PRad o (p_simplify a) (p_simplify b)
 p_simplify (PPrd o a b)        = PPrd o (p_simplify a) (p_simplify b)
@@ -301,6 +312,8 @@ computePredicates decls expr
 
 anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnknown [])
 thing c  = TypExpr (Pid OriginUnknown [c]) False OriginUnknown (Pid OriginUnknown [c])
+isAnything (TypExpr (Pfull _ []) _ _ (Pfull _ [])) = True
+isAnything _ = False
 {- The purpose of 'typing' is to analyse the domains and codomains of an expression in a context.
 As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
 For any two P_Expressions a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _ _,TypExpr b _ _ _) in st.
@@ -329,10 +342,10 @@ typing p_context universeSource universeTarget expr
            -> Type            -- uRt:  the type of the universe for the codomain of x
            -> P_Expression    -- z:    the expression to be analyzed
            -> [(Type, Type)]  -- a list of subset pairs, which is the result of analysing expression x.
-     uType _ _    _     (Pid{})               = nothing                                                              -- I[C]
+     uType x _    _     (Pid{})               = dom x.=.cod x                                                              -- I[C]
      uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
 --   uType x _    _     (Pnid _)              = dom x.=.dom (Pid [c]) .+. cod x.=.cod (Pid [c])                      -- These rules apply for  -I[C] (i.e. Pnid, if it were represented)
-     uType _ _    _     (Patm _ _ [])         = nothing                                                              -- 'Piet'   (an untyped singleton)
+     uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
      uType x _    _     (Patm o _ cs)         = dom x.<.dom (Pid u [head cs]) .+. cod x.<.cod (Pid u [head cs])      -- 'Piet'[Persoon]  (a typed singleton)
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType _ _    _     (Pfull _ [])          = nothing                                                              --  V     (the untyped full set)
@@ -352,26 +365,30 @@ typing p_context universeSource universeTarget expr
      uType x uLft uRt   (Pimp o a b)          = uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ o a (PIsc o a b)
 --
-     uType x  _    _    (PIsc o a b)          = dom x.<.dom a .+. cod x.<.cod a .+. dom x.<.dom b .+. cod x.<.cod b  --  intersect ( /\ )
+     uType x  _    _    (PIsc o a b)          = dom x.<.dom a .+. cod x.<.cod a .+. dom x.<.dom b .+. cod x.<.cod b    --  intersect ( /\ )
+                                                .+. interDom.<.dom a .+. interCod.<.cod a .+. interDom.<.dom b .+. interCod.<.cod b
                                                 .+. uType a interDom interCod a .+. uType b interDom interCod b
                                                 where interDom = mSpecific (dom a) (dom b) o x
                                                       interCod = mSpecific (cod a) (cod b) o x
-     uType x  _    _    (PUni o a b)          = dom a.<.dom x .+. cod a.<.cod x .+. dom b.<.dom x .+. cod b.<.cod x  --  union     ( \/ )
+     uType x  _    _    (PUni o a b)          = dom a.<.dom x .+. cod a.<.cod x .+. dom b.<.dom x .+. cod b.<.cod x    --  union     ( \/ )
+                                                .+. dom a.<.interDom .+. cod a.<.interCod .+. dom b.<.interDom .+. cod b.<.interCod
                                                 .+. uType a interDom interCod a .+. uType b interDom interCod b
                                                 where interDom = mGeneric (dom a) (dom b) o x
                                                       interCod = mGeneric (cod a) (cod b) o x
-     uType x uLft uRt   (PDif _ a b)          = dom x.<.dom a .+. cod x.<.cod a                                      --  a-b    (difference)
+     uType x uLft uRt   (PDif _ a b)          = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                                                  .+. uType a uLft uRt a .+. uType b (dom a) (cod a) b
      uType x uLft uRt   (PLrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a!b      relative addition
                                                 where e = PRad o a (complement (p_flp b))
      uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a!b      relative addition
                                                 where e = PRad o (complement (p_flp a)) b
      uType x uLft uRt   (PCps _ (Pid _ []) b) = uType x uLft uRt b                                                     -- I;b
-     uType x  _   uRt   (PCps o a@(Pid{}) b)  = dom x.=.(mSpecific (cod a) (dom b) o x) .+. cod x.<.cod b .+.              -- I[C];b   composition
-                                                uType x (mSpecific (cod a) (dom b) o x) uRt b
+     uType x  _   uRt   (PCps o a@(Pid{}) b)  = dom x.=.between .+. cod x.<.cod b .+. between.<.dom b .+.              -- I[C];b   composition
+                                                uType x between uRt b
+                                                where between = mSpecific (cod a) (dom b) o x
      uType x uLft uRt   (PCps _ a (Pid _ [])) = uType x uLft uRt a                                                     -- a;I      composition
-     uType x uLft  _    (PCps o a b@(Pid{}))  = dom x.<.dom a .+. cod x.=.mSpecific (cod a) (dom b) o x .+.              -- a;I[C]   composition
-                                                uType x uLft (mSpecific (cod a) (dom b) o x) a
+     uType x uLft  _    (PCps o a b@(Pid{}))  = dom x.<.dom a .+. cod x.=.between .+. between.<.cod a .+.              -- a;I[C]   composition
+                                                uType x uLft between a
+                                                where between = mSpecific (cod a) (dom b) o x
      uType x uLft uRt   (PCps o a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                  -- a;b      composition
                                                 between.<.cod a .+. between.<.dom b .+.
                                           --    between.=.TypExpr betweenExpr False o betweenExpr .+.
@@ -399,12 +416,18 @@ typing p_context universeSource universeTarget expr
      uType x uLft uRt   (PFlp _ (Pflp o nm))  = uType x uLft uRt (Prel o nm)                                            -- r~~
      uType x uLft uRt   (PFlp _ e)            = cod e.=.dom x .+. dom e.=.cod x .+. uType e uRt uLft e
 {- the abstract version of uType for PCpl
-     uType x uLft uRt   (PCpl o e)            = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- -a  complement
-                                                where e = PDif o (Pfull o [uLft, uRt]) b
+     uType x uLft uRt   (PCpl o e)            = dom x.=.dom ec .+. cod x.=.cod ec .+. uType x uLft uRt ec                 -- -a  complement
+                                                where ec = PDif o (Pfull o [uLft, uRt]) e
 -}
-     uType x uLft uRt   (PCpl _ e)            = dom x.<.uLft .+. cod x.<.uRt .+.                                     -- -e  complement
-                                                dom e.<.uLft .+. cod e.<.uRt .+.
-                                                uType e uLft uRt e
+{- the abstract version of uType for PCpl
+     uType x uLft uRt   (PCpl _ e)            = ( case (isAnything uLft, isAnything uRt) of
+                                                   (False, False) -> dom x.<.uLft .+. dom e.<.uLft .+. cod x.<.uRt .+. cod e.<.uRt
+                                                   (False, True ) -> dom x.<.uLft .+. dom e.<.uLft .+. cod x.=.cod e
+                                                   (True , False) -> dom x.=.dom e .+. cod x.<.uRt .+. cod e.<.uRt
+                                                   (True , True ) -> dom x.=.dom e .+. cod x.=.cod e
+                                                ) .+. uType e uLft uRt e
+-}
+     uType x uLft uRt   (PCpl _ e)            = dom x.=.dom e .+. cod x.=.cod e .+. uType e uLft uRt e
      uType x uLft uRt   (PBrk _ e)            = uType x uLft uRt e                                                     -- (e) brackets
      uType _  _    _    (PTyp _ _ (P_Sign []))= fatal 196 "P_Sign is empty"
      uType x uLft uRt   (PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                  -- e[A*B]  type-annotation
@@ -1447,8 +1470,8 @@ pCtx2aCtx p_context
          f (PUni o a (PUni _ b c)) = EUni ([f a]++b_c_s) where EUni b_c_s = f (PUni o b c)
          f (PUni _ a b)            = EUni [f a, f b]
          f (PDif _ a b)    = EDif (f a, f b)
-         f (PLrs _ a b)    = ERrs (f a, f b)
-         f (PRrs _ a b)    = ELrs (f a, f b)
+         f (PLrs _ a b)    = ELrs (f a, f b)
+         f (PRrs _ a b)    = ERrs (f a, f b)
          f (PCps o (PCps _ a b) c) = ECps (a_b_s++[f c]) where ECps a_b_s = f (PCps o a b)
          f (PCps o a (PCps _ b c)) = ECps ([f a]++b_c_s) where ECps b_c_s = f (PCps o b c)
          f (PCps _ a b)            = ECps [f a, f b]
