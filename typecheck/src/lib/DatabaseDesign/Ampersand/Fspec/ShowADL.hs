@@ -338,7 +338,7 @@ showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"
 
 --used to compose error messages at p2a time
 instance ShowADL P_Expression where
- showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
+ showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
    where
     showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr) expr
      = showchar expr'
