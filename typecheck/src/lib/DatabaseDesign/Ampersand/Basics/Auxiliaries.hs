@@ -56,8 +56,10 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
      in  [ vs | CyclicSCC vs <- stronglyConnComp graphEdges ]
 
 -- The following function can be used to determine how much of a set of alternative expression is already determined
-
--- | example: combinations [[1,2,3],[10,20],[4]] = [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
+   -- | The 'combinations' function returns all possible combinations of lists of list.
+   -- For example,
+   --
+   -- > combinations [[1,2,3],[10,20],[4]] == [[1,10,4],[1,20,4],[2,10,4],[2,20,4],[3,10,4],[3,20,4]]
    combinations :: [[a]] -> [[a]]
    combinations []       = [[]]
    combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
