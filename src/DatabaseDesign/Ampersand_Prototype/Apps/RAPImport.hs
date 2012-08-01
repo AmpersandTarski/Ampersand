@@ -7,7 +7,6 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..),maxima)
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(..))
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message(..))
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPIdentifiers
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP         (picturesForAtlas)

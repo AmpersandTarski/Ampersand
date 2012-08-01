@@ -394,9 +394,10 @@ selectGeneric i src trg tbl whr
    (if toM whr==Just "1" then tbl else tbl+|+(phpIndent i ++ "WHERE "+>+whr))
    where  selectcl | snd src=="" && snd trg=="" = fatal 421 "Source and target are \"\", use selectExists' for this purpose"
                    | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
-                   | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
-                   | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
-                   | otherwise = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
+                   | snd src==""       = "SELECT DISTINCT " ++ selectSelItem trg
+                   | snd trg==""       = "SELECT DISTINCT " ++ selectSelItem src
+                   | snd src=="tgt"    = "SELECT DISTINCT " ++ selectSelItem trg ++", "++selectSelItem src  -- added because of flipped expression (see ticket #342) 
+                   | otherwise         = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
 selectSelItem :: (String, String) -> String
 selectSelItem (att,alias)
   | unquote (afterPoint att) == unquote alias = att
