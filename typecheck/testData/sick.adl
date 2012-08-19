@@ -1,0 +1,79 @@
+﻿CONTEXT Test
+-- Dit bestand is bedoeld om alle foutmeldingen van de Ampersand-typechecker tenminste éénmaal te testen
+
+PATTERN Type1Error
+r :: A*B
+t :: B*A
+s :: A*B
+RULE r = s;t
+ENDPATTERN
+
+PATTERN Type2Error
+sees :: Comp*Comp
+sees :: Component*Comp
+RULE sees;sees~ |- sees
+ENDPATTERN
+
+PATTERN Type3Error
+sees :: Comp*Comp
+sendr :: Comp*A
+sees :: Component*Comp
+RULE sees;sees~ |- sendr
+ENDPATTERN
+
+PATTERN Type4Error
+lineReceiver :: Line*Object
+method :: Line*Method
+sees :: Comp*Comp
+sees :: Component*Comp
+RULE  lineReceiver~;method /\ sees |- sees
+RULE  lineReceiver~;method \/ sees |- sees
+ENDPATTERN
+
+PATTERN Type5Error
+lineSender :: Line*Object
+method :: Line*Method
+sees :: Comp*Comp
+RULE  lineSender;method /\ sees |- sees
+ENDPATTERN
+
+PATTERN Type6Error
+meth :: Line*Object
+meth :: Line*Method
+send :: Comp*Object
+send :: Comp*Method
+comp :: Line * Comp
+RULE  meth;send~ |- comp
+ENDPATTERN
+
+PATTERN Type7Error
+roeptaan :: Component*Service [TRN,RFX]
+ENDPATTERN
+
+PATTERN Type8Error
+RULE I=I
+ENDPATTERN
+
+PATTERN Type15Error
+van         :: Toegangsrecht * Medewerker
+op          :: Toegangsrecht * Document
+RULE I |- van~;op
+ENDPATTERN
+
+PATTERN Type16Error
+van         :: Toegangsrecht * Medewerker
+op          :: Toegangsrecht * Document
+RULE van~;op |- I
+ENDPATTERN
+
+-- the following should not produce mistakes:
+
+PATTERN Correct
+r :: B*A
+t :: B*A
+s :: A*B
+RULE r |- s~ /\ t
+RULE r |- t /\ s~
+RULE r |- (t /\ s~) \/ s~
+ENDPATTERN
+ENDCONTEXT
