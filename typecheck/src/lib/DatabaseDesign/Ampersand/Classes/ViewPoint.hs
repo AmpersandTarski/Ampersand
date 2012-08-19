@@ -19,26 +19,26 @@ import Data.List
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
 
 class Language a where
-  objectdef    :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
-  conceptDefs  :: a -> [ConceptDef]  -- ^ all concept definitions that are valid within this viewpoint
+  objectdef :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
+  conceptDefs :: a -> [ConceptDef]  -- ^ all concept definitions that are valid within this viewpoint
   declarations :: a -> [Declaration] -- ^ all relations that exist in the scope of this viewpoint.
                                      -- ^ These are user defined declarations and all generated declarations,
                                      -- ^ i.e. one declaration for each GEN and one for each signal rule.
                                      -- ^ Don't confuse declarations with mors, which gives the relations that are
                                      -- ^ used in a.)
-  rules        :: a -> [Rule] -- ^ all user defined rules that are maintained within this viewpoint,
+  rules :: a -> [Rule] -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not key rules.
-  invariants   :: a -> [Rule] -- ^ all rules that are not maintained by users will be maintained by the computer.
+  invariants :: a -> [Rule] -- ^ all rules that are not maintained by users will be maintained by the computer.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  multrules    :: a -> [Rule] -- ^ all multiplicityrules that are maintained within this viewpoint.
+  multrules :: a -> [Rule] -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
-  keyrules     :: a -> [Rule] -- all key rules that are maintained within this viewpoint.
+  keyrules :: a -> [Rule] -- all key rules that are maintained within this viewpoint.
   keyrules x    = concatMap rulesFromKey $ keyDefs x
-  keyDefs      :: a -> [KeyDef]      -- ^ all keys that are defined in a
-  gens         :: a -> [A_Gen]       -- ^ all generalizations that are valid within this viewpoint
-  patterns     :: a -> [Pattern]     -- ^ all patterns that are used in this viewpoint
+  keyDefs :: a -> [KeyDef]      -- ^ all keys that are defined in a
+  gens :: a -> [A_Gen]       -- ^ all generalizations that are valid within this viewpoint
+  patterns :: a -> [Pattern]     -- ^ all patterns that are used in this viewpoint
   --TODO -> there are more rules than rules+multrules that can be violated
-  violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
+  violations :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
   violations x = [(r,viol) |r<-invariants x++multrules x++keyrules x, viol<-ruleviolations r]
   cExperimental :: a -> Bool 
   cExperimental _ = False
@@ -69,15 +69,15 @@ makeDecl g
          }
 
 class ProcessStructure a where
-  processes    :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
-  roles        :: a -> [String]        -- ^ all roles that are used in this ProcessStructure
-  interfaces   :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
-  objDefs      :: a -> [ObjectDef]
+  processes :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
+  roles :: a -> [String]        -- ^ all roles that are used in this ProcessStructure
+  interfaces :: a -> [Interface]     -- ^ all interfaces that are used in this ProcessStructure
+  objDefs :: a -> [ObjectDef]
   processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
                                        -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  maintains    :: a -> [(String,Rule)] -- ^ the string represents a Role
-  mayEdit      :: a -> [(String,Relation)] -- ^ the string represents a Role
-  workTBD      :: a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
+  maintains :: a -> [(String,Rule)] -- ^ the string represents a Role
+  mayEdit :: a -> [(String,Relation)] -- ^ the string represents a Role
+  workTBD :: a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workTBD    x = [(r,viol) |r<-processRules x, viol<-ruleviolations r]
    
 rulesFromKey :: KeyDef -> [Rule]

@@ -2,10 +2,10 @@
 module DatabaseDesign.Ampersand.Misc.TinyXML where
 
    -----------------some new data types for simple XML structures--------
-   data XTree = Elem { etag  :: XTag
+   data XTree = Elem { etag :: XTag
                      , etrees :: [XTree]
                      }
-              | Node { ntag  :: XTag  -- WHY? is Node nodig? Immers een Elem met een lege etrees doet precies hetzelfde...
+              | Node { ntag :: XTag  -- WHY? is Node nodig? Immers een Elem met een lege etrees doet precies hetzelfde...
                                       -- BECAUSE! De show van een Node laat maar ��n tag zien. Een Elem showt een begin- en end-tag.
                      }
               | PlainText {ptstr :: String}

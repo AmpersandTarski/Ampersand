@@ -352,7 +352,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
      (<$>) ::   (a->b) -> p a -> p b
      (<$ ) ::   f      -> p a -> p f
      pSucceed :: a -> p a
-     pLow     :: a -> p a
+     pLow :: a -> p a
      f <$> p = pSucceed f <*> p
      f <$  q = pSucceed f <*  q
      p <*  q = pSucceed       const  <*> p <*> q
@@ -363,39 +363,39 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
      pFail :: p a
 
    class SymParser p s | p -> s where
-    pCostRange   :: Int{-I-} -> s -> SymbolR s -> p s
-    pCostSym     :: Int{-I-} -> s -> s         -> p s
-    pSym         ::             s         -> p s
-    pRange       ::        s -> SymbolR s -> p s
-    getfirsts    ::  p v -> Exp s
-    setfirsts    ::  Exp s -> p v ->  p v
+    pCostRange :: Int{-I-} -> s -> SymbolR s -> p s
+    pCostSym :: Int{-I-} -> s -> s         -> p s
+    pSym ::             s         -> p s
+    pRange ::        s -> SymbolR s -> p s
+    getfirsts ::  p v -> Exp s
+    setfirsts ::  Exp s -> p v ->  p v
     pSym a       =  pCostSym   5{-I-} a a
     pRange       =  pCostRange 5{-I-}
 
    class SplitParser p where
-    getzerop     ::  p v -> Maybe (p v)
-    getonep      ::  p v -> Maybe (p v)
+    getzerop ::  p v -> Maybe (p v)
+    getonep ::  p v -> Maybe (p v)
 
    class Symbol s => InputState state s where
     splitStateE :: state s            -> Either' state s
-    splitState  :: state s            -> ({-L-} s, state s {-R-})
-    firstState  :: state s            -> Maybe s
+    splitState :: state s            -> ({-L-} s, state s {-R-})
+    firstState :: state s            -> Maybe s
     getPosition :: state s            -> String
 --    {-# INLINE splitStateE #-}
 --    {-# INLINE splitState  #-}
 
    class OutputState r  where
-     acceptR      ::                              v             -> rest        -> r v rest
-     nextR        ::  (a ->     rest -> rest') -> (b -> a)      -> r b rest  -> rest'
-     dollarR      ::  (a -> r c rest -> rest') -> (b -> a) -> b -> r c rest  -> rest'
+     acceptR ::                              v             -> rest        -> r v rest
+     nextR ::  (a ->     rest -> rest') -> (b -> a)      -> r b rest  -> rest'
+     dollarR ::  (a -> r c rest -> rest') -> (b -> a) -> b -> r c rest  -> rest'
 --     {-# INLINE acceptR #-}
 --     {-# INLINE nextR   #-}
 --     {-# INLINE dollarR #-}
 
    class (Ord s, Show s) => Symbol s where
     deleteCost :: s -> Int{-I-}
-    symBefore  :: s -> s
-    symAfter   :: s -> s
+    symBefore :: s -> s
+    symAfter :: s -> s
     deleteCost b = 5{-I-}
     symBefore  = fatal 398 "You should have made your token type an instance of the Class Symbol. eg by defining symBefore = pred"
     symAfter   = fatal 399 "You should have made your token type an instance of the Class Symbol. eg by defining symAfter  = succ"
@@ -622,14 +622,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
 
 
    data AnaParser  state result s a
-    = AnaParser { pars     :: ParsRec state result s a
-                , zerop    :: Maybe (Bool, Either a (ParsRec state result s a))
-                , onep     :: OneDescr state  result s a
+    = AnaParser { pars :: ParsRec state result s a
+                , zerop :: Maybe (Bool, Either a (ParsRec state result s a))
+                , onep :: OneDescr state  result s a
                 } -- deriving Show
    data OneDescr  state result s a
-    = OneDescr  { leng     :: Nat
-                , firsts   :: Exp s
-                , table    :: [(SymbolR s, TableEntry state result s a)]
+    = OneDescr  { leng :: Nat
+                , firsts :: Exp s
+                , table :: [(SymbolR s, TableEntry state result s a)]
                 } -- deriving Show
                 
    data TableEntry state result s a = TableEntry (ParsRec  state result s a) (Exp s -> ParsRec state result s a)
