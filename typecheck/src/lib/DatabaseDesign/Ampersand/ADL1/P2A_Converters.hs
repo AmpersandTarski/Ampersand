@@ -407,6 +407,13 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
 {-  The following table is made by merging expressionTable and classNumbers into one list.
     This has already caught mistakes in the past, so it is advisable to leave the checks in the code for debugging reasons.
 -}
+     table
+      = if length expressionTable==length classNumbers
+        then [ (i,classNr,typeExpr, ambConcepts classNr)
+             | ((i,typeExpr),(j,classNr))<-zip expressionTable classNumbers, if i/=j then fatal 410 "mistake in table" else True ]
+        else fatal 413 "mistake in table"
+         where
+{-
      table = f False expressionTable classNumbers
        where f _ [(i,typeExpr)] [(j,classNr)]
               | i==j = [(i,classNr,typeExpr, ambConcepts classNr)]
@@ -416,6 +423,7 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
               | i<j  = fatal 425 "mistake in table"
              f _ [] [] = []
              f _ et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
+-}
              ambConcepts :: Int -> [P_Concept]
              ambConcepts classNr = [c | (i,c)<-concepts, i==classNr]
      ambGraph :: Graph.Graph
@@ -517,6 +525,7 @@ showTypeTable typeTable
     showTypeExpr (TypLub _ _ _ origExpr)  = origExpr
     showTypeExpr (TypGlb _ _ _ origExpr)  = origExpr
     showTypeExpr (TypExpr _ _ _ origExpr) = origExpr
+    showPos OriginUnknown = "Origin unknown"
     showPos (FileLoc (FilePos (_,Pos l c,_)))
        = "line " ++ show l++":"++show c
     showPos _ = fatal 517 "Unexpected pattern in showPos"
@@ -1423,7 +1432,7 @@ pCtx2aCtx p_context
                          | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
                          , length conflictingConcepts>1
                          , origin x==origin origExpr
-                         ] ++ [error (showTypeTable typeTable)]
+                         ]
              deepErrors = g a++g b
          lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
 
