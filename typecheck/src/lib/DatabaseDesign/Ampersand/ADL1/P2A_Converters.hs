@@ -42,7 +42,10 @@ TypLub a b o e is read as:
 data Type =  TypExpr P_Expression Bool Origin P_Expression
            | TypLub Type Type Origin P_Expression
            | TypGlb Type Type Origin P_Expression
-            deriving Show -- note: do not put "deriving Ord", because Eq is specified (and not derived)
+            -- note: do not put "deriving Ord", because Eq is specified (and not derived)
+
+instance Show Type where
+    showsPrec _ typExpr = showString (showType typExpr)
 
 -- Equality of type expressions is based on occurrence. Only I[c] and V[a,b] have equality irrespective of their occurrence.
 {-
@@ -517,17 +520,22 @@ showTypeTable typeTable
    where  -- hier volgt een (wellicht wat onhandige, maar goed...) manier om de type table leesbaar neer te zetten.
     nMax = maximum [i | (stIndex,cIndex,_,_)<-typeTable, i<-[stIndex, cIndex]]
     sh i = [ ' ' | j<-[length (show i)..length (show nMax)] ]++show i
-    maxPos = maximum [length (showPos (origin t)) | (_,_,t,_)<-typeTable]
-    shPos t = str++[ ' ' | j<-[length str..maxPos] ] where str = showPos (origin t)
-    maxExpr = maximum [length (showADL (showTypeExpr t)) | (_,_,t,_)<-typeTable]
-    shExp t = str++[ ' ' | j<-[length str..maxExpr] ] where str = showADL t
-    showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++", "++shPos (origin t)++"  "++shExp (showTypeExpr t)++"  "++show concepts
+    shPos t = str++[ ' ' | j<-[length str..maxPos] ]
+     where str = showPos (origin t)
+           maxPos = maximum [length (showPos (origin typExpr)) | (_,_,typExpr,_)<-typeTable]
+    shType t = str++[ ' ' | j<-[length str..maxType] ]
+     where str = show t
+           maxType = maximum [length (show typExpr) | (_,_,typExpr,_)<-typeTable]
+    shExp t = str++[ ' ' | j<-[length str..maxExpr] ]
+     where str = showADL (showTypeExpr t)
+           maxExpr = maximum [length (showADL (showTypeExpr typExpr)) | (_,_,typExpr,_)<-typeTable]
+    showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++", "++shPos (origin t)++"  "++shExp t++"  "++shType t++"  "++show concepts
     showTypeExpr (TypLub _ _ _ origExpr)  = origExpr
     showTypeExpr (TypGlb _ _ _ origExpr)  = origExpr
     showTypeExpr (TypExpr _ _ _ origExpr) = origExpr
     showPos OriginUnknown = "Origin unknown"
     showPos (FileLoc (FilePos (_,Pos l c,_)))
-       = "line " ++ show l++":"++show c
+       = "("++show l++":"++show c++")"
     showPos _ = fatal 517 "Unexpected pattern in showPos"
 
 showStVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
