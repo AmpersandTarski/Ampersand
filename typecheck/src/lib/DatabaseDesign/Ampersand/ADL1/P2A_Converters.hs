@@ -378,12 +378,12 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
      typeExpressions :: [Type]     -- a list of all type expressions in st.
      typeExpressions = nub (map fst st++map snd st)
      expressionTable :: [(Int, Type)]
-     (expressionTable,numberOfNodes) = ([(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ], length typeExpressions)
+     expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
 -- stGraph is computed for debugging purposes. It shows precisely which edges are computed by uType.
      stGraph :: Graph.Graph
-     stGraph = Graph.buildG (0, numberOfNodes-1) stEdges
+     stGraph = Graph.buildG (0, (length typeExpressions)-1) stEdges
      stEdges :: [(Int,Int)]
      stEdges = nub [(i,i') | (t,t')<-st, let i=expressionNr t, let i'=expressionNr t', i/=i']
 {- sccGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
@@ -391,18 +391,17 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
    These equivalence classes are the strongly connected components of the original graph, which are computed by Graph.scc
 -}
      eqClasses :: [[Int]]             -- The strongly connected components are computed in the form of trees (by Graph.scc)
-     eqClasses = rfxFilter (clos1 (stEdges ++ [(i,i) | i<-take numberOfNodes [0..]])) -- (nub . concat) [[(i,i),(j,j)] | (i,j)<-stEdges] ))
+     eqClasses = rfxFilter (clos1 (stEdges ++ [(i,i) | i<-take (length typeExpressions) [0..]])) -- (nub . concat) [[(i,i),(j,j)] | (i,j)<-stEdges] ))
       where rfxFilter lst = f (lst `isc` [(b,a) | (a,b)<-lst])
                             where f [] = []
                                   f ((a,b):rest) = cl : f [ (c,d) | (c,d)<-rest, c `notElem` cl ]
                                     where cl = nub (a:b:[d | (c,d)<-rest, a==c ])
      exprClass :: Int -> Int
      exprClass i = head ([classNr | (exprNr,classNr)<-classNumbers, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
+     condensedEdges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
      sccGraph :: Graph.Graph
      sccGraph
-      = Graph.buildG (0, length eqClasses-1) edges
-        where edges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
-        --    verts = nub [n | (c,c')<-edges, n<-[c,c']]
+      = Graph.buildG (0, length eqClasses-1) condensedEdges
      -- classNumbers is the relation from stGraph to sccGraph, relating the different numberings
      classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging expressionTable and classNumbers into one list.
@@ -423,7 +422,7 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
      ambGraph = Graph.buildG (0, length eqClasses-1) ambiguities
      -- all concepts belonging to an sccGraph node
      concepts :: [(Int,P_Concept)]
-     concepts = [ (i,c) | (i,j) <- clos1 (Graph.edges sccGraph), TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
+     concepts = [ (i,c) | (i,j) <- clos1 condensedEdges, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
      exprsLookupOfClass i = [typeExpr | (_,classNr,typeExpr,_) <- table, i==classNr]
      ambiguities :: [(Int,Int)]
      ambiguities = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
