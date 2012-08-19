@@ -58,7 +58,7 @@ where
     showHSName :: a -> String
     
    class ShowHS a where
-    showHS     :: Options -> String -> a -> String
+    showHS :: Options -> String -> a -> String
 
    instance ShowHSName a => ShowHSName [a] where
     showHSName xs = "["++intercalate "," (map showHSName xs)++"]"
@@ -1005,7 +1005,7 @@ where
                    | otherwise    = hsId cs'
       hsId ""                     = ""
 
-   showL   :: [String] -> String
+   showL :: [String] -> String
    showL xs = "["++intercalate "," xs++"]"
 
 

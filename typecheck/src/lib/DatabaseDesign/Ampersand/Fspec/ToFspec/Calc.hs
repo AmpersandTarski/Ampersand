@@ -24,7 +24,7 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.Calc"
 
-   showClause  :: Fspc -> Clauses -> String
+   showClause :: Fspc -> Clauses -> String
    showClause fSpec cl
     = "\nRule: "++(showADL.mapexprs disambiguate fSpec) (cl_rule cl) ++concat
        [if null shifts then "\nNo clauses" else

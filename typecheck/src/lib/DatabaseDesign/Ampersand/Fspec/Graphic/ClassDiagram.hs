@@ -89,7 +89,7 @@ where
    plugs2classdiagram fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
     where
 -- The condition for becoming a class is in the function isClass. Does this correspond with the distinction TblSQL and BinSQL?
-       isClass  :: PlugSQL -> Bool
+       isClass :: PlugSQL -> Bool
        isClass  p = (not.null) [fld |fld<-tblfields p, flduniq fld] &&      -- an assocciation does not have fields that are flduniq
                     (not.null) [fld |fld<-tblfields p, not (flduniq fld)]   -- a scalar has only fields that are flduniq
        classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull | (a,atype,fNull)<-attrs plug] [] -- drop the I field.
@@ -318,24 +318,24 @@ where
 
 
 -------------- Class Diagrams ------------------
-   data ClassDiag = OOclassdiagram {classes     :: [Class]            --
-                                   ,assocs      :: [Association]      --
-                                   ,aggrs       :: [Aggregation]      --
-                                   ,geners      :: [Generalization]   --
+   data ClassDiag = OOclassdiagram {classes :: [Class]            --
+                                   ,assocs :: [Association]      --
+                                   ,aggrs :: [Aggregation]      --
+                                   ,geners :: [Generalization]   --
                                    ,nameandcpts :: (String,[A_Concept])}
                             deriving Show
    instance Identified ClassDiag where
       name cd = n
         where (n,_) = nameandcpts cd
         
-   data Class          = OOClass  { clNm        :: String        -- ^ name of the class
-                                  , clAtts      :: [CdAttribute] -- ^ Attributes of the class
-                                  , clMths      :: [Method]      -- ^ Methods of the class
+   data Class          = OOClass  { clNm :: String        -- ^ name of the class
+                                  , clAtts :: [CdAttribute] -- ^ Attributes of the class
+                                  , clMths :: [Method]      -- ^ Methods of the class
                                   } deriving Show
    instance Identified Class where
       name = clNm
-   data CdAttribute    = OOAttr   { attNm       :: String      -- ^ name of the attribute
-                                  , attTyp      :: String      -- ^ type of the attribute (Concept name or built-in type)
+   data CdAttribute    = OOAttr   { attNm :: String      -- ^ name of the attribute
+                                  , attTyp :: String      -- ^ type of the attribute (Concept name or built-in type)
                                   , attOptional :: Bool        -- ^ says whether the attribute is optional
                                   } deriving Show
    instance Identified CdAttribute where

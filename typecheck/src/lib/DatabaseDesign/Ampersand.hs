@@ -53,7 +53,7 @@ module DatabaseDesign.Ampersand
    -- * Functions with plugs:
    , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff
-   , CtxError, ParseError, nocxe, cxes
+   , CtxError, ParseError
    , parseContext
    , parsePopulations
    , parseADL1pExpr

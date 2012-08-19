@@ -54,24 +54,24 @@ where
    fatal = fatalMsg "ParseTree"
    
    data P_Context
-      = PCtx{ ctx_nm     :: String          -- ^ The name of this context
-            , ctx_pos    :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-            , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
+      = PCtx{ ctx_nm :: String          -- ^ The name of this context
+            , ctx_pos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+            , ctx_lang :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
             , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-            , ctx_thms   :: [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-            , ctx_pats   :: [P_Pattern]     -- ^ The patterns defined in this context
-            , ctx_PPrcs  :: [P_Process]     -- ^ The processes as defined by the parser
-            , ctx_rs     :: [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
-            , ctx_ds     :: [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-            , ctx_cs     :: [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks     :: [P_KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
-            , ctx_gs     :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
-            , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps     :: [PPurpose]      -- ^ The purposes defined in this context, outside the scope of patterns
-            , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
-            , ctx_sql    :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
-            , ctx_php    :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
-            , ctx_metas  :: [P_Meta]    -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+            , ctx_thms :: [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+            , ctx_pats :: [P_Pattern]     -- ^ The patterns defined in this context
+            , ctx_PPrcs :: [P_Process]     -- ^ The processes as defined by the parser
+            , ctx_rs :: [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
+            , ctx_ds :: [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
+            , ctx_cs :: [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
+            , ctx_ks :: [P_KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
+            , ctx_gs :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
+            , ctx_ifcs :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
+            , ctx_ps :: [PPurpose]      -- ^ The purposes defined in this context, outside the scope of patterns
+            , ctx_pops :: [P_Population]  -- ^ The populations defined in this context
+            , ctx_sql :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctx_php :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_metas :: [P_Meta]    -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
             , ctx_experimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
             } deriving Show
 
@@ -84,10 +84,10 @@ where
    instance Identified P_Context where
      name = ctx_nm
    
-   data P_Meta = P_Meta { mt_Pos  :: Origin
-                        , mt_Obj  :: MetaObj
+   data P_Meta = P_Meta { mt_Pos :: Origin
+                        , mt_Obj :: MetaObj
                         , mt_Name :: String
-                        , mt_Val  :: String
+                        , mt_Val :: String
                         } deriving Show
 
    data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for the entire context  
@@ -95,25 +95,25 @@ where
    -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
    data P_RoleRelation
       = P_RR { rr_Roles :: [String]         -- ^ name of a role
-             , rr_Rels  :: [P_Expression]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
-             , rr_Pos   :: Origin           -- ^ position in the Ampersand script
+             , rr_Rels :: [P_Expression]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+             , rr_Pos :: Origin           -- ^ position in the Ampersand script
              } deriving (Show)       -- just for debugging
    instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
    instance Traced P_RoleRelation where
     origin = rr_Pos
 
-   data P_Process = P_Prc { procNm    :: String
-                          , procPos   :: Origin           -- ^ the start position in the file
-                          , procEnd   :: Origin           -- ^ the end position in the file
+   data P_Process = P_Prc { procNm :: String
+                          , procPos :: Origin           -- ^ the start position in the file
+                          , procEnd :: Origin           -- ^ the end position in the file
                           , procRules :: [P_Rule]
-                          , procGens  :: [P_Gen]
-                          , procDcls  :: [P_Declaration]
+                          , procGens :: [P_Gen]
+                          , procDcls :: [P_Declaration]
                           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-                          , procCds   :: [ConceptDef]     -- ^ The concept definitions defined in this process
-                          , procKds   :: [P_KeyDef]       -- ^ The key definitions defined in this process
-                          , procXps   :: [PPurpose]       -- ^ The purposes of elements defined in this process
-                          , procPop   :: [P_Population]   -- ^ The populations that are local to this process
+                          , procCds :: [ConceptDef]     -- ^ The concept definitions defined in this process
+                          , procKds :: [P_KeyDef]       -- ^ The key definitions defined in this process
+                          , procXps :: [PPurpose]       -- ^ The purposes of elements defined in this process
+                          , procPop :: [P_Population]   -- ^ The populations that are local to this process
                           } deriving Show
 
    instance Identified P_Process where
@@ -127,14 +127,14 @@ where
       = Maintain
         { mRoles :: [String]    -- ^ name of a role
         , mRules :: [String]    -- ^ name of a Rule
-        , mPos   :: Origin      -- ^ position in the Ampersand script
+        , mPos :: Origin      -- ^ position in the Ampersand script
         } deriving (Eq, Show)   -- just for debugging
 
    instance Traced RoleRule where
     origin = mPos
 
    data P_Pattern
-      = P_Pat { pt_nm  :: String          -- ^ Name of this pattern
+      = P_Pat { pt_nm :: String          -- ^ Name of this pattern
               , pt_pos :: Origin          -- ^ the starting position in the file in which this pattern was declared.
               , pt_end :: Origin          -- ^ the end position in the file in which this pattern was declared.
               , pt_rls :: [P_Rule]        -- ^ The user defined rules in this pattern
@@ -173,12 +173,12 @@ where
    data RelConceptDef = RelConceptDef SrcOrTgt String deriving (Eq, Show)
    
    data P_Declaration = 
-         P_Sgn { dec_nm   :: String    -- ^ the name of the declaration
+         P_Sgn { dec_nm :: String    -- ^ the name of the declaration
                , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
                , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-               , dec_prL  :: String    -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-               , dec_prM  :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-               , dec_prR  :: String
+               , dec_prL :: String    -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+               , dec_prM :: String    -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+               , dec_prR :: String
                , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
                , dec_conceptDef :: Maybe RelConceptDef -- ^ alternative definition for the source or target concept in the context of this relation
                , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
@@ -191,8 +191,8 @@ where
     origin = dec_fpos
 
    data P_Relation = 
-        P_Rel   { rel_nm   :: String            -- ^ the name of the relation.
-                , rel_pos  :: Origin            -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable.
+        P_Rel   { rel_nm :: String            -- ^ the name of the relation.
+                , rel_pos :: Origin            -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable.
                 }
         | P_I
         | P_V
@@ -219,11 +219,12 @@ where
       _       -> OriginUnknown
 
    data P_Expression 
-      = Pid Origin [P_Concept]                 -- ^ identity element restricted to a type; This must be the first in the data declaration
+      = PI Origin                              -- ^ identity element without a type
                                                --   At parse time, there may be zero or one element in the list of concepts.
                                                --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
                                                --   to know whether an eqClass represents a concept, we only look at its witness
                                                --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
+      | Pid P_Concept                          -- ^ identity element restricted to a type
       | Pnid P_Concept                         -- ^ unidentity element restricted to a type; the dual of Pid
       | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
       | Pnull                                  -- ^ the empty relation
@@ -251,7 +252,8 @@ where
 
    instance Traced P_Expression where
     origin e = case e of
-      Pid orig _     -> orig
+      PI orig        -> orig
+      Pid _          -> OriginUnknown
       Pnid _         -> OriginUnknown
       Patm orig _ _  -> orig
       Pnull          -> OriginUnknown
@@ -288,12 +290,12 @@ where
             deriving Show
 
    data P_Rule  =
-      P_Ru { rr_nm    :: String             -- ^ Name of this rule
-           , rr_exp   :: P_Expression       -- ^ The rule expression 
-           , rr_fps   :: Origin             -- ^ Position in the Ampersand file
-           , rr_mean  :: [PMeaning]         -- ^ User-specified meanings, possibly more than one, for multiple languages.
-           , rr_msg   :: [P_Markup]         -- ^ User-specified violation messages, possibly more than one, for multiple languages.
-           , rr_viol  :: Maybe P_PairView   -- ^ Custom presentation for violations, currently only in a single language
+      P_Ru { rr_nm :: String             -- ^ Name of this rule
+           , rr_exp :: P_Expression       -- ^ The rule expression 
+           , rr_fps :: Origin             -- ^ Position in the Ampersand file
+           , rr_mean :: [PMeaning]         -- ^ User-specified meanings, possibly more than one, for multiple languages.
+           , rr_msg :: [P_Markup]         -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+           , rr_viol :: Maybe P_PairView   -- ^ Custom presentation for violations, currently only in a single language
            } deriving Show
    instance Traced P_Rule where
     origin = rr_fps
@@ -302,16 +304,16 @@ where
             deriving Show
             
    data P_Markup = 
-       P_Markup  { mLang   :: Maybe Lang
+       P_Markup  { mLang :: Maybe Lang
                  , mFormat :: Maybe PandocFormat
                  , mString :: String
                  } deriving Show -- for debugging only     
                
    data P_Population
-     = P_Popu { p_popm   :: String
-              , p_type   :: P_Sign
-              , p_orig   :: Origin
-              , p_popps  :: Pairs
+     = P_Popu { p_popm :: String
+              , p_type :: P_Sign
+              , p_orig :: Origin
+              , p_popps :: Pairs
               }
      | P_CptPopu (String,[String]) --(the name of a concept,atoms in the initial population of that concept)
        deriving Show
@@ -323,15 +325,15 @@ where
     origin = p_orig
 
    data P_Interface = 
-        P_Ifc { ifc_Name   :: String                 -- ^ the name of the interface
+        P_Ifc { ifc_Name :: String                 -- ^ the name of the interface
               , ifc_Params :: [P_Expression]         -- ^ a list of relations, which are editable within this interface.
                                                      --   either  Prel nm
                                                      --       or  PTyp (Prel nm) sgn
-              , ifc_Args   :: [[String]]             -- ^ a list of arguments for code generation.
-              , ifc_Roles  :: [String]               -- ^ a list of roles that may use this interface
-              , ifc_Obj    :: P_ObjectDef            -- ^ the context expression (mostly: I[c])
-              , ifc_Pos    :: Origin
-              , ifc_Expl   :: String
+              , ifc_Args :: [[String]]             -- ^ a list of arguments for code generation.
+              , ifc_Roles :: [String]               -- ^ a list of roles that may use this interface
+              , ifc_Obj :: P_ObjectDef            -- ^ the context expression (mostly: I[c])
+              , ifc_Pos :: Origin
+              , ifc_Expl :: String
               } deriving Show
 
    instance Identified P_Interface where
@@ -347,9 +349,9 @@ where
                    deriving (Eq, Show)
 
    data P_ObjectDef = 
-        P_Obj { obj_nm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-              , obj_pos  :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-              , obj_ctx  :: P_Expression   -- ^ this expression describes the instances of this object, related to their context. 
+        P_Obj { obj_nm :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+              , obj_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+              , obj_ctx :: P_Expression   -- ^ this expression describes the instances of this object, related to their context. 
               , obj_msub :: Maybe P_SubInterface  -- ^ the attributes, which are object definitions themselves.
               , obj_strs :: [[String]]     -- ^ directives that specify the interface.
               }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
@@ -405,8 +407,8 @@ where
         PRef2Context str -> str
         PRef2Fspc str -> str
 
-   data PPurpose = PRef2 { pexPos   :: Origin     -- the position in the Ampersand script of this purpose definition
-                         , pexObj   :: PRef2Obj   -- the reference to the object whose purpose is explained
+   data PPurpose = PRef2 { pexPos :: Origin     -- the position in the Ampersand script of this purpose definition
+                         , pexObj :: PRef2Obj   -- the reference to the object whose purpose is explained
                          , pexMarkup:: P_Markup   -- the piece of text, including markup and language info
                          , pexRefID :: String     -- the reference (for traceability)
                          } deriving Show
@@ -443,7 +445,7 @@ where
      showsPrec _ s = 
          showString (   "[" ++ intercalate "*" (map show (psign s)) ++ "]" )
 
-   data P_Gen = PGen{ gen_fp  :: Origin         -- ^ the position of the GEN-rule
+   data P_Gen = PGen{ gen_fp :: Origin         -- ^ the position of the GEN-rule
                     , gen_gen :: P_Concept      -- ^ generic concept
                     , gen_spc :: P_Concept      -- ^ specific concept
                     }
@@ -484,8 +486,8 @@ where
     showsPrec _ Rfx = showString "RFX"
     showsPrec _ Irf = showString "IRF"
 
-   data Label = Lbl { lblnm   :: String
-                    , lblpos  :: Origin
+   data Label = Lbl { lblnm :: String
+                    , lblpos :: Origin
                     , lblstrs :: [[String]]
                     }
    instance Eq Label where

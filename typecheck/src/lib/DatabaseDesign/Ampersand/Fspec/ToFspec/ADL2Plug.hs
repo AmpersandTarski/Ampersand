@@ -192,7 +192,7 @@ makeEntities _ allRels exclusions
           plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
           plugMors              = mainkernel++restkernel++plugAtts --all relations for which the target is stored in the plug
           plugFields            = [fld a | a<-plugMors]      -- Each field comes from a relation.
-          conceptLookuptable   :: [(A_Concept,SqlField)]
+          conceptLookuptable :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r) |r<-mainkernel]
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
@@ -211,10 +211,10 @@ makeEntities _ allRels exclusions
 -- In order to make kernels as large as possible,
 -- all relations that are univalent and injective are flipped if that makes them surjective.
 -- kernelRels contains all relations that occur in kernels.
-    kernelRels  :: [Expression]
+    kernelRels :: [Expression]
     kernelRels   = [ERel r |r<-unis, isSur r]++[EFlp (ERel r) |r<-unis, not (isSur r), isTot r]
 -- attRels contains all relations that will be attribute of a kernel.
-    attRels     :: [Expression]
+    attRels :: [Expression]
     attRels      = [ERel r | r<-rs, isUni r]
                 ++ [EFlp (ERel r) | r<-rs, not (isUni r), isInj r]
                    where rs = rels>-mors kernelRels

@@ -57,13 +57,13 @@ partialOrder Prelude.GT = GT
 class Eq a => Poset a where
     compare :: a -> a -> Ordering
     -- | Is comparable to.
-    (<==>)  :: a -> a -> Bool
+    (<==>) :: a -> a -> Bool
     -- | Is not comparable to.
-    (</=>)  :: a -> a -> Bool
-    (<)     :: a -> a -> Bool
-    (<=)    :: a -> a -> Bool
-    (>=)    :: a -> a -> Bool
-    (>)     :: a -> a -> Bool
+    (</=>) :: a -> a -> Bool
+    (<) :: a -> a -> Bool
+    (<=) :: a -> a -> Bool
+    (>=) :: a -> a -> Bool
+    (>) :: a -> a -> Bool
 
     a `compare` b
         | a == b = EQ

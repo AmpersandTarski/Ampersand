@@ -57,7 +57,7 @@ testADLFiles flags xs
          check p_context = case p_context of
                             Right ctx -> typeCheck ctx []
                             Left msg  -> (fatal 38 "There are errors that should have been presented!",PE [msg],fatal 59 "No eq Graph",fatal 59 "No st Graph")
-         parsedAndTypesOk (_,errs,_,_) = errs == CxeNone
+         parsedAndTypesOk (_,errs,_,_) = null errs
                      
    
 testSet :: IO [( FilePath , Bool )]

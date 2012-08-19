@@ -52,7 +52,7 @@ where
    ----------------------------------------------------------------------
   
    class XML a where 
-    mkTag     :: a -> XTag
+    mkTag :: a -> XTag
     mkXmlTree :: a -> XTree
    
    still2bdone :: String -> XTree

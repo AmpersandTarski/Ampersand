@@ -407,5 +407,5 @@ noMod :: ArrowModifier
 noMod = ArrMod { arrowFill = FilledArrow
                , arrowSide = BothSides
                }
-open  :: ArrowModifier
+open :: ArrowModifier
 open  = noMod {arrowFill = OpenArrow}

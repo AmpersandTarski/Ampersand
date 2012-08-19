@@ -18,10 +18,10 @@ fatal = fatalMsg "ADL1.MorphismAndDeclaration"
 
 class Association r => Relational r where
     multiplicities :: r -> [Prop]
-    isProp         :: r -> Bool  -- > tells whether the argument is a property
-    isImin         :: r -> Bool  -- > tells whether the argument is equivalent to I-
-    isTrue         :: r -> Bool  -- > tells whether the argument is equivalent to V
-    isFalse        :: r -> Bool  -- > tells whether the argument is equivalent to V-
+    isProp :: r -> Bool  -- > tells whether the argument is a property
+    isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
+    isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
+    isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
     isFunction :: r -> Bool     
     isFunction r   = null ([Uni,Tot]>-multiplicities r)
     isTot :: r -> Bool  -- 
