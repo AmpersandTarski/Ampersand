@@ -1320,8 +1320,8 @@ pCtx2aCtx p_context
        )
        where
          st :: [(Type,Type)]
-         st = typing p_context universeSource universeTarget pExpr -- ^ define the smaller-than relation as a list of tuples, st.
-         (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st   -- ^ define the type table by analysing st.
+         st = typing p_context universeSource universeTarget pExpr -- define the smaller-than relation as a list of tuples, st.
+         (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st   -- define the type table by analysing st.
          f :: P_Expression -> Expression
          f (PTyp _ (PI _)  (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
          f (PTyp _ (Pid _) (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
