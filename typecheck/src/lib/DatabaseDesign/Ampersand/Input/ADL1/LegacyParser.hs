@@ -44,11 +44,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
 
 
 
---   pBind             :: Parser Token (P_Declaration,String)
+--   pBind :: Parser Token (P_Declaration,String)
 --   pBind              = rebuild <$ pKey "BIND" <*> pDeclaration <* pKey "TOPHP" <*> (pConid <|> pString)
 --                       where rebuild d s = (d,s)
 
-   pContext         :: Parser Token P_Context
+   pContext :: Parser Token P_Context
    pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*>
 --                                  ((rebexpr <$ pKey ":" <*> pExpr <*> 
 --                                  --     (pSpec '{' *> pList1Sep (pSpec ';') pBind <* pSpec '}')
@@ -82,7 +82,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                               }
                           where
                                ps = [p | CPat p<-ces]
-                       pContextElement    :: Parser Token ContextElement
+                       pContextElement :: Parser Token ContextElement
                        pContextElement     = CPat     <$> pPattern      <|>
                                              CDcl     <$> pDeclaration  <|>
                                              CCon     <$> pConceptDef   <|>
@@ -104,7 +104,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                        | CPhpPlug P_ObjectDef
                        | CXpl PPurpose
 
-   pExplain           :: Parser Token PPurpose
+   pExplain :: Parser Token PPurpose
    pExplain            = rebuild <$> pKey_pos "EXPLAIN" <*> pExplObj <*> optional pLanguageID <*> pRefID <*> pExpl 
                           where rebuild orig obj lang ref str =
                                   PRef2 orig obj (P_Markup lang Nothing str) ref
@@ -137,7 +137,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                                              }
          ppop _ x _ = fatal 138 ("ppop must have an argument of the form PTyp _ (Prel _ nm) sgn, but has been called with\n"++show x)
 
-   pPattern         :: Parser Token P_Pattern
+   pPattern :: Parser Token P_Pattern
    pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
                        <*> pList pPatElem
                        <*> pKey_pos "ENDPATTERN"
@@ -171,7 +171,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                      | Pk P_KeyDef
                      | Pe PPurpose
 
-   pRule            :: Parser Token P_Rule
+   pRule :: Parser Token P_Rule
    pRule             = hc True            <$>   -- This boolean tells whether this rule will be a signal rule or a maintaining rule.
                           pSignal         <*>   -- "RULE m SIGNALS" (or "RULE m MAINTAINS in other cases)
                           pExpr           <*>   -- the antecedent
@@ -216,36 +216,36 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                  }
                         meaning str = [PMeaning (P_Markup Nothing Nothing str)]
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
-                        pSignal          :: Parser Token (String, Origin)
+                        pSignal :: Parser Token (String, Origin)
                         pSignal           = pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|>
                                               pKey "RULE" *> pADLid_val_pos <* pKey "SIGNALS"
-                        pAlways          :: Parser Token (String, Origin)
+                        pAlways :: Parser Token (String, Origin)
                         pAlways           = ( pKey "RULE" *> pADLid_val_pos <* pKey "MAINTAINS" ) `opt` ("",fatal 160 "no location")
-   pGen             :: Parser Token P_Gen
+   pGen :: Parser Token P_Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen ) (PCpt spc )
 
-   pExpr            :: Parser Token P_Expression
+   pExpr :: Parser Token P_Expression
    pExpr             = pFactorI <??> (f <$> pKey_pos "\\/" <*> pExpr)
                        where f orig y x = PUni orig x y
 
-   pFactorI         :: Parser Token P_Expression
+   pFactorI :: Parser Token P_Expression
    pFactorI          = pFactor <??> (f <$> pKey_pos "/\\" <*> pFactorI)
                        where f orig y x = PIsc orig x y
 
-   pFactor          :: Parser Token P_Expression
+   pFactor :: Parser Token P_Expression
    pFactor           = pTermD <??> (f <$> pKey_pos "!" <*> pFactor)
                        where f orig y x = PRad orig x y
 
-   pTermD           :: Parser Token P_Expression
+   pTermD :: Parser Token P_Expression
    pTermD            = pTermP <??> (f <$> pKey_pos ";" <*> pTermD)
                        where f orig y x = PCps orig x y
 
-   pTermP           :: Parser Token P_Expression
+   pTermP :: Parser Token P_Expression
    pTermP            = pExp5 <??> (f <$> pKey_pos "*" <*> pTermP)
                        where f orig y x = PPrd orig x y
 
-   pExp5  :: Parser Token P_Expression
+   pExp5 :: Parser Token P_Expression
    pExp5  =  f <$> pList (pKey_pos "-") <*> pExp6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
              where f ms pe (("~",orig):ps) = PFlp orig (f ms pe ps)
                    f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)
@@ -253,29 +253,29 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                    f (orig:ms) pe ps = PCpl orig (f ms pe ps)
                    f _ pe _          = pe
 
-   pExp6            :: Parser Token P_Expression
+   pExp6 :: Parser Token P_Expression
    pExp6             =  f <$> pExp7 <*> optional pSign
                         where f e Nothing = e
                               f e (Just (sgn,orig)) = PTyp orig e sgn
 -- Alternatively, this works too:    pExp6  =  pExp7 <??> (flip PTyp <$> pSign)
 
-   pExp7            :: Parser Token P_Expression
+   pExp7 :: Parser Token P_Expression
    pExp7             =  pRelationRef                                    <|>
                         PBrk <$>  pSpec_pos '('  <*>  pExpr  <*  pSpec ')'
 
-   pRelationRef     :: Parser Token P_Expression
+   pRelationRef :: Parser Token P_Expression
    pRelationRef      = pid   <$> pKey_pos "I" <*> optional (pSpec '[' *> pConceptRef <* pSpec ']') <|>
                        pfull <$> pKey_pos "V" <*> optional pSign                                   <|>
                        pRelSign                                                                    <|>
                        singl <$> pAtom_val_pos <*> optional (pSpec '[' *> pConceptRef <* pSpec ']')
-                       where pid orig Nothing = Pid orig []
-                             pid orig (Just c) = Pid orig [c]
+                       where pid orig Nothing = PI orig
+                             pid  _  (Just c) = Pid c
                              pfull orig Nothing = Pfull orig []
                              pfull _ (Just (P_Sign cs, orig)) = Pfull orig cs
                              singl (nm,orig) Nothing  = Patm orig nm []
                              singl (nm,orig) (Just c) = Patm orig nm [c]
 
-   pRelSign         :: Parser Token P_Expression
+   pRelSign :: Parser Token P_Expression
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
                        where prel (nm,orig) Nothing = Prel orig nm
                              prel (nm,pos') (Just (sgn,orig)) = PTyp orig (Prel pos' nm) sgn
@@ -290,27 +290,27 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
              Nothing -> (P_Sign { psign = [a] }  , orig)
 
 
-   pConceptRef      :: Parser Token P_Concept
+   pConceptRef :: Parser Token P_Concept
    pConceptRef       = (P_Singleton <$ pKey "ONE") <|> (PCpt <$> (pConid <|> pString))
 
 -- DAAROM:
 --  (SJ) Waarom heeft een label (optioneel) strings?
 --  (GM) Dit is bedoeld als binding mechanisme voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
 --  (SJ) Met het invoeren van referenties (t.b.v. losse explanations) bestaat er een variant met props en eentje zonder.
-   pLabelProps      :: Parser Token Label
+   pLabelProps :: Parser Token Label
    pLabelProps       = lbl <$> pADLid_val_pos
                            <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
                        where lbl :: (String, Origin) -> [[String]] -> Label
                              lbl (nm,pos') = Lbl nm pos'
 
-   pADLid           :: Parser Token String
+   pADLid :: Parser Token String
    pADLid            = pVarid <|> pConid <|> pString
 
-   pADLid_val_pos   :: Parser Token (String, Origin)
+   pADLid_val_pos :: Parser Token (String, Origin)
    pADLid_val_pos    = pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos
 
-   pConceptDef      :: Parser Token ConceptDef
+   pConceptDef :: Parser Token ConceptDef
    pConceptDef       = cd <$> pKey_pos "CONCEPT"
                           <*> (pConid <|> pString)   -- the concept name
                           <*> pString                -- the definition text
@@ -324,7 +324,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
 -- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
 -- KEY onSSN: Person("social security number":ssn)
-   pKeyDef          :: Parser Token P_KeyDef
+   pKeyDef :: Parser Token P_KeyDef
    pKeyDef           = kd <$ pKey "KEY" <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pKeySegment <* pSpec ')'
                         where kd :: Label -> P_Concept -> [P_KeySegment] -> P_KeyDef 
                               kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
@@ -354,14 +354,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                                   , obj_strs = []
                                                   }
 
-   pSqlplug          :: Parser Token P_ObjectDef
+   pSqlplug :: Parser Token P_ObjectDef
    pSqlplug           = pKey_pos "SQLPLUG" *> pObj
 
-   pPhpplug          :: Parser Token P_ObjectDef
+   pPhpplug :: Parser Token P_ObjectDef
    pPhpplug           = pKey_pos "PHPPLUG" *> pObj
 
 
-   pService         :: Parser Token P_Interface
+   pService :: Parser Token P_Interface
    pService          = lbl <$> (pKey "SERVICE" *> pADLid_val_pos) <*>
                                (pParams `opt` [])                 <*>  -- a list of expressions, which say which relations are editable within this service.
                                                                        -- either  Prel _ nm
@@ -394,7 +394,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    optional :: (Sequence p, Alternative p) => p a -> p (Maybe a)
    optional a        = Just <$> a <|> pSucceed Nothing
 
-   pObj             :: Parser Token P_ObjectDef
+   pObj :: Parser Token P_ObjectDef
    pObj              = obj <$> pLabelProps
                            <*> pExpr                                             -- de contextexpressie (default: I[c])
                            <*> optional (pKey "ALWAYS" *> pProps')             -- uni of tot of prop
@@ -419,7 +419,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                          pProp' :: Parser Token String
                          pProp' = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"
 
-   pDeclaration     :: Parser Token P_Declaration
+   pDeclaration :: Parser Token P_Declaration
    pDeclaration      = rebuild <$> pVarid 
                                <*> pKey_pos "::" 
                                <*> pConceptRef 
@@ -457,19 +457,19 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                        props'= nub props `uni` if fun'=="->" then [Uni,Tot] else []
                              pPragma :: Parser Token [String]
                              pPragma = pKey "PRAGMA" *> pList1 pString
-                             pProps  :: Parser Token [Prop]
+                             pProps :: Parser Token [Prop]
                              pProps  = pSpec '['  *> pListSep (pSpec ',') pProp <* pSpec ']'
 
-                             pProp   :: Parser Token Prop
+                             pProp :: Parser Token Prop
                              pProp   = k Uni "UNI" <|> k Inj "INJ" <|> k Sur "SUR" <|> k Tot "TOT"
                                    <|> k Sym "SYM" <|> k Asy "ASY" <|> k Trn "TRN" <|> k Rfx "RFX"
                                   where k obj str = f <$> pKey str where f _ = obj
 
 
-   pContent         :: Parser Token Pairs
+   pContent :: Parser Token Pairs
    pContent          = pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
 
-   pRecord          :: Parser Token Paire
+   pRecord :: Parser Token Paire
    pRecord           = mkPair<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
                                 
    get_tok_pos :: Token -> Origin
@@ -485,18 +485,17 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    gsym_val_pos :: IsParser p Token => TokenType -> String -> String -> p (String,Origin)
    gsym_val_pos kind val' val2' = get_tok_val_pos <$> pSym (Tok kind val' val2' noPos "")
 
-   pKey_pos         :: String -> Parser Token Origin
+   pKey_pos :: String -> Parser Token Origin
    pKey_pos keyword  =   gsym_pos TkKeyword   keyword   keyword
-   pSpec_pos        :: Char -> Parser Token Origin
+   pSpec_pos :: Char -> Parser Token Origin
    pSpec_pos s       =   gsym_pos TkSymbol    [s]       [s]
 
-   pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos
-                      ::  IsParser p Token => p (String,Origin)
+   pString_val_pos, pVarid_val_pos, pConid_val_pos, pAtom_val_pos ::  IsParser p Token => p (String,Origin)
    pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
    pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
    pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"
    pAtom_val_pos      =   gsym_val_pos TkAtom      ""        ""
-   pKey_val_pos        ::  IsParser p Token => String -> p (String,Origin)
+   pKey_val_pos ::  IsParser p Token => String -> p (String,Origin)
    pKey_val_pos keyword = gsym_val_pos TkKeyword   keyword   keyword
---   pSpec_val_pos       ::  IsParser p Token => Char -> p (String,Origin)
+--   pSpec_val_pos ::  IsParser p Token => Char -> p (String,Origin)
 --   pSpec_val_pos s      = gsym_val_pos TkSymbol    [s]       [s]

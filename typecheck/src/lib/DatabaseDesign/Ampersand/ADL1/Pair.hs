@@ -17,7 +17,7 @@ where
    type Pairs = [Paire]
    srcPaire :: Paire -> String
    trgPaire :: Paire -> String
-   mkPair   :: String -> String -> Paire
+   mkPair :: String -> String -> Paire
    type Paire = (String,String)
    mkPair a b = (a,b)
    srcPaire = fst

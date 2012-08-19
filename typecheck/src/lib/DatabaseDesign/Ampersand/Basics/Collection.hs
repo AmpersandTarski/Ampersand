@@ -13,11 +13,11 @@ module DatabaseDesign.Ampersand.Basics.Collection
    infixl 5  >-
 
    class Collection a where      -- TODO Vervangen door efficient algorithme: Data.Set
-    eleM     :: Eq b => b -> a b -> Bool  
+    eleM :: Eq b => b -> a b -> Bool  
     uni, isc :: Eq b => a b -> a b -> a b  
-    (>-)     :: Eq b => a b -> a b -> a b
-    empty    :: Eq b => a b
-    elems    :: Eq b => a b -> [b]
+    (>-) :: Eq b => a b -> a b -> a b
+    empty :: Eq b => a b
+    elems :: Eq b => a b -> [b]
 
    instance Collection [] where
     eleM         = elem

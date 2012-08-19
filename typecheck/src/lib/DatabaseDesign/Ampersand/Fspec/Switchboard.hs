@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    fatal = fatalMsg "Fspec.Switchboard"
 
    data SwitchBdDiagram
-    = SBdgrm { sbName     :: String
+    = SBdgrm { sbName :: String
              , sbdotGraph :: DotGraph String
              }
    instance Identified SwitchBdDiagram where

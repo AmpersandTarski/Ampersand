@@ -37,34 +37,34 @@ import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfor
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
 
-data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the Ampersand script
-                 , fspos        :: [Origin]              -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
-                 , themes       :: [String]              -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                 , fsLang       :: Lang                  -- ^ The default language for this specification, if specified at all.
-                 , vprocesses   :: [FProcess]            -- ^ All processes defined in the Ampersand script
-                 , vplugInfos   :: [PlugInfo]            -- ^ All plugs defined in the Ampersand script
-                 , plugInfos    :: [PlugInfo]            -- ^ All plugs (defined and derived)
-                 , interfaceS   :: [Interface]           -- ^ All interfaces defined in the Ampersand script
-                 , interfaceG   :: [Interface]           -- ^ All interfaces derived from the basic ontology
+data Fspc = Fspc { fsName :: String                -- ^ The name of the specification, taken from the Ampersand script
+                 , fspos :: [Origin]              -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
+                 , themes :: [String]              -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                 , fsLang :: Lang                  -- ^ The default language for this specification, if specified at all.
+                 , vprocesses :: [FProcess]            -- ^ All processes defined in the Ampersand script
+                 , vplugInfos :: [PlugInfo]            -- ^ All plugs defined in the Ampersand script
+                 , plugInfos :: [PlugInfo]            -- ^ All plugs (defined and derived)
+                 , interfaceS :: [Interface]           -- ^ All interfaces defined in the Ampersand script
+                 , interfaceG :: [Interface]           -- ^ All interfaces derived from the basic ontology
                  , fSwitchboard :: Fswitchboard          -- ^ The code to be executed to maintain the truth of invariants
-                 , fActivities  :: [Activity]            -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
-                 , fRoleRels    :: [(String,Relation)]   -- ^ the relation saying which roles may change the population of which relation.
-                 , fRoleRuls    :: [(String,Rule)]       -- ^ the relation saying which roles may change the population of which relation.
-                 , vrules       :: [Rule]                -- ^ All user defined rules that apply in the entire Fspc
-                 , grules       :: [Rule]                -- ^ All rules that are generated: multiplicity rules and key rules
-                 , vkeys        :: [KeyDef]              -- ^ All keys that apply in the entire Fspc
-                 , vgens        :: [A_Gen]               -- ^ All gens that apply in the entire Fspc
-                 , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec)
-                 , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec)
-                 , vEcas        :: [ECArule]             -- ^ All ECA rules generated (by ADL2Fspec)
-                 , vrels        :: [Declaration]         -- ^ All user defined and generated declarations plus all defined and computed totals.
+                 , fActivities :: [Activity]            -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
+                 , fRoleRels :: [(String,Relation)]   -- ^ the relation saying which roles may change the population of which relation.
+                 , fRoleRuls :: [(String,Rule)]       -- ^ the relation saying which roles may change the population of which relation.
+                 , vrules :: [Rule]                -- ^ All user defined rules that apply in the entire Fspc
+                 , grules :: [Rule]                -- ^ All rules that are generated: multiplicity rules and key rules
+                 , vkeys :: [KeyDef]              -- ^ All keys that apply in the entire Fspc
+                 , vgens :: [A_Gen]               -- ^ All gens that apply in the entire Fspc
+                 , vconjs :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec)
+                 , vquads :: [Quad]                -- ^ All quads generated (by ADL2Fspec)
+                 , vEcas :: [ECArule]             -- ^ All ECA rules generated (by ADL2Fspec)
+                 , vrels :: [Declaration]         -- ^ All user defined and generated declarations plus all defined and computed totals.
                                                          --   The generated declarations are all generalizations and
                                                          --   one declaration for each signal.
-                 , fsisa        :: [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
-                 , vpatterns    :: [Pattern]             -- ^ All patterns taken from the Ampersand script
+                 , fsisa :: [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
+                 , vpatterns :: [Pattern]             -- ^ All patterns taken from the Ampersand script
                  , vConceptDefs :: [ConceptDef]          -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
-                 , fSexpls      :: [Purpose]             -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
-                 , metas        :: [Meta]                -- ^ All meta declarations from the entire context      
+                 , fSexpls :: [Purpose]             -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
+                 , metas :: [Meta]                -- ^ All meta declarations from the entire context      
                  , vctxenv :: ( Expression
                               , [(Declaration,String)])   -- an expression on the context with unbound relations, to be bound in this environment
                  }
@@ -93,7 +93,7 @@ instance Language Fspc where
                      -- default violations computes al rules again from declarations
 
 data FProcess
-  = FProc { fpProc       :: Process
+  = FProc { fpProc :: Process
           , fpActivities :: [Activity]
           }  
 instance Identified FProcess where
@@ -101,10 +101,10 @@ instance Identified FProcess where
  
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
-  = Fswtch { fsbEvIn  :: [Event]
+  = Fswtch { fsbEvIn :: [Event]
            , fsbEvOut :: [Event]
            , fsbConjs :: [(Rule, Expression)]
-           , fsbECAs  :: [ECArule]
+           , fsbECAs :: [ECArule]
            }
 
 --DESCR -> Finterface contains everything needed to render the specification, the code, and the documentation including proofs of a single interface.
@@ -112,18 +112,18 @@ data Fswitchboard
 --         The coding process that uses an Finterface takes care of language specific issues, and renders it to the final product.
 --TODO: Task of ticket #107
 data Finterface = Fifc
-                  { fsv_ifcdef    :: Interface                -- The interface declaration that was specified by the programmer,
+                  { fsv_ifcdef :: Interface                -- The interface declaration that was specified by the programmer,
                                                             -- and which has been type checked by the compiler.
-                  , fsv_insrels   :: [Relation]     -- The relations into which a user of this interface may insert elements
-                  , fsv_delrels   :: [Relation]     -- The relations from which a user of this interface may remove elements
-                  , fsv_rules     :: [Rule] -- The rules that may be affected by this interface (provided by the parser)
---                  , fsv_quads     :: [Quad]                 -- The Quads that are used to make a switchboard. (generated by ADL2Fspec)
---                  , fsv_ecaRules  :: [ECArule]      -- The ECA-rules that may be used by this interface to restore invariants. (generated by ADL2Fspec)
+                  , fsv_insrels :: [Relation]     -- The relations into which a user of this interface may insert elements
+                  , fsv_delrels :: [Relation]     -- The relations from which a user of this interface may remove elements
+                  , fsv_rules :: [Rule] -- The rules that may be affected by this interface (provided by the parser)
+--                  , fsv_quads :: [Quad]                 -- The Quads that are used to make a switchboard. (generated by ADL2Fspec)
+--                  , fsv_ecaRules :: [ECArule]      -- The ECA-rules that may be used by this interface to restore invariants. (generated by ADL2Fspec)
                   , fsv_procRules :: [Rule] -- All process rules that are visible in this interface
---                  , fsv_fields    :: Fields                 -- All fields/parameters of this interface
-                  , fsv_creating  :: [A_Concept]              -- All concepts of which this interface can create new instances
-                  , fsv_deleting  :: [A_Concept]              -- All concepts of which this interface can delete instances
---                  , fsv_fpa       :: FPA                    -- function point assessment of this interface
+--                  , fsv_fields :: Fields                 -- All fields/parameters of this interface
+                  , fsv_creating :: [A_Concept]              -- All concepts of which this interface can create new instances
+                  , fsv_deleting :: [A_Concept]              -- All concepts of which this interface can delete instances
+--                  , fsv_fpa :: FPA                    -- function point assessment of this interface
                   }
    
 
@@ -158,24 +158,24 @@ instance ConceptStructure Finterface where
 --     explanations fServ = fsv_expls fServ
     
 type Fields = [Field]
-data Field  = Att { fld_name      :: String        -- The name of this field
-                  , fld_sub       :: Fields        -- all sub-fields
-                  , fld_expr      :: Expression    -- The expression by which this field is attached to the interface
-                  , fld_rel       :: Relation      -- The relation to which the database table is attached.
-                  , fld_editable  :: Bool          -- can this field be changed by the user of this interface?
-                  , fld_list      :: Bool          -- can there be multiple values in this field?
-                  , fld_must      :: Bool          -- is this field obligatory?
-                  , fld_new       :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
-                  , fld_sLevel    :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
-                  , fld_insAble   :: Bool          -- can the user insert in this field?
-                  , fld_onIns     :: ECArule       -- the PAclause to be executed after an insert on this field
-                  , fld_delAble   :: Bool          -- can the user delete this field?
-                  , fld_onDel     :: ECArule       -- the PAclause to be executed after a delete on this field
+data Field  = Att { fld_name :: String        -- The name of this field
+                  , fld_sub :: Fields        -- all sub-fields
+                  , fld_expr :: Expression    -- The expression by which this field is attached to the interface
+                  , fld_rel :: Relation      -- The relation to which the database table is attached.
+                  , fld_editable :: Bool          -- can this field be changed by the user of this interface?
+                  , fld_list :: Bool          -- can there be multiple values in this field?
+                  , fld_must :: Bool          -- is this field obligatory?
+                  , fld_new :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
+                  , fld_sLevel :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
+                  , fld_insAble :: Bool          -- can the user insert in this field?
+                  , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this field
+                  , fld_delAble :: Bool          -- can the user delete this field?
+                  , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this field
                   } 
    
 
-data FTheme = FTheme { tconcept   :: A_Concept
-                     , trules     :: [Rule]
+data FTheme = FTheme { tconcept :: A_Concept
+                     , trules :: [Rule]
                      }
 {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
  - "The properties of the Interface Operation component are as follows:
@@ -199,13 +199,13 @@ instance Identified FSid where
   name (FS_id nm) = nm
 
 
-data Activity = Act { actRule   :: Rule
-                    , actTrig   :: [Relation]
+data Activity = Act { actRule :: Rule
+                    , actTrig :: [Relation]
                     , actAffect :: [Relation]
-                    , actQuads  :: [Quad]
-                    , actEcas   :: [ECArule]
-                    , actFPA    :: FPA
-                    , actPurp   :: [Purpose]
+                    , actQuads :: [Quad]
+                    , actEcas :: [ECArule]
+                    , actFPA :: FPA
+                    , actPurp :: [Purpose]
                     }
 instance Identified Activity where
   name act = name (actRule act)
@@ -221,8 +221,8 @@ instance ConceptStructure Activity where
 --  closExprs act = closExprs (actRule act)                          -- The closure expressions of this Activity
 
 data Quad     = Quad
-          { qMorph        :: Relation        -- The relation that, when affected, triggers a restore action.
-          , qClauses      :: Clauses         -- The clauses
+          { qMorph :: Relation        -- The relation that, when affected, triggers a restore action.
+          , qClauses :: Clauses         -- The clauses
           } deriving Eq
 
 instance Eq Activity where
@@ -231,9 +231,9 @@ instance Eq Activity where
 data InsDel   = Ins | Del
                  deriving (Show,Eq)
 data ECArule= ECA { ecaTriggr :: Event     -- The event on which this rule is activated
-                  , ecaDelta  :: Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
+                  , ecaDelta :: Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
                   , ecaAction :: PAclause  -- The action to be taken when triggered.
-                  , ecaNum    :: Int       -- A unique number that identifies the ECArule within its scope.
+                  , ecaNum :: Int       -- A unique number that identifies the ECArule within its scope.
                   }
 instance Eq (ECArule) where
    e==e' = ecaNum e==ecaNum e'
@@ -242,39 +242,39 @@ data Event = On { eSrt :: InsDel
                   , eRel :: Relation
                   } deriving (Show,Eq)
 data PAclause
-              = Chc { paCls   :: [PAclause]
+              = Chc { paCls :: [PAclause]
                     , paMotiv :: [(Expression,[Rule] )] -- tells which conjunct from whichule is being maintained
                     }
-              | All { paCls   :: [PAclause]
+              | All { paCls :: [PAclause]
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Do  { paSrt   :: InsDel                   -- do Insert or Delete
-                    , paTo    :: Expression               -- into toExpr    or from toExpr
+              | Do  { paSrt :: InsDel                   -- do Insert or Delete
+                    , paTo :: Expression               -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Sel { paCpt   :: A_Concept                -- pick an existing instance of type c
-                    , paExp   :: Expression               -- the expression to pick from
-                    , paCl    :: String->PAclause         -- the completion of the clause
+              | Sel { paCpt :: A_Concept                -- pick an existing instance of type c
+                    , paExp :: Expression               -- the expression to pick from
+                    , paCl :: String->PAclause         -- the completion of the clause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | New { paCpt   :: A_Concept                -- make a new instance of type c
-                    , paCl    :: String->PAclause         -- to be done after creating the concept
+              | New { paCpt :: A_Concept                -- make a new instance of type c
+                    , paCl :: String->PAclause         -- to be done after creating the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Rmv { paCpt   :: A_Concept                -- Remove an instance of type c
-                    , paCl    :: String->PAclause         -- to be done afteremoving the concept
+              | Rmv { paCpt :: A_Concept                -- Remove an instance of type c
+                    , paCl :: String->PAclause         -- to be done afteremoving the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
                     }
               | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
                     }
-              | Let { paExpr  :: PAclause               -- the expression that represents a condition to be tested.
-                    , paBody  :: PAclause -> PAclause
+              | Let { paExpr :: PAclause               -- the expression that represents a condition to be tested.
+                    , paBody :: PAclause -> PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Ref { paVar   :: String
+              | Ref { paVar :: String
                     }
    -- The data structure Clauses is meant for calculation purposes.
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hcs)<-cl_conjNF cl, disj<-[conj!!i]]
@@ -294,7 +294,7 @@ data Clauses  = Clauses
                                   ,[Expression])]   -- The list of pairs (conj, hcs) in which conj is a conjunct of the rule
                                                     -- and hcs contains all derived expressions to be used for eca-rule construction.
                                                     -- hcs contains only disjunctive normal forms.
-                  , cl_rule   :: Rule -- The rule that is restored by this clause (for traceability purposes)
+                  , cl_rule :: Rule -- The rule that is restored by this clause (for traceability purposes)
                   }
 instance Eq Clauses where
   cl==cl' = cl_rule cl==cl_rule cl'
@@ -320,26 +320,26 @@ instance Identified PlugInfo where
   name (ExternalPlug obj)  = name obj
 
 data PlugSQL
- = TblSQL  { sqlname   :: String
-           , fields    :: [SqlField]
-           , cLkpTbl   :: [(A_Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
-           , mLkpTbl   :: [(Expression,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
-           , sqlfpa    :: FPA -- ^ function point analysis
+ = TblSQL  { sqlname :: String
+           , fields :: [SqlField]
+           , cLkpTbl :: [(A_Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
+           , mLkpTbl :: [(Expression,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
+           , sqlfpa :: FPA -- ^ function point analysis
            }
  | BinSQL  { --see rel2plug in ADL2Fspec.hs
-             sqlname   :: String
-           , columns   :: (SqlField,SqlField)
-           , cLkpTbl   :: [(A_Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
+             sqlname :: String
+           , columns :: (SqlField,SqlField)
+           , cLkpTbl :: [(A_Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
                                                 --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                 --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
-           , mLkp      :: Expression -- the morphism links concepts implemented by this plug
-           , sqlfpa    :: FPA -- ^ function point analysis
+           , mLkp :: Expression -- the morphism links concepts implemented by this plug
+           , sqlfpa :: FPA -- ^ function point analysis
            }
  | ScalarSQL
-           { sqlname   :: String
+           { sqlname :: String
            , sqlColumn :: SqlField
-           , cLkp      :: A_Concept -- the concept implemented by this plug
-           , sqlfpa    :: FPA -- ^ function point analysis
+           , cLkp :: A_Concept -- the concept implemented by this plug
+           , sqlfpa :: FPA -- ^ function point analysis
            }
    deriving (Show) 
 instance Identified PlugSQL where
@@ -357,11 +357,11 @@ lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec
                  [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,sqlColumn plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
 
-data SqlField = Fld { fldname     :: String
-                    , fldexpr     :: Expression
-                    , fldtype     :: SqlType
-                    , fldnull     :: Bool -- can there be empty field-values?
-                    , flduniq     :: Bool -- are all field-values unique?
+data SqlField = Fld { fldname :: String
+                    , fldexpr :: Expression
+                    , fldtype :: SqlType
+                    , fldnull :: Bool -- can there be empty field-values?
+                    , flduniq :: Bool -- are all field-values unique?
                     } deriving (Eq, Show)
 
 instance Ord SqlField where

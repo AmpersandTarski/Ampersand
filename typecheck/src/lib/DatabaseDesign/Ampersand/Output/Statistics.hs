@@ -15,8 +15,8 @@ module DatabaseDesign.Ampersand.Output.Statistics (Statistics(..)) where
  
    class Statistics a where
     nInterfaces :: a -> Int      -- ^ The number of interfaces in a
-    nPatterns   :: a -> Int      -- ^ The number of patterns in a
-    nFpoints    :: a -> Int      -- ^ The number of function points in a
+    nPatterns :: a -> Int      -- ^ The number of patterns in a
+    nFpoints :: a -> Int      -- ^ The number of function points in a
     
     
    instance Statistics a => Statistics [a] where

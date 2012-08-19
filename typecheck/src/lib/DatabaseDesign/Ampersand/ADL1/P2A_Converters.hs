@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE RelaxedPolyRec #-} -- -RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
-module DatabaseDesign.Ampersand.ADL1.P2A_Converters 
-     ( pCtx2aCtx
-     , disambiguate
+module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
+     -- * Exported functions
+     pCtx2aCtx,
+     disambiguate
      )
 where
 import qualified Data.Graph as Graph
@@ -41,14 +42,14 @@ TypLub a b o e is read as:
 data Type =  TypExpr P_Expression Bool Origin P_Expression
            | TypLub Type Type Origin P_Expression
            | TypGlb Type Type Origin P_Expression
-            deriving Show
+            deriving Show -- note: do not put "deriving Ord", because Eq is specified (and not derived)
 
 -- Equality of type expressions is based on occurrence. Only I[c] and V[a,b] have equality irrespective of their occurrence.
 {-
 instance Eq Type where
- TypExpr (Pid   _ []) _ o _ == TypExpr (Pid   _ [])  _ o' _  =  o==o'
- TypExpr (Pid   _ cs) _ o _ == TypExpr (Pid   _ cs') _ o' _  =  cs==cs' && o==o'
- TypExpr (Pfull _ []) _ o _ == TypExpr (Pfull _ [])  _ o' _  =  o==o'
+ TypExpr (PI _)       _ o _ == TypExpr (PI _)        _ o' _  =  o==o'
+ TypExpr (Pid     c ) _ o _ == TypExpr (Pid     c' ) _ o' _  =  c==c'
+ TypExpr (Pfull _ []) _ o _ == TypExpr (Pfull _ [] ) _ o' _  =  o==o'
  TypExpr (Pfull _ cs) _ o _ == TypExpr (Pfull _ cs') _ o' _  =  cs==cs' && o==o'
  TypExpr p _ o _ == TypExpr p' _  o' _  =  p `p_eq` p'    && o==o'
  TypLub  a b o _ == TypLub  a' b' o' _  =  a==a' && b==b' && o==o'
@@ -57,10 +58,10 @@ instance Eq Type where
 -}
 
 showType :: Type -> String
-showType (TypExpr _ _       orig origExpr@(Pid _ []))   = showADL origExpr ++"("++ shOrig orig++")"
-showType (TypExpr expr@(Pid _ []) _ orig _)             = showADL expr     ++"("++ shOrig orig++")"
-showType (TypExpr expr@(Pid _ _ ) _ _ _)                = showADL expr
-showType (TypExpr _ _       _    origExpr@(Pid _ _))    = showADL origExpr
+showType (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
+showType (TypExpr expr@(PI _) _ orig _)                 = showADL expr     ++"("++ shOrig orig++")"
+showType (TypExpr expr@(Pid _) _ _ _)                   = showADL expr
+showType (TypExpr _ _       _    origExpr@(Pid _))      = showADL origExpr
 showType (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pfull _ []) _ orig _)           = showADL expr     ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pfull _ _ ) _ _ _)              = showADL expr
@@ -70,10 +71,10 @@ showType (TypLub a b _ _)                               = showType a++" ./\\. "+
 showType (TypGlb a b _ _)                               = showType a++" .\\/. "++showType b
 
 showOrig :: Type -> String
-showOrig (TypExpr _ _       orig origExpr@(Pid _ []))   = showADL origExpr ++"("++ shOrig orig++")"
-showOrig (TypExpr expr@(Pid _ []) _ orig _)             = showADL expr     ++"("++ shOrig orig++")"
-showOrig (TypExpr expr@(Pid _ cs) _ _ _)                = showADL expr
-showOrig (TypExpr _ _       orig origExpr@(Pid _ _))    = showADL origExpr
+showOrig (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
+showOrig (TypExpr expr@(Pid _) _ orig _)                = showADL expr     ++"("++ shOrig orig++")"
+showOrig (TypExpr expr@(Pid _) _ _ _)                   = showADL expr
+showOrig (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr
 showOrig (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
 showOrig (TypExpr expr@(Pfull _ []) _ orig _)           = showADL expr     ++"("++ shOrig orig++")"
 showOrig (TypExpr expr@(Pfull _ cs) _ _ _)              = showADL expr
@@ -93,22 +94,32 @@ instance Traced Type where
   origin (TypLub _ _ o _) = o
   origin (TypGlb _ _ o _) = o
 
+-- | Equality of Type is needed for the purpose of making graphs of types.
+--   These are used in the type checking process.
+--   The main idea is that the equality distinguishes between occurrences. So the expression 'r' on line 14:3 differs from 
+--   the expression 'r' on line 87:19.
+--   However, different occurrences of specific expressions that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Eq Type where
   t==t' = t `t_eq` t'
 t_eq :: Type -> Type -> Bool
-t_eq (TypExpr (Pid _ [c])    _ _ _) (TypExpr (Pid _ [c'])     _ _ _) = c==c'
+t_eq (TypExpr (Pid c)        _ _ _) (TypExpr (Pid c')         _ _ _) = c==c'
 t_eq (TypExpr (Pnid c)       _ _ _) (TypExpr (Pnid c')        _ _ _) = c==c'
 t_eq (TypExpr (Patm _ x [c]) _ _ _) (TypExpr (Patm _ x' [c']) _ _ _) = x==x' && c==c'
 t_eq (TypExpr (Pfull _ cs)   _ _ _) (TypExpr (Pfull _ cs')    _ _ _) = cs==cs'
-t_eq e@(TypExpr (PTyp _ _ (P_Sign [])) _ _ _) e'@(TypExpr (PTyp _ _ (P_Sign [])) _ _ _) = e==e'
-t_eq (TypExpr (PTyp _ a sgn) _ _ _) (TypExpr (PTyp _ a' sgn') _ _ _) | sgn==sgn' = a `p_eq` a'
+t_eq (TypExpr e@(PTyp _ _ (P_Sign [])) _ _ _) (TypExpr e'@(PTyp _ _ (P_Sign [])) _ _ _) = e==e'
+t_eq (TypExpr (PTyp _ (Prel _ a) sgn) _ _ _) (TypExpr (PTyp _ (Prel _ a') sgn') _ _ _) = sgn==sgn' && a == a'
+t_eq (TypExpr (PTyp _ (Pflp _ a) sgn) _ _ _) (TypExpr (PTyp _ (Pflp _ a') sgn') _ _ _) = sgn==sgn' && a == a'
 t_eq (TypExpr x _ _ _) (TypExpr y _ _ _) = x == y
 t_eq (TypLub l r _ _) (TypLub l' r' _ _) =  l `t_eq` l' && r `t_eq` r'
 t_eq (TypGlb l r _ _) (TypGlb l' r' _ _) =  l `t_eq` l' && r `t_eq` r'
 t_eq _ _ = False
 
+-- | `p_eq` is an equivalence relation, which does not distinguish between occurrences.
+--   It is intended as the mathematical equivalence of P_Expressions.
+--   It treats two occurrences of the same expression as the same.
 p_eq :: P_Expression -> P_Expression -> Bool
-p_eq (Pid _ cs)     (Pid _ cs')      = cs==cs'
+p_eq (PI _)         (PI _)           = True
+p_eq (Pid c)        (Pid c')         = c==c'
 p_eq (Pnid c)       (Pnid c')        = c==c'
 p_eq (Patm _ x cs)  (Patm _ x' cs')  = x==x' && cs==cs'
 p_eq Pnull          Pnull            = True
@@ -133,7 +144,10 @@ p_eq (PBrk _ a)     (PBrk _ a')      = p_eq a a'
 p_eq (PTyp _ a sgn) (PTyp _ a' sgn') = p_eq a a' && sgn==sgn'
 p_eq _ _ = False
 
+-- | p_flp computes the inverse of a P_Expression.
+--   It is used insteas of PFlp, when evaluation of the flip is desirable.
 p_flp :: P_Expression -> P_Expression
+p_flp a@(PI{})     = a
 p_flp a@(Pid{})    = a
 p_flp a@(Pnid{})   = a
 p_flp a@(Patm{})   = a
@@ -164,8 +178,9 @@ t_complement (TypLub a b orig origExpr)        = TypGlb (t_complement a) (t_comp
 t_complement (TypGlb a b orig origExpr)        = TypLub (t_complement a) (t_complement b) orig (PCpl (origin origExpr) origExpr)
 
 complement :: P_Expression -> P_Expression
-complement a@(Pid o _)    = PCpl o a
-complement (Pnid a)       = Pid OriginUnknown [a]
+complement a@(PI _)       = PCpl OriginUnknown a
+complement a@(Pid _)      = PCpl OriginUnknown a -- Pnid c
+complement (Pnid c)       = Pid c
 complement (Patm o a cs)  = PCpl o (Patm o a cs)
 complement Pnull          = PCpl OriginUnknown Pnull
 complement (Pfull _ _)    = Pnull
@@ -188,147 +203,33 @@ complement (PCpl _ a)     = a
 complement (PBrk o a)     = PBrk o (complement a)
 complement (PTyp o a sgn) = PTyp o (complement a) sgn
 
--- p_simplify is used to make the type graphs smaller, by simplifying only the most evident things.
-p_simplify :: P_Expression -> P_Expression
-p_simplify (PFlp _ (PFlp _ a)) = p_simplify a
-p_simplify (PFlp _ (Prel o r)) = Pflp o r
-p_simplify (PFlp _ (Pflp o r)) = Prel o r
-p_simplify (PFlp o a)          = PFlp o (p_simplify a)
-p_simplify (PBrk _ a)          = p_simplify a
-p_simplify (Pequ o a b)        = Pequ o (p_simplify a) (p_simplify b)
-p_simplify (Pimp o a b)        = Pimp o (p_simplify a) (p_simplify b)
-p_simplify (PIsc o a b)        = PIsc o (p_simplify a) (p_simplify b)
-p_simplify (PUni o a b)        = PUni o (p_simplify a) (p_simplify b)
-p_simplify (PDif o a b)        = PDif o (p_simplify a) (p_simplify b)
-p_simplify (PLrs o a b)        = PLrs o (p_simplify a) (p_simplify b)
-p_simplify (PRrs o a b)        = PRrs o (p_simplify a) (p_simplify b)
-p_simplify (PCps o a b)        = PCps o (p_simplify a) (p_simplify b)
-p_simplify (PRad o a b)        = PRad o (p_simplify a) (p_simplify b)
-p_simplify (PPrd o a b)        = PPrd o (p_simplify a) (p_simplify b)
-p_simplify (PKl0 _ (PKl0 o a)) = PKl0 o (p_simplify a)
-p_simplify (PKl0 _ (PKl1 o a)) = PKl1 o (p_simplify a)
-p_simplify (PKl1 _ (PKl0 o a)) = PKl1 o (p_simplify a)
-p_simplify (PKl1 _ (PKl1 o a)) = PKl1 o (p_simplify a)
-p_simplify (PKl0 o a)          = PKl0 o (p_simplify a)
-p_simplify (PKl1 o a)          = PKl1 o (p_simplify a)
-p_simplify (PCpl o a)          = PCpl o (p_simplify a)
-p_simplify (PTyp o a sgn)      = PTyp o (p_simplify a) sgn
-p_simplify a                   = a
-          
+
 mSpecific, mGeneric :: Type -> Type -> Origin -> P_Expression -> Type
 mSpecific a b o e = TypLub a b o e
 mGeneric  a b o e = TypGlb a b o e
-{- obsolete:
-mSpecific (TypExpr a flippedA oa origA) (TypExpr b flippedB ob origB) o origExpr
- = TypExpr (PIsc o (if flippedA then p_flp a else a) (if flippedB then p_flp b else b)) False o origExpr
-mGeneric  (TypExpr a flippedA oa origA) (TypExpr b flippedB ob origB) o origExpr
- = TypExpr (PUni o (if flippedA then p_flp a else a) (if flippedB then p_flp b else b)) False o origExpr
--}
 
-{-
--- The following function, computepredicates, computes a number of predicates to be resolved with a simplex method,
--- for the purpose of disambiguating relations in P_Expressions.
--- This function only computes the predicates.
--- Linking a declaration (PTyp oD (PRel oD' relNameD) [s,t]) to an occurrence (PRel o relName) is denoted as:  (PTyp o (PRel o relName) [s,t]), which has type P_Expression
--- correspondence between two such links is denoted as a pair (of type (P_Expression,P_Expression))
-computePredicates :: [P_Declaration] ->             -- A list of all declarations in this script
-                     P_Expression ->                -- an expression that must be disambiguated.
-                     [(P_Expression,P_Expression)]  -- a list of term-tuples of the form (x@(PTyp (PRel oX relNameX) [srcX, trgX]),y@(PTyp (PRel oY relNameY) [srcY, trgY]))
-                                                    --   each of which represents a predicate x=y.
-computePredicates decls expr
- = [(x,y) |(x,y)<-predics, x/=y]
-   where
-     (_,_,predics) = preds expr
-     preds :: P_Expression -> ( [P_Expression]                 -- a list of terms of the form PTyp (PRel o relName) [src, trg], being the untyped relations on the left hand side, typed with a possible type
-                              , [P_Expression]                 -- a list of terms of the form PTyp (PRel o relName) [src, trg], being the untyped relations on the right hand side, typed with a possible type
-                              , [(P_Expression,P_Expression)]  -- a list of term-tuples of the form PTyp (PRel o relName) [src, trg],
-                              )                                --   each of which represents a predicate
-     preds (Pequ _ a b)                                                      -- a=b    equality
-          = ( nub [e| (x,y)<-tuplesL,e<-[x,y]]
-            , nub [e| (x,y)<-tuplesR,e<-[x,y]]
-            , tuplesL++tuplesR++predicatesA++predicatesB                                 
-            )
-            where (lTermsA,rTermsA,predicatesA) = preds a; (lTermsB,rTermsB,predicatesB) = preds b
-                  tuplesL = [(x,y) | x@(PTyp _ _ (P_Sign [xSrc, _]))<-lTermsA, y@(PTyp _ _ (P_Sign [ySrc, _]))<-lTermsB, xSrc==ySrc]
-                  tuplesR = [(x,y) | x@(PTyp _ _ (P_Sign [_, xTrg]))<-rTermsA, y@(PTyp _ _ (P_Sign [_, yTrg]))<-rTermsB, xTrg==yTrg]
-     preds (Pimp o a b)            = preds (Pequ o a (PIsc o a b))           -- a|-b    (subset)
-     preds (PIsc _ (Pfull _ []) b) = preds b                                 -- V/\b    (intersection with full relation)
-     preds (PIsc _ a (Pfull _ [])) = preds a                                 -- a/\V    (intersection with full relation)
-     preds (PIsc o a b)            = preds (Pequ o a b)                      -- a/\b    (intersection)
-     preds (PUni _ Pnull b)        = preds b                                 -- emptySet\/b    (union)
-     preds (PUni _ a Pnull)        = preds a                                 -- a\/emptySet    (union)
-     preds (PUni o a b)            = preds (Pequ o a b)                      -- a\/b    (union)
-     preds (PDif o a b)            = preds (Pequ o a b)                      -- a-b     (difference)
-     preds (PLrs o a b)            = preds (PRad o a (complement (p_flp b))) -- a/b     (left residual)      
-     preds (PRrs o a b)            = preds (PRad o (complement (p_flp a)) b) -- a\b     (right residual) 
-     preds (PCps _ (Pid _ []) b)   = preds b                                 -- I;b      composition
-     preds (PCps _ a (Pid _ []))   = preds a                                 -- a;I      composition
-     preds (PCps _ a b)                                                      -- a;b      composition
-          = ( lTermsA>-thrownOutA
-            , rTermsB>-thrownOutB
-            , tuples++predicatesA++predicatesB                                 
-            )
-            where (lTermsA,rTermsA,predicatesA) = preds a; (lTermsB,rTermsB,predicatesB) = preds b
-                  tuples = [(l,r) | l@(PTyp _ _ (P_Sign [_, lTrg]))<-rTermsA, r@(PTyp _ _ (P_Sign [rSrc, _]))<-lTermsB, lTrg==rSrc]
-                  thrownOutA = rTermsA>-[l | (l,_)<-tuples]                    -- the relation-declaration assignments from rTermsA that were not used
-                  thrownOutB = lTermsB>-[r | (_,r)<-tuples]                    -- the relation-declaration assignments from lTermsB that were not used
-     preds (PRad o a b) = preds (PCps o a b)                                 -- a!b relative addition (dagger)
-     preds (PPrd _ a b)                                                      -- a*b cartesian product
-          = ( lTermsA                                                       
-            , rTermsB
-            , predicatesA++predicatesB                                 
-            )
-            where (lTermsA,_,predicatesA) = preds a; (_,rTermsB,predicatesB) = preds b
-     preds (PKl0 _ e)   = preds e
-     preds (PKl1 _ e)   = preds e
-     preds (PFlp _ e)                                                 -- e~ inverse (wok, flip)
-          = ( map p_flp rTerms
-            , map p_flp lTerms
-            , predicates
-            )
-            where (lTerms,rTerms,predicates) = preds e
-     preds (PCpl _ e)             = preds e                           -- -e  complement
-     preds (PBrk _ e)             = preds e                           -- (e) brackets
-     preds (PTyp _ e (P_Sign [])) = preds e
-     preds (PTyp _ e (P_Sign cs))                                     -- e[A*B]  type-annotation
-          = ( [l | l@(PTyp _ _ (P_Sign [lSrc, _]))<-lTerms, lSrc==head cs]                            -- the untyped terms at the left of x
-            , [r | r@(PTyp _ _ (P_Sign [_, rTrg]))<-rTerms, rTrg==last cs]                            -- the untyped terms at the right of x
-            , predicates
-            )
-            where (lTerms,rTerms,predicates) = preds e
-     preds (Pid _ _)      = ( [], [], [])                             -- I[C]
-     preds (Pnid _)       = ( [], [], [])                             -- -I[C]
-     preds (Patm _ _ _)   = ( [], [], [])                             -- 'Piet'   (an untyped singleton)
-     preds  Pnull         = ( [], [], [])                             -- -V     (the empty set)
-     preds (Pfull _ [])   = ( [], [], [])                             -- V     (the untyped full set)
-     preds (Pfull _ _ )   = ( [], [], [])                             -- V[A*B] (the typed full set)
-     preds x@(Prel o relName)                                           -- r      a relation
-          = ( [PTyp o x (dec_sign d)| d<-decls, relName==dec_nm d]  -- the untyped terms at the left of x, with possible types
-            , [PTyp o x (dec_sign d)| d<-decls, relName==dec_nm d]  -- the untyped terms at the right of x, with possible types
-            , []                                                    -- no predicates can be derived from x                                
-            )
-     preds (Pflp o nm) = preds (PFlp o (Prel o nm))                   -- r~     a flipped relation
--}
-
+anything :: Type
 anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnknown [])
-thing c  = TypExpr (Pid OriginUnknown [c]) False OriginUnknown (Pid OriginUnknown [c])
+thing :: P_Concept -> Type
+thing c  = TypExpr (Pid c) False OriginUnknown (Pid c)
+isAnything :: Type -> Bool
 isAnything (TypExpr (Pfull _ []) _ _ (Pfull _ [])) = True
 isAnything _ = False
-{- The purpose of 'typing' is to analyse the domains and codomains of an expression in a context.
-As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
-For any two P_Expressions a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _ _,TypExpr b _ _ _) in st.
-In the code below, this shows up as  dom a.<.dom b
-The function typing does a recursive scan through all subexpressions, collecting all tuples on its way.
-Besides expression expr, this function requires a universe in which to operate.
-Specify 'anything anything' if there are no restrictions.
-If the source and target of expr is restricted to concepts c and d, specify (thing c) (thing d).
--}
+
+-- | The purpose of 'typing' is to analyse the domains and codomains of an expression in a context.
+--   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
+--   For any two P_Expressions a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _ _,TypExpr b _ _ _) in st.
+--   In the code below, this shows up as  dom a.<.dom b
+--   The function typing does a recursive scan through all subexpressions, collecting all tuples on its way.
+--   Besides expression expr, this function requires a universe in which to operate.
+--   Specify 'anything anything' if there are no restrictions.
+--   If the source and target of expr is restricted to concepts c and d, specify (thing c) (thing d).
 typing :: P_Context -> Type -> Type -> P_Expression -> [(Type, Type)] -- subtypes (.. is subset of ..)
 typing p_context universeSource universeTarget expr
- = nub (uType expr universeSource universeTarget expr ++  -- should we use '(p_simplify expr)' instead of just 'expr'?
+ = nub (uType expr universeSource universeTarget expr ++
         [ st| g<-isas
-            , let spc=Pid (origin g) [gen_spc g]
-            , let gen=Pid (origin g) [gen_gen g]
+            , let spc=Pid (gen_spc g)
+            , let gen=Pid (gen_gen g)
             , let x=Pimp (origin g) spc gen
             , st<-dom spc.<.dom gen
         ])
@@ -342,14 +243,15 @@ typing p_context universeSource universeTarget expr
            -> Type            -- uRt:  the type of the universe for the codomain of x
            -> P_Expression    -- z:    the expression to be analyzed
            -> [(Type, Type)]  -- a list of subset pairs, which is the result of analysing expression x.
-     uType x _    _     (Pid{})               = dom x.=.cod x                                                              -- I[C]
+     uType x _    _     (PI{})                = dom x.=.cod x                                                        -- I
+     uType x _    _     (Pid{})               = dom x.=.cod x                                                        -- I[C]
      uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
---   uType x _    _     (Pnid _)              = dom x.=.dom (Pid [c]) .+. cod x.=.cod (Pid [c])                      -- These rules apply for  -I[C] (i.e. Pnid, if it were represented)
+--   uType x _    _     (Pnid _)              = dom x.=.dom (Pid c) .+. cod x.=.cod (Pid c)                          -- These rules apply for  -I[C] (i.e. Pnid, if it were represented)
      uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
-     uType x _    _     (Patm o _ cs)         = dom x.<.dom (Pid u [head cs]) .+. cod x.<.cod (Pid u [head cs])      -- 'Piet'[Persoon]  (a typed singleton)
+     uType x _    _     (Patm o _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          -- 'Piet'[Persoon]  (a typed singleton)
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType _ _    _     (Pfull _ [])          = nothing                                                              --  V     (the untyped full set)
-     uType x _    _     (Pfull o cs)          = dom x.=.dom (Pid u [head cs]) .+. cod x.=.cod (Pid u [last cs])      --  V[A*B] (the typed full set)
+     uType x _    _     (Pfull o cs)          = dom x.=.dom (Pid (head cs)) .+. cod x.=.cod (Pid (head cs))      --  V[A*B] (the typed full set)
      uType x _    _     (Prel _ nm)           = foldr (.+.) [] [ dom x.<.dom decl .+. cod x.<.cod decl               --  r      a relation
                                                                | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
      uType x _    _     (Pflp _ nm)           = foldr (.+.) [] [ dom x.<.cod decl .+. cod x.<.dom decl               --  r~     a flipped relation
@@ -381,11 +283,11 @@ typing p_context universeSource universeTarget expr
                                                 where e = PRad o a (complement (p_flp b))
      uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a!b      relative addition
                                                 where e = PRad o (complement (p_flp a)) b
-     uType x uLft uRt   (PCps _ (Pid _ []) b) = uType x uLft uRt b                                                     -- I;b
+     uType x uLft uRt   (PCps _ (PI _) b)     = uType x uLft uRt b                                                     -- I;b
      uType x  _   uRt   (PCps o a@(Pid{}) b)  = dom x.=.between .+. cod x.<.cod b .+. between.<.dom b .+.              -- I[C];b   composition
                                                 uType x between uRt b
                                                 where between = mSpecific (cod a) (dom b) o x
-     uType x uLft uRt   (PCps _ a (Pid _ [])) = uType x uLft uRt a                                                     -- a;I      composition
+     uType x uLft uRt   (PCps _ a (PI _))     = uType x uLft uRt a                                                     -- a;I      composition
      uType x uLft  _    (PCps o a b@(Pid{}))  = dom x.<.dom a .+. cod x.=.between .+. between.<.cod a .+.              -- a;I[C]   composition
                                                 uType x uLft between a
                                                 where between = mSpecific (cod a) (dom b) o x
@@ -436,8 +338,8 @@ typing p_context universeSource universeTarget expr
                                                 then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e .+.
                                                      uType e iSrc iTrg e
-                                                where iSrc = TypExpr (Pid u [head cs]) False o x
-                                                      iTrg = TypExpr (Pid u [last cs])  True o x
+                                                where iSrc = TypExpr (Pid (head cs)) False o x
+                                                      iTrg = TypExpr (Pid (last cs))  True o x
      nothing :: [(Type,Type)]
      nothing = []
      infixl 2 .+.   -- concatenate two lists of types
@@ -457,10 +359,11 @@ typing p_context universeSource universeTarget expr
 
 {- The following table is a data structure that is meant to facilitate drawing type graphs and creating the correct messages for users.
 This table is organized as follows:
-Int             : a vertex (number) in the stGraph, which contains the raw tuples from function 'typing'
-Int             : a vertex (number) in the sccGraph, which is a condensed form of the stGraph, leaving the semantics identical
-Type            : a type expression, containing a P_Expression, which is represented by a number in the type graphs. Different expressions may carry the same number in the sccGraph.
-[P_Expression]  : the original expression, as it came out of the script, if there is one.
+Int          : a vertex (number) in the stGraph, which contains the raw tuples from function 'typing'
+Int          : a vertex (number) in the sccGraph, which is a condensed form of the stGraph, leaving the semantics identical
+Type         : a type expression, containing a P_Expression, which is represented by a number in the type graphs. Different expressions may carry the same number in the sccGraph.
+[P_Concept]  : a list of concepts. If (_,_,expr,cs) is an element of this table, then for every c in cs there is a proof that dom expr is a subset of I[c].
+               For a type correct expr, list cs contains precisely one element.
 -}
 tableOfTypes :: [(Type,Type)] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph, Graph.Graph)
 tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
@@ -469,15 +372,12 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
    The list st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by dom t is a subset of the set of atoms contained by dom t'.
 -}
-     typeExpressions   :: [Type]     -- a list of all type expressions in st.
+     typeExpressions :: [Type]     -- a list of all type expressions in st.
      typeExpressions = nub (map fst st++map snd st)
      expressionTable :: [(Int, Type)]
      (expressionTable,numberOfNodes) = ([(i,typeExpr) | (i,cl)<-zip [0..] eqExpressions, typeExpr<-cl ], length eqExpressions)
       where eqExpressions = eqClass (==) typeExpressions     -- WHY do we need the following definition of t_Eq? What is the problem to use t_eq instead?
-            TypExpr (Pid   _ cs) _ _ _ `t_Eq` TypExpr (Pid   _ cs') _ _ _  =  cs==cs'
-            TypExpr (Pfull _ cs) _ _ _ `t_Eq` TypExpr (Pfull _ cs') _ _ _  =  cs==cs'
-            x `t_Eq` y                                                     =   x==y
-     expressionNr   :: Type -> Int
+     expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
 -- stGraph is computed for debugging purposes. It shows precisely which edges are computed by uType.
      stGraph :: Graph.Graph
@@ -489,10 +389,12 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
    These equivalence classes are the strongly connected components of the original graph, which are computed by Graph.scc
 -}
      eqClasses :: [[Int]]             -- The strongly connected components are computed in the form of trees (by Graph.scc)
-     eqClasses = map Tree.flatten stronglyConnected    -- We are only interested in the elements of each component.
-      where stronglyConnected :: [Tree.Tree Int]       -- For that reason we flatten the trees.
-            stronglyConnected = Graph.scc stGraph      -- Each equivalence class contains integers, each of which represents a type expression.
-     exprClass  :: Int -> Int
+     eqClasses = rfxFilter (clos1 (stEdges ++ [(i,i) | i<-take numberOfNodes [0..]])) -- (nub . concat) [[(i,i),(j,j)] | (i,j)<-stEdges] ))
+      where rfxFilter lst = f (lst `isc` [(b,a) | (a,b)<-lst])
+                            where f [] = []
+                                  f ((a,b):rest) = cl : f [ (c,d) | (c,d)<-rest, c `notElem` cl ]
+                                    where cl = nub (a:b:[d | (c,d)<-rest, a==c ])
+     exprClass :: Int -> Int
      exprClass i = head ([classNr | (exprNr,classNr)<-classNumbers, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
      sccGraph :: Graph.Graph
      sccGraph
@@ -502,7 +404,8 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
      classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging expressionTable and classNumbers into one list.
     In this case it might be done simply with zip, because the left column of classNumbers is identical to the left column of expressionTable.
-    However, the following (more elaborate) way has been chosen to make sure that future mistakes will be caught..
+    If for some reason during code development this is not true, the following merge provides a check.
+    This has already caught mistakes in the past, so it is advisable to leave this check in the code for debugging reasons.
 -}
      table = f expressionTable classNumbers
        where f [(i,typeExpr)] [(j,classNr)]
@@ -512,126 +415,28 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
               | i>j  = f exprTable classNrs'
               | i<j  = fatal 425 "mistake in table"
              f et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
-             ambConcepts classNr = [c |cl<-eqCl fst ambiguities, fst (head cl)==classNr, TypExpr (Pid _ [c]) _ _ _<-map (lookupType table.snd) cl]
+             ambConcepts classNr = [c |cl<-eqCl fst ambiguities, fst (head cl)==classNr, TypExpr (Pid c) _ _ _<-map (lookupType table.snd) cl]
      ambGraph :: Graph.Graph
      ambGraph = Graph.buildG (0, length eqClasses-1) ambiguities
-      where
-       ag = Graph.buildG (0, length eqClasses-1) 
-                             [ (i,j)| (i,j)<-clos1 (Graph.edges sccGraph), Graph.outdegree sccGraph!i>1, Graph.outdegree sccGraph!j==0 ]
      ambiguities :: [(Int,Int)]
      ambiguities = [ (i,j)| (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
       where
        ag = Graph.buildG (0, length eqClasses-1) 
                              [ (i,j)| (i,j)<-clos1 (Graph.edges sccGraph), Graph.outdegree sccGraph!i>1, Graph.outdegree sccGraph!j==0 ]
-                             
-calcTypeErrors :: P_Context -> [(Int,Int,Type,[P_Concept])] -> [(Type, Type)] -> ([CtxError])
-calcTypeErrors p_context typeTable st = typeErrors
-   where
-    typeErrors :: [CtxError]
-    typeErrors
-     | (not.null) err1 = err1
-     | (not.null) err2 = err2
-     | otherwise       = err3
-     where err1 = derivedEquals++ambiguousRelations
-           err2 = undeclaredRelations
-           err3 = untypableExpressions++ambiguousExpressions
-    (_{-typeTable-},_,sccGraph,_) = tableOfTypes st
-    derivedEquals :: [CtxError]
-    derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the expressions derived from the script).
-     = [ newcxe ("The following concepts were proven equal:\n  "++intercalate ", " [show c| (_,_,TypExpr (Pid _ [c]) _ _ _)<-diffs] )
-       | diffs<-eqCl (\(_,classNr,_) -> classNr) (map head (eqClass tripleEq conceptTypes))
-       , length diffs>1]
-       where (_,_,t) `tripleEq` (_,_,t') = t `t_eq` t'
---    predics = [pred | expr<-expressions p_context, pred<-computePredicates (p_declarations p_context) expr ]
-    conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ]
-    conceptClasses = [ classNr | (_, classNr, _)<-conceptTypes ]
-{- The expressions with constructor Pid are basic types. Each one should be in precisely one equivalence class.
-   It is useful to have a small table with the numbers that represent the expression in the stGraph and the number that represents the equivalence class -}
-    -- type errors come in three kinds:
-    -- 1. Two named types are equal.
-    --    This is usually unintended: user should give equal types equal names.
-    -- 2. The type of a relation cannot be determined.
-    --    This means that there is no named type in which it is contained.
-    -- 3. The type of a term has no name??
-    --    I don't know if these can be considered as type-errors
-    --    perhaps if this type is too high up, or too low under
-    ambiguousRelations :: [CtxError]
-    ambiguousRelations
-     = [ CxeOrig (newcxe ("Relation \""++relName++"\" is ambiguous. It can be typed by:\n   "
-                  ++intercalate "\n   " ["declaration ("++show (origin decl)++") of \""++showADL decl++"\"" | decl<-map snd cl]))
-                 "relation"
-                 relName
-                 orig
-       | cl<-eqCl fst declaredExprs, length cl>1
-       , let (Prel orig relName,_) = head cl
-       ]
-    pDecls = [origin d| d<-p_declarations p_context]
-    declaredExprs = [ (r,decl) | ( TypExpr r@(Prel _ relName) _ _ _, TypExpr decl@(PTyp _ (Prel _ rnm) _) _ orig _ )<-st, relName==rnm, orig `elem` pDecls ]
-    undeclaredRelations :: [CtxError]
-    undeclaredRelations
-     = [ CxeOrig (newcxe ("Relation \""++relName++"\" is not declared."))
-                 "relation"
-                 relName
-                 orig
-       | Prel orig relName<-subexpressions p_context, relName `notElem` nub (map name (p_declarations p_context))
-       ] where 
-    ambiguousExpressions :: [CtxError]
-    ambiguousExpressions
-     = [ CxeAmbExpr {cxeExpr   = expr
-                    ,cxeSrcT   = srcTypes
-                    ,cxeTrgT   = trgTypes
-                    ,cxeSign   = []
-                    }       
-       | cl<-eqCl (\(e,_,_)->origin e) separateSrcTrg
-       , let (expr,_,_) = head cl
-       , let srcTypes = nub [a | (_,as,_)<-cl, a<-as]
-       , let trgTypes = nub [a | (_,_,as)<-cl, a<-as]
-       , length srcTypes>1 || length trgTypes>1
-       ]++
-       [ CxeAmbBetween {cxeExpr   = origExpr
-                       ,cxeSrcE   = pExpr a
-                       ,cxeSrcB   = fExpr a
-                       ,cxeTrgE   = pExpr b
-                       ,cxeTrgB   = fExpr b
-                       ,cxeCpts   = as
-                       }       
-       | (TypLub a b _ origExpr, as) <- ambiguity
-       ]
-        where
-         ambiguity
-          = [ (typExpr, ambConcepts)
-            | (_, _, typExpr, ambConcepts)<-typeTable, (not.null) ambConcepts
-            ]
-         separateSrcTrg -- In order to qualify ambiguity of a particular expression, we distinguish source- and target ambiguity for the purpose of assembling feedback in CxeAmbExpr.
-          = [ x
-            | (TypExpr _ flipped _ expr,as) <- ambiguity
-            , x<-[(expr, [a | not flipped, a<-as], []), (p_flp expr, [], [a | flipped, a<-as])]
-            ]
-         pExpr :: Type -> P_Expression
-         pExpr (TypExpr _ _ _ expr) = expr
-         pExpr x = fatal 549 ("May not call pExpr with "++showType x)
-         fExpr :: Type -> Bool
-         fExpr (TypExpr _ flipped _ _) = flipped
-         fExpr x = fatal 552 ("May not call fExpr with "++showType x)
-    untypableExpressions :: [CtxError]
-    untypableExpressions
-     = [ CxeOrig (newcxe ("Nonexistent type for src("++showVertex typeTable v++")." ))
-                 "expression"
-                 ""
-                 (origin (lookupType typeTable v))
-       | v <- Graph.vertices sccGraph, Graph.indegree sccGraph!v==0, tree<-Graph.dfs sccGraph [v]
-       , let as=[a|a<-apples tree, a `elem` conceptClasses]
-       , null as
-       ]
-    apples :: Tree.Tree Int -> [Int]
-    apples t = if null (Tree.subForest t) then [Tree.rootLabel t] else concat (map apples (Tree.subForest t))
+
 
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
 
 showErr :: CtxError -> String
-showErr (Cxes xs) = intercalate "\n" (map showErr xs)
+-- * CxeEqConcepts tells us that there are concepts with different names, which can be proven equal by the type checker.
+showErr err@(CxeEqConcepts{})
+ = concat
+     ["The following concepts are equal:\n"++commaEng "and" (map show (cxeConcepts err))++"." | not (null (cxeConcepts err)) ]
+-- * CxeEqAttribs tells us that there are concepts with different names, which can be proven equal by the type checker.
+showErr err@(CxeEqAttribs{})
+ = show (cxeOrig err)++": Different attributes share the same name \""++cxeName err++"\":\n   "++
+   intercalate "\n   " [ show (origin expr)++" : "++showADL expr | expr<-cxeAtts err ]
 showErr err@(CxeAmbExpr{})
  = concat
      ( [show (origin (cxeExpr err))++": Ambiguous expression\n   "++showADL (cxeExpr err)++"\n   "]++
@@ -639,25 +444,69 @@ showErr err@(CxeAmbExpr{})
        ["has either "++commaEng "or" (map showADL (cxeSrcT err))++" as its source concept." | not (null (cxeSrcT err)) ]++
        ["has either "++commaEng "or" (map showADL (cxeTrgT err))++" as its target concept." | not (null (cxeTrgT err)) ]
      )
-showErr err@(CxeAmbBetween{})
+showErr err@(CxeILike { cxeCpts=[]})
+ = concat
+     ( [show (origin (cxeExpr err))]++["\n"]++
+       ["    Expression   "++showADL (cxeExpr err)++"    can be of any type."]
+     )
+showErr err@(CxeILike {})
+ = concat
+     ( [show (origin (cxeExpr err))]++["\n"]++
+       ["    Expression   "++showADL (cxeExpr err)++",\n"]++
+       ["    cannot be both "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
+     )
+showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})
  = concat
      ( [show (origin (cxeExpr err))]++["\n"]++
        ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
-       ["between the "++f (cxeSrcB err)++" of   "++showADL (cxeSrcE err)]++["\n"]++
-       ["    and the "++f (cxeTrgB err)++" of   "++showADL (cxeTrgE err)]++["\n"]++
-       ["there is a conflict between concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++["."]
+       ["    between the target of   "++showADL a]++
+       ["    and the target of   "++showADL b]++[",\n"]++
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
      )
-   where f flipped = if flipped then "target" else "source"
-showErr (CxeOrig cxe t nm o)
- | nocxe cxe                                    = "The " ++ t ++ " at "++ shOrig o ++ " is correct."
- | t `elem` ["pattern", "process", "interface"] = "The " ++ t ++ " named \""++ nm ++ "\" contains errors " ++ showErr cxe
- | otherwise                                    = "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ showErr cxe
-showErr (Cxe cxe x) = x ++ "\n" ++ showErr cxe
-showErr CxeNone =  ""
-showErr (PE msg) = "Parse error:\n"++ show (case msg of 
-                                                 [] -> fatal 35 "No messages??? The impossible happened!" 
-                                                 x:_ -> x)
+showErr err@(CxeCpsLike { cxeExpr=PRrs _ a b})
+ = concat
+     ( [show (origin (cxeExpr err))]++["\n"]++
+       ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
+       ["    between the source of   "++showADL a]++
+       ["    and the source of   "++showADL b]++[",\n"]++
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
+     )
+showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})
+ = concat
+     ( [show (origin (cxeExpr err))]++["\n"]++
+       ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
+       ["    between the target of   "++showADL a]++
+       ["    and the source of   "++showADL b]++[",\n"]++
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
+     )
+showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})
+ = concat
+     ( [show (origin (cxeExpr err))]++["\n"]++
+       ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
+       ["    between the target of   "++showADL a]++
+       ["    and the source of   "++showADL b]++[",\n"]++
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
+     )
+showErr (CxeOrig typeErrors t nm o)
+ | null typeErrors                              = ""
+ | t `elem` ["pattern", "process", "interface"] = "The " ++ t ++ " named \""++ nm ++ "\" contains errors " ++ intercalate "\n" (map showErr typeErrors)
+ | otherwise                                    = "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
+showErr (Cxe typeErrors x)                      = x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
+showErr (PE msg)                                = "Parse error:\n"++ show (case msg of 
+                                                                             []  -> fatal 35 "No messages??? The impossible happened!" 
+                                                                             x:_ -> x)
+showErr _ = fatal 580 "missing pattern in type error."
 
+showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
+showTypeTable typeTable
+ = intercalate "\n  " (map showLine typeTable)
+   where
+    nMax = maximum [i | (stIndex,cIndex,_,_)<-typeTable, i<-[stIndex, cIndex]]
+    sh i = [ ' ' | j<-[length (show i)..length (show nMax)] ]++show i
+    showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++","++show t++","++showADL (showTypeExpr t)++","++show concepts
+    showTypeExpr (TypLub _ _ _ origExpr)  = origExpr
+    showTypeExpr (TypGlb _ _ _ origExpr)  = origExpr
+    showTypeExpr (TypExpr _ _ _ origExpr) = origExpr
 showStVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
 showStVertex typeTable i
  = head ([ showType e | (exprNr, _, e,_)<-typeTable, i==exprNr ]++fatal 506 ("No expression numbered "++show i++" found by showStVertex"))
@@ -668,7 +517,7 @@ showVertex typeTable i
                           ]
 vertex2Concept :: [(Int,Int,Type,[P_Concept])] -> Int -> P_Concept
 vertex2Concept typeTable i
- = head ([ c | (_, classNr, TypExpr (Pid _ [c]) _ _ _, _)<-typeTable , i==classNr]
+ = head ([ c | (_, classNr, TypExpr (Pid c) _ _ _, _)<-typeTable , i==classNr]
          ++fatal 603 ("No concept numbered "++show i++" found by vertex2Concept typeTable.\n  "++intercalate "\n  " [ show tti | tti@(_, classNr, _, _)<-typeTable , i==classNr])
         )
 unFlip :: Type -> P_Expression
@@ -696,7 +545,7 @@ typeAnimate st = (stTypeGraph, condensedGraph, ambiguityGraph)
     condensedGraph = toDotGraph showVtx sccGraph
      where showVtx n = (intercalate "\n".nub)
                        [ case head cl of
-                           t@(TypExpr (Pid _ [])   _ _ _ ) -> showType t
+                           t@(TypExpr (PI _)       _ _ _ ) -> showType t
                            (TypExpr t@(Pid{})      _ _ _ ) -> showADL t
                            t@(TypExpr (Pfull _ []) _ _ _ ) -> showType t
                            (TypExpr t@(Pfull{})    _ _ _ ) -> showADL t
@@ -709,7 +558,7 @@ typeAnimate st = (stTypeGraph, condensedGraph, ambiguityGraph)
     ambiguityGraph = toDotGraph showVtx ambGraph
      where showVtx n = (intercalate "\n".nub)
                        [ case head cl of
-                           t@(TypExpr (Pid _ [])   _ _ _ ) -> showType t
+                           t@(TypExpr (PI _)       _ _ _ ) -> showType t
                            (TypExpr t@(Pid{})      _ _ _ ) -> showADL t
                            t@(TypExpr (Pfull _ []) _ _ _ ) -> showType t
                            (TypExpr t@(Pfull{})    _ _ _ ) -> showADL t
@@ -738,7 +587,9 @@ instance Expr P_Context where
          p_concs (ctx_rs    pContext) ++
          p_concs (ctx_ds    pContext) ++
          p_concs (ctx_ks    pContext) ++
+         p_concs (ctx_gs    pContext) ++
          p_concs (ctx_ifcs  pContext) ++
+         p_concs (ctx_pops  pContext) ++
          p_concs (ctx_sql   pContext) ++
          p_concs (ctx_php   pContext)
         )
@@ -811,13 +662,17 @@ instance Expr P_Rule where
  expressions r = expressions (rr_exp r)
  subexpressions r = subexpressions (rr_exp r)
 instance Expr P_Sign where
- p_concs (P_Sign cs) = nub cs
+ p_concs x = nub (psign x)
+ expressions r = []
+ subexpressions r = []
+instance Expr P_Gen where
+ p_concs x = nub [gen_gen x, gen_spc x]
  expressions r = []
  subexpressions r = []
 instance Expr P_Declaration where
  p_concs d = p_concs (dec_sign d)
  expressions d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
--- expressions d = [PCps orig (Pid orig [head sgn]) (PCps orig (Prel orig (dec_nm d)) (Pid orig [last sgn]))] where P_Sign sgn = dec_sign d; orig = origin d
+-- expressions d = [PCps orig (Pid (head sgn)) (PCps orig (Prel orig (dec_nm d)) (Pid (last sgn)))] where P_Sign sgn = dec_sign d; orig = origin d
  subexpressions d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
 instance Expr P_KeyDef where
  p_concs k = p_concs [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
@@ -835,6 +690,10 @@ instance Expr P_SubInterface where
  p_concs x = p_concs (si_box x)
  expressions x = expressions (si_box x)
  subexpressions x = subexpressions (si_box x)
+instance Expr P_Population where
+ p_concs x = p_concs (p_type x)
+ expressions x = []
+ subexpressions x = []
 instance Expr a => Expr (Maybe a) where
  p_concs Nothing = []
  p_concs (Just x) = p_concs x
@@ -847,13 +706,14 @@ instance Expr a => Expr [a] where
  expressions = concat.map expressions
  subexpressions = concat.map subexpressions
 instance Expr P_Expression where
- p_concs e@(Pid _ cs)     = nub cs
- p_concs e@(Pnid c)       = [c]
- p_concs e@(Patm _ _ cs)  = nub cs
- p_concs e@Pnull          = []
- p_concs e@(Pfull _ cs)   = nub cs
- p_concs e@(Prel{})       = []
- p_concs e@(Pflp{})       = []
+ p_concs   (PI _)         = []
+ p_concs   (Pid c)        = [c]
+ p_concs   (Pnid c)       = [c]
+ p_concs   (Patm _ _ cs)  = nub cs
+ p_concs   Pnull          = []
+ p_concs   (Pfull _ cs)   = nub cs
+ p_concs   (Prel{})       = []
+ p_concs   (Pflp{})       = []
  p_concs e@(Pequ _ a b)   = p_concs a `uni` p_concs b
  p_concs e@(Pimp _ a b)   = p_concs a `uni` p_concs b
  p_concs e@(PIsc _ a b)   = p_concs a `uni` p_concs b
@@ -871,6 +731,7 @@ instance Expr P_Expression where
  p_concs e@(PBrk _ a)     = p_concs a
  p_concs e@(PTyp _ a sgn) = p_concs a `uni` p_concs sgn
  expressions e = [e]
+ subexpressions e@(PI{})       = [e]
  subexpressions e@(Pid{})      = [e]
  subexpressions e@(Pnid{})     = [e]
  subexpressions e@(Patm{})     = [e]
@@ -925,11 +786,12 @@ toDotGraph showVtx graph
                 , toNode   = show v'
                 , edgeAttributes = []
                 }
- 
-pCtx2aCtx :: P_Context -> (A_Context,CtxError,DotGraph String,DotGraph String,DotGraph String)
+
+-- | Transform a context as produced by the parser into a type checked heterogeneous algebra.
+--   Produce type error messages if necessary and produce proof graphs to document the type checking process.
+pCtx2aCtx :: P_Context -> (A_Context,[CtxError],DotGraph String,DotGraph String,DotGraph String)
 pCtx2aCtx p_context
- = (contxt
-   ,cxelist ( cxerrs++if nocxe(cxelist cxerrs) then postchks else [])
+ = (contxt,typeErrors
    ,stTypeGraph,condensedGraph,ambiguityGraph)
    where
     contxt = 
@@ -958,11 +820,23 @@ pCtx2aCtx p_context
              }
     st = (nub . concat . map (typing p_context anything anything) . expressions) p_context
     (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st
-    typeErrors = calcTypeErrors p_context typeTable st
+    typeErrors :: [CtxError]
+    typeErrors
+     | (not.null) derivedEquals = derivedEquals
+     | (not.null) cxerrs        = cxerrs
+     | otherwise                = postchks
+    derivedEquals :: [CtxError]
+    derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the expressions derived from the script).
+     = [ CxeEqConcepts [ c| (_,_,TypExpr (Pid c) _ _ _)<-diffs]
+       | diffs<-eqCl (\(_,classNr,_) -> classNr) (map head (eqClass tripleEq conceptTypes))
+       , length diffs>1]
+       where (_,_,t) `tripleEq` (_,_,t') = t `t_eq` t'
+    conceptTypes :: [(Int,Int,Type)]
+    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ]
     (stTypeGraph,condensedGraph,ambiguityGraph) = typeAnimate st
-    cxerrs = typeErrors++patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++declnmchk++themeschk
+    cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
-    postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ procnmchk ++ cyclicInterfaces
+    postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
     hierarchy = 
         let ctx_gens = p_gens p_context
         in [(a (gen_spc g),a (gen_gen g)) | g<-ctx_gens]
@@ -974,16 +848,16 @@ pCtx2aCtx p_context
                        }
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
     agens = map (pGen2aGen "NoPattern") (ctx_gs p_context)
-    (adecs,   deccxes)   = (unzip . map (pDecl2aDecl allpops "NoPattern") . ctx_ds) p_context
-    (apurp,   xplcxes)   = (unzip . map  pPurp2aPurp                      . ctx_ps   ) p_context
-    (pats,    patcxes)   = (unzip . map (pPat2aPat   allpops)             . ctx_pats ) p_context
-    (procs,   proccxes)  = (unzip . map (pProc2aProc allpops)             . ctx_PPrcs) p_context
-    (ctxrules,rulecxes)  = (unzip . map (pRul2aRul   "NoPattern")         . ctx_rs   ) p_context
-    (keys,    keycxes)   = (unzip . map  pKDef2aKDef                      . ctx_ks   ) p_context
-    (ifcs,interfacecxes) = (unzip . map  pIFC2aIFC                        . ctx_ifcs ) p_context
-    (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef [] NoCast)           . ctx_sql  ) p_context
-    (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef [] NoCast)           . ctx_php  ) p_context
-    (allmbpops, popcxes) = (unzip . map  pPop2aPop                        . pops     ) p_context
+    (adecs,   deccxes)   = (unzip . map (pDecl2aDecl allpops "NoPattern")  . ctx_ds) p_context
+    (apurp,   xplcxes)   = (unzip . map  pPurp2aPurp                       . ctx_ps   ) p_context
+    (pats,    patcxes)   = (unzip . map (pPat2aPat   allpops)              . ctx_pats ) p_context
+    (procs,   proccxes)  = (unzip . map (pProc2aProc allpops)              . ctx_PPrcs) p_context
+    (ctxrules,rulecxes)  = (unzip . map (pRul2aRul   "NoPattern")          . ctx_rs   ) p_context
+    (keys,    keycxes)   = (unzip . map  pKDef2aKDef                       . ctx_ks   ) p_context
+    (ifcs,interfacecxes) = (unzip . map  pIFC2aIFC                         . ctx_ifcs ) p_context
+    (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef [] anything)          . ctx_sql  ) p_context
+    (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef [] anything)          . ctx_php  ) p_context
+    (allmbpops, popcxes) = (unzip . map  pPop2aPop                         . pops     ) p_context
     allpops    = [pop | Just pop<-allmbpops]
     allexplicitatoms = [cptos' | P_CptPopu cptos'<-pops p_context]
     pops pc
@@ -996,20 +870,13 @@ pCtx2aCtx p_context
                  _    -> [newcxe ("The following themes are selected for output, but are not defined:\n   "++intercalate ", " orphans)]
                 where orphans = ctxthms contxt>-themenames
                       themenames=[name p |p<-pats]++[name p |p<-procs]
-    rulenmchk = nub [newcxe ("Rules with identical names at positions "++show(map origin rs))
-                    |r<-rules contxt, let rs=[r' |r'<-rules contxt,name r==name r'],length rs>1]
-    ifcnmchk  = nub [newcxe ("Interfaces with identical names at positions "++show(map origin xs))
-                    |ifc<-ifcs, let xs=[ifc' |ifc'<-ifcs,name ifc==name ifc'],length xs>1]
-    patnmchk  = nub [newcxe ("Patterns with identical names at positions "++show(map origin xs))
-                    |p<-pats, let xs=[p' |p'<-pats,name p==name p'],length xs>1]
-    procnmchk = nub [newcxe ("Processes with identical names at positions "++show(map origin xs))
-                    |p<-procs, let xs=[p' |p'<-procs,name p==name p'],length xs>1]
-    declnmchk = nub [newcxe ("Declarations with comparable signatures at positions "++show(map origin ds))
-                    | d<-declarations contxt, decusr d
-                    , let ds=[d' | d'<-declarations contxt, decusr d'
-                                 , name d==name d'
-                                 , sign d <==> sign d']
-                    , length ds>1]
+    rulenmchk = [ newcxe ("Rules with identical names at positions "++show(map origin cl))
+                | cl<-eqCl name (rules contxt),length cl>1]
+    ifcnmchk  = [newcxe ("Interfaces with identical names at positions "++show(map origin cl))
+                | cl<-eqCl name ifcs,length cl>1]
+    patnmchk  = [newcxe ("Patterns or processes with identical names at positions "++show(map fst cl))
+                | cl<-eqCl snd (zip (map origin pats++map origin procs)
+                                    (map name   pats++map name   procs)),length cl>1]
     cyclicInterfaces = [ newcxe $ "These interfaces form a reference cycle:\n" ++
                                   unlines [ "- " ++ show ifcNm ++ " at " ++ show (origin $ lookupInterface ifcNm)
                                           | ifcNm <- iCycle ]
@@ -1023,7 +890,7 @@ pCtx2aCtx p_context
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
-    pPat2aPat :: [Population] -> P_Pattern -> (Pattern, CtxError)
+    pPat2aPat :: [Population] -> P_Pattern -> (Pattern, [CtxError])
     pPat2aPat pops ppat 
      = (A_Pat { ptnm  = name ppat    -- Name of this pattern
               , ptpos = pt_pos ppat  -- the position in the file in which this pattern was declared.
@@ -1034,8 +901,10 @@ pCtx2aCtx p_context
               , ptkds = keys         -- The key definitions defined in this pattern
               , ptxps = xpls         -- The purposes of elements defined in this pattern
               }
-       ,CxeOrig (cxelist (rulecxes++keycxes++deccxes++xplcxes)) "pattern" (name ppat) (origin ppat) )
+       , [CxeOrig typeErrs "pattern" (name ppat) (origin ppat) | (not.null) typeErrs]
+       )
        where
+        typeErrs = concat (rulecxes++keycxes++deccxes++xplcxes)
         (prules,rulecxes) = unzip arls
         arls  = map (pRul2aRul (name ppat)) (pt_rls ppat)
         agens = map (pGen2aGen (name ppat)) (pt_gns ppat)
@@ -1044,7 +913,7 @@ pCtx2aCtx p_context
         (adecs,deccxes) = (unzip . map (pDecl2aDecl pops (name ppat)) . pt_dcs) ppat
         (xpls,xplcxes) = (unzip . map pPurp2aPurp . pt_xps) ppat
     
-    pProc2aProc :: [Population] -> P_Process -> (Process,CtxError)
+    pProc2aProc :: [Population] -> P_Process -> (Process,[CtxError])
     pProc2aProc pops pproc
      = (Proc { prcNm    = procNm pproc
              , prcPos   = procPos pproc
@@ -1057,8 +926,10 @@ pCtx2aCtx p_context
              , prcKds   = keys           -- The key definitions defined in this process
              , prcXps   = expls          -- The purposes of elements defined in this process
              }
-       ,CxeOrig (cxelist (rulecxes++keycxes++deccxes++rrcxes++editcxes++explcxes)) "process" (name pproc) (origin pproc) )
+       , [CxeOrig typeErrs "process" (name pproc) (origin pproc) | (not.null) typeErrs]
+       )
        where
+        typeErrs = concat (rulecxes++keycxes++deccxes++rrcxes++editcxes++explcxes)
         (prules,rulecxes) = (unzip . map (pRul2aRul (name pproc)) . procRules) pproc
         arrels = [(rol,rel) |rr<-rrels, rol<-rrRoles rr, rel<-rrRels rr]
         (rrels,editcxes)  = (unzip . map pRRel2aRRel            . procRRels) pproc
@@ -1069,38 +940,40 @@ pCtx2aCtx p_context
         (keys,keycxes)    = (unzip . map  pKDef2aKDef                    . procKds) pproc
         (expls,explcxes)  = (unzip . map  pPurp2aPurp                    . procXps) pproc
  
-    pRRul2aRRul :: RoleRule -> (RoleRule,CtxError)
+    pRRul2aRRul :: RoleRule -> (RoleRule,[CtxError])
     pRRul2aRRul prrul
-     = ( prrul, CxeOrig (cxelist rrcxes) "role rule" "" (origin prrul))
+     = ( prrul, [CxeOrig rrcxes "role rule" "" (origin prrul) | (not.null) rrcxes] )
        where
          rrcxes = [ newcxe ("Rule '"++r++" does not exist.")
                   | r<-mRules prrul, null [rul | rul<-rules contxt, name rul==r]]
          
-    pRRel2aRRel :: P_RoleRelation -> (RoleRelation,CtxError)
+    pRRel2aRRel :: P_RoleRelation -> (RoleRelation,[CtxError])
     pRRel2aRRel prrel
      = ( RR { rrRoles = rr_Roles prrel
             , rrRels  = rels
             , rrPos   = rr_Pos prrel
             }
-       , CxeOrig (cxelist editcxes) "role relation" "" (origin prrel))
+       , [CxeOrig typeErrs "role relation" "" (origin prrel) | (not.null) typeErrs]
+       )
        where
+         typeErrs = concat editcxes
          (rels,editcxes) = unzip [ pRel2aRel (psign sgn) r
                                  | PTyp _ r@(Prel{}) sgn<-rr_Rels prrel
                                                           ++fatal 547 ("Untyped relation(s) "++ intercalate ", " [nm | Prel _ nm<-rr_Rels prrel])
                                  ]
     
-    p2aPairView :: Sign -> P_PairView -> (PairView,CtxError)
-    p2aPairView sgn (P_PairView ppvs) = (PairView pvs, cxelist errs) 
+    p2aPairView :: Sign -> P_PairView -> (PairView,[CtxError])
+    p2aPairView sgn (P_PairView ppvs) = (PairView pvs, concat errs) 
      where (pvs, errs) = unzip $ map (p2aPairViewSegment sgn) ppvs
     
-    p2aPairViewSegment :: Sign -> P_PairViewSegment -> (PairViewSegment,CtxError)
-    p2aPairViewSegment  _  (P_PairViewText str)          = (PairViewText str, cxenone)
+    p2aPairViewSegment :: Sign -> P_PairViewSegment -> (PairViewSegment,[CtxError])
+    p2aPairViewSegment  _  (P_PairViewText str)          = (PairViewText str, [])
     p2aPairViewSegment sgn (P_PairViewExp srcOrTgt pexp) = (PairViewExp srcOrTgt aexpr, exprcxe)
-        where (aexpr,exprcxe) = pExpr2aExpr (SourceCast $ segSrcType sgn srcOrTgt) pexp
+        where (aexpr,_,exprcxe) = pExpr2aExpr (thing (PCpt (name (segSrcType sgn srcOrTgt)))) anything pexp
               segSrcType (Sign srcType _) Src = srcType 
               segSrcType (Sign _ tgtType) Tgt = tgtType
                
-    pRul2aRul :: String -> P_Rule -> (Rule,CtxError)
+    pRul2aRul :: String -> P_Rule -> (Rule,[CtxError])
     pRul2aRul patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
      = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
            , rrexp = aexpr                      -- The rule expression
@@ -1132,11 +1005,12 @@ pCtx2aCtx p_context
                          , decplug = True
                          }
            }
-       , CxeOrig (cxelist [exprcxe, mviolcxe]) "rule" "" (origin prul)
+       , [CxeOrig typeErrors "rule" "" (origin prul) | (not.null) typeErrors]
        )
-       where (aexpr,exprcxe) = pExpr2aExpr NoCast (rr_exp prul)
+       where typeErrors        = exprcxe++mviolcxe
+             (aexpr,_,exprcxe) = pExpr2aExpr anything anything (rr_exp prul)
              (mviol, mviolcxe) = case fmap (p2aPairView $ sign aexpr) $ rr_viol prul of
-                                   Nothing              -> (Nothing, cxenone)
+                                   Nothing              -> (Nothing, [])
                                    Just (viol, violcxe) -> (Just viol, violcxe)
              meanings = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) 
     pMeanings2aMeaning :: Lang          -- The default language
@@ -1160,40 +1034,36 @@ pCtx2aCtx p_context
                where fmt = fromMaybe defFormat (mFormat pm)
                
     -- | pKDef2aKDef checks compatibility of composition with key concept on equality
-    pKDef2aKDef :: P_KeyDef -> (KeyDef, CtxError)
+    pKDef2aKDef :: P_KeyDef -> (KeyDef, [CtxError])
     pKDef2aKDef pkdef
      = (Kd { kdpos = kd_pos pkdef
            , kdlbl = kd_lbl pkdef
            , kdcpt = c
            , kdats = segs
                         }
-       , CxeOrig (cxelist (nmchk:kdcxe:duplicateKeyErrs:multipleKeyErrs:segscxes)) "key definition" "" (origin pkdef) )
+       , [CxeOrig typeErrors "key definition" "" (origin pkdef) | (not.null) typeErrors]
+       )
        where
-        (segs, segscxes) = unzip . map (pKeySeg2aKeySeg c) $ kd_ats pkdef
+        typeErrors = kdcxe++concat segscxes
+        (segs, segscxes) = unzip . map (pKeySeg2aKeySeg (kd_cpt pkdef)) $ kd_ats pkdef
         c  = pCpt2aCpt (kd_cpt pkdef)
         -- check equality
         ats = [ expr | KeyExp expr <- segs ]
-        kdcxe = newcxeif (nocxe (cxelist segscxes) && length (nub (c:map (source.objctx) ats))/=1)
+        kdcxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
                          (intercalate "\n" ["The source of expression " ++ showADL (objctx x) 
                                             ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the key concept ("++ showADL c ++ ")."
                                            |x<-ats,source (objctx x)/=c])
-        nmchk  = cxelist$nub [ newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
-                             | P_KeyExp at<-kd_ats pkdef, let xs=[ at' | P_KeyExp at'<-kd_ats pkdef,name at==name at' ],length xs>1]
-        duplicateKeyErrs = newcxeif (length (filter (\k -> name k == kd_lbl pkdef) $ keyDefs contxt) > 1) $
-                             "Duplicate key name \""++kd_lbl pkdef++"\" at "++show (origin pkdef)  
-        multipleKeyErrs = newcxeif (length (filter (\k -> name (kdcpt k) == name c) $ keyDefs contxt) > 1) $
-                             "Multiple keys for concept  \""++name c++"\" at "++show (origin pkdef)  
     
-    -- (ats,atscxes)  = (unzip . map (pODef2aODef (SourceCast c)) . kd_ats) pkdef
-    pKeySeg2aKeySeg :: A_Concept -> P_KeySegment -> (KeySegment, CtxError)
-    pKeySeg2aKeySeg _      (P_KeyText str)   = (KeyText str, cxenone)
-    pKeySeg2aKeySeg _      (P_KeyHtml str)   = (KeyHtml str, cxenone)
-    pKeySeg2aKeySeg concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef [] (SourceCast concpt) keyExp
-                                                    in ( KeyExp objDef, cxe)
+    -- (ats,atscxes)  = (unzip . map (pODef2aODef [] (thing c)) . kd_ats) pkdef
+    pKeySeg2aKeySeg :: P_Concept -> P_KeySegment -> (KeySegment, [CtxError])
+    pKeySeg2aKeySeg _      (P_KeyText str)   = (KeyText str, [])
+    pKeySeg2aKeySeg _      (P_KeyHtml str)   = (KeyHtml str, [])
+    pKeySeg2aKeySeg concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef [] (thing concpt) keyExp
+                                               in ( KeyExp objDef, cxe)
       
     
     -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
-    pIFC2aIFC :: P_Interface -> (Interface,CtxError)
+    pIFC2aIFC :: P_Interface -> (Interface,[CtxError])
     pIFC2aIFC pifc 
      = (Ifc { ifcName   = ifc_Name pifc
             , ifcParams = prms
@@ -1204,70 +1074,65 @@ pCtx2aCtx p_context
             , ifcPos    = ifc_Pos pifc
             , ifcExpl   = ifc_Expl pifc
             }
-       , CxeOrig (cxelist (objcxe:prmcxes++duplicateRoleErrs++undeclaredRoleErrs)) "interface" (name pifc) (origin pifc) )
+       , [CxeOrig typeErrors "interface" (name pifc) (origin pifc) | (not.null) typeErrors]
+       )
        where
+        typeErrors = objcxe++concat prmcxes++duplicateRoleErrs++undeclaredRoleErrs
         parentIfcRoles = if null $ ifc_Roles pifc then roles contxt else ifc_Roles pifc -- if no roles are specified, the interface supports all roles
-        (obj,objcxe)  = pODef2aODef parentIfcRoles NoCast (ifc_Obj pifc)
-        (prms,prmcxes)  = unzip [pRel2aRel (psign sgn) r
-                                | PTyp _ r@(Prel{}) sgn<-ifc_Params pifc -- Todo: link untyped relations to their type!
-                                                         ++fatal 669 ("Untyped relation(s) "++ intercalate ", " [nm | (Prel _ nm)<-ifc_Params pifc])
-                                ]
+        (obj,objcxe) = pODef2aODef parentIfcRoles anything (ifc_Obj pifc)
+        (prms,prmcxes) = unzip [pRel2aRel (psign sgn) r
+                               | PTyp _ r@(Prel{}) sgn<-ifc_Params pifc -- Todo: link untyped relations to their type!
+                                                        ++fatal 669 ("Untyped relation(s) "++ intercalate ", " [nm | (Prel _ nm)<-ifc_Params pifc])
+                               ]
         duplicateRoleErrs = [newcxe $ "Duplicate interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, length (filter (==role) $ ifc_Roles pifc) > 1 ]
-        undeclaredRoleErrs = if null duplicateRoleErrs then [newcxe $ "Undeclared interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, role `notElem` roles contxt ]
-                                                       else []
+        undeclaredRoleErrs = [newcxe $ "Undeclared interface role \""++role++"\" at "++show (origin pifc) | null duplicateRoleErrs, role <- nub $ ifc_Roles pifc, role `notElem` roles contxt ]
         -- we show the line nr for the interface, which may be slightly inaccurate, but roles have no position 
         -- and the implementation of error messages makes it difficult to give a nice one here
         
     -- | pODef2aODef checks compatibility of composition of expressions on equality
-    pODef2aODef :: [String] -> AutoCast -> P_ObjectDef -> (ObjectDef,CtxError)
-    pODef2aODef parentIfcRoles cast podef 
+    pODef2aODef :: [String]              -- a list of roles that may use this object
+                -> Type                  -- the universe for type checking this object. anything if the type checker decides freely, thing c if it must be of type c.
+                -> P_ObjectDef           -- the object definition as specified in the parse tree
+                -> (ObjectDef,[CtxError]) -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
+    pODef2aODef parentIfcRoles universe podef 
      = (Obj { objnm   = obj_nm podef
             , objpos  = obj_pos podef
             , objctx  = expr
             , objmsub = msub
             , objstrs = obj_strs podef
             }
-       , CxeOrig (cxelist (nmchk : exprcxe : msubcxes)) "object definition" "" (origin podef) )
+       , [CxeOrig typeErrors "object definition" "" (origin podef) | (not.null) typeErrors]
+       )
        where
-        nmchk  = cxelist$nub [newcxe ("Sibling objects with identical names at positions "++show(map origin xs))
-                             |at<-getSubPObjs podef, let xs=[at' |at'<-getSubPObjs podef,name at==name at'],length xs>1]
+        typeErrors = nmchk++exprcxe++msubcxes
+        -- A name check ensures that all attributes have unique names
+        nmchk = [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl)
+                |cl<-eqCl name (getSubPObjs podef),length cl>1]
         getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
         getSubPObjs _                                      = []
         -- Step1: check obj_ctx
-        (expr,exprcxe)  = pExpr2aExpr cast (obj_ctx podef)
+        (expr,(_,tTrg),exprcxe)  = pExpr2aExpr universe anything (obj_ctx podef)
         -- Step2: check obj_ats in the context of expr
-        (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles (target expr) $ obj_msub podef
-        -- Step3: compute type error messages
-        {- SJ 4th jan 2012: I have disabled odcxe in order to find out why it is necessary to check equality. We should run in trouble if this check is indeed necessary...
-        odcxe
-         | nocxe exprcxe && nocxe atscxes = eqcxe   -- equality check disabled (see below)
-         | nocxe exprcxe && not(nocxe atscxes) 
-              -- the nature of an atscxe is unknown and may be caused by the SourceCast. If so, a note on the type of expr is useful .
-            = cxelist [atscxes,newcxe ("Note that the type of "++ showADL expr ++ " at " ++ show(origin podef) ++ " is "++ show (sign expr) ++ ".")]
-         | otherwise     = exprcxe
-        -- Step4: check equality  -- Why is this necessary? Compatible should be enough...
-        eqcxe = newcxeif (length (nub (target expr:map (source.objctx) ats))/=1)
-                         (intercalate "\n" ["The source of expression " 
-                                            ++ showADL (objctx x) ++" ("++showADL (source (objctx x))++")"
-                                            ++ " is compatible, but not equal to the target of expression "
-                                            ++ showADL expr       ++" ("++showADL (target expr) ++ ")."
-                                           |x<-ats,source (objctx x)/=target expr])
-        -}
+        (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles conc $ obj_msub podef
+         where
+           conc = case tTrg of
+                   TypExpr (Pid c) _ _ _ -> c
+                   _                     -> fatal 1235 ("erroneous type found by pODef2aODef.")
         
-    p2a_MaybeSubInterface :: [String] -> A_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
-    p2a_MaybeSubInterface _              _    Nothing = (Nothing, [])
+    p2a_MaybeSubInterface :: [String] -> P_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
+    p2a_MaybeSubInterface _              _    Nothing               = (Nothing, [])
     p2a_MaybeSubInterface parentIfcRoles conc (Just (P_Box p_objs)) =
-      let (objs, errs) = unzip [pODef2aODef parentIfcRoles (SourceCast conc) p_obj | p_obj<-p_objs] 
-      in  (Just $ Box objs, errs)
+      let (objs, errss) = unzip [pODef2aODef parentIfcRoles (thing conc) p_obj | p_obj<-p_objs] 
+      in  (Just $ Box objs, concat errss)
     p2a_MaybeSubInterface parentIfcRoles conc (Just (P_InterfaceRef pos nm)) =
-      (Just $ InterfaceRef nm, [err])
-     where err = case [ifc | ifc <- interfaces contxt, name ifc == nm ] of
-                   []                                     -> newcxe $ "Undeclared interface \""++nm++"\" at " ++show pos ++ "."
+      (Just $ InterfaceRef nm, errs)
+     where errs = case [ifc | ifc <- interfaces contxt, name ifc == nm ] of
+                   []                                     -> [newcxe $ "Undeclared interface \""++nm++"\" at " ++show pos ++ "."]
                    (_:_:_)                                -> fatal 350 $ "Multiple interfaces for ref "++nm
                    [Ifc { ifcObj = Obj {objctx= ifcExp}, ifcRoles = thisIfcRoles }] ->
-                     if source ifcExp < conc
-                     then newcxe $ "Incompatible interface "++show nm++" at "++show pos++":"++
-                                   "\nInterface source concept "++name (source ifcExp)++" is not equal to or a supertype of "++name conc
+                     if source ifcExp < pCpt2aCpt conc
+                     then [newcxe $ "Incompatible interface "++show nm++" at "++show pos++":"++
+                                    "\nInterface source concept "++name (source ifcExp)++" is not equal to or a supertype of "++name conc]
                      else let unsupportedRoles = if null thisIfcRoles
                                                  then [] -- no roles specified means all roles are supported
                                                  else parentIfcRoles \\ thisIfcRoles
@@ -1275,7 +1140,7 @@ pCtx2aCtx p_context
                              "Interface "++show nm++", referenced at "++show pos++", does not support all roles of the containing interface. "++
                              "Unsupported roles: "++ intercalate ", " unsupportedRoles ++"."
       
-    pPurp2aPurp :: PPurpose -> (Purpose, CtxError)
+    pPurp2aPurp :: PPurpose -> (Purpose, [CtxError])
     pPurp2aPurp pexpl
      = ( Expl { explPos      = pexPos   pexpl
               , explObj      = explobs
@@ -1284,18 +1149,17 @@ pCtx2aCtx p_context
               , explUserdefd = True
              -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
               }
-       , CxeOrig xplcxe "explanation" "" (origin pexpl))
+       , [CxeOrig xplcxe "explanation" "" (origin pexpl) | (not.null) xplcxe]
+       )
        where (explobs,xplcxe) = pExOb2aExOb (pexObj   pexpl)
              
     
-    pExOb2aExOb :: PRef2Obj -> (ExplObj, CtxError)
+    pExOb2aExOb :: PRef2Obj -> (ExplObj, [CtxError])
     pExOb2aExOb (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
                                           where cds = [cd | cd<-conceptDefs contxt, cdcpt cd==str ]
     pExOb2aExOb (PRef2Declaration x@(PTyp o (Prel _ nm) sgn))
                                         = ( ExplDeclaration (head decls)
-                                          , if null decls
-                                            then CxeOrig (newcxe ("No declaration for '"++showADL x++"'")) "relation" nm o
-                                            else CxeNone
+                                          , [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o | null decls]
                                           )
                                           where decls = [d | d<-declarations contxt, name d==nm, sign d==pSign2aSign sgn ]
     pExOb2aExOb (PRef2Rule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
@@ -1308,15 +1172,15 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2Context str     ) = (ExplContext str,   newcxeif(name contxt/=str) ("No context named '"++str++"'") )  
     pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name contxt/=str) ("No specification named '"++str++"'") )
     
-    pPop2aPop :: P_Population -> (Maybe Population,CtxError)
-    pPop2aPop (P_CptPopu{}) = (Nothing,cxenone)
+    pPop2aPop :: P_Population -> (Maybe Population,[CtxError])
+    pPop2aPop (P_CptPopu{}) = (Nothing,[])
     pPop2aPop p@(P_Popu{})
      = ( Just (Popu { popm  = aRel
                     , popps = p_popps p
                     })
        , relcxe
        )
-       where (ERel aRel, relcxe) = pExpr2aExpr NoCast (PTyp (origin p) (Prel (origin p) (name p)) (p_type p))
+       where (ERel aRel, _, relcxe) = pExpr2aExpr anything anything (PTyp (origin p) (Prel (origin p) (name p)) (p_type p))
     
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
@@ -1346,7 +1210,7 @@ pCtx2aCtx p_context
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
     
-    pDecl2aDecl :: [Population] -> String -> P_Declaration -> (Declaration, CtxError)
+    pDecl2aDecl :: [Population] -> String -> P_Declaration -> (Declaration, [CtxError])
     pDecl2aDecl pops patname pd =
      ( Sgn { decnm   = dec_nm pd
            , decsgn  = pSign2aSign (dec_sign pd)
@@ -1371,68 +1235,64 @@ pCtx2aCtx p_context
            }
       , case dec_conceptDef pd of 
           Just (RelConceptDef srcOrTgt _) | relConceptName (dec_nm pd) `elem` map name (concs contxt) -> 
-            CxeOrig (newcxe ("Illegal DEFINE "++showSRCorTGT++" for relation "++show (dec_nm pd)++". Concept "++
-                             relConceptName (dec_nm pd)++" already exists."))
-                    "declaration" "" (origin pd)
+            [CxeOrig [newcxe ("Illegal DEFINE "++showSRCorTGT++" for relation "++show (dec_nm pd)++". Concept "++
+                             relConceptName (dec_nm pd)++" already exists.")]
+                    "declaration" "" (origin pd)]
              where showSRCorTGT = if srcOrTgt == Src then "SRC" else "TGT"
                    relConceptName ""     = fatal 472 "empty concept"
                    relConceptName (c:cs) = toUpper c : cs
-          _ -> cxenone
+          _ -> []
       )
       
     -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in an expression.
-    pRel2aRel :: [P_Concept] -> P_Expression -> (Relation,CtxError)
+    pRel2aRel :: [P_Concept] -> P_Expression -> (Relation,[CtxError])
     pRel2aRel _ (Pfull orig pConcepts)
      = case pConcepts of
-        [] -> (fatal 326 "Ambiguous universal relation."
-                              , CxeOrig (newcxe "Ambiguous universal relation.") 
-                                        "relation" "" orig )
-        [c] -> (V (Sign (pCpt2aCpt c) (pCpt2aCpt c)), CxeOrig cxenone "relation" "" orig)
-        [s,t] -> (V (Sign (pCpt2aCpt s) (pCpt2aCpt t)), CxeOrig cxenone "relation" "" orig)
-        _   -> fatal 328 "Encountered a Sign with more than two elements. This should be impossible."
-    pRel2aRel _ (Pid orig pConcepts)
-     = case pConcepts of
-        [] -> (fatal 331 "Ambiguous identity relation."
-                              , CxeOrig (newcxe
-                                        "Ambiguous identity relation.") 
-                                        "relation" "" orig )
-        [c] -> (I (pCpt2aCpt c), CxeOrig cxenone "relation" "" orig)
-        _   -> fatal 341 "Encountered a Sign with more than one element. This should be impossible."
+        [] -> ( fatal 326 "Ambiguous universal relation."
+              , [CxeOrig [newcxe "Ambiguous universal relation."] "relation" "" orig]
+              )
+        [c] -> (V (Sign (pCpt2aCpt c) (pCpt2aCpt c)), [])
+        [s,t] -> (V (Sign (pCpt2aCpt s) (pCpt2aCpt t)), [])
+        _   -> fatal 328 "Encountered a Sign with more than two elements."
+    pRel2aRel _ (PI orig)
+     = ( fatal 331 ("Ambiguous identity relation I in "++show orig)
+       , [CxeOrig [newcxe "Ambiguous identity relation."]  "relation" "" orig]
+       )
+    pRel2aRel _ (Pid pConc)
+     = (I (pCpt2aCpt pConc), [])
     pRel2aRel _ (Patm orig atom pConcepts) 
      = case pConcepts of
-        [] -> (fatal 343 "Ambiguous value."
-                              , CxeOrig (newcxe
-                                        "Ambiguous value.") 
-                                        "relation" "" orig )
-        [c] -> (Mp1 atom (pCpt2aCpt c), CxeOrig cxenone "relation" "" orig)
+        [] -> ( fatal 343 "Ambiguous value."
+              , [CxeOrig [newcxe "Ambiguous value."] "relation" "" orig]
+              )
+        [c] -> (Mp1 atom (pCpt2aCpt c), [])
         _   -> fatal 354 "Encountered a Sign with more than one element. This should be impossible."
     pRel2aRel sgn (Prel orig nm)
      = case (ds,dts,sgn,unknowncpts) of
         ( _ , _ , _ ,c:cs) -> ( fatal 324 ("Unknown concept in a relation named '"++nm++".")
-                              , cxelist [ newcxeif (null cs)      ("Unknown concept: '"++name c++"'.")
-                                        , newcxeif (not(null cs)) ("Unknown concepts: '"++name c++"' and '"++name (head cs)++"'." )
-                                        ]
+                              , newcxeif (null cs)      ("Unknown concept: '"++name c++"'.")++
+                                newcxeif (not(null cs)) ("Unknown concepts: '"++name c++"' and '"++name (head cs)++"'." )
                               )
                               --        "relation" "" (origin prel) )
         ([] , _ , _ , _  ) -> ( fatal 329 ("Relation undeclared: '"++nm++".")
-                              , newcxe ("Relation undeclared: '"++nm++"'.")
+                              , [newcxe ("Relation undeclared: '"++nm++"'.")]
                               )
                               --        "relation" "" (origin prel) )
-        ([d],[] ,[] , _  ) -> (makeRelation d, CxeOrig cxenone "relation" "" orig)
+        ([d],[] ,[] , _  ) -> (makeRelation d, [])
         ([d],[] , _ , _  ) -> ( fatal 334 ("Relation undeclared: '"++nm++".")
-                              , newcxe ("Relation undeclared: '"++nm++show sgn++"'."
-                                        ++".\nDo you intend the one with type "++(show.sign) d++"?")
+                              , [newcxe ("Relation undeclared: '"++nm++show sgn++"'."
+                                        ++".\nDo you intend the one with type "++(show.sign) d++"?")]
                               )
                               --        "relation" "" (origin prel) )
-        ( _ ,[d], _ , _  ) -> (makeRelation d, CxeOrig cxenone "relation" "" orig)
+        ( _ ,[d], _ , _  ) -> (makeRelation d, [])
         ( _ ,[] ,[] , _  ) -> ( fatal 340 ("Ambiguous reference to a relation named: '"++nm++".")
-                              , newcxe ("Ambiguous relation: '"++nm++"'.\nUse the full relation signature."
-                                        ++"\nPossible types are "++concatMap (show.sign) ds++".")
+                              , [newcxe ("Ambiguous relation: '"++nm++"'.\nUse the full relation signature."
+                                        ++"\nPossible types are "++concatMap (show.sign) ds++".")]
                               )
                               --        "relation" "" (origin prel) )
         ( _ ,[] , _ , _  ) -> ( fatal 345 ("Illegal reference to a relation named '"++nm++".")
-                              , newcxe ("Relation undeclared: '"++nm++show sgn++"'."
-                                        ++"\nPossible types are "++concatMap (show.sign) ds++".")
+                              , [newcxe ("Relation undeclared: '"++nm++show sgn++"'."
+                                        ++"\nPossible types are "++concatMap (show.sign) ds++".")]
                               )
                               --        "relation" "" (origin prel) )
         (_ : (_ : _), _ : (_ : _), [], []) -> fatal 350 "dts should be empty because dts=[..|.., not(null sgn), ..]"
@@ -1445,14 +1305,28 @@ pCtx2aCtx p_context
                         , name (head sgn)==name (source d) &&
                           name (last sgn)==name (target d)   ]
 
-    pExpr2aExpr :: AutoCast -> P_Expression -> (Expression,CtxError)
-    pExpr2aExpr typecast pExpr = (f pExpr, CxeNone)
+    pExpr2aExpr :: Type -> Type    -- The universe in which typing is sought. Typically:  anything anything, although the type space can be restricted by:   (thing s) (thing t)
+                -> P_Expression    -- The expression to be typed
+                -> ( Expression    -- the resulting expression. It is defined only when the list of errors is empty.
+                   , (Type,Type)   -- the type of the resulting expression. It is defined only when the list of errors is empty.
+                   , [CtxError]    -- the list of type errors
+                   )
+    pExpr2aExpr universeSource               -- the universe on the left hand side of the expression
+                universeTarget               -- the universe on the right hand side of the expression
+                pExpr                        -- The expression to be typed
+     = ( f pExpr                             -- the resulting expression. It is defined only when the list of errors is empty.
+       , (lookup pExpr,lookup (p_flp pExpr)) -- the type of the resulting expression. It is defined only when the list of errors is empty.
+       , g pExpr                             -- the list of type errors
+       )
        where
+         st :: [(Type,Type)]
+         st = typing p_context universeSource universeTarget pExpr -- ^ define the smaller-than relation as a list of tuples, st.
+         (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st   -- ^ define the type table by analysing st.
          f :: P_Expression -> Expression
-         f (PTyp _ (Pid _ _) (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
-         f x@(PTyp o (Pid _ _) (P_Sign _))  = fatal 983 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to an expression.")
-         f (Pid _ [c])     = ERel (I (pCpt2aCpt c))
-         f x@(Pid o _ )    = fatal 985 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to an expression.")
+         f (PTyp _ (PI _)  (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
+         f (PTyp _ (Pid _) (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
+         f x@(PTyp o (Pid _) (P_Sign _))   = fatal 983 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to an expression.")
+         f (Pid c)         = ERel (I (pCpt2aCpt c))
          f (Pnid c)        = ECpl (ERel (I (pCpt2aCpt c)))
          f (Patm _ atom [c]) = ERel (Mp1 atom (pCpt2aCpt c))
          f x@Pnull         = fatal 988 ("pExpr2aExpr cannot transform "++show x++" to an expression.")
@@ -1490,13 +1364,64 @@ pCtx2aCtx p_context
          f (PTyp _ a sgn)  = ETyp (f a) (Sign (pCpt2aCpt s) (pCpt2aCpt t))
                              where P_Sign cs = sgn; s=head cs; t=last cs
 
-    --the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
-    --applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
+         g :: P_Expression -> [CtxError]
+         g x@(PI _)            = errILike x
+         g x@(Pid _)           = errILike x
+         g x@(Pnid _)          = errILike x
+         g x@(Patm _ _ _)      = errILike x
+         g x@Pnull             = errILike x
+         g x@(Pfull _ [s,t])   = []
+         g x@(Pfull _ [s])     = []
+         g x@(Pfull o [])      = []
+         g x@(Prel o a)        = []
+         g x@(Pflp o a)        = []
+         g x@(Pequ _ a b)      = g a++g b
+         g x@(Pimp _ a b)      = g a++g b
+         g x@(PIsc _ a b)      = g a++g b
+         g x@(PUni _ a b)      = g a++g b
+         g x@(PDif _ a b)      = g a++g b
+         g x@(PLrs _ a b)      = errCpsLike x a b
+         g x@(PRrs _ a b)      = errCpsLike x a b
+         g x@(PCps _ a b)      = errCpsLike x a b
+         g x@(PRad _ a b)      = errCpsLike x a b
+         g x@(PPrd _ a b)      = g a++g b
+         g x@(PKl0 _ a)        = g a
+         g x@(PKl1 _ a)        = g a
+         g x@(PFlp _ a)        = g a
+         g x@(PCpl _ a)        = g a
+         g x@(PBrk _ a)        = g a
+         g x@(PTyp _ a (P_Sign [])) = g a
+         g x@(PTyp _ a sgn)    = g a
+         errILike x
+          = [ CxeILike {cxeExpr   = origExpr
+                       ,cxeCpts   = conflictingConcepts
+                       }
+            | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
+            , length conflictingConcepts>1
+            , origin x==origin origExpr
+            ]
+         errCpsLike x a b
+          = error (showTypeTable typeTable)  -- if null deepErrors then nodeError else deepErrors
+            where
+             nodeError = [ CxeCpsLike {cxeExpr   = origExpr
+                                      ,cxeCpts   = conflictingConcepts
+                                      }
+                         | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
+                         , length conflictingConcepts>1
+                         , origin x==origin origExpr
+                         ]
+             deepErrors = g a++g b
+         lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
 
+--the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
+--applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
+
+-- | Disambiguation is needed for the purpose of printing an expression.    parse (disambiguate expr) = expr
+--   Produce type error messages if necessary and produce proof graphs to document the type checking process.
 disambiguate :: Fspc -> Expression -> Expression
 disambiguate fSpec x = x -- temporarily disabled (19 july 2012), in order to get the type checker correct first...
 {-
- | nocxe errs = expr 
+ | null errs = expr 
  | otherwise  = fatal 428 ("an expression must be type correct, but this one is not:\n" ++ show errs)
  where
    (expr,errs) = pExpr2aExpr fSpec{vrels=vrels fSpec++deltas} NoCast (f x)
@@ -1525,7 +1450,7 @@ disambiguate fSpec x = x -- temporarily disabled (19 july 2012), in order to get
    f (ETyp e _)   = f e
    f (ERel rel@(Rel{})) = PTyp OriginUnknown (Prel OriginUnknown (name rel))
                                (P_Sign [g (source rel),g (target rel)])
-   f (ERel rel@(I{}))   = Pid OriginUnknown [g (source rel)]
+   f (ERel rel@(I{}))   = Pid (g (source rel))
    f (ERel rel@(V{}))   = Pfull OriginUnknown [g (source rel),g (target rel)]
    f (ERel rel@(Mp1{})) = Patm OriginUnknown (relval rel) [g (source rel)]
    g c@(C{}) = PCpt (name c) 

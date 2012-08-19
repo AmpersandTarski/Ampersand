@@ -194,7 +194,7 @@ chpDiagnosis lev fSpec opts
                      ]
 
   relsNotUsed :: [Block]
-  pics        :: [Picture]
+  pics :: [Picture]
   (relsNotUsed,pics)
    = ( ( case (language opts, notUsed) of
           (Dutch,[])  -> [Para 

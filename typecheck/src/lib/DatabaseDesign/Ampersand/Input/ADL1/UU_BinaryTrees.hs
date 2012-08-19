@@ -25,7 +25,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees
 
 
 
-   btFind     :: (a -> b -> Ordering) -> BinSearchTree (a, c) -> b -> Maybe c
+   btFind :: (a -> b -> Ordering) -> BinSearchTree (a, c) -> b -> Maybe c
    btLocateIn :: (a -> b -> Ordering) -> BinSearchTree a      -> b -> Maybe a
    btFind     = btLookup fst snd
    btLocateIn = btLookup id id

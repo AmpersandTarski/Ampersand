@@ -14,7 +14,7 @@ where
    foldr1' _ f lst = foldr1 f lst
    
    class Populated a where
-    contents  :: a -> Pairs
+    contents :: a -> Pairs
    
    instance Populated A_Concept where
     contents c

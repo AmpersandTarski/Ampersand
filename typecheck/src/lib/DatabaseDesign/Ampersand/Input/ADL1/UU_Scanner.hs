@@ -32,10 +32,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
    data Pos = Pos{line:: !Line, column:: !Column} deriving (Eq, Ord)
    type Filename   = String
 
-   data Token = Tok { tp   :: TokenType
+   data Token = Tok { tp :: TokenType
                     , val1 :: String
                     , val2 :: String
-                    , pos  :: !Pos
+                    , pos :: !Pos
                     , file :: !Filename
                     }
 
@@ -312,7 +312,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
    gsym :: IsParser p Token => TokenType -> String -> String -> p String
    gsym kind val val2 = get_tok_val <$> pSym (Tok kind val val2 noPos "")
    pString, pExpl, pAtom, pChar, pInteger8, pInteger10, pInteger16, pVarid, pConid,
-     pTextnm, pTextln, pInteger  :: IsParser p Token => p String
+     pTextnm, pTextln, pInteger :: IsParser p Token => p String
    pOper name     =   gsym TkOp        name      name
    pKey  keyword  =   gsym TkKeyword   keyword   keyword
    pSpec s        =   gsym TkSymbol    [s]       [s]
@@ -331,8 +331,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
 
    pInteger       =   pInteger10
 
-   pComma, pSemi, pOParen, pCParen, pOBrack, pCBrack, pOCurly, pCCurly
-      :: IsParser p Token => p String
+   pComma, pSemi, pOParen, pCParen, pOBrack, pCBrack, pOCurly, pCCurly :: IsParser p Token => p String
    pComma  = pSpec ','
    pSemi   = pSpec ';'
    pOParen = pSpec '('
@@ -346,7 +345,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
    pSemics ::  IsParser p Token => p a -> p [a]
    pParens ::  IsParser p Token => p a -> p a
    pBracks ::  IsParser p Token => p a -> p a
-   pCurly  ::  IsParser p Token => p a -> p a
+   pCurly ::  IsParser p Token => p a -> p a
 
    pCommas  = pListSep pComma
    pSemics  = pListSep pSemi
@@ -356,7 +355,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner where
 
    pParens_pCommas :: IsParser p Token => p a -> p [a]
    pBracks_pCommas :: IsParser p Token => p a -> p [a]
-   pCurly_pSemics  :: IsParser p Token => p a -> p [a]
+   pCurly_pSemics :: IsParser p Token => p a -> p [a]
 
    pParens_pCommas = pParens.pCommas
    pBracks_pCommas = pBracks.pCommas

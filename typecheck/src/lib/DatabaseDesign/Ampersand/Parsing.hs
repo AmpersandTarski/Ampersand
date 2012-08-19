@@ -26,7 +26,7 @@ fatal = fatalMsg "Parsing"
 -- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
 --   This parser is for parsing of a Context
-parseContext  :: Options       -- ^ flags to be taken into account
+parseContext :: Options       -- ^ flags to be taken into account
             -> FilePath      -- ^ the full path to the file to parse 
             -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
 parseContext opts file = tryAll versions2try
@@ -56,7 +56,7 @@ parseContext opts file = tryAll versions2try
 
                          
 -- | Same as parseContext , however this one is for a list of populations
-parsePopulations   :: String            -- ^ The string to be parsed
+parsePopulations :: String            -- ^ The string to be parsed
                    -> Options           -- ^ flags to be taken into account
                    -> String            -- ^ The name of the .pop file (used for error messages)
                    -> IO [P_Population] -- ^ The IO monad with the populations. 

@@ -23,7 +23,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowADL"
 
 class ShowADL a where
- showADL      :: a -> String
+ showADL :: a -> String
 
 -- there are data types yielding language dependent data like an Expression
 -- the LanguageDependent class provides function(s) to map language dependent functions on those data if any.
@@ -344,8 +344,8 @@ instance ShowADL P_Expression where
      = showchar expr'
       where
        expr' = insP_Parentheses expr
-       showchar (Pid _ [])     = "I"
-       showchar (Pid _ cs)     = "I["++showADL (head cs)++"]"
+       showchar (PI _)         = "I"
+       showchar (Pid c)        = "I["++showADL c++"]"
        showchar (Pnid c)       = "-I["++showADL c++"]"
        showchar (Patm _ a [])  = "'"++a++"'"
        showchar (Patm _ a cs)  = "'"++a++"'["++show (head cs)++"]"
