@@ -368,15 +368,17 @@ Type         : a type expression, containing a P_Expression, which is represente
 tableOfTypes :: [(Type,Type)] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph, Graph.Graph)
 tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
  where
-{- stGraph is a graph whose edges are precisely st, but each element in st is replaced by a pair of integers. The reason is that datatype Graph expects integers.
-   The list st contains the essence of the type analysis. It contains tuples (t,t'),
-   each of which means that the set of atoms contained by dom t is a subset of the set of atoms contained by dom t'.
+{-  stGraph is a graph whose edges are precisely st, but each element in
+	st is replaced by a pair of integers. The reason is that datatype
+	Graph expects integers. The list st contains the essence of the
+	type analysis. It contains tuples (t,t'), each of which means
+	that the set of atoms contained by dom t is a subset of the set
+	of atoms contained by dom t'.
 -}
      typeExpressions :: [Type]     -- a list of all type expressions in st.
      typeExpressions = nub (map fst st++map snd st)
      expressionTable :: [(Int, Type)]
-     (expressionTable,numberOfNodes) = ([(i,typeExpr) | (i,cl)<-zip [0..] eqExpressions, typeExpr<-cl ], length eqExpressions)
-      where eqExpressions = eqClass (==) typeExpressions     -- WHY do we need the following definition of t_Eq? What is the problem to use t_eq instead?
+     (expressionTable,numberOfNodes) = ([(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ], length typeExpressions)
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
 -- stGraph is computed for debugging purposes. It shows precisely which edges are computed by uType.
@@ -401,29 +403,33 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
       = Graph.buildG (0, length eqClasses-1) edges
         where edges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
         --    verts = nub [n | (c,c')<-edges, n<-[c,c']]
+     -- classNumbers is the relation from stGraph to sccGraph, relating the different numberings
      classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging expressionTable and classNumbers into one list.
-    In this case it might be done simply with zip, because the left column of classNumbers is identical to the left column of expressionTable.
-    If for some reason during code development this is not true, the following merge provides a check.
-    This has already caught mistakes in the past, so it is advisable to leave this check in the code for debugging reasons.
+    This has already caught mistakes in the past, so it is advisable to leave the checks in the code for debugging reasons.
 -}
-     table = f expressionTable classNumbers
-       where f [(i,typeExpr)] [(j,classNr)]
+     table = f False expressionTable classNumbers
+       where f _ [(i,typeExpr)] [(j,classNr)]
               | i==j = [(i,classNr,typeExpr, ambConcepts classNr)]
-             f exprTable@((i,typeExpr):exprTable') classNrs@((j,classNr):classNrs')
-              | i==j = (i,classNr,typeExpr, ambConcepts classNr) : f exprTable' classNrs
-              | i>j  = f exprTable classNrs'
+             f b exprTable@((i,typeExpr):exprTable') classNrs@((j,classNr):classNrs')
+              | i==j = (i,classNr,typeExpr, ambConcepts classNr) : f True exprTable' classNrs
+              | i>j && b = f False exprTable classNrs'
               | i<j  = fatal 425 "mistake in table"
-             f [] [] = []
-             f et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
-             ambConcepts classNr = [c |cl<-eqCl fst ambiguities, fst (head cl)==classNr, TypExpr (Pid c) _ _ _<-map (lookupType table.snd) cl]
+             f _ [] [] = []
+             f _ et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
+             ambConcepts :: Int -> [P_Concept]
+             ambConcepts classNr = [c | (i,c)<-concepts, i==classNr]
      ambGraph :: Graph.Graph
      ambGraph = Graph.buildG (0, length eqClasses-1) ambiguities
+     -- all concepts belonging to an sccGraph node
+     concepts :: [(Int,P_Concept)]
+     concepts = [ (i,c) | (i,j) <- clos1 (Graph.edges sccGraph), TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
+     exprsLookupOfClass i = [typeExpr | (_,classNr,typeExpr,_) <- table, i==classNr]
      ambiguities :: [(Int,Int)]
-     ambiguities = [ (i,j)| (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
+     ambiguities = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
       where
        ag = Graph.buildG (0, length eqClasses-1) 
-                             [ (i,j)| (i,j)<-clos1 (Graph.edges sccGraph), Graph.outdegree sccGraph!i>1, Graph.outdegree sccGraph!j==0 ]
+                             [ (i,j) | (i,j)<-clos1 (Graph.edges sccGraph), Graph.outdegree sccGraph!i>1, Graph.outdegree sccGraph!j==0 ]
 
 
 instance Show CtxError where
@@ -500,7 +506,7 @@ showErr _ = fatal 580 "missing pattern in type error."
 
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
- = "\n  "++intercalate "\n  " (map showLine typeTable)
+ = "\n  " ++ intercalate "\n  " (map showLine typeTable)
    where  -- hier volgt een (wellicht wat onhandige, maar goed...) manier om de type table leesbaar neer te zetten.
     nMax = maximum [i | (stIndex,cIndex,_,_)<-typeTable, i<-[stIndex, cIndex]]
     sh i = [ ' ' | j<-[length (show i)..length (show nMax)] ]++show i
@@ -1410,7 +1416,7 @@ pCtx2aCtx p_context
             , origin x==origin origExpr
             ]
          errCpsLike x a b
-          = error (showTypeTable typeTable)  -- if null deepErrors then nodeError else deepErrors
+          = if null deepErrors then nodeError else deepErrors
             where
              nodeError = [ CxeCpsLike {cxeExpr   = origExpr
                                       ,cxeCpts   = conflictingConcepts
@@ -1418,7 +1424,7 @@ pCtx2aCtx p_context
                          | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
                          , length conflictingConcepts>1
                          , origin x==origin origExpr
-                         ]
+                         ] ++ [error (showTypeTable typeTable)]
              deepErrors = g a++g b
          lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
 
