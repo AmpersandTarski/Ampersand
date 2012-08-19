@@ -148,7 +148,11 @@ p_eq (PTyp _ a sgn) (PTyp _ a' sgn') = p_eq a a' && sgn==sgn'
 p_eq _ _ = False
 
 -- | p_flp computes the inverse of a P_Expression.
---   It is used insteas of PFlp, when evaluation of the flip is desirable.
+p_flp :: P_Expression -> P_Expression
+p_flp (PFlp _ a) = a
+p_flp a          = PFlp OriginUnknown a
+
+{-
 p_flp :: P_Expression -> P_Expression
 p_flp a@(PI{})     = a
 p_flp a@(Pid{})    = a
@@ -174,6 +178,7 @@ p_flp (PFlp _ a)     = p_flp (p_flp a) -- ensures that inner PFlp is removed too
 p_flp (PCpl o a)     = PCpl o (p_flp a)
 p_flp (PBrk o a)     = PBrk o (p_flp a)
 p_flp (PTyp o a sgn) = PTyp o (p_flp a) (let P_Sign cs=sgn in P_Sign (reverse cs))
+-}
 
 t_complement :: Type -> Type
 t_complement (TypExpr e flipped orig origExpr) = TypExpr (complement e) flipped orig (PCpl (origin origExpr) origExpr)
