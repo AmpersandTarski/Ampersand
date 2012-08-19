@@ -20,7 +20,7 @@ import DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.GraphViz hiding (addExtension, C)
-import Data.GraphViz.Attributes.Complete hiding (Box)
+import Data.GraphViz.Attributes.Complete hiding (Box, Pos)
 import Data.Maybe
 import Data.List
 import Data.Char
@@ -414,6 +414,7 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
               | i==j = (i,classNr,typeExpr, ambConcepts classNr) : f exprTable' classNrs
               | i>j  = f exprTable classNrs'
               | i<j  = fatal 425 "mistake in table"
+             f [] [] = []
              f et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
              ambConcepts classNr = [c |cl<-eqCl fst ambiguities, fst (head cl)==classNr, TypExpr (Pid c) _ _ _<-map (lookupType table.snd) cl]
      ambGraph :: Graph.Graph
@@ -499,14 +500,22 @@ showErr _ = fatal 580 "missing pattern in type error."
 
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
- = intercalate "\n  " (map showLine typeTable)
-   where
+ = "\n  "++intercalate "\n  " (map showLine typeTable)
+   where  -- hier volgt een (wellicht wat onhandige, maar goed...) manier om de type table leesbaar neer te zetten.
     nMax = maximum [i | (stIndex,cIndex,_,_)<-typeTable, i<-[stIndex, cIndex]]
     sh i = [ ' ' | j<-[length (show i)..length (show nMax)] ]++show i
-    showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++","++show t++","++showADL (showTypeExpr t)++","++show concepts
+    maxPos = maximum [length (showPos (origin t)) | (_,_,t,_)<-typeTable]
+    shPos t = str++[ ' ' | j<-[length str..maxPos] ] where str = showPos (origin t)
+    maxExpr = maximum [length (showADL (showTypeExpr t)) | (_,_,t,_)<-typeTable]
+    shExp t = str++[ ' ' | j<-[length str..maxExpr] ] where str = showADL t
+    showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++", "++shPos (origin t)++"  "++shExp (showTypeExpr t)++"  "++show concepts
     showTypeExpr (TypLub _ _ _ origExpr)  = origExpr
     showTypeExpr (TypGlb _ _ _ origExpr)  = origExpr
     showTypeExpr (TypExpr _ _ _ origExpr) = origExpr
+    showPos (FileLoc (FilePos (_,Pos l c,_)))
+       = "line " ++ show l++":"++show c
+    showPos _ = fatal 517 "Unexpected pattern in showPos"
+
 showStVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
 showStVertex typeTable i
  = head ([ showType e | (exprNr, _, e,_)<-typeTable, i==exprNr ]++fatal 506 ("No expression numbered "++show i++" found by showStVertex"))
