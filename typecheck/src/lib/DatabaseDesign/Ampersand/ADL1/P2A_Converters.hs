@@ -223,6 +223,9 @@ anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnk
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False OriginUnknown (Pid c)
 
+setClosure xs = foldl f xs (Data.Map.keys xs `isc` nub (concat$Data.Map.elems xs))
+  where
+   f q x = Data.Map.map (\bs->foldl uni bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
 
 -- | The purpose of 'typing' is to analyse the domains and codomains of an expression in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
@@ -232,19 +235,17 @@ thing c  = TypExpr (Pid c) False OriginUnknown (Pid c)
 --   Besides expression expr, this function requires a universe in which to operate.
 --   Specify 'anything anything' if there are no restrictions.
 --   If the source and target of expr is restricted to concepts c and d, specify (thing c) (thing d).
-typing :: P_Context -> Type -> Type -> P_Expression -> [(Type, Type)] -- subtypes (.. is subset of ..)
-typing p_context universeSource universeTarget expr
- = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) [] (firstSetOfEdges .++. secondSetOfEdges)
+typing :: P_Context -> Data.Map.Map Type [Type] -- subtypes (.. is subset of ..)
+typing p_context
+ = firstSetOfEdges .++. secondSetOfEdges
    where
      (firstSetOfEdges,secondSetOfEdges)
-      = (uType expr universeSource universeTarget expr .+.
+      = (foldr (.+.) nothing [uType expr anything anything expr | expr <- expressions p_context] .+.
         foldr (.+.) nothing [dom spc.<.dom gen | g<-isas
                                                , let spc=Pid (gen_spc g)
                                                , let gen=Pid (gen_gen g)
                                                , let x=Pimp (origin g) spc gen ])
-     stClos = foldl f firstSetOfEdges (Data.Map.keys firstSetOfEdges `isc` nub (concat$Data.Map.elems firstSetOfEdges))
-         where
-          f q x = Data.Map.map (\bs->foldl uni bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
+     stClos = setClosure firstSetOfEdges
      isas     = p_gens p_context
      decls    = p_declarations p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
@@ -364,7 +365,7 @@ Type         : a type expression, containing a P_Expression, which is represente
 [P_Concept]  : a list of concepts. If (_,_,expr,cs) is an element of this table, then for every c in cs there is a proof that dom expr is a subset of I[c].
                For a type correct expr, list cs contains precisely one element.
 -}
-tableOfTypes :: [(Type,Type)] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph, Graph.Graph)
+tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph, Graph.Graph)
 tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
  where
 {-  stGraph is a graph whose edges are precisely st, but each element in
@@ -375,7 +376,7 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
 	of atoms contained by dom t'.
 -}
      typeExpressions :: [Type]     -- a list of all type expressions in st.
-     typeExpressions = nub (map fst st++map snd st)
+     typeExpressions = Data.Map.keys st
      expressionTable :: [(Int, Type)]
      expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
      expressionNr :: Type -> Int
@@ -384,7 +385,7 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      stGraph :: Graph.Graph
      stGraph = Graph.buildG (0, (length typeExpressions)-1) stEdges
      stEdges :: [(Int,Int)]
-     stEdges = nub [(i,i') | (t,t')<-st, let i=expressionNr t, let i'=expressionNr t', i/=i']
+     stEdges = Data.Map.foldWithKey (\s ts o -> o ++ [(expressionNr s,expressionNr t)|t<-ts]) [] st
 {- sccGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph, which are computed by Graph.scc
@@ -560,7 +561,7 @@ lookupType typeTable i
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
-typeAnimate :: [(Type, Type)] -> (DotGraph String,DotGraph String,DotGraph String)
+typeAnimate :: Data.Map.Map Type [Type] -> (DotGraph String,DotGraph String,DotGraph String)
 typeAnimate st = (stTypeGraph, condensedGraph, ambiguityGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
@@ -845,7 +846,7 @@ pCtx2aCtx p_context
              , ctxexperimental = ctx_experimental p_context
              , ctxatoms  = allexplicitatoms
              }
-    st = (nub . concat . map (typing p_context anything anything) . expressions) p_context
+    st = typing p_context
     (typeTable,stGraph,sccGraph,conflictGraph) = tableOfTypes st
     typeErrors :: [CtxError]
     typeErrors
@@ -1087,7 +1088,6 @@ pCtx2aCtx p_context
     pKeySeg2aKeySeg _      (P_KeyHtml str)   = (KeyHtml str, [])
     pKeySeg2aKeySeg concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef [] (thing concpt) keyExp
                                                in ( KeyExp objDef, cxe)
-      
     
     -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
     pIFC2aIFC :: P_Interface -> (Interface,[CtxError])
@@ -1346,9 +1346,6 @@ pCtx2aCtx p_context
        , g pExpr                             -- the list of type errors
        )
        where
-         st :: [(Type,Type)]
-         st = typing p_context universeSource universeTarget pExpr -- define the smaller-than relation as a list of tuples, st.
-         (typeTableExpr,stGraph,sccGraph,conflictGraph) = tableOfTypes st   -- define the type table by analysing st.
          f :: P_Expression -> Expression
          f (PTyp _ (PI _)  (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
          f (PTyp _ (Pid _) (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
@@ -1420,25 +1417,10 @@ pCtx2aCtx p_context
          g x@(PTyp _ a (P_Sign [])) = g a
          g x@(PTyp _ a sgn)    = g a
          errILike x
-          = [ CxeILike {cxeExpr   = origExpr
-                       ,cxeCpts   = conflictingConcepts
-                       }
-            | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTableExpr
-            , length conflictingConcepts>1
-            , origin x==origin origExpr
-            ]
+          = []
          errCpsLike x a b
-          = error (showTypeTable typeTableExpr) ++ if null deepErrors then nodeError else deepErrors
-            where
-             nodeError = [ CxeCpsLike {cxeExpr   = origExpr
-                                      ,cxeCpts   = conflictingConcepts
-                                      }
-                         | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTableExpr
-                         , length conflictingConcepts>1
-                         , origin x==origin origExpr
-                         ]
-             deepErrors = g a++g b
-         lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTableExpr, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
+          = error "disabled"
+         lookup pExpr = fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table")
 
 --the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
