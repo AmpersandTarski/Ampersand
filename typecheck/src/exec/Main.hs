@@ -59,12 +59,6 @@ main =
                             ; putStr ("\n"++ambiguityGraphPath++" written.")
                             ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
                             ; putStr ("\n"++stDotGraphPath++" written.")
-                            ; condensedDotGraphPath<-runGraphvizCommand Dot condensedGraph DotOutput (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".dot")
-                            ; putStr ("\n"++condensedDotGraphPath++" written.")
-                            ; ambiguityDotGraphPath<-runGraphvizCommand Dot ambiguityGraph DotOutput (replaceExtension ("Ambiguity_Graph_of_"++baseName opts) ".dot")
-                            ; putStr ("\n"++ambiguityDotGraphPath++" written.")
-                            ; stDotDotGraphPath<-runGraphvizCommand Dot stTypeGraph DotOutput (replaceExtension ("stGraph_of_"++baseName opts) ".dot")
-                            ; putStr ("\n"++stDotDotGraphPath++" written.")
                             }
                     else do { putStr "" }
                   ; case type_errors of
