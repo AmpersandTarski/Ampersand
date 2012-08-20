@@ -365,7 +365,7 @@ Type         : a type expression, containing a P_Expression, which is represente
                For a type correct expr, list cs contains precisely one element.
 -}
 tableOfTypes :: [(Type,Type)] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph, Graph.Graph)
-tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
+tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
  where
 {-  stGraph is a graph whose edges are precisely st, but each element in
 	st is replaced by a pair of integers. The reason is that datatype
@@ -425,8 +425,8 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
 -}
              ambConcepts :: Int -> [P_Concept]
              ambConcepts classNr = [c | (i,c)<-concepts, i==classNr]
-     ambGraph :: Graph.Graph
-     ambGraph = Graph.buildG (0, length eqClasses-1) conflicts
+     conflictGraph :: Graph.Graph
+     conflictGraph = Graph.buildG (0, length eqClasses-1) conflicts
      -- all concepts belonging to an sccGraph node
      concepts :: [(Int,P_Concept)]
      concepts = [ (i,c) | (i,j) <- clos1 condensedEdges, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
@@ -565,7 +565,7 @@ typeAnimate st = (stTypeGraph, condensedGraph, ambiguityGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-    (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st
+    (typeTable,stGraph,sccGraph,conflictGraph) = tableOfTypes st
     stTypeGraph :: DotGraph String
     stTypeGraph = toDotGraph (showStVertex typeTable) stGraph
     condensedGraph :: DotGraph String
@@ -582,7 +582,7 @@ typeAnimate st = (stTypeGraph, condensedGraph, ambiguityGraph)
                        | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_)<-typeTable, n==classNr ]
                        ]
     ambiguityGraph :: DotGraph String
-    ambiguityGraph = toDotGraph showVtx ambGraph
+    ambiguityGraph = toDotGraph showVtx conflictGraph
      where showVtx n = (intercalate "\n".nub)
                        [ case head cl of
                            t@(TypExpr (PI _)       _ _ _ ) -> showType t
@@ -846,7 +846,7 @@ pCtx2aCtx p_context
              , ctxatoms  = allexplicitatoms
              }
     st = (nub . concat . map (typing p_context anything anything) . expressions) p_context
-    (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st
+    (typeTable,stGraph,sccGraph,conflictGraph) = tableOfTypes st
     typeErrors :: [CtxError]
     typeErrors
      | (not.null) derivedEquals = derivedEquals
@@ -859,7 +859,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condensedGraph,ambiguityGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -1348,7 +1348,7 @@ pCtx2aCtx p_context
        where
          st :: [(Type,Type)]
          st = typing p_context universeSource universeTarget pExpr -- define the smaller-than relation as a list of tuples, st.
-         (typeTable,stGraph,sccGraph,ambGraph) = tableOfTypes st   -- define the type table by analysing st.
+         (typeTableExpr,stGraph,sccGraph,conflictGraph) = tableOfTypes st   -- define the type table by analysing st.
          f :: P_Expression -> Expression
          f (PTyp _ (PI _)  (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
          f (PTyp _ (Pid _) (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
@@ -1423,22 +1423,22 @@ pCtx2aCtx p_context
           = [ CxeILike {cxeExpr   = origExpr
                        ,cxeCpts   = conflictingConcepts
                        }
-            | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
+            | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTableExpr
             , length conflictingConcepts>1
             , origin x==origin origExpr
             ]
          errCpsLike x a b
-          = error (showTypeTable typeTable) ++ if null deepErrors then nodeError else deepErrors
+          = error (showTypeTable typeTableExpr) ++ if null deepErrors then nodeError else deepErrors
             where
              nodeError = [ CxeCpsLike {cxeExpr   = origExpr
                                       ,cxeCpts   = conflictingConcepts
                                       }
-                         | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
+                         | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTableExpr
                          , length conflictingConcepts>1
                          , origin x==origin origExpr
                          ]
              deepErrors = g a++g b
-         lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
+         lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTableExpr, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
 
 --the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
