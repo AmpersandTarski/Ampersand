@@ -248,7 +248,7 @@ where
       | PCpl Origin P_Expression               -- ^ Complement
       | PBrk Origin P_Expression               -- ^ bracketed expression ( ... )
       | PTyp Origin P_Expression P_Sign        -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      deriving (Eq, Show) -- deriving Show only for debugging purposes
+      deriving (Eq, Ord, Show) -- deriving Show for debugging purposes
 
    instance Traced P_Expression where
     origin e = case e of
