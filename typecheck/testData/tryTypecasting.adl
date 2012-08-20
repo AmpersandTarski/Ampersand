@@ -6,8 +6,8 @@ r :: A*C.
 r :: D*E.
 t :: B*C.
 s :: A*B.
---RULE r[A*C] = s;t
-RULE I[A];r;I[C] = s;t
+RULE r[G*H][A*C] = s;t
+--RULE I[A];r;I[C] = s;t
 ENDPATTERN
 
 ENDCONTEXT
