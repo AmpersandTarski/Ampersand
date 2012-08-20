@@ -11,8 +11,9 @@ module DatabaseDesign.Ampersand.ADL1.Pair
                     ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
-   import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),sort',eqCl)
+   import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),eqCl)
    import Data.List (nub)
+   import GHC.Exts (sortWith)
 
    type Pairs = [Paire]
    srcPaire :: Paire -> String
@@ -40,8 +41,8 @@ where
      closPair _ = Nothing
       
    instance KAComputable Pairs where
-     kleenejoin a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
-                      ((sort' (srcPaire.head).eqCl srcPaire) b)
+     kleenejoin a b = merge ((sortWith (trgPaire.head).eqCl trgPaire) a)
+                      ((sortWith (srcPaire.head).eqCl srcPaire) b)
                 where merge (xs:xss) (ys:yss)
                        | trgPaire (head xs)<srcPaire (head ys) = merge xss (ys:yss)
                        | trgPaire (head xs)>srcPaire (head ys) = merge (xs:xss) yss

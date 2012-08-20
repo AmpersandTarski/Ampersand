@@ -9,7 +9,7 @@
 
 -- | Partially ordered data types.  The standard 'Prelude.Ord' class is for
 -- total orders and therefore not suitable for floating point.  However, we can
--- still define meaningful 'max' and 'sort' functions for these types.
+-- still define meaningful 'max' and 'sortWith functions for these types.
 --
 -- We define our own 'Ord' class which is intended as a replacement for
 -- 'Prelude.Ord'.  However, in order to take advantage of existing libraries
