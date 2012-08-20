@@ -426,13 +426,13 @@ tableOfTypes st = (table, stGraph, sccGraph, ambGraph) -- to debug:  error (inte
              ambConcepts :: Int -> [P_Concept]
              ambConcepts classNr = [c | (i,c)<-concepts, i==classNr]
      ambGraph :: Graph.Graph
-     ambGraph = Graph.buildG (0, length eqClasses-1) ambiguities
+     ambGraph = Graph.buildG (0, length eqClasses-1) conflicts
      -- all concepts belonging to an sccGraph node
      concepts :: [(Int,P_Concept)]
      concepts = [ (i,c) | (i,j) <- clos1 condensedEdges, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
      exprsLookupOfClass i = [typeExpr | (_,classNr,typeExpr,_) <- table, i==classNr]
-     ambiguities :: [(Int,Int)]
-     ambiguities = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
+     conflicts :: [(Int,Int)]
+     conflicts = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
       where
        ag = Graph.buildG (0, length eqClasses-1) 
                              [ (i,j) | (i,j)<-clos1 (Graph.edges sccGraph), Graph.outdegree sccGraph!i>1, Graph.outdegree sccGraph!j==0 ]
@@ -1428,7 +1428,7 @@ pCtx2aCtx p_context
             , origin x==origin origExpr
             ]
          errCpsLike x a b
-          = if null deepErrors then nodeError else deepErrors
+          = error (showTypeTable typeTable) ++ if null deepErrors then nodeError else deepErrors
             where
              nodeError = [ CxeCpsLike {cxeExpr   = origExpr
                                       ,cxeCpts   = conflictingConcepts
