@@ -860,7 +860,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condensedGraph,ambiguityGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -1417,10 +1417,25 @@ pCtx2aCtx p_context
          g x@(PTyp _ a (P_Sign [])) = g a
          g x@(PTyp _ a sgn)    = g a
          errILike x
-          = []
+          = [ CxeILike {cxeExpr   = origExpr
+                       ,cxeCpts   = conflictingConcepts
+                       }
+            | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
+            , length conflictingConcepts>1
+            , origin x==origin origExpr
+            ]
          errCpsLike x a b
-          = error "disabled"
-         lookup pExpr = fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table")
+          = if null deepErrors then nodeError else deepErrors
+            where
+             nodeError = [ CxeCpsLike {cxeExpr   = origExpr
+                                      ,cxeCpts   = conflictingConcepts
+                                      }
+                         | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
+                         , length conflictingConcepts>1
+                         , origin x==origin origExpr
+                         ]
+             deepErrors = g a++g b
+         lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
 
 --the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
