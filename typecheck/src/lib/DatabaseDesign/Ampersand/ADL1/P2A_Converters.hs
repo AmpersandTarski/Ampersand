@@ -347,7 +347,7 @@ typing p_context universeSource universeTarget expr
      (.+.) :: (Data.Map.Map Type [Type] , Data.Map.Map Type [Type]) -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type]) -> (Data.Map.Map Type [Type], Data.Map.Map Type [Type])
      (a,b) .+. (c,d) = (a.++.c,b.++.d)
      carefully :: (Data.Map.Map Type [Type] , Data.Map.Map Type [Type] ) -> (Data.Map.Map Type [Type], Data.Map.Map Type [Type])
-     carefully (a,b) = (Data.Map.empty,a.++.b)
+     carefully x = (Data.Map.empty,fst x.++.snd x)
      dom, cod :: P_Expression -> Type
      dom x    = TypExpr x         False (origin x) x -- the domain of x, and make sure to check subexpressions of x as well
      cod x    = TypExpr (p_flp x) True  (origin x) x 
