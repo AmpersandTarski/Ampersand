@@ -3,7 +3,6 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    ( eqCl 
    , eqClass
    , sort
-   , sort'
    , getCycles
    , combinations
    , commaEng
@@ -31,20 +30,6 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    eqCl :: Eq b => (a -> b) -> [a] -> [[a]]
    eqCl _ [] = []
    eqCl f (x:xs) = (x:[e |e<-xs, f x==f e]) : eqCl f [e |e<-xs, f x/=f e]
-
-   --TODO Replace by Data.List.sort
---   sort :: (Ord a) => [a] -> [a]
---   sort [] = []
---   sort (x:xs) = sort [e |e<-xs, e<x] ++ [x] ++ sort [e |e<-xs, e>=x]
-
-   -- | This function sorts a list of elements using the user supplied function to project something out of each element
-   -- e.g. sorting people on the order of their date of birth, which might be:   sort' date_of_birth persons
-   --TODO Replace by sortWith
-   sort' :: (Ord b) => (a -> b) -> [a] -> [a]
-   sort' = sortWith
---   sort' :: (Ord b) => (a -> b) -> [a] -> [a]
---   sort' _ [] = []
---   sort' f (x:xs) = sort' f [e |e<-xs, f e<f x] ++ [x] ++ sort' f [e |e<-xs, f e>=f x]
 
    -- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
    --   and a list of to-vertices)

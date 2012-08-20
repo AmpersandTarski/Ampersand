@@ -6,10 +6,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Core.Poset
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+import DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),eqCl, sort')
+import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),eqCl)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
@@ -17,6 +17,7 @@ import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Fspec.Fspec 
 import Data.Char
 import Data.List (nub)
+import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
@@ -165,14 +166,14 @@ rel2fld kernel                                      -- > all relations (in the f
    These relations serve as attributes. Code:  [a| a<-attRels, source a `elem` concs kernel]
    Then, all these relations are made into fields. Code: plugFields = [rel2fld plugMors a| a<-plugMors]
    We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
-   For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
+   For the fun of it, we sort the plugs on length, the longest first. Code:   sortWith ((0-).length.fields)
    By the way, parameter allRels contains all relations that are declared in context, enriched with extra multiplicities.
    This parameter allRels was added to makePlugs to avoid recomputation of the extra multiplicities.
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
 makeEntities :: ConceptStructure a => A_Context -> [Relation] -> [a] -> [PlugSQL]
 makeEntities _ allRels exclusions
- = sort' ((0-).length.tblfields)
+ = sortWith ((0-).length.tblfields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
       ScalarSQL (name c) (rel2fld [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
