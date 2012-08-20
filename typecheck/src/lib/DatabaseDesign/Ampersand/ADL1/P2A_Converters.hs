@@ -258,12 +258,21 @@ typing p_context universeSource universeTarget expr
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType _ _    _     (Pfull _ [])          = nothing                                                              --  V     (the untyped full set)
      uType x _    _     (Pfull _ cs)          = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          --  V[A*B] (the typed full set)
-     uType x _    _     (Prel _ nm)           = nothing
-                                                -- foldr (.+.) [] [ dom x.<.dom decl .+. cod x.<.cod decl               --  r      a relation
-                                                --                | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
-     uType x _    _     (Pflp _ nm)           = nothing
-                                                -- foldr (.+.) [] [ dom x.<.cod decl .+. cod x.<.dom decl               --  r~     a flipped relation
-                                                --                | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
+     uType x uLft uRt   (Prel _ nm)           = -- disambiguate nm
+                                                if length spcls == 1 then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
+                                                else nothing
+                                                where decls = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
+                                                      spcls = if length decls==1 then decls else
+                                                              [d    | d@(PTyp _ (Prel _ dnm) (P_Sign cs@(_:_)))<-decls, compatible (head cs) (last cs)]
+                                                      compatible l r = isTypeSubset uLft l && isTypeSubset uRt r
+                                                      isTypeSubset (TypExpr (Pid c) _ _ _) t = t==c
+                                                      isTypeSubset (TypExpr (PIsc _ a b) x y z) t = isTypeSubset (TypExpr a x y z) t || isTypeSubset (TypExpr b x y z) t
+                                                      isTypeSubset (TypLub a b _ _) t = isTypeSubset a t || isTypeSubset b t
+                                                      isTypeSubset (TypExpr (PUni _ a b) x y z) t = isTypeSubset (TypExpr a x y z) t && isTypeSubset (TypExpr b x y z) t
+                                                      isTypeSubset (TypGlb a b _ _) t = isTypeSubset a t && isTypeSubset b t
+                                                      isTypeSubset (TypExpr _ _ _ _) _ = False
+     uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
+                                                where e = Prel o nm
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
 {- A direct way, which requires proof
@@ -331,8 +340,8 @@ typing p_context universeSource universeTarget expr
                                                 if o `elem` [origin d| d<-decls]
                                                 then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e
-                                                     .+. interDom .<. uLft .+. interCod .<. uRt
-                                                     .+. interDom .<. iSrc .+. interCod .<. iTrg
+                                                     -- .+. interDom .<. uLft .+. interCod .<. uRt  -- not sure we need these two lines
+                                                     -- .+. interDom .<. iSrc .+. interCod .<. iTrg -- not sure we need these two lines
                                                      .+. uType e interDom interCod e
                                                 where iSrc = TypExpr (Pid (head cs)) False OriginUnknown (Pid (head cs))
                                                       iTrg = TypExpr (Pid (last cs))  True OriginUnknown (Pid (last cs))
