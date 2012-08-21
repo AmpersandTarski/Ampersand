@@ -62,10 +62,9 @@ instance Eq Type where
 -}
 
 showType :: Type -> String
-showType (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
+showType (TypExpr _ _       _    origExpr@(Pid _))      = showADL origExpr
 showType (TypExpr expr@(PI _) _ orig _)                 = showADL expr     ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pid _) _ _ _)                   = showADL expr
-showType (TypExpr _ _       _    origExpr@(Pid _))      = showADL origExpr
 showType (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pfull _ []) _ orig _)           = showADL expr     ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pfull _ _ ) _ _ _)              = showADL expr
