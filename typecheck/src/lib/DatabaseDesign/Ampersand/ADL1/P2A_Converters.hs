@@ -278,11 +278,11 @@ typing p_context
                                                                getList (Just a) = a
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b -- .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
-     uType x  _    _    (PIsc _ a b)          = dom x.=.interDom .+. cod x.<.interCod    --  intersect ( /\ )
+     uType x  _    _    (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
                                                 .+. dm .+. cm .+. uType a interDom interCod a .+. uType b interDom interCod b
                                                 where (dm,interDom) = mSpecific (dom a) (dom b)  x
                                                       (cm,interCod) = mSpecific (cod a) (cod b)  x
-     uType x  _    _    (PUni _ a b)          = dom x.=.interDom .+. cod x.<.interCod    --  union     ( \/ )
+     uType x  _    _    (PUni _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
                                                 .+. dm .+. cm
                                                 .+. uType a interDom interCod a .+. uType b interDom interCod b
                                                 where (dm,interDom) = mGeneric (dom a) (dom b)  x
