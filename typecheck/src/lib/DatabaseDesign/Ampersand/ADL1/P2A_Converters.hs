@@ -427,7 +427,8 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      condensedClos = clos1 condensedEdges 
 -- function typeConcepts computes the type 
      typeConcepts :: [Type] -> [P_Concept]
-     typeConcepts cls = [ c | (i,_,c)<-reducedTypes, i==cls]
+     typeConcepts cls = if null isAType then [ c | (i,_,c)<-reducedTypes, i==cls] else isAType
+       where isAType = [c | TypExpr (Pid c) _ _ _<-cls]
      -- The possible types are all concepts of which term i is a subset.
      possibleTypes :: [([Type],[Type],P_Concept)]
      possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _ _<- j, i/=j ]
@@ -435,8 +436,6 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, head i'==head j]
      -- reducedtypes contains all types for which there is not a more specific type
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
-     
-
      conflictGraph :: Graph.Graph
      conflictGraph = Graph.buildG (0, length eqClasses-1) conflicts
      conflicts :: [(Int,Int)]
