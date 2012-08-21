@@ -399,6 +399,7 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      exprClass :: Int -> Int
      exprClass i = head ([classNr | (exprNr,classNr)<-classNumbers, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
      condensedEdges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
+     condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
      sccGraph :: Graph.Graph
      sccGraph
       = Graph.buildG (0, length eqClasses-1) condensedEdges
@@ -409,28 +410,43 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
 -}
      table
       = if length expressionTable==length classNumbers
-        then [ (i,classNr,typeExpr, ambConcepts classNr)
+        then [ (i,classNr,typeExpr, typeConcepts classNr)
              | ((i,typeExpr),(j,classNr))<-zip expressionTable classNumbers, if i/=j then fatal 410 "mistake in table" else True ]
         else fatal 413 "mistake in table"
-         where
 {-
      table = f False expressionTable classNumbers
        where f _ [(i,typeExpr)] [(j,classNr)]
-              | i==j = [(i,classNr,typeExpr, ambConcepts classNr)]
+              | i==j = [(i,classNr,typeExpr, typeConcepts classNr)]
              f b exprTable@((i,typeExpr):exprTable') classNrs@((j,classNr):classNrs')
-              | i==j = (i,classNr,typeExpr, ambConcepts classNr) : f True exprTable' classNrs
+              | i==j = (i,classNr,typeExpr, typeConcepts classNr) : f True exprTable' classNrs
               | i>j && b = f False exprTable classNrs'
               | i<j  = fatal 425 "mistake in table"
              f _ [] [] = []
              f _ et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
 -}
-             ambConcepts :: Int -> [P_Concept]
-             ambConcepts classNr = [c | (i,c)<-concepts, i==classNr]
+-- function typeConcepts computes the type 
+     typeConcepts :: Int -> [P_Concept]
+     typeConcepts classNr = [ foldr1 glb cs | cl<-classes, let cs = [g | g<-candidates, g `elem` cl], (not.null) cs]
+      where
+        specializationTuples
+         = [ (s,g) | (i,j) <- clos1 condensedEdges
+                   , TypExpr (Pid s) _ _ _<- exprsLookupOfClass i
+                   , TypExpr (Pid g) _ _ _<- exprsLookupOfClass j ] ++
+           [ (c,c) | i<-condensedVerts, TypExpr (Pid c) _ _ _<- exprsLookupOfClass i ]
+        possibleTypes :: [(Int,P_Concept)]
+        possibleTypes = [ (i,c) | (i,j) <- clos1 condensedEdges, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
+        candidates = [ c | cl<-eqCl fst possibleTypes, fst (head cl)==classNr, c<-map snd cl ]
+        (order,classes) = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples
+        a `gE` b = order a b `elem` [DatabaseDesign.Ampersand.Core.Poset.EQ,DatabaseDesign.Ampersand.Core.Poset.GT]
+        a `comparable` b = order a b /= DatabaseDesign.Ampersand.Core.Poset.NC
+        a `glb` b = case order a b of
+                     DatabaseDesign.Ampersand.Core.Poset.LT -> a
+                     DatabaseDesign.Ampersand.Core.Poset.GT -> b
+                     DatabaseDesign.Ampersand.Core.Poset.EQ -> a
+                     DatabaseDesign.Ampersand.Core.Poset.NC -> fatal 439 "mistake in typeConcepts"
+
      conflictGraph :: Graph.Graph
      conflictGraph = Graph.buildG (0, length eqClasses-1) conflicts
-     -- all concepts belonging to an sccGraph node
-     concepts :: [(Int,P_Concept)]
-     concepts = [ (i,c) | (i,j) <- clos1 condensedEdges, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
      exprsLookupOfClass i = [typeExpr | (_,classNr,typeExpr,_) <- table, i==classNr]
      conflicts :: [(Int,Int)]
      conflicts = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
@@ -460,45 +476,41 @@ showErr err@(CxeAmbExpr{})
      )
 showErr err@(CxeILike { cxeCpts=[]})
  = concat
-     ( [show (origin (cxeExpr err))]++["\n"]++
-       ["    Expression   "++showADL (cxeExpr err)++"    can be of any type."]
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    Expression  "++showADL (cxeExpr err)++"  can be of any type."]
      )
 showErr err@(CxeILike {})
  = concat
-     ( [show (origin (cxeExpr err))]++["\n"]++
-       ["    Expression   "++showADL (cxeExpr err)++",\n"]++
-       ["    cannot be both "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    Expression  "++showADL (cxeExpr err)++",\n"]++
+       ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
      )
 showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})
  = concat
-     ( [show (origin (cxeExpr err))]++["\n"]++
-       ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of   "++showADL a]++
-       ["    and the target of   "++showADL b]++[",\n"]++
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    Inside expression  "++showADL (cxeExpr err)++",\n"]++
+       ["    between the target of  "++showADL a++"  and the target of  "++showADL b++",\n"]++
        ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
      )
 showErr err@(CxeCpsLike { cxeExpr=PRrs _ a b})
  = concat
-     ( [show (origin (cxeExpr err))]++["\n"]++
+     ( [show (origin (cxeExpr err))++"\n"]++
        ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the source of   "++showADL a]++
-       ["    and the source of   "++showADL b]++[",\n"]++
+       ["    between the source of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
        ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
      )
 showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})
  = concat
-     ( [show (origin (cxeExpr err))]++["\n"]++
+     ( [show (origin (cxeExpr err))++"\n"]++
        ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of   "++showADL a]++
-       ["    and the source of   "++showADL b]++[",\n"]++
+       ["    between the target of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
        ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
      )
 showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})
  = concat
-     ( [show (origin (cxeExpr err))]++["\n"]++
-       ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of   "++showADL a]++
-       ["    and the source of   "++showADL b]++[",\n"]++
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    Inside expression  "++showADL (cxeExpr err)++",\n"]++
+       ["    between the target of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
        ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
      )
 showErr (CxeOrig typeErrors t nm o)
@@ -530,7 +542,7 @@ showTypeTable typeTable
     showTypeExpr (TypLub _ _ _ origExpr)  = origExpr
     showTypeExpr (TypGlb _ _ _ origExpr)  = origExpr
     showTypeExpr (TypExpr _ _ _ origExpr) = origExpr
-    showPos OriginUnknown = "Origin unknown"
+    showPos OriginUnknown = "Unknown"
     showPos (FileLoc (FilePos (_,Pos l c,_)))
        = "("++show l++":"++show c++")"
     showPos _ = fatal 517 "Unexpected pattern in showPos"
@@ -827,7 +839,7 @@ pCtx2aCtx p_context
              , ctxpos    = ctx_pos p_context
              , ctxlang   = fromMaybe Dutch (ctx_lang p_context)
              , ctxmarkup = fromMaybe ReST  (ctx_markup p_context) -- The default markup format for free text in this context
-             , ctxpo     = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder hierarchy    -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+             , ctxpo     = gE
              , ctxthms   = ctx_thms p_context -- The patterns/processes to be printed in the functional specification. (for making partial documentation)
              , ctxpats   = pats          -- The patterns defined in this context
                                          -- Each pattern contains all user defined rules inside its scope
@@ -848,6 +860,17 @@ pCtx2aCtx p_context
              }
     st = typing p_context
     (typeTable,stGraph,sccGraph,conflictGraph) = tableOfTypes st
+    specializationTuples :: [(P_Concept,P_Concept)]
+    specializationTuples = [(specCpt,genCpt) | (_, _, e@(TypExpr (Pid specCpt) _ _ _), genCpts)<-typeTable, genCpt<-genCpts]
+    gE :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
+    gE = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder [(pC2aC s, pC2aC g) | (s,g)<-specializationTuples]   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+             where
+                pC2aC pc = C {cptnm = p_cptnm pc
+                             ,cptgE = fatal 63 "do not refer to this concept"
+                             ,cptos = fatal 64 "do not refer to this concept"
+                             ,cpttp = fatal 65 "do not refer to this concept"
+                             ,cptdf = fatal 66 "do not refer to this concept"
+                             }
     typeErrors :: [CtxError]
     typeErrors
      | (not.null) derivedEquals = derivedEquals
@@ -865,15 +888,6 @@ pCtx2aCtx p_context
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
-    hierarchy = 
-        let ctx_gens = p_gens p_context
-        in [(a (gen_spc g),a (gen_gen g)) | g<-ctx_gens]
-        where a pc = C {cptnm = p_cptnm pc
-                       ,cptgE = fatal 63 "do not refer to this concept"
-                       ,cptos = fatal 64 "do not refer to this concept"
-                       ,cpttp = fatal 65 "do not refer to this concept"
-                       ,cptdf = fatal 66 "do not refer to this concept"
-                       }
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
     agens = map (pGen2aGen "NoPattern") (ctx_gs p_context)
     (adecs,   deccxes)   = (unzip . map (pDecl2aDecl allpops "NoPattern")  . ctx_ds) p_context
@@ -1417,15 +1431,15 @@ pCtx2aCtx p_context
          g x@(PTyp _ a (P_Sign [])) = g a
          g x@(PTyp _ a sgn)    = g a
          errILike x
-          = [ CxeILike {cxeExpr   = origExpr
-                       ,cxeCpts   = conflictingConcepts
-                       }
-            | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
-            , length conflictingConcepts>1
-            , origin x==origin origExpr
-            ]
+          = nub [ CxeILike {cxeExpr   = origExpr
+                           ,cxeCpts   = conflictingConcepts
+                           }
+                | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
+                , length conflictingConcepts/=1
+                , origin x==origin origExpr
+                ]
          errCpsLike x a b
-          = if null deepErrors then nodeError else deepErrors
+          = error (showTypeTable typeTable) ++ if null deepErrors then nodeError else deepErrors
             where
              nodeError = [ CxeCpsLike {cxeExpr   = origExpr
                                       ,cxeCpts   = conflictingConcepts
