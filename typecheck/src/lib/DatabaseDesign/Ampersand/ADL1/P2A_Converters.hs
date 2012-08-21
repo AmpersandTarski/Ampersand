@@ -276,13 +276,13 @@ typing p_context
                                                       isTypeSubset t c = c `elem` getList (Data.Map.lookup t stClos)
                                                          where getList Nothing = []
                                                                getList (Just a) = a
-     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
+     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b -- .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
-     uType x  _    _    (PIsc _ a b)          = dom x.<.dom a .+. cod x.<.cod a .+. dom x.<.dom b .+. cod x.<.cod b    --  intersect ( /\ )
+     uType x  _    _    (PIsc _ a b)          = dom x.=.interDom .+. cod x.<.interCod    --  intersect ( /\ )
                                                 .+. dm .+. cm .+. uType a interDom interCod a .+. uType b interDom interCod b
                                                 where (dm,interDom) = mSpecific (dom a) (dom b)  x
                                                       (cm,interCod) = mSpecific (cod a) (cod b)  x
-     uType x  _    _    (PUni _ a b)          = dom a.<.dom x .+. cod a.<.cod x .+. dom b.<.dom x .+. cod b.<.cod x    --  union     ( \/ )
+     uType x  _    _    (PUni _ a b)          = dom x.=.interDom .+. cod x.<.interCod    --  union     ( \/ )
                                                 .+. dm .+. cm
                                                 .+. uType a interDom interCod a .+. uType b interDom interCod b
                                                 where (dm,interDom) = mGeneric (dom a) (dom b)  x
@@ -355,6 +355,13 @@ typing p_context
      mSpecific a b e = (r .<. a .+. r .<. b , r) where r = TypLub a b OriginUnknown e
      mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = TypGlb a b OriginUnknown e
 
+flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
+reverseMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+reverseMap lst = (Data.Map.fromListWith (++) (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
+reflexiveMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
+-- note: reverseMap is relatively slow, but only needs to be calculated once
+-- if not all of reflexiveMap will be used, a different implementation might be more useful
 
 {- The following table is a data structure that is meant to facilitate drawing type graphs and creating the correct messages for users.
 This table is organized as follows:
@@ -384,19 +391,19 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      stGraph :: Graph.Graph
      stGraph = Graph.buildG (0, (length typeExpressions)-1) stEdges
      stEdges :: [(Int,Int)]
-     stEdges = Data.Map.foldWithKey (\s ts o -> o ++ [(expressionNr s,expressionNr t)|t<-ts]) [] st
+     stEdges = [(expressionNr s,expressionNr t) | (s,t) <- flattenMap st]
 {- sccGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph, which are computed by Graph.scc
 -}
      eqClasses :: [[Int]]             -- The strongly connected components are computed in the form of trees (by Graph.scc)
-     eqClasses = rfxFilter (clos1 (stEdges ++ [(i,i) | i<-take (length typeExpressions) [0..]])) -- (nub . concat) [[(i,i),(j,j)] | (i,j)<-stEdges] ))
-      where rfxFilter lst = f (lst `isc` [(b,a) | (a,b)<-lst])
-                            where f [] = []
-                                  f ((a,b):rest) = cl : f [ (c,d) | (c,d)<-rest, c `notElem` cl ]
-                                    where cl = nub (a:b:[d | (c,d)<-rest, a==c ])
+     eqClasses = map (map expressionNr) (f $ sort (Data.Map.elems (addIdentity (reflexiveMap (setClosure st)))))
+      where f ((a:_):bs@(b:_):rs) | a==b = f (bs:rs)
+            f (a:rs) = a:f rs
+            f [] = []
+            addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else a)
      exprClass :: Int -> Int
-     exprClass i = head ([classNr | (exprNr,classNr)<-classNumbers, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
+     exprClass i = head ([classNr | (exprNr,classNr)<-classNumbers, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found in "++show eqClasses++" by exprClass")])
      condensedEdges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
      condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
      sccGraph :: Graph.Graph
@@ -412,37 +419,17 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
         then [ (i,classNr,typeExpr, typeConcepts classNr)
              | ((i,typeExpr),(j,classNr))<-zip expressionTable classNumbers, if i/=j then fatal 410 "mistake in table" else True ]
         else fatal 413 "mistake in table"
-{-
-     table = f False expressionTable classNumbers
-       where f _ [(i,typeExpr)] [(j,classNr)]
-              | i==j = [(i,classNr,typeExpr, typeConcepts classNr)]
-             f b exprTable@((i,typeExpr):exprTable') classNrs@((j,classNr):classNrs')
-              | i==j = (i,classNr,typeExpr, typeConcepts classNr) : f True exprTable' classNrs
-              | i>j && b = f False exprTable classNrs'
-              | i<j  = fatal 425 "mistake in table"
-             f _ [] [] = []
-             f _ et ct = fatal 249 ("Remaining elements in table\n"++intercalate "\n" (map show et++map show ct))
--}
+     condensedClos = clos1 condensedEdges
 -- function typeConcepts computes the type 
      typeConcepts :: Int -> [P_Concept]
-     typeConcepts classNr = [ foldr1 glb cs | cl<-classes, let cs = [g | g<-candidates, g `elem` cl], (not.null) cs]
-      where
-        specializationTuples
-         = [ (s,g) | (i,j) <- clos1 condensedEdges
-                   , TypExpr (Pid s) _ _ _<- exprsLookupOfClass i
-                   , TypExpr (Pid g) _ _ _<- exprsLookupOfClass j ] ++
-           [ (c,c) | i<-condensedVerts, TypExpr (Pid c) _ _ _<- exprsLookupOfClass i ]
-        possibleTypes :: [(Int,P_Concept)]
-        possibleTypes = [ (i,c) | (i,j) <- clos1 condensedEdges, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j ]
-        candidates = [ c | cl<-eqCl fst possibleTypes, fst (head cl)==classNr, c<-map snd cl ]
-        (order,classes) = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples
-        a `gE` b = order a b `elem` [DatabaseDesign.Ampersand.Core.Poset.EQ,DatabaseDesign.Ampersand.Core.Poset.GT]
-        a `comparable` b = order a b /= DatabaseDesign.Ampersand.Core.Poset.NC
-        a `glb` b = case order a b of
-                     DatabaseDesign.Ampersand.Core.Poset.LT -> a
-                     DatabaseDesign.Ampersand.Core.Poset.GT -> b
-                     DatabaseDesign.Ampersand.Core.Poset.EQ -> a
-                     DatabaseDesign.Ampersand.Core.Poset.NC -> fatal 439 "mistake in typeConcepts"
+     typeConcepts classNr = [ c | (i,_,c)<-reducedTypes, i==classNr]
+     possibleTypes :: [(Int,Int,P_Concept)]
+     possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j, i/=j ]
+     -- all types for which there is not a more specific type
+     typeSubsets   = [ (i,j) | (i,j,_) <- possibleTypes, TypExpr (Pid c) _ _ _<- exprsLookupOfClass i ]
+     secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, i'==j]
+     reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,i==i',j==j']]
+     
 
      conflictGraph :: Graph.Graph
      conflictGraph = Graph.buildG (0, length eqClasses-1) conflicts
