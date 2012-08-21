@@ -7,9 +7,9 @@ t :: B*C.
 s :: A*D.
 RULE r[A*C] = s;t
 RULE I |- r~;r
-RULE I |- t;s~;s;t
+RULE I |- t~;s~;s;t
 --SPEC B ISA D
---SPEC D ISA B
+SPEC D ISA B
 ENDPATTERN
 
 ENDCONTEXT
