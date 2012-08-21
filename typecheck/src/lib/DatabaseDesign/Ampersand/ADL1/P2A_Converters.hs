@@ -245,10 +245,14 @@ typing p_context
                                                , let spc=Pid (gen_spc g)
                                                , let gen=Pid (gen_gen g)
                                                , let x=Pimp (origin g) spc gen ])
-     stClos = setClosure firstSetOfEdges
+     stClos   = setClosure firstSetOfEdges
      isas     = p_gens p_context
      decls    = p_declarations p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
+     isTypeSubset t c = c `elem` findInClos t
+     findInClos t = getList (Data.Map.lookup t stClos)
+                      where getList Nothing = []
+                            getList (Just a) = a
      u = OriginUnknown
      uType :: P_Expression    -- x:    the original expression from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
@@ -262,7 +266,11 @@ typing p_context
      uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
      uType x _    _     (Patm _ _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          -- 'Piet'[Persoon]  (a typed singleton)
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
-     uType _ _    _     (Pfull _ [])          = nothing                                                              --  V     (the untyped full set)
+     uType x uLft uRt   (Pfull _ [])          = carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+                                                               if null spcls then nothing else
+                                                               dom x.=.fst (head spcls) .+. cod x.=.snd (head spcls)
+                                                          )
+                                                where spcls = [(a,b) | a<-findInClos uLft, b<-findInClos uRt]
      uType x _    _     (Pfull _ cs)          = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          --  V[A*B] (the typed full set)
      uType x uLft uRt   (Prel _ nm)           = -- disambiguate nm
                                                 carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
@@ -274,9 +282,6 @@ typing p_context
                                                               [d    | d@(PTyp _ (Prel _ dnm) (P_Sign cs@(_:_)))<-decls, compatible (head cs) (last cs)]
                                                       compatible l r =    isTypeSubset uLft (thing l)
                                                                        && isTypeSubset uRt  (thing r)
-                                                      isTypeSubset t c = c `elem` getList (Data.Map.lookup t stClos)
-                                                         where getList Nothing = []
-                                                               getList (Just a) = a
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b -- .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x  _    _    (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
@@ -391,6 +396,7 @@ tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercal
 -- stGraph is computed for debugging purposes. It shows precisely which edges are computed by uType.
      stGraph :: Graph.Graph
      stGraph = Graph.buildG (0, (length typeExpressions)-1) stEdges
+     stClos = setClosure st
      stEdges :: [(Int,Int)]
      stEdges = [(expressionNr s,expressionNr t) | (s,t) <- flattenMap st]
 {- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
@@ -398,7 +404,7 @@ tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercal
    These equivalence classes are the strongly connected components of the original graph
 -}
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
-     eqClasses = (f $ sort (Data.Map.elems (addIdentity (reflexiveMap (setClosure st)))))
+     eqClasses = (f $ sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
       where f ((a:_):bs@(b:_):rs) | a==b = f (bs:rs) -- efficient nub for sorted classes: only compares the first element
             f (a:rs) = a:f rs
             f [] = []
@@ -407,6 +413,7 @@ tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercal
      exprClass i = head ([c | c<-eqClasses, i `elem` c]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
      condensedEdges :: [([Type],[Type])]
      condensedEdges = nub [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', c/=c']
+     condensedClos  = nub [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', c/=c']
      -- condensedVerts is eqClasses
      -- condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
      condensedGraph :: Graph.Graph
@@ -425,11 +432,10 @@ tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercal
      table
       = [ (expressionNr s,classNr c,s, typeConcepts c)
              | c<-eqClasses,s<-c]
-     condensedClos = clos1 condensedEdges 
 -- function typeConcepts computes the type 
      typeConcepts :: [Type] -> [P_Concept]
      typeConcepts cls = if null isAType then [ c | (i,_,c)<-reducedTypes, i==cls] else isAType
-       where isAType = [c | TypExpr (Pid c) _ _ _<-cls]
+       where isAType = nub [c | TypExpr (Pid c) _ _ _<-cls]
      -- The possible types are all concepts of which term i is a subset.
      possibleTypes :: [([Type],[Type],P_Concept)]
      possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _ _<- j, i/=j ]
