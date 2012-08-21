@@ -271,8 +271,8 @@ typing p_context
                                                 where decls = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
                                                       spcls = if length decls==1 then decls else
                                                               [d    | d@(PTyp _ (Prel _ dnm) (P_Sign cs@(_:_)))<-decls, compatible (head cs) (last cs)]
-                                                      compatible l r =    isTypeSubset uLft (TypExpr (Pid l) False OriginUnknown (Pid l))
-                                                                       && isTypeSubset uRt  (TypExpr (Pid r) False OriginUnknown (Pid r))
+                                                      compatible l r =    isTypeSubset uLft (thing l)
+                                                                       && isTypeSubset uRt  (thing r)
                                                       isTypeSubset t c = c `elem` getList (Data.Map.lookup t stClos)
                                                          where getList Nothing = []
                                                                getList (Just a) = a
@@ -312,8 +312,8 @@ typing p_context
                                                 else dom x.<.dom e .+. cod x.<.cod e
                                                      .+. dm .+. cm -- do we need these?
                                                      .+. uType e interDom interCod e
-                                                where iSrc = TypExpr (Pid (head cs)) False OriginUnknown (Pid (head cs))
-                                                      iTrg = TypExpr (Pid (last cs))  True OriginUnknown (Pid (last cs))
+                                                where iSrc = thing (head cs)
+                                                      iTrg = thing (last cs)
                                                       (dm,interDom) = (mSpecific iSrc uLft x)
                                                       (cm,interCod) = (mSpecific iTrg uRt  x)
      uType x uLft uRt   (PPrd _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
@@ -423,11 +423,12 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
 -- function typeConcepts computes the type 
      typeConcepts :: Int -> [P_Concept]
      typeConcepts classNr = [ c | (i,_,c)<-reducedTypes, i==classNr]
+     -- The possible types are all concepts of which term i is a subset.
      possibleTypes :: [(Int,Int,P_Concept)]
      possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j, i/=j ]
-     -- all types for which there is not a more specific type
      typeSubsets   = [ (i,j) | (i,j,_) <- possibleTypes, TypExpr (Pid c) _ _ _<- exprsLookupOfClass i ]
      secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, i'==j]
+     -- reducedtypes contains all types for which there is not a more specific type
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,i==i',j==j']]
      
 
@@ -516,7 +517,7 @@ showTypeTable typeTable
     nMax = maximum [i | (stIndex,cIndex,_,_)<-typeTable, i<-[stIndex, cIndex]]
     sh i = [ ' ' | j<-[length (show i)..length (show nMax)] ]++show i
     shPos t = str++[ ' ' | j<-[length str..maxPos] ]
-     where str = showPos (origin t)
+     where str = showPos t
            maxPos = maximum [length (showPos (origin typExpr)) | (_,_,typExpr,_)<-typeTable]
     shType t = str++[ ' ' | j<-[length str..maxType] ]
      where str = show t
@@ -1421,11 +1422,11 @@ pCtx2aCtx p_context
                            ,cxeCpts   = conflictingConcepts
                            }
                 | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
-                , length conflictingConcepts/=1
+                , length conflictingConcepts/=1 || isConceptTerm origExpr
                 , origin x==origin origExpr
                 ]
          errCpsLike x a b
-          = error (showTypeTable typeTable) ++ if null deepErrors then nodeError else deepErrors
+          = error (showTypeTable typeTable) ++ if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  
             where
              nodeError = [ CxeCpsLike {cxeExpr   = origExpr
                                       ,cxeCpts   = conflictingConcepts
@@ -1436,6 +1437,10 @@ pCtx2aCtx p_context
                          ]
              deepErrors = g a++g b
          lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
+
+isConceptTerm :: P_Expression -> Bool
+isConceptTerm (Pid{}) = True
+isConceptTerm _ = False
 
 --the type checker always returns an expression with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed expression is equivalent to disambiguating the expression
