@@ -30,7 +30,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
               | Cxe           {cxeSubErrors :: [CtxError] -- ^ lower level errors
                               ,cxemsg :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
               | PE            {cxeMsgs :: [ParseError]}  -- ^ list of parse-time messages 
-
+                deriving Eq
 {-
 instance Eq CtxError where
   CxeOrig es t n o == CxeOrig es' t' n' o' = es == es' && t == t' && n == n' && o == o'

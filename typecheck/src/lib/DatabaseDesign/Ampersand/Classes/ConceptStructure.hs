@@ -33,7 +33,7 @@ where
 
    instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
     concs   (a,b) = concs a `uni` concs b
-    mors    (a,b) =  mors a `uni` mors b
+    mors    (a,b) = mors a  `uni` mors b
     morlist (a,b) = morlist a ++ morlist b
 
    instance ConceptStructure a => ConceptStructure (Maybe a) where
@@ -59,7 +59,8 @@ where
     mors      c = mors (ctxpats c) `uni` mors (ctxprocs c) `uni` mors [ifcObj s | s<-ctxifcs c]
     morlist   c = morlist (ctxpats c)++morlist (ctxprocs c)++morlist [ifcObj s | s<-ctxifcs c]
 --  closExprs c = closExprs (ctxpats c) `uni` closExprs [ifcObj s | s<-ctxifcs c]
-    genE        = ctxpo 
+    genE      c = ctxpo c
+
    instance ConceptStructure KeyDef where
     concs     kd = [kdcpt kd] `uni` concs [objDef | KeyExp objDef <- kdats kd]
     mors      kd = mors                   [objDef | KeyExp objDef <- kdats kd]

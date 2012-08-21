@@ -531,7 +531,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
    getMsgs (NoMoreSteps _      ) = []
 
    newtype Message s  =  Msg (String, String, Exp s) -- action, position, expecting 
-
+                         deriving Eq
    getStart (Msg (_,_,st)) = st
 
    addToMessage (Msg (act, pos, exp)) more = Msg (act, pos, more `eor` exp)
