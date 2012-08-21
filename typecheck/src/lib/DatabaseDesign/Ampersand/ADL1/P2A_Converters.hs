@@ -266,11 +266,7 @@ typing p_context
      uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
      uType x _    _     (Patm _ _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          -- 'Piet'[Persoon]  (a typed singleton)
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
-     uType x uLft uRt   (Pfull _ [])          = carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                                               if null spcls then nothing else
-                                                               dom x.=.fst (head spcls) .+. cod x.=.snd (head spcls)
-                                                          )
-                                                where spcls = [(a,b) | a<-findInClos uLft, b<-findInClos uRt]
+     uType x uLft uRt   (Pfull _ [])          = dom x.<.uLft .+. cod x.<.uRt
      uType x _    _     (Pfull _ cs)          = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          --  V[A*B] (the typed full set)
      uType x uLft uRt   (Prel _ nm)           = -- disambiguate nm
                                                 carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
