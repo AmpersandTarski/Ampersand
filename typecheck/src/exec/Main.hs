@@ -47,7 +47,7 @@ main =
                                         ; parsePopulations popsText opts fn
                                         }
                   ; verboseLn opts "Type checking..."
-                  ; let (actx,type_errors,stTypeGraph,condensedGraph,ambiguityGraph) = typeCheck p_context pPops
+                  ; let (actx,type_errors,stTypeGraph,condensedGraph) = typeCheck p_context pPops
 -- For the purpose of debugging the type checker, or for educational purposes, the switch "--typing" can be used.
 -- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
 -- Use only for very small scripts, or else the results will not be very informative.
@@ -55,8 +55,6 @@ main =
                   ; if typeGraphs opts
                     then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
                             ; putStr ("\n"++condensedGraphPath++" written.")
-                            ; ambiguityGraphPath<-runGraphvizCommand Dot ambiguityGraph Png (replaceExtension ("Ambiguity_Graph_of_"++baseName opts) ".png")
-                            ; putStr ("\n"++ambiguityGraphPath++" written.")
                             ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
                             ; putStr ("\n"++stDotGraphPath++" written.")
                             }
