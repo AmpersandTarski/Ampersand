@@ -396,45 +396,49 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph, which are computed by Graph.scc
 -}
-     eqClasses :: [[Int]]             -- The strongly connected components are computed in the form of trees (by Graph.scc)
-     eqClasses = map (map expressionNr) (f $ sort (Data.Map.elems (addIdentity (reflexiveMap (setClosure st)))))
-      where f ((a:_):bs@(b:_):rs) | a==b = f (bs:rs)
+     eqClasses :: [[Type]]             -- The strongly connected components are computed in the form of trees (by Graph.scc)
+     eqClasses = (f $ sort (Data.Map.elems (addIdentity (reflexiveMap (setClosure st)))))
+      where f ((a:_):bs@(b:_):rs) | a==b = f (bs:rs) -- efficient nub for sorted classes: only compares the first element
             f (a:rs) = a:f rs
             f [] = []
             addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else a)
-     exprClass :: Int -> Int
-     exprClass i = head ([classNr | (exprNr,classNr)<-classNumbers, i==exprNr]++[fatal 191 ("Type Expression "++show i++" not found in "++show eqClasses++" by exprClass")])
-     condensedEdges = nub [(c,c') | (i,i')<-stEdges, let c=exprClass i, let c'=exprClass i', c/=c']
-     condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
+     exprClass :: Type -> [Type]
+     exprClass i = head ([c | c<-eqClasses, i `elem` c]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
+     condensedEdges :: [([Type],[Type])]
+     condensedEdges = nub [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', c/=c']
+     -- condensedVerts is eqClasses
+     -- condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
      sccGraph :: Graph.Graph
      sccGraph
-      = Graph.buildG (0, length eqClasses-1) condensedEdges
+      = Graph.buildG (0, length eqClasses-1) (map (\(x,y)->(classNr x,classNr y)) condensedEdges)
+     classTable :: [(Int,[Type])]
+     classTable = zip [0..] eqClasses
+     classNr :: [Type] -> Int
+     classNr (t:ts)  = head ([i | (i,(v:vs))<-classTable, t == v]++[fatal 178 ("Type Class "++show t++" not found by classNr")])
+
      -- classNumbers is the relation from stGraph to sccGraph, relating the different numberings
-     classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
+     -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging expressionTable and classNumbers into one list.
     This has already caught mistakes in the past, so it is advisable to leave the checks in the code for debugging reasons.
 -}
      table
-      = if length expressionTable==length classNumbers
-        then [ (i,classNr,typeExpr, typeConcepts classNr)
-             | ((i,typeExpr),(j,classNr))<-zip expressionTable classNumbers, if i/=j then fatal 410 "mistake in table" else True ]
-        else fatal 413 "mistake in table"
-     condensedClos = clos1 condensedEdges
+      = [ (expressionNr s,classNr c,s, typeConcepts c)
+             | c<-eqClasses,s<-c]
+     condensedClos = clos1 condensedEdges 
 -- function typeConcepts computes the type 
-     typeConcepts :: Int -> [P_Concept]
-     typeConcepts classNr = [ c | (i,_,c)<-reducedTypes, i==classNr]
+     typeConcepts :: [Type] -> [P_Concept]
+     typeConcepts cls = [ c | (i,_,c)<-reducedTypes, i==cls]
      -- The possible types are all concepts of which term i is a subset.
-     possibleTypes :: [(Int,Int,P_Concept)]
-     possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _ _<- exprsLookupOfClass j, i/=j ]
-     typeSubsets   = [ (i,j) | (i,j,_) <- possibleTypes, TypExpr (Pid c) _ _ _<- exprsLookupOfClass i ]
-     secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, i'==j]
+     possibleTypes :: [([Type],[Type],P_Concept)]
+     possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _ _<- j, i/=j ]
+     typeSubsets   = [ (i,j) | (i,j,_) <- possibleTypes, TypExpr (Pid c) _ _ _<- i ]
+     secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, head i'==head j]
      -- reducedtypes contains all types for which there is not a more specific type
-     reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,i==i',j==j']]
+     reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
      
 
      conflictGraph :: Graph.Graph
      conflictGraph = Graph.buildG (0, length eqClasses-1) conflicts
-     exprsLookupOfClass i = [typeExpr | (_,classNr,typeExpr,_) <- table, i==classNr]
      conflicts :: [(Int,Int)]
      conflicts = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
       where
