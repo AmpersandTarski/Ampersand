@@ -62,7 +62,8 @@ instance Eq Type where
 -}
 
 showType :: Type -> String
-showType (TypExpr _ _       _    origExpr@(Pid _))      = showADL origExpr
+showType (TypExpr _ _   OriginUnknown origExpr@(Pid _)) = showADL origExpr
+showType (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
 showType (TypExpr expr@(PI _) _ orig _)                 = showADL expr     ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pid _) _ _ _)                   = showADL expr
 showType (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
@@ -366,13 +367,13 @@ reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverse
 {- The following table is a data structure that is meant to facilitate drawing type graphs and creating the correct messages for users.
 This table is organized as follows:
 Int          : a vertex (number) in the stGraph, which contains the raw tuples from function 'typing'
-Int          : a vertex (number) in the sccGraph, which is a condensed form of the stGraph, leaving the semantics identical
-Type         : a type expression, containing a P_Expression, which is represented by a number in the type graphs. Different expressions may carry the same number in the sccGraph.
+Int          : a vertex (number) in the condensedGraph, which is a condensed form of the stGraph, leaving the semantics identical
+Type         : a type expression, containing a P_Expression, which is represented by a number in the type graphs. Different expressions may carry the same number in the condensedGraph.
 [P_Concept]  : a list of concepts. If (_,_,expr,cs) is an element of this table, then for every c in cs there is a proof that dom expr is a subset of I[c].
                For a type correct expr, list cs contains precisely one element.
 -}
-tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph, Graph.Graph)
-tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
+tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph)
+tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
  where
 {-  stGraph is a graph whose edges are precisely st, but each element in
 	st is replaced by a pair of integers. The reason is that datatype
@@ -392,11 +393,11 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      stGraph = Graph.buildG (0, (length typeExpressions)-1) stEdges
      stEdges :: [(Int,Int)]
      stEdges = [(expressionNr s,expressionNr t) | (s,t) <- flattenMap st]
-{- sccGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
+{- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
-   These equivalence classes are the strongly connected components of the original graph, which are computed by Graph.scc
+   These equivalence classes are the strongly connected components of the original graph
 -}
-     eqClasses :: [[Type]]             -- The strongly connected components are computed in the form of trees (by Graph.scc)
+     eqClasses :: [[Type]]             -- The strongly connected components of stGraph
      eqClasses = (f $ sort (Data.Map.elems (addIdentity (reflexiveMap (setClosure st)))))
       where f ((a:_):bs@(b:_):rs) | a==b = f (bs:rs) -- efficient nub for sorted classes: only compares the first element
             f (a:rs) = a:f rs
@@ -408,15 +409,15 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      condensedEdges = nub [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', c/=c']
      -- condensedVerts is eqClasses
      -- condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
-     sccGraph :: Graph.Graph
-     sccGraph
+     condensedGraph :: Graph.Graph
+     condensedGraph
       = Graph.buildG (0, length eqClasses-1) (map (\(x,y)->(classNr x,classNr y)) condensedEdges)
      classTable :: [(Int,[Type])]
      classTable = zip [0..] eqClasses
      classNr :: [Type] -> Int
      classNr (t:ts)  = head ([i | (i,(v:vs))<-classTable, t == v]++[fatal 178 ("Type Class "++show t++" not found by classNr")])
 
-     -- classNumbers is the relation from stGraph to sccGraph, relating the different numberings
+     -- classNumbers is the relation from stGraph to condensedGraph, relating the different numberings
      -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging expressionTable and classNumbers into one list.
     This has already caught mistakes in the past, so it is advisable to leave the checks in the code for debugging reasons.
@@ -436,15 +437,6 @@ tableOfTypes st = (table, stGraph, sccGraph, conflictGraph) -- to debug:  error 
      secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, head i'==head j]
      -- reducedtypes contains all types for which there is not a more specific type
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
-     conflictGraph :: Graph.Graph
-     conflictGraph = Graph.buildG (0, length eqClasses-1) conflicts
-     conflicts :: [(Int,Int)]
-     conflicts = [ (i,j) | (i,j)<-Graph.edges ag, Graph.outdegree ag!i>1 ]
-      where
-       ag = Graph.buildG (0, length eqClasses-1) 
-                             [ (i,j) | (i,j)<-clos1 (Graph.edges sccGraph), Graph.outdegree sccGraph!i>1, Graph.outdegree sccGraph!j==0 ]
-
-
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
 
@@ -563,29 +555,16 @@ lookupType typeTable i
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
-typeAnimate :: Data.Map.Map Type [Type] -> (DotGraph String,DotGraph String,DotGraph String)
-typeAnimate st = (stTypeGraph, condensedGraph, ambiguityGraph)
+typeAnimate :: Data.Map.Map Type [Type] -> (DotGraph String,DotGraph String)
+typeAnimate st = (stTypeGraph, condTypeGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-    (typeTable,stGraph,sccGraph,conflictGraph) = tableOfTypes st
+    (typeTable,stGraph,condensedGraph) = tableOfTypes st
     stTypeGraph :: DotGraph String
     stTypeGraph = toDotGraph (showStVertex typeTable) stGraph
-    condensedGraph :: DotGraph String
-    condensedGraph = toDotGraph showVtx sccGraph
-     where showVtx n = (intercalate "\n".nub)
-                       [ case head cl of
-                           t@(TypExpr (PI _)       _ _ _ ) -> showType t
-                           (TypExpr t@(Pid{})      _ _ _ ) -> showADL t
-                           t@(TypExpr (Pfull _ []) _ _ _ ) -> showType t
-                           (TypExpr t@(Pfull{})    _ _ _ ) -> showADL t
-                           (TypExpr t@(Pnid{})     _ _ _ ) -> showADL t
-                           (TypExpr t@(Pnull{})    _ _ _ ) -> showADL t
-                           t                               -> showType t
-                       | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_)<-typeTable, n==classNr ]
-                       ]
-    ambiguityGraph :: DotGraph String
-    ambiguityGraph = toDotGraph showVtx conflictGraph
+    condTypeGraph :: DotGraph String
+    condTypeGraph = toDotGraph showVtx condensedGraph
      where showVtx n = (intercalate "\n".nub)
                        [ case head cl of
                            t@(TypExpr (PI _)       _ _ _ ) -> showType t
@@ -819,10 +798,10 @@ toDotGraph showVtx graph
 
 -- | Transform a context as produced by the parser into a type checked heterogeneous algebra.
 --   Produce type error messages if necessary and produce proof graphs to document the type checking process.
-pCtx2aCtx :: P_Context -> (A_Context,[CtxError],DotGraph String,DotGraph String,DotGraph String)
+pCtx2aCtx :: P_Context -> (A_Context,[CtxError],DotGraph String,DotGraph String)
 pCtx2aCtx p_context
  = (contxt,typeErrors
-   ,stTypeGraph,condensedGraph,ambiguityGraph)
+   ,stTypeGraph,condTypeGraph)
    where
     contxt = 
          ACtx{ ctxnm     = name p_context     -- The name of this context
@@ -849,7 +828,7 @@ pCtx2aCtx p_context
              , ctxatoms  = allexplicitatoms
              }
     st = typing p_context
-    (typeTable,stGraph,sccGraph,conflictGraph) = tableOfTypes st
+    (typeTable,stGraph,condensedGraph) = tableOfTypes st
     specializationTuples :: [(P_Concept,P_Concept)]
     specializationTuples = [(specCpt,genCpt) | (_, _, e@(TypExpr (Pid specCpt) _ _ _), genCpts)<-typeTable, genCpt<-genCpts]
     gE :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
@@ -874,7 +853,7 @@ pCtx2aCtx p_context
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
     conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
-    (stTypeGraph,condensedGraph,ambiguityGraph) = typeAnimate st
+    (stTypeGraph,condTypeGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces

@@ -36,10 +36,10 @@ fatal = fatalMsg "Components"
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   If the list of populations is not empty, then it overwrites the one included in the parsed context
-typeCheck :: P_Context -> [P_Population] -> (A_Context, [CtxError],DotGraph String,DotGraph String,DotGraph String)
+typeCheck :: P_Context -> [P_Population] -> (A_Context, [CtxError],DotGraph String,DotGraph String)
 typeCheck p_context []   = pCtx2aCtx p_context                 
 typeCheck p_context pops = pCtx2aCtx (p_context{ctx_pops=pops})
-                           -- consisting of:  (aCtx,ctxcheck,stTypeGraph,condensedGraph,ambiguityGraph)
+                           -- consisting of:  (aCtx,ctxcheck,stTypeGraph,condensedGraph)
   
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.
