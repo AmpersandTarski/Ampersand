@@ -1,14 +1,19 @@
 CONTEXT Test
--- This script is incorrect, because the intersection between B and D does not exist.
--- Therefore, if s;q were to be computed, it is predictably empty.
+
 PATTERN Test2
-
-r :: A*C
-s :: A*D
-q :: B*C
-SPEC B ISA Z
-SPEC D ISA Z
-
-RULE r = s;q
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+SPEC B ISA E
+SPEC A ISA E
+SPEC D ISA B
+SPEC D ISA A
+RULE r = s;t
 ENDPATTERN
+
+-- Result: FAIL
+-- Reason: the intersection between A and B does not exist as a type.
+-- If s;q were to be computed, the concepts at the connection at the ; are B, D and Z.
+-- However, there is no way to choose between these concepts, because there is no smallest.
+
 ENDCONTEXT
