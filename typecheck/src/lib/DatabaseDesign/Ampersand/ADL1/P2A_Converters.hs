@@ -682,9 +682,12 @@ instance Expr P_ObjectDef where
  expressions o = [obj_ctx o | null (expressions (obj_msub o))]++expressions [PCps (origin o) (obj_ctx o) e | e<-expressions (obj_msub o)]
  subexpressions o = subexpressions (obj_ctx o)++subexpressions (obj_msub o)
 instance Expr P_SubInterface where
- p_concs x = p_concs (si_box x)
- expressions x = expressions (si_box x)
- subexpressions x = subexpressions (si_box x)
+ p_concs x@(P_Box{}) = p_concs (si_box x)
+ p_concs _ = []
+ expressions x@(P_Box{}) = expressions (si_box x)
+ expressions _ = []
+ subexpressions x@(P_Box{}) = subexpressions (si_box x)
+ subexpressions _ = []
 instance Expr P_Population where
  p_concs x = p_concs (p_type x)
  expressions x = []
@@ -838,7 +841,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condTypeGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
