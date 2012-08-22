@@ -62,17 +62,9 @@ instance Eq Type where
 -}
 
 showType :: Type -> String
-showType (TypExpr _ _   OriginUnknown origExpr@(Pid _)) = showADL origExpr
-showType (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
-showType (TypExpr expr@(PI _) _ orig _)                 = showADL expr     ++"("++ shOrig orig++")"
-showType (TypExpr expr@(Pid _) _ _ _)                   = showADL expr
-showType (TypExpr _ _ OriginUnknown origExpr@(Pfull _ [])) = showADL origExpr
-showType (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
-showType (TypExpr expr@(Pfull _ []) _ OriginUnknown _)  = showADL expr
-showType (TypExpr expr@(Pfull _ []) _ orig _)           = showADL expr     ++"("++ shOrig orig++")"
-showType (TypExpr expr@(Pfull _ _ ) _ _ _)              = showADL expr
-showType (TypExpr _ _       _    origExpr@(Pfull _ _))  = showADL origExpr
-showType (TypExpr _ flipped orig origExpr)              = showADL (if flipped then p_flp origExpr else origExpr) ++"("++ shOrig orig++")"
+showType (TypExpr expr@(Pid _) _ OriginUnknown _)       = showADL expr
+showType (TypExpr expr@(Pfull OriginUnknown []) _ _ _)  = showADL expr
+showType (TypExpr expr _ orig _)                        = showADL expr     ++"("++ shOrig orig++")"
 showType (TypLub a b _ _)                               = showType a++" ./\\. "++showType b
 showType (TypGlb a b _ _)                               = showType a++" .\\/. "++showType b
 
@@ -479,6 +471,12 @@ showErr err@(CxeILike {})
        ["    Expression  "++showADL (cxeExpr err)++",\n"]++
        ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
      )
+showErr err@(CxeCpl{})
+ = concat
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    There is no universe from which to compute a complement in expression  "++showADL (cxeExpr err)++"." | null (cxeCpts err)]++
+       ["    There are multiple universes from which to compute a complement in expression  "++showADL (cxeExpr err)++":\n    "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]
+     )
 showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
@@ -535,9 +533,9 @@ showTypeTable typeTable
      where str = showADL (showTypeExpr t)
            maxExpr = maximum [length (showADL (showTypeExpr typExpr)) | (_,_,typExpr,_)<-typeTable]
     showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++", "++shPos (origin t)++"  "++shExp t++"  "++shType t++"  "++show concepts
-    showTypeExpr (TypLub _ _ _ origExpr)  = origExpr
-    showTypeExpr (TypGlb _ _ _ origExpr)  = origExpr
-    showTypeExpr (TypExpr _ _ _ origExpr) = origExpr
+    showTypeExpr (TypLub _ _ _ expr)  = expr
+    showTypeExpr (TypGlb _ _ _ expr)  = expr
+    showTypeExpr (TypExpr expr _ _ _) = expr
     showPos OriginUnknown = "Unknown"
     showPos (FileLoc (FilePos (_,Pos l c,_)))
        = "("++show l++":"++show c++")"
@@ -862,7 +860,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condTypeGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -1405,22 +1403,33 @@ pCtx2aCtx p_context
          g x@(PKl0 _ a)        = g a
          g x@(PKl1 _ a)        = g a
          g x@(PFlp _ a)        = g a
-         g x@(PCpl _ a)        = g a
+         g x@(PCpl _ a)        = errCpl x a
          g x@(PBrk _ a)        = g a
          g x@(PTyp _ a (P_Sign [])) = g a
          g x@(PTyp _ a sgn)    = g a
+         errCpl x a
+          = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
+            where
+             nodeError =  [ CxeCpl {cxeExpr   = a
+                                   ,cxeCpts   = conflictingConcepts
+                                   }
+                          | (_,_,TypExpr expr _ _ _,conflictingConcepts)<-typeTable
+                          , length conflictingConcepts/=1
+                          , origin x==origin expr, expr==x
+                          ]
+             deepErrors = g a
          errILike x
-          = nub [ CxeILike {cxeExpr   = origExpr
+          = nub [ CxeILike {cxeExpr   = expr
                            ,cxeCpts   = conflictingConcepts
                            }
-                | (_,_,TypExpr _ _ _ origExpr,conflictingConcepts)<-typeTable
-                , length conflictingConcepts/=1 || isConceptTerm origExpr
-                , origin x==origin origExpr
+                | (_,_,TypExpr expr _ _ _,conflictingConcepts)<-typeTable
+                , length conflictingConcepts/=1
+                , origin x==origin expr, expr==x
                 ]
          errCpsLike x a b
           = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
             where
-             nodeError = [ CxeCpsLike {cxeExpr   = origExpr
+             nodeError = [ CxeCpsLike {cxeExpr   = x
                                       ,cxeCpts   = conflictingConcepts
                                       }
                          | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
