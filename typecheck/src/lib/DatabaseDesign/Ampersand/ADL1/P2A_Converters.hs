@@ -66,7 +66,9 @@ showType (TypExpr _ _   OriginUnknown origExpr@(Pid _)) = showADL origExpr
 showType (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
 showType (TypExpr expr@(PI _) _ orig _)                 = showADL expr     ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pid _) _ _ _)                   = showADL expr
+showType (TypExpr _ _ OriginUnknown origExpr@(Pfull _ [])) = showADL origExpr
 showType (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
+showType (TypExpr expr@(Pfull _ []) _ OriginUnknown _)  = showADL expr
 showType (TypExpr expr@(Pfull _ []) _ orig _)           = showADL expr     ++"("++ shOrig orig++")"
 showType (TypExpr expr@(Pfull _ _ ) _ _ _)              = showADL expr
 showType (TypExpr _ _       _    origExpr@(Pfull _ _))  = showADL origExpr
@@ -113,8 +115,8 @@ instance Prelude.Ord Type where
   compare (TypExpr (PTyp _ (Prel _ a) sgn) _ _ _) (TypExpr (PTyp _ (Prel _ a') sgn') _ _ _) = Prelude.compare (sgn,a) (sgn',a')
   compare (TypExpr (PTyp _ (Pflp _ a) sgn) _ _ _) (TypExpr (PTyp _ (Pflp _ a') sgn') _ _ _) = Prelude.compare (sgn,a) (sgn',a')
   compare (TypExpr x _ _ _) (TypExpr y _ _ _) = Prelude.compare x y
-  compare (TypLub l r _ _) (TypLub l' r' _ _) = Prelude.compare (l,r) (l',r')
-  compare (TypGlb l r _ _) (TypGlb l' r' _ _) = Prelude.compare (l,r) (l',r')
+  compare (TypLub l r _ _) (TypLub l' r' _ _) = compare (l,r) (l',r')
+  compare (TypGlb l r _ _) (TypGlb l' r' _ _) = compare (l,r) (l',r')
   compare (TypExpr _ _ _ _) _  = Prelude.LT
   compare (TypLub _ _ _ _)  (TypExpr _ _ _ _) = Prelude.GT
   compare (TypLub _ _ _ _) _ = Prelude.LT
@@ -192,31 +194,10 @@ t_complement (TypLub a b orig origExpr)        = TypGlb (t_complement a) (t_comp
 t_complement (TypGlb a b orig origExpr)        = TypLub (t_complement a) (t_complement b) orig (PCpl (origin origExpr) origExpr)
 
 complement :: P_Expression -> P_Expression
-complement a@(PI _)       = PCpl OriginUnknown a
-complement a@(Pid _)      = PCpl OriginUnknown a -- Pnid c
-complement (Pnid c)       = Pid c
-complement (Patm o a cs)  = PCpl o (Patm o a cs)
-complement Pnull          = PCpl OriginUnknown Pnull
-complement (Pfull _ _)    = Pnull
-complement (Prel o r)     = PCpl o (Prel o r)
-complement (Pflp o r)     = PCpl o (Pflp o r)
-complement (Pequ o a b)   = complement (PIsc o (Pimp o a b) (Pimp o b a))
-complement (Pimp o a b)   = PIsc o a (complement b)
-complement (PIsc o a b)   = PUni o (complement a) (complement b)
-complement (PUni o a b)   = PIsc o (complement a) (complement b)
-complement (PDif o a b)   = PUni o (complement a) b
-complement (PLrs o a b)   = PCps o (complement a) (p_flp b)
-complement (PRrs o a b)   = PCps o (p_flp a) (complement b)
-complement (PCps o a b)   = PRad o (complement a) (complement b)
-complement (PRad o a b)   = PCps o (complement a) (complement b)
-complement (PPrd o a b)   = PCpl o (PPrd o a b)
-complement a@(PKl0{})     = PCpl (origin a) a
-complement a@(PKl1{})     = PCpl (origin a) a
-complement (PFlp o a)     = PFlp o (complement a)
 complement (PCpl _ a)     = a
-complement (PBrk o a)     = PBrk o (complement a)
-complement (PTyp o a sgn) = PTyp o (complement a) sgn
-
+complement Pnull          = Pfull OriginUnknown []
+complement (Pnid c)       = Pid c
+complement a              = PCpl (origin a) a
 
 anything :: Type
 anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnknown [])
@@ -264,10 +245,10 @@ typing p_context
      uType x _    _     (Pid{})               = dom x.=.cod x                                                        -- I[C]
      uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
      uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
-     uType x _    _     (Patm _ _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          -- 'Piet'[Persoon]  (a typed singleton)
+     uType x _    _     (Patm _ _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (last cs))          -- 'Piet'[Persoon]  (a typed singleton)
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType x uLft uRt   (Pfull _ [])          = dom x.<.uLft .+. cod x.<.uRt
-     uType x _    _     (Pfull _ cs)          = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (head cs))          --  V[A*B] (the typed full set)
+     uType x _    _     (Pfull _ cs)          = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (last cs))          --  V[A*B] (the typed full set)
      uType x uLft uRt   (Prel _ nm)           = -- disambiguate nm
                                                 carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                                   if length spcls == 1 then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
@@ -278,7 +259,7 @@ typing p_context
                                                               [d    | d@(PTyp _ (Prel _ dnm) (P_Sign cs@(_:_)))<-decls, compatible (head cs) (last cs)]
                                                       compatible l r =    isTypeSubset uLft (thing l)
                                                                        && isTypeSubset uRt  (thing r)
-     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b -- .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
+     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x  _    _    (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
                                                 .+. dm .+. cm .+. uType a interDom interCod a .+. uType b interDom interCod b
@@ -325,22 +306,30 @@ typing p_context
                                                 where e = Prel o nm
      uType x uLft uRt   (Pimp _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ OriginUnknown a (PIsc OriginUnknown a b)
-     uType x uLft uRt   (PLrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a/b = a!-b~
-                                                where e = PRad OriginUnknown a (complement (p_flp b))
-     uType x uLft uRt   (PRrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a\b = -a~!b
-                                                where e = PRad OriginUnknown (complement (p_flp a)) b
+     uType x uLft uRt   (PLrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
+                                                where e = PCpl OriginUnknown (PCps OriginUnknown (complement a) (p_flp b))
+     uType x uLft uRt   (PRrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
+                                                where e = PCpl OriginUnknown (PCps OriginUnknown (p_flp a) (complement b))
      uType x uLft uRt   (PRad _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
                                                 where e = PCps OriginUnknown (complement a) (complement b)
      uType x uLft uRt   (PCpl _ a)            = dom x.=.dom e .+. cod x.=.cod e .+. uType e uLft uRt e                 -- -a = V - a
-                                                where e = PDif OriginUnknown (Pfull OriginUnknown []) a
+                                                where e = PDif OriginUnknown (Pfull (origin x) []) a
      nothing :: (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
      nothing = (Data.Map.empty,Data.Map.empty)
+     isFull (TypExpr (Pfull _ []) _ _ _) = True
+     isFull (TypLub a b _ _) = isFull a && isFull b
+     isFull (TypGlb a b _ _) = isFull a && isFull b
+     isFull _ = False
+     isNull (TypExpr Pnull _ _ _) = True
+     isNull (TypLub a b _ _) = isNull a && isNull b
+     isNull (TypGlb a b _ _) = isNull a && isNull b
+     isNull _ = False
      infixl 2 .+.   -- concatenate two lists of types
      infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
      infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
      (.<.) :: Type -> Type -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
-     _ .<. TypExpr (Pfull _ []) _ _ _= nothing
-     TypExpr Pnull _ _ _ .<. _ = nothing
+     _ .<. b | isFull b = nothing
+     a .<. _ | isNull a = nothing
      a .<. b  = (Data.Map.fromList [(a, [b]),(b, [])],Data.Map.empty) -- a tuple meaning that a is a subset of b, and introducing b as a key.
      (.=.) :: Type -> Type -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
      a .=. b  = (Data.Map.fromList [(a, [b]),(b, [a])],Data.Map.empty)
@@ -487,15 +476,17 @@ showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
        ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err))++
+        "\n    between the target of  "++showADL a++"  and the source of  "++showADL b++" are in conflict." | (not.null) (cxeCpts err)]++
+       ["    the type between the target of  "++showADL a++"  and the source of  "++showADL b++" is undefined." | null (cxeCpts err)]
      )
 showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside expression  "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
+       ["    Inside expression   "++showADL (cxeExpr err)++",\n"]++
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err))++
+        "\n    between the target of  "++showADL a++"  and the source of  "++showADL b++" are in conflict." | (not.null) (cxeCpts err)]++
+       ["    the type between the target of  "++showADL a++"  and the source of  "++showADL b++" is undefined." | null (cxeCpts err)]
      )
 showErr (CxeOrig typeErrors t nm o)
  | null typeErrors                              = ""
@@ -568,14 +559,7 @@ typeAnimate st = (stTypeGraph, condTypeGraph)
     condTypeGraph :: DotGraph String
     condTypeGraph = toDotGraph showVtx condensedGraph
      where showVtx n = (intercalate "\n".nub)
-                       [ case head cl of
-                           t@(TypExpr (PI _)       _ _ _ ) -> showType t
-                           (TypExpr t@(Pid{})      _ _ _ ) -> showADL t
-                           t@(TypExpr (Pfull _ []) _ _ _ ) -> showType t
-                           (TypExpr t@(Pfull{})    _ _ _ ) -> showADL t
-                           (TypExpr t@(Pnid{})     _ _ _ ) -> showADL t
-                           (TypExpr t@(Pnull{})    _ _ _ ) -> showADL t
-                           t                               -> showType t
+                       [ showType (head cl)
                        | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_)<-typeTable, n==classNr ]
                        ]
 class Expr a where
@@ -854,7 +838,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condTypeGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -1410,13 +1394,13 @@ pCtx2aCtx p_context
                 , origin x==origin origExpr
                 ]
          errCpsLike x a b
-          = error (showTypeTable typeTable) ++ if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  
+          = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
             where
              nodeError = [ CxeCpsLike {cxeExpr   = origExpr
                                       ,cxeCpts   = conflictingConcepts
                                       }
                          | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
-                         , length conflictingConcepts>1
+                         , length conflictingConcepts/=1
                          , origin x==origin origExpr
                          ]
              deepErrors = g a++g b
