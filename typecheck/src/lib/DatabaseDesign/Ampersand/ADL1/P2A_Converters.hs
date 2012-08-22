@@ -204,9 +204,16 @@ anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnk
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False OriginUnknown (Pid c)
 
+type Typemap = Data.Map.Map Type [Type]
+
 setClosure xs = foldl f xs (Data.Map.keys xs `isc` nub (concat$Data.Map.elems xs))
   where
-   f q x = Data.Map.map (\bs->foldl uni bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
+--   f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
+   f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (Just b') <- [Data.Map.lookup x q]]) q
+merge (a:as) (b:bs) | a<b  = a:merge as (b:bs)
+                    | a==b = a:merge as bs
+                    | a>b  = b:merge (a:as) bs
+merge a b = a ++ b -- since either a or b is the empty list
 
 -- | The purpose of 'typing' is to analyse the domains and codomains of an expression in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
@@ -221,13 +228,12 @@ typing p_context
  = firstSetOfEdges .++. secondSetOfEdges
    where
      (firstSetOfEdges,secondSetOfEdges)
-      = (foldr (.+.) nothing [uType expr anything anything expr | expr <- expressions p_context] .+.
-        foldr (.+.) nothing [dom spc.<.dom gen | g<-isas
-                                               , let spc=Pid (gen_spc g)
-                                               , let gen=Pid (gen_gen g)
-                                               , let x=Pimp (origin g) spc gen ])
+      = (foldl (.+.) nothing ([uType expr anything anything expr | expr <- expressions p_context] ++
+                              [dom spc.<.dom gen | g<-p_gens p_context
+                                                 , let spc=Pid (gen_spc g)
+                                                 , let gen=Pid (gen_gen g)
+                                                 , let x=Pimp (origin g) spc gen ]))
      stClos   = setClosure firstSetOfEdges
-     isas     = p_gens p_context
      decls    = p_declarations p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
      isTypeSubset t c = c `elem` findInClos t
@@ -333,18 +339,19 @@ typing p_context
      a .<. b  = (Data.Map.fromList [(a, [b]),(b, [])],Data.Map.empty) -- a tuple meaning that a is a subset of b, and introducing b as a key.
      (.=.) :: Type -> Type -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
      a .=. b  = (Data.Map.fromList [(a, [b]),(b, [a])],Data.Map.empty)
-     (.++.) :: Data.Map.Map Type [Type] -> Data.Map.Map Type [Type] -> Data.Map.Map Type [Type]
-     m1 .++. m2  = Data.Map.unionWith uni m1 m2
-     (.+.) :: (Data.Map.Map Type [Type] , Data.Map.Map Type [Type]) -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type]) -> (Data.Map.Map Type [Type], Data.Map.Map Type [Type])
-     (a,b) .+. (c,d) = (a.++.c,b.++.d)
-     carefully :: (Data.Map.Map Type [Type] , Data.Map.Map Type [Type] ) -> (Data.Map.Map Type [Type], Data.Map.Map Type [Type])
+     (.++.) :: Typemap -> Typemap -> Typemap
+     m1 .++. m2  = Data.Map.unionWith merge m1 m2
+     (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
+     (a,b) .+. (c,d) = (c.++.a,d.++.b)
+     carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
      carefully x = (Data.Map.empty,fst x.++.snd x)
      dom, cod :: P_Expression -> Type
      dom x    = TypExpr x         False (origin x) x -- the domain of x, and make sure to check subexpressions of x as well
      cod x    = TypExpr (p_flp x) True  (origin x) x 
-     mSpecific, mGeneric :: Type -> Type -> P_Expression -> ( (Data.Map.Map Type [Type] , Data.Map.Map Type [Type]) ,Type)
+     mSpecific, mGeneric :: Type -> Type -> P_Expression -> ( (Typemap , Typemap) ,Type)
      mSpecific a b e = (r .<. a .+. r .<. b , r) where r = TypLub a b OriginUnknown e
      mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = TypGlb a b OriginUnknown e
+
 
 flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
 reverseMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
@@ -712,22 +719,22 @@ instance Expr P_Expression where
  p_concs   (Pfull _ cs)   = nub cs
  p_concs   (Prel{})       = []
  p_concs   (Pflp{})       = []
- p_concs e@(Pequ _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(Pimp _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PIsc _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PUni _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PDif _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PLrs _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PRrs _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PCps _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PRad _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PPrd _ a b)   = p_concs a `uni` p_concs b
- p_concs e@(PKl0 _ a)     = p_concs a
- p_concs e@(PKl1 _ a)     = p_concs a
- p_concs e@(PFlp _ a)     = p_concs a
- p_concs e@(PCpl _ a)     = p_concs a
- p_concs e@(PBrk _ a)     = p_concs a
- p_concs e@(PTyp _ a sgn) = p_concs a `uni` p_concs sgn
+ p_concs (Pequ _ a b)   = p_concs a `uni` p_concs b
+ p_concs (Pimp _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PIsc _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PUni _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PDif _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PLrs _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PRrs _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PCps _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PRad _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PPrd _ a b)   = p_concs a `uni` p_concs b
+ p_concs (PKl0 _ a)     = p_concs a
+ p_concs (PKl1 _ a)     = p_concs a
+ p_concs (PFlp _ a)     = p_concs a
+ p_concs (PCpl _ a)     = p_concs a
+ p_concs (PBrk _ a)     = p_concs a
+ p_concs (PTyp _ a sgn) = p_concs a `uni` p_concs sgn
  expressions e = [e]
  subexpressions e@(PI{})       = [e]
  subexpressions e@(Pid{})      = [e]
@@ -819,7 +826,7 @@ pCtx2aCtx p_context
     st = typing p_context
     (typeTable,stGraph,condensedGraph) = tableOfTypes st
     specializationTuples :: [(P_Concept,P_Concept)]
-    specializationTuples = [(specCpt,genCpt) | (_, _, e@(TypExpr (Pid specCpt) _ _ _), genCpts)<-typeTable, genCpt<-genCpts]
+    specializationTuples = [(specCpt,genCpt) | (_, _, (TypExpr (Pid specCpt) _ _ _), genCpts)<-typeTable, genCpt<-genCpts]
     gE :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
     gE = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder [(pC2aC s, pC2aC g) | (s,g)<-specializationTuples]   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
              where
