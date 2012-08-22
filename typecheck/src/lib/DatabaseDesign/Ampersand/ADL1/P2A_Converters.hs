@@ -204,7 +204,7 @@ anything = TypExpr (Pfull OriginUnknown []) False OriginUnknown (Pfull OriginUnk
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False OriginUnknown (Pid c)
 
-type Typemap = Data.Map.Map Type [Type]
+type Typemap = [(Type,Type)] --Data.Map.Map Type [Type]
 
 setClosure xs = foldl f xs (Data.Map.keys xs `isc` nub (concat$Data.Map.elems xs))
   where
@@ -225,14 +225,23 @@ merge a b = a ++ b -- since either a or b is the empty list
 --   If the source and target of expr is restricted to concepts c and d, specify (thing c) (thing d).
 typing :: P_Context -> Data.Map.Map Type [Type] -- subtypes (.. is subset of ..)
 typing p_context
- = firstSetOfEdges .++. secondSetOfEdges
+ = Data.Map.unionWith merge secondSetOfEdges firstSetOfEdges
    where
      (firstSetOfEdges,secondSetOfEdges)
-      = (foldl (.+.) nothing ([uType expr anything anything expr | expr <- expressions p_context] ++
+      = makeDataMaps
+        (foldr (.+.) nothing ([uType expr anything anything expr | expr <- expressions p_context] ++
                               [dom spc.<.dom gen | g<-p_gens p_context
                                                  , let spc=Pid (gen_spc g)
                                                  , let gen=Pid (gen_gen g)
                                                  , let x=Pimp (origin g) spc gen ]))
+     makeDataMaps :: (Typemap,Typemap) -> (Data.Map.Map Type [Type],Data.Map.Map Type [Type])
+     makeDataMaps (a,b) = (makeDataMap a, makeDataMap b)
+     makeDataMap lst = Data.Map.fromDistinctAscList (foldr compress [] (sort lst))
+       where
+         compress (a,b) o@(r:rs) = if a==(fst r) then (a,addTo b (snd r)):rs else (a,[b]):o
+         compress (a,b) [] = [(a,[b])]
+         addTo b o@(c:_) | c==b = o
+         addTo b o = b:o
      stClos   = setClosure firstSetOfEdges
      decls    = p_declarations p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
@@ -245,8 +254,8 @@ typing p_context
            -> Type            -- uLft: the type of the universe for the domain of x 
            -> Type            -- uRt:  the type of the universe for the codomain of x
            -> P_Expression    -- z:    the expression to be analyzed, which must be logically equivalent to x
-           -> ( Data.Map.Map Type [Type]  -- for each type, a list of types that are subsets of it, which is the result of analysing expression x.
-              , Data.Map.Map Type [Type] ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
+           -> ( Typemap  -- for each type, a list of types that are subsets of it, which is the result of analysing expression x.
+              , Typemap ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
      uType x _    _     (PI{})                = dom x.=.cod x                                                        -- I
      uType x _    _     (Pid{})               = dom x.=.cod x                                                        -- I[C]
      uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
@@ -310,18 +319,23 @@ typing p_context
      -- derived uTypes: the following do no calculations themselves, but merely rewrite expressions to the ones we covered
      uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
                                                 where e = Prel o nm
-     uType x uLft uRt   (Pimp _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 --  a|-b   implication (aka: subset)
+     uType x uLft uRt   (Pimp _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+. 
+                                                uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ OriginUnknown a (PIsc OriginUnknown a b)
-     uType x uLft uRt   (PLrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
+     uType x uLft uRt   (PLrs _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
                                                 where e = PCpl OriginUnknown (PCps OriginUnknown (complement a) (p_flp b))
-     uType x uLft uRt   (PRrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
+     uType x uLft uRt   (PRrs _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
                                                 where e = PCpl OriginUnknown (PCps OriginUnknown (p_flp a) (complement b))
-     uType x uLft uRt   (PRad _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
+     uType x uLft uRt   (PRad _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
                                                 where e = PCps OriginUnknown (complement a) (complement b)
-     uType x uLft uRt   (PCpl _ a)            = dom x.=.dom e .+. cod x.=.cod e .+. uType e uLft uRt e                 -- -a = V - a
+     uType x uLft uRt   (PCpl _ a)            = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                uType x uLft uRt e                 -- -a = V - a
                                                 where e = PDif OriginUnknown (Pfull (origin x) []) a
-     nothing :: (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
-     nothing = (Data.Map.empty,Data.Map.empty)
+     nothing :: (Typemap,Typemap)
+     nothing = ([],[])
      isFull (TypExpr (Pfull _ []) _ _ _) = True
      isFull (TypLub a b _ _) = isFull a && isFull b
      isFull (TypGlb a b _ _) = isFull a && isFull b
@@ -333,18 +347,18 @@ typing p_context
      infixl 2 .+.   -- concatenate two lists of types
      infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
      infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
-     (.<.) :: Type -> Type -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
+     (.<.) :: Type -> Type -> (Typemap , Typemap)
      _ .<. b | isFull b = nothing
      a .<. _ | isNull a = nothing
-     a .<. b  = (Data.Map.fromList [(a, [b]),(b, [])],Data.Map.empty) -- a tuple meaning that a is a subset of b, and introducing b as a key.
-     (.=.) :: Type -> Type -> (Data.Map.Map Type [Type] , Data.Map.Map Type [Type])
-     a .=. b  = (Data.Map.fromList [(a, [b]),(b, [a])],Data.Map.empty)
+     a .<. b  = ([(a,b),(b,b)],snd nothing) -- (Data.Map.fromList [(a, [b]),(b, [])],nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
+     (.=.) :: Type -> Type -> (Typemap, Typemap)
+     a .=. b  = ([(a,b),(b,a)],snd nothing) -- (Data.Map.fromList [(a, [b]),(b, [a])],nothing)
      (.++.) :: Typemap -> Typemap -> Typemap
-     m1 .++. m2  = Data.Map.unionWith merge m1 m2
+     m1 .++. m2  = m1 ++ m2 -- Data.Map.unionWith merge m1 m2
      (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
      (a,b) .+. (c,d) = (c.++.a,d.++.b)
      carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
-     carefully x = (Data.Map.empty,fst x.++.snd x)
+     carefully x = (fst nothing,fst x.++.snd x)
      dom, cod :: P_Expression -> Type
      dom x    = TypExpr x         False (origin x) x -- the domain of x, and make sure to check subexpressions of x as well
      cod x    = TypExpr (p_flp x) True  (origin x) x 
