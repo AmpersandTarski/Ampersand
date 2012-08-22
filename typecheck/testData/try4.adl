@@ -1,0 +1,14 @@
+CONTEXT Test
+-- This script is incorrect, because the intersection between B and D does not exist.
+-- Therefore, if s;q were to be computed, it is predictably empty.
+PATTERN Test2
+
+r :: A*C
+s :: A*D
+q :: B*C
+SPEC B ISA Z
+SPEC D ISA Z
+
+RULE r = s;q
+ENDPATTERN
+ENDCONTEXT
