@@ -1,0 +1,12 @@
+CONTEXT Test
+PATTERN Test
+r :: A*C
+s :: A*B
+q :: B*C
+RULE r = -(-s;-q)
+ENDPATTERN
+
+{-
+This script is meant to show that -(-s;-q) is equivalent to s!q
+-}
+ENDCONTEXT
