@@ -1,13 +1,14 @@
 ﻿CONTEXT Test
 
 PATTERN Test2
-RELATION r[A*C]
-RELATION s[B*A]
-RELATION t[B*C]
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
 RULE r = s;t
---SPEC D ISA B
---SPEC D ISA A
-RULE  I[D] = I[A]/\I[B]
+RULE I[D] = I[A]/\I[B]
 ENDPATTERN
+
+-- Result: PASS
+-- Reason: type on ; should be inferred as I[D]
 
 ENDCONTEXT
