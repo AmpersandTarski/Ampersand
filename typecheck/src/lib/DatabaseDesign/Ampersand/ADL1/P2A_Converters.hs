@@ -319,19 +319,19 @@ typing p_context
      -- derived uTypes: the following do no calculations themselves, but merely rewrite expressions to the ones we covered
      uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
                                                 where e = Prel o nm
-     uType x uLft uRt   (Pimp _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+. 
+     uType x uLft uRt   (Pimp _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. 
                                                 uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ OriginUnknown a (PIsc OriginUnknown a b)
-     uType x uLft uRt   (PLrs _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PLrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
                                                 where e = PCpl OriginUnknown (PCps OriginUnknown (complement a) (p_flp b))
-     uType x uLft uRt   (PRrs _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PRrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
                                                 where e = PCpl OriginUnknown (PCps OriginUnknown (p_flp a) (complement b))
-     uType x uLft uRt   (PRad _ a b)          = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PRad _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
                                                 where e = PCps OriginUnknown (complement a) (complement b)
-     uType x uLft uRt   (PCpl _ a)            = -- dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PCpl _ a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- -a = V - a
                                                 where e = PDif OriginUnknown (Pfull (origin x) []) a
      nothing :: (Typemap,Typemap)
