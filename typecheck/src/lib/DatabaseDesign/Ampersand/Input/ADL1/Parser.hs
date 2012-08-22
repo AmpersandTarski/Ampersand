@@ -250,8 +250,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
    pRelationDef :: Parser Token P_Declaration
    pRelationDef      = ( rebuild <$> pVarid  <*> pKey_pos "::"  <*> pConceptRef  <*> pFun  <*> pConceptRef
-                         <|>
-                         rbd <$> pKey_pos "RELATION" <*> pVarid  <*> pSign
+                         <|> rbd <$> pKey_pos "RELATION" <*> pVarid  <*> pSign
                        )
                          <*> ((True <$ pKey "BYPLUG") `opt` False)
                          <*> (pProps `opt` [])
@@ -391,8 +390,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
              pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
 
    pSubInterface :: Parser Token P_SubInterface 
-   pSubInterface = rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos  
-                   <|> P_Box <$> pBox 
+   pSubInterface = P_Box <$> pBox 
+                   <|> rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos  
       where
         rebuild (n,p) = P_InterfaceRef p n
 

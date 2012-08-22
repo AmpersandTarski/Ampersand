@@ -1,9 +1,15 @@
 CONTEXT Test
-PATTERN Test
-r :: A*C
-s :: A*B
-q :: B*C
-RULE r = s!q
+
+PATTERN Test2
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RELATION u[E*Y]
+RULE r = s;(t/\u)
+RULE I[D] = (I[A]/\I[B])/\I[E]
 ENDPATTERN
+
+-- Result: PASS
+-- Reason: type on ; should be inferred as I[D], brackets are placed to mislead.
 
 ENDCONTEXT

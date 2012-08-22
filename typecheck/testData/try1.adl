@@ -7,4 +7,7 @@ RELATION t[B*C]
 RULE r = s;t
 ENDPATTERN
 
+-- Result: PASS
+-- Reason: simple correct script with = and ;
+
 ENDCONTEXT

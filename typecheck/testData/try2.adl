@@ -1,10 +1,13 @@
 CONTEXT Test
 
 PATTERN Test2
-RELATION r[A*C]
-RELATION s[B*A]
-RELATION t[B*C]
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
 RULE r = s;t
 ENDPATTERN
+
+-- Result: FAIL
+-- Reason: type error on ;
 
 ENDCONTEXT

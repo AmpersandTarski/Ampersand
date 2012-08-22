@@ -207,6 +207,9 @@ merge (a:as) (b:bs) | a<b  = a:merge as (b:bs)
                     | a>b  = b:merge (a:as) bs
 merge a b = a ++ b -- since either a or b is the empty list
 
+findIn t cl = getList (Data.Map.lookup t cl)
+                 where getList Nothing = []
+                       getList (Just a) = a
 -- | The purpose of 'typing' is to analyse the domains and codomains of an expression in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
 --   For any two P_Expressions a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _ _,TypExpr b _ _ _) in st.
@@ -237,10 +240,7 @@ typing p_context
      stClos   = setClosure firstSetOfEdges
      decls    = p_declarations p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
-     isTypeSubset t c = c `elem` findInClos t
-     findInClos t = getList (Data.Map.lookup t stClos)
-                      where getList Nothing = []
-                            getList (Just a) = a
+     isTypeSubset t c = c `elem` findIn t stClos
      u = OriginUnknown
      uType :: P_Expression    -- x:    the original expression from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
@@ -360,12 +360,6 @@ typing p_context
 
 
 flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
-reverseMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reverseMap lst = (Data.Map.fromListWith (++) (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
-reflexiveMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
--- note: reverseMap is relatively slow, but only needs to be calculated once
--- if not all of reflexiveMap will be used, a different implementation might be more useful
 
 {- The following table is a data structure that is meant to facilitate drawing type graphs and creating the correct messages for users.
 This table is organized as follows:
@@ -375,8 +369,8 @@ Type         : a type expression, containing a P_Expression, which is represente
 [P_Concept]  : a list of concepts. If (_,_,expr,cs) is an element of this table, then for every c in cs there is a proof that dom expr is a subset of I[c].
                For a type correct expr, list cs contains precisely one element.
 -}
-tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], Graph.Graph, Graph.Graph)
-tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercalate "\n  " (map show (take 10 eqClasses)++[show (length eqClasses), show ((sort.nub) [classNr | (exprNr,classNr,_)<-table]>-[0..length eqClasses])]++[show x | x<-take 25 table++drop (length table-10) table])) --  
+tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)])
+tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTable,(map (\(x,y)->(classNr x,classNr y)) condensedEdges),(map (\(x,y)->(classNr x,classNr y)) condensedEdges2)) 
  where
 {-  stGraph is a graph whose edges are precisely st, but each element in
 	st is replaced by a pair of integers. The reason is that datatype
@@ -391,10 +385,24 @@ tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercal
      expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
--- stGraph is computed for debugging purposes. It shows precisely which edges are computed by uType.
-     stGraph :: Graph.Graph
-     stGraph = Graph.buildG (0, (length typeExpressions)-1) stEdges
-     stClos = setClosure st
+     stClos1 = setClosure st
+     someWhatSortedLubs = nub $ decompose (Data.Map.keys st)
+      where
+       decompose (o@(TypLub a b _ _):rs) = o:decompose [r|r<-rs,r/=a,r/=b] ++ decompose [a] ++ decompose [b]
+       decompose (o@(TypGlb a b _ _):rs) = o:decompose [r|r<-rs,r/=a,r/=b] ++ decompose [a] ++ decompose [b]
+       decompose (o:rs) = decompose rs
+       decompose [] = []
+     stClosAdded = foldl f stClos1 someWhatSortedLubs
+       where
+        f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
+        f q o@(TypLub a b _ _) = Data.Map.map (\cs -> foldr merge cs [e | a `elem` cs, b `elem` cs, (Just e)<-[Data.Map.lookup o q]]) q
+        f q o@(TypGlb a b _ _) = Data.Map.map (\cs -> foldr merge cs [e | a `elem` cs, b `elem` cs, (Just e)<-[Data.Map.lookup o q]]) q
+        sortisc :: (Ord a, Eq a) => [a]->[a]->[a]
+        sortisc (a:as) (b:bs) | a == b = a:sortisc as bs
+                              | a < b = sortisc as (b:bs)
+                              | a > b = sortisc (a:as) bs
+        sortisc _ _ = []
+     stClos = setClosure stClosAdded
      stEdges :: [(Int,Int)]
      stEdges = [(expressionNr s,expressionNr t) | (s,t) <- flattenMap st]
 {- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
@@ -402,26 +410,30 @@ tableOfTypes st = (table, stGraph, condensedGraph) -- to debug:  error (intercal
    These equivalence classes are the strongly connected components of the original graph
 -}
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
-     eqClasses = (f $ sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
-      where f ((a:_):bs@(b:_):rs) | a==b = f (bs:rs) -- efficient nub for sorted classes: only compares the first element
-            f (a:rs) = a:f rs
-            f [] = []
-            addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else a)
+     eqClasses = (efficientNub $ sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
+      where addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else a)
+     efficientNub :: [[Type]] -> [[Type]] -- should be sorted!
+     efficientNub ((a:_):bs@(b:_):rs) | a==b = efficientNub (bs:rs) -- efficient nub for sorted classes: only compares the first element
+     efficientNub (a:rs) = a:efficientNub rs
+     efficientNub [] = []
      exprClass :: Type -> [Type]
      exprClass i = head ([c | c<-eqClasses, i `elem` c]++[fatal 191 ("Type Expression "++show i++" not found by exprClass")])
      condensedEdges :: [([Type],[Type])]
-     condensedEdges = nub [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', c/=c']
-     condensedClos  = nub [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', c/=c']
+     condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', head c/=head c']
+     condensedEdges2 = nub $ sort [(c,c') | (i,i')<-flattenMap stClosAdded, i' `notElem` findIn i stClos1, let c=exprClass i, let c'=exprClass i', head c/=head c']
+     condensedClos  = nub $ sort [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', head c/=head c']
      -- condensedVerts is eqClasses
      -- condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
-     condensedGraph :: Graph.Graph
-     condensedGraph
-      = Graph.buildG (0, length eqClasses-1) (map (\(x,y)->(classNr x,classNr y)) condensedEdges)
      classTable :: [(Int,[Type])]
      classTable = zip [0..] eqClasses
      classNr :: [Type] -> Int
      classNr (t:ts)  = head ([i | (i,(v:vs))<-classTable, t == v]++[fatal 178 ("Type Class "++show t++" not found by classNr")])
-
+     reverseMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+     reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
+     reflexiveMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+     reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
+     -- note: reverseMap is relatively slow, but only needs to be calculated once
+     -- if not all of reflexiveMap will be used, a different implementation might be more useful
      -- classNumbers is the relation from stGraph to condensedGraph, relating the different numberings
      -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging expressionTable and classNumbers into one list.
@@ -572,11 +584,11 @@ typeAnimate st = (stTypeGraph, condTypeGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-    (typeTable,stGraph,condensedGraph) = tableOfTypes st
+    (typeTable,stVtx,stEdg,cdVtx,cdEdg,cdEdg2) = tableOfTypes st
     stTypeGraph :: DotGraph String
-    stTypeGraph = toDotGraph (showStVertex typeTable) stGraph
+    stTypeGraph = toDotGraph (showStVertex typeTable) show stVtx [] stEdg []
     condTypeGraph :: DotGraph String
-    condTypeGraph = toDotGraph showVtx condensedGraph
+    condTypeGraph = toDotGraph showVtx show cdVtx [] cdEdg cdEdg2
      where showVtx n = (intercalate "\n".nub)
                        [ showType (head cl)
                        | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_)<-typeTable, n==classNr ]
@@ -776,32 +788,35 @@ instance Expr P_Expression where
 
 --  The following is for drawing graphs.
 
-toDotGraph :: (Graph.Vertex->String) -- ^ a show-function for printing vertices.
-             -> Graph.Graph
+toDotGraph ::   (a->String) -- ^ a show-function for displaying vertices.
+             -> (a->String) -- ^ a show-function for getting different dot-identifiers for vertices.
+             -> [a] -- ^ main vertices
+             -> [a] -- ^ secondary vertices (if any)
+             -> [(a,a)] -- ^ main edges
+             -> [(a,a)] -- ^ secondary edges (if any)
              -> DotGraph String        -- ^ The resulting DotGraph
-toDotGraph showVtx graph
+toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
        = DotGraph { strictGraph = False
                   , directedGraph = True
                   , graphID = Nothing
                   , graphStatements 
                         = DotStmts { attrStmts = [GraphAttrs [Splines SplineEdges, RankDir FromLeft]]
                                    , subGraphs = []
-                                   , nodeStmts = map constrNode (Graph.vertices graph)
-                                   , edgeStmts = map constrEdge (Graph.edges graph)
+                                   , nodeStmts = map (constrNode []) vtx1 ++ map (constrNode [Style [SItem Dashed []]]) vtx2
+                                   , edgeStmts = map (constrEdge []) edg1 ++ map (constrEdge [Style [SItem Dashed []]]) edg2
                                    }
                   }
    where
-    constrNode :: Graph.Vertex -> DotNode String
-    constrNode v
-      = DotNode { nodeID = show v
-                , nodeAttributes = [ toLabel (showVtx v)]
+    -- constrNode :: Graph.Vertex -> DotNode String
+    constrNode attr v
+      = DotNode { nodeID = idVtx v
+                , nodeAttributes = [ toLabel (showVtx v)]++attr
                 }
- 
-    constrEdge :: Graph.Edge -> DotEdge String
-    constrEdge (v, v')
-      = DotEdge { fromNode = show v
-                , toNode   = show v'
-                , edgeAttributes = []
+    -- constrEdge :: Graph.Edge -> DotEdge String
+    constrEdge attr (v, v')
+      = DotEdge { fromNode = idVtx v
+                , toNode   = idVtx v'
+                , edgeAttributes = attr
                 }
 
 -- | Transform a context as produced by the parser into a type checked heterogeneous algebra.
@@ -836,7 +851,7 @@ pCtx2aCtx p_context
              , ctxatoms  = allexplicitatoms
              }
     st = typing p_context
-    (typeTable,stGraph,condensedGraph) = tableOfTypes st
+    (typeTable,_,_,_,_,_) = tableOfTypes st
     specializationTuples :: [(P_Concept,P_Concept)]
     specializationTuples = [(specCpt,genCpt) | (_, _, (TypExpr (Pid specCpt) _ _ _), genCpts)<-typeTable, genCpt<-genCpts]
     gE :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
@@ -860,7 +875,8 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _ _), _)<-typeTable ] --
+                   -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condTypeGraph) = typeAnimate st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -988,9 +1004,7 @@ pCtx2aCtx p_context
     p2aPairViewSegment :: Sign -> P_PairViewSegment -> (PairViewSegment,[CtxError])
     p2aPairViewSegment  _  (P_PairViewText str)          = (PairViewText str, [])
     p2aPairViewSegment sgn (P_PairViewExp srcOrTgt pexp) = (PairViewExp srcOrTgt aexpr, exprcxe)
-        where (aexpr,_,exprcxe) = pExpr2aExpr (thing (PCpt (name (segSrcType sgn srcOrTgt)))) anything pexp
-              segSrcType (Sign srcType _) Src = srcType 
-              segSrcType (Sign _ tgtType) Tgt = tgtType
+        where (aexpr,_,exprcxe) = pExpr2aExpr pexp
                
     pRul2aRul :: String -> P_Rule -> (Rule,[CtxError])
     pRul2aRul patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
@@ -1027,7 +1041,7 @@ pCtx2aCtx p_context
        , [CxeOrig typeErrors "rule" "" (origin prul) | (not.null) typeErrors]
        )
        where typeErrors        = exprcxe++mviolcxe
-             (aexpr,_,exprcxe) = pExpr2aExpr anything anything (rr_exp prul)
+             (aexpr,_,exprcxe) = pExpr2aExpr (rr_exp prul)
              (mviol, mviolcxe) = case fmap (p2aPairView $ sign aexpr) $ rr_viol prul of
                                    Nothing              -> (Nothing, [])
                                    Just (viol, violcxe) -> (Just viol, violcxe)
@@ -1129,7 +1143,7 @@ pCtx2aCtx p_context
         getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
         getSubPObjs _                                      = []
         -- Step1: check obj_ctx
-        (expr,(_,tTrg),exprcxe)  = pExpr2aExpr universe anything (obj_ctx podef)
+        (expr,(_,tTrg),exprcxe)  = pExpr2aExpr (obj_ctx podef)
         -- Step2: check obj_ats in the context of expr
         (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles conc $ obj_msub podef
          where
@@ -1198,7 +1212,7 @@ pCtx2aCtx p_context
                     })
        , relcxe
        )
-       where (ERel aRel, _, relcxe) = pExpr2aExpr anything anything (PTyp (origin p) (Prel (origin p) (name p)) (p_type p))
+       where (ERel aRel, _, relcxe) = pExpr2aExpr (PTyp (origin p) (Prel (origin p) (name p)) (p_type p))
     
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
@@ -1323,15 +1337,12 @@ pCtx2aCtx p_context
                         , name (head sgn)==name (source d) &&
                           name (last sgn)==name (target d)   ]
 
-    pExpr2aExpr :: Type -> Type    -- The universe in which typing is sought. Typically:  anything anything, although the type space can be restricted by:   (thing s) (thing t)
-                -> P_Expression    -- The expression to be typed
+    pExpr2aExpr :: P_Expression    -- The expression to be typed
                 -> ( Expression    -- the resulting expression. It is defined only when the list of errors is empty.
                    , (Type,Type)   -- the type of the resulting expression. It is defined only when the list of errors is empty.
                    , [CtxError]    -- the list of type errors
                    )
-    pExpr2aExpr universeSource               -- the universe on the left hand side of the expression
-                universeTarget               -- the universe on the right hand side of the expression
-                pExpr                        -- The expression to be typed
+    pExpr2aExpr pExpr                        -- The expression to be typed
      = ( f pExpr                             -- the resulting expression. It is defined only when the list of errors is empty.
        , (lookup pExpr,lookup (p_flp pExpr)) -- the type of the resulting expression. It is defined only when the list of errors is empty.
        , g pExpr                             -- the list of type errors
@@ -1378,7 +1389,7 @@ pCtx2aCtx p_context
          f x@(PTyp o _ (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to an expression.")
          f (PTyp _ a sgn)  = ETyp (f a) (Sign (pCpt2aCpt s) (pCpt2aCpt t))
                              where P_Sign cs = sgn; s=head cs; t=last cs
-
+         
          g :: P_Expression -> [CtxError]
          g x@(PI _)            = errILike x
          g x@(Pid _)           = errILike x
