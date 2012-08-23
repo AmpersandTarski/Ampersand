@@ -11,9 +11,10 @@ SPEC D ISA A
 RULE r = s;t
 ENDPATTERN
 
--- Result: FAIL
--- Reason: the intersection between A and B does not exist as a type.
--- If s;q were to be computed, the concepts at the connection at the ; are A, B, and E.
--- However, there is no way to choose between these concepts, because there is no smallest.
-
 ENDCONTEXT
+
+{-
+   Purpose: This script demonstrates how NOT to specify an intersection type between A and B.
+   Result: FAIL
+   Reason: the intersection between A and B does not exist as a concept.
+-}

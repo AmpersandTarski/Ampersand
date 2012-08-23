@@ -881,7 +881,6 @@ pCtx2aCtx p_context
              , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas p_context ]
-             , ctxexperimental = ctx_experimental p_context
              , ctxatoms  = allexplicitatoms
              }
     st = typing p_context
