@@ -248,9 +248,9 @@ typing p_context
            -> P_Expression    -- z:    the expression to be analyzed, which must be logically equivalent to x
            -> ( Typemap  -- for each type, a list of types that are subsets of it, which is the result of analysing expression x.
               , Typemap ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
+     uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
      uType x _    _     (PI{})                = dom x.=.cod x                                                        -- I
      uType x _    _     (Pid{})               = dom x.=.cod x                                                        -- I[C]
-     uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
      uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
      uType x _    _     (Patm _ _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (last cs))          -- 'Piet'[Persoon]  (a typed singleton)
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
@@ -353,6 +353,11 @@ typing p_context
      carefully x = (fst nothing,fst x.++.snd x)
      dom, cod :: P_Expression -> Type
      dom x    = TypExpr x         False (origin x) x -- the domain of x, and make sure to check subexpressions of x as well
+     cod o@(PI{})  = dom o
+     cod o@(Pid{}) = dom o
+     cod o@(Patm{}) = dom o
+     cod o@(Pnull{}) = dom o
+     cod (Pfull o cs) = dom (Pfull o (reverse cs))
      cod x    = TypExpr (p_flp x) True  (origin x) x 
      mSpecific, mGeneric :: Type -> Type -> P_Expression -> ( (Typemap , Typemap) ,Type)
      mSpecific a b e = (r .<. a .+. r .<. b , r) where r = TypLub a b OriginUnknown e
@@ -386,17 +391,16 @@ tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTab
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Expression "++show t++" not found by expressionNr")])
      stClos1 = setClosure st
-     someWhatSortedLubs = nub $ decompose (Data.Map.keys st)
+     someWhatSortedLubs = decompose (Data.Map.keys st)
       where
-       decompose (o@(TypLub a b _ _):rs) = o:decompose [r|r<-rs,r/=a,r/=b] ++ decompose [a] ++ decompose [b]
-       decompose (o@(TypGlb a b _ _):rs) = o:decompose [r|r<-rs,r/=a,r/=b] ++ decompose [a] ++ decompose [b]
+       decompose (o@(TypLub a b _ _):rs) = decompose (lookups a st) ++ decompose (lookups b st) ++ o:[r|r<-decompose rs, r `notElem` lookups a st, r `notElem` lookups b st]
        decompose (o:rs) = decompose rs
        decompose [] = []
+     lookups o q = head [merge [o] e | (Just e)<-[Data.Map.lookup o q]]
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
-        f q o@(TypLub a b _ _) = Data.Map.map (\cs -> foldr merge cs [e | a `elem` cs, b `elem` cs, (Just e)<-[Data.Map.lookup o q]]) q
-        f q o@(TypGlb a b _ _) = Data.Map.map (\cs -> foldr merge cs [e | a `elem` cs, b `elem` cs, (Just e)<-[Data.Map.lookup o q]]) q
+        f q o@(TypLub a b _ _) = Data.Map.map (\cs -> foldr merge cs [lookups o q | a `elem` cs, b `elem` cs]) q
         sortisc :: (Ord a, Eq a) => [a]->[a]->[a]
         sortisc (a:as) (b:bs) | a == b = a:sortisc as bs
                               | a < b = sortisc as (b:bs)
