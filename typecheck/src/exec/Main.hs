@@ -47,7 +47,7 @@ main =
                                         ; parsePopulations popsText opts fn
                                         }
                   ; verboseLn opts "Type checking..."
-                  ; let (actx,type_errors,stTypeGraph,condensedGraph) = typeCheck p_context pPops
+                  ; let (actx,stTypeGraph,condensedGraph) = typeCheck p_context pPops
 -- For the purpose of debugging the type checker, or for educational purposes, the switch "--typing" can be used.
 -- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
 -- Use only for very small scripts, or else the results will not be very informative.
@@ -59,16 +59,16 @@ main =
                             ; putStr ("\n"++stDotGraphPath++" written.")
                             }
                     else do { putStr "" }
-                  ; case type_errors of
-                     []    -> do { return actx }
-                     [err] -> do { Prelude.putStrLn $ "There is one type error:"
-                                 ; Prelude.putStrLn $ show err
-                                 ; exitWith $ ExitFailure 20
-                                 }
-                     _     -> do { Prelude.putStrLn $ "The following type errors were found:\n"
-                                 ; Prelude.putStrLn $ intercalate "\n\n" (map show type_errors)
-                                 ; exitWith $ ExitFailure 20
-                                 }
+                  ; case actx of
+                     Errors [err]      -> do { Prelude.putStrLn $ "There is one type error:"
+                                             ; Prelude.putStrLn $ show err
+                                             ; exitWith $ ExitFailure 20
+                                             }
+                     Errors type_errors-> do { Prelude.putStrLn $ "The following type errors were found:\n"
+                                             ; Prelude.putStrLn $ intercalate "\n\n" (map show type_errors)
+                                             ; exitWith $ ExitFailure 20
+                                             }
+                     Checked a         -> return a
                   }
           }
              
