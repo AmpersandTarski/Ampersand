@@ -1,15 +1,16 @@
 CONTEXT Test
 
-PATTERN Test2
+PATTERN Test5
 RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
 RELATION u[E*Y]
 RULE r = s;(t/\u)
 RULE I[D] = (I[A]/\I[B])/\I[E]
+
 ENDPATTERN
 
--- Result: PASS
--- Reason: type on ; should be inferred as I[D], brackets are placed to mislead.
-
 ENDCONTEXT
+
+-- Result: FAIL
+-- Reason: t/\u are in conflict (concepts B and E)

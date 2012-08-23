@@ -34,7 +34,7 @@ parseContext opts file = tryAll versions2try
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion opts of
          Just pv  -> [pv]
-         Nothing  -> [Current,Legacy,Current] --the errors of the last will be printed on the output stream
+         Nothing  -> [Current] -- ,Legacy,Current] --the errors of the last will be printed on the output stream
       
       try :: ParserVersion -> IO (Either ParseError P_Context)
       try pv = do { verboseLn opts $ "Parsing with "++show pv++"..."
@@ -68,7 +68,7 @@ parsePopulations popsstring flags fn =
     }
                     
 -- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> IO P_Expression
+parseADL1pExpr :: String -> String -> IO Term
 parseADL1pExpr pexprstr fn = 
   case parseExpr pexprstr fn Current of
     Right res -> return res
@@ -209,7 +209,7 @@ parsePops str fn pv =
 parseExpr :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
-          -> Either String P_Expression -- ^ The result: Either a list of populations, or some errors. 
+          -> Either String Term -- ^ The result: Either a list of populations, or some errors. 
 parseExpr str fn pv =
     case runParser pv pExpr fn str of
       Right result -> Right result
@@ -221,7 +221,7 @@ runParser :: forall res . ParserVersion -> Parser Token res -> String -> String 
 runParser parserVersion parser filename input = 
   let scanner = case parserVersion of 
                   Legacy  -> scan LegacyParser.keywordstxt LegacyParser.keywordsops LegacyParser.specialchars LegacyParser.opchars filename initPos
-                  Current  -> scan       keywordstxt       keywordsops       specialchars       opchars filename initPos
+                  Current -> scan              keywordstxt              keywordsops              specialchars              opchars filename initPos
       steps :: Steps (Pair res (Pair [Token] a)) Token
       steps = parse parser $ scanner input
   in  case  getMsgs steps of

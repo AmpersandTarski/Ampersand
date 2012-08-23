@@ -1,12 +1,23 @@
 CONTEXT Test
-PATTERN Test
+
+PATTERN Test6
 r :: A*C
 s :: A*B
 q :: B*C
 RULE r = -(-s;-q)
 ENDPATTERN
 
-{-
-This script is meant to show that -(-s;-q) is equivalent to s!q
--}
 ENDCONTEXT
+
+{-
+This script is meant to show that -(-s;-q) is equivalent to s!q. It does not, however:
+   Result: FAIL
+   Reason: type error on ;
+   Error message:
+
+   The pattern named "Test" contains errors in the rule at line 7:1:
+   line 7:13, file "try6.adl"
+       There is no universe from which to compute a complement in expression  s.
+   line 7:16, file "try6.adl"
+       There is no universe from which to compute a complement in expression  q.
+-}

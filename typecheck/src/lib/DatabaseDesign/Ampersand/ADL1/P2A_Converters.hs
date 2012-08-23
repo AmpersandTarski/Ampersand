@@ -40,9 +40,9 @@ origExpr (in conjunction with Origin o) is kept for the purpose of generating me
 TypLub a b o e is read as:
   "the least upper bound of types a and b, in the context of expression e, which is located at o.
 -}
-data Type =  TypExpr P_Expression Bool Origin P_Expression
-           | TypLub Type Type Origin P_Expression
-           | TypGlb Type Type Origin P_Expression
+data Type =  TypExpr Term Bool Origin Term
+           | TypLub Type Type Origin Term
+           | TypGlb Type Type Origin Term
             -- note: do not put "deriving Ord", because Eq is specified (and not derived)
 
 instance Show Type where
@@ -120,7 +120,7 @@ instance Eq Type where
 -- | `p_eq` is an equivalence relation, which does not distinguish between occurrences.
 --   It is intended as the mathematical equivalence of P_Expressions.
 --   It treats two occurrences of the same expression as the same.
-p_eq :: P_Expression -> P_Expression -> Bool
+p_eq :: Term -> Term -> Bool
 p_eq (PI _)         (PI _)           = True
 p_eq (Pid c)        (Pid c')         = c==c'
 p_eq (Pnid c)       (Pnid c')        = c==c'
@@ -147,13 +147,13 @@ p_eq (PBrk _ a)     (PBrk _ a')      = p_eq a a'
 p_eq (PTyp _ a sgn) (PTyp _ a' sgn') = p_eq a a' && sgn==sgn'
 p_eq _ _ = False
 
--- | p_flp computes the inverse of a P_Expression.
-p_flp :: P_Expression -> P_Expression
+-- | p_flp computes the inverse of a Term.
+p_flp :: Term -> Term
 p_flp (PFlp _ a) = a
 p_flp a          = PFlp OriginUnknown a
 
 {-
-p_flp :: P_Expression -> P_Expression
+p_flp :: Term -> Term
 p_flp a@(PI{})     = a
 p_flp a@(Pid{})    = a
 p_flp a@(Pnid{})   = a
@@ -185,7 +185,7 @@ t_complement (TypExpr e flipped orig origExpr) = TypExpr (complement e) flipped 
 t_complement (TypLub a b orig origExpr)        = TypGlb (t_complement a) (t_complement b) orig (PCpl (origin origExpr) origExpr)
 t_complement (TypGlb a b orig origExpr)        = TypLub (t_complement a) (t_complement b) orig (PCpl (origin origExpr) origExpr)
 
-complement :: P_Expression -> P_Expression
+complement :: Term -> Term
 complement (PCpl _ a)     = a
 complement Pnull          = Pfull OriginUnknown []
 complement (Pnid c)       = Pid c
@@ -242,10 +242,10 @@ typing p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
      isTypeSubset t c = c `elem` findIn t stClos
      u = OriginUnknown
-     uType :: P_Expression    -- x:    the original expression from the script, meant for representation in the graph.
+     uType :: Term    -- x:    the original expression from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
            -> Type            -- uRt:  the type of the universe for the codomain of x
-           -> P_Expression    -- z:    the expression to be analyzed, which must be logically equivalent to x
+           -> Term    -- z:    the expression to be analyzed, which must be logically equivalent to x
            -> ( Typemap  -- for each type, a list of types that are subsets of it, which is the result of analysing expression x.
               , Typemap ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
      uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
@@ -351,7 +351,7 @@ typing p_context
      (a,b) .+. (c,d) = (c.++.a,d.++.b)
      carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
      carefully x = (fst nothing,fst x.++.snd x)
-     dom, cod :: P_Expression -> Type
+     dom, cod :: Term -> Type
      dom x    = TypExpr x         False (origin x) x -- the domain of x, and make sure to check subexpressions of x as well
      cod o@(PI{})  = dom o
      cod o@(Pid{}) = dom o
@@ -359,7 +359,7 @@ typing p_context
      cod o@(Pnull{}) = dom o
      cod (Pfull o cs) = dom (Pfull o (reverse cs))
      cod x    = TypExpr (p_flp x) True  (origin x) x 
-     mSpecific, mGeneric :: Type -> Type -> P_Expression -> ( (Typemap , Typemap) ,Type)
+     mSpecific, mGeneric :: Type -> Type -> Term -> ( (Typemap , Typemap) ,Type)
      mSpecific a b e = (r .<. a .+. r .<. b , r) where r = TypLub a b OriginUnknown e
      mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = TypGlb a b OriginUnknown e
 
@@ -370,7 +370,7 @@ flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
 This table is organized as follows:
 Int          : a vertex (number) in the stGraph, which contains the raw tuples from function 'typing'
 Int          : a vertex (number) in the condensedGraph, which is a condensed form of the stGraph, leaving the semantics identical
-Type         : a type expression, containing a P_Expression, which is represented by a number in the type graphs. Different expressions may carry the same number in the condensedGraph.
+Type         : a type expression, containing a Term, which is represented by a number in the type graphs. Different expressions may carry the same number in the condensedGraph.
 [P_Concept]  : a list of concepts. If (_,_,expr,cs) is an element of this table, then for every c in cs there is a proof that dom expr is a subset of I[c].
                For a type correct expr, list cs contains precisely one element.
 -}
@@ -570,10 +570,10 @@ vertex2Concept typeTable i
  = head ([ c | (_, classNr, TypExpr (Pid c) _ _ _, _)<-typeTable , i==classNr]
          ++fatal 603 ("No concept numbered "++show i++" found by vertex2Concept typeTable.\n  "++intercalate "\n  " [ show tti | tti@(_, classNr, _, _)<-typeTable , i==classNr])
         )
-unFlip :: Type -> P_Expression
+unFlip :: Type -> Term
 unFlip (TypExpr _ flipped _ e) = if flipped then p_flp e else e
 unFlip x = fatal 607 ("May not call 'original' with "++showType x)
-original :: Type -> P_Expression
+original :: Type -> Term
 original (TypExpr _ _ _ e) = e
 original (TypLub  _ _ _ e) = e
 original (TypGlb  _ _ _ e) = e
@@ -603,8 +603,8 @@ class Expr a where
   p_concs :: a -> [P_Concept]
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
-  expressions :: a -> [P_Expression]
-  subexpressions :: a -> [P_Expression]
+  expressions :: a -> [Term]
+  subexpressions :: a -> [Term]
 
 instance Expr P_Context where
  p_gens pContext
@@ -738,7 +738,7 @@ instance Expr a => Expr [a] where
  p_concs = concat.map p_concs
  expressions = concat.map expressions
  subexpressions = concat.map subexpressions
-instance Expr P_Expression where
+instance Expr Term where
  p_concs   (PI _)         = []
  p_concs   (Pid c)        = [c]
  p_concs   (Pnid c)       = [c]
@@ -1281,7 +1281,7 @@ pCtx2aCtx p_context
       )
       
     -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in an expression.
-    pRel2aRel :: [P_Concept] -> P_Expression -> (Relation,[CtxError])
+    pRel2aRel :: [P_Concept] -> Term -> (Relation,[CtxError])
     pRel2aRel _ (Pfull orig pConcepts)
      = case pConcepts of
         [] -> ( fatal 326 "Ambiguous universal relation."
@@ -1341,7 +1341,7 @@ pCtx2aCtx p_context
                         , name (head sgn)==name (source d) &&
                           name (last sgn)==name (target d)   ]
 
-    pExpr2aExpr :: P_Expression    -- The expression to be typed
+    pExpr2aExpr :: Term    -- The expression to be typed
                 -> ( Expression    -- the resulting expression. It is defined only when the list of errors is empty.
                    , (Type,Type)   -- the type of the resulting expression. It is defined only when the list of errors is empty.
                    , [CtxError]    -- the list of type errors
@@ -1352,7 +1352,7 @@ pCtx2aCtx p_context
        , g pExpr                             -- the list of type errors
        )
        where
-         f :: P_Expression -> Expression
+         f :: Term -> Expression
          f (PTyp _ (PI _)  (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
          f (PTyp _ (Pid _) (P_Sign (c:_))) = ERel (I (pCpt2aCpt c))
          f x@(PTyp o (Pid _) (P_Sign _))   = fatal 983 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to an expression.")
@@ -1394,7 +1394,7 @@ pCtx2aCtx p_context
          f (PTyp _ a sgn)  = ETyp (f a) (Sign (pCpt2aCpt s) (pCpt2aCpt t))
                              where P_Sign cs = sgn; s=head cs; t=last cs
          
-         g :: P_Expression -> [CtxError]
+         g :: Term -> [CtxError]
          g x@(PI _)            = errILike x
          g x@(Pid _)           = errILike x
          g x@(Pnid _)          = errILike x
@@ -1454,7 +1454,7 @@ pCtx2aCtx p_context
              deepErrors = g a++g b
          lookup pExpr = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pExpr==origExpr ]++fatal 1535 ("cannot find "++showADL pExpr++" in the lookup table"))
 
-isConceptTerm :: P_Expression -> Bool
+isConceptTerm :: Term -> Bool
 isConceptTerm (Pid{}) = True
 isConceptTerm _ = False
 
@@ -1470,7 +1470,7 @@ disambiguate fSpec x = x -- temporarily disabled (19 july 2012), in order to get
  | otherwise  = fatal 428 ("an expression must be type correct, but this one is not:\n" ++ show errs)
  where
    (expr,errs) = pExpr2aExpr fSpec{vrels=vrels fSpec++deltas} NoCast (f x)
-   -- f transforms x to a P_Expression using full relation signatures
+   -- f transforms x to a Term using full relation signatures
    f (EEqu (l,r)) = Pequ OriginUnknown (f l) (f r)
    f (EImp (l,r)) = Pimp OriginUnknown (f l) (f r)
    f (EIsc [l])   = f l

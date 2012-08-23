@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Relation(..), RelConceptDef(..), P_Declaration(..)
    
-   , P_Expression(..)
+   , Term(..)
    
    , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..), isSrc
    
@@ -95,7 +95,7 @@ where
    -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
    data P_RoleRelation
       = P_RR { rr_Roles :: [String]         -- ^ name of a role
-             , rr_Rels :: [P_Expression]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+             , rr_Rels :: [Term]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
              , rr_Pos :: Origin           -- ^ position in the Ampersand script
              } deriving (Show)       -- just for debugging
    instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
@@ -218,7 +218,7 @@ where
       P_Rel{} -> rel_pos r
       _       -> OriginUnknown
 
-   data P_Expression 
+   data Term 
       = PI Origin                              -- ^ identity element without a type
                                                --   At parse time, there may be zero or one element in the list of concepts.
                                                --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
@@ -232,25 +232,25 @@ where
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | Pflp Origin String                     -- ^ flip / relational inverse
-      | Pequ Origin P_Expression P_Expression  -- ^ equivalence             =
-      | Pimp Origin P_Expression P_Expression  -- ^ implication             |-
-      | PIsc Origin P_Expression P_Expression  -- ^ intersection            /\
-      | PUni Origin P_Expression P_Expression  -- ^ union                   \/
-      | PDif Origin P_Expression P_Expression  -- ^ difference              -
-      | PLrs Origin P_Expression P_Expression  -- ^ left residual           /
-      | PRrs Origin P_Expression P_Expression  -- ^ right residual          \
-      | PCps Origin P_Expression P_Expression  -- ^ composition             ;
-      | PRad Origin P_Expression P_Expression  -- ^ relative addition       !
-      | PPrd Origin P_Expression P_Expression  -- ^ cartesian product       *
-      | PKl0 Origin P_Expression               -- ^ Rfx.Trn closure         *  (Kleene star)
-      | PKl1 Origin P_Expression               -- ^ Transitive closure      +  (Kleene plus)
-      | PFlp Origin P_Expression               -- ^ conversion (flip, wok)  ~
-      | PCpl Origin P_Expression               -- ^ Complement
-      | PBrk Origin P_Expression               -- ^ bracketed expression ( ... )
-      | PTyp Origin P_Expression P_Sign        -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
+      | Pequ Origin Term Term  -- ^ equivalence             =
+      | Pimp Origin Term Term  -- ^ implication             |-
+      | PIsc Origin Term Term  -- ^ intersection            /\
+      | PUni Origin Term Term  -- ^ union                   \/
+      | PDif Origin Term Term  -- ^ difference              -
+      | PLrs Origin Term Term  -- ^ left residual           /
+      | PRrs Origin Term Term  -- ^ right residual          \
+      | PCps Origin Term Term  -- ^ composition             ;
+      | PRad Origin Term Term  -- ^ relative addition       !
+      | PPrd Origin Term Term  -- ^ cartesian product       *
+      | PKl0 Origin Term               -- ^ Rfx.Trn closure         *  (Kleene star)
+      | PKl1 Origin Term               -- ^ Transitive closure      +  (Kleene plus)
+      | PFlp Origin Term               -- ^ conversion (flip, wok)  ~
+      | PCpl Origin Term               -- ^ Complement
+      | PBrk Origin Term               -- ^ bracketed expression ( ... )
+      | PTyp Origin Term P_Sign        -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       deriving (Eq, Ord, Show) -- deriving Show for debugging purposes
 
-   instance Traced P_Expression where
+   instance Traced Term where
     origin e = case e of
       PI orig        -> orig
       Pid _          -> OriginUnknown
@@ -286,12 +286,12 @@ where
    data P_PairView = P_PairView [P_PairViewSegment] deriving Show
 
    data P_PairViewSegment = P_PairViewText String
-                          | P_PairViewExp SrcOrTgt P_Expression
+                          | P_PairViewExp SrcOrTgt Term
             deriving Show
 
    data P_Rule  =
       P_Ru { rr_nm :: String             -- ^ Name of this rule
-           , rr_exp :: P_Expression       -- ^ The rule expression 
+           , rr_exp :: Term       -- ^ The rule expression 
            , rr_fps :: Origin             -- ^ Position in the Ampersand file
            , rr_mean :: [PMeaning]         -- ^ User-specified meanings, possibly more than one, for multiple languages.
            , rr_msg :: [P_Markup]         -- ^ User-specified violation messages, possibly more than one, for multiple languages.
@@ -326,7 +326,7 @@ where
 
    data P_Interface = 
         P_Ifc { ifc_Name :: String                 -- ^ the name of the interface
-              , ifc_Params :: [P_Expression]         -- ^ a list of relations, which are editable within this interface.
+              , ifc_Params :: [Term]         -- ^ a list of relations, which are editable within this interface.
                                                      --   either  Prel nm
                                                      --       or  PTyp (Prel nm) sgn
               , ifc_Args :: [[String]]             -- ^ a list of arguments for code generation.
@@ -351,7 +351,7 @@ where
    data P_ObjectDef = 
         P_Obj { obj_nm :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
               , obj_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-              , obj_ctx :: P_Expression   -- ^ this expression describes the instances of this object, related to their context. 
+              , obj_ctx :: Term   -- ^ this expression describes the instances of this object, related to their context. 
               , obj_msub :: Maybe P_SubInterface  -- ^ the attributes, which are object definitions themselves.
               , obj_strs :: [[String]]     -- ^ directives that specify the interface.
               }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
@@ -384,7 +384,7 @@ where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
    data PRef2Obj = PRef2ConceptDef String
-                 | PRef2Declaration P_Expression -- typically PTyp (Prel nm) sgn,   with nm::String and sgn::P_Sign
+                 | PRef2Declaration Term -- typically PTyp (Prel nm) sgn,   with nm::String and sgn::P_Sign
                  | PRef2Rule String
                  | PRef2KeyDef String
                  | PRef2Pattern String
