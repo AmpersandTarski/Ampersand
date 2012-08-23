@@ -396,7 +396,7 @@ tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTab
        decompose (o@(TypLub a b _ _):rs) = decompose (lookups a st) ++ decompose (lookups b st) ++ o:[r|r<-decompose rs, r `notElem` lookups a st, r `notElem` lookups b st]
        decompose (o:rs) = decompose rs
        decompose [] = []
-     lookups o q = head [merge [o] e | (Just e)<-[Data.Map.lookup o q]]
+     lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[o])
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
