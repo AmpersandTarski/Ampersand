@@ -9,4 +9,9 @@ ENDPATTERN
 ENDCONTEXT
 
 {- This script is written as a superficial check whether type deduction works.
+-
+   Purpose: a superficial check whether type deduction works.
+   Result: PASS
+   Reason: This is not entirely trivial. Relation I takes its type from r,
+           so the checker deduces that I[A] is meant.
 -}

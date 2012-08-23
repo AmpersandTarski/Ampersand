@@ -40,8 +40,6 @@ class Language a where
   --TODO -> there are more rules than rules+multrules that can be violated
   violations :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
   violations x = [(r,viol) |r<-invariants x++multrules x++keyrules x, viol<-ruleviolations r]
-  cExperimental :: a -> Bool 
-  cExperimental _ = False
   initialatoms :: a -> [(String,[String])] -- ^ all atoms explicitly mentioned to be in the initial population of a concept
   initialatoms _ = []
   
@@ -173,7 +171,6 @@ instance Language A_Context where
   keyDefs      context = concatMap keyDefs (ctxpats context) ++ concatMap keyDefs (ctxprocs context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
   gens         context = concatMap gens (ctxpats context) `uni` concatMap gens (ctxprocs context) `uni` ctxgs context
   patterns             = ctxpats
-  cExperimental        = ctxexperimental
   initialatoms         = ctxatoms
 
 instance ProcessStructure A_Context where

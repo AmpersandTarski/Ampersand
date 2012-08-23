@@ -36,7 +36,7 @@ main =
           ; pCtx <- parseContext opts (fileName opts)
           ; case pCtx of
               Left msg ->
-               do { Prelude.putStrLn $ "Parse error:"
+               do { Prelude.putStrLn $ "Parsing error:"
                   ; Prelude.putStrLn $ show msg
                   ; exitWith $ ExitFailure 10 
                   }
