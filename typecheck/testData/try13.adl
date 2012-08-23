@@ -1,0 +1,14 @@
+CONTEXT Test
+-- is type correct if the checker can deduce that r\/I::[A*A]
+PATTERN Test
+
+r :: A*A
+r :: B*C
+
+RULE r[A] = r\/I
+
+ENDPATTERN
+ENDCONTEXT
+
+{- This script is written as a superficial check whether type deduction works.
+-}

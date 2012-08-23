@@ -1,0 +1,14 @@
+CONTEXT Test
+-- should yield an error
+PATTERN Test
+
+r :: A*A
+
+
+RULE r = r[A*A]\/I
+
+ENDPATTERN
+ENDCONTEXT
+
+{- This script is written as a superficial check whether type deduction works.
+-}
