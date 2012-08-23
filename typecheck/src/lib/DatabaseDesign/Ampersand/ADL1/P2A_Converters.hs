@@ -269,15 +269,20 @@ typing p_context
                                                                        && isTypeSubset uRt  (thing r)
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
-     uType x  _    _    (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
-                                                .+. dm .+. cm .+. uType a interDom interCod a .+. uType b interDom interCod b
+     uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
+                                                .+. dm .+. cm .+. dm2 .+. cm2
+                                                .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mSpecific (dom a) (dom b)  x
                                                       (cm,interCod) = mSpecific (cod a) (cod b)  x
-     uType x  _    _    (PUni _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
-                                                .+. dm .+. cm
-                                                .+. uType a interDom interCod a .+. uType b interDom interCod b
+                                                      (dm2,interDom2) = mSpecific interDom uLft  x
+                                                      (cm2,interCod2) = mSpecific interCod uRt   x
+     uType x uLft uRt   (PUni _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
+                                                .+. dm .+. cm .+. dm2 .+. cm2
+                                                .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mGeneric (dom a) (dom b)  x
                                                       (cm,interCod) = mGeneric (cod a) (cod b)  x
+                                                      (dm2,interDom2) = mSpecific interDom uLft  x
+                                                      (cm2,interCod2) = mSpecific interCod uRt   x
      uType x uLft uRt   (PCps _ a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                  -- a;b      composition
                                                 bm .+. uType a uLft between a .+. uType b between uRt b
                                                 .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
@@ -290,7 +295,7 @@ typing p_context
                                                  .+. uType a uLft uRt a
                                                  .+. uType b interDom interCod b
                                                 where (dm,interDom) = (mSpecific uLft (dom a) x)
-                                                      (cm,interCod) = (mSpecific uRt (cod a) x)
+                                                      (cm,interCod) = (mSpecific uRt  (cod a) x)
      uType x uLft uRt   (PKl0 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType e uLft uRt e
      uType x uLft uRt   (PKl1 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType e uLft uRt e
      uType x uLft uRt   (PFlp _ e)            = cod e.=.dom x .+. dom e.=.cod x .+. uType e uRt uLft e
@@ -301,12 +306,9 @@ typing p_context
                                                 if o `elem` [origin d| d<-decls]
                                                 then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e
-                                                     .+. dm .+. cm -- do we need these?
-                                                     .+. uType e interDom interCod e
+                                                     .+. uType e iSrc iTrg e
                                                 where iSrc = thing (head cs)
                                                       iTrg = thing (last cs)
-                                                      (dm,interDom) = (mSpecific iSrc uLft x)
-                                                      (cm,interCod) = (mSpecific iTrg uRt  x)
      uType x uLft uRt   (PPrd _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                                                 .+. uType a uLft anything a .+. uType b anything uRt b
      -- derived uTypes: the following do no calculations themselves, but merely rewrite expressions to the ones we covered
@@ -827,26 +829,34 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
 -- On Guarded: it is intended to return something, as long as there were no errors creating it.
 -- For instance, (Guarded P_Context) would return the P_Context, unless there are errors.
 
-type Guarded = Either [CtxError]
+data Guarded a = Errors [CtxError] | Checked a deriving (Show, Eq)
+
 getErrors :: (Guarded a) -> [CtxError]
-getErrors (Left l) = l
+getErrors (Errors l) = l
 getErrors _ = []
 
 parallel :: (a->b->c) -> Guarded a -> Guarded b -> Guarded c -- get both values or collect all error messages
-parallel f (Right a) (Right b) = Right$ f a b
-parallel _ (Left  a) (Right b) = Left a 
-parallel _ (Right a) (Left  b) = Left b
-parallel _ (Left  a) (Left  b) = Left (a ++ b)
+parallel f (Checked a) = (<*>) $ Checked (f a) 
+parallel f (Errors  a) = (<*>) $ Errors a
 
 parallelList :: [Guarded a] -> Guarded [a] -- get both values or collect all error messages
-parallelList = foldr (parallel (:)) (Right [])
+parallelList = foldr (parallel (:)) (Checked [])
 
-instance Applicative (Guarded) where
- pure a = Right a
- (<*>) (Right f) (Right a) = Right (f a)
- (<*>) (Left  a) (Right b) = Left a 
- (<*>) (Right a) (Left  b) = Left b
- (<*>) (Left  a) (Left  b) = Left (a ++ b)
+instance Functor Guarded where
+ fmap _ (Errors a) = (Errors a)
+ fmap f (Checked a) = Checked (f a)
+ 
+instance Applicative Guarded where
+ pure a = Checked a
+ (<*>) (Checked f) (Checked a) = Checked (f a)
+ (<*>) (Errors  a) (Checked b) = Errors a 
+ (<*>) (Checked a) (Errors  b) = Errors b
+ (<*>) (Errors  a) (Errors  b) = Errors (a ++ b)
+ 
+instance Monad Guarded where
+ (>>=) (Errors  a) _ = (Errors a)
+ (>>=) (Checked a) f = f a
+ return = Checked
 
 -- note the difference: if we want to get no errors from val2 if there are still errors in val1, use:
 -- do { a <- val1; b <- val2; return (f a b) }
