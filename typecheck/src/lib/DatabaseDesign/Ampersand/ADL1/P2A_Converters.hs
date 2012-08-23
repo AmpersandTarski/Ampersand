@@ -566,10 +566,13 @@ showErrBoolTerm err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
                          ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
             (cs, cs') -> ["    Inside term   "++showADL x++",\n"]++
-                         ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                         ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+                         if sort cs==sort cs'
+                         then ["    the sources and targets of  "++showADL a++"  and  "++showADL b++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+                         else ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
+                              ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
      )
 
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
