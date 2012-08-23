@@ -13,13 +13,14 @@ module DatabaseDesign.Ampersand.Components
    , doGenUML
    , doGenDocument
    , doGenExcel
+   , Guarded(..)
     -- * etc...
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
 import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
+import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,Guarded(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Input
 import Text.Pandoc 
@@ -36,7 +37,7 @@ fatal = fatalMsg "Components"
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   If the list of populations is not empty, then it overwrites the one included in the parsed context
-typeCheck :: P_Context -> [P_Population] -> (A_Context, [CtxError],DotGraph String,DotGraph String)
+typeCheck :: P_Context -> [P_Population] -> (Guarded A_Context,DotGraph String,DotGraph String)
 typeCheck p_context []   = pCtx2aCtx p_context                 
 typeCheck p_context pops = pCtx2aCtx (p_context{ctx_pops=pops})
                            -- consisting of:  (aCtx,ctxcheck,stTypeGraph,condensedGraph)
