@@ -7,6 +7,22 @@ RELATION t[B*C]
 RULE r = s;t
 RULE r |- s;t
 RULE s;t
+RULE r;(s=t)
 ENDPATTERN
 
 ENDCONTEXT
+
+{-
+   Purpose: This script that there are three types of rules: an equivalence, an implication, and an expression.
+            It also shows that the equivalence cannot be used inside another rule, which holds for the implication as well.
+   Result: FAIL
+   Reason: the rule on line 10 will not parse.
+   Error message:
+
+   Parse error:
+
+   Expecting symbol ) or symbol [ or "!" or "*" or "-" or "/" or "/\\" or ";" or "\
+   \" or "\\/" or ("*" or "+" or "~" ...)*
+   before "=" at line 10, column 10 of file "try7.adl"
+   Try inserting symbol symbol )
+-}

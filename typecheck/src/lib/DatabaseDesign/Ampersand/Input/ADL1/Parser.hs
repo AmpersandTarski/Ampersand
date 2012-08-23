@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.Input.ADL1.Parser 
-   (pContext, pPopulations,pExpr, keywordstxt, keywordsops, specialchars, opchars) where
+   (pContext, pPopulations,pTerm, keywordstxt, keywordsops, specialchars, opchars) where
    import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
             ( Token(..),TokenType(..),noPos
             , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma,pInteger)
@@ -81,7 +81,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_ps    = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
                , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
                , ctx_metas = [m | CMeta m <-ces]
-               , ctx_experimental = False -- is set in Components.hs
                }
           , includeFileNames)
 
@@ -242,7 +241,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                    pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
    
                    pPairViewSegment :: Parser Token P_PairViewSegment
-                   pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pExpr
+                   pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pTerm
                                   <|> P_PairViewText <$ pKey "TXT" <*> pString
    
    pSrcOrTgt :: Parser Token SrcOrTgt                    
@@ -343,7 +342,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                            P_KeyText <$ pKey "TXT" <*> pString <|>
                            P_KeyHtml <$ pKey "PRIMHTML" <*> pString
              pKeyAtt :: Parser Token P_ObjectDef
-             pKeyAtt = rebuild <$> optional pLabelProps <*> pExpr
+             pKeyAtt = rebuild <$> optional pLabelProps <*> pTerm
                  where
                    rebuild mLbl attexpr =
                      case mLbl of
@@ -369,7 +368,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                                                        --       or  PTyp _ (Prel _ nm) sgn
                         (pArgs   `opt` [])                   <*>  
                         (pRoles  `opt` [])                   <*>  
-                        (pKey ":" *> pExpr)                  <*>  
+                        (pKey ":" *> pTerm)                  <*>  
                         pSubInterface
        where lbl :: (String, Origin) -> [Term] -> [[String]] -> [String] -> Term -> P_SubInterface -> P_Interface
              lbl (nm,p) params args roles expr sub
@@ -398,7 +397,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
    pObjDef :: Parser Token P_ObjectDef
    pObjDef            = obj <$> pLabelProps
-                            <*> pExpr            -- the context expression (for example: I[c])
+                            <*> pTerm            -- the context expression (for example: I[c])
                             <*> optional pSubInterface  -- the optional subinterface 
                         where obj (Lbl nm pos' strs) expr msub  = 
                                 P_Obj { obj_nm   = nm
@@ -485,29 +484,29 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
                               
 {-  Basically we would have the following expression syntax:
-pRule ::= pExp1   "="    pExpr                           |
-          pExp1   "|-"   pExpr                           |
-          pExp1 .
-pExpr ::= pList1Sep "/\\" pExp2                          |
-          pList1Sep "\\/" pExp2                          |
-          pExp2 .
-pExp2 ::= pExp3    "-"    pExp3                          |
-          pExp3 .
-pExp3 ::= pExp4   "\\"   pExp4                           |
-          pExp4   "/"    pExp4                           |
-          pExp4 .
-pExp4 ::= pList1Sep ";" pExp5                            |
-          pList1Sep "!" pExp5                            |
-          pList1Sep "*" pExp5                            |
-          pExp5 .
-pExp5 ::= "-"     pExp6                                  |
-          pExp6   pSign                                  |
-          pExp6   "~"                                    |
-          pExp6   "*"                                    |
-          pExp6   "+"                                    |
-          pExp6 .
-pExp6 ::= pRelation                                      |
-          "("   pExpr   ")" .
+pRule ::= pTrm1   "="    pTerm                           |
+          pTrm1   "|-"   pTerm                           |
+          pTrm1 .
+pTerm ::= pList1Sep "/\\" pTrm2                          |
+          pList1Sep "\\/" pTrm2                          |
+          pTrm2 .
+pTrm2 ::= pTrm3    "-"    pTrm3                          |
+          pTrm3 .
+pTrm3 ::= pTrm4   "\\"   pTrm4                           |
+          pTrm4   "/"    pTrm4                           |
+          pTrm4 .
+pTrm4 ::= pList1Sep ";" pTrm5                            |
+          pList1Sep "!" pTrm5                            |
+          pList1Sep "*" pTrm5                            |
+          pTrm5 .
+pTrm5 ::= "-"     pTrm6                                  |
+          pTrm6   pSign                                  |
+          pTrm6   "~"                                    |
+          pTrm6   "*"                                    |
+          pTrm6   "+"                                    |
+          pTrm6 .
+pTrm6 ::= pRelation                                      |
+          "("   pTerm   ")" .
 In practice, we have it a little different.
  - In order to avoid "associative" brackets, we parse the associative operators "\/", "/\", ";", and "!" with pList1Sep. That works.
  - We would like the user to disambiguate between "=" and "|-" by using brackets. 
@@ -515,74 +514,74 @@ In practice, we have it a little different.
 
 {- In theory, the expression is parsed by:
    pRule :: Parser Token (Term)
-   pRule  =  fEequ <$> pExp1  <*>  pKey_pos "="   <*>  pExpr   <|>
-             fEimp <$> pExp1  <*>  pKey_pos "|-"  <*>  pExpr   <|>
-             pExp1
+   pRule  =  fEequ <$> pTrm1  <*>  pKey_pos "="   <*>  pTerm   <|>
+             fEimp <$> pTrm1  <*>  pKey_pos "|-"  <*>  pTerm   <|>
+             pTrm1
              where fequ  lExp orig rExp = Pequ orig lExp rExp
                    fEimp lExp orig rExp = Pimp orig lExp rExp
 -- However elegant, this solution needs to be left-factored in order to get a performant parser.
 -}
    pRule :: Parser Token Term
-   pRule  =  pExpr <??> (fEqu  <$> pKey_pos "="  <*> pExpr <|>
-                         fImpl <$> pKey_pos "|-" <*> pExpr )
+   pRule  =  pTerm <??> (fEqu  <$> pKey_pos "="  <*> pTerm <|>
+                         fImpl <$> pKey_pos "|-" <*> pTerm )
              where fEqu  orig rExp lExp = Pequ orig lExp rExp
                    fImpl orig rExp lExp = Pimp orig lExp rExp
 
 {-
-   pExp1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
+   pTrm1 is slightly more complicated, for the purpose of avoiding "associative" brackets.
    The idea is that each operator ("/\\" or "\\/") can be parsed as a sequence without brackets.
    However, as soon as they are combined, brackets are needed to disambiguate the combination.
    There is no natural precedence of one operator over the other.
-   Brackets are enforced by parsing the subexpression as pExp5.
+   Brackets are enforced by parsing the subexpression as pTrm5.
    In order to maintain performance standards, the parser is left factored.
    The functions pars and f have arguments 'combinator' and 'operator' only to avoid writing the same code twice.
 -}
-   pExpr :: Parser Token Term
-   pExpr   = pExp2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
+   pTerm :: Parser Token Term
+   pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
              where pars combinator operator
-                    = g <$> pKey_pos operator <*> pExp2 <*> optional (pars combinator operator)
+                    = g <$> pKey_pos operator <*> pTrm2 <*> optional (pars combinator operator)
                              where g orig y Nothing  = (orig, y)
                                    g orig y (Just (org,z)) = (orig, combinator org y z)
                    f combinator (orig, y) x = combinator orig x y
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
-   pExp2 :: Parser Token Term
-   pExp2   = pExp3 <??> (f <$> pKey_pos "-" <*> pExp3)
+   pTrm2 :: Parser Token Term
+   pTrm2   = pTrm3 <??> (f <$> pKey_pos "-" <*> pTrm3)
              where f orig rExp lExp = PDif orig lExp rExp
 
 -- The left factored version of right- and left residuals:
-   pExp3 :: Parser Token Term
-   pExp3  =  pExp4 <??> (fRrs <$> pKey_pos "\\"  <*> pExp4 <|> fLrs <$> pKey_pos "/" <*> pExp4 )
+   pTrm3 :: Parser Token Term
+   pTrm3  =  pTrm4 <??> (fRrs <$> pKey_pos "\\"  <*> pTrm4 <|> fLrs <$> pKey_pos "/" <*> pTrm4 )
              where fRrs orig rExp lExp = PRrs orig lExp rExp
                    fLrs orig rExp lExp = PLrs orig lExp rExp
 
 {- by the way, a slightly different way of getting exactly the same result is:
-   pExp3 :: Parser Token Term
-   pExp3  =  pExp4 <??> (f <$>  (pKey_val_pos "\\" <|> pKey_val_pos "/") <*> pExp4 )
+   pTrm3 :: Parser Token Term
+   pTrm3  =  pTrm4 <??> (f <$>  (pKey_val_pos "\\" <|> pKey_val_pos "/") <*> pTrm4 )
              where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
                    f (_   , orig) rExp lExp = PLrs orig lExp rExp
 -}
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
-   pExp4 :: Parser Token Term
-   pExp4   = pExp5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "*")
+   pTrm4 :: Parser Token Term
+   pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "*")
              where pars combinator operator
-                    = g <$> pKey_pos operator <*> pExp5 <*> optional (pars combinator operator)
+                    = g <$> pKey_pos operator <*> pTrm5 <*> optional (pars combinator operator)
                              where g orig y Nothing  = (orig, y)
                                    g orig y (Just (org,z)) = (orig, combinator org y z)
                    f combinator (orig, y) x = combinator orig x y
 
-   pExp5 :: Parser Token Term
-   pExp5  =  f <$> pList (pKey_pos "-") <*> pExp6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
+   pTrm5 :: Parser Token Term
+   pTrm5  =  f <$> pList (pKey_pos "-") <*> pTrm6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
              where f ms pe (("~",orig):ps) = PFlp orig (f ms pe ps)
                    f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)
                    f ms pe (("+",orig):ps) = PKl1 orig (f ms pe ps)
                    f (orig:ms) pe ps = PCpl orig (f ms pe ps)
                    f _ pe _          = pe
 
-   pExp6 :: Parser Token Term
-   pExp6  =  pRelationRef                                    <|>
-             PBrk <$>  pSpec_pos '('  <*>  pExpr  <*  pSpec ')'
+   pTrm6 :: Parser Token Term
+   pTrm6  =  pRelationRef                                    <|>
+             PBrk <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')'
 
    pRelationRef :: Parser Token Term
    pRelationRef      = pRelSign                                                                      <|>

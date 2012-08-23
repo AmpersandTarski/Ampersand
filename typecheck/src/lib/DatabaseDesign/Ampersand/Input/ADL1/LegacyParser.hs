@@ -78,7 +78,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                               , ctx_sql   = [plug | CSqlPlug plug<-ces]   -- user defined sqlplugs, taken from the Ampersand script
                               , ctx_php   = [plug | CPhpPlug plug<-ces]   -- user defined phpplugs, taken from the Ampersand script
                               , ctx_metas = []
-                              , ctx_experimental = False -- is set in Components.hs
                               }
                           where
                                ps = [p | CPat p<-ces]

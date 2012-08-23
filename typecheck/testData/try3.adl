@@ -10,5 +10,9 @@ ENDPATTERN
 
 ENDCONTEXT
 
--- Result: PASS
--- Reason: type on ; must be inferred as I[D]
+{-
+   Purpose: This script shows that a type conflict (between A and B) can be resolved
+            by defining an intersection type D.
+   Result: PASS
+   Reason: the type on ; is inferred as I[D]
+-}

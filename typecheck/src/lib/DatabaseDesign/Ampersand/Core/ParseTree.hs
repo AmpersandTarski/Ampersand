@@ -72,7 +72,6 @@ where
             , ctx_sql :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
             , ctx_metas :: [P_Meta]    -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-            , ctx_experimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
             } deriving Show
 
 --   instance Show P_Context where

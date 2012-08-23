@@ -9,7 +9,9 @@ ENDPATTERN
 
 ENDCONTEXT
 
-{- Result: FAIL
+{-
+   Purpose: This script is a simply incorrect with = and ;
+   Result: FAIL
    Reason: type error on ;
    Error message:
 

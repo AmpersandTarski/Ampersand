@@ -10,7 +10,7 @@ ENDPATTERN
 ENDCONTEXT
 
 {-
-This script is meant to show that -(-s;-q) is equivalent to s!q. It does not, however:
+   Purpose: This script is meant to study the equivalence of -(-s;-q) and s!q.
    Result: FAIL
    Reason: type error on ;
    Error message:

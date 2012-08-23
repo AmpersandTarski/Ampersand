@@ -9,5 +9,7 @@ ENDPATTERN
 
 ENDCONTEXT
 
--- Result: PASS
--- Reason: simple correct script with = and ;
+{-
+   Purpose: This script is a simple correct script with = and ;
+   Result: PASS
+-}

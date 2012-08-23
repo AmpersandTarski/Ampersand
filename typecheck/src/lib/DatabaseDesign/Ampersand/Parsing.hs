@@ -10,7 +10,7 @@ import Data.List
 import Data.Char
 import System.Directory
 import System.FilePath
-import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
+import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
 import qualified DatabaseDesign.Ampersand.Input.ADL1.LegacyParser as LegacyParser
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics
@@ -41,7 +41,7 @@ parseContext opts file = tryAll versions2try
                   ; eRes <- parseADL opts pv file
                   ; case eRes of 
                       Right ctx  -> verboseLn opts "Parsing successful"
-                                >> return (Right $ ctx{ctx_experimental = experimental opts}) -- set the experimental flag
+                                >> return (Right ctx)
                       Left err -> verboseLn opts "Parsing failed"
                                  >> return (Left err)
                   }
@@ -156,11 +156,11 @@ readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir (rel
     }
  
 emptyContext :: P_Context
-emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] False
+emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
 mergeContexts :: P_Context -> P_Context -> P_Context
-mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1 _)
-              (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2 _) =
+mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
+              (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
   PCtx{ ctx_nm = nm1
       , ctx_pos = pos1 ++ pos2
       , ctx_lang = lang1
@@ -179,7 +179,6 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs
       , ctx_sql = sql1 ++ sql2
       , ctx_php = php1 ++ php2
       , ctx_metas = metas1 ++ metas2
-      , ctx_experimental = False -- is set in Components.hs
       }
 
 
@@ -211,7 +210,7 @@ parseExpr :: String            -- ^ The string to be parsed
           -> ParserVersion     -- ^ The specific version of the parser to be used
           -> Either String Term -- ^ The result: Either a list of populations, or some errors. 
 parseExpr str fn pv =
-    case runParser pv pExpr fn str of
+    case runParser pv pTerm fn str of
       Right result -> Right result
       Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
 
