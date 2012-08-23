@@ -10,20 +10,20 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               }
               | CxeEqAttribs  {cxeOrig :: Origin          -- ^ The location of the object/key definition in which different attributes have the same name.
                               ,cxeName :: String          -- ^ The name shared by different attributes.
-                              ,cxeAtts :: [P_Expression]  -- ^ The list of attributes with the same name.
+                              ,cxeAtts :: [Term]  -- ^ The list of attributes with the same name.
                               }
-              | CxeAmbExpr    {cxeExpr :: P_Expression   -- ^ an erroneous expression, which is ambiguous
+              | CxeAmbExpr    {cxeExpr :: Term   -- ^ an erroneous expression, which is ambiguous
                               ,cxeSrcT :: [P_Concept]    -- ^ The applicable types for the source (length must be >1)
                               ,cxeTrgT :: [P_Concept]    -- ^ The applicable types for the target (length must be >1)
                               ,cxeSign :: [P_Sign]       -- ^ The applicable types for the expression (length must be >1)
                               }
-              | CxeILike      {cxeExpr :: P_Expression
+              | CxeILike      {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
-              | CxeCpl        {cxeExpr :: P_Expression
+              | CxeCpl        {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
-              | CxeCpsLike    {cxeExpr :: P_Expression
+              | CxeCpsLike    {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
               | CxeOrig       {cxeSubErrors :: [CtxError] -- ^ context information of an error   

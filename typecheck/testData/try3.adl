@@ -1,14 +1,15 @@
 ﻿CONTEXT Test
 
-PATTERN Test2
+PATTERN Test3
 RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
 RULE r = s;t
 RULE I[D] = I[A]/\I[B]
+RULE I[E] = I[A]\/I[B]
 ENDPATTERN
 
--- Result: PASS
--- Reason: type on ; should be inferred as I[D]
-
 ENDCONTEXT
+
+-- Result: PASS
+-- Reason: type on ; must be inferred as I[D]

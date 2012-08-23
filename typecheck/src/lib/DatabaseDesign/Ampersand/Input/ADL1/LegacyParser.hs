@@ -225,27 +225,27 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen ) (PCpt spc )
 
-   pExpr :: Parser Token P_Expression
+   pExpr :: Parser Token Term
    pExpr             = pFactorI <??> (f <$> pKey_pos "\\/" <*> pExpr)
                        where f orig y x = PUni orig x y
 
-   pFactorI :: Parser Token P_Expression
+   pFactorI :: Parser Token Term
    pFactorI          = pFactor <??> (f <$> pKey_pos "/\\" <*> pFactorI)
                        where f orig y x = PIsc orig x y
 
-   pFactor :: Parser Token P_Expression
+   pFactor :: Parser Token Term
    pFactor           = pTermD <??> (f <$> pKey_pos "!" <*> pFactor)
                        where f orig y x = PRad orig x y
 
-   pTermD :: Parser Token P_Expression
+   pTermD :: Parser Token Term
    pTermD            = pTermP <??> (f <$> pKey_pos ";" <*> pTermD)
                        where f orig y x = PCps orig x y
 
-   pTermP :: Parser Token P_Expression
+   pTermP :: Parser Token Term
    pTermP            = pExp5 <??> (f <$> pKey_pos "*" <*> pTermP)
                        where f orig y x = PPrd orig x y
 
-   pExp5 :: Parser Token P_Expression
+   pExp5 :: Parser Token Term
    pExp5  =  f <$> pList (pKey_pos "-") <*> pExp6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
              where f ms pe (("~",orig):ps) = PFlp orig (f ms pe ps)
                    f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)
@@ -253,17 +253,17 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                    f (orig:ms) pe ps = PCpl orig (f ms pe ps)
                    f _ pe _          = pe
 
-   pExp6 :: Parser Token P_Expression
+   pExp6 :: Parser Token Term
    pExp6             =  f <$> pExp7 <*> optional pSign
                         where f e Nothing = e
                               f e (Just (sgn,orig)) = PTyp orig e sgn
 -- Alternatively, this works too:    pExp6  =  pExp7 <??> (flip PTyp <$> pSign)
 
-   pExp7 :: Parser Token P_Expression
+   pExp7 :: Parser Token Term
    pExp7             =  pRelationRef                                    <|>
                         PBrk <$>  pSpec_pos '('  <*>  pExpr  <*  pSpec ')'
 
-   pRelationRef :: Parser Token P_Expression
+   pRelationRef :: Parser Token Term
    pRelationRef      = pid   <$> pKey_pos "I" <*> optional (pSpec '[' *> pConceptRef <* pSpec ']') <|>
                        pfull <$> pKey_pos "V" <*> optional pSign                                   <|>
                        pRelSign                                                                    <|>
@@ -275,7 +275,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                              singl (nm,orig) Nothing  = Patm orig nm []
                              singl (nm,orig) (Just c) = Patm orig nm [c]
 
-   pRelSign :: Parser Token P_Expression
+   pRelSign :: Parser Token Term
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
                        where prel (nm,orig) Nothing = Prel orig nm
                              prel (nm,pos') (Just (sgn,orig)) = PTyp orig (Prel pos' nm) sgn
@@ -369,7 +369,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                (pArgs `opt` [])                   <*>  -- a list of arguments for code generation.
                                (pKey ":" *> pExpr)                <*>  -- the context expression (mostly: I[c])
                                (pAttrs `opt` [])                       -- the subobjects
-                       where lbl :: (String, Origin) -> [P_Expression] -> [[String]] -> P_Expression -> [P_ObjectDef] -> P_Interface
+                       where lbl :: (String, Origin) -> [Term] -> [[String]] -> Term -> [P_ObjectDef] -> P_Interface
                              lbl (nm,p) params args expr ats
                               = P_Ifc { ifc_Name   = nm
                                       , ifc_Params = params
