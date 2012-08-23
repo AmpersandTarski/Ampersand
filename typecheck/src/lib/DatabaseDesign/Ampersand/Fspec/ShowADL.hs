@@ -341,36 +341,38 @@ instance ShowADL Term where
  showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
    where
     showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr) expr
-     = showchar expr'
+     = showchar (insP_Parentheses expr)
       where
-       expr' = insP_Parentheses expr
-       showchar (PI _)         = "I"
-       showchar (Pid c)        = "I["++showADL c++"]"
-       showchar (Pnid c)       = "-I["++showADL c++"]"
-       showchar (Patm _ a [])  = "'"++a++"'"
-       showchar (Patm _ a cs)  = "'"++a++"'["++show (head cs)++"]"
-       showchar Pnull          = "-V"
-       showchar (Pfull _ [])   = "V"
-       showchar (Pfull _ cs)   = "V["++intercalate "*" (map show cs)++"]"
-       showchar (Prel _ rel)   = rel
-       showchar (Pflp _ rel)   = rel++flp'
-       showchar (Pequ _ l r)   = showchar l++equi++showchar r
-       showchar (Pimp _ l r)   = showchar l++impl++showchar r
-       showchar (PIsc _ l r)   = showchar l++inter++showchar r
-       showchar (PUni _ l r)   = showchar l++union'++showchar r
-       showchar (PDif _ l r)   = showchar l++diff ++showchar r
-       showchar (PLrs _ l r)   = showchar l++lresi++showchar r
-       showchar (PRrs _ l r)   = showchar l++rresi++showchar r
-       showchar (PCps _ l r)   = showchar l++rMul++showchar r
-       showchar (PRad _ l r)   = showchar l++rAdd++showchar r
-       showchar (PPrd _ l r)   = showchar l++rPrd++showchar r
-       showchar (PKl0 _ e)     = showchar e++closK0
-       showchar (PKl1 _ e)     = showchar e++closK1
-       showchar (PFlp _ e)     = showchar e++flp'
-       showchar (PCpl _ e)     = '-':showchar e
-       showchar (PBrk _ e)     = lpar++showchar e++rpar
-       showchar (PTyp _ e (P_Sign{psign=[x]}))  = showchar e++lbr++showADL x++rbr
-       showchar (PTyp _ e (P_Sign{psign=xs }))  = showchar e++lbr++showADL (head xs)++star++showADL (last xs)++rbr
+       showchar (PI _)                                   = "I"
+       showchar (Pid c)                                  = "I["++showADL c++"]"
+       showchar (Pnid c)                                 = "-I["++showADL c++"]"
+       showchar (Patm _ a [])                            = "'"++a++"'"
+       showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
+       showchar Pnull                                    = "-V"
+       showchar (Pfull _ [])                             = "V"
+       showchar (Pfull _ cs)                             = "V["++intercalate "*" (map show cs)++"]"
+       showchar (Prel _ rel)                             = rel
+       showchar (Pflp _ rel)                             = rel++flp'
+       showchar (Pequ _ l r)                             = showchar l++equi++showchar r
+       showchar (Pimp _ l r)                             = showchar l++impl++showchar r
+       showchar (PIsc _ l r)                             = showchar l++inter++showchar r
+       showchar (PUni _ l r)                             = showchar l++union'++showchar r
+       showchar (PDif _ l r)                             = showchar l++diff ++showchar r
+       showchar (PLrs _ l r)                             = showchar l++lresi++showchar r
+       showchar (PRrs _ l r)                             = showchar l++rresi++showchar r
+       showchar (PCps _ l r)                             = showchar l++rMul++showchar r
+       showchar (PRad _ l r)                             = showchar l++rAdd++showchar r
+       showchar (PPrd _ l r)                             = showchar l++rPrd++showchar r
+       showchar (PKl0 _ e)                               = showchar e++closK0
+       showchar (PKl1 _ e)                               = showchar e++closK1
+       showchar (PFlp _ e)                               = showchar e++flp'
+       showchar (PCpl _ e)                               = '-':showchar e
+       showchar (PBrk _ e)                               = lpar++showchar e++rpar
+       showchar (PTyp _ e@(Prel{}) psgn)                 = showchar e++showsign psgn
+       showchar (PTyp _ (Pflp _ rel) (P_Sign{psign=xs})) = rel++showsign (P_Sign{psign=reverse xs})++flp'
+       showchar (PTyp _ e psgn)                          = lpar++showchar e++rpar++showsign psgn
+       showsign (P_Sign{psign=[x]})                      = lbr++showADL x++rbr
+       showsign (P_Sign{psign=xs })                      = lbr++showADL (head xs)++star++showADL (last xs)++rbr
 
 insP_Parentheses :: Term -> Term
 insP_Parentheses = insPar 0

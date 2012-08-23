@@ -496,6 +496,11 @@ showErr err@(CxeCpl{})
        ["    There is no universe from which to compute a complement in expression  "++showADL (cxeExpr err)++"." | null (cxeCpts err)]++
        ["    There are multiple universes from which to compute a complement in expression  "++showADL (cxeExpr err)++":\n    "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]
      )
+showErr err@(CxeEquLike { cxeExpr=Pequ _ _ _ }) = showErrEquation err
+showErr err@(CxeEquLike { cxeExpr=Pimp _ _ _ }) = showErrEquation err
+showErr err@(CxeEquLike { cxeExpr=PIsc _ _ _ }) = showErrBoolTerm err
+showErr err@(CxeEquLike { cxeExpr=PUni _ _ _ }) = showErrBoolTerm err
+showErr err@(CxeEquLike { cxeExpr=PDif _ _ _ }) = showErrBoolTerm err
 showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
@@ -535,6 +540,37 @@ showErr (PE msg)                                = "Parse error:\n"++ show (case 
                                                                              []  -> fatal 35 "No messages??? The impossible happened!" 
                                                                              x:_ -> x)
 showErr _ = fatal 580 "missing pattern in type error."
+showErrEquation err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
+ = concat
+     ( [show (origin x)++"\n"]++
+       case (cxeSrcCpts err, cxeTrgCpts err) of
+            ([], [])  -> ["    Entirely ambiguous equation  "++showADL (cxeExpr err)]
+            (cs, [])  -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+            ([], cs') -> ["    The target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+            (cs, cs') -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
+                         ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+     )
+showErrBoolTerm err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
+ = concat
+     ( [show (origin x)++"\n"]++
+       case (cxeSrcCpts err, cxeTrgCpts err) of
+            ([], [])  -> ["    Entirely ambiguous term  "++showADL (cxeExpr err)]
+            (cs, [])  -> ["    Inside term   "++showADL x++",\n"]++
+                         ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+            ([], cs') -> ["    Inside term   "++showADL x++",\n"]++
+                         ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+            (cs, cs') -> ["    Inside term   "++showADL x++",\n"]++
+                         ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
+                         ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+     )
 
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
@@ -1444,11 +1480,11 @@ pCtx2aCtx p_context
          g x@(Pfull o [])      = []
          g x@(Prel o a)        = []
          g x@(Pflp o a)        = []
-         g x@(Pequ _ a b)      = g a++g b
-         g x@(Pimp _ a b)      = g a++g b
-         g x@(PIsc _ a b)      = g a++g b
-         g x@(PUni _ a b)      = g a++g b
-         g x@(PDif _ a b)      = g a++g b
+         g x@(Pequ _ a b)      = errEquLike x a b
+         g x@(Pimp _ a b)      = errEquLike x a b
+         g x@(PIsc _ a b)      = errEquLike x a b
+         g x@(PUni _ a b)      = errEquLike x a b
+         g x@(PDif _ a b)      = errEquLike x a b
          g x@(PLrs _ a b)      = errCpsLike x a b
          g x@(PRrs _ a b)      = errCpsLike x a b
          g x@(PCps _ a b)      = errCpsLike x a b
@@ -1461,6 +1497,20 @@ pCtx2aCtx p_context
          g x@(PBrk _ a)        = g a
          g x@(PTyp _ a (P_Sign [])) = g a
          g x@(PTyp _ a sgn)    = g a
+         errEquLike x a b
+          = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
+            where
+             nodeError = [ CxeEquLike {cxeExpr    = x
+                                      ,cxeLhs     = a
+                                      ,cxeRhs     = b
+                                      ,cxeSrcCpts = srcConflictingConcepts
+                                      ,cxeTrgCpts = trgConflictingConcepts
+                                      }
+                         | (_,_,TypExpr t _ _ _,srcConflictingConcepts)<-typeTable, t==x
+                         , (_,_,TypExpr t _ _ _,trgConflictingConcepts)<-typeTable, t==p_flp x
+                         , length srcConflictingConcepts/=1, length trgConflictingConcepts/=1
+                         ]
+             deepErrors = g a++g b
          errCpl x a
           = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
             where

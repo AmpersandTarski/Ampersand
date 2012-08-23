@@ -56,23 +56,23 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "AbstractSyntaxTree.hs"
 
 data A_Context
-   = ACtx{ ctxnm :: String        -- ^ The name of this context
+   = ACtx{ ctxnm :: String           -- ^ The name of this context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctxlang :: Lang          -- ^ The default language used in this context.
-         , ctxmarkup :: PandocFormat  -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxthms :: [String]      -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-         , ctxpo :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
-         , ctxpats :: [Pattern]     -- ^ The patterns defined in this context
+         , ctxlang :: Lang           -- ^ The default language used in this context.
+         , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
+         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctxpo :: GenR             -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
+         , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxprocs :: [Process]     -- ^ The processes defined in this context
-         , ctxrs :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: [Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-         , ctxcds :: [ConceptDef]  -- ^ The concept definitions defined in this context, including those from patterns and processes
-         , ctxks :: [KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxgs :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxifcs :: [Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-         , ctxps :: [Purpose]     -- ^ The purposes of objects defined in this context, outside the scope of patterns
-         , ctxsql :: [ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
-         , ctxphp :: [ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
+         , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctxds :: [Declaration]    -- ^ The declarations defined in this context, outside the scope of patterns
+         , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxks :: [KeyDef]         -- ^ The key definitions defined in this context, outside the scope of patterns
+         , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context, outside the scope of patterns
+         , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns
+         , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
+         , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxenv :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
          , ctxmetas :: [Meta]
          , ctxatoms :: [(String,[String])] -- ^ (the name of a concept, explicit initial population of that concept)
