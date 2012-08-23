@@ -1,6 +1,6 @@
 CONTEXT Test
 
-PATTERN Test2
+PATTERN Test4
 RELATION r[X*Y]
 RELATION s[X*A]
 RELATION t[B*Y]
@@ -13,7 +13,7 @@ ENDPATTERN
 
 -- Result: FAIL
 -- Reason: the intersection between A and B does not exist as a type.
--- If s;q were to be computed, the concepts at the connection at the ; are B, D and Z.
+-- If s;q were to be computed, the concepts at the connection at the ; are A, B, and E.
 -- However, there is no way to choose between these concepts, because there is no smallest.
 
 ENDCONTEXT

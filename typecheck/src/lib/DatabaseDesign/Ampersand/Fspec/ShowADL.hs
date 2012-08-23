@@ -337,7 +337,7 @@ showatom :: String -> String
 showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
 
 --used to compose error messages at p2a time
-instance ShowADL P_Expression where
+instance ShowADL Term where
  showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
    where
     showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr) expr
@@ -372,12 +372,12 @@ instance ShowADL P_Expression where
        showchar (PTyp _ e (P_Sign{psign=[x]}))  = showchar e++lbr++showADL x++rbr
        showchar (PTyp _ e (P_Sign{psign=xs }))  = showchar e++lbr++showADL (head xs)++star++showADL (last xs)++rbr
 
-insP_Parentheses :: P_Expression -> P_Expression
+insP_Parentheses :: Term -> Term
 insP_Parentheses = insPar 0
       where
-       wrap :: Integer -> Integer -> P_Expression -> P_Expression
+       wrap :: Integer -> Integer -> Term -> Term
        wrap i j e' = if i<=j then e' else PBrk (origin e') e'
-       insPar :: Integer -> P_Expression -> P_Expression
+       insPar :: Integer -> Term -> Term
        insPar i (Pequ o l r) = wrap i     0 (Pequ o (insPar 1 l) (insPar 1 r))
        insPar i (Pimp o l r) = wrap i     0 (Pimp o (insPar 1 l) (insPar 1 r))
        insPar i (PIsc o l r) = wrap (i+1) 2 (PIsc o (insPar 2 l) (insPar 2 r))
