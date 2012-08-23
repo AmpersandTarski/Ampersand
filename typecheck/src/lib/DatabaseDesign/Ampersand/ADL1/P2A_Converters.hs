@@ -394,21 +394,16 @@ tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTab
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by expressionNr")])
      stClos1 = setClosure st
-     someWhatSortedLubs = decompose (Data.Map.keys st)
+     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _ _) <- Data.Map.keys st]
       where
-       decompose (o@(TypLub a b _ _):rs) = decompose (lookups a st) ++ decompose (lookups b st) ++ o:[r|r<-decompose rs, r `notElem` lookups a st, r `notElem` lookups b st]
-       decompose (o:rs) = decompose rs
-       decompose [] = []
+       compr a b  = if b `elem` (lookups a stClos1) then LT else
+                    if a `elem` (lookups b stClos1) then GT else EQ
      lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[[o]])
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
         f q o@(TypLub a b _ _) = Data.Map.map (\cs -> foldr merge cs [lookups o q | a `elem` cs, b `elem` cs]) q
-        sortisc :: (Ord a, Eq a) => [a]->[a]->[a]
-        sortisc (a:as) (b:bs) | a == b = a:sortisc as bs
-                              | a < b = sortisc as (b:bs)
-                              | a > b = sortisc (a:as) bs
-        sortisc _ _ = []
+        f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
      stClos = setClosure stClosAdded
      stEdges :: [(Int,Int)]
      stEdges = [(expressionNr s,expressionNr t) | (s,t) <- flattenMap st]
