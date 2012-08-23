@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 {-# LANGUAGE RelaxedPolyRec #-} -- -RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
@@ -25,6 +25,7 @@ import Data.Maybe
 import Data.List
 import Data.Char
 import Data.Array
+import Control.Applicative
 import qualified Data.Map
 
 -- TODO: this module should import Database.Ampersand.Core.ParseTree directly, and it should be one 
@@ -396,7 +397,7 @@ tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTab
        decompose (o@(TypLub a b _ _):rs) = decompose (lookups a st) ++ decompose (lookups b st) ++ o:[r|r<-decompose rs, r `notElem` lookups a st, r `notElem` lookups b st]
        decompose (o:rs) = decompose rs
        decompose [] = []
-     lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[o])
+     lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[[o]])
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
@@ -823,6 +824,35 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
                 , edgeAttributes = attr
                 }
 
+-- On Guarded: it is intended to return something, as long as there were no errors creating it.
+-- For instance, (Guarded P_Context) would return the P_Context, unless there are errors.
+
+type Guarded = Either [CtxError]
+getErrors :: (Guarded a) -> [CtxError]
+getErrors (Left l) = l
+getErrors _ = []
+
+parallel :: (a->b->c) -> Guarded a -> Guarded b -> Guarded c -- get both values or collect all error messages
+parallel f (Right a) (Right b) = Right$ f a b
+parallel _ (Left  a) (Right b) = Left a 
+parallel _ (Right a) (Left  b) = Left b
+parallel _ (Left  a) (Left  b) = Left (a ++ b)
+
+parallelList :: [Guarded a] -> Guarded [a] -- get both values or collect all error messages
+parallelList = foldr (parallel (:)) (Right [])
+
+instance Applicative (Guarded) where
+ pure a = Right a
+ (<*>) (Right f) (Right a) = Right (f a)
+ (<*>) (Left  a) (Right b) = Left a 
+ (<*>) (Right a) (Left  b) = Left b
+ (<*>) (Left  a) (Left  b) = Left (a ++ b)
+
+-- note the difference: if we want to get no errors from val2 if there are still errors in val1, use:
+-- do { a <- val1; b <- val2; return (f a b) }
+-- if we want to get both errors, use:
+-- do { (a,b) <- getPair val1 val2; return (f a b) }
+
 -- | Transform a context as produced by the parser into a type checked heterogeneous algebra.
 --   Produce type error messages if necessary and produce proof graphs to document the type checking process.
 pCtx2aCtx :: P_Context -> (A_Context,[CtxError],DotGraph String,DotGraph String)
@@ -830,25 +860,25 @@ pCtx2aCtx p_context
  = (contxt,typeErrors
    ,stTypeGraph,condTypeGraph)
    where
-    contxt = 
-         ACtx{ ctxnm     = name p_context     -- The name of this context
+    contxt = ACtx{ ctxnm     = name p_context     -- The name of this context
              , ctxpos    = ctx_pos p_context
              , ctxlang   = fromMaybe Dutch (ctx_lang p_context)
              , ctxmarkup = fromMaybe ReST  (ctx_markup p_context) -- The default markup format for free text in this context
-             , ctxpo     = gE
+             , ctxpo     = gE -- 1
              , ctxthms   = ctx_thms p_context -- The patterns/processes to be printed in the functional specification. (for making partial documentation)
+             , ctxrs     = ctxrules
+             , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
              , ctxpats   = pats          -- The patterns defined in this context
                                          -- Each pattern contains all user defined rules inside its scope
              , ctxprocs  = procs         -- The processes defined in this context
-             , ctxrs     = ctxrules
-             , ctxds     = adecs         -- The declarations defined in this context, outside the scope of patterns
-             , ctxcds    = acds          -- All concept definitions
-             , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
-             , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
              , ctxifcs   = ifcs          -- The interfaces defined in this context, outside the scope of patterns
              , ctxps     = apurp         -- The purposes defined in this context, outside the scope of patterns
              , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
+
+             , ctxds     = adecs         -- The declarations defined in this context, outside the scope of patterns
+             , ctxcds    = acds          -- All concept definitions
+             , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas p_context ]
              , ctxexperimental = ctx_experimental p_context
