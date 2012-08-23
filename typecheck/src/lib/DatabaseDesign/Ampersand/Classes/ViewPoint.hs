@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..)) where
+module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..),makeDecl) where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Core.Poset
