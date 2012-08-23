@@ -1,14 +1,20 @@
 CONTEXT Test
--- should yield an error
-PATTERN Test
 
+PATTERN Test11
 r :: A*A
 r :: B*C
-
 RULE r = r[A*A]\/I
-
 ENDPATTERN
+
 ENDCONTEXT
 
-{- This script is written as a superficial check whether type deduction works.
+{-
+   Purpose: a superficial check on type deduction
+   Result: FAIL
+   Reason: The type of I is a subset of r(line 6:6), so the type of r is not determined...
+   Error message:
+
+   The pattern named "Test11" contains errors in the rule at line 6:1:
+   line 6:18, file "try11.adl"
+       Expression  I  can be of any type.
 -}

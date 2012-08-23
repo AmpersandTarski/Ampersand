@@ -1,6 +1,6 @@
 CONTEXT Test
 
-PATTERN Try8
+PATTERN Test8
 r :: A*C.
 RULE r |- r~;r
 ENDPATTERN

@@ -580,8 +580,10 @@ In practice, we have it a little different.
                    f _ pe _          = pe
 
    pTrm6 :: Parser Token Term
-   pTrm6  =  pRelationRef                                    <|>
-             PBrk <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')'
+   pTrm6  =  pRelationRef                                                        <|>
+             f <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')' <*> optional pSign
+             where f orig term  Nothing          =            PBrk orig term
+                   f org  term (Just (sgn,orig)) = PTyp orig (PBrk org  term) sgn
 
    pRelationRef :: Parser Token Term
    pRelationRef      = pRelSign                                                                      <|>

@@ -1,14 +1,16 @@
 CONTEXT Test
--- should yield an error
-PATTERN Test
 
+PATTERN Test12
 r :: A*A
-
-
-RULE r = r[A*A]\/I
-
+r :: B*C
+RULE r = r[A]/\r[B*B]
 ENDPATTERN
+
 ENDCONTEXT
 
-{- This script is written as a superficial check whether type deduction works.
+{- 
+   Purpose: to get a proper error message, which makes sense to the programmer.
+   Result: FAIL
+   Reason: the two occurrences of r on the right hand side of the equation
+           are both diagnosed ambiguous, thus giving strange error messages.
 -}

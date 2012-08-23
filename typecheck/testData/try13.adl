@@ -1,14 +1,16 @@
 CONTEXT Test
--- is type correct if the checker can deduce that r\/I::[A*A]
-PATTERN Test
 
+PATTERN Test13
 r :: A*A
 r :: B*C
-
 RULE r[A] = r\/I
-
 ENDPATTERN
+
 ENDCONTEXT
 
-{- This script is written as a superficial check whether type deduction works.
+{- 
+   Purpose: to verify that the checker can deduce that r\/I::[A*A]
+   Result: PASS
+   Reason: This is not entirely trivial. Relation I takes its type from r,
+           so the checker deduces that I[A] is meant.
 -}

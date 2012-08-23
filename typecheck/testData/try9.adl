@@ -1,15 +1,13 @@
 CONTEXT Test
-PATTERN Test
 
+PATTERN Test9
 r :: A*A
-
 RULE r = r\/I
-
 ENDPATTERN
+
 ENDCONTEXT
 
-{- This script is written as a superficial check whether type deduction works.
--
+{- 
    Purpose: a superficial check whether type deduction works.
    Result: PASS
    Reason: This is not entirely trivial. Relation I takes its type from r,
