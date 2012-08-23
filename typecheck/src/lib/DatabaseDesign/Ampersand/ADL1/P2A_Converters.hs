@@ -270,14 +270,14 @@ typing p_context
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
-                                                .+. dm .+. cm .+. dm2 .+. cm2
+                                                .+. dm .+. cm -- .+. dm2 .+. cm2 -- probably needed, but if there is no try*.adl that reports a bug caused by this commenting, please keep it commented
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mSpecific (dom a) (dom b)  x
                                                       (cm,interCod) = mSpecific (cod a) (cod b)  x
                                                       (dm2,interDom2) = mSpecific interDom uLft  x
                                                       (cm2,interCod2) = mSpecific interCod uRt   x
      uType x uLft uRt   (PUni _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
-                                                .+. dm .+. cm .+. dm2 .+. cm2
+                                                .+. dm .+. cm -- .+. dm2 .+. cm2 -- probably needed, but if there is no try*.adl that reports a bug caused by this commenting, please keep it commented
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mGeneric (dom a) (dom b)  x
                                                       (cm,interCod) = mGeneric (cod a) (cod b)  x
