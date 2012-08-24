@@ -19,14 +19,14 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Picture.hs"
 
 type Pictures = [Picture]
-data Picture = Pict { origName     :: String    -- ^ The original name of the object this picture was made for. (could include spaces!)
-                    , pType        :: PictType  -- ^ the type of the picture
-                    , uniqueName   :: String    -- ^ used to reference the picture in pandoc or tex
-                    , dotSource    :: DotGraph String    -- ^ the string representing the .dot
-                    , fullPath      :: FilePath  -- ^ the full file path where the .dot and .png file resides
-                    , relPng       :: FilePath  -- ^ the relative file path where the .png file resides
-                    , dotProgName  :: GraphvizCommand   -- ^ the name of the program to use  ("dot" or "neato" )
-                    , caption      :: String    -- ^ a human readable name of this picture
+data Picture = Pict { origName :: String    -- ^ The original name of the object this picture was made for. (could include spaces!)
+                    , pType :: PictType  -- ^ the type of the picture
+                    , uniqueName :: String    -- ^ used to reference the picture in pandoc or tex
+                    , dotSource :: DotGraph String    -- ^ the string representing the .dot
+                    , fullPath :: FilePath  -- ^ the full file path where the .dot and .png file resides
+                    , relPng :: FilePath  -- ^ the relative file path where the .png file resides
+                    , dotProgName :: GraphvizCommand   -- ^ the name of the program to use  ("dot" or "neato" )
+                    , caption :: String    -- ^ a human readable name of this picture
                     }
 data PictType = PTClassDiagram -- a UML class diagram, or something that comes close
               | PTPattern      -- a conceptual diagram with the relations USED in a pattern

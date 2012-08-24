@@ -20,20 +20,20 @@ where
 --   fatal = fatalMsg "Classes.ConceptStructure"
 
    class ConceptStructure a where
-    concs   :: a -> [A_Concept]                 -- ^ the set of all concepts used in data structure a
-    mors    :: a -> [Relation]        -- ^ the set of all relations used within data structure a,
+    concs :: a -> [A_Concept]                 -- ^ the set of all concepts used in data structure a
+    mors :: a -> [Relation]        -- ^ the set of all relations used within data structure a,
     mors     = nub . morlist
     morlist :: a -> [Relation]        -- ^ the list of all relations used within data structure a
                                       --   (the difference with mors is that morlist is not unique wrt name and signature)
-    genE    :: a -> GenR
+    genE :: a -> GenR
     genE cstruc = if null cs then (\x y -> if x==y then EQ else NC,[]) else head cs where cs = [order c |c<-concs cstruc]
     
 -- class KleeneClos where
---  closExprs    :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
+--  closExprs :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
 
    instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
     concs   (a,b) = concs a `uni` concs b
-    mors    (a,b) =  mors a `uni` mors b
+    mors    (a,b) = mors a  `uni` mors b
     morlist (a,b) = morlist a ++ morlist b
 
    instance ConceptStructure a => ConceptStructure (Maybe a) where
@@ -59,7 +59,8 @@ where
     mors      c = mors (ctxpats c) `uni` mors (ctxprocs c) `uni` mors [ifcObj s | s<-ctxifcs c]
     morlist   c = morlist (ctxpats c)++morlist (ctxprocs c)++morlist [ifcObj s | s<-ctxifcs c]
 --  closExprs c = closExprs (ctxpats c) `uni` closExprs [ifcObj s | s<-ctxifcs c]
-    genE        = ctxpo 
+    genE      c = ctxpo c
+
    instance ConceptStructure KeyDef where
     concs     kd = [kdcpt kd] `uni` concs [objDef | KeyExp objDef <- kdats kd]
     mors      kd = mors                   [objDef | KeyExp objDef <- kdats kd]

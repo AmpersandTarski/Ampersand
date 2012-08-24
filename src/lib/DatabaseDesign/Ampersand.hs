@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
-   , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), P_Expression(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
+   , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
    , A_Concept(..), A_Gen, newAcpt, atomsOf
    , Sign(..), ConceptDef(..), ConceptStructure(..)
@@ -53,7 +53,7 @@ module DatabaseDesign.Ampersand
    -- * Functions with plugs:
    , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff
-   , CtxError, ParseError, nocxe, cxes
+   , CtxError, ParseError
    , parseContext
    , parsePopulations
    , parseADL1pExpr
@@ -81,7 +81,6 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.hPutStrLn
    , DatabaseDesign.Ampersand.Basics.readFile
    , DatabaseDesign.Ampersand.Basics.writeFile
-   , DatabaseDesign.Ampersand.Basics.trim
    , spaces
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)

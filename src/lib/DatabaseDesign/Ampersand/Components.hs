@@ -13,12 +13,14 @@ module DatabaseDesign.Ampersand.Components
    , doGenUML
    , doGenDocument
    , doGenExcel
+   , Guarded(..)
     -- * etc...
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
+import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx)
+import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,Guarded(..))
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Input
 import Text.Pandoc 
@@ -34,11 +36,11 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Components"
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
---   Apply nocxe on the error object to determine whether there are errors.
 --   If the list of populations is not empty, then it overwrites the one included in the parsed context
-typeCheck :: P_Context -> [P_Population] -> (A_Context, CtxError)
-typeCheck pCtx []   = let (aCtx,ctxcheck)=pCtx2aCtx pCtx                  in (aCtx,cxes ctxcheck)
-typeCheck pCtx pops = let (aCtx,ctxcheck)=pCtx2aCtx (pCtx{ctx_pops=pops}) in (aCtx,cxes ctxcheck)
+typeCheck :: P_Context -> [P_Population] -> (Guarded A_Context,DotGraph String,DotGraph String)
+typeCheck p_context []   = pCtx2aCtx p_context                 
+typeCheck p_context pops = pCtx2aCtx (p_context{ctx_pops=pops})
+                           -- consisting of:  (aCtx,ctxcheck,stTypeGraph,condensedGraph)
   
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.

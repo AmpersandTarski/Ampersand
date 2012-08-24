@@ -190,9 +190,9 @@ where
                             | simpl                  = (if isEIsc f then EIsc (t:unE f) else EIsc [t,f], steps++steps', fEqu [equ',equ''])
                      -- Absorb equals:    r/\r  -->  r
                             | or [length cl>1 |cl<-absor3]
-                                                     = (EIsc [head cl | cl<-absor3], [shw e++"/\\"++shw e++" = "++shw e | cl<-absor3, length cl>1, let e=head cl], "<=>")
+                                                     = (EIsc [head cl | cl<-absor3], [shw e++" /\\ "++shw e++" = "++shw e | cl<-absor3, length cl>1, let e=head cl], "<=>")
                      -- Inconsistency:    r/\-r   -->  False
-                            | not (null incons)      = (EUni [], [shw (notCpl (head incons))++"/\\"++shw (head incons)++" = V-"], "<=>")
+                            | not (null incons)      = (EUni [], [shw (notCpl (head incons))++" /\\ "++shw (head incons)++" = V-"], "<=>")
                      -- Inconsistency:    EUni []   -->  False
                             | k==EUni []             = (EUni [], ["inconsistency"], "<=>")
   -- this is unreachable    | k==EIsc []             = (EIsc ks, ["x/\\V = x"], "<=>")
@@ -201,7 +201,7 @@ where
                      -- Absorb if r is antisymmetric:    r/\r~  -->  I    (note that a reflexive r incurs r/\r~ = I)
                             | or [length cl>1 |cl<-absor2]
                                                      = ( EUni [if length cl>1 then ERel (I (source e))  else e | cl<-absor2, let e=head cl]
-                                                       , [shw e++"/\\"++shw (flp e)++" = I, because"++shw e++" is antisymmetric" | cl<-absor2, let e=head cl]
+                                                       , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric" | cl<-absor2, let e=head cl]
                                                        , if and [isRfx (head cl) | cl<-absor2, length cl>1] then "<=>" else "==>"
                                                        )
                      -- Absorb:    (x\\/y)/\\y  -->  y

@@ -15,7 +15,7 @@
    upCap [] = []  
    upCap (h:t) = toUpper h:t
 
-   trim      :: String -> String
+   trim :: String -> String
    trim      = f . f
      where f = reverse . dropWhile (' '==)
 

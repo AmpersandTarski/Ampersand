@@ -23,7 +23,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowADL"
 
 class ShowADL a where
- showADL      :: a -> String
+ showADL :: a -> String
 
 -- there are data types yielding language dependent data like an Expression
 -- the LanguageDependent class provides function(s) to map language dependent functions on those data if any.
@@ -221,7 +221,8 @@ instance ShowADL Relation where
  showADL rel = showADL (ETyp (ERel rel) (sign rel))
 
 instance ShowADL Expression where
- showADL = showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+ showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+-- NOTE: retain space after \\, because of unexpected side effects if it is used just before an 'r' or 'n'....
 
 instance ShowADL Declaration where
  showADL decl = 
@@ -319,10 +320,10 @@ instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
 instance ShowADL P_Population where
- showADL (P_Popu pr (P_Sign rtp) pairs)
-  = "POPULATION "++name pr++(if null rtp then [] else "["++name(head rtp)++"*"++name(last rtp)++"]")++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
-    where indent = "   "
+ showADL p@(P_Popu{})
+  = "POPULATION "++name p++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
+    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps p))++indent++"]"
+    where indent = "   "; P_Sign pConcepts=p_type p
  showADL (P_CptPopu (cnm, xs))
   = "POPULATION "++cnm++" CONTAINS\n"++
     indent++"[ "++intercalate ("\n"++indent++", ") (map showatom xs) ++indent++"]"
@@ -336,37 +337,67 @@ showatom :: String -> String
 showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
 
 --used to compose error messages at p2a time
-instance ShowADL P_Expression where
- showADL = showPExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " \\ ", " / ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
+instance ShowADL Term where
+ showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
    where
-    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr)
-     = showchar
+    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr) expr
+     = showchar (insP_Parentheses expr)
       where
-       showchar (Pid c)      = "I["++showADL c++"]"
-       showchar (Pnid c)     = "-I["++showADL c++"]"
-       showchar Pnull        = "-V"
-       showchar (Pfull a b)  = "V["++showADL a++"*"++showADL b++"]"
-       showchar (Prel rel)   = showADL rel
-       showchar (Pflp rel)   = showADL rel++"~"
-       showchar (Pequ l r)   = showchar l++equi++showchar r
-       showchar (Pimp l r)   = showchar l++impl++showchar r
-       showchar (Pisc [])    = "V"
-       showchar (Pisc es)    = intercalate inter  [showchar e | e<-es]
-       showchar (PUni [])    = "-V"
-       showchar (PUni es)    = intercalate union' [showchar e | e<-es]
-       showchar (PDif l r)   = showchar l++diff ++showchar r
-       showchar (PLrs l r)   = showchar l++lresi++showchar r
-       showchar (PRrs l r)   = showchar l++rresi++showchar r
-       showchar (PCps l r)   = showchar l++rMul++showchar r
-       showchar (PRad l r)   = showchar l++rAdd++showchar r
-       showchar (PPrd l r)   = showchar l++rPrd++showchar r
-       showchar (PKl0 e)     = showchar e++closK0
-       showchar (PKl1 e)     = showchar e++closK1
-       showchar (PFlp e)     = showchar e++flp'
-       showchar (PCpl e)     = '-':showchar e
-       showchar (PBrk e)     = lpar++showchar e++rpar
-       showchar (PTyp e (P_Sign{psign=[x]}))  = showchar e++lbr++showADL x++rbr
-       showchar (PTyp e (P_Sign{psign=xs }))  = showchar e++lbr++showADL (head xs)++star++showADL (last xs)++rbr
+       showchar (PI _)                                   = "I"
+       showchar (Pid c)                                  = "I["++showADL c++"]"
+       showchar (Pnid c)                                 = "-I["++showADL c++"]"
+       showchar (Patm _ a [])                            = "'"++a++"'"
+       showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
+       showchar Pnull                                    = "-V"
+       showchar (Pfull _ [])                             = "V"
+       showchar (Pfull _ cs)                             = "V["++intercalate "*" (map show cs)++"]"
+       showchar (Prel _ rel)                             = rel
+       showchar (Pflp _ rel)                             = rel++flp'
+       showchar (Pequ _ l r)                             = showchar l++equi++showchar r
+       showchar (Pimp _ l r)                             = showchar l++impl++showchar r
+       showchar (PIsc _ l r)                             = showchar l++inter++showchar r
+       showchar (PUni _ l r)                             = showchar l++union'++showchar r
+       showchar (PDif _ l r)                             = showchar l++diff ++showchar r
+       showchar (PLrs _ l r)                             = showchar l++lresi++showchar r
+       showchar (PRrs _ l r)                             = showchar l++rresi++showchar r
+       showchar (PCps _ l r)                             = showchar l++rMul++showchar r
+       showchar (PRad _ l r)                             = showchar l++rAdd++showchar r
+       showchar (PPrd _ l r)                             = showchar l++rPrd++showchar r
+       showchar (PKl0 _ e)                               = showchar e++closK0
+       showchar (PKl1 _ e)                               = showchar e++closK1
+       showchar (PFlp _ e)                               = showchar e++flp'
+       showchar (PCpl _ e)                               = '-':showchar e
+       showchar (PBrk _ e)                               = lpar++showchar e++rpar
+       showchar (PTyp _ e@(Prel{}) psgn)                 = showchar e++showsign psgn
+       showchar (PTyp _ (Pflp _ rel) (P_Sign{psign=xs})) = rel++showsign (P_Sign{psign=reverse xs})++flp'
+       showchar (PTyp _ e psgn)                          = lpar++showchar e++rpar++showsign psgn
+       showsign (P_Sign{psign=[x]})                      = lbr++showADL x++rbr
+       showsign (P_Sign{psign=xs })                      = lbr++showADL (head xs)++star++showADL (last xs)++rbr
+
+insP_Parentheses :: Term -> Term
+insP_Parentheses = insPar 0
+      where
+       wrap :: Integer -> Integer -> Term -> Term
+       wrap i j e' = if i<=j then e' else PBrk (origin e') e'
+       insPar :: Integer -> Term -> Term
+       insPar i (Pequ o l r) = wrap i     0 (Pequ o (insPar 1 l) (insPar 1 r))
+       insPar i (Pimp o l r) = wrap i     0 (Pimp o (insPar 1 l) (insPar 1 r))
+       insPar i (PIsc o l r) = wrap (i+1) 2 (PIsc o (insPar 2 l) (insPar 2 r))
+       insPar i (PUni o l r) = wrap (i+1) 2 (PUni o (insPar 2 l) (insPar 2 r))
+       insPar i (PDif o l r) = wrap i     4 (PDif o (insPar 5 l) (insPar 5 r))
+       insPar i (PLrs o l r) = wrap i     6 (PLrs o (insPar 7 l) (insPar 7 r))
+       insPar i (PRrs o l r) = wrap i     6 (PRrs o (insPar 7 l) (insPar 7 r))
+       insPar i (PCps o l r) = wrap (i+1) 8 (PCps o (insPar 8 l) (insPar 8 r))
+       insPar i (PRad o l r) = wrap (i+1) 8 (PRad o (insPar 8 l) (insPar 8 r))
+       insPar i (PPrd o l r) = wrap (i+1) 8 (PPrd o (insPar 8 l) (insPar 8 r))
+       insPar _ (PKl0 o e)   = PKl0 o (insPar 10 e)
+       insPar _ (PKl1 o e)   = PKl1 o (insPar 10 e)
+       insPar _ (PFlp o e)   = PFlp o (insPar 10 e)
+       insPar _ (PCpl o e)   = PCpl o (insPar 10 e)
+       insPar i (PBrk _ e)   = insPar i e
+       insPar _ (PTyp o e t) = PTyp o (insPar 10 e) t
+       insPar _ x            = x
+
 
 --used to compose error messages at p2a time
 instance ShowADL P_Relation where

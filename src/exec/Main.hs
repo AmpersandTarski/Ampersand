@@ -2,11 +2,13 @@
 module Main where
 
 import Control.Monad
+import System.FilePath (replaceExtension)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
+import Data.GraphViz --hiding (addExtension, C)
+import Data.List (intercalate)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
@@ -34,24 +36,39 @@ main =
           ; pCtx <- parseContext opts (fileName opts)
           ; case pCtx of
               Left msg ->
-               do { Prelude.putStrLn $ "Parse error:"
+               do { Prelude.putStrLn $ "Parsing error:"
                   ; Prelude.putStrLn $ show msg
                   ; exitWith $ ExitFailure 10 
                   }
-              Right pctx -> 
+              Right p_context -> 
                do { pPops <- case importfile opts of
                                [] -> return []
                                fn -> do { popsText <- readFile fn
                                         ; parsePopulations popsText opts fn
                                         }
                   ; verboseLn opts "Type checking..."
-                  ; let (actx,err) = typeCheck pctx pPops
-                  ; if nocxe err 
-                    then return actx
-                    else do { Prelude.putStrLn $ "Type error:"
-                            ; Prelude.putStrLn $ show err
-                            ; exitWith $ ExitFailure 20
+                  ; let (actx,stTypeGraph,condensedGraph) = typeCheck p_context pPops
+-- For the purpose of debugging the type checker, or for educational purposes, the switch "--typing" can be used.
+-- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
+-- Use only for very small scripts, or else the results will not be very informative.
+-- For the large scripts that are used in projects, the program may abort due to insufficient resources.
+                  ; if typeGraphs opts
+                    then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
+                            ; putStr ("\n"++condensedGraphPath++" written.")
+                            ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
+                            ; putStr ("\n"++stDotGraphPath++" written.")
                             }
+                    else do { putStr "" }
+                  ; case actx of
+                     Errors [err]      -> do { Prelude.putStrLn $ "There is one type error:"
+                                             ; Prelude.putStrLn $ show err
+                                             ; exitWith $ ExitFailure 20
+                                             }
+                     Errors type_errors-> do { Prelude.putStrLn $ "The following type errors were found:\n"
+                                             ; Prelude.putStrLn $ intercalate "\n\n" (map show type_errors)
+                                             ; exitWith $ ExitFailure 20
+                                             }
+                     Checked a         -> return a
                   }
           }
              

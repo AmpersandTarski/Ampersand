@@ -15,8 +15,9 @@ module DatabaseDesign.Ampersand.Fspec.Plug
 where
 import DatabaseDesign.Ampersand.ADL1 
 import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),ConceptStructure(..))
-import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),fatalMsg,Identified(..),(>-),sort',eqClass)
+import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),fatalMsg,Identified(..),(>-),eqClass)
 import Data.List(elemIndex,nub)
+import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
 fatal :: Int -> String -> a
@@ -191,8 +192,8 @@ instance Object PlugSQL where
     where
      f c mms
        | null stop = f c mms'  -- a path from c to a is not found (yet), so add another step to the recursion
-       | null (sort' length stop) = fatal 243 "null (sort' length stop)."
-       | otherwise = ECps (head (sort' length stop))  -- pick the shortest path and turn it into an expression.
+       | null (sortWith length stop) = fatal 243 "null (sortWith length stop)."
+       | otherwise = ECps (head (sortWith length stop))  -- pick the shortest path and turn it into an expression.
       where
         mms' = if [] `elem` mms 
                then fatal 295 "null in mms."

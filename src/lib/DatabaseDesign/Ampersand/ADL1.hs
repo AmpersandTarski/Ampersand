@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand.ADL1
            , objAts, objatsLegacy
            , P_SubInterface(..), SubInterface(..)
            , Interface(..)
-           , P_Expression(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
+           , Term(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
            , A_Gen(..),P_Gen(..)
            , Relation(..), flp, isTypeable, makeRelation
