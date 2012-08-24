@@ -82,7 +82,7 @@ rulesFromKey :: KeyDef -> [Rule]
 rulesFromKey key = [] --see #276 mkProductInjectivityRule keyExps : 
                    --mkProductTotalityRule keyExps :
                    --see #276 map mkUnivalenceRule keyExps  
-
+{-
  where keyExps = [ (objnm att, objctx att) | KeyExp att <- kdats key ]
  
        mkProductInjectivityRule exprs = mkKeyRule "Diamond" "Diamond rule" "Diamantregel" $ 
@@ -134,7 +134,7 @@ rulesFromKey key = [] --see #276 mkProductInjectivityRule keyExps :
                                      , decplug = True
                                      }
                 }
-
+-}
 instance ProcessStructure a => ProcessStructure [a] where
   processes     = concatMap processes
   roles         = concatMap roles
