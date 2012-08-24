@@ -12,13 +12,11 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeName :: String          -- ^ The name shared by different attributes.
                               ,cxeAtts :: [Term]  -- ^ The list of attributes with the same name.
                               }
-              | CxeAmbExpr    {cxeExpr :: Term   -- ^ an erroneous expression, which is ambiguous
-                              ,cxeSrcT :: [P_Concept]    -- ^ The applicable types for the source (length must be >1)
-                              ,cxeTrgT :: [P_Concept]    -- ^ The applicable types for the target (length must be >1)
-                              ,cxeSign :: [P_Sign]       -- ^ The applicable types for the expression (length must be >1)
-                              }
               | CxeILike      {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
+                              }       
+              | CxeRel        {cxeExpr :: Term
+                              ,cxeDcls :: [Term]
                               }       
               | CxeCpl        {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
