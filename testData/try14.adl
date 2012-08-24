@@ -1,0 +1,19 @@
+﻿CONTEXT Test
+
+PATTERN Test14
+r :: A*C.
+r :: D*E.
+t :: B*C.
+s :: A*B.
+RULE (r[G*H])[A*C] = s;t
+--RULE I[A];r;I[C] = s;t
+ENDPATTERN
+
+ENDCONTEXT
+
+{- 
+   Purpose: to verify that the checker can deduce that r\/I::[A*A]
+   Result: PASS
+   Reason: This is not entirely trivial. Relation I takes its type from r,
+           so the checker deduces that I[A] is meant.
+-}
