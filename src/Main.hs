@@ -4,9 +4,10 @@ module Main where
 import Control.Monad
 import Data.List
 import Data.Function (on)
-import System.FilePath        (combine)
+import System.FilePath        (replaceExtension,combine)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
+import Data.GraphViz hiding (addExtension, C)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAPImport
@@ -30,37 +31,47 @@ main
   where
   parseAndTypeCheck :: Options -> IO A_Context 
   parseAndTypeCheck opts 
-   = do pCtxOrErr <- parseContext opts (fileName opts)
-        case pCtxOrErr of
-          Left pErr ->
-           do { Prelude.putStrLn $ "Parse error:"
-              ; Prelude.putStrLn $ show pErr
-              ; exitWith $ ExitFailure 10 
-              }
-          Right pCtx ->  
-           do { let importFilename = importfile opts
-              ; pPops <- if null importFilename then return [] 
-                         else 
-                          do popsText <- readFile importFilename
-                             case fileformat opts of
-                               Adl1PopFormat -> parsePopulations popsText opts importFilename
-                               Adl1Format -> do verbose opts ("Importing "++importFilename++" in RAP... ")
-                                                imppCtxOrErr <- parseContext opts (importfile opts)
-                                                case imppCtxOrErr of
-                                                  (Right imppcx) -> if nocxe (snd(typeCheck imppcx [])) 
-                                                                    then importfspec  (makeFspec opts (fst(typeCheck imppcx []))) opts
-                                                                    else importfailed (Right (imppcx, snd(typeCheck imppcx []))) opts 
-                                                  (Left impperr) ->      importfailed (Left impperr) opts 
-              ; verboseLn opts "Type checking..."
-              ; let (actx,err) = typeCheck pCtx pPops
-              ; if nocxe err 
-                then return actx
-                else do { Prelude.putStrLn $ "Type error:"
-                        ; Prelude.putStrLn $ show err
-                        ; exitWith $ ExitFailure 20
-                        }
-              }
-              
+   = do { verboseLn opts "Start parsing...."
+        ; pCtxOrErr <- parseContext opts (fileName opts)
+        ; case pCtxOrErr of
+           Left pErr ->
+            do { Prelude.putStrLn $ "Parse error:"
+               ; Prelude.putStrLn $ show pErr
+               ; exitWith $ ExitFailure 10 
+               }
+           Right p_context ->  
+            do { let importFilename = importfile opts
+               ; pPops <- if null importFilename then return [] 
+                          else
+                           do popsText <- readFile importFilename
+                              case fileformat opts of
+                                Adl1PopFormat -> parsePopulations popsText opts importFilename
+                                Adl1Format -> do verbose opts ("Importing "++importFilename++" in RAP... ")
+                                                 imppCtxOrErr <- parseContext opts (importfile opts)
+                                                 case imppCtxOrErr of
+                                                   (Right imppcx) -> let (aCtxOrErr,_,_) = typeCheck imppcx [] in
+                                                                     case aCtxOrErr of
+                                                                      Checked a_context  -> importfspec  (makeFspec opts a_context) opts
+                                                                      Errors type_errors -> importfailed imppCtxOrErr opts 
+                                                   (Left impperr) -> importfailed imppCtxOrErr opts 
+               ; verboseLn opts "Type checking..."
+               ; let (actxOrErrs,stTypeGraph,condensedGraph) = typeCheck p_context pPops
+               ; if typeGraphs opts
+                 then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
+                         ; putStr ("\n"++condensedGraphPath++" written.")
+                         ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
+                         ; putStr ("\n"++stDotGraphPath++" written.")
+                         }
+                 else do { putStr "" }
+               ; case actxOrErrs of
+                  Errors type_errors-> do { Prelude.putStrLn $ "The following type errors were found:\n"
+                                          ; Prelude.putStrLn $ intercalate "\n\n" (map show type_errors)
+                                          ; exitWith $ ExitFailure 20
+                                          }
+                  Checked actx      -> return actx
+               }
+        }
+
 generateProtoStuff :: Options -> Fspc -> IO ()
 generateProtoStuff opts fSpec | validateSQL opts =
  do { verboseLn opts "Validating SQL expressions..."

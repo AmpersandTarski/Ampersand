@@ -30,7 +30,7 @@ importfspec fspec opts
           usrfiles <- getUsrFiles opts
           return (makeRAPPops fspec opts usrfiles pics)
 
-importfailed :: Either ParseError (P_Context,CtxError) -> Options -> IO [P_Population]
+importfailed :: Either ParseError P_Context -> Options -> IO [P_Population]
 importfailed imperr opts 
  = do verbose opts "Getting all uploaded adl-files of RAP user... "
       usrfiles <- getUsrFiles opts
@@ -68,16 +68,17 @@ rapfiles opts usrfiles
 type RAPRelation = (String,String,String)
 makepopu :: RAPRelation -> [(ConceptIdentifier,ConceptIdentifier)] -> P_Population
 makepopu (r,src,trg) xys
- = P_Popu{ p_popm  = P_Rel r (Origin "RAPImport.hs")
+ = P_Popu{ p_popm  = r
+         , p_orig  = Origin "RAPImport.hs"
          , p_type  = P_Sign [PCpt src, PCpt trg]
-         , p_popps = [mkPair (trim (getid x)) (trim (getid y)) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
+         , p_popps = [mkPair (getid x) (getid y) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
          }
 
 -----------------------------------------------------------------------------
 --make population functions--------------------------------------------------
 -----------------------------------------------------------------------------
 --make population for the import that failed due to a parse or type error
-makeFailedPops :: Either ParseError (P_Context,CtxError) -> Options -> [(String,ClockTime)] -> [P_Population]
+makeFailedPops :: Either ParseError P_Context -> Options -> [(String,ClockTime)] -> [P_Population]
 makeFailedPops imperr opts usrfiles 
  =   --see trunk/apps/Atlas/RAP.adl
      (case imperr of 
@@ -86,8 +87,8 @@ makeFailedPops imperr opts usrfiles
                                       ,makepopu ("pe_position","ParseError","String")       [(errid fid, nonsid pos)]
                                       ,makepopu ("pe_expecting","ParseError","String")      [(errid fid, nonsid (show exp))]
                                       ]
-         Right (c,x) ->  makepopu ("typeerror","File","TypeError")    [(fid, errid fid)]
-                        :makeCtxErrorPops opts usrfiles (errid fid) c (cxes x)
+         Right pctx -> makepopu ("typeerror","File","TypeError")    [(fid, errid fid)]
+                        :makeCtxErrorPops opts usrfiles (errid fid) pctx
      )
     ++makeFilePops opts usrfiles []
     where fid = fileid (srcfile opts)
@@ -104,19 +105,18 @@ te_position :: TypeError * String [UNI]
 te_origtype :: TypeError * String [UNI]
 te_origname :: TypeError * String [UNI]
  - -}
-makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> CtxError -> [P_Population]
-makeCtxErrorPops opts usrfiles eid c x 
- = makepopu ("te_message","TypeError","ErrorMessage")    [(eid,nonsid (show x))]
-  :(if nocxe es 
-    then makeRAPPops (makeFspec opts cx) opts usrfiles []
-    else [])
-   where (cx,es) = typeCheck nc []
-         nc = PCtx (ctx_nm c) (ctx_pos c) (ctx_lang c) (ctx_markup c) [] 
-                   [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats c]
-                   [] [] [] [] [] [] [] [] [] [] [] [] False
+makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Context -> [P_Population]
+makeCtxErrorPops opts usrfiles eid pctx
+ = case cx of
+      Checked c -> makepopu ("te_message","TypeError","ErrorMessage") [] : makeRAPPops (makeFspec opts c) opts usrfiles []
+      Errors x ->  makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))] : []
+   where (cx,_,_) = typeCheck nc []
+         nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) [] 
+                   [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
+                   [] [] [] [] [] [] [] [] [] [] [] []
 {-makeCtxErrorPops eid c (Cxes xs) = []
 makeCtxErrorPops eid c (CxeOrig cxe t nm o)
-   | nocxe cxe                                    = []
+   | null cxe                                    = []
    | t `elem` ["pattern", "process", "interface"] = []
    | otherwise                                    = []
 makeCtxErrorPops eid c (Cxe cxe x) = []
