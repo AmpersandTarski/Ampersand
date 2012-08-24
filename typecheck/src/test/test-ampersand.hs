@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Paths_ampersand
 import System.FilePath
-import Directory
+import System.Directory
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "test-ampersand"

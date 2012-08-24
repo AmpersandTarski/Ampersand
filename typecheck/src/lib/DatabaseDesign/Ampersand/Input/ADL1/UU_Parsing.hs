@@ -385,9 +385,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
 --    {-# INLINE splitState  #-}
 
    class OutputState r  where
-     acceptR ::                              v             -> rest        -> r v rest
-     nextR ::  (a ->     rest -> rest') -> (b -> a)      -> r b rest  -> rest'
-     dollarR ::  (a -> r c rest -> rest') -> (b -> a) -> b -> r c rest  -> rest'
+     acceptR      ::                              v             -> rest        -> r v rest
+     nextR        ::  (a ->     rest -> rest') -> (b -> a)      -> r b rest  -> rest'
+     dollarR      ::  (a -> r c rest -> rest') -> (b -> a) -> b -> r c rest  -> rest'
 --     {-# INLINE acceptR #-}
 --     {-# INLINE nextR   #-}
 --     {-# INLINE dollarR #-}

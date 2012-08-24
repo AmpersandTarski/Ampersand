@@ -328,14 +328,14 @@ where
       name cd = n
         where (n,_) = nameandcpts cd
         
-   data Class          = OOClass  { clNm :: String        -- ^ name of the class
-                                  , clAtts :: [CdAttribute] -- ^ Attributes of the class
-                                  , clMths :: [Method]      -- ^ Methods of the class
+   data Class          = OOClass  { clNm        :: String        -- ^ name of the class
+                                  , clAtts      :: [CdAttribute] -- ^ Attributes of the class
+                                  , clMths      :: [Method]      -- ^ Methods of the class
                                   } deriving Show
    instance Identified Class where
       name = clNm
-   data CdAttribute    = OOAttr   { attNm :: String      -- ^ name of the attribute
-                                  , attTyp :: String      -- ^ type of the attribute (Concept name or built-in type)
+   data CdAttribute    = OOAttr   { attNm       :: String      -- ^ name of the attribute
+                                  , attTyp      :: String      -- ^ type of the attribute (Concept name or built-in type)
                                   , attOptional :: Bool        -- ^ says whether the attribute is optional
                                   } deriving Show
    instance Identified CdAttribute where

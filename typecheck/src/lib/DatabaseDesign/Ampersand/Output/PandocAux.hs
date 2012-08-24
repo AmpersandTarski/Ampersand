@@ -75,8 +75,8 @@ defaultWriterVariables flags fSpec
          , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
          , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
          , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
-         , "\\newcommand{\\iden}{\\mathbb{I}}"
-         , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+         , "%\\newcommand{\\iden}{\\mathbb{I}}"
+         , "%\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
          , "\\newcommand{\\full}{\\mathbb{V}}"
          , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
          , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
@@ -334,8 +334,8 @@ theOldLatexTemplate flags
                , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}\n"
                , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}\n"
                , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}\n"
-               , "\\newcommand{\\iden}{\\mathbb{I}}\n"
-               , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}\n"
+               , "%\\newcommand{\\iden}{\\mathbb{I}}\n"
+               , "%\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}\n"
                , "\\newcommand{\\full}{\\mathbb{V}}\n"
                , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}\n"
            --    , "\\newcommand{\\relAdd}{\\dagger}\n"
@@ -614,11 +614,11 @@ instance ShowMath Declaration where
  showMath decl@(Sgn{})
   = "\\declare{"++latexEscShw(name decl)++"}{"++latexEscShw(name (source decl))++"}{"++latexEscShw(name (target decl))++"}"
  showMath Isn{}
-  = "\\iden"
+  = "\\mathbb{I}"
  showMath Vs{}
   = "\\full"
  showMath Iscompl{}
-  = "\\cmpl{\\iden}"
+  = "\\cmpl{\\mathbb{I}}"
 
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
