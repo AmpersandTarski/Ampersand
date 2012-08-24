@@ -1,6 +1,0 @@
-The testData directory contains files that can be used to do a regression test of Ampersand. 
-
-Currently, there are .adl scripts available in two kinds: 
-* scripts that should pass parsing AND typechecking. These files are located in the directory `pass`
-* scripts that should fail parsing or typechecking. These files are located in the directory `fail`.
-
