@@ -1,17 +1,14 @@
-﻿{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 {-# LANGUAGE RelaxedPolyRec #-} -- -RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
-     pCtx2aCtx,
-     disambiguate, Guarded(..)
+     pCtx2aCtx, disambiguate,
+     Guarded(..)
      )
 where
-import qualified Data.Graph as Graph
-import qualified Data.Tree as Tree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.ADL1.Pair
-import DatabaseDesign.Ampersand.Basics
+import DatabaseDesign.Ampersand.Basics (name, uni, isc, eqCl, getCycles, (>-), eqClass, fatalMsg)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -24,7 +21,6 @@ import Data.GraphViz.Attributes.Complete hiding (Box, Pos)
 import Data.Maybe
 import Data.List
 import Data.Char
-import Data.Array
 import Control.Applicative
 import qualified Data.Map
 
@@ -73,20 +69,14 @@ showOrig :: Type -> String
 showOrig (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr ++"("++ shOrig orig++")"
 showOrig (TypExpr term@(Pid _) _ orig _)                = showADL term     ++"("++ shOrig orig++")"
 showOrig (TypExpr term@(Pid _) _ _ _)                   = showADL term
-showOrig (TypExpr _ _       orig origExpr@(Pid _))      = showADL origExpr
-showOrig (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
 showOrig (TypExpr term@(Pfull _ []) _ orig _)           = showADL term     ++"("++ shOrig orig++")"
 showOrig (TypExpr term@(Pfull _ cs) _ _ _)              = showADL term
-showOrig (TypExpr _ _       orig origExpr@(Pfull _ _))  = showADL origExpr
+showOrig (TypExpr _ _       _    origExpr@(Pid _))      = showADL origExpr
+showOrig (TypExpr _ _       orig origExpr@(Pfull _ [])) = showADL origExpr ++"("++ shOrig orig++")"
+showOrig (TypExpr _ _       _    origExpr@(Pfull _ _))  = showADL origExpr
 showOrig (TypExpr _ flipped orig origExpr)              = showADL (if flipped then p_flp origExpr else origExpr) ++"("++ shOrig orig++")"
 showOrig (TypLub _ _ orig origExpr)                     = showADL origExpr ++"("++ shOrig orig++")"
 showOrig (TypGlb _ _ orig origExpr)                     = showADL origExpr ++"("++ shOrig orig++")"
-
-shOrig :: Origin -> String
-shOrig (FileLoc (FilePos (fn,DatabaseDesign.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++":"++show c
-shOrig (DBLoc str)   = "Database location: "++str
-shOrig (Origin str)  = str
-shOrig OriginUnknown = "Unknown origin"
 
 instance Traced Type where
   origin (TypExpr _ _ o _) = o
@@ -257,8 +247,7 @@ typing p_context
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType x uLft uRt   (Pfull _ [])          = dom x.<.uLft .+. cod x.<.uRt
      uType x _    _     (Pfull _ cs)          = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (last cs))          --  V[A*B] (the typed full set)
-     uType x uLft uRt   (Prel _ nm)           = -- disambiguate nm
-                                                carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+     uType x uLft uRt   (Prel _ nm)           = carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                                   if length spcls == 1 then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
                                                                   else nothing
                                                           )
@@ -455,150 +444,8 @@ tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTab
      secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, head i'==head j]
      -- reducedtypes contains all types for which there is not a more specific type
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
-instance Show CtxError where
-    showsPrec _ err = showString (showErr err)
 
-showErr :: CtxError -> String
--- * CxeEqConcepts tells us that there are concepts with different names, which can be proven equal by the type checker.
-showErr err@(CxeEqConcepts{})
- = concat
-     ["The following concepts are equal:\n"++commaEng "and" (map show (cxeConcepts err))++"." | not (null (cxeConcepts err)) ]
--- * CxeEqAttribs tells us that there are concepts with different names, which can be proven equal by the type checker.
-showErr err@(CxeEqAttribs{})
- = show (cxeOrig err)++": Different attributes share the same name \""++cxeName err++"\":\n   "++
-   intercalate "\n   " [ show (origin term)++" : "++showADL term | term<-cxeAtts err ]
-showErr err@(CxeILike{ cxeCpts=[] })
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
-     )
-showErr err@(CxeILike{})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Term  "++showADL (cxeExpr err)++",\n"]++
-       ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
-     )
-showErr err@(CxeTyp{})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeDcls err)]++
-       ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
-        intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
-     ) where sh term = termString++[' ' | i<-[length termString..maxLen]]++showADL term
-                       where termString = show (origin term)
-                             maxLen = maximum [length (show (origin term)) | term<-cxeDcls err ]
-showErr err@(CxeRel{})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeCpts err)]++
-       ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
-        intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
-     ) where sh term = termString++[' ' | i<-[length termString..maxLen]]++showADL term
-                       where termString = show (origin term)
-                             maxLen = maximum [length (show (origin term)) | term<-cxeDcls err ]
-showErr err@(CxeCpl{})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    There is no universe from which to compute a complement in term  "++showADL (cxeExpr err)++"." | null (cxeCpts err)]++
-       ["    There are multiple universes from which to compute a complement in term  "++showADL (cxeExpr err)++":\n    "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]
-     )
-showErr err@(CxeEquLike { cxeExpr=Pequ _ _ _ }) = showErrEquation err
-showErr err@(CxeEquLike { cxeExpr=Pimp _ _ _ }) = showErrEquation err
-showErr err@(CxeEquLike { cxeExpr=PIsc _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeEquLike { cxeExpr=PUni _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeEquLike { cxeExpr=PDif _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term  "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of  "++showADL a++"  and the target of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
-     )
-showErr err@(CxeCpsLike { cxeExpr=PRrs _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the source of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
-     )
-showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err))++
-        "\n    between the target of  "++showADL a++"  and the source of  "++showADL b++" are in conflict." | (not.null) (cxeCpts err)]++
-       ["    the type between the target of  "++showADL a++"  and the source of  "++showADL b++" is undefined." | null (cxeCpts err)]
-     )
-showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err))++
-        "\n    between the target of  "++showADL a++"  and the source of  "++showADL b++" are in conflict." | (not.null) (cxeCpts err)]++
-       ["    the type between the target of  "++showADL a++"  and the source of  "++showADL b++" is undefined." | null (cxeCpts err)]
-     )
-showErr (CxeOrig typeErrors t nm o)
- | null typeErrors                              = ""
- | t `elem` ["pattern", "process", "interface"] = "The " ++ t ++ " named \""++ nm ++ "\" contains errors " ++ intercalate "\n" (map showErr typeErrors)
- | otherwise                                    = "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
-showErr (Cxe typeErrors x)                      = x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
-showErr (PE msg)                                = "Parse error:\n"++ show (case msg of 
-                                                                             []  -> fatal 35 "No messages??? The impossible happened!" 
-                                                                             x:_ -> x)
-showErr _ = fatal 580 "missing pattern in type error."
-showErrEquation err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
- = concat
-     ( [show (origin x)++"\n"]++
-       case (cxeSrcCpts err, cxeTrgCpts err) of
-            ([], [])  -> ["    Entirely ambiguous equation  "++showADL x]
-            ([_], []) -> ["    The target of  "++showADL x++"  is ambiguous."]
-            ([], [_]) -> ["    The source of  "++showADL x++"  is ambiguous."]
-            (cs, [])  -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-            (cs, [_]) -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-            ([], cs') -> ["    The target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-            ([_],cs') -> ["    The target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-            (cs, cs') -> if sort cs==sort cs'
-                         then ["    the sources and targets of  "++showADL a++"  and  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-                         else ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                              ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-     )
-showErrBoolTerm err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
- = concat
-     ( [show (origin x)++"\n"]++
-       case (cxeSrcCpts err, cxeTrgCpts err) of
-            ([], [])  -> ["    Entirely ambiguous term  "++showADL x]
-            ([_], []) -> ["    Inside term   "++showADL x++"\n"]++
-                         ["    the target of  "++showADL x++"  is ambiguous."]
-            ([], [_]) -> ["    Inside term   "++showADL x++"\n"]++
-                         ["    the source of  "++showADL x++"  is ambiguous."]
-            (cs, [])  -> ["    Inside term   "++showADL x++"\n"]++
-                         ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-            (cs, [_]) -> ["    Inside term   "++showADL x++"\n"]++
-                         ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-            ([], cs') -> ["    Inside term   "++showADL x++"\n"]++
-                         ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-            ([_],cs') -> ["    Inside term   "++showADL x++"\n"]++
-                         ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-            (cs, cs') -> ["    Inside term   "++showADL x++",\n"]++
-                         if sort cs==sort cs'
-                         then ["    the sources and targets of  "++showADL a++"  and  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-                         else ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                              ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-     )
+
 
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
@@ -893,7 +740,7 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
 -- On Guarded: it is intended to return something, as long as there were no errors creating it.
 -- For instance, (Guarded P_Context) would return the P_Context, unless there are errors.
 
-data Guarded a = Errors [CtxError] | Checked a deriving (Show, Eq)
+data Guarded a = Errors [CtxError] | Checked a deriving (Eq)
 
 parallel :: (a->b->c) -> Guarded a -> Guarded b -> Guarded c -- get both values or collect all error messages
 parallel f ga = (<*>) (fmap f ga)
@@ -1599,18 +1446,16 @@ pCtx2aCtx p_context
                          ]
          lookup pTerm = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pTerm==origExpr ]++fatal 1535 ("cannot find "++showADL pTerm++" in the lookup table"))
 
-isConceptTerm :: Term -> Bool
-isConceptTerm (Pid{}) = True
-isConceptTerm _ = False
-
 --the type checker always returns a term with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed term is equivalent to disambiguating the term
 
--- | Disambiguation is needed for the purpose of printing a term.    parse (disambiguate expr) = expr
+--   Disambiguation is needed for the purpose of printing a term.    parse (disambiguate expr) = expr
 --   Produce type error messages if necessary and produce proof graphs to document the type checking process.
 disambiguate :: Fspc -> Expression -> Expression
-disambiguate fSpec x = x -- temporarily disabled (19 july 2012), in order to get the type checker correct first...
-{-
+disambiguate _ x = x
+{- -- temporarily disabled (19 july 2012), in order to get the type checker correct first...
+disambiguate :: Fspc -> Expression -> Expression
+disambiguate fspec x = 
  | null errs = expr 
  | otherwise  = fatal 428 ("a term must be type correct, but this one is not:\n" ++ show errs)
  where
