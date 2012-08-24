@@ -9,7 +9,7 @@
 
 -- | Partially ordered data types.  The standard 'Prelude.Ord' class is for
 -- total orders and therefore not suitable for floating point.  However, we can
--- still define meaningful 'max' and 'sort' functions for these types.
+-- still define meaningful 'max' and 'sortWith functions for these types.
 --
 -- We define our own 'Ord' class which is intended as a replacement for
 -- 'Prelude.Ord'.  However, in order to take advantage of existing libraries
@@ -45,15 +45,15 @@ fatal = fatalMsg "Core.Poset"
 --   When A_Concept should be a collection of total orders change f a b guard (| or [ a `elem` cl && b `elem` cl | cl <- cls ] = NC)
 --
 --   examples on data X = A | B | C | D | E | F deriving (Eq,Show):
---   [bottom]       (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F)])  :: (A <= B /\ C <= B \/ C <= D <= E /\ F <= E \/ F)
+--   [bottom]       (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F)]) :: (A <= B /\ C <= B \/ C <= D <= E /\ F <= E \/ F)
 --   [ringish]      (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A),(F,A)]) _ _ = LT 
 --   [ringish]      (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A)])       F A = GT
 --                  (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(D,E),(D,F),(E,A)])       _ _ = LT
---   [bottom,total] (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(E,F)])        :: ( A <= B /\ C <= B \/ C <= D , E <= F )
---   [2x total]     (makePartialOrder [(A,B),(B,C),(C,D),(E,F)])              :: ( A <= B <= C <= D , E <= F )
---   [total]        (makePartialOrder [(A,B),(B,C),(C,D),(D,E),(E,F)])        :: ( A <= B <= C <= D <= E <= F )
---   [3x total]     (makePartialOrder [(A,B),(B,C),(C,D)])                    :: ( A <= B <= C <= D , E , F )
---   [partial]      (makePartialOrder [(A,B),(C,D),(B,D),(D,E),(D,F)])        :: ( (A <= B <= D <= E /\ F <= E \/ F) + (C <= D <= E /\ F <= E \/ F) ) 
+--   [bottom,total] (makePartialOrder [(A,B),(C,D),(B,D),(A,C),(E,F)]) :: ( A <= B /\ C <= B \/ C <= D , E <= F )
+--   [2x total]     (makePartialOrder [(A,B),(B,C),(C,D),(E,F)]) :: ( A <= B <= C <= D , E <= F )
+--   [total]        (makePartialOrder [(A,B),(B,C),(C,D),(D,E),(E,F)]) :: ( A <= B <= C <= D <= E <= F )
+--   [3x total]     (makePartialOrder [(A,B),(B,C),(C,D)]) :: ( A <= B <= C <= D , E , F )
+--   [partial]      (makePartialOrder [(A,B),(C,D),(B,D),(D,E),(D,F)]) :: ( (A <= B <= D <= E /\ F <= E \/ F) + (C <= D <= E /\ F <= E \/ F) ) 
 --
 --   a sorted list will have the x left of y for all x and y. x <= y
 --   like x==y, the intraposition of x and y is without meaning for all x and y. x `compare` y = CP

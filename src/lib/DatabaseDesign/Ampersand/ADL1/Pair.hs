@@ -7,17 +7,18 @@ module DatabaseDesign.Ampersand.ADL1.Pair
                     , srcPaire,trgPaire
                     , flipPair,mkPair
                     , closPair
-                  --  , clos1
+                    , clos1
                     ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
-   import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),sort',eqCl)
+   import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),eqCl)
    import Data.List (nub)
+   import GHC.Exts (sortWith)
 
    type Pairs = [Paire]
    srcPaire :: Paire -> String
    trgPaire :: Paire -> String
-   mkPair   :: String -> String -> Paire
+   mkPair :: String -> String -> Paire
    type Paire = (String,String)
    mkPair a b = (a,b)
    srcPaire = fst
@@ -40,8 +41,8 @@ where
      closPair _ = Nothing
       
    instance KAComputable Pairs where
-     kleenejoin a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
-                      ((sort' (srcPaire.head).eqCl srcPaire) b)
+     kleenejoin a b = merge ((sortWith (trgPaire.head).eqCl trgPaire) a)
+                      ((sortWith (srcPaire.head).eqCl srcPaire) b)
                 where merge (xs:xss) (ys:yss)
                        | trgPaire (head xs)<srcPaire (head ys) = merge xss (ys:yss)
                        | trgPaire (head xs)>srcPaire (head ys) = merge (xs:xss) yss
@@ -56,8 +57,8 @@ where
 ----------------------------------------------------
 --  Warshall's transitive closure algorithm in Haskell:
 ----------------------------------------------------
-       clos1 :: (Eq a) => [(a,a)] -> [(a,a)]     -- e.g. a list of pairs
-       clos1 xs
-         = foldl f xs (nub (map fst xs) `isc` nub (map snd xs))
-           where
-            f q x = q `uni` [(a, b') | (a, b) <- q, b == x, (a', b') <- q, a' == x]
+   clos1 :: (Eq a) => [(a,a)] -> [(a,a)]     -- e.g. a list of pairs
+   clos1 xs
+     = foldl f xs (nub (map fst xs) `isc` nub (map snd xs))
+       where
+        f q x = q `uni` [(a, b') | (a, b) <- q, b == x, (a', b') <- q, a' == x]

@@ -23,9 +23,9 @@ where
    posIn _ _ _ = False
  
    instance Show FilePos where
-     show (FilePos (fn,Pos l _,_))
-       = "line " ++ show l
-         ++ ", file " ++ show fn
+     show (FilePos (fn,Pos l c,_))
+       = "line " ++ show l++":"++show c
+            ++ ", file " ++ show fn
 
    instance Show Origin where
      show (FileLoc pos) = show pos

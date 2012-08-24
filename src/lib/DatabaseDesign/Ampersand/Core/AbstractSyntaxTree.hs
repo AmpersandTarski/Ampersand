@@ -55,28 +55,26 @@ import Data.List
 fatal :: Int -> String -> a
 fatal = fatalMsg "AbstractSyntaxTree.hs"
 
-
 data A_Context
-   = ACtx{ ctxnm     :: String        -- ^ The name of this context
-         , ctxpos    :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctxlang   :: Lang          -- ^ The default language used in this context.
-         , ctxmarkup :: PandocFormat  -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxthms   :: [String]      -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-         , ctxpo     :: GenR          -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
-         , ctxpats   :: [Pattern]     -- ^ The patterns defined in this context
-         , ctxprocs  :: [Process]     -- ^ The processes defined in this context
-         , ctxrs     :: [Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds     :: [Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-         , ctxcds    :: [ConceptDef]  -- ^ The concept definitions defined in this context, including those from patterns and processes
-         , ctxks     :: [KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxgs     :: [A_Gen]       -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxifcs   :: [Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-         , ctxps     :: [Purpose]     -- ^ The purposes of objects defined in this context, outside the scope of patterns
-         , ctxsql    :: [ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
-         , ctxphp    :: [ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
-         , ctxenv    :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
-         , ctxmetas  :: [Meta]
-         , ctxexperimental :: Bool      -- flag that specifies whether Ampersand was executed with --exp (not techniqually part of the context, but prevents giant refactorings of type checker)
+   = ACtx{ ctxnm :: String           -- ^ The name of this context
+         , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+         , ctxlang :: Lang           -- ^ The default language used in this context.
+         , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
+         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctxpo :: GenR             -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
+         , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
+         , ctxprocs :: [Process]     -- ^ The processes defined in this context
+         , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
+         , ctxds :: [Declaration]    -- ^ The declarations defined in this context, outside the scope of patterns
+         , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
+         , ctxks :: [KeyDef]         -- ^ The key definitions defined in this context, outside the scope of patterns
+         , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context, outside the scope of patterns
+         , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns
+         , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
+         , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
+         , ctxenv :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
+         , ctxmetas :: [Meta]
          , ctxatoms :: [(String,[String])] -- ^ (the name of a concept, explicit initial population of that concept)
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
@@ -103,16 +101,16 @@ instance Traced Theme where
   origin (PatternTheme pat) = origin pat
   origin (ProcessTheme prc) = origin prc
   
-data Process = Proc { prcNm    :: String
-                    , prcPos   :: Origin
-                    , prcEnd   :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
+data Process = Proc { prcNm :: String
+                    , prcPos :: Origin
+                    , prcEnd :: Origin      -- ^ the end position in the file, elements with a position between pos and end are elements of this process.
                     , prcRules :: [Rule]
-                    , prcGens  :: [A_Gen]
-                    , prcDcls  :: [Declaration]
+                    , prcGens :: [A_Gen]
+                    , prcDcls :: [Declaration]
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
                     , prcRRels :: [(String,Relation)] -- ^ The assignment of roles to Relations.
-                    , prcKds   :: [KeyDef]            -- ^ The key definitions defined in this process
-                    , prcXps   :: [Purpose]           -- ^ The motivations of elements defined in this process
+                    , prcKds :: [KeyDef]            -- ^ The key definitions defined in this process
+                    , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
                     }
 instance Identified Process where
   name = prcNm
@@ -122,8 +120,8 @@ instance Traced Process where
 
 data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role
-        , rrRels  :: [Relation]   -- ^ name of a Relation
-        , rrPos   :: Origin       -- ^ position in the Ampersand script
+        , rrRels :: [Relation]   -- ^ name of a Relation
+        , rrPos :: Origin       -- ^ position in the Ampersand script
         } deriving (Eq, Show)     -- just for debugging
 instance Traced RoleRelation where
    origin = rrPos
@@ -131,7 +129,7 @@ instance Traced RoleRelation where
 
 
 data Pattern
-   = A_Pat { ptnm  :: String        -- ^ Name of this pattern
+   = A_Pat { ptnm :: String        -- ^ Name of this pattern
            , ptpos :: Origin        -- ^ the position in the file in which this pattern was declared.
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
@@ -146,7 +144,7 @@ instance Traced Pattern where
  origin = ptpos
 
 data A_Markup =
-    A_Markup { amLang   :: Lang
+    A_Markup { amLang :: Lang
              , amFormat :: PandocFormat
              , amPandoc :: [Block]
              } deriving Show
@@ -157,18 +155,18 @@ data PairViewSegment = PairViewText String
                      | PairViewExp SrcOrTgt Expression deriving Show
 
 data Rule =
-     Ru { rrnm      :: String                  -- ^ Name of this rule
-        , rrexp     :: Expression              -- ^ The rule expression
-        , rrfps     :: Origin                  -- ^ Position in the Ampersand file
-        , rrmean    :: AMeaning                -- ^ Ampersand generated meaning (for all known languages)
-        , rrmsg     :: [A_Markup]              -- ^ User-specified violation messages, possibly more than one, for multiple languages.
-        , rrviol    :: Maybe PairView          -- ^ Custom presentation for violations, currently only in a single language
-        , rrtyp     :: Sign                    -- ^ Allocated type
-        , rrdcl     :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
-        , r_env     :: String                  -- ^ Name of pattern in which it was defined.
-        , r_usr     :: Bool                    -- ^ True if this rule was specified explicitly as a rule in the Ampersand script; False if it follows implicitly from the Ampersand script and generated by a computer
-        , r_sgl     :: Bool                    -- ^ True if this is a signal; False if it is an ALWAYS rule
-        , srrel     :: Declaration             -- ^ the signal relation
+     Ru { rrnm :: String                  -- ^ Name of this rule
+        , rrexp :: Expression              -- ^ The rule expression
+        , rrfps :: Origin                  -- ^ Position in the Ampersand file
+        , rrmean :: AMeaning                -- ^ Ampersand generated meaning (for all known languages)
+        , rrmsg :: [A_Markup]              -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+        , rrviol :: Maybe PairView          -- ^ Custom presentation for violations, currently only in a single language
+        , rrtyp :: Sign                    -- ^ Allocated type
+        , rrdcl :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
+        , r_env :: String                  -- ^ Name of pattern in which it was defined.
+        , r_usr :: Bool                    -- ^ True if this rule was specified explicitly as a rule in the Ampersand script; False if it follows implicitly from the Ampersand script and generated by a computer
+        , r_sgl :: Bool                    -- ^ True if this is a signal; False if it is an ALWAYS rule
+        , srrel :: Declaration             -- ^ the signal relation
         }
 instance Eq Rule where
   r==r' = rrnm r==rrnm r'
@@ -187,31 +185,31 @@ instance Signaling Rule where
 data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
 data Declaration = 
-  Sgn { decnm   :: String     -- ^ the name of the declaration
-      , decsgn  :: Sign       -- ^ the source concept of the declaration
+  Sgn { decnm :: String     -- ^ the name of the declaration
+      , decsgn :: Sign       -- ^ the source concept of the declaration
        --multiplicities returns decprps_calc so if you only need the user defined properties do not use multiplicities but decprps
       , decprps :: [Prop]     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
       , decprps_calc :: [Prop]-- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
-      , decprL  :: String     -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-      , decprM  :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-      , decprR  :: String
+      , decprL :: String     -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+      , decprM :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+      , decprR :: String
       , decMean :: AMeaning   -- ^ the meaning of a declaration, for each language supported by Ampersand.
       , decConceptDef :: Maybe RelConceptDef -- ^ alternative definition for the source or target concept in the context of this relation
       , decpopu :: Pairs      -- ^ the list of tuples, of which the relation consists.
       , decfpos :: Origin     -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
-      , deciss  :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
-      , decusr  :: Bool       -- ^ if true, this relation is declared in the Ampersand script; otherwise it was generated by Ampersand.
-      , decpat  :: String     -- ^ the pattern where this declaration has been declared.
+      , deciss :: Bool       -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
+      , decusr :: Bool       -- ^ if true, this relation is declared in the Ampersand script; otherwise it was generated by Ampersand.
+      , decpat :: String     -- ^ the pattern where this declaration has been declared.
       , decplug :: Bool       -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
       } | 
  Isn 
-      { detyp   :: A_Concept       -- ^ The type
+      { detyp :: A_Concept       -- ^ The type
       } |
  Iscompl 
-      { detyp   :: A_Concept
+      { detyp :: A_Concept
       } |
  Vs 
-      { decsgn  :: Sign
+      { decsgn :: Sign
       }
 instance Eq Declaration where
   d@Sgn{}     == d'@Sgn{}     = decnm d==decnm d' && decsgn d==decsgn d'
@@ -270,7 +268,7 @@ instance Traced KeyDef where
 
 data KeySegment = KeyExp ObjectDef | KeyText String | KeyHtml String deriving (Eq, Show)
 
-data A_Gen = Gen { genfp  :: Origin         -- ^ the position of the GEN-rule
+data A_Gen = Gen { genfp :: Origin         -- ^ the position of the GEN-rule
                  , gengen :: A_Concept      -- ^ generic concept
                  , genspc :: A_Concept      -- ^ specific concept
                  , genpat :: String         -- ^ pattern of declaration
@@ -286,14 +284,14 @@ instance Association A_Gen where
   sign r = Sign (genspc r) (gengen r)
 
 
-data Interface = Ifc { ifcName   :: String
+data Interface = Ifc { ifcName :: String
                      , ifcParams :: [Relation]
-                     , ifcViols  :: [Rule]
-                     , ifcArgs   :: [[String]]
-                     , ifcRoles  :: [String]
-                     , ifcObj    :: ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcPos    :: Origin
-                     , ifcExpl   :: String
+                     , ifcViols :: [Rule]
+                     , ifcArgs :: [[String]]
+                     , ifcRoles :: [String]
+                     , ifcObj :: ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+                     , ifcPos :: Origin
+                     , ifcExpl :: String
                      } deriving Show
 instance Eq Interface where
   s==s' = ifcName s==ifcName s'
@@ -312,10 +310,10 @@ objatsLegacy Obj{ objmsub=Nothing } = []
 objatsLegacy Obj{ objmsub=Just (Box objs) } = objs
 objatsLegacy Obj{ objmsub=Just (InterfaceRef _) } = fatal 301 $ "Using functionality that has not been extended to InterfaceRefs"
 
-data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                     , objpos  :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
-                     , objmsub  :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
+data ObjectDef = Obj { objnm :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                     , objpos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+                     , objctx :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+                     , objmsub :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Identified ObjectDef where
@@ -327,11 +325,11 @@ data SubInterface = Box [ObjectDef] | InterfaceRef String deriving (Eq, Show)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
-data Purpose  = Expl { explPos      :: Origin     -- ^ The position in the Ampersand script of this purpose definition
-                     , explObj      :: ExplObj    -- ^ The object that is explained.
-                     , explMarkup   :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
+data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand script of this purpose definition
+                     , explObj :: ExplObj    -- ^ The object that is explained.
+                     , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
-                     , explRefId    :: String     -- ^ The reference of the explaination
+                     , explRefId :: String     -- ^ The reference of the explaination
                      } deriving Show  --handy for XML creation
 instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 && 
@@ -340,7 +338,7 @@ instance Traced Purpose where
   origin = explPos
 
 data Population
-  = Popu { popm  :: Relation
+  = Popu { popm :: Relation
          , popps :: Pairs
          }
 
@@ -378,7 +376,7 @@ data Expression
       | ERel Relation                      -- ^ simple relation
       deriving Eq
 instance Show Expression where
- showsPrec _ = showString . showExpr (" = ", " |- ", "/\\", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+ showsPrec _ = showString . showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
 showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
 showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
@@ -496,19 +494,19 @@ instance Association Expression where
    Mp1{} has precisely one atom, which must be an element of its type, i.e. relatom m `elem` atoms (rel1typ c)
 -}
 data Relation = 
-  Rel { relnm   :: String           -- ^ the name of the relation. This is the same name as the name of reldcl.
+  Rel { relnm :: String           -- ^ the name of the relation. This is the same name as the name of reldcl.
                                     --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration reldcl ....
                                     --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn reldcl.
-      , relpos  :: Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
-      , relsgn  :: Sign             -- ^ the allocated signature. May differ from the signature in the reldcl.
-      , reldcl  :: Declaration      -- ^ the declaration bound to this relation.
+      , relpos :: Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
+      , relsgn :: Sign             -- ^ the allocated signature. May differ from the signature in the reldcl.
+      , reldcl :: Declaration      -- ^ the declaration bound to this relation.
       } |
  I    { rel1typ :: A_Concept        -- ^ the allocated type.
       } |
- V    { reltyp  :: Sign             -- ^ the allocated type.
+ V    { reltyp :: Sign             -- ^ the allocated type.
       } |
  --   An Mp1 is a subset of I. Shouldn't we replace it by an I?
- Mp1  { relval  :: String          -- ^ the value of the singleton morphism
+ Mp1  { relval :: String          -- ^ the value of the singleton morphism
       , rel1typ :: A_Concept               -- ^ the allocated type.
       } 
 instance Eq Relation where
@@ -610,15 +608,16 @@ class Association rel where
   source, target :: rel -> A_Concept      -- e.g. Declaration -> Concept
   source x        = source (sign x)
   target x        = target (sign x)
-  sign           :: rel -> Sign
-  isEndo         :: rel  -> Bool
+  sign :: rel -> Sign
+  isEndo :: rel  -> Bool
   isEndo s        = source s == target s
-  
+
+-- WHY? (SJ, July 9th 2012)  Why does Poset require association? (SJ: It feels wrong, because Poset is a property of abstract algebra's, which is now linked to Association... )
 instance (Eq a,Association a) => Poset a where
   a <= b = sign a <= sign b
 
 class Signaling a where
-  isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
+  isSignal :: a -> Bool  -- > tells whether the argument refers to a signal
     
 
 {- 
@@ -635,7 +634,7 @@ class Signaling a where
   --   + and a list of comparable classes [[A_Concept]]
 -}
 type GenR = (A_Concept -> A_Concept -> Ordering,[[A_Concept]])
-order      :: A_Concept -> GenR
+order :: A_Concept -> GenR
 order c@(C{}) = cptgE c
 order _ = (\x y -> if x==y then EQ else NC,[])
 instance Poset A_Concept where

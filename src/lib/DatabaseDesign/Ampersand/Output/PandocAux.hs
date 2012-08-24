@@ -476,14 +476,14 @@ count flags n x
 ------ Symbolic referencing ---------------------------------
 
 class SymRef a where
-  symLabel     :: a -> String -- unique label for symbolic reference purposes
-  symReqLabel  :: a -> String  -- labels the requirement of a
+  symLabel :: a -> String -- unique label for symbolic reference purposes
+  symReqLabel :: a -> String  -- labels the requirement of a
   symReqLabel   c = "\\label{Req"++symLabel c++"}"
-  symDefLabel  :: a -> String  -- labels the definition of a
+  symDefLabel :: a -> String  -- labels the definition of a
   symDefLabel   c = "\\label{Def"++symLabel c++"}"
-  symReqRef    :: a -> String  -- references the requirement of a
+  symReqRef :: a -> String  -- references the requirement of a
   symReqRef     c = "\\ref{Req"++symLabel c++"}"
-  symDefRef    :: a -> String  -- references the definition of a 
+  symDefRef :: a -> String  -- references the definition of a 
   symDefRef     c = "\\ref{Def"++symLabel c++"}"
   symReqPageRef :: a -> String  -- references the requirement of a
   symReqPageRef c = "\\pageref{Req"++symLabel c++"}"

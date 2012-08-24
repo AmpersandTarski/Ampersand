@@ -48,8 +48,8 @@ class  Identified a => Motivated a where
                     , markupMatchesLang (explMarkup e)
                  ] 
          markupMatchesLang m = amLang m == l
-  explForObj     :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
-  explanations   :: a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
+  explForObj :: a -> ExplObj -> Bool    -- ^ Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
+  explanations :: a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
   purposesDefinedIn :: Fspc -> Lang -> a -> [Purpose]  -- ^ The explanations that are defined inside a (including that of a itself)
   purposesDefinedIn fSpec l x
    = [e | e<-explanations fSpec
