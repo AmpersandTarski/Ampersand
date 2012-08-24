@@ -15,8 +15,11 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
               | CxeILike      {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
-              | CxeRel        {cxeExpr :: Term
+              | CxeTyp        {cxeExpr :: Term
                               ,cxeDcls :: [Term]
+                              }       
+              | CxeRel        {cxeExpr :: Term
+                              ,cxeCpts :: [P_Concept]
                               }       
               | CxeCpl        {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
