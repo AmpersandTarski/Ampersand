@@ -1,8 +1,0 @@
-﻿CONTEXT Test
--- Dit bestand is bedoeld om alle foutmeldingen van de Ampersand-typechecker tenminste éénmaal te testen.
-
-PATTERN Type7Error
-roeptaan :: Component*Service [TRN,RFX].
-ENDPATTERN
-
-ENDCONTEXT

@@ -1,9 +1,0 @@
-CONTEXT Test
-PATTERN Test
-
-r :: A*A.
-
-r = r\/I
-
-ENDPATTERN
-ENDCONTEXT
