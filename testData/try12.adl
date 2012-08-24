@@ -1,0 +1,16 @@
+CONTEXT Test
+
+PATTERN Test12
+r :: A*A
+r :: B*C
+RULE r = r[A*A]/\r[B*B]
+ENDPATTERN
+
+ENDCONTEXT
+
+{- 
+   Purpose: to get a proper error message, which makes sense to the programmer.
+   Result: FAIL
+   Reason: the two occurrences of r on the right hand side of the equation
+           are both diagnosed ambiguous, thus giving strange error messages.
+-}

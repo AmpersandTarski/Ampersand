@@ -1,0 +1,13 @@
+﻿CONTEXT Test
+-- Dit bestand is bedoeld om alle foutmeldingen van de Ampersand-typechecker tenminste éénmaal te testen.
+
+PATTERN Type4Error
+lineReceiver :: Line*Object.
+method :: Line*Method.
+sees :: Comp*Comp.
+sees :: Component*Comp.
+  lineReceiver~;method /\ sees |- sees
+  lineReceiver~;method \/ sees |- sees
+ENDPATTERN
+
+ENDCONTEXT
