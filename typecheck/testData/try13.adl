@@ -2,7 +2,7 @@ CONTEXT Test
 
 PATTERN Test13
 r :: A*A
-r :: B*C
+--r :: B*C
 RULE r[A] = r\/I
 ENDPATTERN
 

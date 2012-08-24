@@ -478,10 +478,19 @@ showErr err@(CxeILike{})
        ["    Term  "++showADL (cxeExpr err)++",\n"]++
        ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
      )
-showErr err@(CxeRel{})
+showErr err@(CxeTyp{})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
        ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeDcls err)]++
+       ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
+        intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
+     ) where sh term = termString++[' ' | i<-[length termString..maxLen]]++showADL term
+                       where termString = show (origin term)
+                             maxLen = maximum [length (show (origin term)) | term<-cxeDcls err ]
+showErr err@(CxeRel{})
+ = concat
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeCpts err)]++
        ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
         intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
      ) where sh term = termString++[' ' | i<-[length termString..maxLen]]++showADL term
@@ -1546,8 +1555,8 @@ pCtx2aCtx p_context
                          , length srcConflictingConcepts/=1 || length trgConflictingConcepts/=1
                          ]
              deepErrors = g a++g b
-         errRelLike x@(PTyp{})
-          = [ CxeRel {cxeExpr   = x
+         errTyp x@(PTyp{})
+          = [ CxeTyp {cxeExpr   = x
                      ,cxeDcls   = decls
                      }
             | (_,classNr,TypExpr term _ _ _,_)<-typeTable, x==term
@@ -1556,7 +1565,7 @@ pCtx2aCtx p_context
             ] where isDeclaration term = (not.null) [ decl | decl<-p_declarations p_context, origin decl==origin term]
          errRelLike x
           = [ CxeRel {cxeExpr   = x
-                     ,cxeDcls   = decls
+                     ,cxeCpts   = conflictingConcepts
                      }
             | (_,_,TypExpr term _ _ _,conflictingConcepts)<-typeTable, x==term
             , length conflictingConcepts/=1
