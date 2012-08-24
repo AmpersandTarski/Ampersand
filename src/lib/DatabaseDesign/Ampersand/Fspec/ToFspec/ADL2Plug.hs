@@ -6,10 +6,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Core.Poset
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+import DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),eqCl, sort')
+import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),eqCl)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
@@ -17,6 +17,7 @@ import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Fspec.Fspec 
 import Data.Char
 import Data.List (nub)
+import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
@@ -165,14 +166,14 @@ rel2fld kernel                                      -- > all relations (in the f
    These relations serve as attributes. Code:  [a| a<-attRels, source a `elem` concs kernel]
    Then, all these relations are made into fields. Code: plugFields = [rel2fld plugMors a| a<-plugMors]
    We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
-   For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
+   For the fun of it, we sort the plugs on length, the longest first. Code:   sortWith ((0-).length.fields)
    By the way, parameter allRels contains all relations that are declared in context, enriched with extra multiplicities.
    This parameter allRels was added to makePlugs to avoid recomputation of the extra multiplicities.
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
 makeEntities :: ConceptStructure a => A_Context -> [Relation] -> [a] -> [PlugSQL]
 makeEntities _ allRels exclusions
- = sort' ((0-).length.tblfields)
+ = sortWith ((0-).length.tblfields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
       ScalarSQL (name c) (rel2fld [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
@@ -192,7 +193,7 @@ makeEntities _ allRels exclusions
           plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
           plugMors              = mainkernel++restkernel++plugAtts --all relations for which the target is stored in the plug
           plugFields            = [fld a | a<-plugMors]      -- Each field comes from a relation.
-          conceptLookuptable   :: [(A_Concept,SqlField)]
+          conceptLookuptable :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r) |r<-mainkernel]
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
@@ -211,10 +212,10 @@ makeEntities _ allRels exclusions
 -- In order to make kernels as large as possible,
 -- all relations that are univalent and injective are flipped if that makes them surjective.
 -- kernelRels contains all relations that occur in kernels.
-    kernelRels  :: [Expression]
+    kernelRels :: [Expression]
     kernelRels   = [ERel r |r<-unis, isSur r]++[EFlp (ERel r) |r<-unis, not (isSur r), isTot r]
 -- attRels contains all relations that will be attribute of a kernel.
-    attRels     :: [Expression]
+    attRels :: [Expression]
     attRels      = [ERel r | r<-rs, isUni r]
                 ++ [EFlp (ERel r) | r<-rs, not (isUni r), isInj r]
                    where rs = rels>-mors kernelRels

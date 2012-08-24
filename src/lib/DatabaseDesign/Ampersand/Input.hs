@@ -4,4 +4,4 @@ module DatabaseDesign.Ampersand.Input (
  module DatabaseDesign.Ampersand.Input.ADL1.CtxError
 )where
 --import DatabaseDesign.Ampersand.Input.ADL1.Parser
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError,nocxe,cxes)
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError)

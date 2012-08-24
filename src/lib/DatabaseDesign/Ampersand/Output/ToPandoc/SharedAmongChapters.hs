@@ -44,7 +44,7 @@ data Chapter = Intro
 
 class Xreferencable a where
   xLabel :: a  -> String
-  xrefReference  :: a  -> Inline
+  xrefReference :: a  -> Inline
   xrefReference a = RawInline "latex" ("\\ref{"++xLabel a++"}")
   xrefLabel :: a -> Inline
   xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")

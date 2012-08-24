@@ -5,10 +5,11 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs where
 import Data.Char hiding (Space)
 import Data.List
 import Data.List.Split
+import GHC.Exts (sortWith)
 import Data.Maybe
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
@@ -195,9 +196,9 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                             ]
               
               -- sort the requirements by file position
-              reqs = sort' fst [ ((i,filenm org, linenr org,colnr org), bs) 
-                               | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ addIndex 2 (printRelConcepts relConcepts) ++ 
-                                              addIndex 2 (printRels rels2print) ++ addIndex 3 (printRules rules2print)]
+              reqs = sortWith fst [ ((i,filenm org, linenr org,colnr org), bs) 
+                                  | (i,org,bs)<- addIndex 0 (printConcepts concs2print) ++ addIndex 2 (printRelConcepts relConcepts) ++ 
+                                                 addIndex 2 (printRels rels2print) ++ addIndex 3 (printRules rules2print)]
                where addIndex i ps = [ (i::Int,fs, sn) | (fs,sn) <- ps ] -- add an index to sort first on category (concept, rel, ..)
               
               -- make blocks for requirements

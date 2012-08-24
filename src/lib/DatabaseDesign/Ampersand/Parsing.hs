@@ -5,13 +5,12 @@ module DatabaseDesign.Ampersand.Parsing ( parseContext
                                         , ParseError)
 where
 
-import Prelude hiding (putStr,readFile,writeFile)
 import Control.Monad
 import Data.List
 import Data.Char
 import System.Directory
 import System.FilePath
-import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pExpr,keywordstxt, keywordsops, specialchars, opchars)
+import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
 import qualified DatabaseDesign.Ampersand.Input.ADL1.LegacyParser as LegacyParser
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics
@@ -27,7 +26,7 @@ fatal = fatalMsg "Parsing"
 -- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
 --   This parser is for parsing of a Context
-parseContext  :: Options       -- ^ flags to be taken into account
+parseContext :: Options       -- ^ flags to be taken into account
             -> FilePath      -- ^ the full path to the file to parse 
             -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
 parseContext opts file = tryAll versions2try
@@ -35,14 +34,14 @@ parseContext opts file = tryAll versions2try
       versions2try :: [ParserVersion]
       versions2try = case forcedParserVersion opts of
          Just pv  -> [pv]
-         Nothing  -> [Current,Legacy,Current] --the errors of the last will be printed on the output stream
+         Nothing  -> [Current] -- ,Legacy,Current] --the errors of the last will be printed on the output stream
       
       try :: ParserVersion -> IO (Either ParseError P_Context)
       try pv = do { verboseLn opts $ "Parsing with "++show pv++"..."
                   ; eRes <- parseADL opts pv file
                   ; case eRes of 
                       Right ctx  -> verboseLn opts "Parsing successful"
-                                >> return (Right $ ctx{ctx_experimental = experimental opts}) -- set the experimental flag
+                                >> return (Right ctx)
                       Left err -> verboseLn opts "Parsing failed"
                                  >> return (Left err)
                   }
@@ -57,7 +56,7 @@ parseContext opts file = tryAll versions2try
 
                          
 -- | Same as parseContext , however this one is for a list of populations
-parsePopulations   :: String            -- ^ The string to be parsed
+parsePopulations :: String            -- ^ The string to be parsed
                    -> Options           -- ^ flags to be taken into account
                    -> String            -- ^ The name of the .pop file (used for error messages)
                    -> IO [P_Population] -- ^ The IO monad with the populations. 
@@ -69,7 +68,7 @@ parsePopulations popsstring flags fn =
     }
                     
 -- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> IO P_Expression
+parseADL1pExpr :: String -> String -> IO Term
 parseADL1pExpr pexprstr fn = 
   case parseExpr pexprstr fn Current of
     Right res -> return res
@@ -103,7 +102,7 @@ readAndParseFile opts parserVersion depth alreadyParsed mIncluderFilepath fileDi
       then do { when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
               ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
               } 
-      else do { fileContents <- readFile filepath
+      else do { fileContents <- DatabaseDesign.Ampersand.Basics.readFile filepath
               ; when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ filepath
               ; parseFileContents opts parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
                                   fileContents newFileDir newFilename     
@@ -157,11 +156,11 @@ readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir (rel
     }
  
 emptyContext :: P_Context
-emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] [] False
+emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
 mergeContexts :: P_Context -> P_Context -> P_Context
-mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1 _)
-              (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2 _) =
+mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs1 ifcs1 ps1 pops1 sql1 php1 metas1)
+              (PCtx nm2 pos2 lang2 markup2 thms2 pats2 pprcs2 rs2 ds2 cs2 ks2 gs2 ifcs2 ps2 pops2 sql2 php2 metas2) =
   PCtx{ ctx_nm = nm1
       , ctx_pos = pos1 ++ pos2
       , ctx_lang = lang1
@@ -180,7 +179,6 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs
       , ctx_sql = sql1 ++ sql2
       , ctx_php = php1 ++ php2
       , ctx_metas = metas1 ++ metas2
-      , ctx_experimental = False -- is set in Components.hs
       }
 
 
@@ -210,9 +208,9 @@ parsePops str fn pv =
 parseExpr :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
-          -> Either String P_Expression -- ^ The result: Either a list of populations, or some errors. 
+          -> Either String Term -- ^ The result: Either a list of populations, or some errors. 
 parseExpr str fn pv =
-    case runParser pv pExpr fn str of
+    case runParser pv pTerm fn str of
       Right result -> Right result
       Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
 
@@ -222,7 +220,7 @@ runParser :: forall res . ParserVersion -> Parser Token res -> String -> String 
 runParser parserVersion parser filename input = 
   let scanner = case parserVersion of 
                   Legacy  -> scan LegacyParser.keywordstxt LegacyParser.keywordsops LegacyParser.specialchars LegacyParser.opchars filename initPos
-                  Current  -> scan       keywordstxt       keywordsops       specialchars       opchars filename initPos
+                  Current -> scan              keywordstxt              keywordsops              specialchars              opchars filename initPos
       steps :: Steps (Pair res (Pair [Token] a)) Token
       steps = parse parser $ scanner input
   in  case  getMsgs steps of

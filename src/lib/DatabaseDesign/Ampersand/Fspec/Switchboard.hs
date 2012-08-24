@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    fatal = fatalMsg "Fspec.Switchboard"
 
    data SwitchBdDiagram
-    = SBdgrm { sbName     :: String
+    = SBdgrm { sbName :: String
              , sbdotGraph :: DotGraph String
              }
    instance Identified SwitchBdDiagram where
@@ -246,4 +246,3 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
      f (EBrk e)       = f e
      f (ETyp e _)     = f e
      f (ERel r)       = [ True | r==rel ]
-     

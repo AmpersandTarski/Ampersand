@@ -123,7 +123,7 @@ The precondition is that the graph cycle free.
        trees tuples'' root' = maketree (nub [b |(a,b)<-tuples'', root'==a]) [(a,b) |(a,b)<-tuples'', root'/=a]
 
    class Identified a where
-    name   :: a->String
+    name :: a->String
     rename :: a->String->a
     rename x _ = fatal 130 $ "some Identified element named " ++ name x ++ " cannot be renamed."
 

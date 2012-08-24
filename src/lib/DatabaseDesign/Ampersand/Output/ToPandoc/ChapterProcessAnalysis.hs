@@ -146,7 +146,7 @@ chpProcessAnalysis lev fSpec flags
          sctMotivation
           = purposes2Blocks flags purps
          purps = purposesDefinedIn fSpec (language flags) fproc
-         sctRules  :: [([Inline], [[Block]])]
+         sctRules :: [([Inline], [[Block]])]
          (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (fpProc fproc)) i seenConcepts seenDeclarations
 
   txtLangModel :: FProcess->[Block]

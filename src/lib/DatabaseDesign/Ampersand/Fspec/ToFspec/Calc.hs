@@ -7,9 +7,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
             , testInterface )
 where
 
-   import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),sort',eqCl)
+   import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl)
    import Data.List
-   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+   import GHC.Exts (sortWith)
+   import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Classes
@@ -24,7 +25,7 @@ where
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.Calc"
 
-   showClause  :: Fspc -> Clauses -> String
+   showClause :: Fspc -> Clauses -> String
    showClause fSpec cl
     = "\nRule: "++(showADL.mapexprs disambiguate fSpec) (cl_rule cl) ++concat
        [if null shifts then "\nNo clauses" else
@@ -504,7 +505,7 @@ Rewrite rules:
                                 e         -> fatal 428 ("fPrfs "++showADL e++" is not defined.Consult your dealer!")
                        where
                           xs fs = [lam tOp e3 f |f<-fs, isVar f e3]                       
-               lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sort' length (rc expr'')))
+               lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sortWith length (rc expr'')))
                rc expr'' = remainders (vars expr'') (vars expr'')
                vars expr'' = map head (fPrfs expr'')
                const' (EUni fs) = [f |f<-fs, isConst f e3]
