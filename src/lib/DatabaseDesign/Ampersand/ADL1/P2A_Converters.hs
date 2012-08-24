@@ -119,7 +119,7 @@ instance Eq Type where
   t == t' = compare t t' == EQ
 
 -- | `p_eq` is an equivalence relation, which does not distinguish between occurrences.
---   It is intended as the mathematical equivalence of P_Expressions.
+--   It is intended as the mathematical equivalence of Terms.
 --   It treats two occurrences of the same term as the same.
 p_eq :: Term -> Term -> Bool
 p_eq (PI _)         (PI _)           = True
@@ -213,7 +213,7 @@ findIn t cl = getList (Data.Map.lookup t cl)
                        getList (Just a) = a
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
---   For any two P_Expressions a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _ _,TypExpr b _ _ _) in st.
+--   For any two Terms a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _ _,TypExpr b _ _ _) in st.
 --   In the code below, this shows up as  dom a.<.dom b
 --   The function typing does a recursive scan through all subexpressions, collecting all tuples on its way.
 --   Besides term term, this function requires a universe in which to operate.
