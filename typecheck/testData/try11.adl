@@ -16,5 +16,5 @@ ENDCONTEXT
 
    The pattern named "Test11" contains errors in the rule at line 6:1:
    line 6:18, file "try11.adl"
-       Expression  I  can be of any type.
+       Cannot deduce a type for  I.
 -}

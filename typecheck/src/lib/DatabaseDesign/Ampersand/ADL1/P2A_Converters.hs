@@ -314,21 +314,21 @@ typing p_context
      -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
                                                 where e = Prel o nm
-     uType x uLft uRt   (Pimp _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+. 
+     uType x uLft uRt   (Pimp o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. 
                                                 uType x uLft uRt e                 --  a|-b   implication (aka: subset)
-                                                where e = Pequ OriginUnknown a (PIsc OriginUnknown a b)
-     uType x uLft uRt   (PLrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                where e = Pequ o a (PIsc o a b)
+     uType x uLft uRt   (PLrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
-                                                where e = PCpl OriginUnknown (PCps OriginUnknown (complement a) (p_flp b))
-     uType x uLft uRt   (PRrs _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                where e = PCpl o (PCps o (complement a) (p_flp b))
+     uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
-                                                where e = PCpl OriginUnknown (PCps OriginUnknown (p_flp a) (complement b))
-     uType x uLft uRt   (PRad _ a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                where e = PCpl o (PCps o (p_flp a) (complement b))
+     uType x uLft uRt   (PRad o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
-                                                where e = PCps OriginUnknown (complement a) (complement b)
-     uType x uLft uRt   (PCpl _ a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                where e = PCps o (complement a) (complement b)
+     uType x uLft uRt   (PCpl o a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- -a = V - a
-                                                where e = PDif OriginUnknown (Pfull (origin x) []) a
+                                                where e = PDif o (Pfull (origin x) []) a
      nothing :: (Typemap,Typemap)
      nothing = ([],[])
      isFull (TypExpr (Pfull _ []) _ _ _) = True
@@ -467,24 +467,26 @@ showErr err@(CxeEqConcepts{})
 showErr err@(CxeEqAttribs{})
  = show (cxeOrig err)++": Different attributes share the same name \""++cxeName err++"\":\n   "++
    intercalate "\n   " [ show (origin term)++" : "++showADL term | term<-cxeAtts err ]
-showErr err@(CxeAmbExpr{})
- = concat
-     ( [show (origin (cxeExpr err))++": Ambiguous term\n   "++showADL (cxeExpr err)++"\n   "]++
-       ["can be typed by either "++commaEng "or" (map show (cxeSign err))++"." | not (null (cxeSign err)) ]++
-       ["has either "++commaEng "or" (map showADL (cxeSrcT err))++" as its source concept." | not (null (cxeSrcT err)) ]++
-       ["has either "++commaEng "or" (map showADL (cxeTrgT err))++" as its target concept." | not (null (cxeTrgT err)) ]
-     )
-showErr err@(CxeILike { cxeCpts=[]})
+showErr err@(CxeILike{ cxeCpts=[] })
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
        ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
      )
-showErr err@(CxeILike {})
+showErr err@(CxeILike{})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
        ["    Term  "++showADL (cxeExpr err)++",\n"]++
        ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
      )
+showErr err@(CxeRel{})
+ = concat
+     ( [show (origin (cxeExpr err))++"\n"]++
+       ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeDcls err)]++
+       ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
+        intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
+     ) where sh term = termString++[' ' | i<-[length termString..maxLen]]++showADL term
+                       where termString = show (origin term)
+                             maxLen = maximum [length (show (origin term)) | term<-cxeDcls err ]
 showErr err@(CxeCpl{})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
@@ -539,25 +541,44 @@ showErrEquation err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
  = concat
      ( [show (origin x)++"\n"]++
        case (cxeSrcCpts err, cxeTrgCpts err) of
-            ([], [])  -> ["    Entirely ambiguous equation  "++showADL (cxeExpr err)]
+            ([], [])  -> ["    Entirely ambiguous equation  "++showADL x]
+            ([_], []) -> ["    The target of  "++showADL x++"  is ambiguous."]
+            ([], [_]) -> ["    The source of  "++showADL x++"  is ambiguous."]
             (cs, [])  -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+            (cs, [_]) -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
             ([], cs') -> ["    The target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-            (cs, cs') -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                         ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+            ([_],cs') -> ["    The target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+            (cs, cs') -> if sort cs==sort cs'
+                         then ["    the sources and targets of  "++showADL a++"  and  "++showADL b++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+                         else ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
+                              ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
      )
 showErrBoolTerm err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
  = concat
      ( [show (origin x)++"\n"]++
        case (cxeSrcCpts err, cxeTrgCpts err) of
-            ([], [])  -> ["    Entirely ambiguous term  "++showADL (cxeExpr err)]
-            (cs, [])  -> ["    Inside term   "++showADL x++",\n"]++
+            ([], [])  -> ["    Entirely ambiguous term  "++showADL x]
+            ([_], []) -> ["    Inside term   "++showADL x++"\n"]++
+                         ["    the target of  "++showADL x++"  is ambiguous."]
+            ([], [_]) -> ["    Inside term   "++showADL x++"\n"]++
+                         ["    the source of  "++showADL x++"  is ambiguous."]
+            (cs, [])  -> ["    Inside term   "++showADL x++"\n"]++
                          ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-            ([], cs') -> ["    Inside term   "++showADL x++",\n"]++
+            (cs, [_]) -> ["    Inside term   "++showADL x++"\n"]++
+                         ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+            ([], cs') -> ["    Inside term   "++showADL x++"\n"]++
+                         ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
+                         ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+            ([_],cs') -> ["    Inside term   "++showADL x++"\n"]++
                          ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
             (cs, cs') -> ["    Inside term   "++showADL x++",\n"]++
@@ -1490,12 +1511,10 @@ pCtx2aCtx p_context
          g x@(Pid _)           = errILike x
          g x@(Pnid _)          = errILike x
          g x@(Patm _ _ _)      = errILike x
-         g x@Pnull             = errILike x
-         g x@(Pfull _ [s,t])   = []
-         g x@(Pfull _ [s])     = []
-         g x@(Pfull o [])      = []
-         g x@(Prel o a)        = []
-         g x@(Pflp o a)        = []
+         g x@Pnull             = []
+         g x@(Pfull _ _)       = []
+         g x@(Prel{})          = errRelLike x
+         g x@(Pflp{})          = errRelLike x
          g x@(Pequ _ a b)      = errEquLike x a b
          g x@(Pimp _ a b)      = errEquLike x a b
          g x@(PIsc _ a b)      = errEquLike x a b
@@ -1512,7 +1531,7 @@ pCtx2aCtx p_context
          g x@(PCpl _ a)        = errCpl x a
          g x@(PBrk _ a)        = g a
          g x@(PTyp _ a (P_Sign [])) = g a
-         g x@(PTyp _ a sgn)    = g a
+         g x@(PTyp{})          = errRelLike x
          errEquLike x a b
           = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
             where
@@ -1522,11 +1541,27 @@ pCtx2aCtx p_context
                                       ,cxeSrcCpts = srcConflictingConcepts
                                       ,cxeTrgCpts = trgConflictingConcepts
                                       }
-                         | (_,_,TypExpr t _ _ _,srcConflictingConcepts)<-typeTable, t==x
-                         , (_,_,TypExpr t _ _ _,trgConflictingConcepts)<-typeTable, t==p_flp x
-                         , length srcConflictingConcepts/=1, length trgConflictingConcepts/=1
+                         | (_,_,TypLub (TypExpr s  _ _ _) (TypExpr t  _ _ _) _ _, srcConflictingConcepts)<-typeTable, s ==      a, t ==      b 
+                         , (_,_,TypLub (TypExpr s' _ _ _) (TypExpr t' _ _ _) _ _, trgConflictingConcepts)<-typeTable, s'==p_flp a, t'==p_flp b
+                         , length srcConflictingConcepts/=1 || length trgConflictingConcepts/=1
                          ]
              deepErrors = g a++g b
+         errRelLike x@(PTyp{})
+          = [ CxeRel {cxeExpr   = x
+                     ,cxeDcls   = decls
+                     }
+            | (_,classNr,TypExpr term _ _ _,_)<-typeTable, x==term
+            , let decls = [term | (_,cl,TypExpr term _ _ _,_)<-typeTable, classNr==cl, isDeclaration term]
+            , length decls/=1
+            ] where isDeclaration term = (not.null) [ decl | decl<-p_declarations p_context, origin decl==origin term]
+         errRelLike x
+          = [ CxeRel {cxeExpr   = x
+                     ,cxeDcls   = decls
+                     }
+            | (_,classNr,TypExpr term _ _ _,_)<-typeTable, x==term
+            , let decls = [term | (_,cl,TypExpr term _ _ _,_)<-typeTable, classNr==cl, isDeclaration term]
+            , length decls/=1
+            ] where isDeclaration term = (not.null) [ decl | decl<-p_declarations p_context, origin decl==origin term]
          errCpl x a
           = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
             where
@@ -1552,9 +1587,8 @@ pCtx2aCtx p_context
              nodeError = [ CxeCpsLike {cxeExpr   = x
                                       ,cxeCpts   = conflictingConcepts
                                       }
-                         | (_,_,TypLub _ _ _ origExpr,conflictingConcepts)<-typeTable
+                         | (_,_,TypLub (TypExpr s _ _ _) (TypExpr t _ _ _) _ _,conflictingConcepts)<-typeTable, p_flp s==a, t==b
                          , length conflictingConcepts/=1
-                         , origin x==origin origExpr
                          ]
              deepErrors = g a++g b
          lookup pTerm = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pTerm==origExpr ]++fatal 1535 ("cannot find "++showADL pTerm++" in the lookup table"))
