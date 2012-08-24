@@ -1337,8 +1337,12 @@ pCtx2aCtx p_context
          f (Pfull _ [s,t])   = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
          f (Pfull _ [s])     = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt s))))
          f x@(Pfull o [])    = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
-         f x@(Prel o a)      = return (ERel (Rel{relnm=a, relpos=o}))        <* errRelLike x -- TODO: this should yield a decl!!
-         f x@(Pflp o a)      = return (EFlp (ERel (Rel{relnm=a, relpos=o}))) <* errRelLike x -- TODO!
+         f x@(Prel o a)      = do { (decl,sign) <- errRelLike x
+                                  ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sign, reldcl=decl}))
+                                  }
+         f x@(Pflp o a)      = do { (decl,sign) <- errRelLike x
+                                  ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sign, reldcl=decl})))
+                                  }
          f x@(Pequ _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
                                     ; return (EEqu (a', b')) <* errEquLike x a b }
          f x@(Pimp _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
@@ -1414,14 +1418,23 @@ pCtx2aCtx p_context
             , let decls = [term | (_,cl,TypExpr term _ _ _,_)<-typeTable, classNr==cl, isDeclaration term]
             , length decls/=1
             ] where isDeclaration term = (not.null) [ decl | decl<-p_declarations p_context, origin decl==origin term]
-         errRelLike x
-          = createVoid $
-            [ CxeRel {cxeExpr   = x
-                     ,cxeCpts   = conflictingConcepts
-                     }
-            | (_,_,TypExpr term _ _ _,conflictingConcepts)<-typeTable, x==term
-            , length conflictingConcepts/=1
-            ]
+         errRelLike :: Term -> Guarded (Declaration, Sign)
+         errRelLike term
+          = case [ decl | decl<-declarations contxt, nm==name decl
+                        , source decl `elem` srcTypes, target decl `elem` trgTypes]
+            of [d] -> Checked (d, Sign (head srcTypes) (head trgTypes))
+               _   -> let err = [ CxeRel {cxeExpr   = term'
+                                         ,cxeCpts   = conflictingConcepts
+                                         }
+                                | (_,_,TypExpr term' _ _ _,conflictingConcepts)<-typeTable, term'==term || term'==p_flp term
+                                , length conflictingConcepts/=1
+                                ]
+                      in if null err then fatal 1585 ("Impossible situation: non-unique binding, but still correctly typed.")
+                         else Errors err
+            where srcTypes = [ pCpt2aCpt c | (_,_,TypExpr term' _ _ _,conflictingConcepts)<-typeTable, term'==      term, c<-conflictingConcepts]
+                  trgTypes = [ pCpt2aCpt c | (_,_,TypExpr term' _ _ _,conflictingConcepts)<-typeTable, term'==p_flp term, c<-conflictingConcepts]
+                  nm = head ([ rel | Prel _ rel<-[term] ]++[ rel | Pflp _ rel<-[term] ]++
+                             fatal 1590 "no name for nm in a call of errRelLike")
          errCpl x a
           = createVoid $  [ CxeCpl {cxeExpr   = a
                                    ,cxeCpts   = conflictingConcepts
