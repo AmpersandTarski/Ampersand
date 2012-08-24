@@ -1,0 +1,17 @@
+CONTEXT Try
+PATTERN Try
+
+-- Iedere klant heeft minimaal een klantnummer.
+ klantnummer :: Klant * Nummer [TOT, INJ] PRAGMA "" " heeft " ""
+  = [ ("Piet","7") ; ("Piet","8") ; ("Jan","3") ].
+
+-- Iedere klant valt binnen één klantgroep.
+  groep :: Klant -> Groep PRAGMA "" " valt binnen "
+  = [ ("Piet","A") ; ("Jan","B") ].
+
+  ng :: Nummer * Groep.
+
+  ng = klantnummer~ ; groep
+
+ENDPATTERN
+ENDCONTEXT

@@ -1,0 +1,13 @@
+CONTEXT Test
+PATTERN Test
+
+r :: A*C
+s :: A*D
+q :: B*C
+--SPEC B ISA Z
+--SPEC D ISA Z
+--SPEC Z ISA D
+
+RULE r = s!q
+ENDPATTERN
+ENDCONTEXT

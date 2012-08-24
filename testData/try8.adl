@@ -1,0 +1,22 @@
+CONTEXT Test
+
+PATTERN Test8
+r :: A*C.
+RULE r |- r~;r
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is a simply incorrect with |- and ;
+   Result: FAIL
+   Reason: type error on ;
+   Error message:
+
+   The pattern named "Try8" contains errors in the rule at line 5:1:
+   line 5:13, file "try8.adl"
+       Inside expression   r~;r,
+       concepts A and C
+       between the target of  r~  and the source of  r are in conflict.
+
+-}
