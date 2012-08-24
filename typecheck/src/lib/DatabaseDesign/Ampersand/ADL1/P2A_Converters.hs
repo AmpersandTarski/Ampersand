@@ -1558,10 +1558,9 @@ pCtx2aCtx p_context
           = [ CxeRel {cxeExpr   = x
                      ,cxeDcls   = decls
                      }
-            | (_,classNr,TypExpr term _ _ _,_)<-typeTable, x==term
-            , let decls = [term | (_,cl,TypExpr term _ _ _,_)<-typeTable, classNr==cl, isDeclaration term]
-            , length decls/=1
-            ] where isDeclaration term = (not.null) [ decl | decl<-p_declarations p_context, origin decl==origin term]
+            | (_,_,TypExpr term _ _ _,conflictingConcepts)<-typeTable, x==term
+            , length conflictingConcepts/=1
+            ]
          errCpl x a
           = if null deepErrors then nodeError else deepErrors -- for debugging, in front of this if statement is a good place to add  error (showTypeTable typeTable) ++ 
             where
