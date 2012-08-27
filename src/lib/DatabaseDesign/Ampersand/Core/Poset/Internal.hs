@@ -13,11 +13,11 @@ module DatabaseDesign.Ampersand.Core.Poset.Internal where
 import qualified Data.List as List
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
+import Data.Monoid
 import DatabaseDesign.Ampersand.Basics (fatalMsg)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.Poset.Internal"
 
-import Data.Monoid
 
 data Ordering = LT | EQ | GT | CP | NC
     deriving (Eq, Show, Read, Bounded, Enum)

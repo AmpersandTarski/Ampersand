@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand.Core.Poset (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Core.Poset.Instances
-import DatabaseDesign.Ampersand.Core.Poset.Internal
+import DatabaseDesign.Ampersand.Core.Poset.Internal hiding (fatal)
 
 import Data.Function
 import Data.Monoid
