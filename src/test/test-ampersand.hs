@@ -87,6 +87,3 @@ testSet = do
 --       , insParentheses (EIsc [EUni [t,t], EIsc [t,t], EIsc [t,t], t]) == EIsc [EBrk (EUni [t,t]), EBrk (EIsc [t,t]), EBrk (EIsc [t,t]), t]
 --       ]
 --   where t = ERel (I ONE)
-   
-
- 

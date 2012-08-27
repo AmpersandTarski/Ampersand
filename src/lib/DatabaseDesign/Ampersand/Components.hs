@@ -22,7 +22,6 @@ import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,Guarded(..))
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Input
 import Text.Pandoc 
 import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Basics 

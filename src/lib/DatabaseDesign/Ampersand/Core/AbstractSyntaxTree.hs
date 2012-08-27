@@ -435,56 +435,60 @@ insParentheses = insPar 0
        insPar _ (ETyp e t)   = ETyp (insPar 10 e) t
        insPar _ (ERel rel)   = ERel rel
 
+showOrder :: Association a => a -> String
+showOrder x = "\nComparability classes:"++ind++intercalate ind (map show classes)
+ where (_,classes) = cptgE (source x); ind = "\n   "
+ 
 -- The following code has been reviewed by Gerard and Stef on nov 1st, 2011 (revision 290)
 instance Association Expression where
  sign (EEqu (l,r))   = if sign l <==> sign r
                        then sign l `join` sign r
-                       else fatal 233 $ "type checker failed to verify "++show (EEqu (l,r))++"."
+                       else fatal 233 $ "type checker failed to verify "++show (EEqu (l,r))++"."++showOrder l
  sign (EImp (l,r))   = if sign l <==> sign r
                        then sign l `join` sign r
-                       else fatal 236 $ "type checker failed to verify "++show (EImp (l,r))++"."
+                       else fatal 236 $ "type checker failed to verify "++show (EImp (l,r))++"."++showOrder l
  sign (EIsc [])      = fatal 237 $ "Ampersand failed to eliminate "++show (EIsc [])++"."
  sign (EIsc es)      = let ss=map sign es in
                        if and [l <==> r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss <==> s | s<-tail ss] may be wrong, since comparable is not transitive.
                        then Sign (greatest$map source ss) (greatest$map target ss) -- do not use  foldr1 join ss, because <==> is not transitive.
-                       else fatal 241 $ "type checker failed to verify "++show (EIsc es)++"."
+                       else fatal 241 $ "type checker failed to verify "++show (EIsc es)++"\nSigns"++show ss++"."++showOrder (head ss)
  sign (EUni [])      = fatal 242 $ "Ampersand failed to eliminate "++show (EUni [])++"."
  sign (EUni es)      = let ss=map sign es in
                        if and [l <==> r | (l,r)<-zip (init ss) (tail ss)] -- The alternative [head ss <==> s | s<-tail ss] may be wrong, since comparable is not transitive.
                        then Sign (greatest$map source ss)(greatest$map target ss) -- do not use  foldr1 join ss, because <==> is not transitive.
-                       else fatal 246 $ "type checker failed to verify "++show (EUni es)++"."
+                       else fatal 246 $ "type checker failed to verify "++show (EUni es)++"."++showOrder (head ss)
  sign (EDif (l,r))   = if sign l <==> sign r
                        then sign l
-                       else sign l -- fatal 249 $ "type checker failed to verify "++show (EDif (l,r))++"."
+                       else sign l -- fatal 249 $ "type checker failed to verify "++show (EDif (l,r))++"."++showOrder l
  sign (ELrs (l,r))   = if target l <==> target r
                        then Sign (source l) (source r)
-                       else fatal 252 $ "type checker failed to verify "++show (ELrs (l,r))++"."
+                       else fatal 252 $ "type checker failed to verify "++show (ELrs (l,r))++"."++showOrder l
  sign (ERrs (l,r))   = if source l <==> source r
                        then Sign (target l) (target r)
-                       else fatal 255 $ "type checker failed to verify "++show (ERrs (l,r))++"."
+                       else fatal 255 $ "type checker failed to verify "++show (ERrs (l,r))++"."++showOrder l
  sign (ECps [])      = fatal 256 $ "Ampersand failed to eliminate "++show (ECps [])++"."
  sign (ECps es)      = let ss=map sign es in
                        if and [r <==> l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
                        then Sign (source (head ss)) (target (last ss))
-                       else fatal 260 $ "type checker failed to verify "++show (ECps es)++"."
+                       else fatal 260 $ "type checker failed to verify "++show (ECps es)++"."++showOrder (head ss)
  sign (ERad [])      = fatal 261 $ "Ampersand failed to eliminate "++show (ERad [])++"."
  sign (ERad es)      = let ss=map sign es in
                        if and [r <==> l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
                        then Sign (source (head ss)) (target (last ss))
-                       else fatal 265 $ "type checker failed to verify "++show (ERad es)++"."
+                       else fatal 265 $ "type checker failed to verify "++show (ERad es)++"."++showOrder (head ss)
  sign (EPrd [])      = fatal 261 $ "Ampersand failed to eliminate "++show (EPrd [])++"."
  sign (EPrd es)      = Sign (source (head es)) (target (last es))
  sign (EKl0 e)       = --see #166 
                        if source e <==> target e
                        then Sign (source e `join` target e) (source e `join` target e)
-                       else fatal 409 $ "type checker failed to verify "++show (EKl0 e)++"."
+                       else fatal 409 $ "type checker failed to verify "++show (EKl0 e)++"."++showOrder e
  sign (EKl1 e)       = sign e
  sign (EFlp e)       = Sign t s where Sign s t=sign e
  sign (ECpl e)       = sign e
  sign (EBrk e)       = sign e
  sign (ETyp e sgn)   = if sign e <==> sgn
                        then sgn
-                       else fatal 417 $ "type checker failed to verify "++show (ETyp e sgn)++"."
+                       else fatal 417 $ "type checker failed to verify "++show (ETyp e sgn)++"."++showOrder sgn
  sign (ERel rel)     = sign rel
 
 
@@ -591,8 +595,8 @@ instance Poset Sign where
 instance Sortable Sign where
   meet (Sign a b) (Sign a' b') = Sign (a `meet` a') (b `meet` b')
   join (Sign a b) (Sign a' b') = Sign (a `join` a') (b `join` b')
-  sortBy = fatal 534 "sortBy of Sign has not been implemented (yet)."
-  
+  sortBy f = Data.List.sortBy ((comparableClass .) . f)  -- is this implementation correct?
+
    
 instance Show Sign where
   showsPrec _ (Sign s t) = 
@@ -638,7 +642,11 @@ order :: A_Concept -> GenR
 order c@(C{}) = cptgE c
 order _ = (\x y -> if x==y then EQ else NC,[])
 instance Poset A_Concept where
-  a `compare` b = fst (order a) a b
+  ONE `compare` ONE = EQ
+  _ `compare` ONE   = NC
+  ONE `compare` _   = NC
+  a `compare` b     = a `comp` b
+                      where (comp,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
 instance Sortable A_Concept where
   meet a b | b <= a = b        -- meet yields the more specific of two concepts
            | a <= b = a

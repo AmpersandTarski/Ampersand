@@ -38,7 +38,7 @@ import Control.Monad
 import Data.Maybe
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "PandocAux"
+fatal = fatalMsg "Output.PandocAux"
 
 
 -- | Default key-value pairs for use with the Pandoc template
