@@ -14,7 +14,6 @@ where
    import Data.Maybe
    import DatabaseDesign.Ampersand.ADL1.Expression
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration
-   import DatabaseDesign.Ampersand.Core.Poset(Ordering(..))
    import Prelude hiding (Ordering(..))
 --   fatal :: Int -> String -> a
 --   fatal = fatalMsg "Classes.ConceptStructure"
