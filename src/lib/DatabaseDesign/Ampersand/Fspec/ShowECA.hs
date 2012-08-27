@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
    import Data.List (intercalate)
 
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ShowECA"
+   fatal = fatalMsg "Fspec.ShowECA"
 
 
    class ECA a where 

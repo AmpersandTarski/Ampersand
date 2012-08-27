@@ -13,7 +13,7 @@ import qualified Data.Map as Map
 import Control.Monad.State.Lazy
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "UML"
+fatal = fatalMsg "Fspec.GenerateUML"
 
 -- TODO: escape
 -- TODO: names of model, package, assoc (empty?), etc.

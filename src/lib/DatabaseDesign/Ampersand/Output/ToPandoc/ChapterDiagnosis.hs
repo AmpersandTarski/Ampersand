@@ -14,7 +14,7 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "ChapterDiagnosis.hs"
+fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis.hs"
 
 chpDiagnosis :: Int -> Fspc -> Options -> ([Block],[Picture])
 chpDiagnosis lev fSpec opts

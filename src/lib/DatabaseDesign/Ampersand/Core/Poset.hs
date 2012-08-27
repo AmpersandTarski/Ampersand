@@ -115,12 +115,12 @@ sortWith (tos,allb) f xs
 -- | Elements can be arranged into classes of comparable elements, not necessarily a total order
 --   It makes sense to sort such a class.
 --   Take for example instance Sortable A_Concept.
---   When A_Concept should be a collection of total orders: comparableClass CP = error "Elements in totally ordered class, which are not LT, not GT and not EQ."
+--   When A_Concept should be a collection of total orders: comparableClass CP = fatal 118 "Elements in totally ordered class, which are not LT, not GT and not EQ."
 comparableClass :: Ordering -> Prelude.Ordering
 comparableClass LT = Prelude.LT
 comparableClass EQ = Prelude.EQ
 comparableClass GT = Prelude.GT
-comparableClass NC = error "Uncomparable elements in comparable class."
+comparableClass NC = fatal 123 "Uncomparable elements in comparable class."
 comparableClass CP = Prelude.EQ --the position of two comparable concepts is equal
 
 -- | If elements are in a total order, then they can be sortedBy totalOrder using the Prelude.Ordering
@@ -129,30 +129,30 @@ totalOrder :: Ordering -> Prelude.Ordering
 totalOrder LT = Prelude.LT
 totalOrder EQ = Prelude.EQ
 totalOrder GT = Prelude.GT
-totalOrder NC = error "Uncomparable elements in total order."
-totalOrder CP = error "Uncomparable elements in total order."
+totalOrder NC = fatal 132 "Uncomparable elements in total order."
+totalOrder CP = fatal 133 "Uncomparable elements in total order."
 
 -- | takes the greatest a of comparables
 greatest :: (Show a,Sortable a) => [a] -> a
 greatest xs 
- | null ms = error "there is no greatest"
+ | null ms = fatal 138 "there is no greatest"
  | length ms==1 = head ms
- | otherwise = error ("there is more than one greatest: "++ show (List.nub xs))
+ | otherwise = fatal 140 ("there is more than one greatest: "++ show (List.nub xs))
    where ms = maxima (List.nub xs)
 -- | takes all a without anything larger
 maxima :: Sortable a => [a] -> [a]
-maxima [] = error "the empty list has no maximum"
+maxima [] = fatal 144 "the empty list has no maximum"
 maxima xs = [x | x<-List.nub xs,not (or [x < y | y<-List.nub xs])]
 
 -- | takes the least a of comparables if there is only one
 least :: Sortable a => [a] -> a
 least xs 
- | null ms = error "there is no least"
+ | null ms = fatal 150 "there is no least"
  | length ms==1 = head ms
- | otherwise = error "there is more than one least"
+ | otherwise = fatal 152 "there is more than one least"
    where ms = minima (List.nub xs)
 -- | takes all a without anything less
 minima :: Sortable a => [a] -> [a]
-minima [] = error "the empty list has no minimum"
+minima [] = fatal 156 "the empty list has no minimum"
 minima xs = [x | x<-List.nub xs,not (or [y < x | y<-List.nub xs])]
 

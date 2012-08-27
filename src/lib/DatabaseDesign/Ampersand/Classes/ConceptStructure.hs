@@ -26,7 +26,7 @@ where
     morlist :: a -> [Relation]        -- ^ the list of all relations used within data structure a
                                       --   (the difference with mors is that morlist is not unique wrt name and signature)
     genE :: a -> GenR
-    genE cstruc = if null cs then (\x y -> if x==y then EQ else NC,[]) else head cs where cs = [order c |c<-concs cstruc]
+    genE cstruc = genE (head (concs cstruc))
     
 -- class KleeneClos where
 --  closExprs :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
@@ -93,6 +93,7 @@ where
 --    mors      c = [I c]
     morlist   c = [I c]
 --  closExprs _ = []
+    genE c      = cptgE c
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]

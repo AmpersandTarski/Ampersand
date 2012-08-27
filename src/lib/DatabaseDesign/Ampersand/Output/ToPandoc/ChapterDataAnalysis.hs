@@ -16,7 +16,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List (nub, intercalate)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "ChapterDataAnalysis.hs"
+fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis.hs"
 
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
@@ -388,20 +388,20 @@ chpDataAnalysis lev fSpec flags
 --  voorgestelde multipliciteitenanalyse....
       clauses = nub [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
       is = nub [r | EUni fus<-clauses
-                  , isIdent (EIsc [notCpl f | f<-fus, isPos f])
+                  , isIdent (EIsc [notCpl f | f<-fus, isPos f] sgn)
                   , f<-filter isNeg fus
                   , s<-strands f
                   , e<-[head s, flp (last s)]
                   , r<-mors e
                 ]
       ts = nub [r | EUni fus<-clauses
-                  , isIdent (EIsc [notCpl f | f<-fus, isNeg f])
+                  , isIdent (EIsc [notCpl f | f<-fus, isNeg f] sgn)
                   , f<-filter isPos fus
                   , s<-strands f
                   , e<-[head s, flp (last s)]
                   , r<-mors e
                   ]
-      strands (ECps fs) = [fs]
+      strands (ECps fs _) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
       tots = [d | t<-ts, inline t, d<-map makeDeclaration (mors t)]
       unis = [d | t<-is, inline t, d<-map makeDeclaration (mors t)]
