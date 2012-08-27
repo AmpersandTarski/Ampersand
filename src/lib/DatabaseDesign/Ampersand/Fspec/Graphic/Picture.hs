@@ -16,7 +16,7 @@ import Data.GraphViz.Types.Canonical
 import Data.GraphViz.Commands
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Picture.hs"
+fatal = fatalMsg "Fspec.Graphic.Picture"
 
 type Pictures = [Picture]
 data Picture = Pict { origName :: String    -- ^ The original name of the object this picture was made for. (could include spaces!)

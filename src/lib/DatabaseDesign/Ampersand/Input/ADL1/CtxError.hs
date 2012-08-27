@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Core.ParseTree
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "CtxError"
+fatal = fatalMsg "Input.ADL1.CtxError"
 
 shOrig :: Origin -> String
 shOrig (FileLoc (FilePos (_,DatabaseDesign.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++":"++show c

@@ -30,7 +30,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List             (intercalate)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "SharedAmongChapters.hs"
+fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
 
 data Chapter = Intro 
              | NatLangReqs

@@ -13,6 +13,9 @@ module DatabaseDesign.Ampersand.Core.Poset.Internal where
 import qualified Data.List as List
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
+import DatabaseDesign.Ampersand.Basics (fatalMsg)
+fatal :: Int -> String -> a
+fatal = fatalMsg "Core.Poset.Internal"
 
 import Data.Monoid
 
@@ -33,8 +36,8 @@ totalOrder :: Ordering -> Prelude.Ordering
 totalOrder LT = Prelude.LT
 totalOrder EQ = Prelude.EQ
 totalOrder GT = Prelude.GT
-totalOrder NC = error "Uncomparable elements in total order."
-totalOrder CP = error "Uncomparable elements in total order."
+totalOrder NC = fatal 36 "Uncomparable elements in total order."
+totalOrder CP = fatal 37 "Uncomparable elements in total order."
 
 -- | Internal-use function to convert the ordinary Ordering to ours.
 partialOrder :: Prelude.Ordering -> Ordering

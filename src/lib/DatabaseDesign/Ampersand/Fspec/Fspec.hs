@@ -37,41 +37,40 @@ import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfor
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"
 
-data Fspc = Fspc { fsName :: String                -- ^ The name of the specification, taken from the Ampersand script
-                 , fspos :: [Origin]              -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
-                 , themes :: [String]              -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
-                 , fsLang :: Lang                  -- ^ The default language for this specification, if specified at all.
-                 , vprocesses :: [FProcess]            -- ^ All processes defined in the Ampersand script
-                 , vplugInfos :: [PlugInfo]            -- ^ All plugs defined in the Ampersand script
-                 , plugInfos :: [PlugInfo]            -- ^ All plugs (defined and derived)
-                 , interfaceS :: [Interface]           -- ^ All interfaces defined in the Ampersand script
-                 , interfaceG :: [Interface]           -- ^ All interfaces derived from the basic ontology
-                 , fSwitchboard :: Fswitchboard          -- ^ The code to be executed to maintain the truth of invariants
-                 , fActivities :: [Activity]            -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
-                 , fRoleRels :: [(String,Relation)]   -- ^ the relation saying which roles may change the population of which relation.
-                 , fRoleRuls :: [(String,Rule)]       -- ^ the relation saying which roles may change the population of which relation.
-                 , vrules :: [Rule]                -- ^ All user defined rules that apply in the entire Fspc
-                 , grules :: [Rule]                -- ^ All rules that are generated: multiplicity rules and key rules
-                 , vkeys :: [KeyDef]              -- ^ All keys that apply in the entire Fspc
-                 , vgens :: [A_Gen]               -- ^ All gens that apply in the entire Fspc
-                 , vconjs :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec)
-                 , vquads :: [Quad]                -- ^ All quads generated (by ADL2Fspec)
-                 , vEcas :: [ECArule]             -- ^ All ECA rules generated (by ADL2Fspec)
-                 , vrels :: [Declaration]         -- ^ All user defined and generated declarations plus all defined and computed totals.
-                                                         --   The generated declarations are all generalizations and
-                                                         --   one declaration for each signal.
-                 , fsisa :: [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
-                 , vpatterns :: [Pattern]             -- ^ All patterns taken from the Ampersand script
-                 , vConceptDefs :: [ConceptDef]          -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
-                 , fSexpls :: [Purpose]             -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
-                 , metas :: [Meta]                -- ^ All meta declarations from the entire context      
-                 , vctxenv :: ( Expression
-                              , [(Declaration,String)])   -- an expression on the context with unbound relations, to be bound in this environment
+data Fspc = Fspc { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+                 , fspos ::        [Origin]                 -- ^ The origin of the Fspc. An Fspc can be a merge of a file including other files c.q. a list of Origin.
+                 , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                 , fsLang ::       Lang                     -- ^ The default language for this specification, if specified at all.
+                 , vprocesses ::   [FProcess]               -- ^ All processes defined in the Ampersand script
+                 , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
+                 , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
+                 , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
+                 , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology
+                 , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
+                 , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
+                 , fRoleRels ::    [(String,Relation)]      -- ^ the relation saying which roles may change the population of which relation.
+                 , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
+                 , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
+                 , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and key rules
+                 , vkeys ::        [KeyDef]                 -- ^ All keys that apply in the entire Fspc
+                 , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
+                 , vconjs ::       [Expression]             -- ^ All conjuncts generated (by ADL2Fspec)
+                 , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2Fspec)
+                 , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2Fspec)
+                 , vrels ::        [Declaration]            -- ^ All user defined and generated declarations plus all defined and computed totals.
+                                                            --   The generated declarations are all generalizations and
+                                                            --   one declaration for each signal.
+                 , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
+                 , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
+                 , vConceptDefs :: [ConceptDef]             -- ^ All conceptDefs defined in the Ampersand script including those of concepts not in concs fSpec
+                 , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
+                 , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
+                 , vctxenv ::      ( Expression
+                                   , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
                  }
 instance ConceptStructure Fspc where
-  concs     fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
+  concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
   morlist   fSpec = morlist (interfaceS fSpec) ++ morlist (vrules fSpec)
-  genE      fSpec = genE (vrels fSpec)  
 --  closExprs fSpec = closExprs (rules fSpec)
 
 instance Language Fspc where
@@ -148,7 +147,6 @@ instance ConceptStructure Finterface where
   concs     ifc = concs (fsv_ifcdef ifc)         -- The set of all concepts used in this Fifc
   mors      ifc = mors (fsv_ifcdef ifc)          -- The set of all relations used in this Fifc
   morlist   ifc = morlist (fsv_ifcdef ifc)       -- The list of all relations in this Fifc
-  genE      ifc = genE (fsv_ifcdef ifc)          -- The genE relation
 --  closExprs ifc = closExprs (fsv_ifcdef ifc)     -- The closure expressions of this Fifc
 
 
@@ -217,7 +215,6 @@ instance ConceptStructure Activity where
  concs     act = concs (actRule act) `uni` concs (actAffect act)  -- The set of all concepts used in this Activity
  mors      act = mors (actRule act) `uni` actAffect act           -- The set of all relations used in this Activity
  morlist   act = morlist (actRule act) ++ actAffect act           -- The list of all relations in this Activity
- genE      act = genE (actRule act)                               -- The genE relation
 --  closExprs act = closExprs (actRule act)                          -- The closure expressions of this Activity
 
 data Quad     = Quad

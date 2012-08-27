@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    import Data.List (nub,sort)
    
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ADL1.ParserLegacy"
+   fatal = fatalMsg "ADL1.LegacyParser"
 
 
    keywordstxt :: [String]

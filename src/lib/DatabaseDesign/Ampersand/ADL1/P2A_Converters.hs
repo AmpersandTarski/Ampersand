@@ -28,7 +28,7 @@ import qualified Data.Map
 --       of the very few modules that imports it. (might require some refactoring due to shared stuff)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "P2A_Converters"
+fatal = fatalMsg "ADL1.P2A_Converters"
 
 {-The data structure Type is used to represent a term inside the type checker.
 TypExpr e flipped o origExpr is read as:
@@ -91,6 +91,7 @@ instance Prelude.Ord Type where
   compare (TypLub _ _ _ _)  (TypExpr _ _ _ _) = Prelude.GT
   compare (TypLub _ _ _ _) _ = Prelude.LT
   compare (TypGlb _ _ _ _) _ = Prelude.GT
+
 
 instance Eq Type where
   t == t' = compare t t' == EQ
@@ -329,8 +330,17 @@ Type         : a type term, containing a Term, which is represented by a number 
 [P_Concept]  : a list of concepts. If (_,_,term,cs) is an element of this table, then for every c in cs there is a proof that dom term is a subset of I[c].
                For a type correct term, list cs contains precisely one element.
 -}
-tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)])
-tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTable,(map (\(x,y)->(classNr x,classNr y)) condensedEdges),(map (\(x,y)->(classNr x,classNr y)) condensedEdges2)) 
+tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)],[(P_Concept,P_Concept)])
+tableOfTypes st
+  = ( table
+    , [0..length typeExpressions-1]
+    , stEdges
+    , map fst classTable
+    , (map (\(x,y)->(classNr x,classNr y)) condensedEdges)
+    , (map (\(x,y)->(classNr x,classNr y)) condensedEdges2)
+    , isas                                                  -- a list containing all tuples of concepts that are in the subset relation with each other.
+                                                            -- it is used for the purpose of making a poset of concepts in the A-structure.
+    ) 
  where
 {-  stGraph is a graph whose edges are precisely st, but each element in
 	st is replaced by a pair of integers. The reason is that datatype
@@ -408,9 +418,9 @@ tableOfTypes st = (table, [0..length typeExpressions-1],stEdges,map fst classTab
      secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, head i'==head j]
      -- reducedtypes contains all types for which there is not a more specific type
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
+     isas = [ (x,g) | (i,j)<-typeSubsets, TypExpr (Pid x) _ _ _<- i, TypExpr (Pid g) _ _ _<- j ]
 
-
-{- -- for debug
+-- for debug
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
  = "Type table has "++show (length typeTable)++" rows.\n  " ++ intercalate "\n  " (map showLine typeTable)
@@ -447,7 +457,7 @@ vertex2Concept typeTable i
 unFlip :: Type -> Term
 unFlip (TypExpr _ flipped _ e) = if flipped then p_flp e else e
 unFlip x = fatal 607 ("May not call 'original' with "++showType x)
--}
+
 
 showStVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
 showStVertex typeTable i
@@ -465,7 +475,7 @@ typeAnimate st = (stTypeGraph, condTypeGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-    (typeTable,stVtx,stEdg,cdVtx,cdEdg,cdEdg2) = tableOfTypes st
+    (typeTable,stVtx,stEdg,cdVtx,cdEdg,cdEdg2,_) = tableOfTypes st
     stTypeGraph :: DotGraph String
     stTypeGraph = toDotGraph (showStVertex typeTable) show stVtx [] stEdg []
     condTypeGraph :: DotGraph String
@@ -705,12 +715,12 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
 
 data Guarded a = Errors [CtxError] | Checked a deriving (Eq)
 
-
+{-
 parallelList :: [Guarded a] -> Guarded [a] -- get all values or collect all error messages
 parallelList = foldr (parallel (:)) (Checked [])
   where parallel :: (a->b->c) -> Guarded a -> Guarded b -> Guarded c -- get both values or collect all error messages
         parallel f ga = (<*>) (fmap f ga)
-{- -- the following definition is equivalent:
+ -- the following definition is equivalent:
 parallel f (Checked a) (Checked b) = Checked (f a b)
 parallel f (Errors  a) (Checked b) = Errors a
 parallel f (Checked a) (Errors  b) = Errors b
@@ -777,7 +787,7 @@ pCtx2aCtx p_context
              , ctxpos    = ctx_pos p_context
              , ctxlang   = fromMaybe Dutch (ctx_lang p_context)
              , ctxmarkup = fromMaybe ReST  (ctx_markup p_context) -- The default markup format for free text in this context
-             , ctxpo     = gE
+             , ctxpo     = gEandClasses
              , ctxthms   = ctx_thms p_context -- The patterns/processes to be printed in the functional specification. (for making partial documentation)
              , ctxpats   = pats          -- The patterns defined in this context
                                          -- Each pattern contains all user defined rules inside its scope
@@ -796,18 +806,11 @@ pCtx2aCtx p_context
              , ctxatoms  = allexplicitatoms
              }
     st = typing p_context
-    (typeTable,_,_,_,_,_) = tableOfTypes st
-    specializationTuples :: [(P_Concept,P_Concept)]
-    specializationTuples = [(specCpt,genCpt) | (_, _, (TypExpr (Pid specCpt) _ _ _), genCpts)<-typeTable, genCpt<-genCpts]
-    gE :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
-    gE = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder [(pC2aC s, pC2aC g) | (s,g)<-specializationTuples]   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
-             where
-                pC2aC pc = C {cptnm = p_cptnm pc
-                             ,cptgE = fatal 63 "do not refer to this concept"
-                             ,cptos = fatal 64 "do not refer to this concept"
-                             ,cpttp = fatal 65 "do not refer to this concept"
-                             ,cptdf = fatal 66 "do not refer to this concept"
-                             }
+    (typeTable,_,_,_,_,_,isas) = tableOfTypes st
+    specializationTuples :: [(A_Concept,A_Concept)]
+    specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
+    gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
+    gEandClasses = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
     typeErrors :: [CtxError]
     typeErrors
      | (not.null) derivedEquals = derivedEquals
@@ -1297,64 +1300,63 @@ pCtx2aCtx p_context
          f :: Term -> Guarded Expression
          -- alternatively:
          -- f x@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts x; return (ERel (I (pCpt2aCpt c)))}
-         f x@(PTyp _ (PI _)  (P_Sign (c:_))) = return (ERel (I (pCpt2aCpt c)))     <* returnIConcepts x
-         f x@(PTyp _ (Pid _) (P_Sign (c:_))) = return (ERel (I (pCpt2aCpt c)))     <* returnIConcepts x
-         f x@(PTyp o (Pid _) (P_Sign _))   = fatal 983 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term. (Pattern does not match)")
-         f x@(PI _)            = do{ c<-returnIConcepts x; return (ERel (I (pCpt2aCpt c)))}
-         f x@(Pid c)           = return (ERel (I (pCpt2aCpt c)))                     <* returnIConcepts x
-         f x@(Pnid c)          = return (ECpl (ERel (I (pCpt2aCpt c))))              <* returnIConcepts x
-         f x@(Patm _ atom [c]) = return (ERel (Mp1 atom (pCpt2aCpt c)))              <* returnIConcepts x
-         f x@Pnull           = fatal 988 ("pExpr2aExpr cannot transform "++show x++" to a term.")
-         f (Pfull _ [s,t])   = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
-         f (Pfull _ [s])     = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt s))))
-         f x@(Pfull o [])    = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
-         f x@(Prel o a)      = do { (decl,sgn) <- errRelLike x
-                                  ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
-                                  }
-         f x@(Pflp o a)      = do { (decl,sgn) <- errRelLike x
-                                  ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
-                                  }
-         f x@(Pequ _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; return (EEqu (a', b')) <* errEquLike x a b }
-         f x@(Pimp _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; return (EImp (a', b')) <* errEquLike x a b }
-         f x@(PIsc o a'@(PIsc _ a b) c) = do { (EIsc a_b_s, fc) <- (,) <$> f (PIsc o a b) <*> f c
-                                             ; return (EIsc (a_b_s++[fc])) <* errEquLike x a' c }
-         f x@(PIsc o a b'@(PIsc _ b c)) = do { (fa, EIsc b_c_s) <- (,) <$> f a <*> f (PIsc o b c)
-                                             ; return (EIsc ([fa]++b_c_s)) <* errEquLike x a b' }
-         f x@(PIsc _ a b)               = do { (fa, fb) <- (,) <$> f a <*> f b
-                                             ; return (EIsc [fa,fb]) <* errEquLike x a b }
-         f x@(PUni o a'@(PUni _ a b) c) = do { (EUni a_b_s, fc) <- (,) <$> f (PUni o a b) <*> f c
-                                             ; return (EUni (a_b_s++[fc])) <* errEquLike x a' c }
-         f x@(PUni o a b'@(PUni _ b c)) = do { (fa, EUni b_c_s) <- (,) <$> f a <*> f (PUni o b c)
-                                             ; return (EUni ([fa]++b_c_s)) <* errEquLike x a b' }
-         f x@(PUni _ a b)               = do { (fa, fb) <- (,) <$> f a <*> f b
-                                             ; return (EUni [fa,fb]) <* errEquLike x a b }
-         f x@(PDif _ a b)    = do{ (fa, fb) <- (,) <$> f a <*> f b
-                                 ; return (EDif (fa, fb)) <* errEquLike x a b }
-         f x@(PLrs _ a b)      = do{ (fa, fb) <- (,) <$> f a <*> f b
-                                 ; return (ELrs (fa, fb)) <* errCpsLike x a b }
-         f x@(PRrs _ a b)      = do{ (fa, fb) <- (,) <$> f a <*> f b
-                                 ; return (ERrs (fa, fb)) <* errCpsLike x a b }
-         f x@(PCps o a'@(PCps _ a b) c) = do { (ECps a_b_s, fc) <- (,) <$> f (PCps o a b) <*> f c
-                                             ; return (ECps (a_b_s++[fc])) <* errCpsLike x a' c }
-         f x@(PCps o a b'@(PCps _ b c)) = do { (fa, ECps b_c_s) <- (,) <$> f a <*> f (PCps o b c)
-                                             ; return (ECps ([fa]++b_c_s)) <* errCpsLike x a b' }
-         f x@(PCps _ a b)               = do { (fa, fb) <- (,) <$> f a <*> f b
-                                             ; return (ECps [fa,fb]) <* errCpsLike x a b }
-         f x@(PRad o a'@(PRad _ a b) c) = do { (ERad a_b_s, fc) <- (,) <$> f (PRad o a b) <*> f c
-                                             ; return (ERad (a_b_s++[fc])) <* errCpsLike x a' c }
-         f x@(PRad o a b'@(PRad _ b c)) = do { (fa, ERad b_c_s) <- (,) <$> f a <*> f (PRad o b c)
-                                             ; return (ERad ([fa]++b_c_s)) <* errCpsLike x a b' }
-         f x@(PRad _ a b)               = do { (fa, fb) <- (,) <$> f a <*> f b
-                                             ; return (ERad [fa,fb]) <* errCpsLike x a b }
-         f (PPrd o (PPrd _ a b) c) = do { (EPrd a_b_s, fc) <- (,) <$> f (PPrd o a b) <*> f c
-                                        ; return (EPrd (a_b_s++[fc])) }
-         f (PPrd o a (PPrd _ b c)) = do { (fa, EPrd b_c_s) <- (,) <$> f a <*> f (PPrd o b c)
-                                        ; return (EPrd ([fa]++b_c_s)) }
-         f (PPrd _ a b)            = do { (fa, fb) <- (,) <$> f a <*> f b
-                                        ; return (EPrd [fa,fb]) }
-         f (PKl0 _ a)      = EKl0 <$> f a
+         f x@(PI _)                     = do { c<-returnIConcepts x
+                                             ; return (ERel (I (pCpt2aCpt c)))}
+         f   (Pid c)                    = return (ERel (I (pCpt2aCpt c)))
+         f   (Pnid c)                   = return (ECpl (ERel (I (pCpt2aCpt c))))
+         f x@(Patm _ atom [])           = do { c<-returnIConcepts x
+                                             ; return (ERel (Mp1 atom (pCpt2aCpt c)))}
+         f   (Patm _ atom [c])          = return (ERel (Mp1 atom (pCpt2aCpt c)))
+         f x@Pnull                      = fatal 988 ("pExpr2aExpr cannot transform "++show x++" to a term.")
+         f (Pfull _ [s,t])              = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
+         f (Pfull _ [s])                = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt s))))
+         f x@(Pfull o [])               = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
+         f x@(Prel o a)                 = do { (decl,sgn) <- errRelLike x
+                                             ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
+                                             }
+         f x@(Pflp o a)                 = do { (decl,sgn) <- errRelLike x
+                                             ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
+                                             }
+         f x@(Pequ _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; _{-sign-} <- errEquLike x a b
+                                             ; return (EEqu (a', b'))
+                                             }
+         f x@(Pimp _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; _{-sign-} <- errEquLike x a b
+                                             ; return (EImp (a', b'))
+                                             }
+         f x@(PIsc _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; _{-sign-} <- errEquLike x a b
+                                             ; return (EIsc (case a' of {EIsc xs -> xs; x'-> [x']} ++ case b' of {EIsc xs -> xs; x'-> [x']}))
+                                             }
+         f x@(PUni _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; _{-sign-} <- errEquLike x a b
+                                             ; return (EUni (case a' of {EUni xs -> xs; x'-> [x']} ++ case b' of {EUni xs -> xs; x'-> [x']}))
+                                             }
+         f x@(PDif _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; _{-sign-} <- errEquLike x a b
+                                             ; return (EDif (a', b'))
+                                             }
+         f x@(PLrs _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike x a b
+                                             ; return (ELrs (a', b'))
+                                             }
+         f x@(PRrs _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike x a b
+                                             ; return (ERrs (a', b'))
+                                             }
+         f x@(PCps _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike x a b
+                                             ; return (ECps (case a' of {ECps xs -> xs; x'-> [x']} ++ case b' of {ECps xs -> xs; x'-> [x']}))
+                                             }
+         f x@(PRad _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike x a b
+                                             ; return (ERad (case a' of {ERad xs -> xs; x'-> [x']} ++ case b' of {ERad xs -> xs; x'-> [x']}))
+                                             }
+         f (PPrd o (PPrd _ a b) c)      = do { (EPrd a_b_s, fc) <- (,) <$> f (PPrd o a b) <*> f c
+                                             ; return (EPrd (a_b_s++[fc])) }
+         f (PPrd o a (PPrd _ b c))      = do { (fa, EPrd b_c_s) <- (,) <$> f a <*> f (PPrd o b c)
+                                             ; return (EPrd ([fa]++b_c_s)) }
+         f (PPrd _ a b)                 = do { (fa, fb) <- (,) <$> f a <*> f b
+                                             ; return (EPrd [fa,fb]) }
+         f (PKl0 _ a)                   = do { a' <- f a
+                                             ; return (EKl0 a') }
          f (PKl1 _ a)      = EKl1 <$> f a
          f (PFlp _ a)      = EFlp <$> f a
          f x@(PCpl _ a)      = do { fa <- f a; return (ECpl fa) <* errCpl x a }
@@ -1369,28 +1371,34 @@ pCtx2aCtx p_context
                       ,cxeCpts   = conflictingConcepts
                       }] else return (head conflictingConcepts)
           where conflictingConcepts = obtainConceptsFromTerm x
+         errCpsLike :: Term -> Term -> Term -> Guarded (A_Concept, Expression, Expression)
+         errCpsLike x a b
+          = case conflictingConcepts of
+             [c] -> Checked (pCpt2aCpt c, a', b')
+                     where (a',_,_) = pExpr2aExpr a;   (b',_,_) = pExpr2aExpr b
+             cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                        ,cxeCpts   = cs
+                                        }
+                           ]
+            where
+              conflictingConcepts = [ c | (_,_,TypLub (TypExpr s _ _ _) (TypExpr t _ _ _) _ _,cs)<-typeTable
+                                        , p_flp s==a, t==b, c<-cs]
+         getConcepts x
+          = [ c | (_,_,TypExpr x' _ _ _, cs)<-typeTable, x' == x, c<-cs]
+         getSign :: ([P_Concept]->[P_Concept]->[CtxError]) -> Term -> Guarded Sign
+         getSign e x
+          = case (src,trg) of
+             ([s],[t]) -> Checked (Sign (pCpt2aCpt s) (pCpt2aCpt t))
+             (_  ,_  ) -> Errors (e src trg)
+             where src = getConcepts x
+                   trg = getConcepts (p_flp x)
+         errEquLike :: Term -> Term -> Term -> Guarded Sign
          errEquLike x a b
-          = createVoid $ [ CxeEquLike {cxeExpr    = x
-                                      ,cxeLhs     = a
-                                      ,cxeRhs     = b
-                                      ,cxeSrcCpts = srcConflictingConcepts
-                                      ,cxeTrgCpts = trgConflictingConcepts
-                                      }
-                         | (_,_,TypLub (TypExpr s  _ _ _) (TypExpr t  _ _ _) _ _, srcConflictingConcepts)<-typeTable, s ==      a, t ==      b 
-                         , (_,_,TypLub (TypExpr s' _ _ _) (TypExpr t' _ _ _) _ _, trgConflictingConcepts)<-typeTable, s'==p_flp a, t'==p_flp b
-                         , length srcConflictingConcepts/=1 || length trgConflictingConcepts/=1
-                         ]
-         {- -- not used and non-exhaustive
-         errTyp x@(PTyp{})
-          = createVoid $
-            [ CxeTyp {cxeExpr   = x
-                     ,cxeDcls   = decls
-                     }
-            | (_,classNr,TypExpr term' _ _ _,_)<-typeTable, x==term'
-            , let decls = [term' | (_,cl,TypExpr term' _ _ _,_)<-typeTable, classNr==cl, isDeclaration term']
-            , length decls/=1
-            ] where isDeclaration term' = (not.null) [ decl | decl<-p_declarations p_context, origin decl==origin term']
-         -}
+          = getSign (\s t -> [ CxeEquLike {cxeExpr    = x
+                                          ,cxeLhs     = a
+                                          ,cxeRhs     = b
+                                          ,cxeSrcCpts = s
+                                          ,cxeTrgCpts = t}]) x
          errRelLike :: Term -> Guarded (Declaration, Sign)
          errRelLike term
           = case [ decl | decl<-declarations contxt, nm==name decl
@@ -1423,13 +1431,6 @@ pCtx2aCtx p_context
           where
             cs = [ concepts | (_,_,TypExpr term _ _ _,concepts)<-typeTable
                             , origin x==origin term, term==x]
-         errCpsLike x a b
-          = createVoid $ [ CxeCpsLike {cxeExpr   = x
-                                      ,cxeCpts   = conflictingConcepts
-                                      }
-                         | (_,_,TypLub (TypExpr s _ _ _) (TypExpr t _ _ _) _ _,conflictingConcepts)<-typeTable, p_flp s==a, t==b
-                         , length conflictingConcepts/=1
-                         ]
          lookupType pTerm' = head ([ thing c| (_,_,TypLub _ _ _ origExpr,[c])<-typeTable, pTerm'==origExpr ]++fatal 1535 ("cannot find "++showADL pTerm'++" in the lookup table"))
 
 --the type checker always returns a term with sufficient type casts, it should remove redundant ones.
