@@ -79,7 +79,7 @@ class ProcessStructure a where
   workTBD    x = [(r,viol) |r<-processRules x, viol<-ruleviolations r]
    
 rulesFromKey :: KeyDef -> [Rule]
-rulesFromKey key = [] --see #276 mkProductInjectivityRule keyExps : 
+rulesFromKey _ = [] --see #276 mkProductInjectivityRule keyExps : 
                    --mkProductTotalityRule keyExps :
                    --see #276 map mkUnivalenceRule keyExps  
 {-
