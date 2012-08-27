@@ -151,18 +151,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EPrd []  -> fatal 148 "Illegal call to multiplicities (EPrd [])"
      EPrd [t] -> multiplicities t `uni` [Trn]
      EPrd ts  -> [Tot | isTot (head ts)]++[Sur | isSur (last ts)]++[Rfx | isRfx (head ts)&&isRfx (last ts)]++[Trn]
-     EUni []  -> fatal 151 "Illegal call to multiplicities (EUni [])"
-     EUni [t] -> multiplicities t
-     EUni ts  -> [Tot | any isTot gts]++[Sur | any isSur gts]++[Rfx | any isRfx gts]
-                 where mgs = Sign (greatest$map source ts) (greatest$map target ts)  -- the Most General Signature of expressions in ts
-                       gts = [t | t<-ts, sign t==mgs]
-     EIsc []  -> fatal 154 "Illegal call to multiplicities (EIsc [])"
-     EIsc [t] -> multiplicities t
-     EIsc ts  -> [Tot | all isTot gts]++[Sur | all isSur gts]++
-                 [Uni | all isUni gts]++[Inj | all isInj gts]++[Asy | any isAsy [t | t<-ts, sign t==mgs]] -- TODO:  Is this correct if the elements of ts have different types? (i.e. where generalization and specialization kick in)
-                 where mgs = Sign (greatest$map source ts) (greatest$map target ts)  -- the Most General Signature of expressions in ts
-                       gts = [t | t<-ts, sign t==mgs]
-                  -- TODO:  expr /\ a is Asy if a is Asy, is Uni if a is Uni (TODO), is Tot if both a and expr are tot
+     EUni _   -> []
+     EIsc _   -> []
      EKl0 e'  -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      EKl1 e'  -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
      ECpl e'  -> [p |p<-multiplicities e', p==Sym]

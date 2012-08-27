@@ -420,7 +420,7 @@ tableOfTypes st
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
      isas = [ (x,g) | (i,j)<-typeSubsets, TypExpr (Pid x) _ _ _<- i, TypExpr (Pid g) _ _ _<- j ]
 
--- for debug
+{- -- for debug
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
  = "Type table has "++show (length typeTable)++" rows.\n  " ++ intercalate "\n  " (map showLine typeTable)
@@ -457,7 +457,7 @@ vertex2Concept typeTable i
 unFlip :: Type -> Term
 unFlip (TypExpr _ flipped _ e) = if flipped then p_flp e else e
 unFlip x = fatal 607 ("May not call 'original' with "++showType x)
-
+-}
 
 showStVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
 showStVertex typeTable i
