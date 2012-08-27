@@ -13,7 +13,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 -- import DatabaseDesign.Ampersand.Version (fatalMsg)
 
 --fatal :: Int -> String -> a
---fatal = fatalMsg "Atlas"
+--fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"
 ------
 dsnatlas::String
 dsnatlas = "DSN=RAPv1"

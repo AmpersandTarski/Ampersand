@@ -52,8 +52,8 @@ main
                                                    (Right imppcx) -> let (aCtxOrErr,_,_) = typeCheck imppcx [] in
                                                                      case aCtxOrErr of
                                                                       Checked a_context  -> importfspec  (makeFspec opts a_context) opts
-                                                                      Errors type_errors -> importfailed imppCtxOrErr opts 
-                                                   (Left impperr) -> importfailed imppCtxOrErr opts 
+                                                                      Errors _           -> importfailed imppCtxOrErr opts 
+                                                   (Left _)       -> importfailed imppCtxOrErr opts 
                ; verboseLn opts "Type checking..."
                ; let (actxOrErrs,stTypeGraph,condensedGraph) = typeCheck p_context pPops
                ; if typeGraphs opts

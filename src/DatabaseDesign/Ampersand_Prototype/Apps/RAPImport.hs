@@ -82,10 +82,10 @@ makeFailedPops :: Either ParseError P_Context -> Options -> [(String,ClockTime)]
 makeFailedPops imperr opts usrfiles 
  =   --see trunk/apps/Atlas/RAP.adl
      (case imperr of 
-         Left (Msg (a, pos, exp)) ->  [makepopu ("parseerror","File","ParseError")          [(fid      , errid fid)]
+         Left (Msg (a, pos, expr)) -> [makepopu ("parseerror","File","ParseError")          [(fid      , errid fid)]
                                       ,makepopu ("pe_action","ParseError","String")         [(errid fid, nonsid a)]
                                       ,makepopu ("pe_position","ParseError","String")       [(errid fid, nonsid pos)]
-                                      ,makepopu ("pe_expecting","ParseError","String")      [(errid fid, nonsid (show exp))]
+                                      ,makepopu ("pe_expecting","ParseError","String")      [(errid fid, nonsid (show expr))]
                                       ]
          Right pctx -> makepopu ("typeerror","File","TypeError")    [(fid, errid fid)]
                         :makeCtxErrorPops opts usrfiles (errid fid) pctx
