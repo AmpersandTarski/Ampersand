@@ -95,7 +95,6 @@ defaultWriterVariables flags fSpec
          , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
          , "\\newcommand{\\declare}[3]{\\id{#1}:\\ \\id{#2}\\rel\\id{#3}}"
          , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
-         , "\\selectlanguage{dutch}"
          , "% ============Ampersand specific End==================="
          ])
 --    , ("geometry", "margin=2cm, a4paper")
@@ -330,33 +329,7 @@ theOldLatexTemplate flags
                )++
                [ "\\usepackage{graphicx}\n" | genGraphics flags] ++
           --     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
-               [ "\\def\\id#1{\\mbox{\\em #1\\/}}\n"
-               , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}\n"
-               , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}\n"
-               , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}\n"
-               , "%\\newcommand{\\iden}{\\mathbb{I}}\n"
-               , "%\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}\n"
-               , "\\newcommand{\\full}{\\mathbb{V}}\n"
-               , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}\n"
-           --    , "\\newcommand{\\relAdd}{\\dagger}\n"
-               , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim\n"
-               , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}\n"
-               , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}\n"
-               , "\\newcommand{\\asterisk}{*}\n"
-               , "\\newcommand{\\cmpl}[1]{\\overline{#1}}\n"
-           --    , "\\newcommand{\\compose}{;}\n"
-               , "\\newcommand{\\subs}{\\vdash}\n"
-               , "\\newcommand{\\rel}{\\times}\n"
-               , "\\newcommand{\\fun}{\\rightarrow}\n"
-               , "\\newcommand{\\isa}{\\sqsubseteq}\n"
-               , "\\newcommand{\\N}{\\mbox{\\msb N}}\n"
-               , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}\n"
-               , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\fun\\id{#3}}\n"
-               , "\\newcommand{\\signat}[3]{\\id{#1}:\\id{#2}\\rel\\id{#3}}\n"
-               , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}\n"
-               , "\\newcommand{\\declare}[3]{\\id{#1}:\\ \\id{#2}\\rel\\id{#3}}\n"
-               , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}\n"
-               ] ++ ["\\selectlanguage{dutch}\n" | language flags == Dutch ] ++
+               ["\\selectlanguage{dutch}\n" | language flags == Dutch ] ++
                [ "% =====================================================================================\n"
                , "% == The hyperref package will take care of turning all internal references of your  ==\n"
                , "% == document into hyperlinks. For this to work properly some magic is necessary,    ==\n"
