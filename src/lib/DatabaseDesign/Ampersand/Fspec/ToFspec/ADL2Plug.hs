@@ -158,7 +158,7 @@ rel2fld kernel                                      -- > all relations (in the f
    It is based on the principle that each concept is represented in at most one plug, and each relation in at most one plug.
    First, we determine the kernels for all plugs.
    For that, we collect all relations that are univalent, injective, and surjective (the kernel relations).
-   By the way, that includes all isa-relations, since they are univalent, injective, and surjective by themselves.
+   By the way, that includes all isa-relations, since they are univalent, injective, and surjective by definition.
    Two concepts of those relations end up in the same entity iff
    there is a path between them in the concept graph of the kernel relations.
    Of all concepts in an entity, one most generic concept is designated as root.
