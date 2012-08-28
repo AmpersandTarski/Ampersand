@@ -28,7 +28,7 @@ where
              ++"\n  import DatabaseDesign.Ampersand.Core.ParseTree"
              ++"\n  import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.ShowHS (showHS)"
-             ++"\n  import DatabaseDesign.Ampersand.Fspec.FPA"
+             ++"\n--import DatabaseDesign.Ampersand.Fspec.FPA"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
              ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
              ++"\n  import DatabaseDesign.Ampersand.Basics"
@@ -295,12 +295,12 @@ where
            ,     ", metas         = allMetas"
            
 --           ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
-           ,     ", vctxenv       = vctxenv'"
+           ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
            ,"}" 
            ] ++   
        indent++"where"++
        indent++" isa' :: [(A_Concept, A_Concept)]"++
-       indent++" isa' = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
+       indent++" isa'  = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
        indent++" vctxenv'  = ("++showHS flags (indent ++ "         ") envExpr ++ ", bindings)"++
        indent++" bindings  = "++(if null bindings then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showbinding bindings)++indentB++"]")++
@@ -367,7 +367,7 @@ where
         concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns ***: "++
-        concat [indent++" "++showHSName pat++" gE"++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")
+        concat [indent++" "++showHSName pat++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
@@ -478,6 +478,7 @@ where
                               else ", ptdcs = [" ++intercalate          ", " [showHSName d | d<-ptdcs pat] ++"]"
         , wrap ", ptkds = " indentB (showHS flags) (ptkds pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
+        , "}"
         ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
                 indentB = indentA++"          " -- adding the width of ", ptrls = "
 

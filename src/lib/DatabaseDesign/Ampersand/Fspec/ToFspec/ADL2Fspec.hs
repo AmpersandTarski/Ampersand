@@ -52,7 +52,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = allDecs -- contains all user defined plus all generated relations plus all defined and computed totals.
-                 , fsisa        = [(s,g) | s<-concs context, g<-concs context , s < g]
+                 , fsisa        = [(s,g) | let (gE,classes)=ctxpo context, cl<-classes, s<-cl, g<-cl, s `gE` g==DatabaseDesign.Ampersand.Core.Poset.LT
+                                         , null [c | c<-cl, s `gE` c==DatabaseDesign.Ampersand.Core.Poset.LT
+                                                          , c `gE` g==DatabaseDesign.Ampersand.Core.Poset.LT]
+                                  ]
                  , vpatterns    = patterns context
                  , vgens        = gens context
                  , vkeys        = keyDefs context
