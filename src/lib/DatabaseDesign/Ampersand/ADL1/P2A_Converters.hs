@@ -1059,10 +1059,15 @@ pCtx2aCtx p_context
         typeErrors' = objcxe++concat prmcxes++duplicateRoleErrs++undeclaredRoleErrs
         parentIfcRoles = if null $ ifc_Roles pifc then roles contxt else ifc_Roles pifc -- if no roles are specified, the interface supports all roles
         (obj,objcxe) = pODef2aODef parentIfcRoles anything (ifc_Obj pifc)
-        (prms,prmcxes) = unzip [pRel2aRel (psign sgn) r
-                               | PTyp _ r@(Prel{}) sgn<-ifc_Params pifc -- Todo: link untyped relations to their type!
-                                                        ++fatal 669 ("Untyped relation(s) "++ intercalate ", " [nm | (Prel _ nm)<-ifc_Params pifc])
+        (prms,prmcxes) = unzip [ pRel2aRel (psign sgn) r
+                               | param<-ifc_Params pifc, let (r,sgns)=getSign param, sgn<-sgns
                                ]
+                         where
+                            getSign :: Term -> (Term,[P_Sign])
+                            getSign (PTyp _ r@(Prel{}) (P_Sign []))  = (r,[])
+                            getSign (PTyp _ r@(Prel{}) sgn) = (r,[sgn])
+                            getSign r@(Prel _ rel)          = (r,[dec_sign d | d<-p_declarations p_context, name d==rel ])
+                            getSign r                       = fatal 1070 ("Illegal call of getSign ("++show r++").")
         duplicateRoleErrs = [newcxe $ "Duplicate interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, length (filter (==role) $ ifc_Roles pifc) > 1 ]
         undeclaredRoleErrs = [newcxe $ "Undeclared interface role \""++role++"\" at "++show (origin pifc) | null duplicateRoleErrs, role <- nub $ ifc_Roles pifc, role `notElem` roles contxt ]
         -- we show the line nr for the interface, which may be slightly inaccurate, but roles have no position 
