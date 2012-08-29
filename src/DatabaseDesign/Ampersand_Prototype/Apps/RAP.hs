@@ -295,9 +295,9 @@ atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos
    , let rpop = [makepair pid | (rid',pid)<-r_decpopu, rid==rid']
    ]
    ++
-   [P_CptPopu ( geta r_cptnm (fst(head cl)) (error "while geta r_cptnm for CptPopu.")
-              ,[geta r_atomvalue aid (error "while geta r_atomvalue of aid.") | (_,aid)<-cl]
-              )
+   [P_CptPopu { p_popm=geta r_cptnm (fst(head cl)) (error "while geta r_cptnm for CptPopu.")
+              , p_popps=[(a,a) | (_,aid)<-cl, let a=geta r_atomvalue aid (error "while geta r_atomvalue of aid.")]
+              }
    | cl<-eqCl fst r_cptos, not (null cl)]
    where 
    makepair pid = (lval,rval) 
