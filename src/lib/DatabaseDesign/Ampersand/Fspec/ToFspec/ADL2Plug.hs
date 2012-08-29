@@ -225,6 +225,7 @@ So the first step is create the kernels ...   -}
 --fst kernels = subset of kernel where no two kernel fields have the same target i.e. cLkpTbl
 --              attRels will link (see mLkpTbl) to these kernel fields
 --snd kernels = complement of (fst kernels) (thus, we will not link attRels to these kernel fields directly)
+{- originally:
     kernels :: [[Expression]]
     kernels
      = --error ("Diag ADL2Plug "++show (kernelRels)++"\n"++show (concs rels)++"\n"++show (expand [(c,[])| c<-concs rels]))++
@@ -242,6 +243,61 @@ So the first step is create the kernels ...   -}
                 oneRun [] = []
                 oneRun ((c,ms):ks') = (c, ms++[r |(c',ms')<-ks', c' `elem` c:concs ms, r<-ms', r `notElem` ms]):
                                       oneRun [k |k@(c',_)<-ks', c' `notElem` c:concs ms]
+    {- Kernels are built recursively. Kernels expand by adding (sur, uni and inj) relations until there are none left.
+       Step 1: compute the expansion of each kernel (code: ms++[r |r<-rs, source r `elem` concs ms])
+       Step 2: merge kernels if possible (code: recursion over oneRun)
+       Step 3: compute the remaining relations (code: [r | r<-rs, source r `notElem` concs [ms | (_,ms)<-kernels]] )
+       And call recursively until there are none left. -}
+-}
+{- attempt (untried) to get more than one root per concept in kernels.
+    kernels :: [[Expression]]
+    kernels
+     = --error ("Diag ADL2Plug "++show (kernelRels)++"\n"++show (concs rels)++"\n"++show (expand [(c,[])| c<-concs rels]))++
+       -- The recursion (function f) starts with the set of kernels that would arise if kernelRels were empty.
+       [ [ERel (I c) | c<-cs ] ++ ms  -- at least one relation for each concept in the kernel
+       | (cs,ms)<-f [(island,[]) | island<-initialKernels ]    -- the initial kernels
+       ]
+       where
+         (gE,islands) = case concs rels of
+                         []  -> (\x y -> if x==y then EQ else NC,[])
+                         c:_ -> cptgE c
+         initialKernels :: [[A_Concept]]
+         initialKernels = sortWith length islands++[ [c] | c<-concs rels, not (c `elem` concat islands)]
+         f :: [([A_Concept],[Expression])] -> [([A_Concept],[Expression])]
+         f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelRels are surjective, univalent and injective
+          where nks = expand ks
+         expand ks = [(cs, ms++[e |e<-kernelRels, e `notElem` ms, source e `elem` cs++concs ms]) | (cs,ms)<-ks] -- expand a kernel (c,ms) by one step
+         merge ks = if nks==ks then ks else merge nks
+          where nks = oneRun ks
+                oneRun [] = []
+                oneRun ((cs,ms):ks') = (cs, ms++[r |(cs',ms')<-ks', (not.null) (cs' `isc` concs ms), r<-ms', r `notElem` ms]):
+                                       oneRun [k |k@(c',_)<-ks', c' `notElem` c:concs ms]
+-}
+    kernels :: [[Expression]]
+    kernels
+     = kerns++[ [ERel (I c)] ++
+                [ rs | rs<-otherFields, source rs==c, target rs/=c]
+              | c<-concs rels, not (c `elem` (map target (concat kerns)))
+              ]
+       where
+         (_,islands) = case concs rels of
+                         []  -> (\x y -> if x==y then DatabaseDesign.Ampersand.Core.Poset.EQ else DatabaseDesign.Ampersand.Core.Poset.NC,[])
+                         c:_ -> cptgE c
+         kerns :: [[Expression]]
+         kerns =  [ [ERel (I c) | c<-island ] ++
+                    [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
+                  | island<-sortWith ((0-).length) islands ]
+         otherFields :: [Expression]
+         otherFields = [ECps (head (sortWith length cl)) | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
+         closure :: [[Expression]]
+         closure = clos1 [ [r] | r<-kernelRels, null [ () |island<-islands, source r `elem` island, target r `elem` island] ]
+         clos1 :: [[Expression]] -> [[Expression]]
+         clos1 xs
+            = foldl f xs (nub (map src xs) `isc` nub (map trg xs))
+              where
+               f q x = q `uni` [r++r' | r<-q, trg r==x, r'<-q, src r'== x]
+         src = source.head
+         trg = target.last
     {- Kernels are built recursively. Kernels expand by adding (sur, uni and inj) relations until there are none left.
        Step 1: compute the expansion of each kernel (code: ms++[r |r<-rs, source r `elem` concs ms])
        Step 2: merge kernels if possible (code: recursion over oneRun)
