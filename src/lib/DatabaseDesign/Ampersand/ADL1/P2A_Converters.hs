@@ -420,7 +420,7 @@ tableOfTypes st
      reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
      isas = [ (x,g) | (i,j)<-typeSubsets, TypExpr (Pid x) _ _ _<- i, TypExpr (Pid g) _ _ _<- j ]
 
-{- -- for debug
+ -- for debug
 showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
 showTypeTable typeTable
  = "Type table has "++show (length typeTable)++" rows.\n  " ++ intercalate "\n  " (map showLine typeTable)
@@ -444,24 +444,6 @@ showTypeTable typeTable
     showPos (FileLoc (FilePos (_,Pos l c,_)))
        = "("++show l++":"++show c++")"
     showPos _ = fatal 517 "Unexpected pattern in showPos"
-showVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
-showVertex typeTable i
- = (intercalate "\n".nub) [ showType (head cl)
-                          | cl<-eqCl original [ typExpr | (_, classNr, typExpr,_)<-typeTable, i==classNr ]
-                          ]
-vertex2Concept :: [(Int,Int,Type,[P_Concept])] -> Int -> P_Concept
-vertex2Concept typeTable i
- = head ([ c | (_, classNr, TypExpr (Pid c) _ _ _, _)<-typeTable , i==classNr]
-         ++fatal 603 ("No concept numbered "++show i++" found by vertex2Concept typeTable.\n  "++intercalate "\n  " [ show tti | tti@(_, classNr, _, _)<-typeTable , i==classNr])
-        )
-unFlip :: Type -> Term
-unFlip (TypExpr _ flipped _ e) = if flipped then p_flp e else e
-unFlip x = fatal 607 ("May not call 'original' with "++showType x)
--}
-
-showStVertex :: [(Int,Int,Type,[P_Concept])] -> Int -> String
-showStVertex typeTable i
- = head ([ showType e | (exprNr, _, e,_)<-typeTable, i==exprNr ]++fatal 506 ("No term numbered "++show i++" found by showStVertex"))
 
 original :: Type -> Term
 original (TypExpr _ _ _ e) = e
@@ -477,13 +459,17 @@ typeAnimate st = (stTypeGraph, condTypeGraph)
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
     (typeTable,stVtx,stEdg,cdVtx,cdEdg,cdEdg2,_) = tableOfTypes st
     stTypeGraph :: DotGraph String
-    stTypeGraph = toDotGraph (showStVertex typeTable) show stVtx [] stEdg []
+    stTypeGraph = toDotGraph showStVertex show stVtx [] stEdg []
     condTypeGraph :: DotGraph String
     condTypeGraph = toDotGraph showVtx show cdVtx [] cdEdg cdEdg2
      where showVtx n = (intercalate "\n".nub)
                        [ showType (head cl)
                        | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_)<-typeTable, n==classNr ]
                        ]
+    showStVertex :: Int -> String
+    showStVertex i
+     = head ([ showType e | (exprNr, _, e,_)<-typeTable, i==exprNr ]++fatal 506 ("No term numbered "++show i++" found by showStVertex"))
+
 class Expr a where
   p_gens :: a -> [P_Gen]
   p_gens _ = []
@@ -522,7 +508,8 @@ instance Expr P_Context where
          terms (ctx_ks    pContext) ++
          terms (ctx_ifcs  pContext) ++
          terms (ctx_sql   pContext) ++
-         terms (ctx_php   pContext)
+         terms (ctx_php   pContext) ++
+         terms (ctx_pops  pContext)
         )
  subexpressions pContext
   = subexpressions (ctx_pats  pContext) ++
@@ -532,7 +519,8 @@ instance Expr P_Context where
     subexpressions (ctx_ks    pContext) ++
     subexpressions (ctx_ifcs  pContext) ++
     subexpressions (ctx_sql   pContext) ++
-    subexpressions (ctx_php   pContext)
+    subexpressions (ctx_php   pContext) ++
+    subexpressions (ctx_pops  pContext)
 
 instance Expr P_Pattern where
  p_gens pPattern
@@ -547,12 +535,14 @@ instance Expr P_Pattern where
  terms pPattern
   = nub (terms (pt_rls pPattern) ++
          terms (pt_dcs pPattern) ++
-         terms (pt_kds pPattern)
+         terms (pt_kds pPattern) ++
+         terms (pt_pop pPattern)
         )
  subexpressions pPattern
   = subexpressions (pt_rls pPattern) ++
     subexpressions (pt_dcs pPattern) ++
-    subexpressions (pt_kds pPattern)
+    subexpressions (pt_kds pPattern) ++
+    subexpressions (pt_pop pPattern)
 
 instance Expr P_Process where
  p_gens pProcess
@@ -567,12 +557,14 @@ instance Expr P_Process where
  terms pProcess
   = nub (terms (procRules pProcess) ++
          terms (procDcls  pProcess) ++
-         terms (procKds   pProcess)
+         terms (procKds   pProcess) ++
+         terms (procPop   pProcess)
         )
  subexpressions pProcess
   = subexpressions (procRules pProcess) ++
     subexpressions (procDcls  pProcess) ++
-    subexpressions (procKds   pProcess)
+    subexpressions (procKds   pProcess) ++
+    subexpressions (procPop   pProcess)
 
 instance Expr P_Rule where
  p_concs r = p_concs (rr_exp r)
@@ -612,8 +604,11 @@ instance Expr P_SubInterface where
  subexpressions _ = []
 instance Expr P_Population where
  p_concs x = p_concs (p_type x)
- terms _ = []
- subexpressions _ = []
+ terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
+ terms pop@(P_Popu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (p_popm pop)) (p_type pop)]
+ terms pop@(P_CptPopu{})              = [Pid (PCpt (p_popm pop))]
+ subexpressions pop = terms pop
+
 instance Expr a => Expr (Maybe a) where
  p_concs Nothing = []
  p_concs (Just x) = p_concs x
@@ -803,7 +798,7 @@ pCtx2aCtx p_context
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas p_context ]
-             , ctxatoms  = allexplicitatoms
+             , ctxatoms  = allExplicitAtoms
              }
     st = typing p_context
     (typeTable,_,_,_,_,_,isas) = tableOfTypes st
@@ -839,9 +834,9 @@ pCtx2aCtx p_context
     (ifcs,interfacecxes) = (unzip . map  pIFC2aIFC                         . ctx_ifcs ) p_context
     (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef [] anything)          . ctx_sql  ) p_context
     (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef [] anything)          . ctx_php  ) p_context
-    (allmbpops, popcxes) = (unzip . map  pPop2aPop                         . pops     ) p_context
-    allpops    = [pop | Just pop<-allmbpops]
-    allexplicitatoms = [cptos' | P_CptPopu cptos'<-pops p_context]
+    (allpops, popcxes)   = (unzip . map  pPop2aPop                         . pops     ) p_context
+    allExplicitAtoms :: [(String,[String])]
+    allExplicitAtoms = [(p_popm cptos',[a | (a,_)<-p_popps cptos']) | cptos'@P_CptPopu{}<-pops p_context]
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
@@ -1157,15 +1152,19 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name contxt/=str) ("No specification named '"++str++"'") )
     pExOb2aExOb po = fatal 1150 ("pExOb2aExOb is non-exhaustive, unexpected PO: "++show po)
     
-    pPop2aPop :: P_Population -> (Maybe Population,[CtxError])
-    pPop2aPop (P_CptPopu{}) = (Nothing,[])
-    pPop2aPop p@(P_Popu{})
-     = ( Just (Popu { popm  = aRel
-                    , popps = p_popps p
-                    })
+    pPop2aPop :: P_Population -> (Population,[CtxError])
+    pPop2aPop pop
+     = ( Popu { popm  = aRel
+              , popps = p_popps pop
+              }
        , relcxe
        )
-       where (ERel aRel, _, relcxe) = pExpr2aExpr (PTyp (origin p) (Prel (origin p) (name p)) (p_type p))
+       where (ERel aRel, _, relcxe) = pExpr2aExpr expr
+             expr = case pop of
+                      P_CptPopu{}              -> Pid (PCpt (name pop))
+                      P_Popu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
+                      P_Popu{}                 -> PTyp (origin pop) (Prel (origin pop) (name pop)) (p_type pop)
+                    
     
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
@@ -1415,7 +1414,7 @@ pCtx2aCtx p_context
                                 | (_,_,TypExpr term' _ _ _,conflictingConcepts)<-typeTable, term'==term || term'==p_flp term
                                 , length conflictingConcepts/=1
                                 ]
-                      in if null err then fatal 1585 ("Impossible situation: non-unique binding, but still correctly typed.")
+                      in if null err then fatal 1585 ("Impossible situation: non-unique binding, but still correctly typed.\nTerm: "++show term++"\n"++showTypeTable typeTable)
                          else Errors err
             where srcTypes = [ pCpt2aCpt c | (_,_,TypExpr term' _ _ _,conflictingConcepts)<-typeTable, term'==      term, c<-conflictingConcepts]
                   trgTypes = [ pCpt2aCpt c | (_,_,TypExpr term' _ _ _,conflictingConcepts)<-typeTable, term'==p_flp term, c<-conflictingConcepts]

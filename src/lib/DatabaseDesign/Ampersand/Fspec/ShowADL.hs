@@ -281,7 +281,7 @@ instance ShowADL A_Context where
     ++ "\n\nENDCONTEXT"
     where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
                         | d<-declarations context, decusr d, not (null (decpopu d))]
-                        ++ [showADL (P_CptPopu (name c,atomsOf c)) | c<-concs context, c/=ONE, not(null (atomsOf c))]
+                        ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs context, c/=ONE, not(null (atomsOf c))]
           cds = conceptDefs context >- (concatMap conceptDefs (ctxpats context) ++ concatMap conceptDefs (ctxprocs context))
 
 instance ShowADL Fspc where
@@ -303,7 +303,7 @@ instance ShowADL Fspc where
     ++ "\n\nENDCONTEXT"
     where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
                         | d<-declarations fSpec, decusr d, not (null (decpopu d))]
-                        ++ [showADL (P_CptPopu (name c,atomsOf c)) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
+                        ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
           cds = vConceptDefs fSpec >- (concatMap conceptDefs patts ++ concatMap (conceptDefs.fpProc) procs)
           patts = if null (themes fSpec)
                   then patterns fSpec
@@ -320,14 +320,15 @@ instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
 instance ShowADL P_Population where
- showADL p@(P_Popu{})
-  = "POPULATION "++name p++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps p))++indent++"]"
-    where indent = "   "; P_Sign pConcepts=p_type p
- showADL (P_CptPopu (cnm, xs))
-  = "POPULATION "++cnm++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map showatom xs) ++indent++"]"
+ showADL pop@(P_Popu{})
+  = "POPULATION "++name pop++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
+    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps pop))++indent++"]"
+    where indent = "   "; P_Sign pConcepts=p_type pop
+ showADL pop@(P_CptPopu{})
+  = "POPULATION "++p_popm pop++" CONTAINS\n"++
+    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,_)-> showatom x) (p_popps pop)) ++indent++"]"
     where indent = "   "
+
 instance ShowADL Population where
  showADL (Popu r pairs)
   = "POPULATION "++showADL r++" CONTAINS\n"++

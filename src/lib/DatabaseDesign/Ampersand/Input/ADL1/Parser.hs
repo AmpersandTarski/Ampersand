@@ -454,7 +454,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                    }
          prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
          pcptpop :: Origin -> String -> [String] -> P_Population
-         pcptpop _ cnm contents = P_CptPopu (cnm,contents)
+         pcptpop _ cnm contents = P_CptPopu{p_popm=cnm,p_popps=[(a,a) | a<-contents]}
 
    pRoleRelation :: Parser Token P_RoleRelation
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
