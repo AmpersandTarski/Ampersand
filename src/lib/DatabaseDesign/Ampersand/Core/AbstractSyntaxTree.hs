@@ -338,7 +338,7 @@ instance Traced Purpose where
   origin = explPos
 
 data Population
-  = Popu { popm :: Relation
+  = Popu { popm ::  Relation
          , popps :: Pairs
          }
 

@@ -303,18 +303,20 @@ where
             deriving Show
             
    data P_Markup = 
-       P_Markup  { mLang :: Maybe Lang
+       P_Markup  { mLang ::   Maybe Lang
                  , mFormat :: Maybe PandocFormat
                  , mString :: String
                  } deriving Show -- for debugging only     
                
    data P_Population
-     = P_Popu { p_popm :: String
-              , p_type :: P_Sign
-              , p_orig :: Origin
-              , p_popps :: Pairs
-              }
-     | P_CptPopu (String,[String]) --(the name of a concept,atoms in the initial population of that concept)
+     = P_Popu    { p_popm ::  String
+                 , p_type ::  P_Sign
+                 , p_orig ::  Origin
+                 , p_popps :: Pairs
+                 }
+     | P_CptPopu { p_popm ::  String     -- the name of a concept
+                 , p_popps :: Pairs  -- atoms in the initial population of that concept
+                 }
        deriving Show
 
    instance Identified P_Population where
