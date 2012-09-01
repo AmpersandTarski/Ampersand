@@ -42,7 +42,7 @@ importfailed imperr opts
 getUsrFiles :: Options -> IO [(String,ClockTime)]
 getUsrFiles opts = let fdir = let d=dropFileName (importfile opts) in if null d then "." else d
                    in  do {fns<-getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
-                          ;times<-sequence (map (getModificationTime . combine fdir) fns)
+                          ;times<-mapM (getModificationTime . combine fdir) fns
                           ;if length fns==length times
                            then return (reverse$GHC.Exts.sortWith snd (zip fns times))
                            else return (zip fns (repeat (toClockTime $ CalendarTime 1980 February 27 16 15 0 0 Wednesday 0 "UTC" 0 False)))
@@ -109,7 +109,7 @@ makeCtxErrorPops :: Options -> [(String,ClockTime)] -> ConceptIdentifier -> P_Co
 makeCtxErrorPops opts usrfiles eid pctx
  = case cx of
       Checked c -> makepopu ("te_message","TypeError","ErrorMessage") [] : makeRAPPops (makeFspec opts c) opts usrfiles []
-      Errors x ->  makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))] : []
+      Errors x ->  [makepopu ("te_message","TypeError","ErrorMessage") [(eid,nonsid (show x))]]
    where (cx,_,_) = typeCheck nc []
          nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) [] 
                    [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
@@ -171,7 +171,7 @@ makeRAPPops fs opts usrfiles pics
               else intercalate "."$reverse(mkvchunk (head revchunks) : tail revchunks) --the last (head of reverse) should be a v(ersion)chunk
        --nextversion drops extension because mkversion does
        nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) opts)
-                                            , not(elem (mkversion i fn) (map (dropExtension . fst) usrfiles))]
+                                            , (mkversion i fn) `notElem` (map (dropExtension . fst) usrfiles)]
                      in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
        inclfiles = [(fst (srcfile opts),fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd (srcfile opts)]
        cns = ctxns (srcfile opts)
@@ -268,12 +268,12 @@ makeRAPPops fs opts usrfiles pics
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (isa,x)
    atoms = [(isa , c , x) 
            | isa<-isas, c<-isa, x<-cptos c
-           , not (elem x (concat [cptos s | s<-isa, s < c]))]
+           , x `notElem` concat [cptos s | s<-isa, s < c]]
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
    isanm isa = intercalate "/" (map name (maxima isa))
    --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
    isas = let isas' = [[c' | not (null (concs fs)), c<-isa, c'<-concs fs, c==c'] | isa<-(snd . order . head . concs) fs] 
-          in [[c] | c<-concs fs, not(elem c (concat isas'))] ++ isas'
+          in [[c] | c<-concs fs, c `notElem` concat isas'] ++ isas'
    --populate relsrc and reltrg for typed data structures
    relsrc,reltrg :: Association r => [r] -> P_Population
    relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
@@ -282,7 +282,7 @@ makeRAPPops fs opts usrfiles pics
    relleft,relright :: (Populated r,Association r) => [(IdentifierNamespace,r)] -> P_Population
    relleft rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (ns,r)<-rs, (x,y)<-contents r]
    relright rs = makepopu ("right","PairID","AtomID")              [(pairidid (x,y) (ns,r), atomidid y (getisa$target r)) | (ns,r)<-rs, (x,y)<-contents r]
-   getisa c = concat [isanm isa | isa<-isas, elem c isa]
+   getisa c = concat [isanm isa | isa<-isas, c `elem` isa]
    --populate relrels, relrelnm, relreldcl and relrelsgn for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
    relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm sgn) | (ns,expr)<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]

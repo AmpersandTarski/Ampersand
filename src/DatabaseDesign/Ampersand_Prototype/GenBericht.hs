@@ -1,5 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}  
-module DatabaseDesign.Ampersand_Prototype.GenBericht where
+module DatabaseDesign.Ampersand_Prototype.GenBericht (doGenBericht) where
 
 import Prelude hiding (writeFile)
 import Data.List

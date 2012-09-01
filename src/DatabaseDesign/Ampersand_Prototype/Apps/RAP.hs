@@ -94,7 +94,7 @@ atlas2populations fSpec flags =
 
 makepops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> IO String
 makepops r_ctxnm r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
- = return ("CONTEXT "++cxnm++"\n"++concat (map showADL pops)++"\nENDCONTEXT")
+ = return ("CONTEXT "++cxnm++"\n"++concatMap showADL pops++"\nENDCONTEXT")
    where
    cxnm    = snd(theonly r_ctxnm "no context found in Atlas DB")
    pops    = atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue
@@ -188,7 +188,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
                      r_decpopu r_left r_right          
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
- = return (a_context)
+ = return a_context
    where
    (a_context,_,_) = typeCheck rawctx []
    rawctx 
@@ -239,7 +239,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_pos = DBLoc "Atlas(Pattern)"
          , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
-                    | (pid',rid)<-r_ptrls, pid==pid', not(elem rid (map fst r_declaredthrough))]
+                    | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
          , pt_gns = [PGen (DBLoc "Atlas(Gen)") (PCpt gnm) (PCpt snm)
                     | (pid',genid)<-r_ptgns, pid'==pid
                     , let gid = geta r_gengen genid (error "while geta r_gengen.")

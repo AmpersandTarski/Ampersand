@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
 import DatabaseDesign.Ampersand.Fspec(showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
-import Prelude hiding (writeFile,readFile,getContents)
+import Prelude hiding (writeFile,readFile,getContents,catch)
 import Data.Function
 import Data.List
 import Data.Maybe
@@ -12,6 +12,7 @@ import System.FilePath
 import System.Directory               
 import DatabaseDesign.Ampersand_Prototype.Version 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
+import Control.Exception
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
@@ -32,7 +33,7 @@ generateAll fSpec opts =
     
     ; case customCssFile opts of
         Just customCssFilePath ->
-         do { customCssContents <- readFile customCssFilePath `catch` error ("ERROR: Cannot open custom css file '" ++ customCssFilePath ++ "'")
+         do { customCssContents <- readCustomCssFile customCssFilePath
             ; writePrototypeFile customCssPath customCssContents
             }
         Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
@@ -40,7 +41,7 @@ generateAll fSpec opts =
             ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
             ; if dedicatedCSSExists then
                do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
-                  ; customCssContents <- readFile dedicatedCSSPath `catch` error ("ERROR: Cannot open custom css file '" ++ dedicatedCSSPath ++ "'")
+                  ; customCssContents <- readCustomCssFile dedicatedCSSPath
                   ; writePrototypeFile customCssPath customCssContents
                   }
               else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
@@ -59,6 +60,11 @@ generateAll fSpec opts =
           }
     }
   where
+    readCustomCssFile f =
+      catch (readFile f)
+            (\e -> do let err = show (e :: IOException)
+                      error ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
+                      return "")
     writePrototypeFile fname content =
      do { verboseLn opts ("  Generating "++fname)
         --; verboseLn opts $ content
@@ -78,59 +84,85 @@ generateConstants fSpec opts =
 generateSpecializations fSpec opts =
   [ "$allSpecializations ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [ (showPhpStr $ name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ] 
-         | concept <- concs fSpec, let specializations = getSpecializations fSpec concept,  not $ null specializations ])        
+  addToLastLine ";" 
+    (indent 4 (blockParenthesize "(" ")" ","
+         [ [ showPhpStr (name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ] 
+         | concept <- concs fSpec, let specializations = getSpecializations fSpec concept,  not ( null specializations) ])
+    )        
 
 generateTableInfos fSpec opts =
   [ "$relationTableInfo ="
   , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [showPhpStr rnm++" => array ('srcConcept' => "++(showPhpStr $ name $ source rel)++", 'tgtConcept' => "++(showPhpStr $ name $ target rel)++
+  addToLastLine ";" 
+    (indent 4 (blockParenthesize "(" ")" ","
+         [ [showPhpStr rnm++" => array ('srcConcept' => "++showPhpStr (name (source rel))++", 'tgtConcept' => "++showPhpStr (name (target rel))++
                                           ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
          | rel@(Rel {relnm = rnm}) <- mors fSpec
          , let (table,srcCol,tgtCol) = fromMaybe (fatal 61 $ "No table info for relation " ++ show rel)
                                          (getRelationTableInfo fSpec rel)
-         ]) ++
+         ])) ++
   [ ""
   , "$conceptTableInfo ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [ (showPhpStr $ name c)++" => array "] ++
-             (indent 4 $ blockParenthesize "(" ")" ","
-               [ [ "array ( 'table' => "++showPhpStr (name table)
-                 , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")"
-                 , "      )"]
-               -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-               | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : getGeneralizations fSpec c ])
-         | c <- concs fSpec]) ++        
+  , "  array" 
+  ] ++
+  addToLastLine ";" 
+    (indent 4 
+       (blockParenthesize "(" ")" ","
+         [ [ (showPhpStr.name) c++" => array "
+           ] ++
+           indent 4 
+              (blockParenthesize "(" ")" ","
+                [ [ "array ( 'table' => "++(showPhpStr.name) table
+                  , "      , 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")"
+                  , "      )"
+                  ]
+                -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
+                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : getGeneralizations fSpec c 
+                ]
+              )
+         | c <- concs fSpec
+         ]
+    )  ) ++        
   [ ""
   , "$tableColumnInfo ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize "(" ")" ","
-         [ [(showPhpStr $ name plug)++" =>"
-           , "  array" ] ++
-                (indent 4 $ blockParenthesize "(" ")" ","
-                [ [ (showPhpStr $ fldname field) ++ " => array ( 'concept' => "++showPhpStr (name . target $ fldexpr field)++
-                                                              ", 'unique' => "++showPhpBool (flduniq field)++
-                                                              ", 'null' => " ++ showPhpBool (fldnull field)++")" ] 
-                | field <- getPlugFields plug]) 
-         | InternalPlug plug <- plugInfos fSpec])
+  , "  array" 
+  ] ++
+  addToLastLine ";" 
+    (indent 4 
+       (blockParenthesize "(" ")" ","
+         [ [ (showPhpStr.name) plug++" =>"
+           , "  array" 
+           ] ++
+           indent 4 
+              (blockParenthesize "(" ")" ","
+                [ [ (showPhpStr.fldname) field++ " => array ( 'concept' => "++(showPhpStr.name.target.fldexpr) field++
+                                                           ", 'unique' => " ++(showPhpBool.flduniq)            field++
+                                                           ", 'null' => "  ++ (showPhpBool.fldnull)            field++
+                                                           ")"
+                  ] 
+                | field <- getPlugFields plug]
+              ) 
+         | InternalPlug plug <- plugInfos fSpec
+         ]
+     )  )
  where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
  
 generateRules fSpec opts =
   [ "$allRulesSql ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
-         [ [ showPhpStr (rrnm rule) ++ " =>"
-           , "  array ( 'name' => "++showPhpStr (rrnm rule)
-           , "        , 'ruleAdl' => "++showPhpStr (show $ rrexp rule)
-           , "        , 'origin' => "++showPhpStr (show $ rrfps rule)
-           , "        , 'meaning' => "++showPhpStr (showMeaning rule)
-           , "        , 'message' => "++showPhpStr (showMessage rule)
-           , "        , 'srcConcept' => "++showPhpStr (name (source $ rrexp rule))
-           , "        , 'tgtConcept' => "++showPhpStr (name (target $ rrexp rule))
+  , "  array" 
+  ] ++
+  addToLastLine ";" 
+    (indent 4
+      (blockParenthesize  "(" ")" ","
+         [ [ (showPhpStr.rrnm) rule ++ " =>"
+           , "  array ( 'name' => "      ++(showPhpStr.rrnm)              rule
+           , "        , 'ruleAdl' => "   ++(showPhpStr.show.rrexp)        rule
+           , "        , 'origin' => "    ++(showPhpStr.show.rrfps)        rule
+           , "        , 'meaning' => "   ++(showPhpStr.showMeaning)       rule
+           , "        , 'message' => "   ++(showPhpStr.showMessage)       rule
+           , "        , 'srcConcept' => "++(showPhpStr.name.source.rrexp) rule
+           , "        , 'tgtConcept' => "++(showPhpStr.name.target.rrexp) rule
            ] ++
            ( if (ECpl . rrexp) rule /= violationsExpr && verboseP opts
              then   ["        // Normalization steps:"]
@@ -138,12 +170,13 @@ generateRules fSpec opts =
                   ++["        // "]
              else   []
            ) ++
-           [ "        // Normalized complement (== violationsSQL): "++ escapePhpStr (show violationsExpr)
-           , "        , 'violationsSQL' => '"++ (fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr) $
-                                                  (selectExpr fSpec 26 "src" "tgt" $ violationsExpr))++"'" 
+           [ "        // Normalized complement (== violationsSQL): "++ (escapePhpStr.show) violationsExpr
+           , "        , 'violationsSQL' => '"++ fromMaybe (fatal 100 ( "No sql generated for "++showHS opts "" violationsExpr))
+                                                          (selectExpr fSpec 26 "src" "tgt" violationsExpr)
+                                             ++"'" 
            ] ++
-           ["        , 'contentsSQL' => '" ++
-              case conjNF . rrexp $ rule of
+           [ "        , 'contentsSQL' => '" ++
+             case (conjNF . rrexp) rule of
                   EIsc [] -> "/* EIsc [], not handled by selectExpr */'"
                   ECps [] -> "/* EIsc [], not handled by selectExpr */'"
                   contentsExpr -> fromMaybe
@@ -151,14 +184,20 @@ generateRules fSpec opts =
                                        escapePhpStr (showHS opts "" contentsExpr) ++ "*/")
                                     (selectExpr fSpec 26 "src" "tgt" contentsExpr)
                                     ++ "'"
-            | development opts -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
-                                       -- php/Database.php?testRule=RULENAME
+           | development opts -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+                                      -- php/Database.php?testRule=RULENAME
            ] ++
            [ "        , 'pairView' =>" -- a list of sql queries for the pair-view segments 
-           , "            array" ]++
-                (indent 14 $ blockParenthesize "(" ")" "," $ genMPairView $ rrviol rule) ++  
+           , "            array" 
+           ] ++
+           indent 14 
+             (blockParenthesize "(" ")" ","
+               ((genMPairView.rrviol) rule
+             ) ) ++  
            [ "        )" ]
-         | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = (conjNF . ECpl . rrexp) rule ]) ++
+         | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = (conjNF . ECpl . rrexp) rule 
+         ]
+    ) ) ++
   [ ""
   , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");" ]
  where showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
@@ -202,15 +241,21 @@ generateRoles fSpec opts =
 generateKeys fSpec opts =
   [ "//$allKeys is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getKey())."
   , "$allKeys ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $
+  , "  array" 
+  ] ++
+  addToLastLine ";" 
+    (indent 4 
+      (blockParenthesize  "(" ")" ","
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name concept)
            , "        , 'segments' =>" -- a labeled list of sql queries for the key expressions 
-           , "            array" ]++
-                (indent 14 $ blockParenthesize "(" ")" "," $ map genKeySeg keySegs) ++  
+           , "            array" 
+           ] ++
+           indent 14 (blockParenthesize "(" ")" "," (map genKeySeg keySegs)) ++  
            [ "      )" ]           
-         | Kd _ label concept keySegs <- sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec) ]) --sort from spec to gen
+         | Kd _ label concept keySegs <- sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec) --sort from spec to gen
+         ]
+    ) )
  where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
@@ -223,9 +268,13 @@ generateKeys fSpec opts =
                 
 generateInterfaces fSpec opts =
   [ "$allInterfaceObjects ="
-  , "  array" ] ++
-       (addToLastLine ";" $ indent 4 $ blockParenthesize  "(" ")" "," $ 
-         map (generateInterface fSpec opts) allInterfaces)
+  , "  array"
+  ] ++
+  addToLastLine ";" 
+     (indent 4 
+       (blockParenthesize  "(" ")" ","
+         (map (generateInterface fSpec opts) allInterfaces)
+     ) )
  where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
 
 generateInterface fSpec opts interface =
@@ -268,8 +317,9 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => '" ++ (fromMaybe (fatal 151 $ "No sql generated for "++showHS opts "" normalizedInterfaceExp) $
-                                        selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp) ++ "'"                                                  
+  , "      , 'expressionSQL' => '" ++ fromMaybe (fatal 151 ("No sql generated for "++showHS opts "" normalizedInterfaceExp))
+                                                (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp) 
+                                   ++ "'"                                                  
   ] 
   ++ generateMSubInterface fSpec opts editableRels depth (objmsub object) ++
   [ "      )"
@@ -293,7 +343,8 @@ generateMSubInterface fSpec opts editableRels depth (Just (Box objects)) =
   [ "      // Box" 
   , "      , 'boxSubInterfaces' =>"
   , "          array"
-  ] ++ (indent 12 $ blockParenthesize "(" ")" "," $ map (genInterfaceObjects fSpec opts editableRels Nothing $ depth + 1) objects)
+  ] ++ 
+  indent 12 (blockParenthesize "(" ")" "," (map (genInterfaceObjects fSpec opts editableRels Nothing (depth + 1)) objects))
   
 
 -- utils
@@ -341,8 +392,11 @@ indent n lines = [ replicate n ' ' ++ line | line <- lines ]
 -- FSpec utils
 
 
-showPlug plug =  ["Table: '"++sqlname plug++"'"] ++ 
-                    (indent 4 $ blockParenthesize "[" "]" "," $ map showField $ getPlugFields plug)
+showPlug plug =  
+ [ "Table: '"++sqlname plug++"'"
+ ] ++ 
+ indent 4 
+   (blockParenthesize "[" "]" "," (map showField (getPlugFields plug)))
 
 -- TODO: maybe this one exists already
 getPlugFields (TblSQL  {fields = flds}) = flds

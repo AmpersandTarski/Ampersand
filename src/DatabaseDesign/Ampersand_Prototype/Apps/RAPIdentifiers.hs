@@ -22,7 +22,7 @@ data IdentifierNamespace = CNS String
 --e.g. an atom x of type Blob, String or Varid may just be (CID x)
 --use nonsid :: String -> ConceptIdentifier for those concepts
 nonsid :: String -> ConceptIdentifier
-nonsid x = CID x
+nonsid = CID
 fsid :: (IdentifierNamespace,Fspc) -> ConceptIdentifier
 fsid (CNS ns,fs) = CID $ ns ++ "#" ++ name fs
 cptid :: A_Concept -> ConceptIdentifier
@@ -52,7 +52,7 @@ imageid pic = CID$"Image_" ++ uniqueName pic
 fileid :: (String,String) -> ConceptIdentifier
 fileid (path,fn) = CID (path++fn)
 usrid :: String -> ConceptIdentifier
-usrid usr = CID usr
+usrid = CID
 gid :: Int -> String -> ConceptIdentifier
 gid op fn = CID (show op++"("++fn++")")
 errid :: ConceptIdentifier -> ConceptIdentifier

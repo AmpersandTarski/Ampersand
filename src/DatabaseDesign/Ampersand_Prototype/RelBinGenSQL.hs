@@ -29,7 +29,7 @@ fatal = fatalMsg "RelBinGenSQL"
 -- isOneExpr :: Expression -> Bool
 -- isOneExpr e' = (isUni.conjNF.ECps) [ERel (V (Sign (source e') (source e'))),e']
 isOne' :: ObjectDef -> Bool
-isOne' o = isOne o -- isOneExpr$contextOf o
+isOne' = isOne     -- isOneExpr$contextOf o
                    --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.
                    --      isOneExpr (rev:771) kan in de problemen komen bij doSqlGet (error "line 578 Object.hs"). 
                    --      in dat geval komt isOne (huidige rev) ook in de problemen (error iets met keygroup)
@@ -89,14 +89,14 @@ selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
                     WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
                       AND NOT EXISTS (SELECT foo)            representing neven
 -}
-   where sqlOk   = and (map isJust exprbracs')
+   where sqlOk   = all isJust exprbracs'
          exprbracs=catMaybes exprbracs'
          src'    = sqlExprSrc fSpec fstm
          trgC    = sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
          trg'    = noCollideUnlessTm' fstm [src'] trgC
          fstm    = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
-         mp1Tm   = take 1 ([t | t@(ERel (Mp1{}))<-lst']++[t | t@(ECps ((ERel (Mp1{})):(ERel (V _)):(ERel (Mp1{})):[])) <- lst'])
-         lst     = [t |t<-lst', not (elem t mp1Tm)]
+         mp1Tm   = take 1 [t | t@(ERel (Mp1{}))<-lst']++[t | t@(ECps ((ERel (Mp1{})):(ERel (V _)):(ERel (Mp1{})):[])) <- lst']
+         lst     = [t |t<-lst', t `notElem` mp1Tm]
          posTms  = if null posTms' then map notCpl (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
          negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
          posTms' = [t | t<-lst, isPos t && not (isI t)]++[t | t<-lst, isPos t && isI t] -- the code to calculate I is better if it is not the first term
@@ -152,7 +152,7 @@ selectExpr fSpec i src trg (ECps es@(ERel (V (Sign ONE _)):fs@(_:_)))
                           trg' = sqlExprTrg fSpec (ECps fs)
 selectExpr fSpec i src trg (ECps e@(s1@(ERel (Mp1{})):(s2@(ERel (V _)):(s3@(ERel (Mp1{})):fx@(_:_))))) -- to make more use of the thing below
   = sqlcomment i ("case: (ECps (s1@(ERel (Mp1{})):(s2@(ERel (V _)):(s3@(ERel (Mp1{})):fx@(_:_)))))"++phpIndent (i+3)++"ECps "++show (map showADL e)) $
-    selectExpr fSpec i src trg (ECps ((ECps (s1:s2:s3:[])):fx))
+    selectExpr fSpec i src trg (ECps (ECps [s1,s2,s3]:fx))
 
 selectExpr _ i src trg (ECps e@((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[])))) -- this will occur quite often because of doSubsExpr
   = sqlcomment i ("case: (ECps ((ERel sr@(Mp1{})):((ERel (V _)):((ERel tr@(Mp1{})):[]))))"++phpIndent (i+3)++"ECps "++show (map showADL e)) $
@@ -219,7 +219,7 @@ selectExpr fSpec i src trg (ERel (V (Sign s t))   )
    case [selectGeneric i (src',src) (trg',trg) tbls "1"
         | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
         , (t',trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
-        , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
+        , let tbls = if null (s'++t') then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
         ] of
      []    -> fatal 216 $ "Problem in selectExpr (ERel (V (Sign \""++show s++"\" \""++show t++"\")))"
      sql:_ -> Just sql 
@@ -231,7 +231,7 @@ selectExpr fSpec i src trg (ERel mrph) = selectExprMorph fSpec i src trg mrph
 selectExpr fSpec i src trg (EBrk expr) = selectExpr fSpec i src trg expr
 
 selectExpr   _   i src trg (ECpl (ERel (V _))) = sqlcomment i "case: ECpl (ERel (V _))"$   -- yields empty
-                                                 toM(selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0"))
+                                                 toM(selectGeneric i ("1",src) ("1",trg) "(SELECT 1) AS a" "0")
 selectExpr fSpec i src trg (ECpl e )
    = sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl [ \""++showADL e++"\" ]") $
      selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)

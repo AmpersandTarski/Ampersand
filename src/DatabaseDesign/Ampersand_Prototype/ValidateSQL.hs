@@ -14,6 +14,8 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import DatabaseDesign.Ampersand_Prototype.Installer
 import DatabaseDesign.Ampersand_Prototype.Version 
+import Control.Exception
+import Prelude hiding (catch)
 
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -178,7 +180,10 @@ connectToServer opts =
 executePHP :: String -> IO String
 executePHP phpStr =
  do { --putStrLn $ "Executing PHP:\n" ++ phpStr
-    ; tempdir <- catch (getTemporaryDirectory) (\_ -> return ".")
+    ; tempdir <- catch getTemporaryDirectory
+                       (\e -> do let err = show (e :: IOException)
+                                 return ".")
+
     ; (tempfile, temph) <- openTempFile tempdir "phpInput"
     ; hPutStr temph phpStr
     ; hClose temph
@@ -204,7 +209,7 @@ executePHP phpStr =
               ; errStr <- hGetContents stdErrH
               ; seq (length errStr) $ return ()
               ; hClose stdErrH
-              ; when (not $ null errStr) $
+              ; unless (null errStr) $
                   putStrLn $ "Error during PHP execution:\n" ++ errStr 
               ; outputStr <- hGetContents stdOutH --and fetch the results from the output pipe
               ; seq (length outputStr) $ return ()
