@@ -6,7 +6,7 @@ import DatabaseDesign.Ampersand.Input.ADL1.FilePos
 import DatabaseDesign.Ampersand.ADL1 (Pos(..))
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
-import Data.List  (intercalate)
+import Data.List  (intercalate, sort)
 import DatabaseDesign.Ampersand.Parsing 
 import DatabaseDesign.Ampersand.Core.ParseTree
 

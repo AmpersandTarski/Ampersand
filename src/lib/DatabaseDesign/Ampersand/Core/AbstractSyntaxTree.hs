@@ -614,10 +614,6 @@ class Association rel where
   isEndo :: rel  -> Bool
   isEndo s        = source s == target s
 
--- WHY? (SJ, July 9th 2012)  Why does Poset require association? (SJ: It feels wrong, because Poset is a property of abstract algebra's, which is now linked to Association... )
-instance (Eq a,Association a) => Poset a where
-  a <= b = sign a <= sign b
-
 class Signaling a where
   isSignal :: a -> Bool  -- > tells whether the argument refers to a signal
     
