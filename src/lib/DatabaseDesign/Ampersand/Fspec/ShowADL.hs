@@ -350,8 +350,8 @@ instance ShowADL Term where
        showchar (Patm _ a [])                            = "'"++a++"'"
        showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
        showchar Pnull                                    = "-V"
-       showchar (Pfull _ [])                             = "V"
-       showchar (Pfull _ cs)                             = "V["++intercalate "*" (map show cs)++"]"
+       showchar (PVee _)                                 = "V"
+       showchar (Pfull s t)                              = "V["++show s++"*"++show t++"]"
        showchar (Prel _ rel)                             = rel
        showchar (Pflp _ rel)                             = rel++flp'
        showchar (Pequ _ l r)                             = showchar l++equi++showchar r

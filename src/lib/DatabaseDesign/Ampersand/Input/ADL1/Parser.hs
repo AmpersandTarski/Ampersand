@@ -592,8 +592,8 @@ In practice, we have it a little different.
                        singl <$> pAtom_val_pos <*> optional (pSpec '[' *> pConceptRef <* pSpec ']')
                        where pid orig Nothing = PI orig
                              pid  _  (Just c) = Pid c
-                             pfull orig Nothing = Pfull orig []
-                             pfull _ (Just (P_Sign cs,orig)) = Pfull orig cs
+                             pfull orig Nothing = PVee orig
+                             pfull _ (Just (P_Sign cs, _)) = if null cs then fatal 596 "null source and target in pRelationRef" else Pfull (head cs) (last cs)
                              singl (nm,orig) Nothing  = Patm orig nm []
                              singl (nm,orig) (Just c) = Patm orig nm [c]
 
