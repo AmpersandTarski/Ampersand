@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Output.AdlExplanation
 import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map
-import Control.Monad.State.Lazy
+import Control.Monad.State.Lazy  (State, gets, evalState, modify)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.GenerateUML"

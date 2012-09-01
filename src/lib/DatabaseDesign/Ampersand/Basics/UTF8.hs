@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
    Stability   : alpha
    Portability : portable
 
-UTF-8 aware string IO functions that will work with GHC 6.10 or 6.12.
+UTF-8 aware string IO functions that will work with GHC 6.10, 6.12, or 7.
 -}
 module DatabaseDesign.Ampersand.Basics.UTF8
            ( readFile
@@ -39,7 +39,9 @@ module DatabaseDesign.Ampersand.Basics.UTF8
             )
 
 where
-import qualified Data.ByteString as B
+import Codec.Binary.UTF8.String (encodeString)
+import qualified Data.ByteString as B hiding (putStrLn)
+import qualified Data.ByteString.Char8 as C (putStrLn)
 import Data.ByteString.UTF8 (toString, fromString)
 import Prelude hiding (readFile, writeFile, getContents, putStr, putStrLn)
 import System.IO (Handle)
@@ -53,10 +55,10 @@ stripBOM s | bom `B.isPrefixOf` s = B.drop 3 s
 stripBOM s = s
 
 readFile :: FilePath -> IO String
-readFile = liftM (toString . stripBOM) . B.readFile
+readFile = liftM (toString . stripBOM) . B.readFile . encodeString
 
 writeFile :: FilePath -> String -> IO ()
-writeFile f = B.writeFile f . fromString
+writeFile f = B.writeFile (encodeString f) . fromString
 
 getContents :: IO String
 getContents = liftM (toString . stripBOM) B.getContents
@@ -65,10 +67,10 @@ putStr :: String -> IO ()
 putStr = B.putStr . fromString
 
 putStrLn :: String -> IO ()
-putStrLn = B.putStrLn . fromString
+putStrLn = C.putStrLn . fromString
 
 hGetContents :: Handle -> IO String
-hGetContents h = liftM (toString . stripBOM) $ B.hGetContents h
+hGetContents h = liftM (toString . stripBOM) (B.hGetContents h)
 
 hPutStr :: Handle -> String -> IO ()
 hPutStr h = B.hPutStr h . fromString

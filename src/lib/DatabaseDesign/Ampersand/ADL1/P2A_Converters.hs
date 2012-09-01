@@ -325,11 +325,11 @@ tableOfTypes st
     ) 
  where
 {-  stGraph is a graph whose edges are precisely st, but each element in
-	st is replaced by a pair of integers. The reason is that datatype
-	Graph expects integers. The list st contains the essence of the
-	type analysis. It contains tuples (t,t'), each of which means
-	that the set of atoms contained by dom t is a subset of the set
-	of atoms contained by dom t'.
+    st is replaced by a pair of integers. The reason is that datatype
+    Graph expects integers. The list st contains the essence of the
+    type analysis. It contains tuples (t,t'), each of which means
+    that the set of atoms contained by dom t is a subset of the set
+    of atoms contained by dom t'.
 -}
      typeExpressions :: [Type]     -- a list of all type terms in st.
      typeExpressions = Data.Map.keys st
