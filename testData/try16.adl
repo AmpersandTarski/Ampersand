@@ -1,0 +1,15 @@
+﻿CONTEXT Test
+
+PATTERN Test16
+RELATION r[X*Y]
+RELATION s[X*Y]
+RULE V;r
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script tests type checking wrt V.
+   Result: PASS
+   Reason: the type on ; is inferred as I[X]
+-}
