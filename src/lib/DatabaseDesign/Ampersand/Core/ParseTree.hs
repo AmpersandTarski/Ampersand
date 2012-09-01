@@ -227,7 +227,8 @@ where
       | Pnid P_Concept                         -- ^ unidentity element restricted to a type; the dual of Pid
       | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
       | Pnull                                  -- ^ the empty relation
-      | Pfull Origin [P_Concept]               -- ^ the complete relation, restricted to a type
+      | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
+      | Pfull P_Concept P_Concept              -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | Pflp Origin String                     -- ^ flip / relational inverse
@@ -256,7 +257,8 @@ where
       Pnid _         -> OriginUnknown
       Patm orig _ _  -> orig
       Pnull          -> OriginUnknown
-      Pfull orig _   -> orig
+      PVee orig      -> orig
+      Pfull _ _      -> OriginUnknown
       Prel orig _    -> orig
       Pflp orig _    -> orig
       Pequ orig _ _  -> orig
