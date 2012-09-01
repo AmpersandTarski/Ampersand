@@ -17,7 +17,8 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
-
+import Control.Exception
+import Prelude hiding (catch)
 type ParseError = Message Token
 
 fatal :: Int -> String -> a
@@ -95,28 +96,34 @@ parseADL opts parserVersion file =
 readAndParseFile :: Options -> ParserVersion -> Int -> [String] -> Maybe String -> String -> String ->
                     IO (Either ParseError P_Context, [String])
 readAndParseFile opts parserVersion depth alreadyParsed mIncluderFilepath fileDir relativeFilepath =
- do { canonicFilepath <- fmap (map toUpper) $ canonicalizePath filepath
-      -- Legacy parser has no includes, so no need to print here
-
-    ; if canonicFilepath `elem` alreadyParsed 
-      then do { when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
-              ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
-              } 
-      else do { fileContents <- DatabaseDesign.Ampersand.Basics.readFile filepath
-              ; when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ filepath
-              ; parseFileContents opts parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
-                                  fileContents newFileDir newFilename     
-              }
-    }
- `catch` (\exc -> do { error $ case mIncluderFilepath of
+ catch myMonad myHandler
+   where 
+     myMonad =
+       do { canonicFilepath <- fmap (map toUpper) $ canonicalizePath filepath
+            -- Legacy parser has no includes, so no need to print here
+      
+          ; if canonicFilepath `elem` alreadyParsed 
+            then do { when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
+                    ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
+                    } 
+            else do { fileContents <- DatabaseDesign.Ampersand.Basics.readFile filepath
+                    ; when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ filepath
+                    ; parseFileContents opts parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
+                                        fileContents newFileDir newFilename     
+                    }
+          }
+     myHandler :: IOException 
+               -> IO (Either ParseError P_Context, [String])
+     myHandler =   
+             (\exc -> do { error $ case mIncluderFilepath of
                                  Nothing -> 
                                    "\n\nError: cannot read ADL file " ++ show filepath
                                  Just includerFilepath ->
                                    "\n\nError: cannot read include file " ++ show filepath ++ 
                                    ", included by " ++ show includerFilepath})
- where filepath = combine fileDir relativeFilepath
-       newFileDir = let dir = takeDirectory filepath in if dir == "." then "" else dir
-       newFilename = takeFileName filepath
+     filepath = combine fileDir relativeFilepath
+     newFileDir = let dir = takeDirectory filepath in if dir == "." then "" else dir
+     newFilename = takeFileName filepath
 
 parseFileContents :: Options -- ^ command-line options 
          -> ParserVersion -- ^ The specific version of the parser to be used

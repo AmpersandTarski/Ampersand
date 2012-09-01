@@ -2,17 +2,15 @@
 module DatabaseDesign.Ampersand.Basics.Auxiliaries
    ( eqCl 
    , eqClass
-   , sort
    , getCycles
    , combinations
    , commaEng
    , commaNL
    )
   where
-   import Data.List
+   import Data.List (nub,elemIndex)
    import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
-   import Data.Maybe
-   import GHC.Exts(sortWith)
+   import Data.Maybe (fromMaybe)
 
    -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
    -- that each sublist in the result contains only equal elements, and all equal elements are in 
