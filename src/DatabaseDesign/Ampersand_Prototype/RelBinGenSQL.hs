@@ -95,7 +95,7 @@ selectExpr fSpec i src trg (EIsc lst'@(_:_:_))
          trgC    = sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
          trg'    = noCollideUnlessTm' fstm [src'] trgC
          fstm    = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
-         mp1Tm   = take 1 [t | t@(ERel (Mp1{}))<-lst']++[t | t@(ECps ((ERel (Mp1{})):(ERel (V _)):(ERel (Mp1{})):[])) <- lst']
+         mp1Tm   = take 1 [t | t@(ERel Mp1{})<-lst']++[t | t@(ECps [ERel Mp1{},ERel (V _),ERel Mp1{}]) <- lst']
          lst     = [t |t<-lst', t `notElem` mp1Tm]
          posTms  = if null posTms' then map notCpl (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
          negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
@@ -585,7 +585,7 @@ sqlExprTrg fSpec e = sqlExprSrc fSpec (flp e)
 
 -- sqlConcept gives the name of the plug that contains all atoms of A_Concept c.
 sqlConcept :: Fspc -> A_Concept -> String
-sqlConcept fSpec c = (quote.name.sqlConceptPlug fSpec) c
+sqlConcept fSpec = quote.name.sqlConceptPlug fSpec
    
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: Fspc -> A_Concept -> PlugSQL

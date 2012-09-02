@@ -1,4 +1,7 @@
-module DatabaseDesign.Ampersand_Prototype.ValidateSQL where
+{-# OPTIONS_GHC -Wall #-}
+module DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
+
+where
 
 import Data.List
 import Data.Maybe
@@ -8,14 +11,13 @@ import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.ADL1.Rule
-import DatabaseDesign.Ampersand_Prototype.CoreImporter hiding (putStr)
+import DatabaseDesign.Ampersand_Prototype.CoreImporter hiding (putStr, origin)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import DatabaseDesign.Ampersand_Prototype.Installer
 import DatabaseDesign.Ampersand_Prototype.Version 
 import Control.Exception
-import Prelude hiding (catch)
+import Prelude hiding (catch,exp)
 
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -52,8 +54,9 @@ validateRuleSQL fSpec opts =
         [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
                  ; return True
                  }
-        ves -> do { putStrLn $ "\n\nValidation error. The following expressions failed validation:\n" ++
-                                (unlines $ map showVExp ves)
+        ves -> do { putStrLn ( "\n\nValidation error. The following expressions failed validation:\n" ++
+                               unlines (map showVExp ves)
+                             )
                   ; return False
                   } 
     }
@@ -86,22 +89,23 @@ getAllKeyExps fSpec = concatMap getKeyExps $ vkeys fSpec
 type ValidationExp = (Expression, String) 
 -- a ValidationExp is an expression together with the place in the context where we 
 -- obtained it from (e.g. rule/interface/..)
+showVExp :: ShowADL a => (a, String) -> String
 showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
 
 -- validate a single expression and report the results
 validateExp :: Fspc -> Options -> ValidationExp -> IO (ValidationExp, Bool)
 validateExp _     _    vExp@(ERel _, _)   = -- skip all simple relations 
- do { putStr $ "."
+ do { putStr "."
     ; return (vExp, True)
     }
-validateExp fSpec opts vExp@(exp, origin) =
+validateExp fSpec opts vExp@(exp, _ {-origin-}) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec opts $ exp
     ; let violationsAmp = sort $ contents exp
     
     ; if violationsSQL == violationsAmp 
       then 
-       do { putStr $ "." -- ++show violationsSQL
+       do { putStr "." -- ++show violationsSQL
           ; return (vExp, True)
           }    
       else
@@ -116,12 +120,10 @@ validateExp fSpec opts vExp@(exp, origin) =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: Fspc -> Options -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec opts exp =
- do { violations <- fmap sort $ performQuery opts violationsQuery
-    ; return violations
-    }
+  fmap sort (performQuery opts violationsQuery)
  where violationsExpr = conjNF exp
        violationsQuery = fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr)
-                                   (selectExpr fSpec 26 "src" "tgt" $ violationsExpr) 
+                                   (selectExpr fSpec 26 "src" "tgt" violationsExpr) 
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery opts queryStr =
@@ -152,7 +154,7 @@ performQuery opts queryStr =
 
 createTempDatabase :: Fspc -> Options -> IO ()
 createTempDatabase fSpec opts =
- do { executePHP php
+ do { _ <- executePHP php
     ; return ()
     }
  where php = showPHP $
@@ -164,7 +166,7 @@ createTempDatabase fSpec opts =
 
 removeTempDatabase :: Options -> IO ()
 removeTempDatabase opts =
- do { executePHP . showPHP $ 
+ do { _ <- executePHP . showPHP $ 
         connectToServer opts ++
         ["mysql_query('DROP DATABASE "++tempDbName++"');"]
     ; return ()
@@ -182,6 +184,7 @@ executePHP phpStr =
  do { --putStrLn $ "Executing PHP:\n" ++ phpStr
     ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
+                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
                                  return ".")
 
     ; (tempfile, temph) <- openTempFile tempdir "phpInput"
@@ -199,7 +202,7 @@ executePHP phpStr =
                 , create_group = False
                 }
             
-    ; (_, mStdOut, mStdErr, procHandle) <- createProcess cp 
+    ; (_, mStdOut, mStdErr, _) <- createProcess cp 
     ; outputStr <-
         case (mStdOut, mStdErr) of
           (Nothing, _) -> fatal 105 "no output handle"
@@ -220,5 +223,6 @@ executePHP phpStr =
     ; removeFile tempfile
     ; return outputStr
     }
-
+    
+showPHP :: [String] -> String
 showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]

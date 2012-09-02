@@ -1,9 +1,10 @@
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
 import DatabaseDesign.Ampersand.Fspec(showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
-import Prelude hiding (writeFile,readFile,getContents,catch)
+import Prelude hiding (writeFile,readFile,getContents,catch,exp)
 import Data.Function
 import Data.List
 import Data.Maybe
@@ -23,11 +24,11 @@ customCssPath = "css/Custom.css"
 generateAll :: Fspc -> Options -> IO ()
 generateAll fSpec opts =
  do { writePrototypeFile "Generics.php" . genPhp "Generate.hs" "Generics.php" . intercalate [""] $ 
-        [ generateConstants fSpec opts
-        , generateSpecializations fSpec opts
-        , generateTableInfos fSpec opts
+        [ generateConstants opts
+        , generateSpecializations fSpec
+        , generateTableInfos fSpec
         , generateRules fSpec opts
-        , generateRoles fSpec opts
+        , generateRoles fSpec
         , generateKeys fSpec opts
         , generateInterfaces fSpec opts ]
     
@@ -63,7 +64,7 @@ generateAll fSpec opts =
     readCustomCssFile f =
       catch (readFile f)
             (\e -> do let err = show (e :: IOException)
-                      error ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
+                      _ <- error ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
     writePrototypeFile fname content =
      do { verboseLn opts ("  Generating "++fname)
@@ -71,7 +72,8 @@ generateAll fSpec opts =
         ; writeFile (combine (dirPrototype opts) fname) content
         }
 
-generateConstants fSpec opts = 
+generateConstants :: Options -> [String]
+generateConstants opts = 
   [ "$versionInfo = "++showPhpStr prototypeVersionStr++";" -- so we can show the version in the php-generated html
   , ""
   , "$dbName = "++showPhpStr (dbName opts)++";"
@@ -81,16 +83,18 @@ generateConstants fSpec opts =
   , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
   ]
   
-generateSpecializations fSpec opts =
+generateSpecializations :: Fspc -> [String]
+generateSpecializations fSpec =
   [ "$allSpecializations ="
   , "  array" ] ++
   addToLastLine ";" 
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [ showPhpStr (name concept)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ] 
-         | concept <- concs fSpec, let specializations = getSpecializations fSpec concept,  not ( null specializations) ])
+         [ [ showPhpStr (name cpt)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ] 
+         | cpt <- concs fSpec, let specializations = getSpecializations fSpec cpt,  not ( null specializations) ])
     )        
 
-generateTableInfos fSpec opts =
+generateTableInfos :: Fspc -> [String]
+generateTableInfos fSpec =
   [ "$relationTableInfo ="
   , "  array" ] ++
   addToLastLine ";" 
@@ -108,8 +112,8 @@ generateTableInfos fSpec opts =
   addToLastLine ";" 
     (indent 4 
        (blockParenthesize "(" ")" ","
-         [ [ (showPhpStr.name) c++" => array "
-           ] ++
+         [ ( (showPhpStr.name) c++" => array "
+           ) :
            indent 4 
               (blockParenthesize "(" ")" ","
                 [ [ "array ( 'table' => "++(showPhpStr.name) table
@@ -148,6 +152,7 @@ generateTableInfos fSpec opts =
  where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]       
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
  
+generateRules :: Fspc -> Options -> [String]
 generateRules fSpec opts =
   [ "$allRulesSql ="
   , "  array" 
@@ -223,7 +228,8 @@ generateRules fSpec opts =
          ] 
        
    
-generateRoles fSpec opts =
+generateRoles :: Fspc -> [String]
+generateRoles fSpec =
   [ "$allRoles ="
   , "  array" 
   ] ++
@@ -231,13 +237,14 @@ generateRoles fSpec opts =
     (indent 4 
       (blockParenthesize  "(" ")" "," 
          [ [ "array ( 'name' => "++showPhpStr role
-           , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rules) ++")"
+           , "      , 'ruleNames' => array ("++ intercalate ", " (map (showPhpStr . name) rulez) ++")"
            , "      )" ]
-         | (role,rules) <- rulesPerRole ]
+         | (role,rulez) <- rulesPerRole ]
     ) )
         
  where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        
+generateKeys :: Fspc -> Options -> [String]
 generateKeys fSpec opts =
   [ "//$allKeys is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getKey())."
   , "$allKeys ="
@@ -247,13 +254,13 @@ generateKeys fSpec opts =
     (indent 4 
       (blockParenthesize  "(" ")" ","
          [ [ "  array ( 'label' => "++showPhpStr label
-           , "        , 'concept' => "++showPhpStr (name concept)
+           , "        , 'concept' => "++showPhpStr (name cpt)
            , "        , 'segments' =>" -- a labeled list of sql queries for the key expressions 
            , "            array" 
            ] ++
            indent 14 (blockParenthesize "(" ")" "," (map genKeySeg keySegs)) ++  
            [ "      )" ]           
-         | Kd _ label concept keySegs <- sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec) --sort from spec to gen
+         | Kd _ label cpt keySegs <- sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec) --sort from spec to gen
          ]
     ) )
  where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
@@ -266,6 +273,7 @@ generateKeys fSpec opts =
                                                    ++"' )"
                                    ] 
                 
+generateInterfaces :: Fspc -> Options -> [String]
 generateInterfaces fSpec opts =
   [ "$allInterfaceObjects ="
   , "  array"
@@ -273,13 +281,14 @@ generateInterfaces fSpec opts =
   addToLastLine ";" 
      (indent 4 
        (blockParenthesize  "(" ")" ","
-         (map (generateInterface fSpec opts) allInterfaces)
+         (map (generateInterface fSpec opts) (interfaceS fSpec ++ interfaceG fSpec))
      ) )
- where allInterfaces = interfaceS fSpec ++ interfaceG fSpec
+ 
 
+generateInterface :: Fspc -> Options -> Interface -> [String]
 generateInterface fSpec opts interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"
-                                             roles -> " for role"++ (if length roles == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
+                                             rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":" 
   , showPhpStr (name interface) ++ " => " ] ++
   genInterfaceObjects fSpec opts (ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface) 
@@ -333,23 +342,25 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
                                  ++ concatMap getEditableConcepts (objAts obj)
   
 generateMSubInterface :: Fspc -> Options -> [Relation] -> Int -> Maybe SubInterface -> [String] 
-generateMSubInterface fSpec opts editableRels depth Nothing = 
-  [ "      // No subinterfaces" ] 
-generateMSubInterface fSpec opts editableRels depth (Just (InterfaceRef nm)) = 
-  [ "      // InterfaceRef" 
-  , "      , 'refSubInterface' => "++ showPhpStr nm
-  ]
-generateMSubInterface fSpec opts editableRels depth (Just (Box objects)) = 
-  [ "      // Box" 
-  , "      , 'boxSubInterfaces' =>"
-  , "          array"
-  ] ++ 
-  indent 12 (blockParenthesize "(" ")" "," (map (genInterfaceObjects fSpec opts editableRels Nothing (depth + 1)) objects))
+generateMSubInterface fSpec opts editableRels depth subIntf =
+  case subIntf of
+    Nothing                -> [ "      // No subinterfaces" ] 
+    Just (InterfaceRef nm) -> [ "      // InterfaceRef" 
+                              , "      , 'refSubInterface' => "++ showPhpStr nm
+                              ]
+    Just (Box objects)     -> [ "      // Box" 
+                              , "      , 'boxSubInterfaces' =>"
+                              , "          array"
+                              ] ++ 
+                              indent 12 
+                                (blockParenthesize "(" ")" "," 
+                                  (map (genInterfaceObjects fSpec opts editableRels Nothing (depth + 1)) objects))
   
 
 -- utils
 
 -- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
+genPhp :: String -> String -> [String] -> String
 genPhp generatorModule moduleName contentLines = unlines $
   [ "<?php"
   , "// module "++moduleName++" generated by "++generatorModule
@@ -359,9 +370,11 @@ genPhp generatorModule moduleName contentLines = unlines $
   ]
  
 blockParenthesize :: String -> String -> String -> [[String]] -> [String]
-blockParenthesize open close sep [] = [open ++ close]
-blockParenthesize open close sep  liness = concat [ zipWith (++) (pre:repeat "  ") (lines::[String]) 
-                                                  | (pre, lines) <- zip ((open++" "): repeat (sep++" ")) liness ] ++ [close]
+blockParenthesize open close sep liness = 
+  case liness of 
+    [] -> [open ++ close]
+    _  -> concat [ zipWith (++) (pre:repeat "  ") linez 
+                 | (pre, linez) <- zip ((open++" "): repeat (sep++" ")) liness ] ++ [close]
 -- [["line"], ["line1", "line2", "line3"],["linea", "lineb"] ->
 -- ( line
 -- , line1
@@ -373,36 +386,39 @@ blockParenthesize open close sep  liness = concat [ zipWith (++) (pre:repeat "  
 
 addToLastLine :: String -> [String] -> [String]
 addToLastLine str [] = [str] 
-addToLastLine str lines = init lines ++ [last lines ++ str] 
+addToLastLine str liness = init liness ++ [last liness ++ str] 
   
-toPhp = map replace
- where replace ' ' = '_'
-       replace c   = c
- 
+showPhpStr :: String -> String
 showPhpStr str = "'"++escapePhpStr str++"'"
 
 -- NOTE: we assume a single quote php string, so $ and " are not escaped
+escapePhpStr :: String -> String
 escapePhpStr cs = concat [fromMaybe [c] $ lookup c [('\'', "\\'"),('\\', "\\\\"),('\n', "\\n")] | c<-cs ] -- escape '   \   \n
 -- todo: escape everything else (unicode, etc)
 
+showPhpBool :: Bool -> String
 showPhpBool b = if b then "true" else "false"
   
-indent n lines = [ replicate n ' ' ++ line | line <- lines ]
+indent :: Int -> [String] -> [String]
+indent n liness = [ replicate n ' ' ++ line | line <- liness ]
 
 -- FSpec utils
 
 
+showPlug :: PlugSQL -> [String]
 showPlug plug =  
- [ "Table: '"++sqlname plug++"'"
- ] ++ 
+ ("Table: '"++sqlname plug++"'")
+ : 
  indent 4 
    (blockParenthesize "[" "]" "," (map showField (getPlugFields plug)))
 
 -- TODO: maybe this one exists already
+getPlugFields :: PlugSQL -> [SqlField]
 getPlugFields (TblSQL  {fields = flds}) = flds
 getPlugFields BinSQL  { columns = (fld1,fld2)} = [fld1, fld2]
 getPlugFields ScalarSQL { sqlColumn = fld} = [fld]
 
+showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++ 
                  "'"++fldname fld ++ "':"++show (target $ fldexpr fld)]
 
