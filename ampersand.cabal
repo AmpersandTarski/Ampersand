@@ -90,7 +90,6 @@ library
   exposed-modules:  
                     DatabaseDesign.Ampersand,
                     DatabaseDesign.Ampersand.ADL1,
-                    DatabaseDesign.Ampersand.ADL1.Concept,
                     DatabaseDesign.Ampersand.ADL1.ECArule,
                     DatabaseDesign.Ampersand.ADL1.Expression,
                     DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration,
