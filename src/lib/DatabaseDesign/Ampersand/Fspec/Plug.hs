@@ -20,6 +20,10 @@ import Data.List(elemIndex,nub)
 import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
+import DatabaseDesign.Ampersand.Core.Poset(Ordering(..))
+import Prelude hiding (Ordering(..))
+
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Plug"
 
@@ -147,7 +151,12 @@ entityfield p
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 entityconcept :: PlugSQL -> A_Concept
 entityconcept p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
-  = newAcpt "ID" [show idnr | (idnr,_)<-zip [(1::Int)..] (contents (mLkp p))]  
+  = C { cptnm = "ID"
+      , cptgE = (\x y -> if x==y then EQ else NC,[])  -- TODO: Is this the right place to define this ordering??
+      , cptos = [show idnr | (idnr,_)<-zip [(1::Int)..] (contents (mLkp p))]
+      , cpttp = []
+      , cptdf = []
+      }
 entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
   = case concept p of
      C{} -> (concept p){cptnm=name(concept p)++ "ID"} 
