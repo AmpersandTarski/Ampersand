@@ -49,7 +49,7 @@ instance Show Type where
 showType :: Type -> String
 showType (TypExpr term@(Pid _) _ _)     = showADL term
 showType (TypExpr term@(PVee o) _ _)    = showADL term     ++"("++ shOrig o++")"
-showType (TypExpr term@(Pfull s t) _ _) = showADL term
+showType (TypExpr term@(Pfull _ _) _ _) = showADL term
 showType (TypExpr term _ _)             = showADL term     ++"("++ shOrig (origin term)++")"
 showType (TypLub a b _)                 = showType a++" ./\\. "++showType b
 showType (TypGlb a b _)                 = showType a++" .\\/. "++showType b
@@ -66,7 +66,7 @@ instance Traced Type where
 --   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Prelude.Ord Type where
-  compare p q = comp (normalize p) (normalize q)
+  compare p q = comp p q
    where
     comp Anything _                                                  = Prelude.LT  -- Anything < everything
     comp _ Anything                                                  = Prelude.GT  -- everyting > Anything
@@ -85,27 +85,28 @@ instance Prelude.Ord Type where
     comp (TypLub _ _ _)  (TypExpr _ _ _) = Prelude.GT
     comp (TypLub _ _ _) _ = Prelude.LT
     comp (TypGlb _ _ _) _ = Prelude.GT
-    normalize   (TypLub Anything right _)                                       = normalize right
-    normalize   (TypLub left Anything _)                                        = normalize left
-    normalize t@(TypLub left right x)                                           = norm t left right x
-    normalize   (TypGlb Anything _ _)                                           = Anything
-    normalize   (TypGlb _ Anything _)                                           = Anything
-    normalize t@(TypGlb left right x)                                           = norm t left right x
-    normalize   (TypExpr (PTyp _ x' (P_Sign [])) flipped x)                     = TypExpr x' flipped x
-    normalize   (TypExpr (PTyp _ x'@(PTyp _ _ sgn') sgn) flipped x) | sgn==sgn' = TypExpr x' flipped x
-    normalize t                                                                 = t
-    norm :: Type -> Type -> Type -> Term -> Type
-    norm t left right x
-        = case (normalize left, normalize right) of
-               (TypExpr (PI _)          _ _ , t'@(TypExpr _           _ _)) -> t'
-               (TypExpr (Pid c)         _ _ , TypExpr r'              _ _ ) -> TypExpr (PTyp (origin r') r' (P_Sign [c])) False x
-               (t'@(TypExpr _           _ _), TypExpr (PI _)          _ _ ) -> t'
-               (TypExpr l'              _ _ , TypExpr (Pid c)         _ _ ) -> TypExpr (PTyp (origin l') l' (P_Sign [c])) False x
-               (TypExpr (PVee _)        _ _ , t'                          ) -> t'
-               (TypExpr (Pfull src trg) _ _ , TypExpr r'              _ _ ) -> TypExpr (PTyp (origin r') r' (P_Sign [src,trg])) False x
-               (t'                          , TypExpr (PVee _)        _ _ ) -> t'
-               (TypExpr l'              _ _ , TypExpr (Pfull src trg) _ _ ) -> TypExpr (PTyp (origin l') l' (P_Sign [src,trg])) False x
-               (_                           , _                           ) -> t
+    
+normalize   (TypLub Anything right _)                                       = normalize right
+normalize   (TypLub left Anything _)                                        = normalize left
+normalize t@(TypLub left right x)                                           = norm t left right x
+normalize   (TypGlb Anything _ _)                                           = Anything
+normalize   (TypGlb _ Anything _)                                           = Anything
+normalize t@(TypGlb left right x)                                           = norm t left right x
+normalize   (TypExpr (PTyp _ x' (P_Sign [])) flipped x)                     = TypExpr x' flipped x
+normalize   (TypExpr (PTyp _ x'@(PTyp _ _ sgn') sgn) flipped x) | sgn==sgn' = TypExpr x' flipped x
+normalize t                                                                 = t
+norm :: Type -> Type -> Type -> Term -> Type
+norm t left right x
+    = case (normalize left, normalize right) of
+           (TypExpr (PI _)          _ _ , t'@(TypExpr _           _ _)) -> t'
+           (TypExpr (Pid c)         _ _ , TypExpr r'              _ _ ) -> TypExpr (PTyp (origin r') r' (P_Sign [c])) False x
+           (t'@(TypExpr _           _ _), TypExpr (PI _)          _ _ ) -> t'
+           (TypExpr l'              _ _ , TypExpr (Pid c)         _ _ ) -> TypExpr (PTyp (origin l') l' (P_Sign [c])) False x
+           (TypExpr (PVee _)        _ _ , t'                          ) -> t'
+           (TypExpr (Pfull src trg) _ _ , TypExpr r'              _ _ ) -> TypExpr (PTyp (origin r') r' (P_Sign [src,trg])) False x
+           (t'                          , TypExpr (PVee _)        _ _ ) -> t'
+           (TypExpr l'              _ _ , TypExpr (Pfull src trg) _ _ ) -> TypExpr (PTyp (origin l') l' (P_Sign [src,trg])) False x
+           (_                           , _                           ) -> t
 
 
 instance Eq Type where
@@ -135,17 +136,43 @@ thing c  = TypExpr ic False ic where ic=Pid c
 
 type Typemap = [(Type,Type)] --Data.Map.Map Type [Type]
 
-setClosure :: Ord a => Data.Map.Map a [a] -> Data.Map.Map a [a]
-setClosure xs = foldl f xs (Data.Map.keys xs `isc` nub (concat$Data.Map.elems xs))
+mapIsOk :: Ord a => Data.Map.Map k [a] -> Bool
+mapIsOk m = Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
+ where isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
+       isSortedAndDistinct _ = True
+-- | The purpose of 'setClosure' is to compute the transitive closure of relations that are represented as a Map (Data.Map.Map a [a]).
+--   For that purpose we use a Warshall algorithm.
+setClosure :: Ord a => Data.Map.Map a [a] -> String -> Data.Map.Map a [a]
+setClosure xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
+setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
   where
 --   f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
    f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (Just b') <- [Data.Map.lookup x q]]) q
+   res   = foldl f xs (Data.Map.keys xs `isc` nub (concat (Data.Map.elems xs)))
+
 merge :: Ord a => [a] -> [a] -> [a]
 merge (a:as) (b:bs) | a<b  = a:merge as (b:bs)
                     | a==b = a:merge as bs
                     | a>b  = b:merge (a:as) bs
 merge a b = a ++ b -- since either a or b is the empty list
 
+-- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
+lookups :: Ord a => a -> Data.Map.Map a [a] -> [a]
+lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[[o]])
+{- Trying to understand lookups:
+lookups "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]
+= 
+head ([merge [o] e | (Just e)<-[Data.Map.lookup "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]]]++[["2"]])
+= 
+head ([merge ["2"] e | (Just e)<-[Just ["vuur","mus"]]]++[["2"]])
+= 
+head ([merge ["2"] ["vuur","mus"] ]++[["2"]])
+= 
+head (["2", "vuur","mus"]++[["2"]])
+= 
+["2", "vuur","mus"]
+-}
+-- | findIn(k,R) yields all l such that: k R l.
 findIn :: Ord k => k -> Data.Map.Map k [a] -> [a]
 findIn t cl = getList (Data.Map.lookup t cl)
                  where getList Nothing = []
@@ -178,7 +205,7 @@ typing p_context
          compress (a,b) [] = [(a,[b])]
          addTo b o@(c:_) | c==b = o
          addTo b o = b:o
-     stClos   = setClosure firstSetOfEdges
+     stClos   = setClosure firstSetOfEdges "firstSetOfEdges" -- the transitive closure of 'firstSetOfEdges'
      decls    = p_declarations p_context
      pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
      isTypeSubset t c = c `elem` findIn t stClos
@@ -269,10 +296,11 @@ typing p_context
                                                 where e = PDif o (PVee (origin x)) a
      nothing :: (Typemap,Typemap)
      nothing = ([],[])
+     {-
      isFull (TypExpr (Pfull _ _) _ _) = True
      isFull (TypLub a b _) = isFull a && isFull b
      isFull (TypGlb a b _) = isFull a && isFull b
-     isFull _ = False
+     isFull _ = False -}
      isNull (TypExpr Pnull _ _) = True
      isNull (TypLub a b _) = isNull a && isNull b
      isNull (TypGlb a b _) = isNull a && isNull b
@@ -337,18 +365,35 @@ tableOfTypes st
      expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by expressionNr")])
-     stClos1 = setClosure st
+-- In order to compute the condensed graph, we need the transitive closure of st:
+     stClos1 = setClosure st "st"  -- the transitive closure of 'st'
+-- The TypLub types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
      someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- Data.Map.keys st]
       where
+      -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
        compr a b  = if b `elem` (lookups a stClos1) then LT else
                     if a `elem` (lookups b stClos1) then GT else EQ
-     lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[[o]])
+      {- this definition of compr should be equivalent to:
+       compr a b  = if b==a  ||  b `elem` findIn a stClos1 then LT else
+                    if a==b  ||  a `elem` findIn b stClos1 then GT else EQ
+      -}
+      -- Why do we need to add the TypLubs? Aren't they already in there?
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
         f q o@(TypLub a b _) = Data.Map.map (\cs -> foldr merge cs [lookups o q | a `elem` cs, b `elem` cs]) q
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
-     stClos = setClosure stClosAdded
+{- snap ik niet.... Kijk eens naar de lijst [lookups o q | a `elem` cs, b `elem` cs].
+   Die heeft een lengte van 0 of 1. De foldr is dus overbodig. 
+   De code had ook mogen luiden:
+        f q o@(TypLub a b _) = Data.Map.map (\cs -> merge cs (head ([lookups o q | a `elem` cs, b `elem` cs] ++ [[]]))) q
+        f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
+   Hoe zit dat?
+   Antwoord: waarom laten we de foldr niet staan? Die is korter.
+-}
+
+     stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive clusure of st.
+     stClos = setClosure stClosAdded "stClosAdded"
      -- stEdges is only defined for the sake of drawing pictures
      stEdges :: [(Int,Int)]
      stEdges = [(i,j) | (s,t) <- flattenMap st, let (i,j)=(expressionNr s,expressionNr t), i/=j]
@@ -356,15 +401,27 @@ tableOfTypes st
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph
 -}
+-- | a vertex in the condensed graph contains the TypExprs that are in a cycle of the stGraph.
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
-     eqClasses = (efficientNub $ sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
-      where addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else a)
+     eqClasses = efficientNub (sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
+      where addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else (if k `elem` a then a else fatal 404 ("reflexiveMap must yield something reflexive! But "++show a++" does not contain "++show k))) -- Should reflexiveMap contain an element with an empty list, we don't want the element to get lost.
+--note:  To compute equivalence classes of relation st, we need st*/\st*~
      efficientNub :: [[Type]] -> [[Type]] -- should be sorted!
      efficientNub ((a:_):bs@(b:_):rs) | a==b = efficientNub (bs:rs) -- efficient nub for sorted classes: only compares the first element
+     efficientNub (a:b:_) | a>b = fatal 408 "efficientNub is called on a non-sorted list"
      efficientNub (a:rs) = a:efficientNub rs
      efficientNub [] = []
      exprClass :: Type -> [Type]
-     exprClass typ = head ([cl | cl<-eqClasses, typ `elem` cl]++[fatal 191 ("Type Term "++show typ++" not found by exprClass\n")])
+     exprClass typ = case classes of
+                      []   -> fatal 191 ("Type Term "++show typ++" not found by exprClass"++    -- SJ: 13 sep 2012 This error has occured in Ticket #344
+                                         if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
+                                        )
+                      [cl] -> cl
+                      _    -> fatal 372 ("Type Term "++show typ++" is found in multiple classes:\n  Class: "++
+                                         intercalate "\n  Class: " [ intercalate "\n         " (map show cl) | cl<-classes ]++
+                                         if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
+                                        )
+      where classes = [cl | cl<-eqClasses, typ `elem` cl]
      condensedEdges :: [([Type],[Type])]
      condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', head c/=head c']
      condensedEdges2 = nub $ sort [(c,c') | (i,i')<-flattenMap stClosAdded, i' `notElem` findIn i stClos1, let c=exprClass i, let c'=exprClass i', head c/=head c']
@@ -376,11 +433,14 @@ tableOfTypes st
      classNr :: [Type] -> Int
      classNr (t:_)  = head ([i | (i,(v:_))<-classTable, t == v]++[fatal 178 ("Type Class "++show t++" not found by classNr")])
      classNr [] = fatal 385 "no ClassNr for an empty class. An empty class was generated somewhere, which is very wrong!"
+     -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
+     -- | note that the domain must be preserved!
      reverseMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
      reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
+     -- note: reverseMap is relatively slow, but only needs to be calculated once
+     -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
      reflexiveMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
      reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
-     -- note: reverseMap is relatively slow, but only needs to be calculated once
      -- if not all of reflexiveMap will be used, a different implementation might be more useful
      -- classNumbers is the relation from stGraph to condensedGraph, relating the different numberings
      -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
