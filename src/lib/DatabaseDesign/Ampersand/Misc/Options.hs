@@ -213,7 +213,7 @@ getOptions =
                                                                 Adl1Format -> addExtension (importfile flags) "adl"
                                                                 Adl1PopFormat -> addExtension (importfile flags) "pop"
                                         }
-                x:xs    -> fatal 191 $ "too many files: "++ intercalate ", " (x:xs) ++useHelp
+                x:xs    -> fatal 216 $ "too many files: "++ intercalate ", " (x:xs) ++useHelp
        
        where
           useHelp :: String
