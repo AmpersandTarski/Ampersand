@@ -136,6 +136,22 @@ thing c  = TypExpr ic False ic where ic=Pid c
 
 type Typemap = [(Type,Type)] --Data.Map.Map Type [Type]
 
+{- The type  Data.Map.Map Type [Type]  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
+For the following, let m be a map (Data.Map.Map Type [Type]) that represents relation r[Type*Type]
+Invariants are:
+1. m contains all elements of the source of r
+         keys m     equals the population of  I [source r], which are all Type object drawn from the script
+1a.      keys m     represents    dom r
+1b.      r is total (dom r=source r)
+   By the way, keys m produces the elements in ascending order without duplicates.
+2. All elements of the codomain of r are obtained by 'elems'
+         nub (concat (Data.Map.elems m))     represents    cod r
+3. The map contains sorted lists without duplicates:
+         let isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
+             isSortedAndDistinct _ = True
+         in Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
+-}
+
 mapIsOk :: Ord a => Data.Map.Map k [a] -> Bool
 mapIsOk m = Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
  where isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
