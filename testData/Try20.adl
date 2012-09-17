@@ -1,0 +1,14 @@
+CONTEXT Try20
+
+PATTERN Try20
+
+orderedBy :: Order * Client
+orderReceived :: Order * Client
+orderAccepted :: Order * Vendor
+
+RULE allReceived: orderedBy |- (orderReceived; orderReceived~ \/ -(orderAccepted; V)); orderedBy -- == TOT extended to allow hyperlinking to vendor in violation
+MEANING "All accepted orders have been received"
+
+ENDPATTERN
+
+ENDCONTEXT
