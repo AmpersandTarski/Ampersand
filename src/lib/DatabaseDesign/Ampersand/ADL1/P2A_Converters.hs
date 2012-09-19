@@ -68,6 +68,7 @@ instance Traced Type where
 instance Prelude.Ord Type where
   compare p q = comp p q
    where
+    comp Anything Anything                                           = Prelude.EQ
     comp Anything _                                                  = Prelude.LT  -- Anything < everything
     comp _ Anything                                                  = Prelude.GT  -- everyting > Anything
     comp (TypExpr (Pid c)        _ _) (TypExpr (Pid c')         _ _) = Prelude.compare c c'
@@ -79,12 +80,13 @@ instance Prelude.Ord Type where
     comp (TypExpr (PTyp _ (Prel _ a) sgn) _ _) (TypExpr (PTyp _ (Prel _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
     comp (TypExpr (PTyp _ (Pflp _ a) sgn) _ _) (TypExpr (PTyp _ (Pflp _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
     comp (TypExpr x _ _) (TypExpr y _ _) = Prelude.compare x y
-    comp (TypLub l r _) (TypLub l' r' _) = compare (l,r) (l',r')
-    comp (TypGlb l r _) (TypGlb l' r' _) = compare (l,r) (l',r')
     comp (TypExpr _ _ _) _               = Prelude.LT
-    comp (TypLub _ _ _)  (TypExpr _ _ _) = Prelude.GT
-    comp (TypLub _ _ _) _ = Prelude.LT
-    comp (TypGlb _ _ _) _ = Prelude.GT
+    comp _               (TypExpr _ _ _) = Prelude.GT
+    comp (TypLub l r _) (TypLub l' r' _) = compare (l,r) (l',r')
+    comp (TypLub _ _ _) _                = Prelude.LT
+    comp _              (TypLub _ _ _)   = Prelude.GT
+    comp (TypGlb l r _) (TypGlb l' r' _) = compare (l,r) (l',r')
+    -- comp (TypGlb _ _ _) _ = Prelude.GT
     
 normalize   (TypLub Anything right _)                                       = normalize right
 normalize   (TypLub left Anything _)                                        = normalize left
@@ -455,8 +457,11 @@ tableOfTypes st
      reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
      -- note: reverseMap is relatively slow, but only needs to be calculated once
      -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
-     reflexiveMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-     reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
+     reflexiveMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+     reflexiveMap lst = res
+       -- for debugging: if Data.Map.keys res == Data.Map.keys lst then res else fatal 459 ("Domain not preserved in reflexiveMap! Compare: \n" ++ show (Data.Map.keys res) ++ "\n" ++ show (Data.Map.keys lst))
+      where
+       res = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
      -- if not all of reflexiveMap will be used, a different implementation might be more useful
      -- classNumbers is the relation from stGraph to condensedGraph, relating the different numberings
      -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
