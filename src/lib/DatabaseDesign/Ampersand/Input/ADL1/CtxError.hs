@@ -32,7 +32,9 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeDcls :: [Term]
                               }       
               | CxeRel        {cxeExpr :: Term
-                              ,cxeCpts :: [P_Concept]
+                              ,cxeDecs :: [P_Declaration]
+                              ,cxeSrcs :: [P_Concept]
+                              ,cxeTrgs :: [P_Concept]
                               }       
               | CxeCpl        {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
@@ -53,7 +55,6 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
               | Cxe           {cxeSubErrors :: [CtxError] -- ^ lower level errors
                               ,cxemsg :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
               | PE            {cxeMsgs :: [ParseError]}  -- ^ list of parse-time messages 
-                deriving Eq
 
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
@@ -81,21 +82,21 @@ showErr err@(CxeILike{})
 showErr err@(CxeTyp{})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeDcls err)]++
-       ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
+       ["    Relation  "++showADL (cxeExpr err)++"  is ambiguous." | null (cxeDcls err)]++
+       ["    Relation  "++showADL (cxeExpr err)++"  has conflicting bindings:\n    "++
         intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
      ) where sh term = termString++[' ' | _<-[length termString..maxLen]]++showADL term
                        where termString = show (origin term)
                              maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
 showErr err@(CxeRel{})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Relation  "++showADL (cxeExpr err)++"  has no declaration." | null (cxeCpts err)]++
-       ["    Relation  "++showADL (cxeExpr err)++"  can be bound by different declarations:\n    "++
-        intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
-     ) where sh term = termString++[' ' | _<-[length termString..maxLen]]++showADL term
-                       where termString = show (origin term)
-                             maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
+ = show (origin (cxeExpr err))++"\n"++
+   case (cxeDecs err, cxeSrcs err, cxeTrgs err) of
+    ( _, [], []) -> "    Relation  "++showADL (cxeExpr err)++"  is ambiguous."
+    ([],  _, _ ) -> "    Relation  "++showADL (cxeExpr err)++"  is not declared."
+    ( _, [], _ ) -> "    The source of relation  "++showADL (cxeExpr err)++"  is ambiguous."
+    ( _, _ , []) -> "    The target of relation  "++showADL (cxeExpr err)++"  is ambiguous."
+    ( _, _ , _ ) -> fatal 100 "make more error messages."
+
 showErr err@(CxeCpl{})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
