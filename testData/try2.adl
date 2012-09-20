@@ -16,7 +16,7 @@ ENDCONTEXT
    Error message:
 
    line 7:11, file "try2.adl"
-       Inside expression   s;t,
+       Inside term   s;t,
        concepts A and B
        between the target of  s  and the source of  t are in conflict.
 -}
