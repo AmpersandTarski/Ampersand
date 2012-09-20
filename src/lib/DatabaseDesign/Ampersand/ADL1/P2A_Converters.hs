@@ -197,7 +197,8 @@ findIn t cl = getList (Data.Map.lookup t cl)
                        getList (Just a) = a
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
---   For any two Terms a and b,  if dom(a) is a subset of dom(b), this is represented as a tuple (TypExpr a _ _,TypExpr b _ _) in st.
+--   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
+--   this is represented by a tuple (TypExpr a _ _,TypExpr b _ _) in st.
 --   In the code below, this shows up as  dom a.<.dom b
 --   The function typing does a recursive scan through all subexpressions, collecting all tuples on its way.
 --   Besides term term, this function requires a universe in which to operate.
@@ -207,25 +208,21 @@ typing :: P_Context -> Data.Map.Map Type [Type] -- subtypes (.. is subset of ..)
 typing p_context
  = Data.Map.unionWith merge secondSetOfEdges firstSetOfEdges
    where
+   -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
+   --            These are converted into two maps (each of type Data.Map.Map Type [Type]) for efficiency reasons.
      (firstSetOfEdges,secondSetOfEdges)
-      = makeDataMaps
-        (foldr (.+.) nothing ([uType term Anything Anything term | term <- terms p_context] ++
-                              [dom spc.<.dom gen | g<-p_gens p_context
-                                                 , let spc=Pid (gen_spc g)
-                                                 , let gen=Pid (gen_gen g)
-                                                 -- , let x=Pimp (origin g) spc gen
-                                                 ]))
+      = makeDataMaps (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
      makeDataMaps :: (Typemap,Typemap) -> (Data.Map.Map Type [Type],Data.Map.Map Type [Type])
      makeDataMaps (a,b) = (makeDataMap a, makeDataMap b)
+     makeDataMap :: Typemap -> Data.Map.Map Type [Type]
      makeDataMap lst = Data.Map.fromDistinctAscList (foldr compress [] (sort lst))
        where
-         compress (a,b) o@(r:rs) = if a==(fst r) then (a,addTo b (snd r)):rs else (a,[b]):o
+         compress (a,b) o@((a',bs):rs) = if a==a' then (a',addTo b bs):rs else (a,[b]):o
          compress (a,b) [] = [(a,[b])]
          addTo b o@(c:_) | c==b = o
          addTo b o = b:o
-     stClos   = setClosure firstSetOfEdges "firstSetOfEdges" -- the transitive closure of 'firstSetOfEdges'
-     decls    = p_declarations p_context
-     pDecls   = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-decls]
+     stClos = setClosure firstSetOfEdges "firstSetOfEdges"    -- the transitive closure of 'firstSetOfEdges'
+     pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
      isTypeSubset t c = c `elem` findIn t stClos
      uType :: Term    -- x:    the original term from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
@@ -242,14 +239,17 @@ typing p_context
      uType x uLft uRt   (PVee _)              = dom x.<.uLft .+. cod x.<.uRt
      uType x _    _     (Pfull s t)           = dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
      uType x uLft uRt   (Prel _ nm)           = carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                                                  if length spcls == 1 then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
-                                                                  else nothing
+                                                            if length spcls == 1
+                                                            then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
+                                                            else nothing
                                                           )
                                                 where decls' = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
                                                       spcls = if length decls'==1 then decls' else
                                                               [d    | d@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls', compatible (head cs) (last cs)]
                                                       compatible l r =    isTypeSubset uLft (thing l)
                                                                        && isTypeSubset uRt  (thing r)
+                                                      carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
+                                                      carefully x = (fst nothing,fst x.++.snd x)
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
@@ -286,7 +286,7 @@ typing p_context
      uType _  _    _    (PTyp _ _ (P_Sign []))= fatal 196 "P_Sign is empty"
      uType _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
      uType x  _    _    (PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                  -- e[A*B]  type-annotation
-                                                if o `elem` [origin d| d<-decls]
+                                                if o `elem` [origin d| d<-pDecls]
                                                 then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e
                                                      .+. uType e iSrc iTrg e
@@ -336,8 +336,6 @@ typing p_context
      m1 .++. m2  = m1 ++ m2 -- Data.Map.unionWith merge m1 m2
      (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
      (a,b) .+. (c,d) = (c.++.a,d.++.b)
-     carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
-     carefully x = (fst nothing,fst x.++.snd x)
      dom, cod :: Term -> Type
      dom x    = TypExpr x         False x -- the domain of x, and make sure to check subexpressions of x as well
      cod x    = TypExpr (p_flp x) True  x 
@@ -378,7 +376,7 @@ tableOfTypes st
     of atoms contained by dom t'.
 -}
      typeExpressions :: [Type]     -- a list of all type terms in st.
-     typeExpressions = Data.Map.keys st
+     typeExpressions = Data.Map.keys st -- Because a Data.Map.Map Type [Type] is total, it is sufficient to compute  Data.Map.keys st
      expressionTable :: [(Int, Type)]
      expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
      expressionNr :: Type -> Int
@@ -431,7 +429,8 @@ tableOfTypes st
      efficientNub [] = []
      exprClass :: Type -> [Type]
      exprClass typ = case classes of
-                      []   -> fatal 191 ("Type Term "++show typ++" not found by exprClass"++    -- SJ: 13 sep 2012 This error has occured in Ticket #344
+                      []   -> fatal 191 ("Type Term "++show typ++" not found by exprClass\neqClasses:\n  Class: "++
+                                         intercalate "\n  Class: " [ intercalate "\n         " (map show cl) | cl<-eqClasses ]++    -- SJ: 13 sep 2012 This error has occured in Ticket #344
                                          if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
                                         )
                       [cl] -> cl
@@ -572,6 +571,7 @@ instance Expr P_Context where
          terms (ctx_rs    pContext) ++
          terms (ctx_ds    pContext) ++
          terms (ctx_ks    pContext) ++
+         terms (ctx_gs    pContext) ++
          terms (ctx_ifcs  pContext) ++
          terms (ctx_sql   pContext) ++
          terms (ctx_php   pContext) ++
@@ -641,9 +641,9 @@ instance Expr P_Sign where
  terms _ = []
  subexpressions _ = []
 instance Expr P_Gen where
- p_concs x = nub [gen_gen x, gen_spc x]
- terms _ = []
- subexpressions _ = []
+ p_concs g        = p_concs        (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
+ terms g          =                [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
+ subexpressions g = subexpressions (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
 instance Expr P_Declaration where
  p_concs d = p_concs (dec_sign d)
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
@@ -768,7 +768,7 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
 -- On Guarded: it is intended to return something, as long as there were no errors creating it.
 -- For instance, (Guarded P_Context) would return the P_Context, unless there are errors.
 
-data Guarded a = Errors [CtxError] | Checked a deriving (Eq)
+data Guarded a = Errors [CtxError] | Checked a
 
 {-
 parallelList :: [Guarded a] -> Guarded [a] -- get all values or collect all error messages
@@ -1219,7 +1219,8 @@ pCtx2aCtx p_context
               }
        , relcxe
        )
-       where (ERel aRel, _, relcxe) = pExpr2aExpr expr
+       where (aExp, _, relcxe) = pExpr2aExpr expr
+             ERel aRel = aExp
              expr = case pop of
                       P_CptPopu{}              -> Pid (PCpt (name pop))
                       P_Popu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
@@ -1354,10 +1355,9 @@ pCtx2aCtx p_context
                    , [CtxError]    -- the list of type errors
                    )
     pExpr2aExpr pTerm                        -- The expression to be typed
-     = ( fatalGet 1441 "call to fatalGet in pExpr2aExpr" $ f pTerm -- the resulting expression. It is defined only when the list of errors is empty.
-       , (lookupType pTerm,lookupType (p_flp pTerm)) -- the type of the resulting expression. It is defined only when the list of errors is empty.
-       , getErrors (f pTerm)                    -- the list of type errors
-       )
+     = case f pTerm of
+         Checked r   -> (r, (lookupType pTerm,lookupType (p_flp pTerm)), [])
+         Errors errs -> (fatal 1441 ("call to undefined expression in:   pExpr2aExpr ("++show pTerm++")\n"++show errs), (lookupType pTerm,lookupType (p_flp pTerm)), errs)
        where
          f :: Term -> Guarded Expression
          -- alternatively:
@@ -1441,8 +1441,10 @@ pCtx2aCtx p_context
                            "\na:        "++ show a++
                            "\nb:        "++ show b++
                            show err)  -}
-             [c] -> Checked (pCpt2aCpt c, a', b')
-                     where (a',_,_) = pExpr2aExpr a;   (b',_,_) = pExpr2aExpr b
+             [c] -> case (errsA, errsB) of
+                      ([], []) -> Checked (pCpt2aCpt c, a', b')
+                      _        -> Errors (errsA++errsB)
+                     where (a',_,errsA) = pExpr2aExpr a;   (b',_,errsB) = pExpr2aExpr b
              _   -> Errors err
             where
               err = [ CxeCpsLike {cxeExpr   = x
@@ -1469,19 +1471,21 @@ pCtx2aCtx p_context
                                           ,cxeTrgCpts = t}]) x
          errRelLike :: Term -> Guarded (Declaration, Sign)
          errRelLike term
-          = case [ decl | decl<-declarations contxt, nm==name decl
-                        , source decl `elem` srcTypes, target decl `elem` trgTypes]
-            of [d] -> Checked (d, Sign (head srcTypes) (head trgTypes))
-               _   -> let err = [ CxeRel {cxeExpr   = term'
-                                         ,cxeCpts   = conflictingConcepts
-                                         }
-                                | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==term || term'==p_flp term
-                                , length conflictingConcepts/=1
-                                ]
-                      in if null err then fatal 1585 ("Impossible situation: non-unique binding, but still correctly typed.\nTerm: "++show term )-- ++"\n"++showTypeTable typeTable)
-                         else Errors err
-            where srcTypes = [ pCpt2aCpt c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==      term, c<-conflictingConcepts]
-                  trgTypes = [ pCpt2aCpt c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==p_flp term, c<-conflictingConcepts]
+          = case ([ decl | decl<-p_declarations p_context, nm==name decl
+                         , let P_Sign sgn = dec_sign decl
+                         , head sgn `elem` srcTypes, last sgn `elem` trgTypes], srcTypes, trgTypes) of
+             ([d], [s], [t])  -> let (decl, errs) = pDecl2aDecl [] "" d in
+                                 if null errs
+                                 then Checked (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
+                                 else Errors errs
+             ( ds,  ss,  ts)  -> Errors [CxeRel {cxeExpr   = term
+                                                ,cxeDecs   = ds
+                                                ,cxeSrcs   = ss
+                                                ,cxeTrgs   = ts
+                                                }]
+            where srcTypes = [ c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==      term, c<-conflictingConcepts]
+                  trgTypes = [ c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==p_flp term, c<-conflictingConcepts]
+                 
                   nm = head ([ rel | Prel _ rel<-[term] ]++[ rel | Pflp _ rel<-[term] ]++
                              fatal 1590 "no name for nm in a call of errRelLike")
          errCpl x a
