@@ -1,0 +1,18 @@
+CONTEXT Test
+
+PATTERN Test21
+RELATION r[X*Y]
+RELATION s[X*B]
+RELATION t[A*Y]
+RELATION t[Q*Y]
+RULE I[B] |- I[A]
+RULE r = s;t
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script shows how disambiguation can be done on a ;
+   Result: PASS
+   Reason: the type on ; is inferred as B, which is a A, so t[A*Y] is used.
+-}

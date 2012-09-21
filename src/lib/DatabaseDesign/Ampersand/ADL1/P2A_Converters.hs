@@ -86,7 +86,9 @@ instance Prelude.Ord Type where
     comp (TypLub _ _ _) _                = Prelude.LT
     comp _              (TypLub _ _ _)   = Prelude.GT
     comp (TypGlb l r _) (TypGlb l' r' _) = compare (l,r) (l',r')
-    -- comp (TypGlb _ _ _) _ = Prelude.GT
+    -- in case you wish to add types:
+    -- comp (TypGlb _ _ _) _ = Prelude.LT
+    -- comp _ (TypGlb _ _ _) = Prelude.GT
     
 normalize   (TypLub Anything right _)                                       = normalize right
 normalize   (TypLub left Anything _)                                        = normalize left
@@ -223,7 +225,7 @@ typing p_context
          addTo b o = b:o
      stClos = setClosure firstSetOfEdges "firstSetOfEdges"    -- the transitive closure of 'firstSetOfEdges'
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
-     isTypeSubset t c = c `elem` findIn t stClos
+     isTypeSubset t c = c `elem` findIn t stClos || null (findIn t stClos)
      uType :: Term    -- x:    the original term from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
            -> Type            -- uRt:  the type of the universe for the codomain of x
@@ -238,14 +240,15 @@ typing p_context
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType x uLft uRt   (PVee _)              = dom x.<.uLft .+. cod x.<.uRt
      uType x _    _     (Pfull s t)           = dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
-     uType x uLft uRt   (Prel _ nm)           = carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+     uType x uLft uRt   (Prel _ nm)           = if length decls' == 1 then dom x.=.dom (head decls') .+. cod x.=.cod (head decls') else
+                                                carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                             if length spcls == 1
                                                             then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
                                                             else nothing
                                                           )
                                                 where decls' = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
-                                                      spcls = if length decls'==1 then decls' else
-                                                              [d    | d@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls', compatible (head cs) (last cs)]
+                                                      spcls  = [d    | d@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls', compatible (head cs) (last cs)]
+                                                      -- compatible l r = fatal 251 ("uLft: "++show uLft++"\nuRt:  "++show uRt++"\nuLft: "++show (findIn uLft stClos)++"\nuRt:  "++show (findIn uRt stClos))
                                                       compatible l r =    isTypeSubset uLft (thing l)
                                                                        && isTypeSubset uRt  (thing r)
                                                       carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
