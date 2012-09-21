@@ -1,0 +1,18 @@
+CONTEXT Test
+
+PATTERN Test19
+RELATION r[X*Y]
+RELATION s[X*B]
+RELATION t[A*Y]
+RELATION t[Q*Y]
+RULE I[A] |- I[B]
+RULE r = s;t
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script shows the nice error message suggesting which t to use for disambiguation.
+   Result: FAIL
+   Reason: the type on ; is inferred as B, includes A, so t[A*Y] is suggested, but not used.
+-}
