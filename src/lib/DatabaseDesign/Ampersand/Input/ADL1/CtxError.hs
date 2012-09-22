@@ -92,9 +92,9 @@ showErr err@(CxeRel{})
  = show (origin (cxeExpr err))++"\n"++
    case (cxeDecs err, cxeSrcs err, cxeTrgs err) of
     ( _, [], []) -> "    Relation  "++showADL (cxeExpr err)++"  is ambiguous."
-    ([],  _, _ ) -> "    Relation  "++showADL (cxeExpr err)++"  is not declared."
     ( _, [], _ ) -> "    The source of relation  "++showADL (cxeExpr err)++"  is ambiguous."
     ( _, _ , []) -> "    The target of relation  "++showADL (cxeExpr err)++"  is ambiguous."
+    ([],  _, _ ) -> "    Relation  "++showADL (cxeExpr err)++"  is not declared."
     ( _, _ , _ ) -> fatal 100 "make more error messages."
 
 showErr err@(CxeCpl{})

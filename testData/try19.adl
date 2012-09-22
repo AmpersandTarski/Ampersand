@@ -1,18 +1,16 @@
-CONTEXT Test
+CONTEXT Try19
+{- This file represents a bug that was encountered during the development of the type checker in september 2012.\
+   It should compile successfully.
+-}
+PATTERN Try19
 
-PATTERN Test19
-RELATION r[X*Y]
-RELATION s[X*B]
-RELATION t[A*Y]
-RELATION t[Q*Y]
-RULE I[A] |- I[B]
-RULE r = s;t
+orderedBy :: Order * Client
+orderReceived :: Order * Client
+orderAccepted :: Order * Vendor
+
+RULE allReceived: orderedBy |- (orderReceived; orderReceived~ \/ -(orderAccepted; V)); orderedBy -- == TOT extended to allow hyperlinking to vendor in violation
+MEANING "All accepted orders have been received"
+
 ENDPATTERN
 
 ENDCONTEXT
-
-{-
-   Purpose: This script shows the nice error message suggesting which t to use for disambiguation.
-   Result: FAIL
-   Reason: the type on ; is inferred as B, includes A, so t[A*Y] is suggested, but not used.
--}

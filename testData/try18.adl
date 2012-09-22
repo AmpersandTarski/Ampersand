@@ -2,16 +2,22 @@ CONTEXT Test
 
 PATTERN Test18
 RELATION r[X*Y]
-RELATION s[X*B]
+RELATION s[X*A]
 RELATION t[B*Y]
 RELATION t[Q*Y]
 RULE r = s;t
+RULE I[D] = I[A]/\I[B]
 ENDPATTERN
 
 ENDCONTEXT
 
 {-
-   Purpose: This script shows how disambiguation can be done on a ;
-   Result: PASS
-   Reason: the type on ; is inferred as B, so t[B*Y] is used.
+   Purpose: This script shows that it is not always enough to have an intersection type
+            to 'join' different concepts.
+   Result: FAIL
+   Reason: Ambiguity lures...  use r = s;t[B*Y] to disambiguate this
+   Error message:
+
+   The pattern named "Test18" contains errors line 8:12, file "try18.adl"
+       Relation  t  is ambiguous.
 -}
