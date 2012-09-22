@@ -1,18 +1,17 @@
-CONTEXT Test
+﻿CONTEXT Test
 
-PATTERN Test21
-RELATION r[X*Y]
-RELATION s[X*B]
-RELATION t[A*Y]
-RELATION t[Q*Y]
-RULE I[B] |- I[A]
+PATTERN Test1
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION t[B*C]
+RELATION t[Q*C]
 RULE r = s;t
 ENDPATTERN
 
 ENDCONTEXT
 
 {-
-   Purpose: This script shows how disambiguation can be done on a ;
+   Purpose: This script is a simple correct script, but the type checker must make the
+            right choice between the two declarations of t.
    Result: PASS
-   Reason: the type on ; is inferred as B, which is a A, so t[A*Y] is used.
 -}

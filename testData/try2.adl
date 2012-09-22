@@ -15,7 +15,7 @@ ENDCONTEXT
    Reason: type error on ;
    Error message:
 
-   line 7:11, file "try2.adl"
+   The pattern named "Test2" contains errors line 7:11, file "try2.adl"
        Inside term   s;t,
        concepts A and B
        between the target of  s  and the source of  t are in conflict.

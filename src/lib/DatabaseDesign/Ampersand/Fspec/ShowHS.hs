@@ -649,17 +649,18 @@ where
     showHS flags indent (Ru nm e fps mean msg mviol typ dcl env usr sgl rel)
       = intercalate indent 
         ["Ru{ rrnm   = " ++ show nm
-        ,"  , rrexp  = ("++ showHS flags "" e ++")"
-        ,"  , rrfps  = ("++ showHS flags "" fps ++")"
+        ,"  , rrexp  = " ++ showHS flags (indent++"             ") e
+         
+        ,"  , rrfps  = " ++ showHS flags "" fps
         ,"  , rrmean = " ++ showHS flags "" mean
-        ,"  , rrmsg = " ++ showHS flags "" msg
+        ,"  , rrmsg  = " ++ showHS flags "" msg
         ,"  , rrviol = " ++ showHS flags "" mviol
         ,"  , rrtyp  = " ++ showHS flags "" typ
         ,"  , rrdcl  = " ++ showHS flags "" dcl
-        ,"  , r_env = " ++ show env
-        ,"  , r_usr = " ++ show usr
-        ,"  , r_sgl = " ++ show sgl
-        ,"  , srrel = " ++ showHSName rel
+        ,"  , r_env  = " ++ show env
+        ,"  , r_usr  = " ++ show usr
+        ,"  , r_sgl  = " ++ show sgl
+        ,"  , srrel  = " ++ showHSName rel
         ,"  }"
         ]
 
