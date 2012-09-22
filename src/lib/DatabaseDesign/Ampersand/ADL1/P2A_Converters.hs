@@ -87,8 +87,8 @@ instance Prelude.Ord Type where
   compare (TypExpr _              _ _)   (TypExpr (Pfull _ _)      _ _) = Prelude.GT
   compare (TypExpr (PTyp _ _ (P_Sign [])) _ _) _ = fatal 78 "empty sign not allowed in function compare"
   compare _ (TypExpr (PTyp _ _ (P_Sign [])) _ _) = fatal 79 "empty sign not allowed in function compare"
-  compare (TypExpr (PTyp _ _ (P_Sign [_])) _ _) _ = fatal 90 "singleton sign not allowed in function compare"
-  compare _ (TypExpr (PTyp _ _ (P_Sign [_])) _ _) = fatal 91 "singleton sign not allowed in function compare"
+  compare (TypExpr (PTyp _ _ (P_Sign [_])) _ _) _ = fatal 90 "sign must be of size 2 in function compare"
+  compare _ (TypExpr (PTyp _ _ (P_Sign [_])) _ _) = fatal 91 "sign must be of size 2 in function compare"
   compare (TypExpr (PTyp _ (Prel _ a) sgn) _ _)  (TypExpr (PTyp _ (Prel _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
   compare (TypExpr (PTyp _ (Prel _ _) _) _ _)    (TypExpr (PTyp _ _ _) _ _)              = Prelude.LT
   compare (TypExpr (PTyp _ _ _) _ _)             (TypExpr (PTyp _ (Prel _ _) _) _ _)     = Prelude.GT
@@ -277,15 +277,15 @@ typing p_context
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mSpecific (dom a) (dom b)  x
                                                       (cm,interCod) = mSpecific (cod a) (cod b)  x
-                                                      (d2,interDom2) = mSpecific interDom uLft  x -- probably the first bits are needed, but if there is no try*.adl that reports a bug caused by this commenting, please keep it disabled
+                                                      (d2,interDom2) = mSpecific interDom uLft  x
                                                       (c2,interCod2) = mSpecific interCod uRt   x
      uType x uLft uRt   (PUni _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
-                                                .+. dm .+. cm
+                                                .+. dm .+. cm .+. d2 .+. c2
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mGeneric (dom a) (dom b)  x
                                                       (cm,interCod) = mGeneric (cod a) (cod b)  x
-                                                      (_,interDom2) = mSpecific interDom uLft  x -- probably the first bits are needed, but if there is no try*.adl that reports a bug caused by this commenting, please keep it disabled
-                                                      (_,interCod2) = mSpecific interCod uRt   x
+                                                      (d2,interDom2) = mSpecific interDom uLft  x
+                                                      (c2,interCod2) = mSpecific interCod uRt   x
      uType x uLft uRt   (PCps _ a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                  -- a;b      composition
                                                 bm .+. uType a uLft between a .+. uType b between uRt b
                                                 .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
@@ -429,20 +429,20 @@ Here's how....
                    , bind<-[dBinding,cBinding]
                    ]
 -- In order to compute the condensed graph, we need the transitive closure of st:
-     boundSt = st -- Data.Map.unionWith merge st bindings       -- represents (st\/bindings)
-     stClos1 = setClosure boundSt "st"       -- represents (st\/bindings)*
+     boundSt = Data.Map.unionWith merge st bindings       -- represents (st\/bindings)
+     stClos1 = setClosure st "st"       -- represents (st)*
 -- The TypLub types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
      someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeExpressions]
       where
       -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
-       compr a b  = if b `elem` (lookups a stClos1) then LT else
-                    if a `elem` (lookups b stClos1) then GT else EQ
-      {- this definition of compr should be equivalent to:
-       compr a b  = if b==a  ||  b `elem` findIn a stClos1 then LT else
-                    if a==b  ||  a `elem` findIn b stClos1 then GT else EQ
-         This I don't understand. How can compr yield LT when b==a?
-      -}
-      -- Why do we need to add the TypLubs? Aren't they already in there?
+       compr a b  = if b `elem` (lookups a stClos1) then LT else -- note: by LT we mean: less than or equal
+                    if a `elem` (lookups b stClos1) then GT -- likewise, GT means: greater or equal
+                     else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
+      -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
+      -- This explains why we did the sorting:
+      --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
+      --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
+      -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
@@ -456,11 +456,11 @@ Here's how....
    Hoe zit dat?
    Antwoord: waarom laten we de foldr niet staan? Die is korter.
 -}
-     stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive closure of boundSt.
+     stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive closure of stClosAdded.
      stClos = setClosure stClosAdded "stClosAdded"
-     -- stEdges is only defined for the sake of drawing pictures
+     -- stEdges is only defined for the sake of drawing pictures. For the added arrows, we use a different notation in the picture.
      stEdges :: [(Int,Int)]
-     stEdges = [(i,j) | (s,t) <- flattenMap boundSt, let (i,j)=(expressionNr s,expressionNr t), i/=j]
+     stEdges = [(i,j) | (s,t) <- flattenMap st, let (i,j)=(expressionNr s,expressionNr t), i/=j]
 {- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph
@@ -477,18 +477,18 @@ Here's how....
      efficientNub [] = []
      exprClass :: Type -> [Type]
      exprClass typ = case classes of
-                      []   -> fatal 191 ("Type Term "++show typ++" not found by exprClass\neqClasses:\n  Class: "++
+                      []   -> fatal 191 ("Type Term "++show typ++" not found by exprClass\neqClasses:\n  Class: ") {- ++
                                          intercalate "\n  Class: " [ intercalate "\n         " (map show cl) | cl<-eqClasses ]++    -- SJ: 13 sep 2012 This error has occured in Ticket #344
                                          if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
-                                        )
+                                         -}
                       [cl] -> cl
-                      _    -> fatal 372 ("Type Term "++show typ++" is found in multiple classes:\n  Class: "++
+                      _    -> fatal 372 ("Type Term "++show typ++" is found in multiple classes:\n  Class: ") {- ++
                                          intercalate "\n  Class: " [ intercalate "\n         " (map show cl) | cl<-classes ]++
                                          if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
-                                        )
+                                        -}
       where classes = [cl | cl<-eqClasses, typ `elem` cl]
      condensedEdges :: [([Type],[Type])]
-     condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap boundSt, let c=exprClass i, let c'=exprClass i', head c/=head c']
+     condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', head c/=head c']
      condensedEdges2 = nub $ sort [(c,c') | (i,i')<-flattenMap stClosAdded, i' `notElem` findIn i stClos1, let c=exprClass i, let c'=exprClass i', head c/=head c']
      condensedClos  = nub $ sort [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', head c/=head c']
      -- condensedVerts is eqClasses
