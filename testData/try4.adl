@@ -17,4 +17,10 @@ ENDCONTEXT
    Purpose: This script demonstrates how NOT to specify an intersection type between A and B.
    Result: FAIL
    Reason: the intersection between A and B does not exist as a concept.
+   Error message:
+
+   The pattern named "Test4" contains errors line 11:11, file "try4.adl"
+       Inside term   s;t,
+       concepts A and B
+       between the target of  s  and the source of  t are in conflict.
 -}

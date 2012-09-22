@@ -57,8 +57,9 @@ showType Anything                       = "Anything"
 
 instance Traced Type where
   origin (TypExpr _ _ x) = origin x
-  origin (TypLub _ _ x) = origin x
-  origin (TypGlb _ _ x) = origin x
+  origin (TypLub _ _ x)  = origin x
+  origin (TypGlb _ _ x)  = origin x
+  origin Anything        = OriginUnknown
 
 -- | Equality of Type is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
@@ -90,29 +91,6 @@ instance Prelude.Ord Type where
     -- comp (TypGlb _ _ _) _ = Prelude.LT
     -- comp _ (TypGlb _ _ _) = Prelude.GT
     
-normalize   (TypLub Anything right _)                                       = normalize right
-normalize   (TypLub left Anything _)                                        = normalize left
-normalize t@(TypLub left right x)                                           = norm t left right x
-normalize   (TypGlb Anything _ _)                                           = Anything
-normalize   (TypGlb _ Anything _)                                           = Anything
-normalize t@(TypGlb left right x)                                           = norm t left right x
-normalize   (TypExpr (PTyp _ x' (P_Sign [])) flipped x)                     = TypExpr x' flipped x
-normalize   (TypExpr (PTyp _ x'@(PTyp _ _ sgn') sgn) flipped x) | sgn==sgn' = TypExpr x' flipped x
-normalize t                                                                 = t
-norm :: Type -> Type -> Type -> Term -> Type
-norm t left right x
-    = case (normalize left, normalize right) of
-           (TypExpr (PI _)          _ _ , t'@(TypExpr _           _ _)) -> t'
-           (TypExpr (Pid c)         _ _ , TypExpr r'              _ _ ) -> TypExpr (PTyp (origin r') r' (P_Sign [c])) False x
-           (t'@(TypExpr _           _ _), TypExpr (PI _)          _ _ ) -> t'
-           (TypExpr l'              _ _ , TypExpr (Pid c)         _ _ ) -> TypExpr (PTyp (origin l') l' (P_Sign [c])) False x
-           (TypExpr (PVee _)        _ _ , t'                          ) -> t'
-           (TypExpr (Pfull src trg) _ _ , TypExpr r'              _ _ ) -> TypExpr (PTyp (origin r') r' (P_Sign [src,trg])) False x
-           (t'                          , TypExpr (PVee _)        _ _ ) -> t'
-           (TypExpr l'              _ _ , TypExpr (Pfull src trg) _ _ ) -> TypExpr (PTyp (origin l') l' (P_Sign [src,trg])) False x
-           (_                           , _                           ) -> t
-
-
 instance Eq Type where
   t == t' = compare t t' == EQ
 
@@ -128,7 +106,7 @@ p_flp (Pfull s t)  = Pfull t s
 p_flp (Prel o a)   = Pflp o a
 p_flp (Pflp o a)   = Prel o a
 p_flp (PFlp _ a)   = a
-p_flp a            = PFlp OriginUnknown a
+p_flp a            = PFlp (origin a) a
 
 complement :: Term -> Term
 complement (PCpl _ a)     = a
@@ -197,6 +175,17 @@ findIn :: Ord k => k -> Data.Map.Map k [a] -> [a]
 findIn t cl = getList (Data.Map.lookup t cl)
                  where getList Nothing = []
                        getList (Just a) = a
+
+makeDataMaps :: (Typemap,Typemap) -> (Data.Map.Map Type [Type],Data.Map.Map Type [Type])
+makeDataMaps (a,b) = (makeDataMap a, makeDataMap b)
+makeDataMap :: Typemap -> Data.Map.Map Type [Type]
+makeDataMap lst = Data.Map.fromDistinctAscList (foldr compress [] (sort lst))
+  where
+    compress (a,b) o@((a',bs):rs) = if a==a' then (a',addTo b bs):rs else (a,[b]):o
+    compress (a,b) [] = [(a,[b])]
+    addTo b o@(c:_) | c==b = o
+    addTo b o = b:o
+
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
 --   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
@@ -214,15 +203,6 @@ typing p_context
    --            These are converted into two maps (each of type Data.Map.Map Type [Type]) for efficiency reasons.
      (firstSetOfEdges,secondSetOfEdges)
       = makeDataMaps (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
-     makeDataMaps :: (Typemap,Typemap) -> (Data.Map.Map Type [Type],Data.Map.Map Type [Type])
-     makeDataMaps (a,b) = (makeDataMap a, makeDataMap b)
-     makeDataMap :: Typemap -> Data.Map.Map Type [Type]
-     makeDataMap lst = Data.Map.fromDistinctAscList (foldr compress [] (sort lst))
-       where
-         compress (a,b) o@((a',bs):rs) = if a==a' then (a',addTo b bs):rs else (a,[b]):o
-         compress (a,b) [] = [(a,[b])]
-         addTo b o@(c:_) | c==b = o
-         addTo b o = b:o
      stClos = setClosure firstSetOfEdges "firstSetOfEdges"    -- the transitive closure of 'firstSetOfEdges'
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
      isTypeSubset t c = c `elem` findIn t stClos || null (findIn t stClos)
@@ -252,7 +232,7 @@ typing p_context
                                                       compatible l r =    isTypeSubset uLft (thing l)
                                                                        && isTypeSubset uRt  (thing r)
                                                       carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
-                                                      carefully x = (fst nothing,fst x.++.snd x)
+                                                      carefully tt = (fst nothing,fst tt.++.snd tt)
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
@@ -357,8 +337,8 @@ Type         : a type term, containing a Term, which is represented by a number 
 [P_Concept]  : a list of concepts. If (_,_,term,cs) is an element of this table, then for every c in cs there is a proof that dom term is a subset of I[c].
                For a type correct term, list cs contains precisely one element.
 -}
-tableOfTypes :: Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], [(P_Concept,P_Concept)], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)])
-tableOfTypes st
+tableOfTypes :: P_Context -> Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], [(P_Concept,P_Concept)], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)])
+tableOfTypes p_context st
   = ( table
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
@@ -384,10 +364,38 @@ tableOfTypes st
      expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by expressionNr")])
+{- Bindings:
+Relations that are used in an expression must be bound to declarations. When they have a type annotation, as in r[A*B], there is no problem.
+When it is just 'r', and there are multiple declarations to which it can be bound, a choice must be made.
+Here's how....
+   A relation, islands, relates two Type objects if one is a subset of the other: islands = (st\/st~)*.
+   If an unbound relation is in the same island as a declaration with the same name, the type checker will use that binding. If there are multiple bindings, it will report an ambiguity.
+-}
+     islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "fatal 371 in setClosure"  -- islands = (st\/st~)*
+     domBindings = [(x,d) | x@(TypExpr (Prel o nm) False _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') sgn) _ _)<-ts, nm==nm']
+     codBindings = [(x,d) | x@(TypExpr (Pflp o nm) True  _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') sgn)) _ _)<-ts, nm==nm']
+     bindings    = {- for debugging and illustration purposes: 
+                   error ("\ndomBindings = \n  "++(intercalate "\n  ".map show) domBindings++
+                          "\ncodBindings = \n  "++(intercalate "\n  ".map show) codBindings++
+                          "\nbindings = \n  "++(intercalate "\n  ".map show)
+                                                [ (dBinding,cBinding)      -- the bindings of domain and codomain expressions should lead to the identical declaration. Both bindings will be added to the graph.
+                                                | decl<-p_declarations p_context
+                                                , dBinding@(TypExpr (Prel o nm) _ _, TypExpr d@(PTyp _ (Prel _ nm') sgn) _ _)<-domBindings,           origin decl==origin d
+                                                , cBinding@(TypExpr (Pflp o nm) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ nm') sgn')) _ _)<-codBindings, origin decl==origin c
+                                                ]
+                         ) -}
+                   makeDataMap
+                   [ bind      -- the bindings of domain and codomain expressions should lead to the identical declaration. Both bindings will be added to the graph.
+                   | decl<-p_declarations p_context
+                   , dBinding@(TypExpr (Prel o nm) _ _, TypExpr d@(PTyp _ (Prel _ nm') sgn) _ _)<-domBindings,           origin decl==origin d
+                   , cBinding@(TypExpr (Pflp o nm) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ nm') sgn')) _ _)<-codBindings, origin decl==origin c
+                   , bind<-[dBinding,cBinding]
+                   ]
 -- In order to compute the condensed graph, we need the transitive closure of st:
-     stClos1 = setClosure st "st"  -- the transitive closure of 'st'
+     boundSt = Data.Map.unionWith merge st bindings       -- represents (st\/bindings)
+     stClos1 = setClosure boundSt "st"       -- represents (st\/bindings)*
 -- The TypLub types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
-     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- Data.Map.keys st]
+     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeExpressions]
       where
       -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
        compr a b  = if b `elem` (lookups a stClos1) then LT else
@@ -395,6 +403,7 @@ tableOfTypes st
       {- this definition of compr should be equivalent to:
        compr a b  = if b==a  ||  b `elem` findIn a stClos1 then LT else
                     if a==b  ||  a `elem` findIn b stClos1 then GT else EQ
+         This I don't understand. How can compr yield LT when b==a?
       -}
       -- Why do we need to add the TypLubs? Aren't they already in there?
      stClosAdded = foldl f stClos1 someWhatSortedLubs
@@ -410,12 +419,11 @@ tableOfTypes st
    Hoe zit dat?
    Antwoord: waarom laten we de foldr niet staan? Die is korter.
 -}
-
-     stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive clusure of st.
+     stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive closure of boundSt.
      stClos = setClosure stClosAdded "stClosAdded"
      -- stEdges is only defined for the sake of drawing pictures
      stEdges :: [(Int,Int)]
-     stEdges = [(i,j) | (s,t) <- flattenMap st, let (i,j)=(expressionNr s,expressionNr t), i/=j]
+     stEdges = [(i,j) | (s,t) <- flattenMap boundSt, let (i,j)=(expressionNr s,expressionNr t), i/=j]
 {- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph
@@ -424,7 +432,7 @@ tableOfTypes st
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
      eqClasses = efficientNub (sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
       where addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else (if k `elem` a then a else fatal 404 ("reflexiveMap must yield something reflexive! But "++show a++" does not contain "++show k))) -- Should reflexiveMap contain an element with an empty list, we don't want the element to get lost.
---note:  To compute equivalence classes of relation st, we need st*/\st*~
+--note:  To compute equivalence classes of relation boundSt, we need boundSt*/\boundSt*~
      efficientNub :: [[Type]] -> [[Type]] -- should be sorted!
      efficientNub ((a:_):bs@(b:_):rs) | a==b = efficientNub (bs:rs) -- efficient nub for sorted classes: only compares the first element
      efficientNub (a:b:_) | a>b = fatal 408 "efficientNub is called on a non-sorted list"
@@ -443,7 +451,7 @@ tableOfTypes st
                                         )
       where classes = [cl | cl<-eqClasses, typ `elem` cl]
      condensedEdges :: [([Type],[Type])]
-     condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', head c/=head c']
+     condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap boundSt, let c=exprClass i, let c'=exprClass i', head c/=head c']
      condensedEdges2 = nub $ sort [(c,c') | (i,i')<-flattenMap stClosAdded, i' `notElem` findIn i stClos1, let c=exprClass i, let c'=exprClass i', head c/=head c']
      condensedClos  = nub $ sort [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', head c/=head c']
      -- condensedVerts is eqClasses
@@ -520,12 +528,12 @@ original Anything = fatal 437 "Anything cannot be expressed as a term."
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
-typeAnimate :: Data.Map.Map Type [Type] -> (DotGraph String,DotGraph String)
-typeAnimate st = (stTypeGraph, condTypeGraph)
+typeAnimate :: P_Context -> Data.Map.Map Type [Type] -> (DotGraph String,DotGraph String)
+typeAnimate p_context st = (stTypeGraph, condTypeGraph)
    where
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-    (typeTable,_,stVtx,stEdg,cdVtx,cdEdg,cdEdg2) = tableOfTypes st
+    (typeTable,_,stVtx,stEdg,cdVtx,cdEdg,cdEdg2) = tableOfTypes p_context st
     stTypeGraph :: DotGraph String
     stTypeGraph = toDotGraph showStVertex show stVtx [] stEdg []
     condTypeGraph :: DotGraph String
@@ -804,13 +812,6 @@ instance Monad Guarded where
  return = Checked
  fail s = fatal 926 ("Error generated by fail of a Guarded something (probably a pattern-match failure in a `do'), message: \n "++s)
 
-fatalGet :: Int -> String -> Guarded a -> a
-fatalGet nr msg (Errors _) = fatal nr msg
-fatalGet _ _ (Checked a)   = a
-
-getErrors :: Guarded t -> [CtxError]
-getErrors (Errors a) = a
-getErrors _ = []
 
 -- careful: only use when no references to a are made while computing b.
 -- even then, it is better to avoid (a, [CtxError]) all together in favor of using Guarded directly.
@@ -864,7 +865,7 @@ pCtx2aCtx p_context
              , ctxatoms  = allExplicitAtoms
              }
     st = typing p_context
-    (typeTable,isas,_,_,_,_,_) = tableOfTypes st
+    (typeTable,isas,_,_,_,_,_) = tableOfTypes p_context st
     specializationTuples :: [(A_Concept,A_Concept)]
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
     gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
@@ -882,7 +883,7 @@ pCtx2aCtx p_context
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
     conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
-    (stTypeGraph,condTypeGraph) = typeAnimate st
+    (stTypeGraph,condTypeGraph) = typeAnimate p_context st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
@@ -1008,49 +1009,48 @@ pCtx2aCtx p_context
     
     p2aPairViewSegment :: P_PairViewSegment -> (PairViewSegment,[CtxError])
     p2aPairViewSegment  (P_PairViewText str)          = (PairViewText str, [])
-    p2aPairViewSegment  (P_PairViewExp srcOrTgt pexp) = (PairViewExp srcOrTgt aexpr, exprcxe)
-        where (aexpr,_,exprcxe) = pExpr2aExpr pexp
-               
+    p2aPairViewSegment  (P_PairViewExp srcOrTgt pexp)
+     = case pExpr2aExpr pexp of
+        Checked (aexpr,_,_) -> (PairViewExp srcOrTgt aexpr, [])
+        Errors exprcxe      -> (fatal 1011 "Illegal reference to P_PairViewExp", exprcxe)
     pRul2aRul :: String -> P_Rule -> (Rule,[CtxError])
     pRul2aRul patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
-     = (Ru { rrnm  = rr_nm prul                 -- Name of this rule
-           , rrexp = aexpr                      -- The rule expression
-           , rrfps = rr_fps prul                -- Position in the Ampersand file
-           , rrmean = meanings (rr_mean prul)   -- Ampersand generated meaning (for all known languages)
-           , rrmsg = map (pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt)) $ rr_msg prul
-           , rrviol = mviol
-           , rrtyp = sign aexpr                 -- Allocated type
-           , rrdcl = Nothing                    -- The property, if this rule originates from a property on a Declaration
-           , r_env = patname                    -- Name of pattern in which it was defined.
-           , r_usr = True                       -- True if this rule was specified explicitly as a rule in the Ampersand script;
-                                                -- False if it follows implicitly from the Ampersand script and generated by a computer
-           , r_sgl = or [rr_nm prul `elem` map (name.snd) (prcRRuls p) | p<-ctxprocs contxt]  -- True if this is a signal; False if it is an ALWAYS rule
-           , srrel = -- the signal relation
-                     Sgn { decnm = rr_nm prul
-                         , decsgn = sign aexpr
-                         , decprps = []
-                         , decprps_calc = []
-                         , decprL = ""
-                         , decprM = ""
-                         , decprR = ""
-                         , decMean = meanings (rr_mean prul)
-                         , decConceptDef = Nothing
-                         , decpopu = []
-                         , decfpos = rr_fps prul
-                         , deciss = True
-                         , decusr = False
-                         , decpat = ""
-                         , decplug = True
-                         }
-           }
-       , [CxeOrig typeErrors' "rule" "" (origin prul) | (not.null) typeErrors']
-       )
-       where typeErrors'        = exprcxe++mviolcxe
-             (aexpr,_,exprcxe) = pExpr2aExpr (rr_exp prul)
-             (mviol, mviolcxe) = case fmap (p2aPairView $ sign aexpr) $ rr_viol prul of
-                                   Nothing              -> (Nothing, [])
-                                   Just (viol, violcxe) -> (Just viol, violcxe)
-             meanings = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) 
+     = case pExpr2aExpr (rr_exp prul) of
+        Checked (aexpr,_,_) -> (Ru { rrnm  = rr_nm prul                 -- Name of this rule
+                                   , rrexp = aexpr                      -- The rule expression
+                                   , rrfps = rr_fps prul                -- Position in the Ampersand file
+                                   , rrmean = meanings (rr_mean prul)   -- Ampersand generated meaning (for all known languages)
+                                   , rrmsg = map (pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt)) $ rr_msg prul
+                                   , rrviol = mviol
+                                   , rrtyp = sign aexpr                 -- Allocated type
+                                   , rrdcl = Nothing                    -- The property, if this rule originates from a property on a Declaration
+                                   , r_env = patname                    -- Name of pattern in which it was defined.
+                                   , r_usr = True                       -- True if this rule was specified explicitly as a rule in the Ampersand script;
+                                                                        -- False if it follows implicitly from the Ampersand script and generated by a computer
+                                   , r_sgl = or [rr_nm prul `elem` map (name.snd) (prcRRuls p) | p<-ctxprocs contxt]  -- True if this is a signal; False if it is an ALWAYS rule
+                                   , srrel = -- the signal relation
+                                             Sgn { decnm = rr_nm prul
+                                                 , decsgn = sign aexpr
+                                                 , decprps = []
+                                                 , decprps_calc = []
+                                                 , decprL = ""
+                                                 , decprM = ""
+                                                 , decprR = ""
+                                                 , decMean = meanings (rr_mean prul)
+                                                 , decConceptDef = Nothing
+                                                 , decpopu = []
+                                                 , decfpos = rr_fps prul
+                                                 , deciss = True
+                                                 , decusr = False
+                                                 , decpat = ""
+                                                 , decplug = True
+                                                 }
+                                   }, mviolcxe)
+                               where (mviol, mviolcxe) = case fmap (p2aPairView $ sign aexpr) (rr_viol prul) of
+                                                           Nothing              -> (Nothing, [])
+                                                           Just (viol, violcxe) -> (Just viol, violcxe)
+                                     meanings = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) 
+        Errors exprcxe -> (fatal 1045 "Illegal reference to a P_Rule", exprcxe )
     pMeanings2aMeaning :: Lang          -- The default language
                       -> PandocFormat  -- The default format
                       -> [PMeaning]
@@ -1137,29 +1137,29 @@ pCtx2aCtx p_context
                 -> P_ObjectDef           -- the object definition as specified in the parse tree
                 -> (ObjectDef,[CtxError]) -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
     pODef2aODef parentIfcRoles _ podef 
-     = (Obj { objnm   = obj_nm podef
-            , objpos  = obj_pos podef
-            , objctx  = expr
-            , objmsub = msub
-            , objstrs = obj_strs podef
-            }
-       , [CxeOrig typeErrors' "object definition" "" (origin podef) | (not.null) typeErrors']
-       )
-       where
-        typeErrors' = nmchk++exprcxe++msubcxes
-        -- A name check ensures that all attributes have unique names
-        nmchk = [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl)
-                |cl<-eqCl name (getSubPObjs podef),length cl>1]
-        getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
-        getSubPObjs _                                      = []
-        -- Step1: check obj_ctx
-        (expr,(_,tTrg),exprcxe)  = pExpr2aExpr (obj_ctx podef)
-        -- Step2: check obj_ats in the context of expr
-        (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles conc $ obj_msub podef
-         where
-           conc = case tTrg of
-                   TypExpr (Pid c) _ _ -> c
-                   _                   -> fatal 1235 ("erroneous type found by pODef2aODef.")
+     = case pExpr2aExpr (obj_ctx podef) of
+        Checked (expr, _, tTrg) -> ( Obj { objnm   = obj_nm podef
+                                         , objpos  = obj_pos podef
+                                         , objctx  = expr
+                                         , objmsub = msub
+                                         , objstrs = obj_strs podef
+                                         }
+                                   , [CxeOrig typeErrors' "object definition" "" (origin podef) | (not.null) typeErrors']
+                                   )
+                                   where
+                                    typeErrors' = nmchk++msubcxes
+                                    -- Step 1: A name check ensures that all attributes have unique names
+                                    nmchk = [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl)
+                                            |cl<-eqCl name (getSubPObjs podef),length cl>1]
+                                    getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
+                                    getSubPObjs _                                      = []
+                                    -- Step2: check obj_ats in the context of expr
+                                    (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles conc $ obj_msub podef
+                                     where
+                                       conc = case tTrg of
+                                               TypExpr (Pid c) _ _ -> c
+                                               _                   -> fatal 1235 ("erroneous type found by pODef2aODef.")
+        Errors exprcxe -> (fatal 1160 "Illegal reference to an ObjectDef", exprcxe)
         
     p2a_MaybeSubInterface :: [String] -> P_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
     p2a_MaybeSubInterface _              _    Nothing               = (Nothing, [])
@@ -1217,14 +1217,16 @@ pCtx2aCtx p_context
     
     pPop2aPop :: P_Population -> (Population,[CtxError])
     pPop2aPop pop
-     = ( Popu { popm  = aRel
-              , popps = p_popps pop
-              }
-       , relcxe
-       )
-       where (aExp, _, relcxe) = pExpr2aExpr expr
-             ERel aRel = aExp
-             expr = case pop of
+     = case pExpr2aExpr expr of
+        Checked (ERel aRel,_,_)          -> ( Popu { popm  = aRel
+                                                   , popps = p_popps pop
+                                                   }, [] )
+        Checked (ETyp (ERel aRel) _,_,_) -> ( Popu { popm  = aRel
+                                                   , popps = p_popps pop
+                                                   }, [] )
+        Checked _                        -> fatal 1223 "illegal call of pPop2aPop"
+        Errors errs                      -> ( fatal 1224 "illegal reference to aExp", errs )
+       where expr = case pop of
                       P_CptPopu{}              -> Pid (PCpt (name pop))
                       P_Popu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
                       P_Popu{}                 -> PTyp (origin pop) (Prel (origin pop) (name pop)) (p_type pop)
@@ -1352,15 +1354,14 @@ pCtx2aCtx p_context
                           name (last sgn)==name (target d)   ]
     pRel2aRel _ r = fatal 1314 ("pRel2aRel could not patternmatch on "++show r)
     
-    pExpr2aExpr :: Term    -- The term to be typed
-                -> ( Expression    -- the resulting expression. It is defined only when the list of errors is empty.
-                   , (Type,Type)   -- the type of the resulting expression. It is defined only when the list of errors is empty.
-                   , [CtxError]    -- the list of type errors
-                   )
-    pExpr2aExpr pTerm                        -- The expression to be typed
+    pExpr2aExpr :: Term                    -- The term to be typed
+                -> Guarded ( Expression    -- the resulting expression.
+                           , Type, Type    -- the source and target types of the resulting expression.
+                           )               -- The result might be incorrect, so it is guarded with type error messages.
+    pExpr2aExpr pTerm
      = case f pTerm of
-         Checked r   -> (r, (lookupType pTerm,lookupType (p_flp pTerm)), [])
-         Errors errs -> (fatal 1441 ("call to undefined expression in:   pExpr2aExpr ("++show pTerm++")\n"++show errs), (lookupType pTerm,lookupType (p_flp pTerm)), errs)
+         Checked r   -> Checked (r, lookupType pTerm, lookupType (p_flp pTerm))
+         Errors errs -> Errors errs
        where
          f :: Term -> Guarded Expression
          -- alternatively:
@@ -1444,16 +1445,16 @@ pCtx2aCtx p_context
                            "\na:        "++ show a++
                            "\nb:        "++ show b++
                            show err)  -}
-             [c] -> case (errsA, errsB) of
-                      ([], []) -> Checked (pCpt2aCpt c, a', b')
-                      _        -> Errors (errsA++errsB)
-                     where (a',_,errsA) = pExpr2aExpr a;   (b',_,errsB) = pExpr2aExpr b
-             _   -> Errors err
+             [c] -> case (pExpr2aExpr a, pExpr2aExpr b) of
+                      (Checked (a', _,_), Checked (b', _,_)) -> Checked (pCpt2aCpt c, a', b')
+                      (Errors errsA     , Checked ( _, _,_)) -> Errors errsA
+                      (Checked ( _, _,_), Errors errsB     ) -> Errors errsB
+                      (Errors errsA     , Errors errsB     ) -> Errors (errsA++errsB)
+             _   -> Errors [ CxeCpsLike {cxeExpr   = x
+                                        ,cxeCpts   = conflictingConcepts
+                                        }
+                           ]
             where
-              err = [ CxeCpsLike {cxeExpr   = x
-                                 ,cxeCpts   = conflictingConcepts
-                                 }
-                    ]
               conflictingConcepts = [ c | (_,_,TypLub (TypExpr s _ _) (TypExpr t _ _) _,cs)<-typeTable
                                         , p_flp s==a, t==b, c<-cs]
          getConcepts x
