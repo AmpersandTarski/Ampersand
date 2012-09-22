@@ -37,9 +37,9 @@ origExpr (in conjunction with Origin o) is kept for the purpose of generating me
 TypLub a b e is read as:
   "the least upper bound of types a and b, in the context of term e.
 -}
-data Type =  TypExpr Term Bool Term
-           | TypLub Type Type Term
-           | TypGlb Type Type Term
+data Type =  TypExpr Term Bool Term -- term is deriving Ord
+           | TypLub  Type Type Term
+           | TypGlb  Type Type Term
            | Anything
             -- note: do not put "deriving Ord", because Eq is specified (and not derived)
 
@@ -57,8 +57,8 @@ showType Anything                       = "Anything"
 
 instance Traced Type where
   origin (TypExpr _ _ x) = origin x
-  origin (TypLub _ _ x)  = origin x
-  origin (TypGlb _ _ x)  = origin x
+  origin (TypLub  _ _ x) = origin x
+  origin (TypGlb  _ _ x) = origin x
   origin Anything        = OriginUnknown
 
 -- | Equality of Type is needed for the purpose of making graphs of types.
@@ -67,29 +67,47 @@ instance Traced Type where
 --   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Prelude.Ord Type where
-  compare p q = comp p q
-   where
-    comp Anything Anything                                           = Prelude.EQ
-    comp Anything _                                                  = Prelude.LT  -- Anything < everything
-    comp _ Anything                                                  = Prelude.GT  -- everyting > Anything
-    comp (TypExpr (Pid c)        _ _) (TypExpr (Pid c')         _ _) = Prelude.compare c c'
-    comp (TypExpr (Pnid c)       _ _) (TypExpr (Pnid c')        _ _) = Prelude.compare c c'
-    comp (TypExpr (Patm _ x [c]) _ _) (TypExpr (Patm _ x' [c']) _ _) = Prelude.compare (x,c) (x',c')
-    comp (TypExpr (PVee o)       _ _) (TypExpr (PVee o')        _ _) = Prelude.compare o o' -- This is a V of which the type must be determined (by the environment).
-    comp (TypExpr (Pfull s t)    _ _) (TypExpr (Pfull s' t')    _ _) = Prelude.compare (s,t) (s',t') -- This is a V of which the type is determined by the user
-    comp (TypExpr e@(PTyp _ _ (P_Sign [])) _ _) (TypExpr e'@(PTyp _ _ (P_Sign [])) _ _) = Prelude.compare e e'
-    comp (TypExpr (PTyp _ (Prel _ a) sgn) _ _) (TypExpr (PTyp _ (Prel _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
-    comp (TypExpr (PTyp _ (Pflp _ a) sgn) _ _) (TypExpr (PTyp _ (Pflp _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
-    comp (TypExpr x _ _) (TypExpr y _ _) = Prelude.compare x y
-    comp (TypExpr _ _ _) _               = Prelude.LT
-    comp _               (TypExpr _ _ _) = Prelude.GT
-    comp (TypLub l r _) (TypLub l' r' _) = compare (l,r) (l',r')
-    comp (TypLub _ _ _) _                = Prelude.LT
-    comp _              (TypLub _ _ _)   = Prelude.GT
-    comp (TypGlb l r _) (TypGlb l' r' _) = compare (l,r) (l',r')
+  compare Anything Anything                                           = Prelude.EQ
+  compare Anything _                                                  = Prelude.LT  -- Anything < everything
+  compare _ Anything                                                  = Prelude.GT  -- everyting > Anything
+  compare (TypExpr (Pid c)        _ _)   (TypExpr (Pid c')         _ _) = Prelude.compare c c'
+  compare (TypExpr (Pid _)        _ _)   (TypExpr _                _ _) = Prelude.LT
+  compare (TypExpr _              _ _)   (TypExpr (Pid _)          _ _) = Prelude.GT
+  compare (TypExpr (Pnid c)       _ _)   (TypExpr (Pnid c')        _ _) = Prelude.compare c c'
+  compare (TypExpr (Pnid _)       _ _)   (TypExpr _                _ _) = Prelude.LT
+  compare (TypExpr _              _ _)   (TypExpr (Pnid _)         _ _) = Prelude.GT
+  compare (TypExpr (Patm _ x [c]) _ _)   (TypExpr (Patm _ x' [c']) _ _) = Prelude.compare (x,c) (x',c')
+  compare (TypExpr (Patm _ _ _)   _ _)   (TypExpr _                _ _) = Prelude.LT
+  compare (TypExpr _              _ _)   (TypExpr (Patm _ _ _)     _ _) = Prelude.GT
+  compare (TypExpr (PVee o)       _ _)   (TypExpr (PVee o')        _ _) = Prelude.compare o o' -- This is a V of which the type must be determined (by the environment).
+  compare (TypExpr (PVee _)       _ _)   (TypExpr _                _ _) = Prelude.LT
+  compare (TypExpr _              _ _)   (TypExpr (PVee _)         _ _) = Prelude.GT
+  compare (TypExpr (Pfull s t)    _ _)   (TypExpr (Pfull s' t')    _ _) = Prelude.compare (s,t) (s',t') -- This is a V of which the type is determined by the user
+  compare (TypExpr (Pfull _ _)    _ _)   (TypExpr _                _ _) = Prelude.LT
+  compare (TypExpr _              _ _)   (TypExpr (Pfull _ _)      _ _) = Prelude.GT
+  compare (TypExpr (PTyp _ _ (P_Sign [])) _ _) _ = fatal 78 "empty sign not allowed in function compare"
+  compare _ (TypExpr (PTyp _ _ (P_Sign [])) _ _) = fatal 79 "empty sign not allowed in function compare"
+  compare (TypExpr (PTyp _ _ (P_Sign [_])) _ _) _ = fatal 90 "singleton sign not allowed in function compare"
+  compare _ (TypExpr (PTyp _ _ (P_Sign [_])) _ _) = fatal 91 "singleton sign not allowed in function compare"
+  compare (TypExpr (PTyp _ (Prel _ a) sgn) _ _)  (TypExpr (PTyp _ (Prel _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
+  compare (TypExpr (PTyp _ (Prel _ _) _) _ _)    (TypExpr (PTyp _ _ _) _ _)              = Prelude.LT
+  compare (TypExpr (PTyp _ _ _) _ _)             (TypExpr (PTyp _ (Prel _ _) _) _ _)     = Prelude.GT
+  compare (TypExpr (PTyp _ (Pflp _ a) sgn) _ _)  (TypExpr (PTyp _ (Pflp _ a') sgn') _ _) = Prelude.compare (sgn,a) (sgn',a')
+  compare (TypExpr (PTyp _ _ _) _ _)             (TypExpr (PTyp _ (Pflp _ _) _) _ _)     = Prelude.LT
+  compare (TypExpr (PTyp _ (Pflp _ _) _) _ _)    (TypExpr (PTyp _ _ _) _ _)              = Prelude.GT
+  compare (TypExpr (PTyp _ x sgn) _ _)  (TypExpr (PTyp _ y sgn') _ _) = Prelude.compare (sgn,x) (sgn',y)
+  compare (TypExpr (PTyp _ _ _) _ _)  (TypExpr _ _ _) = Prelude.LT
+  compare (TypExpr _ _ _)  (TypExpr (PTyp _ _ _) _ _) = Prelude.GT
+  compare (TypExpr x _ _) (TypExpr y _ _) = Prelude.compare x y
+  compare (TypExpr _ _ _) _               = Prelude.LT
+  compare _               (TypExpr _ _ _) = Prelude.GT
+  compare (TypLub l r _) (TypLub l' r' _) = compare (l,r) (l',r')
+  compare (TypLub _ _ _) _                = Prelude.LT
+  compare _              (TypLub _ _ _)   = Prelude.GT
+  compare (TypGlb l r _) (TypGlb l' r' _) = compare (l,r) (l',r')
     -- in case you wish to add types:
-    -- comp (TypGlb _ _ _) _ = Prelude.LT
-    -- comp _ (TypGlb _ _ _) = Prelude.GT
+    -- compare (TypGlb _ _ _) _ = Prelude.LT
+    -- compare _ (TypGlb _ _ _) = Prelude.GT
     
 instance Eq Type where
   t == t' = compare t t' == EQ
@@ -134,28 +152,46 @@ Invariants are:
          in Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
 -}
 
-mapIsOk :: Ord a => Data.Map.Map k [a] -> Bool
+mapIsOk :: (Show a,Ord a) => Data.Map.Map k [a] -> Bool
 mapIsOk m = Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
- where isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
-       isSortedAndDistinct _ = True
+isSortedAndDistinct :: Ord a => [a] -> Bool
+isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
+isSortedAndDistinct _ = True
 -- | The purpose of 'setClosure' is to compute the transitive closure of relations that are represented as a Map (Data.Map.Map a [a]).
 --   For that purpose we use a Warshall algorithm.
-setClosure :: Ord a => Data.Map.Map a [a] -> String -> Data.Map.Map a [a]
+setClosure :: (Show a,Ord a) => Data.Map.Map a [a] -> String -> Data.Map.Map a [a]
 setClosure xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
 setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
   where
 --   f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
-   f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (Just b') <- [Data.Map.lookup x q]]) q
+   f q x = Data.Map.map (\bs->foldl merge bs [b' | x `elem` bs, (Just b') <- [Data.Map.lookup x q]]) q
    res   = foldl f xs (Data.Map.keys xs `isc` nub (concat (Data.Map.elems xs)))
 
-merge :: Ord a => [a] -> [a] -> [a]
-merge (a:as) (b:bs) | a<b  = a:merge as (b:bs)
-                    | a==b = a:merge as bs
-                    | a>b  = b:merge (a:as) bs
-merge a b = a ++ b -- since either a or b is the empty list
+merge :: (Show a,Ord a) => [a] -> [a] -> [a]
+merge a b = if isSortedAndDistinct res then res else fatal 151 ("merge' contains an error")
+  where res = if isSortedAndDistinct a then
+                (if isSortedAndDistinct b then merge' a b
+                 else fatal 154 ("merge should be called on sorted distinct lists, but its second argument is:\n "++show b)
+                 )
+              else fatal 156 ("merge should be called on sorted distinct lists, but its first argument is:\n "++show a)
+merge' :: (Show a,Ord a) => [a] -> [a] -> [a]
+merge' (a:as) (b:bs) | a<b  = a:merge' as (b:bs)
+                     | a==b = distinctCons a b (merge' as bs)
+                     | a>b  = if b<a then b:merge' (a:as) bs else fatal 161 ("compare is not antisymmetric for: "++show a++" and "++show b)
+merge' a b = a ++ b -- since either a or b is the empty list
+
+distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
+distinctCons a b' (b:bs) = if a<b then a:(b:bs)
+                           else if a==b then fatal 164 ("Eq is not transitive:\n "++show a++"=="++show b++"\n but `==` ("++show b'++") ("++show b++") is "++show (b' == b))
+                           else fatal 167 (concat (["Ord is not transitive:\n "
+                                                   ,"compare ("++show a++") ("++show b'++") == "++show (compare a b')++"\n"
+                                                   ,"compare ("++show b'++") ("++show b++") == "++show (compare b' b)++"\n"
+                                                   ,"compare ("++show a++") ("++show b++") == "++show (compare a b)++"\n"]))
+                        
+distinctCons a _ bs = a:bs
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
-lookups :: Ord a => a -> Data.Map.Map a [a] -> [a]
+lookups :: (Show a,Ord a) => a -> Data.Map.Map a [a] -> [a]
 lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[[o]])
 {- Trying to understand lookups:
 lookups "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]
@@ -213,10 +249,11 @@ typing p_context
            -> ( Typemap  -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
               , Typemap ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
      uType _ _    _     (Pnid _)              = fatal 136 "Pnid has no representation"
-     uType x _    _     (PI{})                = dom x.=.cod x                                                        -- I
-     uType x _    _     (Pid{})               = dom x.=.cod x                                                        -- I[C]
-     uType x _    _     (Patm _ _ [])         = dom x.=.cod x                                                        -- 'Piet'   (an untyped singleton)
-     uType x _    _     (Patm _ _ cs)         = dom x.<.dom (Pid (head cs)) .+. cod x.<.cod (Pid (last cs))          -- 'Piet'[Persoon]  (a typed singleton)
+     uType x uLft uRt   (PI{})                = dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt    -- I
+     uType x _    _     (Pid{})               = dom x.=.cod x                                     -- I[C]
+     uType x uLft uRt   (Patm _ _ [])         = dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt    -- 'Piet'   (an untyped singleton)
+     uType x _    _     (Patm _ _ cs)         = dom x.<.thing (head cs) .+. cod x.<.thing (last cs)      -- 'Piet'[Persoon]  (a typed singleton)
+                                                .+. dom x.=.cod x
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType x uLft uRt   (PVee _)              = dom x.<.uLft .+. cod x.<.uRt
      uType x _    _     (Pfull s t)           = dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
@@ -236,12 +273,12 @@ typing p_context
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
-                                                .+. dm .+. cm
+                                                .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
                                                 where (dm,interDom) = mSpecific (dom a) (dom b)  x
                                                       (cm,interCod) = mSpecific (cod a) (cod b)  x
-                                                      (_,interDom2) = mSpecific interDom uLft  x -- probably the first bits are needed, but if there is no try*.adl that reports a bug caused by this commenting, please keep it disabled
-                                                      (_,interCod2) = mSpecific interCod uRt   x
+                                                      (d2,interDom2) = mSpecific interDom uLft  x -- probably the first bits are needed, but if there is no try*.adl that reports a bug caused by this commenting, please keep it disabled
+                                                      (c2,interCod2) = mSpecific interCod uRt   x
      uType x uLft uRt   (PUni _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
                                                 .+. dm .+. cm
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
@@ -372,8 +409,8 @@ Here's how....
    If an unbound relation is in the same island as a declaration with the same name, the type checker will use that binding. If there are multiple bindings, it will report an ambiguity.
 -}
      islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "fatal 371 in setClosure"  -- islands = (st\/st~)*
-     domBindings = [(x,d) | x@(TypExpr (Prel o nm) False _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') sgn) _ _)<-ts, nm==nm']
-     codBindings = [(x,d) | x@(TypExpr (Pflp o nm) True  _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') sgn)) _ _)<-ts, nm==nm']
+     domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') _) _ _)<-ts, nm==nm']
+     codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True  _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _ _)<-ts, nm==nm']
      bindings    = {- for debugging and illustration purposes: 
                    error ("\ndomBindings = \n  "++(intercalate "\n  ".map show) domBindings++
                           "\ncodBindings = \n  "++(intercalate "\n  ".map show) codBindings++
@@ -387,12 +424,12 @@ Here's how....
                    makeDataMap
                    [ bind      -- the bindings of domain and codomain expressions should lead to the identical declaration. Both bindings will be added to the graph.
                    | decl<-p_declarations p_context
-                   , dBinding@(TypExpr (Prel o nm) _ _, TypExpr d@(PTyp _ (Prel _ nm') sgn) _ _)<-domBindings,           origin decl==origin d
-                   , cBinding@(TypExpr (Pflp o nm) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ nm') sgn')) _ _)<-codBindings, origin decl==origin c
+                   , dBinding@(TypExpr (Prel _ _) _ _, TypExpr d@(PTyp _ (Prel _ _) _) _ _)<-domBindings,           origin decl==origin d
+                   , cBinding@(TypExpr (Pflp _ _) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ _) _)) _ _)<-codBindings, origin decl==origin c
                    , bind<-[dBinding,cBinding]
                    ]
 -- In order to compute the condensed graph, we need the transitive closure of st:
-     boundSt = Data.Map.unionWith merge st bindings       -- represents (st\/bindings)
+     boundSt = st -- Data.Map.unionWith merge st bindings       -- represents (st\/bindings)
      stClos1 = setClosure boundSt "st"       -- represents (st\/bindings)*
 -- The TypLub types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
      someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeExpressions]
@@ -428,7 +465,7 @@ Here's how....
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph
 -}
--- | a vertex in the condensed graph contains the TypExprs that are in a cycle of the stGraph.
+     -- a vertex in the condensed graph contains the TypExprs that are in a cycle of the stGraph.
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
      eqClasses = efficientNub (sort (Data.Map.elems (addIdentity (reflexiveMap stClos))))
       where addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else (if k `elem` a then a else fatal 404 ("reflexiveMap must yield something reflexive! But "++show a++" does not contain "++show k))) -- Should reflexiveMap contain an element with an empty list, we don't want the element to get lost.
@@ -463,7 +500,7 @@ Here's how....
      classNr [] = fatal 385 "no ClassNr for an empty class. An empty class was generated somewhere, which is very wrong!"
      -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
      -- | note that the domain must be preserved!
-     reverseMap :: (Prelude.Ord a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+     reverseMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
      reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
      -- note: reverseMap is relatively slow, but only needs to be calculated once
      -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
@@ -1374,12 +1411,12 @@ pCtx2aCtx p_context
                                              ; return (ERel (Mp1 atom (pCpt2aCpt c)))}
          f   (Patm _ atom [c])          = return (ERel (Mp1 atom (pCpt2aCpt c)))
          f x@Pnull                      = fatal 988 ("pExpr2aExpr cannot transform "++show x++" to a term.")
-         f x@(PVee o)                   = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
+         f x@(PVee _)                   = ERel <$> (V <$> getSignFromTerm x)
          f (Pfull s t)                  = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
-         f x@(Prel o a)                 = do { (decl,sgn) <- errRelLike x
+         f x@(Prel o a)                 = do { (decl,sgn) <- getDeclarationAndSign x
                                              ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
                                              }
-         f x@(Pflp o a)                 = do { (decl,sgn) <- errRelLike x
+         f x@(Pflp o a)                 = do { (decl,sgn) <- getDeclarationAndSign x
                                              ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
                                              }
          f x@(Pequ _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
@@ -1424,7 +1461,7 @@ pCtx2aCtx p_context
                                              ; return (EKl0 a') }
          f (PKl1 _ a)      = EKl1 <$> f a
          f (PFlp _ a)      = EFlp <$> f a
-         f x@(PCpl _ a)      = do { fa <- f a; return (ECpl fa) <* errCpl x a }
+         f x@(PCpl _ a)    = do { fa <- f a; return (ECpl fa) <* errCpl x a }
          f (PBrk _ a)      = EBrk <$> f a
          f x@(PTyp o _ (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
          f (PTyp _ a sgn)  = ETyp <$> (f a) <*> return (Sign (pCpt2aCpt s) (pCpt2aCpt t))
@@ -1459,6 +1496,10 @@ pCtx2aCtx p_context
                                         , p_flp s==a, t==b, c<-cs]
          getConcepts x
           = [ c | (_,_,TypExpr x' _ _, cs)<-typeTable, x' == x, c<-cs]
+         getSignFromTerm x
+          = getSign (\s t -> [ CxeV {cxeExpr = x
+                                    , cxeSrcs = s
+                                    , cxeTrgs = t}]) x
          getSign :: ([P_Concept]->[P_Concept]->[CtxError]) -> Term -> Guarded Sign
          getSign e x
           = case (src,trg) of
@@ -1473,8 +1514,8 @@ pCtx2aCtx p_context
                                           ,cxeRhs     = b
                                           ,cxeSrcCpts = s
                                           ,cxeTrgCpts = t}]) x
-         errRelLike :: Term -> Guarded (Declaration, Sign)
-         errRelLike term
+         getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
+         getDeclarationAndSign term
           = case ([ decl | decl<-p_declarations p_context, nm==name decl
                          , let P_Sign sgn = dec_sign decl
                          , head sgn `elem` srcTypes, last sgn `elem` trgTypes], srcTypes, trgTypes) of
@@ -1491,7 +1532,7 @@ pCtx2aCtx p_context
                   trgTypes = [ c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==p_flp term, c<-conflictingConcepts]
                  
                   nm = head ([ rel | Prel _ rel<-[term] ]++[ rel | Pflp _ rel<-[term] ]++
-                             fatal 1590 "no name for nm in a call of errRelLike")
+                             fatal 1590 "no name for nm in a call of getDeclarationAndSign")
          errCpl x a
           = createVoid $  [ CxeCpl {cxeExpr   = a
                                    ,cxeCpts   = conflictingConcepts

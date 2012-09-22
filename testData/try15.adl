@@ -3,7 +3,7 @@ CONTEXT Test
 PATTERN Test13
 r :: A*A
 r :: B*C
-RULE r[A] = r/\I
+RULE r[A*A] = r/\I
 ENDPATTERN
 
 ENDCONTEXT

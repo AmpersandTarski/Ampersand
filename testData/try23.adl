@@ -1,0 +1,18 @@
+CONTEXT Test
+
+PATTERN Test1
+RELATION r[A*C]
+RELATION s[A*A]
+RELATION t[B*C]
+RELATION t[Q*C]
+RULE r = s;t
+RULE I[B] |- I[A]
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is a simple correct script, but the type checker must make the
+            right choice between the two declarations of t.
+   Result: PASS
+-}
