@@ -2,8 +2,8 @@ CONTEXT Test
 
 PATTERN Test13
 r :: A*A
---r :: B*C
-RULE r[A] = r\/I
+-- r :: B*C -- enabled in try15.adl
+RULE r[A*A] = r\/I
 ENDPATTERN
 
 ENDCONTEXT
