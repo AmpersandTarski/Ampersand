@@ -15,9 +15,12 @@ ENDCONTEXT
    Purpose: This script shows that it is not always enough to have an intersection type
             to 'join' different concepts.
    Result: FAIL
-   Reason: Ambiguity lures...  use r = s;t[B*Y] to disambiguate this
+   Reason: Ambiguity lures...  the type checker might give a suggestion!
    Error message:
 
    The pattern named "Test18" contains errors line 8:12, file "try18.adl"
        Relation  t  is ambiguous.
+       Is it possible that you meant t[B*Y]?
+       If so, please substitute t on line 8:12, file "try18.adl"
+       by t[B*Y].
 -}

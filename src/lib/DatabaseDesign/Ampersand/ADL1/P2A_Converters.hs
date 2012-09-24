@@ -6,14 +6,15 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      Guarded(..)
      )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics (name, uni, isc, eqCl, getCycles, (>-), eqClass, fatalMsg)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
-import qualified DatabaseDesign.Ampersand.Core.Poset -- hiding (sortWith)
+import qualified DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
+import GHC.Exts (sortWith)
 import Prelude -- hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.GraphViz hiding (addExtension, C)
@@ -375,7 +376,7 @@ Type         : a type term, containing a Term, which is represented by a number 
 [P_Concept]  : a list of concepts. If (_,_,term,cs) is an element of this table, then for every c in cs there is a proof that dom term is a subset of I[c].
                For a type correct term, list cs contains precisely one element.
 -}
-tableOfTypes :: P_Context -> Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept])], [(P_Concept,P_Concept)], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)])
+tableOfTypes :: P_Context -> Data.Map.Map Type [Type] -> ([(Int,Int,Type,[P_Concept],[Type])], [(P_Concept,P_Concept)], [Int],[(Int,Int)],[Int],[(Int,Int)],[(Int,Int)])
 tableOfTypes p_context st
   = ( table
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
@@ -404,14 +405,18 @@ tableOfTypes p_context st
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by expressionNr")])
 {- Bindings:
 Relations that are used in an expression must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
-When it is just 'r', and there are multiple declarations to which it can be bound, a choice must be made.
+When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
+Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
+In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 Here's how....
    A relation, islands, relates two Type objects if one is a subset of the other: islands = (st\/st~)*.
-   If an unbound relation is in the same island as a declaration with the same name, the type checker will use that binding. If there are multiple bindings, it will report an ambiguity.
+   If an unbound relation is in the same island as a declaration with the same name, the type checker will suggest that declaration to bind the relation.
+   If there are multiple declarations that might fit, the type checker will report an ambiguity and refrain from making suggestions.
 -}
      islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "islands"  -- islands = (st\/st~)*
      domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') _) _ _)<-ts, nm==nm']
      codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True  _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _ _)<-ts, nm==nm']
+     bindings :: Data.Map.Map Type [Type]
      bindings    = {- for debugging and illustration purposes: 
                    error ("\ndomBindings = \n  "++(intercalate "\n  ".map show) domBindings++
                           "\ncodBindings = \n  "++(intercalate "\n  ".map show) codBindings++
@@ -425,12 +430,13 @@ Here's how....
                    makeDataMap
                    [ bind      -- the bindings of domain and codomain expressions should lead to the identical declaration. Both bindings will be added to the graph.
                    | decl<-p_declarations p_context
-                   , dBinding@(TypExpr (Prel _ _) _ _, TypExpr d@(PTyp _ (Prel _ _) _) _ _)<-domBindings,           origin decl==origin d
+                   , dBinding@(TypExpr (Prel _ _) _ _, TypExpr d@(PTyp _ (Prel _ _) _) _ _)<-domBindings,          origin decl==origin d
                    , cBinding@(TypExpr (Pflp _ _) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ _) _)) _ _)<-codBindings, origin decl==origin c
                    , bind<-[dBinding,cBinding]
                    ]
+     binds :: Type -> [Type]
+     binds s = [d | Just ds<-[Data.Map.lookup s bindings], d<-ds]
 -- In order to compute the condensed graph, we need the transitive closure of st:
-     boundSt = Data.Map.unionWith merge st bindings       -- represents (st\/bindings)
      stClos1 = setClosure st "st"       -- represents (st)*
 -- The TypLub types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
      someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeExpressions]
@@ -447,7 +453,7 @@ Here's how....
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
-        f q o@(TypLub a b _) = Data.Map.map (\cs -> foldr merge cs [lookups o q | a `elem` cs, b `elem` cs]) q
+        f q o@(TypLub a b _) = Data.Map.map (\cs -> merge cs [e | a `elem` cs, b `elem` cs, e<-lookups o q]) q
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
 {- snap ik niet.... Kijk eens naar de lijst [lookups o q | a `elem` cs, b `elem` cs].
    Die heeft een lengte van 0 of 1. De foldr is dus overbodig. 
@@ -517,38 +523,41 @@ Here's how....
     This has already caught mistakes in the past, so it is advisable to leave the checks in the code for debugging reasons.
 -}
      table
-      = [ (expressionNr s,classNr c,s, typeConcepts c)
-             | c<-eqClasses,s<-c]
--- function typeConcepts computes the type 
-     typeConcepts :: [Type] -> [P_Concept]
-     typeConcepts cls = if null isAType then [ c | (i,_,c)<-reducedTypes, i==cls] else isAType
-       where isAType = nub [c | TypExpr (Pid c) _ _<-cls]
-     -- The possible types are all concepts of which term i is a subset.
+      = [ (expressionNr s, classNr cl, s, tConcepts cl, binds s) | cl<-eqClasses, s<-cl]
+-- function typeConcepts computes the types of one equivalence class
+     tConcepts :: [Type] -> [P_Concept]
+     tConcepts cls = case [maxima [c' | TypExpr (Pid c') _ _<-ts] | (x, ts)<-Data.Map.toList stClos, x `elem` cls] of
+                         cs:_ -> cs
+                         []   -> fatal 531 "Error in tConcepts"
+     maxima :: [P_Concept] -> [P_Concept]
+     maxima typeConcepts
+      = let cList = [(c,[c' | TypExpr (Pid c') _ _<-ts]) | (TypExpr (Pid c) _ _, ts)<-Data.Map.toList stClos] in
+        case sortWith ((0-).length.snd) [x | x@(_,cSet)<-cList, null (cSet>-typeConcepts) ] of
+          []       -> []
+          (c,cs):_ -> c: maxima (typeConcepts>-cs)
+             
      possibleTypes :: [([Type],[Type],P_Concept)]
      possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _<- j, i/=j ]
      typeSubsets   = [ (i,j) | (i,j,_) <- possibleTypes, TypExpr (Pid _) _ _<- i ]
-     secondaryTypes= [ (i,j') | (i,j,_) <- possibleTypes, (i',j')<-typeSubsets, head i'==head j]
-     -- reducedtypes contains all types for which there is not a more specific type
-     reducedTypes  = [ (i,j,c) | (i,j,c) <- possibleTypes, null [j | (i',j')<-secondaryTypes,head i==head i',head j==head j']]
      isas = [ (x,g) | (i,j)<-typeSubsets, TypExpr (Pid x) _ _<- i, TypExpr (Pid g) _ _<- j ]
 
  -- for debug
-showTypeTable :: [(Int,Int,Type,[P_Concept])] -> String
+showTypeTable :: [(Int,Int,Type,[P_Concept],[Type])] -> String
 showTypeTable typeTable
  = "Type table has "++show (length typeTable)++" rows.\n  " ++ intercalate "\n  " (map showLine typeTable)
    where  -- hier volgt een (wellicht wat onhandige, maar goed...) manier om de type table leesbaar neer te zetten.
-    nMax = maximum [i | (stIndex,cIndex,_,_)<-typeTable, i<-[stIndex, cIndex]]
+    nMax = maximum [i | (stIndex,cIndex,_,_,_)<-typeTable, i<-[stIndex, cIndex]]
     sh i = [ ' ' | _<-[length (show i)..length (show nMax)] ]++show i
     shPos t = str++[ ' ' | _<-[length str..maxPos] ]
      where str = showPos t
-           maxPos = maximum [length (showPos (origin typExpr)) | (_,_,typExpr,_)<-typeTable]
+           maxPos = maximum [length (showPos (origin typExpr)) | (_,_,typExpr,_,_)<-typeTable]
     shType t = str++[ ' ' | _<-[length str..maxType] ]
      where str = show t
-           maxType = maximum [length (show typExpr) | (_,_,typExpr,_)<-typeTable]
+           maxType = maximum [length (show typExpr) | (_,_,typExpr,_,_)<-typeTable]
     shExp t = str++[ ' ' | _<-[length str..maxExpr] ]
      where str = showADL (showTypeExpr t)
-           maxExpr = maximum [length (showADL (showTypeExpr typExpr)) | (_,_,typExpr,_)<-typeTable]
-    showLine (stIndex,cIndex,t,concepts) = sh stIndex++","++sh cIndex++", "++shPos (origin t)++"  "++shExp t++"  "++shType t++"  "++show concepts
+           maxExpr = maximum [length (showADL (showTypeExpr typExpr)) | (_,_,typExpr,_,_)<-typeTable]
+    showLine (stIndex,cIndex,t,concepts,binds) = sh stIndex++","++sh cIndex++", "++shPos (origin t)++"  "++shExp t++"  "++shType t++"  "++show concepts++"  "++show binds
     showTypeExpr (TypLub _ _ term)  = term
     showTypeExpr (TypGlb _ _ term)  = term
     showTypeExpr (TypExpr term _ _) = term
@@ -578,11 +587,11 @@ typeAnimate p_context st = (stTypeGraph, condTypeGraph)
     condTypeGraph = toDotGraph showVtx show cdVtx [] cdEdg cdEdg2
      where showVtx n = (intercalate "\n".nub)
                        [ showType (head cl)
-                       | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_)<-typeTable, n==classNr ]
+                       | cl<-eqCl original [ typExpr| (_, classNr, typExpr,_,_)<-typeTable, n==classNr ]
                        ]
     showStVertex :: Int -> String
     showStVertex i
-     = head ([ showType e | (exprNr, _, e,_)<-typeTable, i==exprNr ]++fatal 506 ("No term numbered "++show i++" found by showStVertex"))
+     = head ([ showType e | (exprNr, _, e,_,_)<-typeTable, i==exprNr ]++fatal 506 ("No term numbered "++show i++" found by showStVertex"))
 
 class Expr a where
   p_gens :: a -> [P_Gen]
@@ -926,7 +935,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _), _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _), _, _)<-typeTable ] -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condTypeGraph) = typeAnimate p_context st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
@@ -1484,7 +1493,7 @@ pCtx2aCtx p_context
          errCpsLike x a b
           = case conflictingConcepts of
 {-           []  -> error ("\ntypeTable: "++ showTypeTable typeTable++
-                           "\ntable:    "++ intercalate "\n          " [ showType typ | (_,_,typ@(TypLub (TypExpr s _ _) (TypExpr t _ _) _),_)<-typeTable, p_flp s==a, t==b]++
+                           "\ntable:    "++ intercalate "\n          " [ showType typ | (_,_,typ@(TypLub (TypExpr s _ _) (TypExpr t _ _) _),_,_)<-typeTable, p_flp s==a, t==b]++
                            "\nx:        "++ show x++
                            "\na:        "++ show a++
                            "\nb:        "++ show b++
@@ -1499,10 +1508,10 @@ pCtx2aCtx p_context
                                         }
                            ]
             where
-              conflictingConcepts = [ c | (_,_,TypLub (TypExpr s _ _) (TypExpr t _ _) _,cs)<-typeTable
+              conflictingConcepts = [ c | (_,_,TypLub (TypExpr s _ _) (TypExpr t _ _) _,cs,_)<-typeTable
                                         , p_flp s==a, t==b, c<-cs]
          getConcepts x
-          = [ c | (_,_,TypExpr x' _ _, cs)<-typeTable, x' == x, c<-cs]
+          = [ c | (_,_,TypExpr x' _ _, cs,_)<-typeTable, x' == x, c<-cs]
          getSignFromTerm x
           = getSign (\s t -> [ CxeV {cxeExpr = x
                                     , cxeSrcs = s
@@ -1530,21 +1539,30 @@ pCtx2aCtx p_context
                                  if null errs
                                  then Checked (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
                                  else Errors errs
-             ( ds,  ss,  ts)  -> Errors [CxeRel {cxeExpr   = term
-                                                ,cxeDecs   = ds
-                                                ,cxeSrcs   = ss
-                                                ,cxeTrgs   = ts
+             ( ds,  ss,  ts)  -> Errors [CxeRel {cxeExpr   = term  -- the erroneous term
+                                                ,cxeDecs   = ds    -- the declarations to which this term has been matched
+                                                ,cxeSrcs   = ss    -- the conflicting  source concepts (if null, there is an ambiguity)
+                                                ,cxeTrgs   = ts    -- the conflicting  target concepts (if null, there is an ambiguity)
+                                                ,cxePoss   = possibleDecls  -- possible solution for ambiguity.
                                                 }]
-            where srcTypes = [ c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==      term, c<-conflictingConcepts]
-                  trgTypes = [ c | (_,_,TypExpr term' _ _,conflictingConcepts)<-typeTable, term'==p_flp term, c<-conflictingConcepts]
-                 
+            where (srcTypes,srcPoss) = case [ (conflictingConcepts,[t | TypExpr t _ _<-possibles])
+                                            | (_,_,TypExpr term' _ _,conflictingConcepts,possibles)<-typeTable, term'==      term] of
+                                         [(confls, poss)] -> (confls, poss)
+                                         _ -> fatal 1544 "Something wrong in typeTable"
+                  (trgTypes,trgPoss) = case [ (conflictingConcepts,[p_flp t | TypExpr t _ _<-possibles])
+                                            | (_,_,TypExpr term' _ _,conflictingConcepts,possibles)<-typeTable, term'==p_flp term] of
+                                         [(confls, poss)] -> (confls, poss)
+                                         _ -> fatal 1548 "Something wrong in typeTable"
+                  possibleDecls = [decl | decl<-p_declarations p_context
+                                        , PTyp _ (Prel _ relNm) sgn<-srcPoss `isc` trgPoss
+                                        , relNm==name decl, sgn==dec_sign decl ]
                   nm = head ([ rel | Prel _ rel<-[term] ]++[ rel | Pflp _ rel<-[term] ]++
                              fatal 1590 "no name for nm in a call of getDeclarationAndSign")
          errCpl x a
           = createVoid $  [ CxeCpl {cxeExpr   = a
                                    ,cxeCpts   = conflictingConcepts
                                    }
-                          | (_,_,TypExpr term _ _,conflictingConcepts)<-typeTable
+                          | (_,_,TypExpr term _ _,conflictingConcepts,_)<-typeTable
                           , length conflictingConcepts/=1
                           , origin x==origin term, term==x
                           ]
@@ -1553,9 +1571,9 @@ pCtx2aCtx p_context
             else if not (foldr (\y x' -> x' && (head cs == y)) True cs) then fatal 1515 ("Term "++show x++" has multiple ambiguous occurences in typeTable")
             else head cs
           where
-            cs = [ concepts | (_,_,TypExpr term _ _,concepts)<-typeTable
+            cs = [ concepts | (_,_,TypExpr term _ _,concepts,_)<-typeTable
                             , origin x==origin term, term==x]
-         lookupType pTerm' = head ([ thing c| (_,_,TypLub _ _ origExpr,[c])<-typeTable, pTerm'==origExpr ]++fatal 1535 ("cannot find "++showADL pTerm'++" in the lookup table"))
+         lookupType pTerm' = head ([ thing c| (_,_,TypLub _ _ origExpr,[c],_)<-typeTable, pTerm'==origExpr ]++fatal 1535 ("cannot find "++showADL pTerm'++" in the lookup table"))
 
 --the type checker always returns a term with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed term is equivalent to disambiguating the term
