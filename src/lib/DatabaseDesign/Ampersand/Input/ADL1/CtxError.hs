@@ -35,6 +35,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeDecs :: [P_Declaration]
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
+                              ,cxePoss :: [P_Declaration] -- may contain a suggestion (see 'bindings' in P2A_Converters)
                               }       
               | CxeV          {cxeExpr :: Term
                               ,cxeSrcs :: [P_Concept]
@@ -95,11 +96,16 @@ showErr err@(CxeTyp{})
 showErr err@(CxeRel{})
  = show (origin (cxeExpr err))++"\n"++
    case (cxeDecs err, cxeSrcs err, cxeTrgs err) of
-    ( _, [], []) -> "    Relation  "++showADL (cxeExpr err)++"  is ambiguous."
-    ( _, [], _ ) -> "    The source of relation  "++showADL (cxeExpr err)++"  is ambiguous."
-    ( _, _ , []) -> "    The target of relation  "++showADL (cxeExpr err)++"  is ambiguous."
+    ( _, [], []) -> "    Relation  "++showADL (cxeExpr err)++"  is ambiguous."++poss
+    ( _, [], _ ) -> "    The source of relation  "++showADL (cxeExpr err)++"  is ambiguous."++poss
+    ( _, _ , []) -> "    The target of relation  "++showADL (cxeExpr err)++"  is ambiguous."++poss
     ([],  _, _ ) -> "    Relation  "++showADL (cxeExpr err)++"  is not declared."
     ( _, _ , _ ) -> fatal 100 "make more error messages."
+   where poss = case cxePoss err of
+                 [decl] -> "\n    Is it possible that you meant "++name decl++show (dec_sign decl)++"?"++
+                           "\n    If so, please substitute "++name decl++" on "++show (origin (cxeExpr err))++
+                           "\n    by "++name decl++show (dec_sign decl)++"."
+                 _ -> ""
 
 showErr err@(CxeCpl{})
  = concat
@@ -148,9 +154,8 @@ showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})
  = concat
      ( [show (origin (cxeExpr err))++"\n"]++
        ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err))++
-        "\n    between the target of  "++showADL a++"  and the source of  "++showADL b++" are in conflict." | (not.null) (cxeCpts err)]++
-       ["    the type between the target of  "++showADL a++"  and the source of  "++showADL b++" is undefined." | null (cxeCpts err)]
+       ["    between the target of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
+       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
      )
 showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})
  = concat
