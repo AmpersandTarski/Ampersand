@@ -374,9 +374,12 @@ data Expression
       | EBrk Expression                    -- ^ bracketed expression ( ... )
       | ETyp Expression Sign               -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | ERel Relation                      -- ^ simple relation
-      deriving Eq
+      deriving (Eq, Show)
+{- The following definition of Show is already covered by ShowADL. Therefore Show is the plain old derived show, which is useful for debugging purposes.
 instance Show Expression where
  showsPrec _ = showString . showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
+-}
+
 showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
 showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)

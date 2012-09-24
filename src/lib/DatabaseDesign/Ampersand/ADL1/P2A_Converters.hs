@@ -365,6 +365,7 @@ typing p_context
 
 flattenMap :: Data.Map.Map t [t1] -> [(t, t1)]
 flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
+-- alternatively: flattenMap mp = [ (a,b) | (a,bs)<-Data.Map.toList mp , b<-bs])
 
 {- The following table is a data structure that is meant to facilitate drawing type graphs and creating the correct messages for users.
 This table is organized as follows:
@@ -402,13 +403,13 @@ tableOfTypes p_context st
      expressionNr :: Type -> Int
      expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by expressionNr")])
 {- Bindings:
-Relations that are used in an expression must be bound to declarations. When they have a type annotation, as in r[A*B], there is no problem.
+Relations that are used in an expression must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, a choice must be made.
 Here's how....
    A relation, islands, relates two Type objects if one is a subset of the other: islands = (st\/st~)*.
    If an unbound relation is in the same island as a declaration with the same name, the type checker will use that binding. If there are multiple bindings, it will report an ambiguity.
 -}
-     islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "fatal 371 in setClosure"  -- islands = (st\/st~)*
+     islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "islands"  -- islands = (st\/st~)*
      domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') _) _ _)<-ts, nm==nm']
      codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True  _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _ _)<-ts, nm==nm']
      bindings    = {- for debugging and illustration purposes: 
@@ -641,6 +642,7 @@ instance Expr P_Pattern where
   = pt_gns pPattern
  p_concs pPattern
   = nub (p_concs (pt_rls pPattern) ++
+         p_concs (pt_gns pPattern) ++
          p_concs (pt_dcs pPattern) ++
          p_concs (pt_kds pPattern)
         )
@@ -648,12 +650,14 @@ instance Expr P_Pattern where
   = pt_dcs pPattern
  terms pPattern
   = nub (terms (pt_rls pPattern) ++
+         terms (pt_gns pPattern) ++
          terms (pt_dcs pPattern) ++
          terms (pt_kds pPattern) ++
          terms (pt_pop pPattern)
         )
  subexpressions pPattern
   = subexpressions (pt_rls pPattern) ++
+    subexpressions (pt_gns pPattern) ++
     subexpressions (pt_dcs pPattern) ++
     subexpressions (pt_kds pPattern) ++
     subexpressions (pt_pop pPattern)
@@ -663,6 +667,7 @@ instance Expr P_Process where
   = procGens pProcess
  p_concs pProcess
   = nub (p_concs (procRules pProcess) ++
+         p_concs (procGens  pProcess) ++
          p_concs (procDcls  pProcess) ++
          p_concs (procKds   pProcess)
         )
@@ -670,12 +675,14 @@ instance Expr P_Process where
   = procDcls pProcess
  terms pProcess
   = nub (terms (procRules pProcess) ++
+         terms (procGens  pProcess) ++
          terms (procDcls  pProcess) ++
          terms (procKds   pProcess) ++
          terms (procPop   pProcess)
         )
  subexpressions pProcess
   = subexpressions (procRules pProcess) ++
+    subexpressions (procGens  pProcess) ++
     subexpressions (procDcls  pProcess) ++
     subexpressions (procKds   pProcess) ++
     subexpressions (procPop   pProcess)
