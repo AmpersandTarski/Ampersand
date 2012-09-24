@@ -15,6 +15,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Fspec.Fspec 
+import DatabaseDesign.Ampersand.Fspec.ShowADL
 import Data.Char
 import Data.List (nub)
 import GHC.Exts (sortWith)
@@ -84,25 +85,25 @@ rel2plug  r totals
 -- the rule (fldexpr k1)~;(fldexpr k1);r = r holds because r is uni and (fldexpr k1) is uni,inj,sur
 -- REMARK -> r may be tot or sur, but not inj. (fldexpr k1) may be tot.
 --
--- fldnull and fldunique are based on the multiplicity of the relation (kernelpath);r) from ID to (target r)
+-- fldnull and fldunique are based on the multiplicity of the relation (kernelpath);r from ID to (target r)
 -- it is given that ID is unique and not null
 -- fldnull=not(isTot (kernelpath);r)
 -- flduniq=isInj (kernelpath);r
 -- 
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
 rel2fld :: [Expression] -> [Expression] -> Expression -> SqlField
-rel2fld kernel                                      -- > all relations (in the form either ERel r or EFlp (ERel r)) that may be represented as attributes of this entity.
-        plugAtts                                    -- > all relations (in the form either ERel r or EFlp (ERel r)) that are defined as attributes by the user.
-        e                                           -- > either ERel r or EFlp (ERel r), representing the relation from some kernel field k1 to f1
- = Fld fldName                                      -- fldname : 
-       e                                            -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-       (makeSqlType (target e))                     -- fldtype :
-       (maybenull e)                                -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
-                                                    --           Error: only if source e is the I-field of this plug.
-       (isInj e)                                    -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
-                                                    -- all kernel fldexprs are inj
-                                                    -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
-                                                    -- It is enough to check isInj e
+rel2fld kernel                  -- > all relations (in the form either ERel r or EFlp (ERel r)) that may be represented as attributes of this entity.
+        plugAtts                -- > all relations (in the form either ERel r or EFlp (ERel r)) that are defined as attributes by the user.
+        e                       -- > either ERel r or EFlp (ERel r), representing the relation from some kernel field k1 to f1
+ = Fld fldName                  -- fldname : 
+       e                        -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+       (makeSqlType (target e)) -- fldtype :
+       (maybenull e)            -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
+                                --           Error: only if source e is the I-field of this plug.
+       (isInj e)                -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
+                                -- all kernel fldexprs are inj
+                                -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
+                                -- It is enough to check isInj e
    where 
    fldName = if null [nm | (r',nm)<-table, e==r'] 
              then fatal 117 $ "null names in table for e: " ++ show (e,table)
@@ -135,7 +136,7 @@ rel2fld kernel                                      -- > all relations (in the f
                             -> not $ 
                                  isSur rel &&
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
-                   _ -> fatal 152 "Illegal Plug Expression"
+                   _ -> fatal 152 ("Illegal Plug Expression: "++show expr)
    kernelpaths = clos kernel
    --    Warshall's transitive closure algorithm, adapted for this purpose:
    clos :: [Expression] -> [Expression]
