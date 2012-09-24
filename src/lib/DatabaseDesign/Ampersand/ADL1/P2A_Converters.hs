@@ -935,7 +935,7 @@ pCtx2aCtx p_context
        , length diffs>1]
        where (_,_,t) `tripleEq` (_,_,t') = t == t'
     conceptTypes :: [(Int,Int,Type)]
-    conceptTypes = error (showTypeTable typeTable) -- [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _), _, _)<-typeTable ] -- this is a good place to show the typeTable for debugging purposes.
+    conceptTypes = [ (exprNr, classNr, e) | (exprNr, classNr, e@(TypExpr (Pid{}) _ _), _, _)<-typeTable ] -- error (showTypeTable typeTable) -- this is a good place to show the typeTable for debugging purposes.
     (stTypeGraph,condTypeGraph) = typeAnimate p_context st
     cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
     --postchcks are those checks that require null cxerrs 
