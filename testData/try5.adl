@@ -8,6 +8,7 @@ RELATION u[E*Y]
 RULE r = s;(t/\u)
 RULE I[D] = (I[A]/\I[B])/\I[E]
 RULE I[F] = I[B]/\I[E]
+RULE I[G] = I[A]/\I[B]
 ENDPATTERN
 
 ENDCONTEXT
@@ -18,5 +19,5 @@ ENDCONTEXT
    Result: PASS
 -- Reason: t/\u are in conflict (concepts B and E), but there is an intersection type (concept F) to resolve that.
            now s~ is in conflict with t/\u (A is not F), but there is an intersection type (concept D).
-           The mischievous attempt to mislead the checker is that RULE r1 does refers to F indirectly.
+           The mischievous attempt to mislead the checker is that RULE r1 does refer to F indirectly.
 -}
