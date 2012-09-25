@@ -154,7 +154,7 @@ Invariants are:
 -}
 
 mapIsOk :: (Show a,Ord a) => Data.Map.Map k [a] -> Bool
-mapIsOk m = Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
+mapIsOk m = Data.Map.fold (&&) True (Data.Map.map (isSortedAndDistinct . checkRfx) m)
 isSortedAndDistinct :: Ord a => [a] -> Bool
 isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
 isSortedAndDistinct _ = True
@@ -176,20 +176,24 @@ merge a b = if isSortedAndDistinct res then res else fatal 151 ("merge' contains
                  )
               else fatal 156 ("merge should be called on sorted distinct lists, but its first argument is:\n "++show a)
 merge' :: (Show a,Ord a) => [a] -> [a] -> [a]
-merge' (a:as) (b:bs) | a<b  = a:merge' as (b:bs)
-                     | a==b = distinctCons a b (merge' as bs)
-                     | a>b  = if b<a then b:merge' (a:as) bs else fatal 161 ("compare is not antisymmetric for: "++show a++" and "++show b)
+merge' (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then a:merge' as (b:bs) else fatal 178 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+                     | a==b = if (b==a) then distinctCons a b (merge' as bs) else fatal 179 ("Eq is not symmetric for: "++show a++" and "++show b)
+                     | b<a  = if not (a<b) && not (b==a) then b:merge' (a:as) bs else fatal 161 ("Compare is not antisymmetric for: "++show a++" and "++show b)
 merge' a b = a ++ b -- since either a or b is the empty list
 
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
-distinctCons a b' (b:bs) = if a<b then a:(b:bs)
+distinctCons a b' (b:bs) = if a<b then b':(b:bs)
                            else if a==b then fatal 164 ("Eq is not transitive:\n "++show a++"=="++show b++"\n but `==` ("++show b'++") ("++show b++") is "++show (b' == b))
                            else fatal 167 (concat (["Ord is not transitive:\n "
                                                    ,"compare ("++show a++") ("++show b'++") == "++show (compare a b')++"\n"
                                                    ,"compare ("++show b'++") ("++show b++") == "++show (compare b' b)++"\n"
                                                    ,"compare ("++show a++") ("++show b++") == "++show (compare a b)++"\n"]))
-                        
 distinctCons a _ bs = a:bs
+
+checkRfx :: (Eq a, Show a) => [a] -> [a]
+checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show a) else a:checkRfx as
+checkRfx [] = []        
+                           
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
 lookups :: (Show a,Ord a) => a -> Data.Map.Map a [a] -> [a]
@@ -303,7 +307,8 @@ typing p_context
      uType x uLft uRt   (PKl0 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType e uLft uRt e
      uType x uLft uRt   (PKl1 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType e uLft uRt e
      uType x uLft uRt   (PFlp _ e)            = cod e.=.dom x .+. dom e.=.cod x .+. uType e uRt uLft e
-     uType x uLft uRt   (PBrk _ e)            = uType x uLft uRt e                                                     -- (e) brackets
+     uType x uLft uRt   (PBrk _ e)            = dom x.=.dom e .+. cod x.=.cod e .+.  
+                                                uType x uLft uRt e                                                     -- (e) brackets
      uType _  _    _    (PTyp _ _ (P_Sign []))= fatal 196 "P_Sign is empty"
      uType _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
      uType x  _    _    (PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                  -- e[A*B]  type-annotation
@@ -478,7 +483,8 @@ Here's how....
       where addIdentity = Data.Map.mapWithKey (\k a->if null a then [k] else (if k `elem` a then a else fatal 404 ("reflexiveMap must yield something reflexive! But "++show a++" does not contain "++show k))) -- Should reflexiveMap contain an element with an empty list, we don't want the element to get lost.
 --note:  To compute equivalence classes of relation boundSt, we need boundSt*/\boundSt*~
      efficientNub :: [[Type]] -> [[Type]] -- should be sorted!
-     efficientNub ((a:_):bs@(b:_):rs) | a==b = efficientNub (bs:rs) -- efficient nub for sorted classes: only compares the first element
+     efficientNub ((a:_):bs@(b:_):rs) | a==b = -- if not (as == bs) then fatal 487 "efficientNub should be called on classes that can be identified by their first element" else
+                                                  efficientNub (bs:rs) -- efficient nub for sorted classes: only compares the first element
      efficientNub (a:b:_) | a>b = fatal 408 "efficientNub is called on a non-sorted list"
      efficientNub (a:rs) = a:efficientNub rs
      efficientNub [] = []
@@ -853,7 +859,7 @@ instance Functor Guarded where
  fmap f (Checked a) = Checked (f a)
  
 instance Applicative Guarded where
- pure a = Checked a
+ pure = Checked
  (<*>) (Checked f) (Checked a) = Checked (f a)
  (<*>) (Errors  a) (Checked _) = Errors a 
  (<*>) (Checked _) (Errors  b) = Errors b
@@ -1412,9 +1418,12 @@ pCtx2aCtx p_context
                            , Type, Type    -- the source and target types of the resulting expression.
                            )               -- The result might be incorrect, so it is guarded with type error messages.
     pExpr2aExpr pTerm
-     = case f pTerm of
-         Checked r   -> Checked (r, lookupType pTerm, lookupType (p_flp pTerm))
-         Errors errs -> Errors errs
+     = (\r -> (r, lookupType pTerm, lookupType (p_flp pTerm))) <$> f pTerm
+       -- do { r <- f pTerm ; return (r, lookupType pTerm, lookupType (p_flp pTerm))}
+       -- or equivalently:
+       -- case f pTerm of
+       --  Checked r   -> Checked (r, lookupType pTerm, lookupType (p_flp pTerm))
+       --  Errors errs -> Errors errs
        where
          f :: Term -> Guarded Expression
          -- alternatively:
@@ -1511,7 +1520,12 @@ pCtx2aCtx p_context
               conflictingConcepts = [ c | (_,_,TypLub (TypExpr s _ _) (TypExpr t _ _) _,cs,_)<-typeTable
                                         , p_flp s==a, t==b, c<-cs]
          getConcepts x
-          = [ c | (_,_,TypExpr x' _ _, cs,_)<-typeTable, x' == x, c<-cs]
+          = [ c | c<-getConceptGroup x]
+         getConceptGroup x
+          = case [cs|(_,_,TypExpr x' _ _, cs,_)<-typeTable, x' == x] of
+             [] -> fatal 1504 ("Not found in typetable: "++show x)
+             [c] -> c
+             _ -> fatal 1506 ("Multiple occurrences in typetable: "++show x)
          getSignFromTerm x
           = getSign (\s t -> [ CxeV {cxeExpr = x
                                     , cxeSrcs = s
