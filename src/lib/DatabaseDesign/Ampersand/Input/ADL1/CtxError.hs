@@ -75,18 +75,18 @@ showErr err@(CxeEqAttribs{})
    intercalate "\n   " [ show (origin term)++" : "++showADL term | term<-cxeAtts err ]
 showErr err@(CxeILike{ cxeCpts=[] })
  = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
+     ( [show (origin (cxeExpr err))++":\n"]++
        ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
      )
 showErr err@(CxeILike{})
  = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
+     ( [show (origin (cxeExpr err))++":\n"]++
        ["    Term  "++showADL (cxeExpr err)++",\n"]++
        ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
      )
 showErr err@(CxeTyp{})
  = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
+     ( [show (origin (cxeExpr err))++":\n"]++
        ["    Relation  "++showADL (cxeExpr err)++"  is ambiguous." | null (cxeDcls err)]++
        ["    Relation  "++showADL (cxeExpr err)++"  has conflicting bindings:\n    "++
         intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
@@ -94,28 +94,43 @@ showErr err@(CxeTyp{})
                        where termString = show (origin term)
                              maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
 showErr err@(CxeRel{})
- = show (origin (cxeExpr err))++"\n"++
+ = show (origin expr)++":\n"++
    case (cxeDecs err, cxeSrcs err, cxeTrgs err) of
-    ( _, [], []) -> "    Relation  "++showADL (cxeExpr err)++"  is ambiguous."++poss
-    ( _, [], _ ) -> "    The source of relation  "++showADL (cxeExpr err)++"  is ambiguous."++poss
-    ( _, _ , []) -> "    The target of relation  "++showADL (cxeExpr err)++"  is ambiguous."++poss
-    ([],  _, _ ) -> "    Relation  "++showADL (cxeExpr err)++"  is not declared."
-    ( _, _ , _ ) -> fatal 100 "make more error messages."
+    ( _ , [], []) -> "    Relation  "++showADL expr++"  is ambiguous."++poss
+    ( _ , [], _ ) -> "    The source of relation  "++showADL expr++"  is ambiguous."++poss
+    ( _ , _ , []) -> "    The target of relation  "++showADL expr++"  is ambiguous."++poss
+    ( [], _ , _ ) -> "    Relation  "++showADL expr++"  is not declared."
+    ([d], ss,[_]) -> "    Relation  "++showADL expr++"  is declared as "++name d++show sgn++",\n"++
+                     "    but its source, "++show s++", is in conflict with "++commaEng "and" (map showADL (ss>-[s]))++"."
+                     where sgn@(P_Sign [s,_]) = dec_sign d
+    ([d],[_], ts) -> "    Relation  "++showADL expr++"  is declared as "++name d++show sgn++",\n"++
+                     "    but its target, "++show t++", is in conflict with "++commaEng "and" (map showADL (ts>-[t]))++"."
+                     where sgn@(P_Sign [_,t]) = dec_sign d
+    ([d], ss, ts) -> "    Relation  "++showADL expr++"  is declared as "++name d++show sgn++",\n"++
+                     "    but its source, "++show s++", is in conflict with "++commaEng "and" (map showADL (ss>-[s]))++
+                     "    and its target, "++show t++", is in conflict with "++commaEng "and" (map showADL (ts>-[t]))++"."
+                     where sgn@(P_Sign [s,t]) = dec_sign d
+    ( ds, ss, ts) -> fatal 100 ("make better error messages.\ncxeDecs err\n = "++intercalate "\n   " [ name decl++show (dec_sign decl)++" "++show (origin decl)| decl<-ds]++
+                                                           "\ncxeSrcs err\n = "++intercalate "\n   " (map show ss)++
+                                                           "\ncxeTrgs err\n = "++intercalate "\n   " (map show ts))
    where poss = case cxePoss err of
-                 [decl] -> "\n    Is it possible that you meant "++name decl++show (dec_sign decl)++"?"++
-                           "\n    If so, please substitute "++name decl++" on "++show (origin (cxeExpr err))++
-                           "\n    by "++name decl++show (dec_sign decl)++"."
+                 [decl] -> "\n    Is it possible that you meant "++showADL typedExpr++"?"++
+                           "\n    If so, please substitute "++showADL expr++" on "++show (origin expr)++
+                           "\n    by "++showADL typedExpr++"."
+                           where
+                            typedExpr = PTyp (origin expr) expr (dec_sign decl)
                  _ -> ""
+         expr = cxeExpr err
 
 showErr err@(CxeCpl{})
  = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
+     ( [show (origin (cxeExpr err))++":\n"]++
        ["    There is no universe from which to compute a complement in term  "++showADL (cxeExpr err)++"." | null (cxeCpts err)]++
        ["    There are multiple universes from which to compute a complement in term  "++showADL (cxeExpr err)++":\n    "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]
      )
 showErr err@(CxeV{ cxeExpr=x })
  = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
+     ( [show (origin (cxeExpr err))++":\n"]++
        case (cxeSrcs err, cxeTrgs err) of
             ([], [])  -> ["    No type can be derived for  "++showADL x]
             (_, [])   -> ["    The target of  "++showADL x++"  is ambiguous."]
@@ -136,50 +151,40 @@ showErr err@(CxeEquLike { cxeExpr=Pimp _ _ _ }) = showErrEquation err
 showErr err@(CxeEquLike { cxeExpr=PIsc _ _ _ }) = showErrBoolTerm err
 showErr err@(CxeEquLike { cxeExpr=PUni _ _ _ }) = showErrBoolTerm err
 showErr err@(CxeEquLike { cxeExpr=PDif _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term  "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of  "++showADL a++"  and the target of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
-     )
-showErr err@(CxeCpsLike { cxeExpr=PRrs _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the source of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
-     )
-showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    between the target of  "++showADL a++"  and the source of  "++showADL b++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" are in conflict."]
-     )
-showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})
- = concat
-     ( [show (origin (cxeExpr err))++"\n"]++
-       ["    Inside term   "++showADL (cxeExpr err)++",\n"]++
-       ["    concepts "++commaEng "and" (map showADL (cxeCpts err))++
-        "\n    between the target of  "++showADL a++"  and the source of  "++showADL b++" are in conflict." | (not.null) (cxeCpts err)]++
-       ["    the type between the target of  "++showADL a++"  and the source of  "++showADL b++" is undefined." | null (cxeCpts err)]
-     )
+showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})  = showErrBetweenTerm err a b "target" "target"
+showErr err@(CxeCpsLike { cxeExpr=PRrs _ a b})  = showErrBetweenTerm err a b "source" "source"
+showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})  = showErrBetweenTerm err a b "target" "source"
+showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})  = showErrBetweenTerm err a b "target" "source"
 showErr (CxeOrig typeErrors t nm o)
  | null typeErrors                              = ""
- | t `elem` ["pattern", "process", "interface"] = "The " ++ t ++ " named \""++ nm ++ "\" contains errors " ++ intercalate "\n" (map showErr typeErrors)
+ | t `elem` ["pattern", "process", "interface"] = "The " ++ t ++ " named \""++ nm ++ "\" contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
  | otherwise                                    = "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
 showErr (Cxe typeErrors x)                      = x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
 showErr (PE msg)                                = "Parse error:\n"++ show (case msg of 
                                                                              []  -> fatal 35 "No messages??? The impossible happened!" 
                                                                              x:_ -> x)
 showErr _ = fatal 580 "missing pattern in type error."
+
+showErrBetweenTerm :: CtxError -> Term -> Term -> [Char] -> [Char] -> [Char]
+showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
+ = concat
+     ( [show (origin (cxeExpr err))++":\n"]++
+       ["    Inside term  "++showADL (cxeExpr err)++",\n"]++
+       case (cxeCpts err,a,b) of
+            ([],PVee _,_) -> ["    the type of  "++showADL a++"  must be defined to make the expression unambiguous."]
+            ([],_,PVee _) -> ["    the type of  "++showADL b++"  must be defined to make the expression unambiguous."]
+            ([],PI _,_)   -> ["    the type of  "++showADL a++"  must be defined to make the expression unambiguous."]
+            ([],_,PI _)   -> ["    the type of  "++showADL b++"  must be defined to make the expression unambiguous."]
+            ([],_,_)      -> ["    the type between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++"  is undefined."]
+            (cs,_,_)      -> ["\n    between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++",\n    concepts "++commaEng "and" (map showADL cs)++" are in conflict."]
+     )
+
 showErrEquation :: CtxError -> String
 showErrEquation err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
  = concat
      ( [show (origin x)++"\n"]++
        case (cxeSrcCpts err, cxeTrgCpts err) of
-            ([], [])  -> ["    Entirely ambiguous equation  "++showADL x]
+            ([], [])  -> ["    Ambiguous equation  "++showADL x]
             ([_], []) -> ["    The target of  "++showADL x++"  is ambiguous."]
             ([], [_]) -> ["    The source of  "++showADL x++"  is ambiguous."]
             (cs, [])  -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++

@@ -646,21 +646,20 @@ where
     showHSName r = haskellIdentifier ("rule_"++ rrnm r)
 
    instance ShowHS Rule where
-    showHS flags indent (Ru nm e fps mean msg mviol typ dcl env usr sgl rel)
+    showHS flags indent r@(Ru _ _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
       = intercalate indent 
-        ["Ru{ rrnm   = " ++ show nm
-        ,"  , rrexp  = " ++ showHS flags (indent++"             ") e
-         
-        ,"  , rrfps  = " ++ showHS flags "" fps
-        ,"  , rrmean = " ++ showHS flags "" mean
-        ,"  , rrmsg  = " ++ showHS flags "" msg
-        ,"  , rrviol = " ++ showHS flags "" mviol
-        ,"  , rrtyp  = " ++ showHS flags "" typ
-        ,"  , rrdcl  = " ++ showHS flags "" dcl
-        ,"  , r_env  = " ++ show env
-        ,"  , r_usr  = " ++ show usr
-        ,"  , r_sgl  = " ++ show sgl
-        ,"  , srrel  = " ++ showHSName rel
+        ["Ru{ rrnm   = " ++ show (rrnm   r)
+        ,"  , rrexp  = " ++ showHS flags (indent++"             ") (rrexp  r)
+        ,"  , rrfps  = " ++ showHS flags "" (rrfps  r)
+        ,"  , rrmean = " ++ showHS flags "" (rrmean r)
+        ,"  , rrmsg  = " ++ showHS flags "" (rrmsg  r)
+        ,"  , rrviol = " ++ showHS flags "" (rrviol r)
+        ,"  , rrtyp  = " ++ showHS flags "" (rrtyp  r)
+        ,"  , rrdcl  = " ++ showHS flags "" (rrdcl  r)
+        ,"  , r_env  = " ++ show (r_env  r)
+        ,"  , r_usr  = " ++ show (r_usr  r)
+        ,"  , r_sgl  = " ++ show (r_sgl  r)
+        ,"  , srrel  = " ++ showHSName (srrel  r)
         ,"  }"
         ]
 
