@@ -78,6 +78,7 @@ instance Prelude.Ord Type where
   compare (TypExpr (Pnid _)       _ _)   (TypExpr _                _ _) = Prelude.LT
   compare (TypExpr _              _ _)   (TypExpr (Pnid _)         _ _) = Prelude.GT
   compare (TypExpr (Patm _ x [c]) _ _)   (TypExpr (Patm _ x' [c']) _ _) = Prelude.compare (x,c) (x',c')
+  compare (TypExpr (Patm o x cs)  _ _)   (TypExpr (Patm o' x' cs') _ _) = Prelude.compare (o,x,cs) (o',x',cs')
   compare (TypExpr (Patm _ _ _)   _ _)   (TypExpr _                _ _) = Prelude.LT
   compare (TypExpr _              _ _)   (TypExpr (Patm _ _ _)     _ _) = Prelude.GT
   compare (TypExpr (PVee o)       _ _)   (TypExpr (PVee o')        _ _) = Prelude.compare o o' -- This is a V of which the type must be determined (by the environment).
