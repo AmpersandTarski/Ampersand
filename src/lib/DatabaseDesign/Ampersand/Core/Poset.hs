@@ -21,7 +21,10 @@ module DatabaseDesign.Ampersand.Core.Poset (
     Poset(..), Sortable(..), Ordering(..), Ord, makePartialOrder,comparableClass,greatest,least,maxima,minima,sortWith
 ) where
 import qualified Prelude
+import qualified GHC.Exts (sortWith)
+
 import Prelude hiding (Ord(..), Ordering(..))
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Core.Poset.Instances
 import DatabaseDesign.Ampersand.Core.Poset.Internal hiding (fatal)
 
@@ -61,23 +64,27 @@ fatal = fatalMsg "Core.Poset"
 --    + sort  [F,E,D,C,B,A] = [F,C,A,B,D,E]
 --    + sort  [F,E,D,B,A,C] = [F,A,B,C,D,E]
 --    + sort  [B,F,E,C,D,A] = [A,B,F,C,D,E]
-makePartialOrder :: (Eq a) => [(a, a)] -> (a->a->Ordering,[[a]])
-makePartialOrder rs = (gE , cls)
+makePartialOrder :: Eq a => [(a, a)] -> (a->a->Ordering,[[a]])
+makePartialOrder rs = (gE , classes)
     where
-      paths   = clos fst snd rs
+      nrs     = List.nub rs
+      paths   = clos fst snd nrs
+      cycles  = GHC.Exts.sortWith ((0-).length) (map strip pths)
+                where --pths :: Eq a => [[(a,a)]]
+                      pths          = clos fst snd (nrs `uni` map swap nrs)
+                      swap (a,b)    = (b,a)
+                      strip :: Eq a => [(a,a)] -> [a]
+                      strip pth     = List.nub (fst (head pth): map snd pth)
+      classes = maxima cycles
       gE a b | a==b = EQ
              | (a,b) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = LT
              | (b,a) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = GT
-             | or [ a `elem` cl && b `elem` cl | cl <- cls ] = CP --not EQ, not LT, not GT, but still comparable
+             | or [ a `elem` cl && b `elem` cl | cl <- classes ] = CP --not EQ, not LT, not GT, but still comparable
              | otherwise = NC
-      cls = map (List.nub.localsort.concat)$eqCl last$List.nub$map (List.nub.localsort.concat) (eqCl head [(List.nub.concat)[[x,y]|(x,y)<-pth]|pth<-paths])
-      --localsort is needed, because an application of sort requires this partial order
-      localsort = List.sortBy localorder
-      localorder a b 
-            | a==b = Prelude.EQ
-            | (a,b) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = Prelude.LT
-            | (b,a) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = Prelude.GT
-            | otherwise = Prelude.EQ --the localorder is only used for localsort of paths, which contain only comparable elements 
+      --maxima :: Eq a => [a] -> [a]
+      maxima []       = []
+      maxima (cy:cys) = cy:[cy' | cy'<-cys, null (cy `isc` cy')]
+
 clos :: (Eq b,Eq pair) => (pair->b) -> (pair->b) -> [pair] -> [[pair]]
 clos lft rht xs
     = foldl f [[x]| x<-xs] (List.nub (map lft xs) `isc` List.nub (map rht xs))

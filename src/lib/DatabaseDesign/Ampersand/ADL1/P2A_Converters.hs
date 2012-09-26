@@ -313,9 +313,9 @@ typing p_context
      uType _  _    _    (PTyp _ _ (P_Sign []))= fatal 196 "P_Sign is empty"
      uType _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
      uType x  _    _    (PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                  -- e[A*B]  type-annotation
-                                                if o `elem` [origin d| d<-pDecls]
-                                                then nothing
-                                                else dom x.<.dom e .+. cod x.<.cod e
+                                                if o `elem` [origin d| d<-pDecls]     -- if this is a declaration
+                                                then nothing                          -- then nothing
+                                                else dom x.<.dom e .+. cod x.<.cod e  -- else treat as type restriction
                                                      .+. uType e iSrc iTrg e
                                                 where iSrc = thing (head cs)
                                                       iTrg = thing (last cs)
@@ -339,6 +339,8 @@ typing p_context
      uType x uLft uRt   (PCpl o a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- -a = V - a
                                                 where e = PDif o (PVee (origin x)) a
+                                                      (dm,interDom) = (mSpecific uLft (dom a) x)
+                                                      (cm,interCod) = (mSpecific uRt  (cod a) x)
      nothing :: (Typemap,Typemap)
      nothing = ([],[])
      {-
@@ -538,15 +540,11 @@ Here's how....
                          []   -> fatal 531 "Error in tConcepts"
      maxima :: [P_Concept] -> [P_Concept]
      maxima typeConcepts
-      = let cList = [(c,[c' | TypExpr (Pid c') _ _<-ts]) | (TypExpr (Pid c) _ _, ts)<-Data.Map.toList stClos] in
-        case sortWith ((0-).length.snd) [x | x@(_,cSet)<-cList, null (cSet>-typeConcepts) ] of
+      = case sortWith ((0-).length.snd) [x | x@(_,cSet)<-cList, null (cSet>-typeConcepts) ] of
           []       -> []
           (c,cs):_ -> c: maxima (typeConcepts>-cs)
-             
-     possibleTypes :: [([Type],[Type],P_Concept)]
-     possibleTypes = [ (i,j,c) | (i,j) <- condensedClos, TypExpr (Pid c) _ _<- j, i/=j ]
-     typeSubsets   = [ (i,j) | (i,j,_) <- possibleTypes, TypExpr (Pid _) _ _<- i ]
-     isas = [ (x,g) | (i,j)<-typeSubsets, TypExpr (Pid x) _ _<- i, TypExpr (Pid g) _ _<- j ]
+     cList = [(c,[c' | TypExpr (Pid c') _ _<-ts]) | (TypExpr (Pid c) _ _, ts)<-Data.Map.toList stClos]
+     isas = [ (s,g) | (s,gs)<-cList, g<-gs ]
 
  -- for debug
 showTypeTable :: [(Int,Int,Type,[P_Concept],[Type])] -> String
@@ -730,7 +728,7 @@ instance Expr P_Interface where
  subexpressions k = subexpressions (ifc_Obj k)
 instance Expr P_ObjectDef where
  p_concs o = p_concs (obj_ctx o) `uni` p_concs (terms (obj_msub o))
- terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin o) (obj_ctx o) e | e<-terms (obj_msub o)]
+ terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
  subexpressions o = subexpressions (obj_ctx o)++subexpressions (obj_msub o)
 instance Expr P_SubInterface where
  p_concs x@(P_Box{}) = p_concs (si_box x)
@@ -1196,7 +1194,7 @@ pCtx2aCtx p_context
                 -> Type                  -- the universe for type checking this object. anything if the type checker decides freely, thing c if it must be of type c.
                 -> P_ObjectDef           -- the object definition as specified in the parse tree
                 -> (ObjectDef,[CtxError]) -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
-    pODef2aODef parentIfcRoles _ podef 
+    pODef2aODef parentIfcRoles universe podef 
      = case pExpr2aExpr (obj_ctx podef) of
         Checked (expr, _, tTrg) -> ( Obj { objnm   = obj_nm podef
                                          , objpos  = obj_pos podef
