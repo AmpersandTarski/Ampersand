@@ -920,6 +920,7 @@ pCtx2aCtx p_context
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
     gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
     gEandClasses = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+    (compare,_) = gEandClasses
     typeErrors :: [CtxError]
     typeErrors
      | (not.null) derivedEquals = derivedEquals
@@ -1480,6 +1481,11 @@ pCtx2aCtx p_context
          f x@(PCpl _ a)    = do { fa <- f a; return (ECpl fa) <* errCpl x a }
          f (PBrk _ a)      = EBrk <$> f a
          f x@(PTyp o _ (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
+         f x@(PTyp _ e@(Prel o a) sgnCast) = do { _ <- errCastType x
+                                                ; (decl,sgn) <- getDeclarationAndSign e
+                                                ; error ("Debugging:\n"++showADL x++"\n"++show decl++"\n"++show sgn)
+                                                ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
+                                                }
          f (PTyp _ a sgn)  = ETyp <$> (f a) <*> return (Sign (pCpt2aCpt s) (pCpt2aCpt t))
                              where P_Sign cs = sgn; s=head cs; t=last cs
          f x = fatal 1542 ("Pattern match on f in pExpr2aExpr failed for "++show x)
@@ -1489,6 +1495,21 @@ pCtx2aCtx p_context
                       ,cxeCpts   = conflictingConcepts
                       }] else return (head conflictingConcepts)
           where conflictingConcepts = obtainConceptsFromTerm x
+         errCastType :: Term -> Guarded ()
+         errCastType x@(PTyp _ e@(Prel o a) sgnCast)
+          = case (csDomCast,csCodCast,csDomTerm,csCodTerm) of
+                 (  [dc]   ,  [cc]   ,  [dt]   ,  [ct]   ) -> Checked ()
+                 _                                         -> Errors [CxeCast{ cxeExpr    = x
+                                                                             , cxeDomCast = csDomCast
+                                                                             , cxeCodCast = csCodCast
+                                                                             , cxeDomTerm = csDomTerm
+                                                                             , cxeCodTerm = csCodTerm
+                                                                             }       
+                                                                     ]
+            where csDomCast = [c | (_,_,TypExpr         (PTyp _ e' sgn)  _ _, cs,_)<-typeTable, e'==e, sgn==sgnCast, c<-cs]
+                  csCodCast = [c | (_,_,TypExpr (PFlp _ (PTyp _ e' sgn)) _ _, cs,_)<-typeTable, e'==e, sgn==sgnCast, c<-cs]
+                  csDomTerm = [c | (_,_,TypExpr         e'  _ _, cs,_)<-typeTable, e'==e, c<-cs]
+                  csCodTerm = [c | (_,_,TypExpr (PFlp _ e') _ _, cs,_)<-typeTable, e'==e, c<-cs]
          errCpsLike :: Term -> Term -> Term -> Guarded (A_Concept, Expression, Expression)
          errCpsLike x a b
           = case conflictingConcepts of
@@ -1513,12 +1534,13 @@ pCtx2aCtx p_context
          getConcepts x
           = [ c | c<-getConceptGroup x]
          getConceptGroup x
-          = case [cs|(_,_,TypExpr x' _ _, cs,_)<-typeTable, x' == x] of
+          = case [cs | (_,_,TypExpr x' _ _, cs,_)<-typeTable, x' == x] of
              [] -> fatal 1504 ("Not found in typetable: "++show x)
              [c] -> c
              _ -> fatal 1506 ("Multiple occurrences in typetable: "++show x)
+         getSignFromTerm :: Term -> Guarded Sign
          getSignFromTerm x
-          = getSign (\s t -> [ CxeV {cxeExpr = x
+          = getSign (\s t -> [ CxeV { cxeExpr = x
                                     , cxeSrcs = s
                                     , cxeTrgs = t}]) x
          getSign :: ([P_Concept]->[P_Concept]->[CtxError]) -> Term -> Guarded Sign
