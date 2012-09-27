@@ -13,4 +13,21 @@ ENDCONTEXT
    Result: FAIL
    Reason: the two occurrences of r on the right hand side of the equation
            are both diagnosed ambiguous, thus giving strange error messages.
+   Message:
+   The pattern named "Test12" contains errors:
+   line 6:6, file "try12.adl":
+       Relation  r  is declared as r[A*A],
+       but its source, A, is in conflict with B    and its target, A, is in conflict with B.
+
+   line 6:18, file "try12.adl":
+       Relation  r  is ambiguous.
+       Is it possible that you meant r[A*A]?
+       If so, please substitute r on line 6:18, file "try12.adl"
+       by r[A*A].
+
+
+
+
+
+
 -}

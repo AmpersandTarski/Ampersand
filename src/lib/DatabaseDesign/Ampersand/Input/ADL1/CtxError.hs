@@ -41,6 +41,12 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
                               }       
+              | CxeCast       {cxeExpr    :: Term
+                              ,cxeDomCast :: [P_Concept]
+                              ,cxeCodCast :: [P_Concept]
+                              ,cxeDomTerm :: [P_Concept]
+                              ,cxeCodTerm :: [P_Concept]
+                              }       
               | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeV instead?
                               ,cxeCpts :: [P_Concept]
                               }       
@@ -146,6 +152,18 @@ showErr err@(CxeV{ cxeExpr=x })
                               ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
                               ["    and the target of  "++showADL x++"\n"]++
                               ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]     )
+showErr err@(CxeCast{ cxeExpr=x@(PTyp _ r@(Prel _ _) sgnCast) })
+ = concat
+     ( [show (origin (cxeExpr err))++":\n"]++
+       case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
+            (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
+            (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
+            (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL x++
+                                               "\ncxeDomCast err\n = "++show dcs++
+                                               "\ncxeCodCast err\n = "++show ccs++
+                                               "\ncxeDomTerm err\n = "++show dts++
+                                               "\ncxeCodTerm err\n = "++show cts)
+     )
 showErr err@(CxeEquLike { cxeExpr=Pequ _ _ _ }) = showErrEquation err
 showErr err@(CxeEquLike { cxeExpr=Pimp _ _ _ }) = showErrEquation err
 showErr err@(CxeEquLike { cxeExpr=PIsc _ _ _ }) = showErrBoolTerm err
