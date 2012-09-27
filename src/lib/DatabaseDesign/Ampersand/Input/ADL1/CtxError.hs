@@ -44,7 +44,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
               | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeV instead?
                               ,cxeCpts :: [P_Concept]
                               }       
-              | CxeEquLike    {cxeExpr :: Term   -- error in expression cxeExpr, lefthandside not compatable to righthandside
+              | CxeEquLike    {cxeExpr :: Term   -- error in term cxeExpr, lefthandside not compatable to righthandside
                               ,cxeLhs :: Term
                               ,cxeRhs :: Term
                               ,cxeSrcCpts :: [P_Concept]
@@ -171,10 +171,10 @@ showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
      ( [show (origin (cxeExpr err))++":\n"]++
        ["    Inside term  "++showADL (cxeExpr err)++",\n"]++
        case (cxeCpts err,a,b) of
-            ([],PVee _,_) -> ["    the type of  "++showADL a++"  must be defined to make the expression unambiguous."]
-            ([],_,PVee _) -> ["    the type of  "++showADL b++"  must be defined to make the expression unambiguous."]
-            ([],PI _,_)   -> ["    the type of  "++showADL a++"  must be defined to make the expression unambiguous."]
-            ([],_,PI _)   -> ["    the type of  "++showADL b++"  must be defined to make the expression unambiguous."]
+            ([],PVee _,_) -> ["    the type of  "++showADL a++"  must be defined to make this term unambiguous."]
+            ([],_,PVee _) -> ["    the type of  "++showADL b++"  must be defined to make this term unambiguous."]
+            ([],PI _,_)   -> ["    the type of  "++showADL a++"  must be defined to make this term unambiguous."]
+            ([],_,PI _)   -> ["    the type of  "++showADL b++"  must be defined to make this term unambiguous."]
             ([],_,_)      -> ["    the type between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++"  is undefined."]
             (cs,_,_)      -> ["\n    between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++",\n    concepts "++commaEng "and" (map showADL cs)++" are in conflict."]
      )
@@ -227,14 +227,13 @@ showErrBoolTerm err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
             ([_],cs') -> ["    Inside term   "++showADL x++"\n"]++
                          ["    the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-            (cs, cs') -> ["    Inside term   "++showADL x++",\n"]++
-                         if sort cs==sort cs'
-                         then ["    the sources and targets of  "++showADL a++"  and  "++showADL b++"\n"]++
+            (cs, cs') -> if sort cs==sort cs'
+                         then ["    The sources and targets of (sub-)term "++showADL x++"\n"]++
                               ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-                         else ["    the source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                              ["    and the target of  "++showADL a++"  and the target of  "++showADL b++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+                         else ["    The source of  "++showADL x++"\n"]++
+                              ["    cannot be both "++commaEng "and" (map showADL cs)++"\n"]++
+                              ["    and the target of  "++showADL x++"\n"]++
+                              ["    cannot be both "++commaEng "and" (map showADL cs)++"."]
      )
 showErrBoolTerm o = fatal 206 ("showErrBoolTerm does not match "++show o)
 

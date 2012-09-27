@@ -13,6 +13,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
+import DatabaseDesign.Ampersand.Fspec.ShowHS
 import qualified DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import GHC.Exts (sortWith)
 import Prelude -- hiding (Ord(..))
@@ -107,9 +108,8 @@ instance Prelude.Ord Type where
   compare (TypLub _ _ _) _                = Prelude.LT
   compare _              (TypLub _ _ _)   = Prelude.GT
   compare (TypGlb l r _) (TypGlb l' r' _) = compare (l,r) (l',r')
-    -- in case you wish to add types:
-    -- compare (TypGlb _ _ _) _ = Prelude.LT
-    -- compare _ (TypGlb _ _ _) = Prelude.GT
+  compare (TypGlb _ _ _) _                = Prelude.LT
+  compare _              (TypGlb _ _ _)   = Prelude.GT
     
 instance Eq Type where
   t == t' = compare t t' == EQ
@@ -233,7 +233,7 @@ makeDataMap lst = Data.Map.fromDistinctAscList (foldr compress [] (sort lst))
 --   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
 --   this is represented by a tuple (TypExpr a _ _,TypExpr b _ _) in st.
 --   In the code below, this shows up as  dom a.<.dom b
---   The function typing does a recursive scan through all subexpressions, collecting all tuples on its way.
+--   The function typing does a recursive scan through all subterms, collecting all tuples on its way.
 --   Besides term term, this function requires a universe in which to operate.
 --   Specify 'Anything Anything' if there are no restrictions.
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
@@ -366,7 +366,7 @@ typing p_context
      (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
      (a,b) .+. (c,d) = (c.++.a,d.++.b)
      dom, cod :: Term -> Type
-     dom x    = TypExpr x         False x -- the domain of x, and make sure to check subexpressions of x as well
+     dom x    = TypExpr x         False x -- the domain of x, and make sure to check subterms of x as well
      cod x    = TypExpr (p_flp x) True  x 
      mSpecific, mGeneric :: Type -> Type -> Term -> ( (Typemap , Typemap) ,Type)
      mSpecific a b e = (r .<. a .+. r .<. b , r) where r = TypLub a b e
@@ -391,7 +391,7 @@ tableOfTypes p_context st
     , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
              -- it is used for the purpose of making a poset of concepts in the A-structure.
   -- the following are merely for drawing graphs.
-    , [0..length typeExpressions-1]
+    , [0..length typeTerms-1]
     , stEdges
     , map fst classTable
     , (map (\(x,y)->(classNr x,classNr y)) condensedEdges)
@@ -405,14 +405,14 @@ tableOfTypes p_context st
     that the set of atoms contained by dom t is a subset of the set
     of atoms contained by dom t'.
 -}
-     typeExpressions :: [Type]     -- a list of all type terms in st.
-     typeExpressions = Data.Map.keys st -- Because a Data.Map.Map Type [Type] is total, it is sufficient to compute  Data.Map.keys st
-     expressionTable :: [(Int, Type)]
-     expressionTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeExpressions ]
-     expressionNr :: Type -> Int
-     expressionNr t  = head ([i | (i,v)<-expressionTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by expressionNr")])
+     typeTerms :: [Type]     -- a list of all type terms in st.
+     typeTerms = Data.Map.keys st -- Because a Data.Map.Map Type [Type] is total, it is sufficient to compute  Data.Map.keys st
+     termTable :: [(Int, Type)]
+     termTable = [(i,typeExpr) | (i,typeExpr)<-zip [0..] typeTerms ]
+     termNr :: Type -> Int
+     termNr t  = head ([i | (i,v)<-termTable, t == v]++[fatal 178 ("Type Term "++show t++" not found by termNr")])
 {- Bindings:
-Relations that are used in an expression must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
+Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
@@ -422,21 +422,21 @@ Here's how....
    If there are multiple declarations that might fit, the type checker will report an ambiguity and refrain from making suggestions.
 -}
      islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "islands"  -- islands = (st\/st~)*
-     domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') _) _ _)<-ts, nm==nm']
-     codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True  _)<-typeExpressions, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _ _)<-ts, nm==nm']
+     domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False _)<-typeTerms, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PTyp _ (Prel _ nm') _) _ _)<-ts, nm==nm']
+     codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True  _)<-typeTerms, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _ _)<-ts, nm==nm']
      bindings :: Data.Map.Map Type [Type]
      bindings    = {- for debugging and illustration purposes: 
                    error ("\ndomBindings = \n  "++(intercalate "\n  ".map show) domBindings++
                           "\ncodBindings = \n  "++(intercalate "\n  ".map show) codBindings++
                           "\nbindings = \n  "++(intercalate "\n  ".map show)
-                                                [ (dBinding,cBinding)      -- the bindings of domain and codomain expressions should lead to the identical declaration. Both bindings will be added to the graph.
+                                                [ (dBinding,cBinding)      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
                                                 | decl<-p_declarations p_context
                                                 , dBinding@(TypExpr (Prel o nm) _ _, TypExpr d@(PTyp _ (Prel _ nm') sgn) _ _)<-domBindings,           origin decl==origin d
                                                 , cBinding@(TypExpr (Pflp o nm) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ nm') sgn')) _ _)<-codBindings, origin decl==origin c
                                                 ]
                          ) -}
                    makeDataMap
-                   [ bind      -- the bindings of domain and codomain expressions should lead to the identical declaration. Both bindings will be added to the graph.
+                   [ bind      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
                    | decl<-p_declarations p_context
                    , dBinding@(TypExpr (Prel _ _) _ _, TypExpr d@(PTyp _ (Prel _ _) _) _ _)<-domBindings,          origin decl==origin d
                    , cBinding@(TypExpr (Pflp _ _) _ _, TypExpr (PFlp _ c@(PTyp _ (Prel _ _) _)) _ _)<-codBindings, origin decl==origin c
@@ -447,7 +447,7 @@ Here's how....
 -- In order to compute the condensed graph, we need the transitive closure of st:
      stClos1 = setClosure st "st"       -- represents (st)*
 -- The TypLub types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
-     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeExpressions]
+     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeTerms]
       where
       -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
        compr a b  = if b `elem` (lookups a stClos1) then LT else -- note: by LT we mean: less than or equal
@@ -461,21 +461,13 @@ Here's how....
      stClosAdded = foldl f stClos1 someWhatSortedLubs
        where
         f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
-        f q o@(TypLub a b _) = Data.Map.map (\cs -> merge cs [e | a `elem` cs, b `elem` cs, e<-lookups o q]) q
+        f dataMap o@(TypLub a b _) = Data.Map.map (\cs -> merge cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
-{- snap ik niet.... Kijk eens naar de lijst [lookups o q | a `elem` cs, b `elem` cs].
-   Die heeft een lengte van 0 of 1. De foldr is dus overbodig. 
-   De code had ook mogen luiden:
-        f q o@(TypLub a b _) = Data.Map.map (\cs -> merge cs (head ([lookups o q | a `elem` cs, b `elem` cs] ++ [[]]))) q
-        f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
-   Hoe zit dat?
-   Antwoord: waarom laten we de foldr niet staan? Die is korter.
--}
      stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive closure of stClosAdded.
      stClos = setClosure stClosAdded "stClosAdded"
      -- stEdges is only defined for the sake of drawing pictures. For the added arrows, we use a different notation in the picture.
      stEdges :: [(Int,Int)]
-     stEdges = [(i,j) | (s,t) <- flattenMap st, let (i,j)=(expressionNr s,expressionNr t), i/=j]
+     stEdges = [(i,j) | (s,t) <- flattenMap st, let (i,j)=(termNr s,termNr t), i/=j]
 {- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph
@@ -495,18 +487,18 @@ Here's how....
      exprClass typ = case classes of
                       []   -> fatal 191 ("Type Term "++show typ++" not found by exprClass\neqClasses:\n  Class: ") {- ++
                                          intercalate "\n  Class: " [ intercalate "\n         " (map show cl) | cl<-eqClasses ]++    -- SJ: 13 sep 2012 This error has occured in Ticket #344
-                                         if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
+                                         if null ([i | (i,v)<-termTable, typ == v]) then "" else "\n  termNr = "++show (termNr typ)
                                          -}
                       [cl] -> cl
                       _    -> fatal 372 ("Type Term "++show typ++" is found in multiple classes:\n  Class: ") {- ++
                                          intercalate "\n  Class: " [ intercalate "\n         " (map show cl) | cl<-classes ]++
-                                         if null ([i | (i,v)<-expressionTable, typ == v]) then "" else "\n  expressionNr = "++show (expressionNr typ)
+                                         if null ([i | (i,v)<-termTable, typ == v]) then "" else "\n  termNr = "++show (termNr typ)
                                         -}
       where classes = [cl | cl<-eqClasses, typ `elem` cl]
      condensedEdges :: [([Type],[Type])]
      condensedEdges = nub $ sort [(c,c') | (i,i')<-flattenMap st, let c=exprClass i, let c'=exprClass i', head c/=head c']
      condensedEdges2 = nub $ sort [(c,c') | (i,i')<-flattenMap stClosAdded, i' `notElem` findIn i stClos1, let c=exprClass i, let c'=exprClass i', head c/=head c']
-     condensedClos  = nub $ sort [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', head c/=head c']
+     -- condensedClos  = nub $ sort [(c,c') | (i,i')<-flattenMap stClos, let c=exprClass i, let c'=exprClass i', head c/=head c']
      -- condensedVerts is eqClasses
      -- condensedVerts = nub [c | (i,i')<-condensedEdges, c<-[i,i']]
      classTable :: [(Int,[Type])]
@@ -528,11 +520,11 @@ Here's how....
      -- if not all of reflexiveMap will be used, a different implementation might be more useful
      -- classNumbers is the relation from stGraph to condensedGraph, relating the different numberings
      -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
-{-  The following table is made by merging expressionTable and classNumbers into one list.
+{-  The following table is made by merging termTable and classNumbers into one list.
     This has already caught mistakes in the past, so it is advisable to leave the checks in the code for debugging reasons.
 -}
      table
-      = [ (expressionNr s, classNr cl, s, tConcepts cl, binds s) | cl<-eqClasses, s<-cl]
+      = [ (termNr s, classNr cl, s, tConcepts cl, binds s) | cl<-eqClasses, s<-cl]
 -- function typeConcepts computes the types of one equivalence class
      tConcepts :: [Type] -> [P_Concept]
      tConcepts cls = case [maxima [c' | TypExpr (Pid c') _ _<-ts] | (x, ts)<-Data.Map.toList stClos, x `elem` cls] of
@@ -605,7 +597,7 @@ class Expr a where
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
   terms :: a -> [Term]
-  subexpressions :: a -> [Term]
+  subterms :: a -> [Term]
 
 instance Expr P_Context where
  p_gens pContext
@@ -640,16 +632,16 @@ instance Expr P_Context where
          terms (ctx_php   pContext) ++
          terms (ctx_pops  pContext)
         )
- subexpressions pContext
-  = subexpressions (ctx_pats  pContext) ++
-    subexpressions (ctx_PPrcs pContext) ++
-    subexpressions (ctx_rs    pContext) ++
-    subexpressions (ctx_ds    pContext) ++
-    subexpressions (ctx_ks    pContext) ++
-    subexpressions (ctx_ifcs  pContext) ++
-    subexpressions (ctx_sql   pContext) ++
-    subexpressions (ctx_php   pContext) ++
-    subexpressions (ctx_pops  pContext)
+ subterms pContext
+  = subterms (ctx_pats  pContext) ++
+    subterms (ctx_PPrcs pContext) ++
+    subterms (ctx_rs    pContext) ++
+    subterms (ctx_ds    pContext) ++
+    subterms (ctx_ks    pContext) ++
+    subterms (ctx_ifcs  pContext) ++
+    subterms (ctx_sql   pContext) ++
+    subterms (ctx_php   pContext) ++
+    subterms (ctx_pops  pContext)
 
 instance Expr P_Pattern where
  p_gens pPattern
@@ -669,12 +661,12 @@ instance Expr P_Pattern where
          terms (pt_kds pPattern) ++
          terms (pt_pop pPattern)
         )
- subexpressions pPattern
-  = subexpressions (pt_rls pPattern) ++
-    subexpressions (pt_gns pPattern) ++
-    subexpressions (pt_dcs pPattern) ++
-    subexpressions (pt_kds pPattern) ++
-    subexpressions (pt_pop pPattern)
+ subterms pPattern
+  = subterms (pt_rls pPattern) ++
+    subterms (pt_gns pPattern) ++
+    subterms (pt_dcs pPattern) ++
+    subterms (pt_kds pPattern) ++
+    subterms (pt_pop pPattern)
 
 instance Expr P_Process where
  p_gens pProcess
@@ -694,67 +686,67 @@ instance Expr P_Process where
          terms (procKds   pProcess) ++
          terms (procPop   pProcess)
         )
- subexpressions pProcess
-  = subexpressions (procRules pProcess) ++
-    subexpressions (procGens  pProcess) ++
-    subexpressions (procDcls  pProcess) ++
-    subexpressions (procKds   pProcess) ++
-    subexpressions (procPop   pProcess)
+ subterms pProcess
+  = subterms (procRules pProcess) ++
+    subterms (procGens  pProcess) ++
+    subterms (procDcls  pProcess) ++
+    subterms (procKds   pProcess) ++
+    subterms (procPop   pProcess)
 
 instance Expr P_Rule where
  p_concs r = p_concs (rr_exp r)
  terms r = terms (rr_exp r)
- subexpressions r = subexpressions (rr_exp r)
+ subterms r = subterms (rr_exp r)
 instance Expr P_Sign where
  p_concs x = nub (psign x)
  terms _ = []
- subexpressions _ = []
+ subterms _ = []
 instance Expr P_Gen where
  p_concs g        = p_concs        (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
  terms g          =                [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
- subexpressions g = subexpressions (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
+ subterms g = subterms (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
 instance Expr P_Declaration where
  p_concs d = p_concs (dec_sign d)
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
 -- terms d = [PCps orig (Pid (head sgn)) (PCps orig (Prel orig (dec_nm d)) (Pid (last sgn)))] where P_Sign sgn = dec_sign d; orig = origin d
- subexpressions d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
+ subterms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
 instance Expr P_KeyDef where
  p_concs k = p_concs [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
- subexpressions k = subexpressions [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
+ subterms k = subterms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
 instance Expr P_Interface where
  p_concs k = p_concs (ifc_Obj k)
  terms k = terms (ifc_Obj k)
- subexpressions k = subexpressions (ifc_Obj k)
+ subterms k = subterms (ifc_Obj k)
 instance Expr P_ObjectDef where
  p_concs o = p_concs (obj_ctx o) `uni` p_concs (terms (obj_msub o))
  terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
- subexpressions o = subexpressions (obj_ctx o)++subexpressions (obj_msub o)
+ subterms o = subterms (obj_ctx o)++subterms (obj_msub o)
 instance Expr P_SubInterface where
  p_concs x@(P_Box{}) = p_concs (si_box x)
  p_concs _ = []
  terms x@(P_Box{}) = terms (si_box x)
  terms _ = []
- subexpressions x@(P_Box{}) = subexpressions (si_box x)
- subexpressions _ = []
+ subterms x@(P_Box{}) = subterms (si_box x)
+ subterms _ = []
 instance Expr P_Population where
  p_concs x = p_concs (p_type x)
  terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
  terms pop@(P_Popu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (p_popm pop)) (p_type pop)]
  terms pop@(P_CptPopu{})              = [Pid (PCpt (p_popm pop))]
- subexpressions pop = terms pop
+ subterms pop = terms pop
 
 instance Expr a => Expr (Maybe a) where
  p_concs Nothing = []
  p_concs (Just x) = p_concs x
  terms Nothing = []
  terms (Just x) = terms x
- subexpressions Nothing = []
- subexpressions (Just x) = subexpressions x
+ subterms Nothing = []
+ subterms (Just x) = subterms x
 instance Expr a => Expr [a] where
  p_concs = concat.map p_concs
  terms = concat.map terms
- subexpressions = concat.map subexpressions
+ subterms = concat.map subterms
 instance Expr Term where
  p_concs   (PI _)         = []
  p_concs   (Pid c)        = [c]
@@ -782,23 +774,23 @@ instance Expr Term where
  p_concs (PBrk _ a)     = p_concs a
  p_concs (PTyp _ a sgn) = p_concs a `uni` p_concs sgn
  terms e = [e]
- subexpressions e@(Pequ _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(Pimp _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PIsc _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PUni _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PDif _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PLrs _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PRrs _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PCps _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PRad _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PPrd _ a b) = [e]++subexpressions a++subexpressions b
- subexpressions e@(PKl0 _ a)   = [e]++subexpressions a
- subexpressions e@(PKl1 _ a)   = [e]++subexpressions a
- subexpressions e@(PFlp _ a)   = [e]++subexpressions a
- subexpressions e@(PCpl _ a)   = [e]++subexpressions a
- subexpressions e@(PBrk _ a)   = [e]++subexpressions a
- subexpressions e@(PTyp _ a _) = [e]++subexpressions a
- subexpressions e              = [e]
+ subterms e@(Pequ _ a b) = [e]++subterms a++subterms b
+ subterms e@(Pimp _ a b) = [e]++subterms a++subterms b
+ subterms e@(PIsc _ a b) = [e]++subterms a++subterms b
+ subterms e@(PUni _ a b) = [e]++subterms a++subterms b
+ subterms e@(PDif _ a b) = [e]++subterms a++subterms b
+ subterms e@(PLrs _ a b) = [e]++subterms a++subterms b
+ subterms e@(PRrs _ a b) = [e]++subterms a++subterms b
+ subterms e@(PCps _ a b) = [e]++subterms a++subterms b
+ subterms e@(PRad _ a b) = [e]++subterms a++subterms b
+ subterms e@(PPrd _ a b) = [e]++subterms a++subterms b
+ subterms e@(PKl0 _ a)   = [e]++subterms a
+ subterms e@(PKl1 _ a)   = [e]++subterms a
+ subterms e@(PFlp _ a)   = [e]++subterms a
+ subterms e@(PCpl _ a)   = [e]++subterms a
+ subterms e@(PBrk _ a)   = [e]++subterms a
+ subterms e@(PTyp _ a _) = [e]++subterms a
+ subterms e              = [e]
 
 
 --  The following is for drawing graphs.
@@ -934,7 +926,7 @@ pCtx2aCtx p_context
      | (not.null) cxerrs        = cxerrs
      | otherwise                = postchks
     derivedEquals :: [CtxError]
-    derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the expressions derived from the script).
+    derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the terms derived from the script).
      = [ CxeEqConcepts [ c| (_,_,TypExpr (Pid c) _ _)<-diffs]
        | diffs<-eqCl (\(_,classNr,_) -> classNr) (map head (eqClass tripleEq conceptTypes))
        , length diffs>1]
@@ -1075,7 +1067,7 @@ pCtx2aCtx p_context
     pRul2aRul patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
      = case pExpr2aExpr (rr_exp prul) of
         Checked (aexpr,_,_) -> (Ru { rrnm  = rr_nm prul                 -- Name of this rule
-                                   , rrexp = aexpr                      -- The rule expression
+                                   , rrexp = aexpr                      -- The rule term
                                    , rrfps = rr_fps prul                -- Position in the Ampersand file
                                    , rrmean = meanings (rr_mean prul)   -- Ampersand generated meaning (for all known languages)
                                    , rrmsg = map (pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt)) $ rr_msg prul
@@ -1146,7 +1138,7 @@ pCtx2aCtx p_context
         -- check equality
         ats = [ expr | KeyExp expr <- segs ]
         kdcxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
-                         (intercalate "\n" ["The source of expression " ++ showADL (objctx x) 
+                         (intercalate "\n" ["The source of term " ++ showADL (objctx x) 
                                             ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the key concept ("++ showADL c ++ ")."
                                            |x<-ats,source (objctx x)/=c])
     
@@ -1189,7 +1181,7 @@ pCtx2aCtx p_context
         -- we show the line nr for the interface, which may be slightly inaccurate, but roles have no position 
         -- and the implementation of error messages makes it difficult to give a nice one here
         
-    -- | pODef2aODef checks compatibility of composition of expressions on equality
+    -- | pODef2aODef checks compatibility of composition of terms on equality
     pODef2aODef :: [String]              -- a list of roles that may use this object
                 -> Type                  -- the universe for type checking this object. anything if the type checker decides freely, thing c if it must be of type c.
                 -> P_ObjectDef           -- the object definition as specified in the parse tree
@@ -1352,7 +1344,7 @@ pCtx2aCtx p_context
           _ -> []
       )
       
-    -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in an expression.
+    -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in a term.
     pRel2aRel :: [P_Concept] -> Term -> (Relation,[CtxError])
     pRel2aRel _ (PVee orig)
      =( fatal 326 "Ambiguous universal relation."
