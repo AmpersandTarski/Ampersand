@@ -158,7 +158,7 @@ showErr err@(CxeCast{ cxeExpr=x@(PTyp _ r@(Prel _ _) sgnCast) })
        case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
             (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
             (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
-            (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL x++
+            (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL x++" "++show (origin x)++
                                                "\ncxeDomCast err\n = "++show dcs++
                                                "\ncxeCodCast err\n = "++show ccs++
                                                "\ncxeDomTerm err\n = "++show dts++
