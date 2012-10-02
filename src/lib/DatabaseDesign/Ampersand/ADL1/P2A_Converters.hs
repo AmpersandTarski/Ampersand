@@ -13,7 +13,6 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
-import DatabaseDesign.Ampersand.Fspec.ShowHS
 import qualified DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import GHC.Exts (sortWith)
 import Prelude -- hiding (Ord(..))
@@ -136,6 +135,16 @@ Invariants are:
              isSortedAndDistinct _ = True
          in Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
 -}
+reverseMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
+-- note: reverseMap is relatively slow, but only needs to be calculated once
+-- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
+reflexiveMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
+reflexiveMap lst = res
+  -- for debugging: if Data.Map.keys res == Data.Map.keys lst then res else fatal 459 ("Domain not preserved in reflexiveMap! Compare: \n" ++ show (Data.Map.keys res) ++ "\n" ++ show (Data.Map.keys lst))
+ where
+  res = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
+-- if not all of reflexiveMap will be used, a different implementation might be more useful
 
 mapIsOk :: (Show a,Ord a) => Data.Map.Map k [a] -> Bool
 mapIsOk m = Data.Map.fold (&&) True (Data.Map.map (isSortedAndDistinct . checkRfx) m)
@@ -226,11 +235,14 @@ typing p_context
    where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Data.Map.Map Type [Type]) for efficiency reasons.
+     compatible :: Type -> Type -> Bool
+     compatible l r = r `elem` comparable Data.Map.! l
+      where
+       -- comparable = (firstSetOfEdges\/firstSetOfEdges~)*
+       comparable = setClosure (Data.Map.map sort (Data.Map.unionWith uni firstSetOfEdges (reverseMap firstSetOfEdges))) "comparable"
      (firstSetOfEdges,secondSetOfEdges)
       = makeDataMaps (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
-     stClos = setClosure firstSetOfEdges "firstSetOfEdges"    -- the transitive closure of 'firstSetOfEdges'
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
-     isTypeSubset t c = c `elem` findIn t stClos || null (findIn t stClos)
      uType :: Term    -- x:    the original term from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
            -> Type            -- uRt:  the type of the universe for the codomain of x
@@ -254,14 +266,15 @@ typing p_context
                                                             else nothing
                                                           )
                                                 where decls' = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
-                                                      spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls', compatible (head cs) (last cs)]
-                                                      -- compatible l r = fatal 251 ("uLft: "++show uLft++"\nuRt:  "++show uRt++"\nuLft: "++show (findIn uLft stClos)++"\nuRt:  "++show (findIn uRt stClos))
-                                                      compatible l r =    isTypeSubset uLft (thing l)
-                                                                       && isTypeSubset uRt  (thing r)
+                                                      spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
+                                                                     , compatible (dom x) (thing (head cs))  -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
+                                                                     , compatible (cod x) (thing (last cs))
+                                                                     ]
                                                       carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
                                                       carefully tt = (fst nothing,fst tt.++.snd tt)
-     uType x uLft uRt   (Pequ _ a b)          = --error (show x++"\n"++show uLft++"\n"++show uRt++"\n"++show a++"\n"++show b) .+.
-                                                dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
+     uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
+                                                where e = Prel o nm
+     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
                                                 .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
@@ -301,6 +314,7 @@ typing p_context
                                                 if o `elem` [origin d| d<-pDecls]     -- if this is a declaration
                                                 then nothing                          -- then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e  -- else treat as type restriction
+                                                     .+. dom x.<.iSrc .+. cod x.<.iTrg
                                                      .+. iSrc.<.uLft .+. iTrg.<.uRt
                                                      .+. uType e iSrc iTrg e
                                                 --   .+. error ("Diagnostic: uType ("++showADL e++") ("++showType iSrc++") ("++showType iTrg++")\n x="++show x)
@@ -309,8 +323,6 @@ typing p_context
      uType x uLft uRt   (PPrd _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                                                 .+. uType a uLft Anything a .+. uType b Anything uRt b
      -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
-     uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
-                                                where e = Prel o nm
      uType x uLft uRt   (Pimp o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. 
                                                 uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ o a (PIsc o a b)
@@ -324,11 +336,8 @@ typing p_context
                                                 uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
                                                 where e = PCps o (complement a) (complement b)
      uType x uLft uRt   (PCpl o a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
-                                              --dom (PVee (origin x)).=.dom e .+. cod (PVee (origin x)).=.cod e .+.  
                                                 uType x uLft uRt e                 -- -a = V - a
                                                 where e = PDif o (PVee (origin x)) a
-                                                      (dm,interDom) = (mSpecific uLft (dom a) x)
-                                                      (cm,interCod) = (mSpecific uRt  (cod a) x)
      nothing :: (Typemap,Typemap)
      nothing = ([],[])
      {-
@@ -406,13 +415,14 @@ When it is just 'r', and there are multiple declarations to which it can be boun
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 Here's how....
-   A relation, islands, relates two Type objects if one is a subset of the other: islands = (st\/st~)*.
+   A relation, comparable, relates two Type objects if one is a subset of the other: comparable = (st\/st~)*.
    If an unbound relation is in the same island as a declaration with the same name, the type checker will suggest that declaration to bind the relation.
    If there are multiple declarations that might fit, the type checker will report an ambiguity and refrain from making suggestions.
 -}
-     islands = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "islands"  -- islands = (st\/st~)*
-     domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False)<-typeTerms, Just ts<-[Data.Map.lookup x islands], d@(TypExpr         (PTyp _ (Prel _ nm') _)  _)<-ts, nm==nm']
-     codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True )<-typeTerms, Just ts<-[Data.Map.lookup x islands], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _)<-ts, nm==nm']
+     eqType = Data.Map.intersectionWith  isc stClos (reverseMap stClos)  -- eqType = st* /\ st*~
+     comparable  = setClosure (Data.Map.map sort (Data.Map.unionWith uni st (reverseMap st))) "comparable"  -- comparable = (st\/st~)*
+     domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False)<-typeTerms, Just ts<-[Data.Map.lookup x comparable], d@(TypExpr         (PTyp _ (Prel _ nm') _)  _)<-ts, nm==nm']
+     codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True )<-typeTerms, Just ts<-[Data.Map.lookup x comparable], d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _)<-ts, nm==nm']
      bindings :: Data.Map.Map Type [Type]
      bindings    = {- for debugging and illustration purposes: 
                    error ("\ndomBindings = \n  "++(intercalate "\n  ".map show) domBindings++
@@ -497,16 +507,6 @@ Here's how....
      classNr [] = fatal 385 "no ClassNr for an empty class. An empty class was generated somewhere, which is very wrong!"
      -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
      -- | note that the domain must be preserved!
-     reverseMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-     reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
-     -- note: reverseMap is relatively slow, but only needs to be calculated once
-     -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
-     reflexiveMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-     reflexiveMap lst = res
-       -- for debugging: if Data.Map.keys res == Data.Map.keys lst then res else fatal 459 ("Domain not preserved in reflexiveMap! Compare: \n" ++ show (Data.Map.keys res) ++ "\n" ++ show (Data.Map.keys lst))
-      where
-       res = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
-     -- if not all of reflexiveMap will be used, a different implementation might be more useful
      -- classNumbers is the relation from stGraph to condensedGraph, relating the different numberings
      -- classNumbers = sort [ (exprNr,classNr) | (classNr,eClass)<-zip [0..] eqClasses, exprNr<-eClass]
 {-  The following table is made by merging termTable and classNumbers into one list.
@@ -543,7 +543,7 @@ showTypeTable typeTable
     shExp t = str++[ ' ' | _<-[length str..maxExpr] ]
      where str = showADL (showTypeExpr t)
            maxExpr = maximum [length (showADL (showTypeExpr typExpr)) | (_,_,typExpr,_,_)<-typeTable]
-    showLine (stIndex,cIndex,t,concepts,binds) = sh stIndex++","++sh cIndex++", "++shPos t++"  "++shExp t++"  "++shType t++"  "++show concepts++"  "++show binds
+    showLine (stIndex,cIndex,t,concepts,bindDecls) = sh stIndex++","++sh cIndex++", "++shPos t++"  "++shExp t++"  "++shType t++"  "++show concepts++"  "++show bindDecls
     showTypeExpr (TypLub _ _ term)  = term
     showTypeExpr (TypGlb _ _ term)  = term
     showTypeExpr (TypExpr term _) = term
@@ -576,14 +576,14 @@ typeAnimate p_context st = (stTypeGraph, condTypeGraph)
      = case Data.Map.lookup (origin t) origMap of
                   Just term -> TypExpr (if b then p_flp term else term) b
                   Nothing   -> fatal 586 ("wrong argument for original ("++show t++")")
-       where origMap = Data.Map.fromList [ (origin t,t) | t<-subterms p_context ]
+       where origMap = Data.Map.fromList [ (origin subTerm,subTerm) | subTerm<-subterms p_context ]
     original (TypLub a b e) = TypLub (original a) (original b) e
     original (TypGlb a b e) = TypGlb (original a) (original b) e
     original t = t
 class Expr a where
   p_gens :: a -> [P_Gen]
   p_gens _ = []
-  p_concs :: a -> [P_Concept]
+--  p_concs :: a -> [P_Concept]
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
   terms :: a -> [Term]
@@ -594,6 +594,7 @@ instance Expr P_Context where
   = concat [ p_gens pat | pat<-ctx_pats  pContext] ++
     concat [ p_gens prc | prc<-ctx_PPrcs pContext] ++
     ctx_gs pContext
+{-
  p_concs pContext
   = nub (p_concs (ctx_pats  pContext) ++
          p_concs (ctx_PPrcs pContext) ++
@@ -606,6 +607,7 @@ instance Expr P_Context where
          p_concs (ctx_sql   pContext) ++
          p_concs (ctx_php   pContext)
         )
+-}
  p_declarations pContext
   = concat [ p_declarations pat | pat<-ctx_pats  pContext] ++
     concat [ p_declarations prc | prc<-ctx_PPrcs pContext] ++
@@ -636,12 +638,14 @@ instance Expr P_Context where
 instance Expr P_Pattern where
  p_gens pPattern
   = pt_gns pPattern
+{-
  p_concs pPattern
   = nub (p_concs (pt_rls pPattern) ++
          p_concs (pt_gns pPattern) ++
          p_concs (pt_dcs pPattern) ++
          p_concs (pt_kds pPattern)
         )
+-}
  p_declarations pPattern
   = pt_dcs pPattern
  terms pPattern
@@ -661,12 +665,14 @@ instance Expr P_Pattern where
 instance Expr P_Process where
  p_gens pProcess
   = procGens pProcess
+{-
  p_concs pProcess
   = nub (p_concs (procRules pProcess) ++
          p_concs (procGens  pProcess) ++
          p_concs (procDcls  pProcess) ++
          p_concs (procKds   pProcess)
         )
+-}
  p_declarations pProcess
   = procDcls pProcess
  terms pProcess
@@ -684,60 +690,61 @@ instance Expr P_Process where
     subterms (procPop   pProcess)
 
 instance Expr P_Rule where
- p_concs r = p_concs (rr_exp r)
+-- p_concs r = p_concs (rr_exp r)
  terms r = terms (rr_exp r)
  subterms r = subterms (rr_exp r)
 instance Expr P_Sign where
- p_concs x = nub (psign x)
+-- p_concs x = nub (psign x)
  terms _ = []
  subterms _ = []
 instance Expr P_Gen where
- p_concs g        = p_concs        (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
+-- p_concs g        = p_concs        (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
  terms g          =                [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
  subterms g = subterms (Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)))
 instance Expr P_Declaration where
- p_concs d = p_concs (dec_sign d)
+-- p_concs d = p_concs (dec_sign d)
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
 -- terms d = [PCps orig (Pid (head sgn)) (PCps orig (Prel orig (dec_nm d)) (Pid (last sgn)))] where P_Sign sgn = dec_sign d; orig = origin d
  subterms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
 instance Expr P_KeyDef where
- p_concs k = p_concs [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
+-- p_concs k = p_concs [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
  subterms k = subterms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
 instance Expr P_Interface where
- p_concs k = p_concs (ifc_Obj k)
+-- p_concs k = p_concs (ifc_Obj k)
  terms k = terms (ifc_Obj k)
  subterms k = subterms (ifc_Obj k)
 instance Expr P_ObjectDef where
- p_concs o = p_concs (obj_ctx o) `uni` p_concs (terms (obj_msub o))
+-- p_concs o = p_concs (obj_ctx o) `uni` p_concs (terms (obj_msub o))
  terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
  subterms o = subterms (obj_ctx o)++subterms (obj_msub o)
 instance Expr P_SubInterface where
- p_concs x@(P_Box{}) = p_concs (si_box x)
- p_concs _ = []
+-- p_concs x@(P_Box{}) = p_concs (si_box x)
+-- p_concs _ = []
  terms x@(P_Box{}) = terms (si_box x)
  terms _ = []
  subterms x@(P_Box{}) = subterms (si_box x)
  subterms _ = []
 instance Expr P_Population where
- p_concs x = p_concs (p_type x)
+-- p_concs x = p_concs (p_type x)
  terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
  terms pop@(P_Popu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (p_popm pop)) (p_type pop)]
  terms pop@(P_CptPopu{})              = [Pid (PCpt (p_popm pop))]
  subterms pop = terms pop
 
 instance Expr a => Expr (Maybe a) where
- p_concs Nothing = []
- p_concs (Just x) = p_concs x
+-- p_concs Nothing = []
+-- p_concs (Just x) = p_concs x
  terms Nothing = []
  terms (Just x) = terms x
  subterms Nothing = []
  subterms (Just x) = subterms x
 instance Expr a => Expr [a] where
- p_concs = concat.map p_concs
+-- p_concs = concat.map p_concs
  terms = concat.map terms
  subterms = concat.map subterms
 instance Expr Term where
+{-
  p_concs   (PI _)         = []
  p_concs   (Pid c)        = [c]
  p_concs   (Pnid c)       = [c]
@@ -763,6 +770,7 @@ instance Expr Term where
  p_concs (PCpl _ a)     = p_concs a
  p_concs (PBrk _ a)     = p_concs a
  p_concs (PTyp _ a sgn) = p_concs a `uni` p_concs sgn
+-}
  terms e = [e]
  subterms e@(Pequ _ a b) = [e]++subterms a++subterms b
  subterms e@(Pimp _ a b) = [e]++subterms a++subterms b
@@ -1090,7 +1098,7 @@ pCtx2aCtx p_context
                                                            Nothing              -> (Nothing, [])
                                                            Just (viol, violcxe) -> (Just viol, violcxe)
                                      meanings = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) 
-        Errors exprcxe -> (fatal 1045 "Illegal reference to a P_Rule", exprcxe )
+        Errors exprcxe -> (fatal 1045 ("Illegal reference to a P_Rule\n"++show exprcxe), exprcxe )
     pMeanings2aMeaning :: Lang          -- The default language
                       -> PandocFormat  -- The default format
                       -> [PMeaning]
@@ -1555,18 +1563,18 @@ pCtx2aCtx p_context
                                  if null errs
                                  then Checked (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
                                  else Errors errs
-             ( ds,  ss,  ts)  -> Errors [CxeRel {cxeExpr   = term  -- the erroneous term
-                                                ,cxeDecs   = ds    -- the declarations to which this term has been matched
-                                                ,cxeSrcs   = ss    -- the conflicting  source concepts (if null, there is an ambiguity)
-                                                ,cxeTrgs   = ts    -- the conflicting  target concepts (if null, there is an ambiguity)
+             ( ds,  _ ,  _ )  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                ,cxeDecs   = ds          -- the declarations to which this term has been matched
+                                                ,cxeSrcs   = srcTypes    -- the conflicting  source concepts (if null, there is an ambiguity)
+                                                ,cxeTrgs   = trgTypes    -- the conflicting  target concepts (if null, there is an ambiguity)
                                                 ,cxePoss   = possibleDecls  -- possible solution for ambiguity.
                                                 }]
             where (srcTypes,srcPoss) = case [ (conflictingConcepts,[t | TypExpr t _<-possibles])
-                                            | (_,_,TypExpr term' _,conflictingConcepts,possibles)<-typeTable, term'==      term] of
+                                            | (_,_,TypExpr term' False,conflictingConcepts,possibles)<-typeTable, term'==      term] of
                                          [(confls, poss)] -> (confls, poss)
                                          _ -> fatal 1544 "Something wrong in typeTable"
                   (trgTypes,trgPoss) = case [ (conflictingConcepts,[p_flp t | TypExpr t _<-possibles])
-                                            | (_,_,TypExpr term' _,conflictingConcepts,possibles)<-typeTable, term'==p_flp term] of
+                                            | (_,_,TypExpr term' True ,conflictingConcepts,possibles)<-typeTable, term'==p_flp term] of
                                          [(confls, poss)] -> (confls, poss)
                                          _ -> fatal 1548 "Something wrong in typeTable"
                   possibleDecls = [decl | decl<-p_declarations p_context
