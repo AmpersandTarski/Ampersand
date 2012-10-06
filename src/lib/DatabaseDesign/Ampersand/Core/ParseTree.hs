@@ -184,6 +184,8 @@ where
                , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
                } deriving Show -- for debugging and testing only
+   instance Eq P_Declaration where
+    decl==decl' = origin decl==origin decl'
    instance Identified P_Declaration where
     name = dec_nm
    instance Traced P_Declaration where
