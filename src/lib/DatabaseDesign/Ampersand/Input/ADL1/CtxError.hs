@@ -181,7 +181,8 @@ showErr (Cxe typeErrors x)                      = x ++ "\n" ++ intercalate "\n" 
 showErr (PE msg)                                = "Parse error:\n"++ show (case msg of 
                                                                              []  -> fatal 35 "No messages??? The impossible happened!" 
                                                                              x:_ -> x)
-showErr _ = fatal 580 "missing pattern in type error."
+-- HJO: I think that the following is a bad programmers habbit: Turning compiler warnings into runtime errors!
+--showErr _ = fatal 580 "missing pattern in type error."
 
 showErrBetweenTerm :: CtxError -> Term -> Term -> [Char] -> [Char] -> [Char]
 showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
