@@ -1,7 +1,7 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | Deze module bevat operaties op strings.
   module DatabaseDesign.Ampersand.Basics.String
-   (unCap,upCap,trim,spacesToUnderscores,spaces,commaEngString,commaNLString,preciesEen,escapeNonAlphaNum)
+   (unCap,upCap,trim,spacesToUnderscores,spaces,commaEngString,commaNLString,escapeNonAlphaNum)
   where
    import Data.Char 
 
@@ -42,9 +42,6 @@
    commaNLString str (a:as) = a++", "++commaNLString str as
    commaNLString _ []     = ""
 
-   preciesEen :: String
-   preciesEen = [chr 233]++[chr 233]++"n"
-   
    -- escape anything except regular characters and digits to _<character code>
    -- e.g. escapeNonAlphaNum "a_é" = "a_95_233"
    escapeNonAlphaNum :: String -> String

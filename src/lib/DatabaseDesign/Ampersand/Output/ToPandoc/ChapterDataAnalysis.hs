@@ -327,7 +327,7 @@ chpDataAnalysis lev fSpec flags
        then []
        else [ case language flags of
                Dutch   ->
-                 Para  [Str "Er is ",Str preciesEen,Str " key: ",Str (name k),Str "."]
+                 Para  [Str "Er is één key: ",Str (name k),Str "."]
                English ->
                  Para  [Str "There is but one key: ",Str (name k),Str "." ]
             | length keyds==1, k<-keyds ]++
@@ -481,7 +481,7 @@ chpDataAnalysis lev fSpec flags
                               ]
            Dutch   -> case [k | k<-keyrules fSpec, null (mors k >- mors p)] of
                        []  -> []
-                       [s] -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" key. ") ] 
+                       [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ] 
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
                                 else if isTypeable (rrexp s)
@@ -515,7 +515,7 @@ chpDataAnalysis lev fSpec flags
                                                   else fatal 1714 ("Untypeable "++show s)
                                                 | s<-ss ]
                               ]
-            (Dutch  ,  [s]) -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" procesregel. ") ] 
+            (Dutch  ,  [s]) -> [ Para [ Str ("Deze gegevensverzameling genereert één procesregel. ") ] 
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
                                 else if isTypeable (rrexp s)
