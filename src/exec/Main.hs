@@ -54,9 +54,9 @@ main =
 -- For the large scripts that are used in projects, the program may abort due to insufficient resources.
                   ; if typeGraphs opts
                     then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
-                            ; putStr ("\n"++condensedGraphPath++" written.")
+                            ; verboseLn opts (condensedGraphPath++" written.")
                             ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
-                            ; putStr ("\n"++stDotGraphPath++" written.")
+                            ; verboseLn opts (stDotGraphPath++" written.")
                             }
                     else do { putStr "" }
                   ; case actxOrErrs of

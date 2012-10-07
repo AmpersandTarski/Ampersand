@@ -429,7 +429,7 @@ count :: Options -> Int -> String -> String
 count flags n x
  = case (language flags, n) of
       (Dutch  , 0) -> "geen "++plural Dutch x
-      (Dutch  , 1) -> preciesEen++" "++x
+      (Dutch  , 1) -> "één "++x
       (Dutch  , 2) -> "twee "++plural Dutch x
       (Dutch  , 3) -> "drie "++plural Dutch x
       (Dutch  , 4) -> "vier "++plural Dutch x
