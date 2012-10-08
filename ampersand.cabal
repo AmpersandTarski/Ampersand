@@ -57,7 +57,7 @@ data-files:
 
 source-repository head
   type:      svn
-  location:  https://ampersand.svn.sourceforge.net/svnroot/ampersand
+  location:  https://svn.code.sf.net/p/ampersand/code/trunk
 
 flag executable
   description:  Build the ampersand executable.
