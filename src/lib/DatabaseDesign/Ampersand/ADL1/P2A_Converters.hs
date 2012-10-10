@@ -118,7 +118,7 @@ complement a              = PCpl (origin a) a
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False
 
-type Typemap = [(Type,Type)] --Data.Map.Map Type [Type]
+type Typemap = Data.Map.Map Type [Type]
 
 {- The type  Data.Map.Map Type [Type]  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
 For the following, let m be a map (Data.Map.Map Type [Type]) that represents relation r[Type*Type]
@@ -221,16 +221,6 @@ findIn t cl = getList (Data.Map.lookup t cl)
                  where getList Nothing = []
                        getList (Just a) = a
 
-makeDataMaps :: (Typemap,Typemap) -> (Data.Map.Map Type [Type],Data.Map.Map Type [Type])
-makeDataMaps (a,b) = (makeDataMap a, makeDataMap b)
-makeDataMap :: Typemap -> Data.Map.Map Type [Type]
-makeDataMap lst = Data.Map.fromDistinctAscList (foldr compress [] (sort lst))
-  where
-    compress (a,b) o@((a',bs):rs) = if a==a' then (a',addTo b bs):rs else (a,[b]):o
-    compress (a,b) [] = [(a,[b])]
-    addTo b o@(c:_) | c==b = o
-    addTo b o = b:o
-
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
 --   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
@@ -251,7 +241,7 @@ typing p_context
       where
        revEdgesClos = setClosure (reverseMap firstSetOfEdges) "revEdgesClos"
      (firstSetOfEdges,secondSetOfEdges)
-      = makeDataMaps (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
+      = (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
      uType :: Term    -- x:    the original term from the script, meant for representation in the graph.
            -> Type            -- uLft: the type of the universe for the domain of x 
@@ -349,7 +339,7 @@ typing p_context
                                                 uType x uLft uRt e                 -- -a = V - a
                                                 where e = PDif o (PVee (origin x)) a
      nothing :: (Typemap,Typemap)
-     nothing = ([],[])
+     nothing = (Data.Map.empty,Data.Map.empty)
      {-
      isFull (TypExpr (Pfull _ _) _) = True
      isFull (TypLub a b _) = isFull a && isFull b
@@ -365,11 +355,11 @@ typing p_context
      (.<.) :: Type -> Type -> (Typemap , Typemap)
      _ .<. Anything = nothing
      a .<. _ | isNull a = nothing
-     a .<. b  = ([(a,b),(b,b)],snd nothing) -- (Data.Map.fromList [(a, [b]),(b, [])],nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
+     a .<. b  = (Data.Map.fromList [(a, [b]),(b, [])],snd nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
      (.=.) :: Type -> Type -> (Typemap, Typemap)
-     a .=. b  = ([(a,b),(b,a)],snd nothing) -- (Data.Map.fromList [(a, [b]),(b, [a])],nothing)
+     a .=. b  = (Data.Map.fromList [(a, [b]),(b, [a])],snd nothing)
      (.++.) :: Typemap -> Typemap -> Typemap
-     m1 .++. m2  = m1 ++ m2 -- Data.Map.unionWith merge m1 m2
+     m1 .++. m2  = Data.Map.unionWith merge m1 m2
      (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
      (a,b) .+. (c,d) = (c.++.a,d.++.b)
      dom, cod :: Term -> Type
@@ -825,7 +815,8 @@ parallelList = foldr (parallel (:)) (Checked [])
         parallel f (Errors  a) (Checked b) = Errors a
         parallel f (Checked a) (Errors  b) = Errors b
         parallel f (Errors  a) (Errors  b) = Errors (a ++ b)
-         -- this function is used as a convenience to define parallelList -}
+        -- this function is used as a convenience to define parallelList
+        -}
 
 instance Functor Guarded where
  fmap _ (Errors a) = (Errors a)
