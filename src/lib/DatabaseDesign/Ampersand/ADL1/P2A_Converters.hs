@@ -815,19 +815,17 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
 
 data Guarded a = Errors [CtxError] | Checked a
 
-{-
+
 parallelList :: [Guarded a] -> Guarded [a] -- get all values or collect all error messages
 parallelList = foldr (parallel (:)) (Checked [])
   where parallel :: (a->b->c) -> Guarded a -> Guarded b -> Guarded c -- get both values or collect all error messages
         parallel f ga = (<*>) (fmap f ga)
- -- the following definition is equivalent:
-parallel f (Checked a) (Checked b) = Checked (f a b)
-parallel f (Errors  a) (Checked b) = Errors a
-parallel f (Checked a) (Errors  b) = Errors b
-parallel f (Errors  a) (Errors  b) = Errors (a ++ b)
- -- this function is used as a convenience to define parallelList
--}
-
+        {- the following definition is equivalent:
+        parallel f (Checked a) (Checked b) = Checked (f a b)
+        parallel f (Errors  a) (Checked b) = Errors a
+        parallel f (Checked a) (Errors  b) = Errors b
+        parallel f (Errors  a) (Errors  b) = Errors (a ++ b)
+         -- this function is used as a convenience to define parallelList -}
 
 instance Functor Guarded where
  fmap _ (Errors a) = (Errors a)
@@ -899,6 +897,12 @@ pCtx2aCtx p_context
              , ctxatoms  = allExplicitAtoms
              }
     st = typing p_context
+    stClos      :: Data.Map.Map Type [Type]                  -- (st\/stAdded)*\/I  (total and transitive)
+    eqType      :: Data.Map.Map Type [Type]                  -- (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
+    compatible  :: Type -> Type -> Bool                      -- True if both types have a greatest lower bound (glb), which means they may have atoms in common
+    cGlb        :: P_Concept -> P_Concept -> Maybe P_Concept -- a function to compute a greates lower bound, if it exists. 
+    bindings    :: Data.Map.Map Type [P_Declaration]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    isas        :: [(P_Concept,P_Concept)]                   -- 
     (stClos, eqType, compatible, _ , _ , cGlb, bindings, isas) = tableOfTypes p_context st
     specializationTuples :: [(A_Concept,A_Concept)]
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
@@ -916,21 +920,41 @@ pCtx2aCtx p_context
        , let eqs=[c | TypExpr (Pid c) _<-equals ]
        , length eqs>1]
     (stTypeGraph,eqTypeGraph) = typeAnimate p_context st
-    cxerrs = concat (patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes)++themeschk
+    cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
     agens = map (pGen2aGen "NoPattern") (ctx_gs p_context)
-    (adecs,   deccxes)   = (unzip . map (pDecl2aDecl allpops "NoPattern")  . ctx_ds) p_context
-    (apurp,   xplcxes)   = (unzip . map  pPurp2aPurp                       . ctx_ps   ) p_context
-    (pats,    patcxes)   = (unzip . map (pPat2aPat   allpops)              . ctx_pats ) p_context
-    (procs,   proccxes)  = (unzip . map (pProc2aProc allpops)              . ctx_PPrcs) p_context
-    (ctxrules,rulecxes)  = (unzip . map (pRul2aRul   "NoPattern")          . ctx_rs   ) p_context
-    (keys,    keycxes)   = (unzip . map  pKDef2aKDef                       . ctx_ks   ) p_context
-    (ifcs,interfacecxes) = (unzip . map  pIFC2aIFC                         . ctx_ifcs ) p_context
-    (sqlPlugs,sPlugcxes) = (unzip . map (pODef2aODef [] Anything)          . ctx_sql  ) p_context
-    (phpPlugs,pPlugcxes) = (unzip . map (pODef2aODef [] Anything)          . ctx_php  ) p_context
-    (allpops, popcxes)   = (unzip . map  pPop2aPop                         . pops     ) p_context
+    (adecs,   deccxes)   = case (parallelList . map (pDecl2aDecl allpops "NoPattern")  . ctx_ds   ) p_context of
+                            Checked decs -> (decs, [])
+                            Errors  errs -> (fatal 930 "Do not refer to undefined declarations", errs)
+    (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp                       . ctx_ps   ) p_context of
+                            Checked purps -> (purps, [])
+                            Errors  errs  -> (fatal 938 "Do not refer to undefined purposes", errs)
+    (pats,    patcxes)   = case (parallelList . map (pPat2aPat   allpops)              . ctx_pats ) p_context of
+                            Checked pats' -> (pats', [])
+                            Errors  errs  -> (fatal 938 "Do not refer to undefined patterns", errs)
+    (procs,   proccxes)  = case (parallelList . map (pProc2aProc allpops)              . ctx_PPrcs) p_context of
+                            Checked prcs -> (prcs, [])
+                            Errors errs  -> (fatal 938 "Do not refer to undefined processes", errs)
+    (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")            . ctx_rs   ) p_context of
+                            Checked ruls -> (ruls, [])
+                            Errors errs  -> (fatal 938 "Do not refer to undefined rules", errs)
+    (keys,    keycxes)   = case (parallelList . map pKDef2aKDef                        . ctx_ks   ) p_context of
+                            Checked keys -> (keys, [])
+                            Errors errs  -> (fatal 938 "Do not refer to undefined keys", errs)
+    (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                         . ctx_ifcs ) p_context of
+                            Checked ifcs -> (ifcs, [])
+                            Errors errs  -> (fatal 938 "Do not refer to undefined interfaces", errs)
+    (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef [] Anything)          . ctx_sql  ) p_context of
+                            Checked plugs -> (plugs, [])
+                            Errors errs   -> (fatal 951 "Do not refer to undefined sqlPlugs", errs)
+    (phpPlugs,pPlugcxes) = case (parallelList . map (pODef2aODef [] Anything)          . ctx_php  ) p_context of
+                            Checked plugs -> (plugs, [])
+                            Errors errs   -> (fatal 954 "Do not refer to undefined phpPlugs", errs)
+    (allpops, popcxes)   = case (parallelList . map  pPop2aPop                         . pops     ) p_context of
+                            Checked pops -> (pops, [])
+                            Errors errs  -> (fatal 957 "Do not refer to undefined populations", errs)
     allExplicitAtoms :: [(String,[String])]
     allExplicitAtoms = [(p_popm cptos',[a | (a,_)<-p_popps cptos']) | cptos'@P_CptPopu{}<-pops p_context]
     pops pc
@@ -963,59 +987,78 @@ pCtx2aCtx p_context
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
-    pPat2aPat :: [Population] -> P_Pattern -> (Pattern, [CtxError])
+    pPat2aPat :: [Population] -> P_Pattern -> Guarded Pattern
     pPat2aPat pops' ppat 
-     = (A_Pat { ptnm  = name ppat    -- Name of this pattern
-              , ptpos = pt_pos ppat  -- the position in the file in which this pattern was declared.
-              , ptend = pt_end ppat  -- the position in the file in which this pattern was declared.
-              , ptrls = prules       -- The user defined rules in this pattern
-              , ptgns = agens'        -- The generalizations defined in this pattern
-              , ptdcs = adecs'        -- The declarations declared in this pattern
-              , ptkds = keys'         -- The key definitions defined in this pattern
-              , ptxps = xpls         -- The purposes of elements defined in this pattern
-              }
-       , [CxeOrig typeErrs "pattern" (name ppat) (origin ppat) | (not.null) typeErrs]
-       )
+     = case typeErrs of
+        [] -> Checked (A_Pat { ptnm  = name ppat    -- Name of this pattern
+                             , ptpos = pt_pos ppat  -- the position in the file in which this pattern was declared.
+                             , ptend = pt_end ppat  -- the position in the file in which this pattern was declared.
+                             , ptrls = prules       -- The user defined rules in this pattern
+                             , ptgns = agens'       -- The generalizations defined in this pattern
+                             , ptdcs = adecs'       -- The declarations declared in this pattern
+                             , ptkds = keys'        -- The key definitions defined in this pattern
+                             , ptxps = xpls         -- The purposes of elements defined in this pattern
+                             } )
+        _  -> Errors [CxeOrig typeErrs "pattern" (name ppat) (origin ppat) | (not.null) typeErrs]
        where
-        typeErrs = concat (rulecxes'++keycxes'++deccxes'++xplcxes')
-        (prules,rulecxes') = unzip arls
-        arls  = map (pRul2aRul (name ppat)) (pt_rls ppat)
-        agens' = map (pGen2aGen (name ppat)) (pt_gns ppat)
-        (keys',keycxes') = unzip akds
-        akds  = map pKDef2aKDef (pt_kds ppat)
-        (adecs',deccxes') = (unzip . map (pDecl2aDecl pops' (name ppat)) . pt_dcs) ppat
-        (xpls,xplcxes') = (unzip . map pPurp2aPurp . pt_xps) ppat
-    
-    pProc2aProc :: [Population] -> P_Process -> (Process,[CtxError])
+        typeErrs = rulecxes'++keycxes'++deccxes'++xplcxes'
+        (prules,rulecxes') = case (parallelList . map (pRul2aRul (name ppat)) .pt_rls) ppat of
+                              Checked ruls -> (ruls, [])
+                              Errors errs  -> (fatal 995 "Do not refer to undefined rules", errs)
+        (keys',keycxes')   = case (parallelList . map pKDef2aKDef .pt_kds) ppat of
+                              Checked keys -> (keys, [])
+                              Errors errs  -> (fatal 998 "Do not refer to undefined keys", errs)
+        (adecs',deccxes')  = case (parallelList . map (pDecl2aDecl pops' (name ppat)) . pt_dcs) ppat of
+                              Checked decs -> (decs, [])
+                              Errors  errs -> (fatal 1001 "Do not refer to undefined declarations", errs)
+        (xpls,xplcxes')    = case (parallelList . map pPurp2aPurp . pt_xps) ppat of
+                              Checked purps -> (purps, [])
+                              Errors  errs  -> (fatal 1005 "Do not refer to undefined purposes", errs)
+        agens'  = map (pGen2aGen (name ppat)) (pt_gns ppat)
+
+    pProc2aProc :: [Population] -> P_Process -> Guarded Process
     pProc2aProc pops' pproc
-     = (Proc { prcNm    = procNm pproc
-             , prcPos   = procPos pproc
-             , prcEnd   = procEnd pproc
-             , prcRules = prules
-             , prcGens  = agens'          -- The generalizations defined in this pattern
-             , prcDcls  = adecs'          -- The declarations declared in this pattern
-             , prcRRuls = arruls         -- The assignment of roles to rules.
-             , prcRRels = arrels         -- The assignment of roles to Relations.
-             , prcKds   = keys'           -- The key definitions defined in this process
-             , prcXps   = expls          -- The purposes of elements defined in this process
-             }
-       , [CxeOrig typeErrs "process" (name pproc) (origin pproc) | (not.null) typeErrs]
-       )
+     = case typeErrs of
+        [] -> Checked(Proc { prcNm    = procNm pproc
+                           , prcPos   = procPos pproc
+                           , prcEnd   = procEnd pproc
+                           , prcRules = prules
+                           , prcGens  = agens'          -- The generalizations defined in this pattern
+                           , prcDcls  = adecs'          -- The declarations declared in this pattern
+                           , prcRRuls = arruls         -- The assignment of roles to rules.
+                           , prcRRels = arrels         -- The assignment of roles to Relations.
+                           , prcKds   = keys'           -- The key definitions defined in this process
+                           , prcXps   = expls          -- The purposes of elements defined in this process
+                           } )
+        _  -> Errors [CxeOrig typeErrs "process" (name pproc) (origin pproc) | (not.null) typeErrs]
        where
-        typeErrs = concat (rulecxes'++keycxes'++deccxes'++rrcxes++editcxes++explcxes)
-        (prules,rulecxes') = (unzip . map (pRul2aRul (name pproc)) . procRules) pproc
+        typeErrs = concat ([rulecxes']++[keycxes']++[deccxes']++[rrcxes]++editcxes++[explcxes])
+        (prules,rulecxes') = case (parallelList . map (pRul2aRul (name pproc)) . procRules) pproc of
+                              Checked ruls -> (ruls, [])
+                              Errors errs  -> (fatal 1025 "Do not refer to undefined rules", errs)
         arrels = [(rol,rel) |rr<-rrels, rol<-rrRoles rr, rel<-rrRels rr]
         (rrels,editcxes)  = (unzip . map pRRel2aRRel            . procRRels) pproc
         agens'  = map (pGen2aGen (name pproc)) (procGens pproc)
         arruls = [(rol,rul) |rul<-rules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
-        (adecs',deccxes')   = (unzip . map (pDecl2aDecl pops' (name pproc)) . procDcls) pproc
-        (rruls,rrcxes)    = (unzip . map  pRRul2aRRul                    . procRRuls) pproc
-        (keys',keycxes')    = (unzip . map  pKDef2aKDef                    . procKds) pproc
-        (expls,explcxes)  = (unzip . map  pPurp2aPurp                    . procXps) pproc
+        (adecs',deccxes') = case (parallelList . map (pDecl2aDecl pops' (name pproc)) . procDcls) pproc of
+                             Checked decs -> (decs, [])
+                             Errors  errs -> (fatal 1030 "Do not refer to undefined declarations", errs)
+        (rruls,rrcxes)    = case (parallelList . map pRRul2aRRul . procRRuls) pproc of
+                             Checked rrls -> (rrls, [])
+                             Errors errs  -> (fatal 1029 "Do not refer to undefined roleRules", errs)
+    --  (keys',keycxes')    = (unzip . map  pKDef2aKDef                    . procKds) pproc
+        (keys',keycxes')  = case (parallelList . map pKDef2aKDef . procKds) pproc of
+                             Checked keys -> (keys, [])
+                             Errors errs  -> (fatal 1029 "Do not refer to undefined keys", errs)
+        (expls,explcxes)  = case (parallelList . map pPurp2aPurp . procXps) pproc of
+                             Checked purps -> (purps, [])
+                             Errors  errs  -> (fatal 1032 "Do not refer to undefined purposes", errs)
  
-    pRRul2aRRul :: RoleRule -> (RoleRule,[CtxError])
+    pRRul2aRRul :: RoleRule -> Guarded RoleRule
     pRRul2aRRul prrul
-     = ( prrul, [CxeOrig rrcxes "role rule" "" (origin prrul) | (not.null) rrcxes] )
+     = case rrcxes of
+        [] -> Checked prrul
+        _  -> Errors [CxeOrig rrcxes "role rule" "" (origin prrul) | (not.null) rrcxes]
        where
          rrcxes = [ newcxe ("Rule '"++r++" does not exist.")
                   | r<-mRules prrul, null [rul | rul<-rules contxt, name rul==r]]
@@ -1035,54 +1078,60 @@ pCtx2aCtx p_context
                                                           ++fatal 547 ("Untyped relation(s) "++ intercalate ", " [nm | Prel _ nm<-rr_Rels prrel])
                                  ]
     
-    p2aPairView :: Sign -> P_PairView -> (PairView,[CtxError])
-    p2aPairView _ (P_PairView ppvs) = (PairView pvs, concat errs) 
-     where (pvs, errs) = unzip $ map p2aPairViewSegment ppvs
-    
-    p2aPairViewSegment :: P_PairViewSegment -> (PairViewSegment,[CtxError])
-    p2aPairViewSegment  (P_PairViewText str)          = (PairViewText str, [])
-    p2aPairViewSegment  (P_PairViewExp srcOrTgt pexp)
-     = case pExpr2aExpr pexp of
-        Checked (aexpr,_,_) -> (PairViewExp srcOrTgt aexpr, [])
-        Errors exprcxe      -> (fatal 1011 "Illegal reference to P_PairViewExp", exprcxe)
-    pRul2aRul :: String -> P_Rule -> (Rule,[CtxError])
+{- PairViews are made for the purpose of assembling nice messages for violations. E.g. VIOLATION lateEntry : (afmaken)
+   data P_PairView = P_PairView [P_PairViewSegment] deriving Show
+   data P_PairViewSegment = P_PairViewText String
+                          | P_PairViewExp SrcOrTgt Term
+
+-}
+    p2aPairView :: P_Concept -> P_Concept -> P_PairView -> Guarded PairView
+    p2aPairView srcCpt trgCpt (P_PairView ppvs) = do { guardedPpvs <- (parallelList . map (p2aPairViewSegment srcCpt trgCpt)) ppvs ; return (PairView guardedPpvs) }
+
+    p2aPairViewSegment :: P_Concept -> P_Concept -> P_PairViewSegment -> Guarded PairViewSegment
+    p2aPairViewSegment srcCpt trgCpt (P_PairViewText str)          = Checked (PairViewText str)
+    p2aPairViewSegment srcCpt trgCpt (P_PairViewExp srcOrTgt pexp) = do { (aexpr,s,t) <- pExpr2aExpr pexp
+                                                                        ; return (PairViewExp srcOrTgt aexpr)
+                                                                        }
+    pRul2aRul :: String -> P_Rule -> Guarded Rule
     pRul2aRul patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))
-     = case pExpr2aExpr (rr_exp prul) of
-        Checked (aexpr,_,_) -> (Ru { rrnm  = rr_nm prul                 -- Name of this rule
-                                   , rrexp = aexpr                      -- The rule term
-                                   , rrfps = rr_fps prul                -- Position in the Ampersand file
-                                   , rrmean = meanings (rr_mean prul)   -- Ampersand generated meaning (for all known languages)
-                                   , rrmsg = map (pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt)) $ rr_msg prul
-                                   , rrviol = mviol
-                                   , rrtyp = sign aexpr                 -- Allocated type
-                                   , rrdcl = Nothing                    -- The property, if this rule originates from a property on a Declaration
-                                   , r_env = patname                    -- Name of pattern in which it was defined.
-                                   , r_usr = True                       -- True if this rule was specified explicitly as a rule in the Ampersand script;
-                                                                        -- False if it follows implicitly from the Ampersand script and generated by a computer
-                                   , r_sgl = or [rr_nm prul `elem` map (name.snd) (prcRRuls p) | p<-ctxprocs contxt]  -- True if this is a signal; False if it is an ALWAYS rule
-                                   , srrel = -- the signal relation
-                                             Sgn { decnm = rr_nm prul
-                                                 , decsgn = sign aexpr
-                                                 , decprps = []
-                                                 , decprps_calc = []
-                                                 , decprL = ""
-                                                 , decprM = ""
-                                                 , decprR = ""
-                                                 , decMean = meanings (rr_mean prul)
-                                                 , decConceptDef = Nothing
-                                                 , decpopu = []
-                                                 , decfpos = rr_fps prul
-                                                 , deciss = True
-                                                 , decusr = False
-                                                 , decpat = ""
-                                                 , decplug = True
-                                                 }
-                                   }, mviolcxe)
-                               where (mviol, mviolcxe) = case fmap (p2aPairView $ sign aexpr) (rr_viol prul) of
-                                                           Nothing              -> (Nothing, [])
-                                                           Just (viol, violcxe) -> (Just viol, violcxe)
-                                     meanings = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) 
-        Errors exprcxe -> (fatal 1045 ("Illegal reference to a P_Rule\n"++show exprcxe), exprcxe )
+     = do { (aexpr,srcCpt,trgCpt) <- pExpr2aExpr (rr_exp prul)
+          ; mviol <- case rr_viol prul of
+                      Nothing        -> Checked Nothing
+                      Just pViolSegs -> case p2aPairView srcCpt trgCpt pViolSegs of
+                                          Errors errs -> Errors errs
+                                          Checked violSegs -> Checked (Just violSegs)
+          ; let meanings = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) (rr_mean prul)
+          ; return (Ru { rrnm   = rr_nm prul                 -- Name of this rule
+                       , rrexp  = aexpr                      -- The rule term
+                       , rrfps  = rr_fps prul                -- Position in the Ampersand file
+                       , rrmean = meanings                   -- Ampersand generated meaning (for all known languages)
+                       , rrmsg  = map (pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt)) $ rr_msg prul
+                       , rrviol = mviol
+                       , rrtyp  = sign aexpr                 -- Allocated type
+                       , rrdcl  = Nothing                    -- The property, if this rule originates from a property on a Declaration
+                       , r_env  = patname                    -- Name of pattern in which it was defined.
+                       , r_usr  = True                       -- True if this rule was specified explicitly as a rule in the Ampersand script;
+                                                             -- False if it follows implicitly from the Ampersand script and generated by a computer
+                       , r_sgl  = or [rr_nm prul `elem` map (name.snd) (prcRRuls p) | p<-ctxprocs contxt]  -- True if this is a signal; False if it is an ALWAYS rule
+                       , srrel  = Sgn { decnm = rr_nm prul        -- the signal relation
+                                      , decsgn = sign aexpr
+                                      , decprps = []
+                                      , decprps_calc = []
+                                      , decprL = ""
+                                      , decprM = ""
+                                      , decprR = ""
+                                      , decMean = meanings
+                                      , decConceptDef = Nothing
+                                      , decpopu = []
+                                      , decfpos = rr_fps prul
+                                      , deciss = True
+                                      , decusr = False
+                                      , decpat = ""
+                                      , decplug = True
+                                      }
+                       } )
+          }
+
     pMeanings2aMeaning :: Lang          -- The default language
                       -> PandocFormat  -- The default format
                       -> [PMeaning]
@@ -1104,18 +1153,21 @@ pCtx2aCtx p_context
                where fmt = fromMaybe defFormat (mFormat pm)
                
     -- | pKDef2aKDef checks compatibility of composition with key concept on equality
-    pKDef2aKDef :: P_KeyDef -> (KeyDef, [CtxError])
+    pKDef2aKDef :: P_KeyDef -> Guarded KeyDef
+  --pKDef2aKDef :: P_KeyDef -> (KeyDef, [CtxError])
     pKDef2aKDef pkdef
-     = (Kd { kdpos = kd_pos pkdef
-           , kdlbl = kd_lbl pkdef
-           , kdcpt = c
-           , kdats = segs
-                        }
-       , [CxeOrig typeErrors' "key definition" "" (origin pkdef) | (not.null) typeErrors']
-       )
+     = case typeErrors' of
+        [] -> Checked (Kd { kdpos = kd_pos pkdef
+                          , kdlbl = kd_lbl pkdef
+                          , kdcpt = c
+                          , kdats = segs
+                          })
+        _  -> Errors [CxeOrig typeErrors' "key definition" "" (origin pkdef) | (not.null) typeErrors']
        where
-        typeErrors' = kdcxe++concat segscxes
-        (segs, segscxes) = unzip . map (pKeySeg2aKeySeg (kd_cpt pkdef)) $ kd_ats pkdef
+        typeErrors' = kdcxe++segscxes
+        (segs, segscxes) = case (parallelList . map (pKeySeg2aKeySeg (kd_cpt pkdef)) . kd_ats) pkdef of
+                             Checked segments -> (segments, [])
+                             Errors  errs     -> (fatal 1166 "Do not refer to undefined segments", errs)
         c  = pCpt2aCpt (kd_cpt pkdef)
         -- check equality
         ats = [ expr | KeyExp expr <- segs ]
@@ -1124,40 +1176,42 @@ pCtx2aCtx p_context
                                             ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the key concept ("++ showADL c ++ ")."
                                            |x<-ats,source (objctx x)/=c])
     
-    -- (ats,atscxes)  = (unzip . map (pODef2aODef [] (thing c)) . kd_ats) pkdef
-    pKeySeg2aKeySeg :: P_Concept -> P_KeySegment -> (KeySegment, [CtxError])
-    pKeySeg2aKeySeg _      (P_KeyText str)   = (KeyText str, [])
-    pKeySeg2aKeySeg _      (P_KeyHtml str)   = (KeyHtml str, [])
-    pKeySeg2aKeySeg concpt (P_KeyExp keyExp) = let (objDef, cxe) = pODef2aODef [] (thing concpt) keyExp
-                                               in ( KeyExp objDef, cxe)
+    pKeySeg2aKeySeg :: P_Concept -> P_KeySegment -> Guarded KeySegment
+    pKeySeg2aKeySeg _      (P_KeyText str)   = return (KeyText str)
+    pKeySeg2aKeySeg _      (P_KeyHtml str)   = return (KeyHtml str)
+    pKeySeg2aKeySeg concpt (P_KeyExp keyExp) = do { objDef <- pODef2aODef [] (thing concpt) keyExp
+                                                  ; return (KeyExp objDef)
+                                                  }
     
     -- TODO -> Does pIFC2aIFC require more checks? What is the intention of params, viols, args i.e. the interface data type?
-    pIFC2aIFC :: P_Interface -> (Interface,[CtxError])
+    pIFC2aIFC :: P_Interface -> Guarded Interface
     pIFC2aIFC pifc 
-     = (Ifc { ifcName   = ifc_Name pifc
-            , ifcParams = prms
-            , ifcViols  = fatal 206 "not implemented ifcViols"
-            , ifcArgs   = ifc_Args pifc
-            , ifcRoles  = ifc_Roles pifc
-            , ifcObj    = obj
-            , ifcPos    = ifc_Pos pifc
-            , ifcExpl   = ifc_Expl pifc
-            }
-       , [CxeOrig typeErrors' "interface" (name pifc) (origin pifc) | (not.null) typeErrors']
-       )
+     = case typeErrors' of
+        [] -> Checked (Ifc { ifcName   = ifc_Name pifc
+                           , ifcParams = prms
+                           , ifcViols  = fatal 206 "not implemented ifcViols"
+                           , ifcArgs   = ifc_Args pifc
+                           , ifcRoles  = ifc_Roles pifc
+                           , ifcObj    = obj
+                           , ifcPos    = ifc_Pos pifc
+                           , ifcExpl   = ifc_Expl pifc
+                           } )
+        _  -> Errors [CxeOrig typeErrors' "interface" (name pifc) (origin pifc)]
        where
         typeErrors' = objcxe++concat prmcxes++duplicateRoleErrs++undeclaredRoleErrs
         parentIfcRoles = if null $ ifc_Roles pifc then roles contxt else ifc_Roles pifc -- if no roles are specified, the interface supports all roles
-        (obj,objcxe) = pODef2aODef parentIfcRoles Anything (ifc_Obj pifc)
+        (obj,objcxe) = case pODef2aODef parentIfcRoles Anything (ifc_Obj pifc) of
+                        Checked object -> (object, [])
+                        Errors errs    -> (fatal 1201 "Do not refer to undefined objects", errs)
         (prms,prmcxes) = unzip [ pRel2aRel (psign sgn) r
-                               | param<-ifc_Params pifc, let (r,sgns)=getSign param, sgn<-sgns
+                               | param<-ifc_Params pifc, let (r,sgns)=getSgn param, sgn<-sgns
                                ]
                          where
-                            getSign :: Term -> (Term,[P_Sign])
-                            getSign (PTyp _ r@(Prel{}) (P_Sign []))  = (r,[])
-                            getSign (PTyp _ r@(Prel{}) sgn) = (r,[sgn])
-                            getSign r@(Prel _ rel)          = (r,[dec_sign d | d<-p_declarations p_context, name d==rel ])
-                            getSign r                       = fatal 1070 ("Illegal call of getSign ("++show r++").")
+                            getSgn :: Term -> (Term,[P_Sign])
+                            getSgn (PTyp _ r@(Prel{}) (P_Sign []))  = (r,[])
+                            getSgn (PTyp _ r@(Prel{}) sgn) = (r,[sgn])
+                            getSgn r@(Prel _ rel)          = (r,[dec_sign d | d<-p_declarations p_context, name d==rel ])
+                            getSgn r                       = fatal 1070 ("Illegal call of getSgn ("++show r++").")
         duplicateRoleErrs = [newcxe $ "Duplicate interface role \""++role++"\" at "++show (origin pifc) | role <- nub $ ifc_Roles pifc, length (filter (==role) $ ifc_Roles pifc) > 1 ]
         undeclaredRoleErrs = [newcxe $ "Undeclared interface role \""++role++"\" at "++show (origin pifc) | null duplicateRoleErrs, role <- nub $ ifc_Roles pifc, role `notElem` roles contxt ]
         -- we show the line nr for the interface, which may be slightly inaccurate, but roles have no position 
@@ -1167,35 +1221,32 @@ pCtx2aCtx p_context
     pODef2aODef :: [String]              -- a list of roles that may use this object
                 -> Type                  -- the universe for type checking this object. anything if the type checker decides freely, thing c if it must be of type c.
                 -> P_ObjectDef           -- the object definition as specified in the parse tree
-                -> (ObjectDef,[CtxError]) -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
+                -> Guarded ObjectDef -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
     pODef2aODef parentIfcRoles universe podef 
-     = case pExpr2aExpr (obj_ctx podef) of
-        Checked (expr, _, tTrg) -> ( Obj { objnm   = obj_nm podef
-                                         , objpos  = obj_pos podef
-                                         , objctx  = expr
-                                         , objmsub = msub
-                                         , objstrs = obj_strs podef
-                                         }
-                                   , [CxeOrig typeErrors' "object definition" "" (origin podef) | (not.null) typeErrors']
-                                   )
-                                   where
-                                    typeErrors' = nmchk++msubcxes
-                                    -- Step 1: A name check ensures that all attributes have unique names
-                                    nmchk = [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl)
-                                            |cl<-eqCl name (getSubPObjs podef),length cl>1]
-                                    getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
-                                    getSubPObjs _                                      = []
-                                    -- Step2: check obj_ats in the context of expr
-                                    (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles tTrg $ obj_msub podef
-        Errors exprcxe -> (fatal 1160 "Illegal reference to an ObjectDef", exprcxe)
-        
+     = do { (expr, _, tTrg) <- pExpr2aExpr (obj_ctx podef)
+          ; let (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles tTrg $ obj_msub podef
+                -- Step 1: A name check ensures that all attributes have unique names
+          ; let nmchk = [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl)
+                        |cl<-eqCl name (getSubPObjs podef),length cl>1]
+                 where getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
+                       getSubPObjs _                                      = []
+          ; case nmchk++msubcxes of
+             [] -> return ( Obj { objnm   = obj_nm podef   
+                                , objpos  = obj_pos podef  
+                                , objctx  = expr           
+                                , objmsub = msub           
+                                , objstrs = obj_strs podef 
+                                } )                        
+             typeErrors -> Errors typeErrors
+          }
     p2a_MaybeSubInterface :: [String] -> P_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
     p2a_MaybeSubInterface _              _    Nothing               = (Nothing, [])
     p2a_MaybeSubInterface parentIfcRoles conc (Just (P_Box p_objs)) =
-      let (objs, errss) = unzip [pODef2aODef parentIfcRoles (thing conc) p_obj | p_obj<-p_objs] 
-      in  (Just $ Box objs, concat errss)
+      case (parallelList . map (pODef2aODef parentIfcRoles (thing conc))) p_objs of
+        Checked objects -> (Just (Box objects), [])
+        Errors  errs    -> (fatal 1254 "Do not refer to undefined objects", errs)
     p2a_MaybeSubInterface parentIfcRoles conc (Just (P_InterfaceRef pos nm)) =
-      (Just $ InterfaceRef nm, errs)
+      (Just (InterfaceRef nm), errs)
      where errs = case [ifc | ifc <- interfaces contxt, name ifc == nm ] of
                    []                                     -> [newcxe $ "Undeclared interface \""++nm++"\" at " ++show pos ++ "."]
                    (_:_:_)                                -> fatal 350 $ "Multiple interfaces for ref "++nm
@@ -1210,19 +1261,18 @@ pCtx2aCtx p_context
                              "Interface "++show nm++", referenced at "++show pos++", does not support all roles of the containing interface. "++
                              "Unsupported roles: "++ intercalate ", " unsupportedRoles ++"."
       
-    pPurp2aPurp :: PPurpose -> (Purpose, [CtxError])
+    pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp pexpl
-     = ( Expl { explPos      = pexPos   pexpl
-              , explObj      = explobs
-              , explMarkup   = pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt) (pexMarkup pexpl)
-              , explRefId    = pexRefID pexpl
-              , explUserdefd = True
-             -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
-              }
-       , [CxeOrig xplcxe "explanation" "" (origin pexpl) | (not.null) xplcxe]
-       )
+     = case xplcxe of
+        [] -> Checked ( Expl { explPos      = pexPos   pexpl
+                             , explObj      = explobs
+                             , explMarkup   = pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt) (pexMarkup pexpl)
+                             , explRefId    = pexRefID pexpl
+                             , explUserdefd = True
+                            -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
+                             })
+        _  -> Errors [CxeOrig xplcxe "explanation" "" (origin pexpl) | (not.null) xplcxe]
        where (explobs,xplcxe) = pExOb2aExOb (pexObj   pexpl)
-             
     
     pExOb2aExOb :: PRef2Obj -> (ExplObj, [CtxError])
     pExOb2aExOb (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
@@ -1243,23 +1293,22 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name contxt/=str) ("No specification named '"++str++"'") )
     pExOb2aExOb po = fatal 1150 ("pExOb2aExOb is non-exhaustive, unexpected PO: "++show po)
     
-    pPop2aPop :: P_Population -> (Population,[CtxError])
+    pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop pop
      = case pExpr2aExpr expr of
-        Checked (ERel aRel,_,_)          -> ( Popu { popm  = aRel
-                                                   , popps = p_popps pop
-                                                   }, [] )
-        Checked (ETyp (ERel aRel) _,_,_) -> ( Popu { popm  = aRel
-                                                   , popps = p_popps pop
-                                                   }, [] )
+        Checked (ERel aRel,_,_)          -> Checked ( Popu { popm  = aRel
+                                                           , popps = p_popps pop
+                                                           } )
+        Checked (ETyp (ERel aRel) _,_,_) -> Checked ( Popu { popm  = aRel
+                                                           , popps = p_popps pop
+                                                           } )
         Checked _                        -> fatal 1223 "illegal call of pPop2aPop"
-        Errors errs                      -> ( fatal 1224 "illegal reference to aExp", errs )
+        Errors errs                      -> Errors errs
        where expr = case pop of
                       P_CptPopu{}              -> Pid (PCpt (name pop))
                       P_Popu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
                       P_Popu{}                 -> PTyp (origin pop) (Prel (origin pop) (name pop)) (p_type pop)
                     
-    
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
        = Gen{genfp  = gen_fp  pg
@@ -1288,39 +1337,37 @@ pCtx2aCtx p_context
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
     
-    pDecl2aDecl :: [Population] -> String -> P_Declaration -> (Declaration, [CtxError])
+    pDecl2aDecl :: [Population] -> String -> P_Declaration -> Guarded Declaration
     pDecl2aDecl pops' patname pd =
-     ( Sgn { decnm   = dec_nm pd
-           , decsgn  = pSign2aSign (dec_sign pd)
-           , decprps = dec_prps pd
-           , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-           , decprL  = dec_prL pd
-           , decprM  = dec_prM pd
-           , decprR  = dec_prR pd
-           , decMean = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) (dec_Mean pd)
-           , decConceptDef = dec_conceptDef pd
-           , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
-                       dec_popu pd ++ 
-                       concat [popps pop | pop<-pops', let ad=popm pop
-                                         , name ad==name pd
-                                         , relsgn ad==pSign2aSign (dec_sign pd)
-                                         ]
-           , decfpos = dec_fpos pd 
-           , deciss  = True
-           , decusr  = True
-           , decpat  = patname
-           , decplug = dec_plug pd
-           }
-      , case dec_conceptDef pd of 
-          Just (RelConceptDef srcOrTgt _) | relConceptName (dec_nm pd) `elem` map name (concs contxt) -> 
-            [CxeOrig [newcxe ("Illegal DEFINE "++showSRCorTGT++" for relation "++show (dec_nm pd)++". Concept "++
-                             relConceptName (dec_nm pd)++" already exists.")]
-                    "declaration" "" (origin pd)]
-             where showSRCorTGT = if srcOrTgt == Src then "SRC" else "TGT"
-                   relConceptName ""     = fatal 472 "empty concept"
-                   relConceptName (c:cs) = toUpper c : cs
-          _ -> []
-      )
+     case dec_conceptDef pd of 
+          Just (RelConceptDef srcOrTgt _) | relConceptName (dec_nm pd) `elem` map name (concs contxt)
+            -> Errors [CxeOrig [newcxe ("Illegal DEFINE "++showSRCorTGT++" for relation "++show (dec_nm pd)++". Concept "++
+                                        relConceptName (dec_nm pd)++" already exists.")]
+                               "declaration" "" (origin pd)]
+               where showSRCorTGT = if srcOrTgt == Src then "SRC" else "TGT"
+                     relConceptName ""     = fatal 472 "empty concept"
+                     relConceptName (c:cs) = toUpper c : cs
+          _ -> Checked ( Sgn { decnm   = dec_nm pd
+                             , decsgn  = pSign2aSign (dec_sign pd)
+                             , decprps = dec_prps pd
+                             , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
+                             , decprL  = dec_prL pd
+                             , decprM  = dec_prM pd
+                             , decprR  = dec_prR pd
+                             , decMean = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) (dec_Mean pd)
+                             , decConceptDef = dec_conceptDef pd
+                             , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
+                                         dec_popu pd ++ 
+                                         concat [popps pop | pop<-pops', let ad=popm pop
+                                                           , name ad==name pd
+                                                           , relsgn ad==pSign2aSign (dec_sign pd)
+                                                           ]
+                             , decfpos = dec_fpos pd 
+                             , deciss  = True
+                             , decusr  = True
+                             , decpat  = patname
+                             , decplug = dec_plug pd
+                             } )
       
     -- | p2a for isolated references to relations. Use pExpr2aExpr instead if relation is used in a term.
     pRel2aRel :: [P_Concept] -> Term -> (Relation,[CtxError])
@@ -1395,10 +1442,9 @@ pCtx2aCtx p_context
        --  Errors errs -> Errors errs
        where
          f :: Term -> Guarded Expression
-         -- alternatively:
-         -- f t@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts t; return (ERel (I (pCpt2aCpt c)))}
          f t@(PI _)                     = do { c<-returnIConcepts t
-                                             ; return (ERel (I (pCpt2aCpt c)))}
+                                             ; return (ERel (I (pCpt2aCpt c)))
+                                             }
          f   (Pid c)                    = return (ERel (I (pCpt2aCpt c)))
          f   (Pnid c)                   = return (ECpl (ERel (I (pCpt2aCpt c))))
          f t@(Patm _ atom [])           = do { c<-returnIConcepts t
@@ -1457,6 +1503,8 @@ pCtx2aCtx p_context
          f (PFlp _ a)      = EFlp <$> f a
          f t@(PCpl _ a)    = do { fa <- f a; return (ECpl fa) <* errCpl t a }
          f (PBrk _ a)      = EBrk <$> f a
+         -- alternatively:  WHY (SJ): Bas, waarom staat dit commentaar hier? kunnen we hier nog iets nuttigs mee? 
+         -- f t@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts t; return (ERel (I (pCpt2aCpt c)))}
          f t@(PTyp o _ (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
          f t@(PTyp _ e@(Prel o a) sgnCast) = do { _ <- errCastType t
                                                 ; (decl,_) <- getDeclarationAndSign e
@@ -1545,10 +1593,7 @@ pCtx2aCtx p_context
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
          getDeclarationAndSign term
           = case (possibleDecls, srcTypes, trgTypes) of
-             ([d], [s], [t])  -> let (decl, errs) = pDecl2aDecl [] "" d in
-                                 if null errs
-                                 then Checked (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
-                                 else Errors errs
+             ([d], [s], [t])  -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
              ( ds,  _ ,  _ )  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
                                                 ,cxeDecs   = ds          -- the declarations to which this term has been matched
                                                 ,cxeSrcs   = srcTypes    -- the conflicting  source concepts (if null, there is an ambiguity)
