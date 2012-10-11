@@ -120,16 +120,16 @@ thing c  = TypExpr (Pid c) False
 
 type Typemap = Data.Map.Map Type [Type]
 
-{- The type  Data.Map.Map Type [Type]  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
-For the following, let m be a map (Data.Map.Map Type [Type]) that represents relation r[Type*Type]
+{- The type  Typemap  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
+For the following, let m be a Typemap that represents relation r[Type*Type]
 Invariants are:
 1. m contains all elements of the source of r
          keys m     equals the population of  I [source r], which are all Type object drawn from the script
 1a.      keys m     represents    dom r
-1b.      r is total (dom r=source r)
+1b.      m is total (dom m=I[source r])
    By the way, keys m produces the elements in ascending order without duplicates.
 2. All elements of the codomain of r are obtained by 'elems'
-         nub (concat (Data.Map.elems m))     represents    cod r
+         concat (Data.Map.elems m)     represents    cod r
 3. The map contains sorted lists without duplicates:
          let isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
              isSortedAndDistinct _ = True
@@ -144,17 +144,13 @@ reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | 
 -- note: reverseMap is relatively slow, but only needs to be calculated once
 
 -- | addIdentity r = r\/I
-addIdentity :: Data.Map.Map Type [Type] -> Data.Map.Map Type [Type]
+addIdentity :: Typemap -> Typemap
 addIdentity mp = Data.Map.mapWithKey (\k a->merge a [k]) mp
 
 -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
 {-
 reflexiveMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reflexiveMap lst = res
-  -- for debugging: if Data.Map.keys res == Data.Map.keys lst then res else fatal 459 ("Domain not preserved in reflexiveMap! Compare: \n" ++ show (Data.Map.keys res) ++ "\n" ++ show (Data.Map.keys lst))
- where
-  res = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
--- if not all of reflexiveMap will be used, a different implementation might be more useful
+reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
 -}
 
 mapIsOk :: (Show a,Ord a) => Data.Map.Map k [a] -> Bool
@@ -230,12 +226,12 @@ findIn t cl = getList (Data.Map.lookup t cl)
 --   Besides term term, this function requires a universe in which to operate.
 --   Specify 'Anything Anything' if there are no restrictions.
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
-typing :: P_Context -> Data.Map.Map Type [Type] -- subtypes (.. is subset of ..)
+typing :: P_Context -> Typemap -- subtypes (.. is subset of ..)
 typing p_context
  = Data.Map.unionWith merge firstSetOfEdges secondSetOfEdges
    where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
-   --            These are converted into two maps (each of type Data.Map.Map Type [Type]) for efficiency reasons.
+   --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
      compatible a b = (not.null) ((revEdgesClos Data.Map.! a) `isc` (revEdgesClos Data.Map.! b))
       where
@@ -381,18 +377,22 @@ Type         : a type term, containing a Term, which is represented by a number 
 [P_Concept]  : a list of concepts. If (_,_,term,cs) is an element of this table, then for every c in cs there is a proof that dom term is a subset of I[c].
                For a type correct term, list cs contains precisely one element.
 -}
-tableOfTypes :: P_Context -> Data.Map.Map Type [Type] ->
-                ( Data.Map.Map Type [Type]          -- stClos      -- (st\/stAdded)*\/I  (reflexive and transitive)
-                , Data.Map.Map Type [Type]          -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
-                , Type -> Type -> Bool              -- compatible  -- True if both types have a greatest lower bound (glb), which means they may have atoms in common
-                , Data.Map.Map Type [Type]          -- stClosAdded -- additional links added to stClos
-                , Data.Map.Map Type [Type]          -- stClos1     -- st*  (transitive)
+tableOfTypes :: P_Context -> Typemap ->
+                ( Typemap          -- stClos      -- (st\/stAdded)*\/I  (reflexive and transitive)
+                , Typemap          -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
+                , Typemap          -- stClosAdded -- additional links added to stClos
+                , Typemap          -- stClos1     -- st*  (transitive)
                 , P_Concept -> P_Concept -> Maybe P_Concept -- cGlb-- a function to compute a greates lower bound, if it exists.
                 , Data.Map.Map Type [P_Declaration] -- bindings    -- declarations that may be bound to relations
                 , [(P_Concept,P_Concept)]           -- isas        -- 
                 )                                   
 tableOfTypes p_context st
-  = ( stClos, eqType, compatible, stClosAdded, stClos1, cGlb, bindings
+  = ( stClos
+    , eqType
+    , stClosAdded
+    , stClos1
+    , cGlb
+    , bindings
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
              -- it is used for the purpose of making a poset of concepts in the A-structure.
@@ -406,7 +406,7 @@ tableOfTypes p_context st
     of atoms contained by dom t'.
 -}
      typeTerms :: [Type]          -- The list of all type terms in st.
-     typeTerms = Data.Map.keys st -- Because a Data.Map.Map Type [Type] is total, it is sufficient to compute  Data.Map.keys st
+     typeTerms = Data.Map.keys st -- Because a Typemap is total, it is sufficient to compute  Data.Map.keys st
 -- In order to compute the condensed graph, we need the transitive closure of st:
      stClos1 = setClosure st "st"       -- represents (st)* .   stClos1 is transitive
      someWhatSortedGlbs = sortBy compr [l | l@(TypGlb _ _ _) <- typeTerms]
@@ -420,16 +420,16 @@ tableOfTypes p_context st
       --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
       --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
       -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
-     stClosAdded :: Data.Map.Map Type [Type]
+     stClosAdded :: Typemap
      stClosAdded = foldl f stClos1 someWhatSortedGlbs
        where
-        f :: Data.Map.Map Type [Type] -> Type -> Data.Map.Map Type [Type] 
+        f :: Typemap -> Type -> Typemap 
         f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> merge cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
-     stClos :: Data.Map.Map Type [Type] -- ^ represents the transitive closure of stClosAdded.
-     stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos is reflexive (due to addIdentity) and transitive (due to setClosure).
-     stClosReversed = reverseMap stClos  -- stClosReversed is reflexive and transitive too.
-     eqType = Data.Map.intersectionWith  isc stClos stClosReversed  -- eqType = st* /\ st*~, i.e there exists a path from a to be and a path from b.
+     stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
+     stClos = setClosure stClosAdded "stClosAdded"  -- stClos is transitive (due to setClosure).
+     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too.
+     eqType = Data.Map.intersectionWith merge stClos stClosReversed  -- eqType = st* /\ st*~, i.e there exists a path from a to be and a path from b.
      isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
      compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
@@ -467,14 +467,14 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                      , cBinding@(_, TypExpr (PFlp _ c) _)<-codBindings, origin decl==origin c
                      , (typ,_)<-[dBinding,cBinding]
                      ] ++
-                     [ (d,[]) | d@(TypExpr         (PTyp _ (Prel _ nm') _)  _)<-typeTerms] ++
-                     [ (d,[]) | d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _)<-typeTerms]
+                     [ (d,[]) | d@(TypExpr         (PTyp _ (Prel _ _) _)  _)<-typeTerms] ++
+                     [ (d,[]) | d@(TypExpr (PFlp _ (PTyp _ (Prel _ _) _)) _)<-typeTerms]
                    )
 
 -- The TypGlb types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
 
  -- for debug
-showTypeTable :: Data.Map.Map Type [Type] -> Data.Map.Map Type [Type] -> String
+showTypeTable :: Typemap -> Typemap -> String
 showTypeTable stClos bindings
  = "Type table has "++show (length typeTerms)++" rows.\n  " ++ intercalate "\n  " (map showLine typeTerms)
    where  -- hier volgt een (wellicht wat onhandige, maar goed...) manier om de type table leesbaar neer te zetten.
@@ -503,33 +503,31 @@ showTypeTable stClos bindings
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
-typeAnimate :: P_Context -> Data.Map.Map Type [Type] -> (DotGraph String,DotGraph String)
-typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
+typeAnimate :: P_Context -> Typemap -> (DotGraph String,DotGraph String)
+typeAnimate p_context st = error testTable -- (stTypeGraph, eqTypeGraph)
    where
+     testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-     (stClos, eqType, compatible, stClosAdded, stClos1, _ , _ , _) = tableOfTypes p_context st
+     (stClos, eqType, stClosAdded, stClos1, _ , _ , _) = tableOfTypes p_context st
      typeTerms = Data.Map.keys stClos
      stNr :: Type -> Int
      stNr typ = stTable Data.Map.! typ
-     stTable = Data.Map.fromList [(t,i) | (i,t)<-zip [0..] typeTerms ]
+      where
+       stTable = Data.Map.fromAscList [(t,i) | (i,t)<-zip [0..] typeTerms ]
      stTypeGraph :: DotGraph String
      stTypeGraph = toDotGraph showStVertex show [0..length typeTerms-1] [] stEdges []
      stEdges :: [(Int,Int)]
      stEdges = [(i,j) | (s,t) <- flattenMap st, let (i,j)=(stNr s,stNr t), i/=j]
      showStVertex :: Int -> String
      showStVertex i
-      = head ([ showType t | (t,i')<-Data.Map.toAscList stTable, i==i' ]++fatal 506 ("No term numbered "++show i++" found by showStVertex"))
-
+      = head ([ showType t | (i',t)<-zip [0..] typeTerms, i==i' ]
+              ++fatal 506 ("No term numbered "++show i++" found by showStVertex\n numbered typeTerms:\n  "++(intercalate "\n  ".map show. zip [0..]) typeTerms)
+             )
      eqNr :: Type -> Int
      eqNr typ = Data.Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ] Data.Map.! typ
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
      eqClasses = nub (Data.Map.elems eqType)
-     classTable :: [(Int,[Type])]
-     classTable = zip [0..] eqClasses
-     classNr :: [Type] -> Int
-     classNr (t:_)  = head ([i | (i,(v:_))<-classTable, t == v]++[fatal 178 ("Type Class "++show t++" not found by classNr")])
-     classNr [] = fatal 385 "no ClassNr for an empty class. An empty class was generated somewhere, which is very wrong!"
 
      eqTypeGraph :: DotGraph String
      eqTypeGraph = toDotGraph showVtx show [0..length eqClasses-1] [] condensedEdges condensedEdges2
@@ -888,13 +886,12 @@ pCtx2aCtx p_context
              , ctxatoms  = allExplicitAtoms
              }
     st = typing p_context
-    stClos      :: Data.Map.Map Type [Type]                  -- (st\/stAdded)*\/I  (total and transitive)
-    eqType      :: Data.Map.Map Type [Type]                  -- (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    compatible  :: Type -> Type -> Bool                      -- True if both types have a greatest lower bound (glb), which means they may have atoms in common
+    stClos      :: Typemap                  -- (st\/stAdded)*\/I  (total and transitive)
+    eqType      :: Typemap                  -- (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
     cGlb        :: P_Concept -> P_Concept -> Maybe P_Concept -- a function to compute a greates lower bound, if it exists. 
     bindings    :: Data.Map.Map Type [P_Declaration]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isas        :: [(P_Concept,P_Concept)]                   -- 
-    (stClos, eqType, compatible, _ , _ , cGlb, bindings, isas) = tableOfTypes p_context st
+    (stClos, eqType, _ , _ , cGlb, bindings, isas) = tableOfTypes p_context st
     specializationTuples :: [(A_Concept,A_Concept)]
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
     gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
@@ -1228,7 +1225,7 @@ pCtx2aCtx p_context
                                 , objmsub = msub           
                                 , objstrs = obj_strs podef 
                                 } )                        
-             typeErrors -> Errors typeErrors
+             typeErrs -> Errors typeErrs
           }
     p2a_MaybeSubInterface :: [String] -> P_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
     p2a_MaybeSubInterface _              _    Nothing               = (Nothing, [])
@@ -1510,9 +1507,8 @@ pCtx2aCtx p_context
                       ,cxeCpts   = conflictingConcepts
                       }] else return (head conflictingConcepts)
           where conflictingConcepts = getConceptsFromTerm term
-         typeTerms = Data.Map.keys stClos
          errCastType :: Term -> Guarded ()
-         errCastType term@(PTyp o e@(Prel _ _) sgnCast)
+         errCastType term@(PTyp _ e@(Prel _ _) _)
           = case (csDomCast,csCodCast,csDomTerm,csCodTerm) of
                  (  [_]    ,  [_]    ,  [_]    ,  [_]    ) -> Checked ()
                  _                                         -> Errors [CxeCast{ cxeExpr    = term
@@ -1591,12 +1587,7 @@ pCtx2aCtx p_context
                                                 ,cxeTrgs   = trgTypes    -- the conflicting  target concepts (if null, there is an ambiguity)
                                                 ,cxePoss   = possibleDecls  -- possible solution for ambiguity.
                                                 }]
-            where decls = [ decl | decl<-p_declarations p_context, nm==name decl
-                                 , let P_Sign sgn = dec_sign decl
-                                 , head sgn `elem` srcTypes, last sgn `elem` trgTypes]
-                  nm = head ([ rel | Prel _ rel<-[term] ]++[ rel | Pflp _ rel<-[term] ]++
-                             fatal 1590 "no name for nm in a call of getDeclarationAndSign")
-                  srcTypes = getConceptsFromTerm term
+            where srcTypes = getConceptsFromTerm term
                   trgTypes = getConceptsFromTerm (p_flp term)
                   possibleDecls = bindings  Data.Map.!  TypExpr term False
          errCpl :: Term -> Term -> Guarded ()
