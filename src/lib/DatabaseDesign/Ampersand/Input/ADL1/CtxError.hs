@@ -32,10 +32,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeDcls :: [Term]
                               }       
               | CxeRel        {cxeExpr :: Term
-                              ,cxeDecs :: [P_Declaration]
-                              ,cxeSrcs :: [P_Concept]
-                              ,cxeTrgs :: [P_Concept]
-                              ,cxePoss :: [P_Declaration] -- may contain a suggestion (see 'bindings' in P2A_Converters)
+                              ,cxeDecs :: [(P_Declaration,P_Sign)]
                               }       
               | CxeV          {cxeExpr :: Term
                               ,cxeSrcs :: [P_Concept]
@@ -101,32 +98,15 @@ showErr err@(CxeTyp{})
                              maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
 showErr err@(CxeRel{})
  = show (origin expr)++":\n"++
-   case (cxeDecs err, cxeSrcs err, cxeTrgs err) of
-    ( _ , [], []) -> "    Relation  "++showADL expr++"  is ambiguous."++poss
-    ( _ , [], _ ) -> "    The source of relation  "++showADL expr++"  is ambiguous."++poss
-    ( _ , _ , []) -> "    The target of relation  "++showADL expr++"  is ambiguous."++poss
-    ( [], _ , _ ) -> "    Relation  "++showADL expr++"  is not declared."
-    ([d], ss,[_]) -> "    Relation  "++showADL expr++"  is declared as "++name d++show sgn++",\n"++
-                     "    but its source, "++show s++", is in conflict with "++commaEng "and" (map showADL (ss>-[s]))++"."
-                     where sgn@(P_Sign [s,_]) = dec_sign d
-    ([d],[_], ts) -> "    Relation  "++showADL expr++"  is declared as "++name d++show sgn++",\n"++
-                     "    but its target, "++show t++", is in conflict with "++commaEng "and" (map showADL (ts>-[t]))++"."
-                     where sgn@(P_Sign [_,t]) = dec_sign d
-    ([d], ss, ts) -> "    Relation  "++showADL expr++"  is declared as "++name d++show sgn++",\n"++
-                     "    but its source, "++show s++", is in conflict with "++commaEng "and" (map showADL (ss>-[s]))++
-                     "    and its target, "++show t++", is in conflict with "++commaEng "and" (map showADL (ts>-[t]))++"."
-                     where sgn@(P_Sign [s,t]) = dec_sign d
-    ( ds, ss, ts) -> fatal 100 ("make better error messages.\ncxeDecs err\n = "++intercalate "\n   " [ name decl++show (dec_sign decl)++" "++show (origin decl)| decl<-ds]++
-                                                           "\ncxeSrcs err\n = "++intercalate "\n   " (map show ss)++
-                                                           "\ncxeTrgs err\n = "++intercalate "\n   " (map show ts))
-   where poss = case cxePoss err of
-                 [decl] -> "\n    Is it possible that you meant "++showADL typedExpr++"?"++
-                           "\n    If so, please substitute "++showADL expr++" on "++show (origin expr)++
-                           "\n    by "++showADL typedExpr++"."
-                           where
-                            typedExpr = PTyp (origin expr) expr (dec_sign decl)
-                 _ -> ""
-         expr = cxeExpr err
+   case ([decl | (decl,_)<-cxeDecs err], [sgn | (_,sgn)<-cxeDecs err]) of
+    ( [], _ ) -> "    Relation  "++showADL expr++"  is not declared."
+    ([d], []) -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                 "    but it cannot be bound to a type."
+    ([d], ss) -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                 "    but it can be bound to multiple types: "++commaEng "and" (map show ss)++"."
+    ( ds, _ ) -> "    Relation  "++showADL expr++"  can be bound to multiple declarations on"++
+                 "    "++commaEng "and" (map (show.origin) ds)++"."
+   where expr=cxeExpr err
 
 showErr err@(CxeCpl{})
  = concat

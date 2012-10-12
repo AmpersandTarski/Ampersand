@@ -144,7 +144,7 @@ reverseMap lst = (Data.Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs]
 -- note: reverseMap is relatively slow, but only needs to be calculated once
 
 -- | addIdentity r = r\/I
-addIdentity :: Typemap -> Typemap
+addIdentity :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
 addIdentity mp = Data.Map.mapWithKey (\k a->mrgUnion a [k]) mp
 
 -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
@@ -169,12 +169,12 @@ setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains
    res   = foldl f xs (Data.Map.keys xs `isc` nub (concat (Data.Map.elems xs)))
 
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
-mrgUnion a b = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
-  where res = if isSortedAndDistinct a then
-                (if isSortedAndDistinct b then merge a b
-                 else fatal 175 ("mrgUnion should be called on sorted distinct lists, but its second argument is:\n "++show b)
+mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
+  where res = if isSortedAndDistinct l then
+                (if isSortedAndDistinct r then merge l r
+                 else fatal 175 ("mrgUnion should be called on sorted distinct lists, but its second argument is:\n "++show r)
                  )
-              else fatal 177 ("mrgUnion should be called on sorted distinct lists, but its first argument is:\n "++show a)
+              else fatal 177 ("mrgUnion should be called on sorted distinct lists, but its first argument is:\n "++show l)
         merge :: (Show a,Ord a) => [a] -> [a] -> [a]
         merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then a:merge as (b:bs) else fatal 179 ("Compare is not antisymmetric for: "++show a++" and "++show b)
                             | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 180 ("Eq is not symmetric for: "++show a++" and "++show b)
@@ -182,17 +182,17 @@ mrgUnion a b = if isSortedAndDistinct res then res else fatal 172 ("merge contai
         merge a b = a ++ b -- since either a or b is the empty list
 
 mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
-mrgIntersect a b = if isSortedAndDistinct res then res else fatal 185 ("merge contains an error")
-  where res = if isSortedAndDistinct a then
-                (if isSortedAndDistinct b then merge a b
-                 else fatal 188 ("mrgIntersect should be called on sorted distinct lists, but its second argument is:\n "++show b)
+mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge contains an error")
+  where res = if isSortedAndDistinct l then
+                (if isSortedAndDistinct r then merge l r
+                 else fatal 188 ("mrgIntersect should be called on sorted distinct lists, but its second argument is:\n "++show r)
                  )
-              else fatal 190 ("mrgIntersect should be called on sorted distinct lists, but its first argument is:\n "++show a)
+              else fatal 190 ("mrgIntersect should be called on sorted distinct lists, but its first argument is:\n "++show l)
         merge :: (Show a,Ord a) => [a] -> [a] -> [a]
         merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then merge as (b:bs) else fatal 192 ("Compare is not antisymmetric for: "++show a++" and "++show b)
                             | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
                             | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
-        merge a b = [] -- since either a or b is the empty list
+        merge _ _ = [] -- since either a or b is the empty list
 
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
@@ -396,7 +396,7 @@ tableOfTypes :: P_Context -> Typemap ->
                 , Typemap          -- stClosAdded -- additional links added to stClos
                 , Typemap          -- stClos1     -- st*  (transitive)
                 , P_Concept -> P_Concept -> Maybe P_Concept -- cGlb-- a function to compute a greates lower bound, if it exists.
-                , Data.Map.Map Type [P_Declaration] -- bindings    -- declarations that may be bound to relations
+                , Data.Map.Map Type [(P_Declaration,P_Sign)] -- bindings    -- declarations that may be bound to relations
                 , [(P_Concept,P_Concept)]           -- isas        -- 
                 )                                   
 tableOfTypes p_context st
@@ -441,79 +441,62 @@ tableOfTypes p_context st
         f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
      stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
-     stClos = setClosure stClosAdded "stClosAdded"  -- stClos is transitive (due to setClosure).
-     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too.
-     eqType = addIdentity (Data.Map.intersectionWith mrgIntersect stClos stClosReversed)  -- eqType = (stAdded* /\ stAdded*~)\/I, i.e there exists a path from a to be and a path from b.
-     isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
+     stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
+     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
+     stConcepts :: Data.Map.Map Type [P_Concept]
+     stConcepts = Data.Map.map f stClos
+                  where f ts = [c | TypExpr (Pid c) _<-ts]
+     eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
+     isaClos = addIdentity (Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos])
      isaClosReversed = reverseMap isaClos
-     compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
-     compatible a b = (not.null) ((stClosReversed Data.Map.! a) `isc` (stClosReversed Data.Map.! b))
      cGlb :: P_Concept -> P_Concept -> Maybe P_Concept
      cGlb a b = case (isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b) of
                  [c] -> Just c
                  []  -> Nothing
                  cs  -> (Just . fst.head.sortWith ((0-).length.snd)) [ (c, isaClosReversed Data.Map.! c) | c<-cs]
-
      isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-isaClos Data.Map.! s ]  -- this is redundant, because isas=isas*. Hence, isas may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
+
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 -}
-     domBindings = [(x,d) | x@(TypExpr (Prel _ nm) False)<-typeTerms, d@(TypExpr         (PTyp _ (Prel _ nm') _)  _)<-typeTerms, nm==nm', compatible x d]
-     codBindings = [(x,d) | x@(TypExpr (Pflp _ nm) True )<-typeTerms, d@(TypExpr (PFlp _ (PTyp _ (Prel _ nm') _)) _)<-typeTerms, nm==nm', compatible x d]
-     bindings :: Data.Map.Map Type [P_Declaration]
+     bindings :: Data.Map.Map Type [(P_Declaration,P_Sign)]
      bindings    = {- for debugging and illustration purposes: 
-                   error ("\ndomBindings = \n  "++(intercalate "\n  ".map show) domBindings++
-                          "\ncodBindings = \n  "++(intercalate "\n  ".map show) codBindings++
-                          "\nbindings = \n  "++(intercalate "\n  ".map show)
-                                                [ (dBinding,cBinding)      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
+                   error ("\nbindings = \n  "++(intercalate "\n  ".map show)
+                                                [ tuple      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
                                                 | decl<-p_declarations p_context
-                                                , dBinding@(TypExpr (Prel o nm) _, TypExpr         d@(PTyp _ (Prel _ nm') sgn)   _)<-domBindings,           origin decl==origin d
-                                                , cBinding@(TypExpr (Pflp o nm) _, TypExpr (PFlp _ c@(PTyp _ (Prel _ nm') sgn')) _)<-codBindings, origin decl==origin c
+                                                , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
+                                                , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
+                                                , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
+                                                , Just s<-case stConcepts Data.Map.! dTerm of
+                                                           [c] -> [c `cGlb` srce]
+                                                           _   -> [Just srce]
+                                                , Just t<-case stConcepts Data.Map.! cTerm of
+                                                           [c] -> [c `cGlb` targ]
+                                                           _   -> [Just targ]
+                                                , tuple<-[(dTerm,(decl,P_Sign [s,t])),(cTerm,(decl,P_Sign [s,t]))]
                                                 ]
                          ) -}
-                   Data.Map.fromListWith uni
-                   ( [ (typ,[decl])      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
+                   Data.Map.fromListWith union
+                   ( [ tuple      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the grap
                      | decl<-p_declarations p_context
-                     , dBinding@(_, TypExpr         d  _)<-domBindings, origin decl==origin d
-                     , cBinding@(_, TypExpr (PFlp _ c) _)<-codBindings, origin decl==origin c
-                     , (typ,_)<-[dBinding,cBinding]
+                     , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
+                     , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
+                     , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
+                     , Just s<-case stConcepts Data.Map.! dTerm of
+                                [c] -> [c `cGlb` srce]
+                                _   -> [Just srce]
+                     , Just t<-case stConcepts Data.Map.! cTerm of
+                                [c] -> [c `cGlb` targ]
+                                _   -> [Just targ]
+                     , tuple<-[(dTerm,[(decl,P_Sign [s,t])]),(cTerm,[(decl,P_Sign [s,t])])]
                      ] ++
-                     [ (d,[]) | d@(TypExpr         (PTyp _ (Prel _ _) _)  _)<-typeTerms] ++
-                     [ (d,[]) | d@(TypExpr (PFlp _ (PTyp _ (Prel _ _) _)) _)<-typeTerms]
+                     [ (t,[]) | t<-typeTerms]
                    )
 
 -- The TypGlb types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
-
- -- for debug
-showTypeTable :: Typemap -> Typemap -> String
-showTypeTable stClos bindings
- = "Type table has "++show (length typeTerms)++" rows.\n  " ++ intercalate "\n  " (map showLine typeTerms)
-   where  -- hier volgt een (wellicht wat onhandige, maar goed...) manier om de type table leesbaar neer te zetten.
-    typeTerms = Data.Map.keys stClos
-    shPos t = str++[ ' ' | _<-[length str..maxPos] ]
-     where str = (showPos.origin.showTypeExpr) t
-           maxPos = maximum [ (length.showPos.origin.showTypeExpr) typTerm | typTerm<-typeTerms]
-    shType t = str++[ ' ' | _<-[length str..maxType] ]
-     where str = show t
-           maxType = maximum [length (show typTerm) | typTerm<-typeTerms]
-    shExp t = str++[ ' ' | _<-[length str..maxExpr] ]
-     where str = showADL (showTypeExpr t)
-           maxExpr = maximum [length (showADL (showTypeExpr typTerm)) | typTerm<-typeTerms]
-    showLine :: Type -> String
-    showLine t = shPos t++"  "++shExp t++"  "++shType t++"  "++show concepts++"  "++show bindDecls
-     where concepts = [ c | TypExpr (Pid c) _<-stClos Data.Map.! t ]
-           bindDecls = bindings Data.Map.! t
-    showTypeExpr (TypGlb _ _ term)  = term
-    showTypeExpr (TypLub _ _ term)  = term
-    showTypeExpr (TypExpr term _) = term
-    showTypeExpr Anything = fatal 427 "cannot showTypeExpr Anything"
-    showPos OriginUnknown = "Unknown"
-    showPos (FileLoc (FilePos (_,Pos l c,_)))
-       = "("++show l++":"++show c++")"
-    showPos _ = fatal 517 "Unexpected pattern in showPos"
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
@@ -536,7 +519,7 @@ typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
      showStVertex :: Int -> String
      showStVertex i
       = head ([ showType t | (i',t)<-zip [0..] typeTerms, i==i' ]
-              ++fatal 506 ("No term numbered "++show i++" found by showStVertex\n numbered typeTerms:\n  "++(intercalate "\n  ".map show. zip [0..]) typeTerms)
+              ++fatal 506 ("No term numbered "++show i++" found by showStVertex\n numbered typeTerms:\n  "++(intercalate "\n  ".map show. zip [0::Int ..]) typeTerms)
              )
      eqNr :: Type -> Int
      eqNr typ = Data.Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ] Data.Map.! typ
@@ -903,7 +886,7 @@ pCtx2aCtx p_context
     stClos      :: Typemap                  -- (st\/stAdded)*\/I  (total and transitive)
     eqType      :: Typemap                  -- (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
     cGlb        :: P_Concept -> P_Concept -> Maybe P_Concept -- a function to compute a greates lower bound, if it exists. 
-    bindings    :: Data.Map.Map Type [P_Declaration]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    bindings    :: Data.Map.Map Type [(P_Declaration,P_Sign)]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isas        :: [(P_Concept,P_Concept)]                   -- 
     (stClos, eqType, _ , _ , cGlb, bindings, isas) = tableOfTypes p_context st
     specializationTuples :: [(A_Concept,A_Concept)]
@@ -1540,8 +1523,7 @@ pCtx2aCtx p_context
          errCpsLike :: Term -> Term -> Term -> Guarded (A_Concept, Expression, Expression)
          errCpsLike term a b
           = case conflictingConcepts of
-{-           []  -> error ("\ntypeTable: "++ showTypeTable stClos bindings++
-                           "\nterm:      "++ show term++
+{-           []  -> error ("\nterm:      "++ show term++
                            "\na:         "++ show a++
                            "\nb:         "++ show b++
                            show err)  -}
@@ -1593,17 +1575,11 @@ pCtx2aCtx p_context
                                           ,cxeTrgCpts = t}]) term
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
          getDeclarationAndSign term
-          = case (possibleDecls, srcTypes, trgTypes) of
-             ([d], [s], [t])  -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
-             ( ds,  _ ,  _ )  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                                ,cxeDecs   = ds          -- the declarations to which this term has been matched
-                                                ,cxeSrcs   = srcTypes    -- the conflicting  source concepts (if null, there is an ambiguity)
-                                                ,cxeTrgs   = trgTypes    -- the conflicting  target concepts (if null, there is an ambiguity)
-                                                ,cxePoss   = possibleDecls  -- possible solution for ambiguity.
-                                                }]
-            where srcTypes = getConceptsFromTerm term
-                  trgTypes = getConceptsFromTerm (p_flp term)
-                  possibleDecls = bindings  Data.Map.!  TypExpr term False
+          = case  bindings Data.Map.! TypExpr term False  of
+             [(d,P_Sign [s,t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
+             ds                 -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                  ,cxeDecs   = ds          -- the declarations to which this term has been matched
+                                                  }]
          errCpl :: Term -> Term -> Guarded ()
          errCpl term a
           = createVoid $  [ CxeCpl {cxeExpr   = a
