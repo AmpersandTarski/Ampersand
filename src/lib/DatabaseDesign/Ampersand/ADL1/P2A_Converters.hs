@@ -140,12 +140,12 @@ Invariants are:
 -- | note that the domain must be preserved!
 -- | reverseMap r = r~
 reverseMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reverseMap lst = (Data.Map.fromListWith merge (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
+reverseMap lst = (Data.Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
 -- note: reverseMap is relatively slow, but only needs to be calculated once
 
 -- | addIdentity r = r\/I
 addIdentity :: Typemap -> Typemap
-addIdentity mp = Data.Map.mapWithKey (\k a->merge a [k]) mp
+addIdentity mp = Data.Map.mapWithKey (\k a->mrgUnion a [k]) mp
 
 -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
 {-
@@ -164,22 +164,35 @@ setClosure :: (Show a,Ord a) => Data.Map.Map a [a] -> String -> Data.Map.Map a [
 setClosure xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
 setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
   where
---   f q x = Data.Map.map (\bs->foldl merge bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
-   f q x = Data.Map.map (\bs->foldl merge bs [b' | x `elem` bs, (Just b') <- [Data.Map.lookup x q]]) q
+--   f q x = Data.Map.map (\bs->foldl mrgUnion bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
+   f q x = Data.Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Data.Map.lookup x q]]) q
    res   = foldl f xs (Data.Map.keys xs `isc` nub (concat (Data.Map.elems xs)))
 
-merge :: (Show a,Ord a) => [a] -> [a] -> [a]
-merge a b = if isSortedAndDistinct res then res else fatal 151 ("merge' contains an error")
+mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgUnion a b = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct a then
-                (if isSortedAndDistinct b then merge' a b
-                 else fatal 154 ("merge should be called on sorted distinct lists, but its second argument is:\n "++show b)
+                (if isSortedAndDistinct b then merge a b
+                 else fatal 175 ("mrgUnion should be called on sorted distinct lists, but its second argument is:\n "++show b)
                  )
-              else fatal 156 ("merge should be called on sorted distinct lists, but its first argument is:\n "++show a)
-merge' :: (Show a,Ord a) => [a] -> [a] -> [a]
-merge' (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then a:merge' as (b:bs) else fatal 178 ("Compare is not antisymmetric for: "++show a++" and "++show b)
-                     | a==b = if (b==a) then distinctCons a b (merge' as bs) else fatal 179 ("Eq is not symmetric for: "++show a++" and "++show b)
-                     | b<a  = if not (a<b) && not (b==a) then b:merge' (a:as) bs else fatal 161 ("Compare is not antisymmetric for: "++show a++" and "++show b)
-merge' a b = a ++ b -- since either a or b is the empty list
+              else fatal 177 ("mrgUnion should be called on sorted distinct lists, but its first argument is:\n "++show a)
+        merge :: (Show a,Ord a) => [a] -> [a] -> [a]
+        merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then a:merge as (b:bs) else fatal 179 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+                            | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 180 ("Eq is not symmetric for: "++show a++" and "++show b)
+                            | b<a  = if not (a<b) && not (b==a) then b:merge (a:as) bs else fatal 181 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+        merge a b = a ++ b -- since either a or b is the empty list
+
+mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgIntersect a b = if isSortedAndDistinct res then res else fatal 185 ("merge contains an error")
+  where res = if isSortedAndDistinct a then
+                (if isSortedAndDistinct b then merge a b
+                 else fatal 188 ("mrgIntersect should be called on sorted distinct lists, but its second argument is:\n "++show b)
+                 )
+              else fatal 190 ("mrgIntersect should be called on sorted distinct lists, but its first argument is:\n "++show a)
+        merge :: (Show a,Ord a) => [a] -> [a] -> [a]
+        merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then merge as (b:bs) else fatal 192 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+                            | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
+                            | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+        merge a b = [] -- since either a or b is the empty list
 
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
@@ -197,15 +210,15 @@ checkRfx [] = []
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
 lookups :: (Show a,Ord a) => a -> Data.Map.Map a [a] -> [a]
-lookups o q = head ([merge [o] e | (Just e)<-[Data.Map.lookup o q]]++[[o]])
+lookups o q = head ([mrgUnion [o] e | Just e<-[Data.Map.lookup o q]]++[[o]])
 {- Trying to understand lookups:
 lookups "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]
 = 
-head ([merge [o] e | (Just e)<-[Data.Map.lookup "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]]]++[["2"]])
+head ([mrgUnion [o] e | (Just e)<-[Data.Map.lookup "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]]]++[["2"]])
 = 
-head ([merge ["2"] e | (Just e)<-[Just ["vuur","mus"]]]++[["2"]])
+head ([mrgUnion ["2"] e | (Just e)<-[Just ["vuur","mus"]]]++[["2"]])
 = 
-head ([merge ["2"] ["vuur","mus"] ]++[["2"]])
+head ([mrgUnion ["2"] ["vuur","mus"] ]++[["2"]])
 = 
 head (["2", "vuur","mus"]++[["2"]])
 = 
@@ -228,7 +241,7 @@ findIn t cl = getList (Data.Map.lookup t cl)
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
 typing :: P_Context -> Typemap -- subtypes (.. is subset of ..)
 typing p_context
- = Data.Map.unionWith merge firstSetOfEdges secondSetOfEdges
+ = Data.Map.unionWith mrgUnion firstSetOfEdges secondSetOfEdges
    where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
@@ -355,7 +368,7 @@ typing p_context
      (.=.) :: Type -> Type -> (Typemap, Typemap)
      a .=. b  = (Data.Map.fromList [(a, [b]),(b, [a])],snd nothing)
      (.++.) :: Typemap -> Typemap -> Typemap
-     m1 .++. m2  = Data.Map.unionWith merge m1 m2
+     m1 .++. m2  = Data.Map.unionWith mrgUnion m1 m2
      (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
      (a,b) .+. (c,d) = (c.++.a,d.++.b)
      dom, cod :: Term -> Type
@@ -408,6 +421,7 @@ tableOfTypes p_context st
      typeTerms :: [Type]          -- The list of all type terms in st.
      typeTerms = Data.Map.keys st -- Because a Typemap is total, it is sufficient to compute  Data.Map.keys st
 -- In order to compute the condensed graph, we need the transitive closure of st:
+     stClos1 :: Typemap
      stClos1 = setClosure st "st"       -- represents (st)* .   stClos1 is transitive
      someWhatSortedGlbs = sortBy compr [l | l@(TypGlb _ _ _) <- typeTerms]
       where
@@ -424,12 +438,12 @@ tableOfTypes p_context st
      stClosAdded = foldl f stClos1 someWhatSortedGlbs
        where
         f :: Typemap -> Type -> Typemap 
-        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> merge cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
      stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
      stClos = setClosure stClosAdded "stClosAdded"  -- stClos is transitive (due to setClosure).
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too.
-     eqType = Data.Map.intersectionWith merge stClos stClosReversed  -- eqType = st* /\ st*~, i.e there exists a path from a to be and a path from b.
+     eqType = addIdentity (Data.Map.intersectionWith mrgIntersect stClos stClosReversed)  -- eqType = (stAdded* /\ stAdded*~)\/I, i.e there exists a path from a to be and a path from b.
      isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
      compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
@@ -504,9 +518,9 @@ showTypeTable stClos bindings
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
 typeAnimate :: P_Context -> Typemap -> (DotGraph String,DotGraph String)
-typeAnimate p_context st = error testTable -- (stTypeGraph, eqTypeGraph)
+typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
    where
-     testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
+     -- testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
      (stClos, eqType, stClosAdded, stClos1, _ , _ , _) = tableOfTypes p_context st
