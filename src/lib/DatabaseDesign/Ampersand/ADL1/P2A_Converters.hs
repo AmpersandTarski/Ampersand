@@ -454,8 +454,10 @@ tableOfTypes p_context st
      isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-isaClos Data.Map.! s ]  -- this is redundant, because isas=isas*. Hence, isas may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
      stConcepts :: Data.Map.Map Type [P_Concept]
      stConcepts = Data.Map.map f stClos
-                  where f ts = [c | c<-cs, length ((isaClosReversed Data.Map.! c) `isc` cs)==1]
-                               where cs = [c | TypExpr (Pid c) _<-ts]
+                  where f ts = [ (fst.head.sortWith (length.snd)) [(c,isaClosReversed Data.Map.! c) | c<-cl]
+                               | cl<-eqClass compatible cs]
+                               where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
+                        compatible a b = (not.null) ((isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b))
 
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
