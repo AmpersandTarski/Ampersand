@@ -443,9 +443,6 @@ tableOfTypes p_context st
      stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
      stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
-     stConcepts :: Data.Map.Map Type [P_Concept]
-     stConcepts = Data.Map.map f stClos
-                  where f ts = [c | TypExpr (Pid c) _<-ts]
      eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
      isaClos = addIdentity (Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos])
      isaClosReversed = reverseMap isaClos
@@ -455,6 +452,10 @@ tableOfTypes p_context st
                  []  -> Nothing
                  cs  -> (Just . fst.head.sortWith ((0-).length.snd)) [ (c, isaClosReversed Data.Map.! c) | c<-cs]
      isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-isaClos Data.Map.! s ]  -- this is redundant, because isas=isas*. Hence, isas may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
+     stConcepts :: Data.Map.Map Type [P_Concept]
+     stConcepts = Data.Map.map f stClos
+                  where f ts = [c | c<-cs, length ((isaClosReversed Data.Map.! c) `isc` cs)==1]
+                               where cs = [c | TypExpr (Pid c) _<-ts]
 
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
@@ -1575,7 +1576,7 @@ pCtx2aCtx p_context
                                           ,cxeTrgCpts = t}]) term
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
          getDeclarationAndSign term
-          = case  bindings Data.Map.! TypExpr term False  of
+          = case bindings Data.Map.! TypExpr term False  of
              [(d,P_Sign [s,t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
              ds                 -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
                                                   ,cxeDecs   = ds          -- the declarations to which this term has been matched
