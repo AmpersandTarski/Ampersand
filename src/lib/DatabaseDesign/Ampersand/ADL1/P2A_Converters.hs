@@ -64,7 +64,7 @@ showType Anything                     = "Anything"
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Prelude.Ord Type where
   compare Anything                   Anything                     = Prelude.EQ
-  compare Anything                   _                            = Prelude.LT  -- Anything < everything
+  compare Anything                   _                            = Prelude.LT  -- Anything  < everything
   compare _                          Anything                     = Prelude.GT  -- everyting > Anything
   compare (TypExpr (Pid c)        _) (TypExpr (Pid c')         _) = Prelude.compare c c'
   compare (TypExpr (Pid _)        _) (TypExpr _                _) = Prelude.LT
@@ -206,11 +206,12 @@ distinctCons a _ bs = a:bs
 checkRfx :: (Eq a, Show a) => [a] -> [a]
 checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show a) else a:checkRfx as
 checkRfx [] = []        
-                           
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
 lookups :: (Show a,Ord a) => a -> Data.Map.Map a [a] -> [a]
 lookups o q = head ([mrgUnion [o] e | Just e<-[Data.Map.lookup o q]]++[[o]])
+-- To Stef: lookups was not designed in this way: once upon a time it returned findIn unless the element did not exist.
+-- This is a fundamental difference and wherever lookups was used, there might be bugs now.
 {- Trying to understand lookups:
 lookups "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]
 = 
@@ -246,9 +247,10 @@ typing p_context
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
-     compatible a b = elem b (lookups a stronglyConnectedComponents)
+     compatible a b = null results || elem b results
       where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
        stronglyConnectedComponents = setClosure (Data.Map.unionWith mrgUnion firstSetOfEdges (reverseMap firstSetOfEdges)) "firstSetOfEdges \\/ firstSetOfEdges~"
+       results = findIn a stronglyConnectedComponents
      (firstSetOfEdges,secondSetOfEdges)
       = (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
@@ -277,12 +279,12 @@ typing p_context
                                                 carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                             if length spcls == 1
                                                             then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
-                                                            else nothing
+                                                            else fatal 280 ("Could not infer type for "++(show x)++" with uLft and uRt: "++(show uLft)++" and "++(show uRt)) -- nothing
                                                           )
                                                 where decls' = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
                                                       spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
-                                                                     , compatible (dom x) (thing (head cs))  -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
-                                                                     , compatible (cod x)  (thing (last cs))
+                                                                     , compatible uLft (thing (head cs))  -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
+                                                                     , compatible uRt  (thing (last cs))
                                                                      ]
                                                       carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
                                                       carefully tt = (fst nothing,fst tt.++.snd tt)
@@ -329,7 +331,7 @@ typing p_context
                                                 then nothing                          -- then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e  -- else treat as type restriction
                                                      .+. dom x.<.iSrc .+. cod x.<.iTrg
-                                                     .+. iSrc.<.uLft .+. iTrg.<.uRt
+                                                     -- NOT TRUE (see WHY at Prel) .+. iSrc.<.uLft .+. iTrg.<.uRt
                                                      .+. uType e iSrc iTrg e
                                                 --   .+. error ("Diagnostic: uType ("++showADL e++") ("++showType iSrc++") ("++showType iTrg++")\n x="++show x)
                                                 where iSrc = thing (head cs)
