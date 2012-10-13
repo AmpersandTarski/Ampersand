@@ -14,45 +14,43 @@ license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
 tested-with:    GHC == 7.4.1
-
-data-files:     
-                outputTemplates/default.context, 
-                outputTemplates/default.docbook, 
-                outputTemplates/default.html, 
-                outputTemplates/default.latex, 
-                outputTemplates/default.man, 
-                outputTemplates/default.markdown, 
-                outputTemplates/default.mediawiki, 
-                outputTemplates/default.opendocument, 
-                outputTemplates/default.org, 
-                outputTemplates/default.plain, 
-                outputTemplates/default.rst, 
-                outputTemplates/default.rtf, 
-                outputTemplates/default.s5, 
-                outputTemplates/default.slidy, 
-                outputTemplates/default.texinfo, 
-                outputTemplates/default.textile, 
-                testData/fail/test_error_contexts_extloop.adl, 
-                testData/fail/test_error_contexts_unique.adl, 
-                testData/fail/test_error_declarations_namingconventions.adl, 
-                testData/fail/test_error_keydefs.adl, 
-                testData/fail/test_error_objectdefs.adl, 
-                testData/fail/test_error_patterns_scopes.adl, 
-                testData/fail/test_error_rules_exprs.adl, 
-                testData/fail/test_KeyDef.adl, 
-                testData/fail/test_ObjectDef.adl, 
-                testData/fail/test_Rules_Expressions.adl, 
-                testData/fail/test_Structure_and_Declarations.adl, 
-                testData/pass/Aanvraag.adl, 
-                testData/pass/Deliver.adl, 
-                testData/pass/DeliverDates_oldWay.adl, 
-                testData/pass/DeliverDates.adl, 
-                testData/pass/OUNL.adl, 
-                testData/pass/Outlook.adl, 
-                testData/pass/sick.adl, 
-                testData/pass/test.adl, 
-                testData/pass/Test2.adl, 
-                testData/pass/VIRO.adl, 
+data-files:     outputTemplates/default.context,
+                outputTemplates/default.docbook,
+                outputTemplates/default.html,
+                outputTemplates/default.latex,
+                outputTemplates/default.man,
+                outputTemplates/default.markdown,
+                outputTemplates/default.mediawiki,
+                outputTemplates/default.opendocument,
+                outputTemplates/default.org,
+                outputTemplates/default.plain,
+                outputTemplates/default.rst,
+                outputTemplates/default.rtf,
+                outputTemplates/default.s5,
+                outputTemplates/default.slidy,
+                outputTemplates/default.texinfo,
+                outputTemplates/default.textile,
+                testData/fail/test_error_contexts_extloop.adl,
+                testData/fail/test_error_contexts_unique.adl,
+                testData/fail/test_error_declarations_namingconventions.adl,
+                testData/fail/test_error_keydefs.adl,
+                testData/fail/test_error_objectdefs.adl,
+                testData/fail/test_error_patterns_scopes.adl,
+                testData/fail/test_error_rules_exprs.adl,
+                testData/fail/test_KeyDef.adl,
+                testData/fail/test_ObjectDef.adl,
+                testData/fail/test_Rules_Expressions.adl,
+                testData/fail/test_Structure_and_Declarations.adl,
+                testData/pass/Aanvraag.adl,
+                testData/pass/Deliver.adl,
+                testData/pass/DeliverDates_oldWay.adl,
+                testData/pass/DeliverDates.adl,
+                testData/pass/OUNL.adl,
+                testData/pass/Outlook.adl,
+                testData/pass/sick.adl,
+                testData/pass/test.adl,
+                testData/pass/Test2.adl,
+                testData/pass/VIRO.adl,
                 testData/README
 
 source-repository head
@@ -68,9 +66,8 @@ flag library
   default:      True
 
 library
-  hs-source-dirs:   src/lib
-  build-depends:
-                    ghc >= 7.4 && <= 7.5,
+  hs-source-dirs:    src/lib
+  build-depends:     ghc >= 7.4 && <= 7.5,
                     graphviz >= 2999.13.0.0 && <= 2999.14,
                     pandoc-types == 1.9.*,
                     pandoc >= 1.9.4.1 && < 1.10,
@@ -87,8 +84,7 @@ library
                     time >= 1.4 && < 1.5,
                     SpreadsheetML >= 0.1 && < 0.2,
                     array >= 0.4 && < 0.5
-  exposed-modules:  
-                    DatabaseDesign.Ampersand,
+  exposed-modules:   DatabaseDesign.Ampersand,
                     DatabaseDesign.Ampersand.ADL1,
                     DatabaseDesign.Ampersand.ADL1.ECArule,
                     DatabaseDesign.Ampersand.ADL1.Expression,
@@ -153,8 +149,7 @@ library
                     DatabaseDesign.Ampersand.Output.Statistics,
                     DatabaseDesign.Ampersand.Parsing,
                     Paths_ampersand
-  other-modules:    
-                    DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
+  other-modules:     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis,
@@ -167,42 +162,26 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Fspec.GenerateUML
+  Default-Language:  Haskell2010
 
-  Default-Language: Haskell2010
   if flag(library)
     buildable:  True
+
   else
     buildable:  False
 
 executable ampersand
-  main-is:          Main.hs
-  hs-source-dirs:   src/exec
-  build-depends:    
-                    ampersand == 2.2.1,
+  main-is:           Main.hs
+  hs-source-dirs:    src/exec
+  build-depends:     ampersand == 2.2.1,
                     graphviz >= 2999.13.0.0 && <= 2999.14,
                     filepath >= 1.3.0.0 && < 1.4,
                     base >= 4.5.0.0 && < 4.6
-  Default-Language: Haskell2010
-  
+  Default-Language:  Haskell2010
+
   if flag(executable)
     buildable:  True
+
   else
     buildable:  False
-
-test-suite AmpersandTests
-  type:            exitcode-stdio-1.0
-  x-uses-tf:       true
-  build-depends:   
-                    ampersand == 2.2.1,
-                    directory >= 1.1.0.2 && < 1.2,
-                    HUnit >= 1.2 && < 2,
-                    test-framework >= 0.6,
-                    test-framework-hunit,
-                    filepath >= 1.3.0.0 && < 1.4,
-                    base >= 4.5.0.0 && < 4.6
-  Default-Language: Haskell2010
- 
-  hs-source-dirs:  src/test
-  ghc-options:     -rtsopts
-  main-is:         test-ampersand.hs
 
