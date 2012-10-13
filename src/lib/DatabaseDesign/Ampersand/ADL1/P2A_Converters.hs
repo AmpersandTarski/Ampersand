@@ -246,9 +246,9 @@ typing p_context
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
-     compatible a b = (not.null) ((revEdgesClos Data.Map.! a) `isc` (revEdgesClos Data.Map.! b))
-      where
-       revEdgesClos = setClosure (reverseMap firstSetOfEdges) "revEdgesClos"
+     compatible a b = elem b (lookups a stronglyConnectedComponents)
+      where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
+       stronglyConnectedComponents = setClosure (Data.Map.unionWith mrgUnion firstSetOfEdges (reverseMap firstSetOfEdges)) "firstSetOfEdges \\/ firstSetOfEdges~"
      (firstSetOfEdges,secondSetOfEdges)
       = (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
@@ -267,7 +267,12 @@ typing p_context
      uType _ _    _      Pnull                = nothing                                                              -- -V     (the empty set)
      uType x uLft uRt   (PVee _)              = dom x.<.uLft .+. cod x.<.uRt
      uType x _    _     (Pfull s t)           = dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
-     uType x uLft uRt   (Prel _ nm)           = dom x.<.uLft .+. cod x.<.uRt .+.
+     uType x uLft uRt   (Prel _ nm)           = -- WHY is:
+                                                -- dom x.<.uLft .+. cod x.<.uRt 
+                                                -- correct for PVee but not for Prel?
+                                                -- Explanation:
+                                                -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
+                                                -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
                                                 if length decls' == 1 then dom x.=.dom (head decls') .+. cod x.=.cod (head decls') else
                                                 carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                             if length spcls == 1
@@ -277,7 +282,7 @@ typing p_context
                                                 where decls' = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
                                                       spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
                                                                      , compatible (dom x) (thing (head cs))  -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
-                                                                     , compatible (cod x) (thing (last cs))
+                                                                     , compatible (cod x)  (thing (last cs))
                                                                      ]
                                                       carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
                                                       carefully tt = (fst nothing,fst tt.++.snd tt)
