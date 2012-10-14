@@ -469,8 +469,6 @@ tableOfTypes p_context st
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = stConcepts Data.Map.! typ
      compatible a b = (not.null) ((isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b))
---     stNr :: Type -> Int
---     stNr t = Data.Map.fromDistinctAscList [ (t',i) | ((t',_),i)<-zip (Data.Map.toAscList stClos) [0..] ] Data.Map.! t
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
@@ -478,24 +476,12 @@ Sometimes, there is only one candidate, even though the type checker cannot prov
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 -}
      bindings :: Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])]
-     bindings    = {- for debugging and illustration purposes: 
-                   error ("\nbindings = \n  "++(intercalate "\n  ".map show)
-                                                [ tuple      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
-                                                | decl<-p_declarations p_context
-                                                , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                                                , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, let dConcepts = srcTypes dTerm
-                                                , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, let cConcepts = srcTypes cTerm
-                                                , let declSrcs = [ d | d<-domConcepts, srce `compatible` d ], not (null declSrcs)
-                                                , let declTrgs = [ c | c<-codConcepts, targ `compatible` c ], not (null declTrgs)
-                                                , let declSrcTrgs = (decl,declSrcs,declTrgs)
-                                                , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
-                                                ]
-                         ) -}
-                   Data.Map.fromListWith union
+     bindings    = Data.Map.fromListWith union
                    ( [ tuple
                      | decl<-p_declarations p_context
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
---                     , (error.concat) (["\n  "++show x | x<-Data.Map.toList stConcepts]++["\n  "++show (stNr t)++"\t"++show t++"\t"++show (map stNr ts) | (t,ts)<-Data.Map.toAscList stClos])
+--                     , let stNr t = Data.Map.fromDistinctAscList [ (t',i) | ((t',_),i)<-zip (Data.Map.toAscList stClos) [0..] ] Data.Map.! t
+--                       in (error.concat) (["\n  "++show x | x<-Data.Map.toList stConcepts]++["\n  "++show (stNr t)++"\t"++show t++"\t"++show (map stNr ts) | (t,ts)<-Data.Map.toAscList stClos])
                      , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, let domConcepts = srcTypes dTerm
                      , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, let codConcepts = srcTypes cTerm
                      , let declSrcs = [ d | d<-domConcepts, srce `compatible` d ], not (null declSrcs)
@@ -1563,8 +1549,6 @@ pCtx2aCtx p_context
                                           ,cxeSrcCpts = s
                                           ,cxeTrgCpts = t}]) term
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
-         getDeclarationAndSign (Prel _ "t")   -- debug...
-          = (error.concat) [ "\n  "++show b | b<-Data.Map.toList bindings]
          getDeclarationAndSign term
           = case bindings Data.Map.! TypExpr term False  of
              [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
