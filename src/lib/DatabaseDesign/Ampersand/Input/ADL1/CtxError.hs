@@ -32,7 +32,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeDcls :: [Term]
                               }       
               | CxeRel        {cxeExpr :: Term
-                              ,cxeDecs :: [(P_Declaration,P_Sign)]
+                              ,cxeDecs :: [(P_Declaration,[P_Concept],[P_Concept])]
                               }       
               | CxeV          {cxeExpr :: Term
                               ,cxeSrcs :: [P_Concept]
@@ -98,14 +98,25 @@ showErr err@(CxeTyp{})
                              maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
 showErr err@(CxeRel{})
  = show (origin expr)++":\n"++
-   case ([decl | (decl,_)<-cxeDecs err], [sgn | (_,sgn)<-cxeDecs err]) of
-    ( [], _ ) -> "    Relation  "++showADL expr++"  is not declared."
-    ([d], []) -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                 "    but it cannot be bound to a type."
-    ([d], ss) -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                 "    but it can be bound to multiple types: "++commaEng "and" (map show ss)++"."
-    ( ds, _ ) -> "    Relation  "++showADL expr++"  can be bound to multiple declarations on"++
-                 "    "++commaEng "and" (map (show.origin) ds)++"."
+   case cxeDecs err of
+    []                -> "    Relation  "++showADL expr++"  is not declared."
+    [(d, [], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                         "    but it is ambiguous."
+    [(d, [],[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                         "    but it is ambiguous in its source concept."
+    [(d,[_], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                         "    but it is ambiguous in its target concept."
+    [(d, ss,[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                         "    but its source concept, "++showADL s++", is not compatible with "++commaEng "and" (map show conflicts)++"."
+                         where conflicts = ss>-[s]; P_Sign sgn = dec_sign d; s=head sgn
+    [(d,[_], ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                         "    but its target concept, "++showADL t++", is not compatible with "++commaEng "and" (map show conflicts)++"."
+                         where conflicts = ts>-[t]; P_Sign sgn = dec_sign d; t=last sgn
+    [(d, ss, ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                         "    but its source concept cannot be both "++commaEng "and" (map show ss)++", and"++
+                         "    its target concept cannot be "++commaEng "and" (map show ts)++" all at the same time."
+    ds                -> "    Relation  "++showADL expr++"  is bound to multiple declarations on"++
+                         "    "++commaEng "and" [show (origin d) | (d,_,_)<-ds ]++"."
    where expr=cxeExpr err
 
 showErr err@(CxeCpl{})
