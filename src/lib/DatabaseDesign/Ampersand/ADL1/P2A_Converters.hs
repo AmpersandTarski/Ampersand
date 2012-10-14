@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Basics (name, isc, uni, eqCl, eqClass, getCycles, (>-), fatalMsg)
+import DatabaseDesign.Ampersand.Basics (name, isc, eqCl, eqClass, getCycles, (>-), fatalMsg)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -246,11 +246,15 @@ typing p_context
    where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
-     compatible :: Type -> Type -> Bool                        -- comparable = isa*~;isa*, i.e. a lower bound exists
-     compatible a b = null results || elem b results
+     compatible :: Type -> Type -> Bool
+     compatible a b = null set1 -- approve compatibility for isolated types, such as "Nothing", "Anything" and singleton elements
+                      || null set2
+                      || (not.null) (isc set1 set2)
       where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
-       stronglyConnectedComponents = setClosure (Data.Map.unionWith mrgUnion firstSetOfEdges (reverseMap firstSetOfEdges)) "firstSetOfEdges \\/ firstSetOfEdges~"
-       results = findIn a stronglyConnectedComponents
+       included = setClosure (reverseMap firstSetOfEdges) "firstSetOfEdges~"
+       getAtoms x = findIn x included
+       set1 = getAtoms a
+       set2 = getAtoms b
      (firstSetOfEdges,secondSetOfEdges)
       = (foldr (.+.) nothing [uType term Anything Anything term | term <- terms p_context])
      pDecls = concat (map terms (p_declarations p_context))   --  this amounts to [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) | d<-p_declarations p_context]
@@ -275,13 +279,17 @@ typing p_context
                                                 -- Explanation:
                                                 -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
                                                 -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                                                if length decls' == 1 then dom x.=.dom (head decls') .+. cod x.=.cod (head decls') else
+                                                if length decls == 1 then dom x.=.dom (head decls) .+. cod x.=.cod (head decls) else
                                                 carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                             if length spcls == 1
                                                             then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
-                                                            else fatal 280 ("Could not infer type for "++(show x)++" with uLft and uRt: "++(show uLft)++" and "++(show uRt)) -- nothing
+                                                            else nothing
                                                           )
                                                 where decls' = [decl | decl@(PTyp _ (Prel _ dnm) _)<-pDecls, dnm==nm ]
+                                                      decls  = if length decls' == 1 then decls' else
+                                                               [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
+                                                                     , uLft == (thing$ head cs)
+                                                                     , uRt  == (thing$ last cs) ] 
                                                       spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
                                                                      , compatible uLft (thing (head cs))  -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
                                                                      , compatible uRt  (thing (last cs))
@@ -326,14 +334,13 @@ typing p_context
                                                 uType x uLft uRt e                                                     -- (e) brackets
      uType _  _    _    (PTyp _ _ (P_Sign []))= fatal 196 "P_Sign is empty"
      uType _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
-     uType x uLft uRt   (PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
+     uType x  _    _    (PTyp o e (P_Sign cs))= dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
                                                 if o `elem` [origin d| d<-pDecls]     -- if this is a declaration
                                                 then nothing                          -- then nothing
                                                 else dom x.<.dom e .+. cod x.<.cod e  -- else treat as type restriction
                                                      .+. dom x.<.iSrc .+. cod x.<.iTrg
                                                      -- NOT TRUE (see WHY at Prel) .+. iSrc.<.uLft .+. iTrg.<.uRt
                                                      .+. uType e iSrc iTrg e
-                                                --   .+. error ("Diagnostic: uType ("++showADL e++") ("++showType iSrc++") ("++showType iTrg++")\n x="++show x)
                                                 where iSrc = thing (head cs)
                                                       iTrg = thing (last cs)
      uType x uLft uRt   (PPrd _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
