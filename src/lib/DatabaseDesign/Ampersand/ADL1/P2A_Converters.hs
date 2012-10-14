@@ -140,7 +140,7 @@ Invariants are:
 -- | note that the domain must be preserved!
 -- | reverseMap r = r~
 reverseMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reverseMap lst = (Data.Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toList lst]))
+reverseMap lst = (Data.Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toAscList lst]))
 -- note: reverseMap is relatively slow, but only needs to be calculated once
 
 -- | addIdentity r = r\/I
@@ -290,7 +290,7 @@ typing p_context
                                                       carefully tt = (fst nothing,fst tt.++.snd tt)
      uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
                                                 where e = Prel o nm
-     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x  --  a=b    equality
+     uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                                                  .+. uType a uLft uRt a .+. uType b uLft uRt b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
                                                 .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
@@ -306,7 +306,7 @@ typing p_context
                                                       (cm,interCod) = mGeneric (cod a) (cod b)  x
                                                       (d2,interDom2) = mSpecific interDom uLft  x
                                                       (c2,interCod2) = mSpecific interCod uRt   x
-     uType x uLft uRt   (PCps _ a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                  -- a;b      composition
+     uType x uLft uRt   (PCps _ a b)          = dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
                                                 bm .+. uType a uLft between a .+. uType b between uRt b
                                                 .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
                                                 where (bm,between) = mSpecific (cod a) (dom b) x
@@ -398,13 +398,14 @@ Type         : a type term, containing a Term, which is represented by a number 
                For a type correct term, list cs contains precisely one element.
 -}
 tableOfTypes :: P_Context -> Typemap ->
-                ( Typemap          -- stClos      -- (st\/stAdded)*\/I  (reflexive and transitive)
-                , Typemap          -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
-                , Typemap          -- stClosAdded -- additional links added to stClos
-                , Typemap          -- stClos1     -- st*  (transitive)
+                ( Typemap                                   -- stClos      -- (st\/stAdded)*\/I  (reflexive and transitive)
+                , Typemap                                   -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
+                , Typemap                                   -- stClosAdded -- additional links added to stClos
+                , Typemap                                   -- stClos1     -- st*  (transitive)
                 , P_Concept -> P_Concept -> Maybe P_Concept -- cGlb-- a function to compute a greates lower bound, if it exists.
-                , Data.Map.Map Type [(P_Declaration,P_Sign)] -- bindings    -- declarations that may be bound to relations
-                , [(P_Concept,P_Concept)]           -- isas        -- 
+                , Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])] -- bindings    -- declarations that may be bound to relations
+                , Type -> Data.Map.Map Type [P_Concept]     --  stConcepts -- 
+                , [(P_Concept,P_Concept)]                   -- isas        -- 
                 )                                   
 tableOfTypes p_context st
   = ( stClos
@@ -413,6 +414,7 @@ tableOfTypes p_context st
     , stClos1
     , cGlb
     , bindings
+    , (stConcepts Data.Map.!)
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
              -- it is used for the purpose of making a poset of concepts in the A-structure.
@@ -464,44 +466,40 @@ tableOfTypes p_context st
                   where f ts = [ (fst.head.sortWith (length.snd)) [(c,isaClosReversed Data.Map.! c) | c<-cl]
                                | cl<-eqClass compatible cs]
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
-                        compatible a b = (not.null) ((isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b))
-
+     compatible a b = (not.null) ((isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b))
+     stNr :: Type -> Int
+     stNr t = Data.Map.fromDistinctAscList [ (t',i) | ((t',_),i)<-zip (Data.Map.toAscList stClos) [0..] ] Data.Map.! t
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 -}
-     bindings :: Data.Map.Map Type [(P_Declaration,P_Sign)]
+     bindings :: Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])]
      bindings    = {- for debugging and illustration purposes: 
                    error ("\nbindings = \n  "++(intercalate "\n  ".map show)
                                                 [ tuple      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the graph.
                                                 | decl<-p_declarations p_context
-                                                , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
-                                                , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
                                                 , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                                                , Just s<-case stConcepts Data.Map.! dTerm of
-                                                           [c] -> [c `cGlb` srce]
-                                                           _   -> [Just srce]
-                                                , Just t<-case stConcepts Data.Map.! cTerm of
-                                                           [c] -> [c `cGlb` targ]
-                                                           _   -> [Just targ]
-                                                , tuple<-[(dTerm,(decl,P_Sign [s,t])),(cTerm,(decl,P_Sign [s,t]))]
+                                                , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, let dConcepts = stConcepts Data.Map.! dTerm
+                                                , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, let cConcepts = stConcepts Data.Map.! cTerm
+                                                , let declSrcs = [ d | d<-domConcepts, srce `compatible` d ], not (null declSrcs)
+                                                , let declTrgs = [ c | c<-codConcepts, targ `compatible` c ], not (null declTrgs)
+                                                , let declSrcTrgs = (decl,declSrcs,declTrgs)
+                                                , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
                                                 ]
                          ) -}
                    Data.Map.fromListWith union
-                   ( [ tuple      -- the bindings of domain and codomain terms should lead to the identical declaration. Both bindings will be added to the grap
+                   ( [ tuple
                      | decl<-p_declarations p_context
-                     , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
-                     , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, length (stConcepts Data.Map.! dTerm)<=1
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                     , Just s<-case stConcepts Data.Map.! dTerm of
-                                [c] -> [c `cGlb` srce]
-                                _   -> [Just srce]
-                     , Just t<-case stConcepts Data.Map.! cTerm of
-                                [c] -> [c `cGlb` targ]
-                                _   -> [Just targ]
-                     , tuple<-[(dTerm,[(decl,P_Sign [s,t])]),(cTerm,[(decl,P_Sign [s,t])])]
+--                     , (error.concat) (["\n  "++show x | x<-Data.Map.toList stConcepts]++["\n  "++show (stNr t)++"\t"++show t++"\t"++show (map stNr ts) | (t,ts)<-Data.Map.toAscList stClos])
+                     , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, let domConcepts = stConcepts Data.Map.! dTerm
+                     , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, let codConcepts = stConcepts Data.Map.! cTerm
+                     , let declSrcs = [ d | d<-domConcepts, srce `compatible` d ], not (null declSrcs)
+                     , let declTrgs = [ c | c<-codConcepts, targ `compatible` c ], not (null declTrgs)
+                     , let declSrcTrgs = (decl,declSrcs,declTrgs)
+                     , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
                      ] ++
                      [ (t,[]) | t<-typeTerms]
                    )
@@ -516,7 +514,7 @@ typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
      -- testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-     (stClos, eqType, stClosAdded, stClos1, _ , _ , _) = tableOfTypes p_context st
+     (stClos, eqType, stClosAdded, stClos1, _ , _ , _ , _) = tableOfTypes p_context st
      typeTerms = Data.Map.keys stClos
      stNr :: Type -> Int
      stNr typ = stTable Data.Map.! typ
@@ -896,9 +894,9 @@ pCtx2aCtx p_context
     stClos      :: Typemap                  -- (st\/stAdded)*\/I  (total and transitive)
     eqType      :: Typemap                  -- (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
     cGlb        :: P_Concept -> P_Concept -> Maybe P_Concept -- a function to compute a greates lower bound, if it exists. 
-    bindings    :: Data.Map.Map Type [(P_Declaration,P_Sign)]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    bindings    :: Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isas        :: [(P_Concept,P_Concept)]                   -- 
-    (stClos, eqType, _ , _ , cGlb, bindings, isas) = tableOfTypes p_context st
+    (stClos, eqType, _ , _ , cGlb, bindings, stConcepts, isas) = tableOfTypes p_context st
     specializationTuples :: [(A_Concept,A_Concept)]
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
     gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
@@ -1525,45 +1523,24 @@ pCtx2aCtx p_context
                                                                              , cxeCodTerm = csCodTerm
                                                                              }       
                                                                      ]
-            where csDomCast = getConceptsFromType (TypExpr        term  False)
-                  csCodCast = getConceptsFromType (TypExpr (p_flp term) True )
-                  csDomTerm = getConceptsFromType (TypExpr        e  False)
-                  csCodTerm = getConceptsFromType (TypExpr (p_flp e) True )
+            where csDomCast = stConcepts (TypExpr        term  False)
+                  csCodCast = stConcepts (TypExpr (p_flp term) True )
+                  csDomTerm = stConcepts (TypExpr        e  False)
+                  csCodTerm = stConcepts (TypExpr (p_flp e) True )
          errCastType term = fatal 1508 ("illegal call to errCastType ("++show term++")")
          errCpsLike :: Term -> Term -> Term -> Guarded (A_Concept, Expression, Expression)
          errCpsLike term a b
-          = case conflictingConcepts of
-{-           []  -> error ("\nterm:      "++ show term++
-                           "\na:         "++ show a++
-                           "\nb:         "++ show b++
-                           show err)  -}
-             [c] -> case (pExpr2aExpr a, pExpr2aExpr b) of
-                      (Checked (a', _,_), Checked (b', _,_)) -> Checked (pCpt2aCpt c, a', b')
-                      (Errors errsA     , Checked ( _, _,_)) -> Errors errsA
-                      (Checked ( _, _,_), Errors errsB     ) -> Errors errsB
-                      (Errors errsA     , Errors errsB     ) -> Errors (errsA++errsB)
-             _   -> Errors [ CxeCpsLike {cxeExpr   = term
-                                        ,cxeCpts   = conflictingConcepts
-                                        }
-                           ]
-            where conflictingConcepts = getConceptsFromType (TypExpr term False)
+          = do { (a',b') <- (,) <$> pExpr2aExpr a <*> pExpr2aExpr b
+               ; case stConcepts (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) term) of
+                  [c] -> (pCpt2aCpt c, a', b')
+                  cs  -> Errors [ CxeCpsLike {cxeExpr   = term
+                                             ,cxeCpts   = cs
+                                             }
+                                ]
+               }
          getConceptsFromTerm :: Term -> [P_Concept]
          getConceptsFromTerm x
-          = getConceptsFromType (TypExpr x False) `uni` getConceptsFromType (TypExpr x True)
-         getConceptsFromType :: Type -> [P_Concept]
-         getConceptsFromType typ
-          = glbs [c | TypExpr (Pid c) _ <- stClos Data.Map.! typ ]
-            where
-              -- the function glbs computes the greatest lower bounds of all concepts in cs.
-              glbs cs = [ foldcGlb cl | cl<-eqClass eqCpt cs]
-              a `eqCpt` b = case a `cGlb` b of
-                              Nothing -> False
-                              Just _  -> True
-              foldcGlb [c]    = c
-              foldcGlb (c:cs) = case c `cGlb` foldcGlb cs of
-                                 Just x -> x
-                                 _      -> fatal 1524 "error in glbs"
-              foldcGlb _      = fatal 1525 "error in glbs"
+          = stConcepts (TypExpr x False)
          getSignFromTerm :: Term -> Guarded Sign
          getSignFromTerm term
           = getSign (\s t -> [ CxeV { cxeExpr = term
@@ -1584,12 +1561,14 @@ pCtx2aCtx p_context
                                           ,cxeSrcCpts = s
                                           ,cxeTrgCpts = t}]) term
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
+         getDeclarationAndSign (Prel _ "t")   -- debug...
+          = (error.concat) [ "\n  "++show b | b<-Data.Map.toList bindings]
          getDeclarationAndSign term
           = case bindings Data.Map.! TypExpr term False  of
-             [(d,P_Sign [s,t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
-             ds                 -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                                  ,cxeDecs   = ds          -- the declarations to which this term has been matched
-                                                  }]
+             [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
+             ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                               ,cxeDecs   = ds          -- the declarations to which this term has been matched
+                                               }]
          errCpl :: Term -> Term -> Guarded ()
          errCpl term a
           = createVoid $  [ CxeCpl {cxeExpr   = a
