@@ -460,7 +460,7 @@ tableOfTypes p_context st
      stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
      eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
-     isaClos = addIdentity (Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos])
+     isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
      cGlb :: P_Concept -> P_Concept -> Maybe P_Concept
      cGlb a b = case (isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b) of
@@ -487,12 +487,12 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                    ( [ tuple
                      | decl<-p_declarations p_context
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
---                     , let stNr t = Data.Map.fromDistinctAscList [ (t',i) | ((t',_),i)<-zip (Data.Map.toAscList stClos) [0..] ] Data.Map.! t
---                       in (error.concat) (["\n  "++show x | x<-Data.Map.toList stConcepts]++["\n  "++show (stNr t)++"\t"++show t++"\t"++show (map stNr ts) | (t,ts)<-Data.Map.toAscList stClos])
                      , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, let domConcepts = srcTypes dTerm
                      , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, let codConcepts = srcTypes cTerm
-                     , let declSrcs = [ d | d<-domConcepts, srce `compatible` d ], not (null declSrcs)
-                     , let declTrgs = [ c | c<-codConcepts, targ `compatible` c ], not (null declTrgs)
+                     , srce `elem` domConcepts || null domConcepts
+                     , targ `elem` codConcepts || null codConcepts
+                     , let declSrcs = if null domConcepts then [srce] else domConcepts
+                     , let declTrgs = if null codConcepts then [srce] else codConcepts
                      , let declSrcTrgs = (decl,declSrcs,declTrgs)
                      , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
                      ] ++
