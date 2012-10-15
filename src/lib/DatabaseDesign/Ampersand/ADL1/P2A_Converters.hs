@@ -299,7 +299,7 @@ typing p_context
      uType x uLft uRt   (Pflp o nm)           = dom x.=.cod e .+. cod x.=.dom e .+. uType e uRt uLft e
                                                 where e = Prel o nm
      uType x uLft uRt   (Pequ _ a b)          = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                                                 .+. uType a uLft uRt a .+. uType b uLft uRt b 
+                                                 .+. uType a (dom x) (cod x) a .+. uType b (dom x) (cod x) b 
      uType x uLft uRt   (PIsc _ a b)          = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
                                                 .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
                                                 .+. uType a interDom2 interCod2 a .+. uType b interDom2 interCod2 b
