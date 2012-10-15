@@ -492,7 +492,7 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                      , srce `elem` domConcepts || null domConcepts
                      , targ `elem` codConcepts || null codConcepts
                      , let declSrcs = if null domConcepts then [srce] else domConcepts
-                     , let declTrgs = if null codConcepts then [srce] else codConcepts
+                     , let declTrgs = if null codConcepts then [targ] else codConcepts
                      , let declSrcTrgs = (decl,declSrcs,declTrgs)
                      , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
                      ] ++
