@@ -409,7 +409,6 @@ tableOfTypes :: P_Context -> Typemap ->
                 , Typemap                                   -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
                 , Typemap                                   -- stClosAdded -- additional links added to stClos
                 , Typemap                                   -- stClos1     -- st*  (transitive)
-                , P_Concept -> P_Concept -> Maybe P_Concept -- cGlb-- a function to compute a greates lower bound, if it exists.
                 , Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])] -- bindings    -- declarations that may be bound to relations
                 , Type -> [P_Concept]                       --  srcTypes -- 
                 , [(P_Concept,P_Concept)]                   -- isas        -- 
@@ -419,8 +418,7 @@ tableOfTypes p_context st
     , eqType
     , stClosAdded
     , stClos1
-    , cGlb
-    , bindings
+    , bindings -- for debugging: (error.concat) ["\n  "++show b | b<-Data.Map.toAscList bindings] -- 
     , srcTypes
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
@@ -462,11 +460,6 @@ tableOfTypes p_context st
      eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
      isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
-     cGlb :: P_Concept -> P_Concept -> Maybe P_Concept
-     cGlb a b = case (isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b) of
-                 [c] -> Just c
-                 []  -> Nothing
-                 cs  -> (Just . fst.head.sortWith ((0-).length.snd)) [ (c, isaClosReversed Data.Map.! c) | c<-cs]
      isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-isaClos Data.Map.! s ]  -- this is redundant, because isas=isas*. Hence, isas may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
      stConcepts :: Data.Map.Map Type [P_Concept]
      stConcepts = Data.Map.map f stClos
@@ -476,6 +469,9 @@ tableOfTypes p_context st
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = stConcepts Data.Map.! typ
      compatible a b = (not.null) ((isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b))
+     tGlb :: Type -> Type -> [P_Concept]
+     tGlb a b = nub [c | t<-greatest ((stClosReversed Data.Map.! a) `isc` (stClosReversed Data.Map.! b)), c<-srcTypes t]
+                where greatest ts = foldr isc ts [ stClos Data.Map.! t | t<-ts]
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
@@ -487,13 +483,11 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                    ( [ tuple
                      | decl<-p_declarations p_context
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                     , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl, let domConcepts = srcTypes dTerm
-                     , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl, let codConcepts = srcTypes cTerm
-                     , srce `elem` domConcepts || null domConcepts
-                     , targ `elem` codConcepts || null codConcepts
-                     , let declSrcs = if null domConcepts then [srce] else domConcepts
-                     , let declTrgs = if null codConcepts then [targ] else codConcepts
-                     , let declSrcTrgs = (decl,declSrcs,declTrgs)
+                     , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl
+                     , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl
+                     , let srcConcepts = thing srce `tGlb` dTerm, not (null srcConcepts)
+                     , let trgConcepts = thing targ `tGlb` cTerm, not (null trgConcepts)
+                     , let declSrcTrgs = (decl, srcConcepts, trgConcepts)
                      , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
                      ] ++
                      [ (t,[]) | t<-typeTerms]
@@ -509,7 +503,7 @@ typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
      -- testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-     (stClos, eqType, stClosAdded, stClos1, _ , _ , _ , _) = tableOfTypes p_context st
+     (stClos, eqType, stClosAdded, stClos1, _ , _ , _) = tableOfTypes p_context st
      typeTerms = Data.Map.keys stClos
      stNr :: Type -> Int
      stNr typ = stTable Data.Map.! typ
@@ -888,10 +882,9 @@ pCtx2aCtx p_context
     st = typing p_context
     stClos      :: Typemap                  -- (st\/stAdded)*\/I  (total and transitive)
     eqType      :: Typemap                  -- (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    cGlb        :: P_Concept -> P_Concept -> Maybe P_Concept -- a function to compute a greates lower bound, if it exists. 
     bindings    :: Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isas        :: [(P_Concept,P_Concept)]                   -- 
-    (stClos, eqType, _ , _ , cGlb, bindings, srcTypes, isas) = tableOfTypes p_context st
+    (stClos, eqType, _ , _ , bindings, srcTypes, isas) = tableOfTypes p_context st
     specializationTuples :: [(A_Concept,A_Concept)]
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
     gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
