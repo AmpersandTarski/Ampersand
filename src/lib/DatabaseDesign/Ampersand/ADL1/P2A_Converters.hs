@@ -330,7 +330,7 @@ typing p_context
      uType x uLft uRt   (PKl0 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType e uLft uRt e
      uType x uLft uRt   (PKl1 _ e)            = dom e.<.dom x .+. cod e.<.cod x .+. uType e uLft uRt e
      uType x uLft uRt   (PFlp _ e)            = cod e.=.dom x .+. dom e.=.cod x .+. uType e uRt uLft e
-     uType x uLft uRt   (PBrk _ e)            = dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PBrk _ e)            = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                                                     -- (e) brackets
      uType _  _    _    (PTyp _ _ (P_Sign []))= fatal 196 "P_Sign is empty"
      uType _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
@@ -346,16 +346,16 @@ typing p_context
      uType x uLft uRt   (PPrd _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                                                 .+. uType a uLft Anything a .+. uType b Anything uRt b
      -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
-     uType x uLft uRt   (Pimp o a b)          = dom x.=.dom e .+. cod x.=.cod e .+. 
+     uType x uLft uRt   (Pimp o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ o a (PIsc o a b)
-     uType x uLft uRt   (PLrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PLrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
                                                 where e = PCpl o (PCps o (complement a) (p_flp b))
-     uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
                                                 where e = PCpl o (PCps o (p_flp a) (complement b))
-     uType x uLft uRt   (PRad o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.  
+     uType x uLft uRt   (PRad o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
                                                 where e = PCps o (complement a) (complement b)
      uType x uLft uRt   (PCpl o a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
@@ -437,6 +437,17 @@ tableOfTypes p_context st
 -- In order to compute the condensed graph, we need the transitive closure of st:
      stClos1 :: Typemap
      stClos1 = setClosure st "st"       -- represents (st)* .   stClos1 is transitive
+     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeTerms]
+      where
+      -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
+       compr a b  = if b `elem` (lookups a stClos1) then GT else -- note: by LT we mean: less than or equal
+                    if a `elem` (lookups b stClos1) then LT -- likewise, GT means: greater or equal
+                     else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
+      -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
+      -- This explains why we did the sorting:
+      --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
+      --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
+      -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
      someWhatSortedGlbs = sortBy compr [l | l@(TypGlb _ _ _) <- typeTerms]
       where
       -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
@@ -449,10 +460,13 @@ tableOfTypes p_context st
       --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
       -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
      stClosAdded :: Typemap
-     stClosAdded = foldl f stClos1 someWhatSortedGlbs
+     stClosAdded = foldl f stClos1 (someWhatSortedGlbs++someWhatSortedLubs)
        where
         f :: Typemap -> Type -> Typemap 
-        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+--        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [o| a `elem` cs, b `elem` cs]) dataMap
+        
+        f dataMap o@(TypLub a b _) = Data.Map.insertWith mrgUnion o ((dataMap Data.Map.! a) `mrgIntersect` (dataMap Data.Map.! b)) dataMap
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
      stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
      stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
