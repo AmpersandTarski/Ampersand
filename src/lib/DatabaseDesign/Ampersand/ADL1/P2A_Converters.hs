@@ -445,8 +445,8 @@ tableOfTypes p_context st
      someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeTerms]
       where
       -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
-       compr a b  = if b `elem` (lookups a stClos1) then GT else -- note: by LT we mean: less than or equal
-                    if a `elem` (lookups b stClos1) then LT -- likewise, GT means: greater or equal
+       compr a b  = if b `elem` (lookups a stClos1) then LT else -- note: by LT we mean: less than or equal
+                    if a `elem` (lookups b stClos1) then GT -- likewise, GT means: greater or equal
                      else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
       -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
       -- This explains why we did the sorting:
@@ -465,7 +465,7 @@ tableOfTypes p_context st
       --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
       -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
      stClosAdded :: Typemap
-     stClosAdded = foldl f (setClosure (foldl f stClos1 (someWhatSortedGlbs++someWhatSortedLubs)) "intermediate") (someWhatSortedGlbs++someWhatSortedLubs)
+     stClosAdded = foldl f stClos1 (someWhatSortedGlbs++(reverse someWhatSortedLubs))
        where
         f :: Typemap -> Type -> Typemap 
 --        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
