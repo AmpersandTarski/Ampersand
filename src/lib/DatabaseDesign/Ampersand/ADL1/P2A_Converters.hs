@@ -465,7 +465,7 @@ tableOfTypes p_context st
       --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
       -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
      stClosAdded :: Typemap
-     stClosAdded = foldl f stClos1 (someWhatSortedGlbs++(reverse someWhatSortedLubs))
+     stClosAdded = foldl f (setClosure (foldl f stClos1 (someWhatSortedGlbs++someWhatSortedLubs)) "intermediate") (someWhatSortedGlbs++someWhatSortedLubs)
        where
         f :: Typemap -> Type -> Typemap 
 --        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
