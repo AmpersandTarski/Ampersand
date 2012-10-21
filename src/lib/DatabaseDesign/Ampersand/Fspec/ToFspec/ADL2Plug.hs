@@ -15,7 +15,6 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Fspec.Fspec 
-import DatabaseDesign.Ampersand.Fspec.ShowADL
 import Data.Char
 import Data.List (nub)
 import GHC.Exts (sortWith)

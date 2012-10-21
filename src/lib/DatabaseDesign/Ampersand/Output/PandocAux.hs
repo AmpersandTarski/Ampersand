@@ -128,7 +128,7 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                  Ftextile      -> ".textile"
                                        )
          makeOutput
-            = if (fspecFormat flags == FLatex && not (test flags)) -- temporary still support old LaTeX version 
+            = if False -- (fspecFormat flags == FLatex && not (test flags)) -- temporary still support old LaTeX version 
               then 
                do verboseLn flags ("Generating to LaTeX: "++outputFile)
                   writeFile outputFile (writeLaTeX (writerOptions(Just (theOldLatexTemplate flags))) thePandoc)
