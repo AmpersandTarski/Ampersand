@@ -13,6 +13,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
 
+--WAAROM? @Stef: Why is there a difference between show and shOrig for Origin? 
 shOrig :: Origin -> String
 shOrig (FileLoc (FilePos (_,DatabaseDesign.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++":"++show c
 shOrig (DBLoc str)   = "Database location: "++str
