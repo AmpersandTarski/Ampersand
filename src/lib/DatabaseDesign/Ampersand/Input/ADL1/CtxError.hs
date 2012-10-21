@@ -45,7 +45,8 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeCodTerm :: [P_Concept]
                               }       
               | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeV instead?
-                              ,cxeCpts :: [P_Concept]
+                              ,cxeSrcs :: [P_Concept]
+                              ,cxeTrgs :: [P_Concept]
                               }       
               | CxeEquLike    {cxeExpr :: Term   -- error in term cxeExpr, lefthandside not compatable to righthandside
                               ,cxeLhs :: Term
@@ -119,30 +120,6 @@ showErr err@(CxeRel{})
                          "    "++commaEng "and" [show (origin d) | (d,_,_)<-ds ]++"."
    where expr=cxeExpr err
 
-showErr err@(CxeCpl{})
- = concat
-     ( [show (origin (cxeExpr err))++":\n"]++
-       ["    There is no universe from which to compute a complement in term  "++showADL (cxeExpr err)++"." | null (cxeCpts err)]++
-       ["    There are multiple universes from which to compute a complement in term  "++showADL (cxeExpr err)++":\n    "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]
-     )
-showErr err@(CxeV{ cxeExpr=x })
- = concat
-     ( [show (origin (cxeExpr err))++":\n"]++
-       case (cxeSrcs err, cxeTrgs err) of
-            ([], [])  -> ["    No type can be derived for  "++showADL x]
-            (_, [])   -> ["    The target of  "++showADL x++"  is ambiguous."]
-            ([], _)   -> ["    The source of  "++showADL x++"  is ambiguous."]
-            (cs, [_]) -> ["    Cannot pick a concept for the source of  "++showADL x++"\n"]++
-                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
-            ([_], cs) -> ["    Cannot pick a concept for the target of  "++showADL x++"\n"]++
-                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
-            (cs, cs') -> if sort cs==sort cs'
-                         then ["    the source and target of  "++showADL x++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-                         else ["    the source of  "++showADL x++"\n"]++
-                              ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                              ["    and the target of  "++showADL x++"\n"]++
-                              ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]     )
 showErr err@(CxeCast{ cxeExpr=x@(PTyp _ r@(Prel _ _) sgnCast) })
  = concat
      ( [show (origin (cxeExpr err))++":\n"]++
@@ -172,8 +149,28 @@ showErr (Cxe typeErrors x)                      = x ++ "\n" ++ intercalate "\n" 
 showErr (PE msg)                                = "Parse error:\n"++ show (case msg of 
                                                                              []  -> fatal 35 "No messages??? The impossible happened!" 
                                                                              x:_ -> x)
--- HJO: I think that the following is a bad programmers habbit: Turning compiler warnings into runtime errors!
---showErr _ = fatal 580 "missing pattern in type error."
+showErr err@(CxeCpl{})
+ = show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
+showErr err@(CxeV{})
+ = show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
+showErrSrcsTrgs err 
+ = let x = cxeExpr err in
+   case (cxeSrcs err, cxeTrgs err) of
+            ([], [])  -> ["    No type can be derived for  "++showADL x]
+            (_, [])   -> ["    The target of  "++showADL x++"  is ambiguous."]
+            ([], _)   -> ["    The source of  "++showADL x++"  is ambiguous."]
+            (cs, [_]) -> ["    Cannot pick a concept for the source of  "++showADL x++"\n"]++
+                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
+            ([_], cs) -> ["    Cannot pick a concept for the target of  "++showADL x++"\n"]++
+                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
+            (cs, cs') -> if sort cs==sort cs'
+                         then ["    the source and target of  "++showADL x++"\n"]++
+                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+                         else ["    the source of  "++showADL x++"\n"]++
+                              ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
+                              ["    and the target of  "++showADL x++"\n"]++
+                              ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+
 
 showErrBetweenTerm :: CtxError -> Term -> Term -> [Char] -> [Char] -> [Char]
 showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
