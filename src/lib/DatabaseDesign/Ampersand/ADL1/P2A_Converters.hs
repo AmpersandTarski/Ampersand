@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Basics (name, isc, eqCl, eqClass, getCycles, (>-), fatalMsg)
+import DatabaseDesign.Ampersand.Basics (name, isc, uni, eqCl, eqClass, getCycles, (>-), fatalMsg)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -321,6 +321,14 @@ typing p_context
                                                       pidTest (PI{}) r = r
                                                       pidTest (Pid{}) r = r
                                                       pidTest _ _ = nothing
+     uType x uLft uRt   (PRad _ a b)          = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      composition
+                                                bm .+. uType a uLft between a .+. uType b between uRt b
+                                                .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
+                                                where (bm,between) = mGeneric (cod a) (dom b) x
+                                                      pnidTest (PCpl _ (PI{})) r = r
+                                                      pnidTest (PCpl _ (Pid{})) r = r
+                                                      pnidTest (Pnid{}) r = r
+                                                      pnidTest _ _ = nothing
      uType x uLft uRt   (PDif _ a b)          = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                                                  .+. dm .+. cm
                                                  .+. uType a uLft uRt a
@@ -355,9 +363,6 @@ typing p_context
      uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
                                                 where e = PCpl o (PCps o (p_flp a) (complement b))
-     uType x uLft uRt   (PRad o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                uType x uLft uRt e                 -- a!b = -(-a;-b) relative addition
-                                                where e = PCps o (complement a) (complement b)
      uType x uLft uRt   (PCpl o a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                 uType x uLft uRt e                 -- -a = V - a
                                                 where e = PDif o (PVee (origin x)) a
@@ -1424,10 +1429,10 @@ pCtx2aCtx p_context
                           name (last sgn)==name (target d)   ]
     pRel2aRel _ r = fatal 1314 ("pRel2aRel could not patternmatch on "++show r)
     
-    pExpr2aExpr :: Term                              -- The term to be typed
-                -> Guarded ( Expression              -- the resulting expression.
-                           , P_Concept, P_Concept    -- the source and target types of the resulting expression.
-                           )                         -- The result might be incorrect, so it is guarded with type error messages.
+    pExpr2aExpr :: Term                               -- The term to be typed
+                -> Guarded ( Expression               -- the resulting expression.
+                           , P_Concept, P_Concept     -- the source and target types of the resulting expression.
+                           )                          -- The result might be incorrect, so it is guarded with type error messages.
     pExpr2aExpr pTerm
      = (\r -> (r, lookupType pTerm, lookupType (p_flp pTerm))) <$> f pTerm
        -- do { r <- f pTerm ; return (r, lookupType pTerm, lookupType (p_flp pTerm))}
@@ -1451,40 +1456,108 @@ pCtx2aCtx p_context
          f t@(Prel o a)                 = do { (decl,sgn) <- getDeclarationAndSign t
                                              ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
                                              }
-         f t@(Pflp o a)                 = do { (decl,sgn) <- getDeclarationAndSign t
+         f t@(Pflp o a)                 = do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
                                              ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
                                              }
          f t@(Pequ _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; _{-sign-} <- errEquLike t a b
-                                             ; return (EEqu (a', b'))
+                                             ; let srcAs = srcTypes (TypExpr        a  False)
+                                                   trgAs = srcTypes (TypExpr (p_flp a) True )
+                                                   srcBs = srcTypes (TypExpr        b  False)
+                                                   trgBs = srcTypes (TypExpr (p_flp b) True )
+                                                   srcTyps = srcAs `uni` srcBs
+                                                   trgTyps = trgAs `uni` trgBs
+                                             ; case (srcTyps, trgTyps) of
+                                                    ([_], [_]) -> return (EEqu (a', b'))
+                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                                     ,cxeLhs     = a
+                                                                                     ,cxeRhs     = b
+                                                                                     ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                                     ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                                     }]
                                              }
          f t@(Pimp _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; _{-sign-} <- errEquLike t a b
-                                             ; return (EImp (a', b'))
+                                             ; let srcAs = srcTypes (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
+                                                   trgAs = srcTypes (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                                   srcBs = srcTypes (TypExpr        b  False)
+                                                   trgBs = srcTypes (TypExpr (p_flp b) True )
+                                                   srcTyps = srcAs `uni` srcBs
+                                                   trgTyps = trgAs `uni` trgBs
+                                             ; case (srcAs, trgBs) of
+                                                    ([_], [_]) -> return (EImp (a', b'))
+                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                                     ,cxeLhs     = a
+                                                                                     ,cxeRhs     = b
+                                                                                     ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                                     ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                                     }]
                                              }
          f t@(PIsc _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; _{-sign-} <- errEquLike t a b
-                                             ; return (EIsc (case a' of {EIsc ts -> ts; t'-> [t']} ++ case b' of {EIsc ts -> ts; t'-> [t']}))
+                                             ; let srcs = srcTypes (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
+                                                   trgs = srcTypes (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                             ; case (srcs, trgs) of
+                                                    ([_], [_]) -> return (EIsc (case a' of {EIsc ts -> ts; t'-> [t']} ++ case b' of {EIsc ts -> ts; t'-> [t']}))
+                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                                     ,cxeLhs     = a
+                                                                                     ,cxeRhs     = b
+                                                                                     ,cxeSrcCpts = srcs
+                                                                                     ,cxeTrgCpts = trgs
+                                                                                     }]
                                              }
          f t@(PUni _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; _{-sign-} <- errEquLike t a b
-                                             ; return (EUni (case a' of {EUni ts -> ts; t'-> [t']} ++ case b' of {EUni ts -> ts; t'-> [t']}))
+                                             ; let srcs = srcTypes (TypLub (TypExpr        a  False) (TypExpr        b  False) t)
+                                                   trgs = srcTypes (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                             ; case (srcs, trgs) of
+                                                    ([_], [_]) -> return (EUni (case a' of {EUni ts -> ts; t'-> [t']} ++ case b' of {EUni ts -> ts; t'-> [t']}))
+                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                                     ,cxeLhs     = a
+                                                                                     ,cxeRhs     = b
+                                                                                     ,cxeSrcCpts = srcs
+                                                                                     ,cxeTrgCpts = trgs
+                                                                                     }]
                                              }
          f t@(PDif _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; _{-sign-} <- errEquLike t a b
-                                             ; return (EDif (a', b'))
+                                             ; let srcs = srcTypes (TypLub (TypExpr        a  False) (TypExpr        b  False) t)
+                                                   trgs = srcTypes (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                             ; case (srcs, trgs) of
+                                                    ([_], [_]) -> return (EDif (a', b'))
+                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                                     ,cxeLhs     = a
+                                                                                     ,cxeRhs     = b
+                                                                                     ,cxeSrcCpts = srcs
+                                                                                     ,cxeTrgCpts = trgs
+                                                                                     }]
                                              }
-         f t@(PLrs _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike t a b
-                                             ; return (ELrs (a', b'))
+         f t@(PLrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a/b = a!-b~ = -(-a;b~)
+                                             ; case srcTypes (TypLub (TypExpr (p_flp a) True) (TypExpr (p_flp b) True) t) of
+                                                [c] -> return (ELrs (a', b'))
+                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                           ,cxeCpts   = cs
+                                                                           }
+                                                              ]
                                              }
-         f t@(PRrs _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike t a b
-                                             ; return (ERrs (a', b'))
+         f t@(PRrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a\b = -a~!b = -(a~;-b)
+                                             ; case srcTypes (TypLub (TypExpr a False) (TypExpr b False) t) of
+                                                [c] -> return (ERrs (a', b'))
+                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                           ,cxeCpts   = cs
+                                                                           }
+                                                              ]
                                              }
-         f t@(PCps _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike t a b
-                                             ; return (ECps (case a' of {ECps ts -> ts; t'-> [t']} ++ case b' of {ECps ts -> ts; t'-> [t']}))
+         f t@(PCps _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; case srcTypes (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) t) of
+                                                [c] -> return (ECps (case a' of {ECps ts -> ts; t'-> [t']} ++ case b' of {ECps ts -> ts; t'-> [t']}))
+                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                           ,cxeCpts   = cs
+                                                                           }
+                                                              ]
                                              }
-         f t@(PRad _ a b)               = do { (_{-concept-}, a', b') <- errCpsLike t a b
-                                             ; return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
+         f t@(PRad _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+                                             ; case srcTypes (TypLub (TypExpr (p_flp a) True) (TypExpr b False) t) of
+                                                [c] -> return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
+                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                           ,cxeCpts   = cs
+                                                                           }
+                                                              ]
                                              }
          f (PPrd o (PPrd _ a b) c)      = do { (EPrd a_b_s, fc) <- (,) <$> f (PPrd o a b) <*> f c
                                              ; return (EPrd (a_b_s++[fc])) }
@@ -1494,13 +1567,21 @@ pCtx2aCtx p_context
                                              ; return (EPrd [fa,fb]) }
          f (PKl0 _ a)                   = do { a' <- f a
                                              ; return (EKl0 a') }
-         f (PKl1 _ a)      = EKl1 <$> f a
-         f (PFlp _ a)      = EFlp <$> f a
-         f t@(PCpl _ a)    = do { fa <- f a; return (ECpl fa) <* errCpl t a }
+         f (PKl1 _ a)                   = EKl1 <$> f a
+         f (PFlp _ a)                   = EFlp <$> f a
+         f t@(PCpl _ a)                 = do { fa <- f a
+                                             ; case (srcTypes (TypExpr a False), srcTypes (TypExpr (p_flp a) True)) of
+                                                ([s],[t]) -> return (ECpl fa)
+                                                ( ss, ts) -> Errors [ CxeCpl {cxeExpr   = a
+                                                                             ,cxeSrcs   = ss
+                                                                             ,cxeTrgs   = ts
+                                                                             }
+                                                                    ]
+                                             }
          f (PBrk _ a)      = EBrk <$> f a
          -- alternatively:  WHY (SJ): Bas, waarom staat dit commentaar hier? kunnen we hier nog iets nuttigs mee? 
          -- f t@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts t; return (ERel (I (pCpt2aCpt c)))}
-         f t@(PTyp o _ (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
+         f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
          f t@(PTyp _ e@(Prel o a) sgnCast) = do { _ <- errCastType t
                                                 ; (decl,_) <- getDeclarationAndSign e
                                                 ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
@@ -1509,11 +1590,11 @@ pCtx2aCtx p_context
                              where P_Sign cs = sgn; s=head cs; t=last cs
          f t = fatal 1542 ("Pattern match on f in pExpr2aExpr failed for "++show t)
          returnIConcepts term
-          = if (length conflictingConcepts /= 1) then Errors 
-            [CxeILike {cxeExpr   = term
-                      ,cxeCpts   = conflictingConcepts
-                      }] else return (head conflictingConcepts)
-          where conflictingConcepts = getConceptsFromTerm term
+          = case getConceptsFromTerm term of
+             [c] -> return c
+             cs  -> Errors[CxeILike { cxeExpr = term
+                                    , cxeCpts = cs
+                                    }]
          errCastType :: Term -> Guarded ()
          errCastType term@(PTyp _ e@(Prel _ _) _)
           = case (csDomCast,csCodCast,csDomTerm,csCodTerm) of
@@ -1530,16 +1611,6 @@ pCtx2aCtx p_context
                   csDomTerm = srcTypes (TypExpr        e  False)
                   csCodTerm = srcTypes (TypExpr (p_flp e) True )
          errCastType term = fatal 1508 ("illegal call to errCastType ("++show term++")")
-         errCpsLike :: Term -> Term -> Term -> Guarded (A_Concept, Expression, Expression)
-         errCpsLike term a b
-          = do { ((a',srcA,trgA),(b',srcB,trgB)) <- (,) <$> pExpr2aExpr a <*> pExpr2aExpr b
-               ; case srcTypes (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) term) of
-                  [c] -> Checked (pCpt2aCpt c, a', b')
-                  cs  -> Errors [ CxeCpsLike {cxeExpr   = term
-                                             ,cxeCpts   = cs
-                                             }
-                                ]
-               }
          getConceptsFromTerm :: Term -> [P_Concept]
          getConceptsFromTerm x
           = srcTypes (TypExpr x False)
@@ -1563,20 +1634,13 @@ pCtx2aCtx p_context
                                           ,cxeSrcCpts = s
                                           ,cxeTrgCpts = t}]) term
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
-         getDeclarationAndSign term
+         getDeclarationAndSign term@(Prel o a)
           = case bindings Data.Map.! TypExpr term False  of
              [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
              ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
                                                ,cxeDecs   = ds          -- the declarations to which this term has been matched
                                                }]
-         errCpl :: Term -> Term -> Guarded ()
-         errCpl term a
-          = createVoid $  [ CxeCpl {cxeExpr   = a
-                                   ,cxeCpts   = conflictingConcepts
-                                   }
-                          | length conflictingConcepts/=1
-                          ]
-            where conflictingConcepts = getConceptsFromTerm term
+         getDeclarationAndSign term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of
                          [c] -> c
