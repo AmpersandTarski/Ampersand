@@ -230,8 +230,8 @@ where
 --        = case expl of
 --                ExplConceptDef  cdef  lang ref _ -> Tag "ExplConceptDef"  (atts cdef lang ref)
 --                ExplDeclaration d     lang ref _ -> Tag "ExplDeclaration" (atts (name d++name(source d)++name(target d)) lang ref)
---                ExplRule        r     lang ref _ -> Tag "ExplRule"        (atts (name r) lang ref)
---                ExplKeyDef      k     lang ref _ -> Tag "ExplKeyDef"      (atts (name k) lang ref)
+--                ExplRule        rname lang ref _ -> Tag "ExplRule"        (atts rname lang ref)
+--                ExplKeyDef      kname lang ref _ -> Tag "ExplKeyDef"      (atts kname lang ref)
 --                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
 --                ExplProcess     pname lang ref _ -> Tag "ExplProcess"     (atts pname lang ref)
 --                ExplInterface   cname lang ref _ -> Tag "ExplInterface"   (atts cname lang ref)
