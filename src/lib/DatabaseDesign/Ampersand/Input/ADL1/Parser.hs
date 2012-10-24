@@ -319,8 +319,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pGenDef           = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
-   -- | A key definition looks like:   KEY Person(name, address),
+   -- | A key definition looks like:   KEY onNameAdress : Person(name, address),
    -- which means that name<>name~ /\ address<>addres~ |- I[Person].
+   -- The label 'onNameAddress' is used to refer to this key.
    -- You may also use an expression on each attribute place, for example: KEY onpassport: Person(nationality, passport;documentnr),
    -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
    -- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:

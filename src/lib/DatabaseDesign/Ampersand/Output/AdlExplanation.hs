@@ -18,7 +18,7 @@ fatal = fatalMsg "Output.AdlExplanation"
 
 
 -- The general idea is that an Ampersand declaration such as:
---     PURPOSE r[A*B] IN ENGLISH
+--     PURPOSE RELATION r[A*B] IN ENGLISH
 --     {+This text explains why r[A*B] exists-}
 -- produces the exact right text in the functional specification
 
@@ -70,7 +70,7 @@ instance Motivated A_Concept where
 
 instance Motivated Relation where
 --  meaning l r = meaning l (makeDeclaration r)
-  explForObj r (ExplDeclaration d) = makeDeclaration r == d
+  explForObj r (ExplDeclaration d) =  r == makeRelation d
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning l r = autoMeaning l (makeDeclaration r)
@@ -323,11 +323,11 @@ instance Motivated Rule where
 --   = head (expls++map explCont (autoMeaning l rule))
 --     where
 --        expls = [econt | Means l' econt<-rrxpl rule, l'==Just l || l'==Nothing]
-  explForObj x (ExplRule x') = x == x'
+  explForObj x (ExplRule str) = name x == str
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang r
---   = [Expl { explObj   = ExplRule r                                       -- The object that is explained.
+--   = [Expl { explObj   = ExplRule (name r)                                -- The object that is explained.
 --           , explPos   = origin r
 --           , explLang  = Just lang                                        -- The language of the explaination
 --           , explRefId = ""                                               -- The reference of the explaination
@@ -382,10 +382,10 @@ instance Motivated Activity where
                     purps -> Just purps
 --                    purps -> case concatMarkup (map explMarkup purps) of
 --                              Nothing -> Nothing
---                              Just p  -> Just Expl { explPos      = explPos (head purps) -- The position in the Ampersand script of this purpose definition
---                                                   , explObj      = ExplRule (actRule x) -- The object that is explained.
---                                                   , explMarkup   = p                    -- This field contains the text of the explanation including language and markup info.
---                                                   , explUserdefd = False                -- Is this purpose defined in the script?
+--                              Just p  -> Just Expl { explPos      = explPos (head purps)        -- The position in the Ampersand script of this purpose definition
+--                                                   , explObj      = ExplRule (name (actRule x)) -- The object that is explained.
+--                                                   , explMarkup   = p                           -- This field contains the text of the explanation including language and markup info.
+--                                                   , explUserdefd = False                       -- Is this purpose defined in the script?
 --                                                   , explRefId    = intercalate ", " (map explRefId purps) -- The reference of the explaination
 --                                                   }
 

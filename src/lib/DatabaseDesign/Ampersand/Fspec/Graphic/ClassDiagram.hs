@@ -151,11 +151,14 @@ where
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [ERel (makeRelation rel) | rel@Sgn{} <- declarations fSpec, decusr rel, not (isIdent rel)]
-       relsLim    = [ERel (makeRelation rel)           -- The set of relations that is defined in patterns to be printed.
-                    | rel@Sgn{} <- declarations fSpec
-                    , null (themes fSpec) || decpat rel `elem` themes fSpec   -- restrict to those themes that must be printed.
-                    , decusr rel, not (isIdent rel)]
+       rels       = [ERel (makeRelation decl) | decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)]
+       relsLim    = [ERel (makeRelation decl)           -- The set of relations that is defined in patterns to be printed.
+                    | decl<- if null (themes fSpec)
+                             then declarations fSpec
+                             else [d | pat <- patterns   fSpec, name pat `elem` themes fSpec, d@Sgn{} <- declarations pat ]++
+                                  [d | prc <- vprocesses fSpec, name prc `elem` themes fSpec, d@Sgn{} <- declarations prc ]
+                       -- restrict to those themes that must be printed.
+                    , decusr decl, not (isIdent decl)]
 -- In order to make classes, all relations that are univalent and injective are flipped
 -- attRels contains all relations that occur as attributes in classes.
        attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[EFlp r |r<-rels, not (isUni r), isInj r] ++

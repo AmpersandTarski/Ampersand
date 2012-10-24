@@ -602,8 +602,8 @@ where
     showHS _ {-flags-} _ {-i-} peObj = case peObj of                     -- SJ: names of variables commented out to prevent warnings.
              ExplConceptDef cd  -> "ExplConceptDef " ++showHSName cd
              ExplDeclaration d  -> "ExplDeclaration "++showHSName d
-             ExplRule r         -> "ExplRule "       ++showHSName r
-             ExplKeyDef kd      -> "ExplKeyDef "     ++showHSName kd
+             ExplRule str       -> "ExplRule "       ++show str
+             ExplKeyDef str     -> "ExplKeyDef "     ++show str
              ExplPattern str    -> "ExplPattern "    ++show str
              ExplProcess str    -> "ExplProcess "    ++show str
              ExplInterface str  -> "ExplInterface "  ++show str
