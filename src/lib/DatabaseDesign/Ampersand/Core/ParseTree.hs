@@ -303,6 +303,9 @@ where
    instance Traced P_Rule where
     origin = rr_fps
 
+   instance Identified P_Rule where
+    name = rr_nm
+    
    data PMeaning = PMeaning P_Markup 
             deriving Show
             

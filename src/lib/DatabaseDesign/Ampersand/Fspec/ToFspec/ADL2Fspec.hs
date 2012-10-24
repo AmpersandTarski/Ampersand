@@ -312,7 +312,7 @@ while maintaining all invariants.
                  , actEcas   = [eca | eca<-vEcas fSpec, eRel (ecaTriggr eca) `elem` rels]
                  , actFPA    = NO   -- TODO: this is erroneous. check with IFPUG standard
                  , actPurp   = [Expl { explPos = OriginUnknown
-                                     , explObj = ExplRule rul  -- TODO: check if this is correct?
+                                     , explObj = ExplRule (name rul)
                                      , explMarkup = A_Markup { amLang   = Dutch
                                                              , amFormat = ReST
                                                              , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
@@ -321,7 +321,7 @@ while maintaining all invariants.
                                      , explRefId = "Regel "++name rul
                                      }
                                ,Expl { explPos = OriginUnknown
-                                     , explObj = ExplRule rul  -- TODO: check if this is correct?
+                                     , explObj = ExplRule (name rul)
                                      , explMarkup = A_Markup { amLang   = English
                                                              , amFormat = ReST
                                                              , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]

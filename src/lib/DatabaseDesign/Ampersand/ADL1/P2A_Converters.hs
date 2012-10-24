@@ -920,34 +920,34 @@ pCtx2aCtx p_context
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
     agens = map (pGen2aGen "NoPattern") (ctx_gs p_context)
-    (adecs,   deccxes)   = case (parallelList . map (pDecl2aDecl allpops "NoPattern")  . ctx_ds   ) p_context of
-                            Checked decs -> (decs, [])
+    (adecs,   deccxes)   = case (parallelList . map (pDecl2aDecl allpops)     . ctx_ds   ) p_context of
+                            Checked decs -> ([d{decpat="NoPattern"} | d<-decs], [])
                             Errors  errs -> (fatal 930 "Do not refer to undefined declarations", errs)
-    (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp                       . ctx_ps   ) p_context of
+    (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp              . ctx_ps   ) p_context of
                             Checked purps -> (purps, [])
                             Errors  errs  -> (fatal 938 "Do not refer to undefined purposes", errs)
-    (pats,    patcxes)   = case (parallelList . map (pPat2aPat   allpops)              . ctx_pats ) p_context of
+    (pats,    patcxes)   = case (parallelList . map (pPat2aPat   allpops)     . ctx_pats ) p_context of
                             Checked pats' -> (pats', [])
                             Errors  errs  -> (fatal 938 "Do not refer to undefined patterns", errs)
-    (procs,   proccxes)  = case (parallelList . map (pProc2aProc allpops)              . ctx_PPrcs) p_context of
+    (procs,   proccxes)  = case (parallelList . map (pProc2aProc allpops)     . ctx_PPrcs) p_context of
                             Checked prcs -> (prcs, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined processes", errs)
-    (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")            . ctx_rs   ) p_context of
+    (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")   . ctx_rs   ) p_context of
                             Checked ruls -> (ruls, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined rules", errs)
-    (keys,    keycxes)   = case (parallelList . map pKDef2aKDef                        . ctx_ks   ) p_context of
+    (keys,    keycxes)   = case (parallelList . map pKDef2aKDef               . ctx_ks   ) p_context of
                             Checked keys -> (keys, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined keys", errs)
-    (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                         . ctx_ifcs ) p_context of
+    (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                . ctx_ifcs ) p_context of
                             Checked ifcs -> (ifcs, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined interfaces", errs)
-    (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef [] Anything)          . ctx_sql  ) p_context of
+    (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef [] Anything) . ctx_sql  ) p_context of
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 951 "Do not refer to undefined sqlPlugs", errs)
-    (phpPlugs,pPlugcxes) = case (parallelList . map (pODef2aODef [] Anything)          . ctx_php  ) p_context of
+    (phpPlugs,pPlugcxes) = case (parallelList . map (pODef2aODef [] Anything) . ctx_php  ) p_context of
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 954 "Do not refer to undefined phpPlugs", errs)
-    (allpops, popcxes)   = case (parallelList . map  pPop2aPop                         . pops     ) p_context of
+    (allpops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
                             Checked pops -> (pops, [])
                             Errors errs  -> (fatal 957 "Do not refer to undefined populations", errs)
     allExplicitAtoms :: [(String,[String])]
@@ -1003,8 +1003,8 @@ pCtx2aCtx p_context
         (keys',keycxes')   = case (parallelList . map pKDef2aKDef .pt_kds) ppat of
                               Checked keys -> (keys, [])
                               Errors errs  -> (fatal 998 "Do not refer to undefined keys", errs)
-        (adecs',deccxes')  = case (parallelList . map (pDecl2aDecl pops' (name ppat)) . pt_dcs) ppat of
-                              Checked decs -> (decs, [])
+        (adecs',deccxes')  = case (parallelList . map (pDecl2aDecl pops') . pt_dcs) ppat of
+                              Checked decs -> ([d{decpat=name ppat} | d<-decs], [])
                               Errors  errs -> (fatal 1001 "Do not refer to undefined declarations", errs)
         (xpls,xplcxes')    = case (parallelList . map pPurp2aPurp . pt_xps) ppat of
                               Checked purps -> (purps, [])
@@ -1035,8 +1035,8 @@ pCtx2aCtx p_context
         (rrels,editcxes)  = (unzip . map pRRel2aRRel            . procRRels) pproc
         agens'  = map (pGen2aGen (name pproc)) (procGens pproc)
         arruls = [(rol,rul) |rul<-rules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
-        (adecs',deccxes') = case (parallelList . map (pDecl2aDecl pops' (name pproc)) . procDcls) pproc of
-                             Checked decs -> (decs, [])
+        (adecs',deccxes') = case (parallelList . map (pDecl2aDecl pops') . procDcls) pproc of
+                             Checked decs -> ([d{decpat=name pproc} | d<-decs], [])
                              Errors  errs -> (fatal 1030 "Do not refer to undefined declarations", errs)
         (rruls,rrcxes)    = case (parallelList . map pRRul2aRRul . procRRuls) pproc of
                              Checked rrls -> (rrls, [])
@@ -1271,21 +1271,22 @@ pCtx2aCtx p_context
     
     pExOb2aExOb :: PRef2Obj -> (ExplObj, [CtxError])
     pExOb2aExOb (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
-                                          where cds = [cd | cd<-conceptDefs contxt, cdcpt cd==str ]
+                                          where cds = [cd | cd<-ctx_cs p_context, cdcpt cd==str ]
     pExOb2aExOb (PRef2Declaration x@(PTyp o (Prel _ nm) sgn))
-                                        = ( ExplDeclaration (head decls)
-                                          , [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o | null decls]
-                                          )
-                                          where decls = [d | d<-declarations contxt, name d==nm, sign d==pSign2aSign sgn ]
-    pExOb2aExOb (PRef2Rule str        ) = (ExplRule (head ruls), newcxeif(null ruls)("No rule named '"++str++"'") )
-                                          where ruls = [rul | rul<-rules contxt, name rul==str ]
-    pExOb2aExOb (PRef2KeyDef str      ) = (ExplKeyDef (head kds), newcxeif(null kds)("No key definition named '"++str++"'") )
-                                          where kds = [kd | kd<-keyDefs contxt, name kd==str]
-    pExOb2aExOb (PRef2Pattern str     ) = (ExplPattern str,   newcxeif(null[pat |pat<-patterns   contxt,   name pat==str])("No pattern named '"++str++"'") )
-    pExOb2aExOb (PRef2Process str     ) = (ExplProcess str,   newcxeif(null[prc |prc<-processes  contxt,  name prc==str]) ("No process named '"++str++"'") )
-    pExOb2aExOb (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-interfaces contxt, name ifc==str])  ("No interface named '"++str++"'") )
-    pExOb2aExOb (PRef2Context str     ) = (ExplContext str,   newcxeif(name contxt/=str) ("No context named '"++str++"'") )  
-    pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name contxt/=str) ("No specification named '"++str++"'") )
+                                        = case [pDecl2aDecl [] d | d<-ctx_ds p_context, name d==nm, dec_sign d== sgn ] of
+                                            Checked decl:_ -> (ExplDeclaration decl, [])
+                                            Errors ers:_   -> (undef, ers)
+                                            []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
+                                          where undef = fatal 1284 "Do not refer to an undefine declaration"
+    pExOb2aExOb (PRef2Rule str        ) = (ExplRule str, newcxeif(null ruls)("No rule named '"++str++"'") )
+                                          where ruls = [rul | rul<-ctx_rs p_context, name rul==str ]
+    pExOb2aExOb (PRef2KeyDef str      ) = (ExplKeyDef str, newcxeif(null kds)("No key definition named '"++str++"'") )
+                                          where kds = [kd | kd<-ctx_ks p_context, name kd==str]
+    pExOb2aExOb (PRef2Pattern str     ) = (ExplPattern str,   newcxeif(null[pat |pat<-ctx_pats  p_context, name pat==str]) ("No pattern named '"++str++"'") )
+    pExOb2aExOb (PRef2Process str     ) = (ExplProcess str,   newcxeif(null[prc |prc<-ctx_PPrcs p_context, name prc==str]) ("No process named '"++str++"'") )
+    pExOb2aExOb (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-ctx_ifcs  p_context, name ifc==str]) ("No interface named '"++str++"'") )
+    pExOb2aExOb (PRef2Context str     ) = (ExplContext str,   newcxeif(name p_context/=str) ("No context named '"++str++"'") )  
+    pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name p_context/=str) ("No specification named '"++str++"'") )
     pExOb2aExOb po = fatal 1150 ("pExOb2aExOb is non-exhaustive, unexpected PO: "++show po)
     
     pPop2aPop :: P_Population -> Guarded Population
@@ -1332,8 +1333,8 @@ pCtx2aCtx p_context
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
     
-    pDecl2aDecl :: [Population] -> String -> P_Declaration -> Guarded Declaration
-    pDecl2aDecl pops' patname pd =
+    pDecl2aDecl :: [Population] -> P_Declaration -> Guarded Declaration
+    pDecl2aDecl pops' pd =
      case dec_conceptDef pd of 
           Just (RelConceptDef srcOrTgt _) | relConceptName (dec_nm pd) `elem` map name (concs contxt)
             -> Errors [CxeOrig [newcxe ("Illegal DEFINE "++showSRCorTGT++" for relation "++show (dec_nm pd)++". Concept "++
@@ -1360,7 +1361,7 @@ pCtx2aCtx p_context
                              , decfpos = dec_fpos pd 
                              , deciss  = True
                              , decusr  = True
-                             , decpat  = patname
+                             , decpat  = ""
                              , decplug = dec_plug pd
                              } )
       
@@ -1443,7 +1444,8 @@ pCtx2aCtx p_context
          f   (Pid c)                    = return (ERel (I (pCpt2aCpt c)))
          f   (Pnid c)                   = return (ECpl (ERel (I (pCpt2aCpt c))))
          f t@(Patm _ atom [])           = do { c<-returnIConcepts t
-                                             ; return (ERel (Mp1 atom (pCpt2aCpt c)))}
+                                             ; return (ERel (Mp1 atom (pCpt2aCpt c)))
+                                             }
          f   (Patm _ atom [c])          = return (ERel (Mp1 atom (pCpt2aCpt c)))
          f t@Pnull                      = fatal 988 ("pExpr2aExpr cannot transform "++show t++" to a term.")
          f t@(PVee _)                   = ERel <$> (V <$> getSignFromTerm t)
@@ -1552,35 +1554,21 @@ pCtx2aCtx p_context
                                                                            }
                                                               ]
                                              }
-         f (PPrd o (PPrd _ a b) c)      = do { (EPrd a_b_s, fc) <- (,) <$> f (PPrd o a b) <*> f c
-                                             ; return (EPrd (a_b_s++[fc])) }
-         f (PPrd o a (PPrd _ b c))      = do { (fa, EPrd b_c_s) <- (,) <$> f a <*> f (PPrd o b c)
-                                             ; return (EPrd ([fa]++b_c_s)) }
          f (PPrd _ a b)                 = do { (fa, fb) <- (,) <$> f a <*> f b
                                              ; return (EPrd [fa,fb]) }
          f (PKl0 _ a)                   = do { a' <- f a
                                              ; return (EKl0 a') }
          f (PKl1 _ a)                   = EKl1 <$> f a
          f (PFlp _ a)                   = EFlp <$> f a
-         f t@(PCpl _ a)                 = do { fa <- f a
-                                             ; case (srcTypes (TypExpr a False), srcTypes (TypExpr (p_flp a) True)) of
-                                                ([_],[_]) -> return (ECpl fa)
-                                                ( ss, ts) -> Errors [ CxeCpl {cxeExpr   = t
-                                                                             ,cxeSrcs   = ss
-                                                                             ,cxeTrgs   = ts
-                                                                             }
-                                                                    ]
-                                             }
+         f (PCpl _ a)                   = ECpl <$> f a
          f (PBrk _ a)      = EBrk <$> f a
          -- alternatively:  WHY (SJ): Bas, waarom staat dit commentaar hier? kunnen we hier nog iets nuttigs mee? 
          -- f t@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts t; return (ERel (I (pCpt2aCpt c)))}
          f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
-         f t@(PTyp _ e@(Prel o a) sgnCast) = do { _ <- errCastType t
-                                                ; (decl,_) <- getDeclarationAndSign e
+         f t@(PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
                                                 ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
                                                 }
-         f (PTyp _ a sgn)  = ETyp <$> (f a) <*> return (Sign (pCpt2aCpt s) (pCpt2aCpt t))
-                             where P_Sign cs = sgn; s=head cs; t=last cs
+         f (PTyp _ a (P_Sign cs))  = ETyp <$> f a <*> return (Sign (pCpt2aCpt (head cs)) (pCpt2aCpt (last cs)))
          f t = fatal 1542 ("Pattern match on f in pExpr2aExpr failed for "++show t)
          returnIConcepts term
           = case getConceptsFromTerm term of
@@ -1588,22 +1576,6 @@ pCtx2aCtx p_context
              cs  -> Errors[CxeILike { cxeExpr = term
                                     , cxeCpts = cs
                                     }]
-         errCastType :: Term -> Guarded ()
-         errCastType term@(PTyp _ e@(Prel _ _) _)
-          = case (csDomCast,csCodCast,csDomTerm,csCodTerm) of
-                 (  [_]    ,  [_]    ,  [_]    ,  [_]    ) -> Checked ()
-                 _                                         -> Errors [CxeCast{ cxeExpr    = term
-                                                                             , cxeDomCast = csDomCast
-                                                                             , cxeCodCast = csCodCast
-                                                                             , cxeDomTerm = csDomTerm
-                                                                             , cxeCodTerm = csCodTerm
-                                                                             }       
-                                                                     ]
-            where csDomCast = srcTypes (TypExpr        term  False)
-                  csCodCast = srcTypes (TypExpr (p_flp term) True )
-                  csDomTerm = srcTypes (TypExpr        e  False)
-                  csCodTerm = srcTypes (TypExpr (p_flp e) True )
-         errCastType term = fatal 1508 ("illegal call to errCastType ("++show term++")")
          getConceptsFromTerm :: Term -> [P_Concept]
          getConceptsFromTerm x
           = srcTypes (TypExpr x False)
@@ -1622,7 +1594,7 @@ pCtx2aCtx p_context
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
          getDeclarationAndSign term@(Prel{})
           = case bindings Data.Map.! TypExpr term False  of
-             [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] "" d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
+             [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
              ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
                                                ,cxeDecs   = ds          -- the declarations to which this term has been matched
                                                }]

@@ -97,7 +97,18 @@ data FProcess
           }  
 instance Identified FProcess where
   name = name . fpProc 
- 
+
+instance Language FProcess where
+  objectdef    = objectdef.fpProc
+  conceptDefs  = conceptDefs.fpProc
+  declarations = declarations.fpProc
+  rules        = rules.fpProc
+  invariants   = invariants.fpProc
+  keyDefs      = keyDefs.fpProc
+  gens         = gens.fpProc
+  patterns     = patterns.fpProc
+  violations   = violations.fpProc
+
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
   = Fswtch { fsbEvIn :: [Event]

@@ -119,8 +119,8 @@ instance ShowADL ExplObj where
  showADL e = case e of
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
       ExplDeclaration d  -> "RELATION "++showADL (makeRelation d)
-      ExplRule r         -> "RULE "++showstr (name r)
-      ExplKeyDef kd      -> "KEY "++showADL kd
+      ExplRule str       -> "RULE "++showstr str
+      ExplKeyDef str     -> "KEY "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
       ExplProcess str    -> "PROCESS "++str
       ExplInterface str  -> "INTERFACE "++showstr str
