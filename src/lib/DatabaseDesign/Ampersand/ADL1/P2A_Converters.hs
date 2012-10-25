@@ -470,7 +470,10 @@ tableOfTypes p_context st
         f :: Typemap -> Type -> Typemap 
 --        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
         f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [o| a `elem` cs, b `elem` cs]) dataMap
-        f dataMap o@(TypLub a b _) = Data.Map.insertWith mrgUnion o ((dataMap Data.Map.! a) `mrgIntersect` (dataMap Data.Map.! b)) dataMap
+        f dataMap o@(TypLub a b _) = Data.Map.insertWith mrgUnion o (lkp a `mrgIntersect` lkp b) dataMap
+                                     where lkp x = case Data.Map.lookup x dataMap of                            
+                                                    Just xs -> xs                                               
+                                                    _ -> fatal 477 ("Element "++show x++" not found in dataMap")
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
      stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
      stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
@@ -478,18 +481,36 @@ tableOfTypes p_context st
      eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
      isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
-     isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-isaClos Data.Map.! s ]  -- this is redundant, because isas=isas*. Hence, isas may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
+     isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-lkp s ]  -- there are too many tuples in isas. Because isas=isas*, it may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
+            where lkp c = case Data.Map.lookup c isaClos of
+                           Just cs -> cs
+                           _ -> fatal 487 ("P_Concept "++show c++" not found in isaClos")
      stConcepts :: Data.Map.Map Type [P_Concept]
      stConcepts = Data.Map.map f stClos
-                  where f ts = [ (fst.head.sortWith (length.snd)) [(c,isaClosReversed Data.Map.! c) | c<-cl]
+                  where f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
                                | cl<-eqClass compatible cs]
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
+                                     lkp c = case Data.Map.lookup c isaClosReversed of
+                                              Just cs -> cs
+                                              _ -> fatal 495 ("P_Concept "++show c++" not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
-     srcTypes typ = stConcepts Data.Map.! typ
-     compatible a b = (not.null) ((isaClosReversed Data.Map.! a) `isc` (isaClosReversed Data.Map.! b))
+     srcTypes typ = case Data.Map.lookup typ stConcepts of
+                     Just cs -> cs
+                     _ -> fatal 499 ("Type "++show typ++" was not found in stConcepts")
+     compatible a b = (not.null) (lkp a `isc` lkp b)
+      where lkp c = case Data.Map.lookup c isaClosReversed of
+                     Just cs -> cs
+                     _ -> fatal 503 ("P_Concept "++show c++" not found in isaClosReversed")
      tGlb :: Type -> Type -> [P_Concept]
-     tGlb a b = nub [c | t<-greatest ((stClosReversed Data.Map.! a) `isc` (stClosReversed Data.Map.! b)), c<-srcTypes t]
-                where greatest ts = foldr isc ts [ stClos Data.Map.! t | t<-ts]
+     tGlb a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
+      where lkp c = case Data.Map.lookup c stClosReversed of
+                     Just cs -> cs
+                     _ -> fatal 508 ("P_Concept "++show c++" not found in stClosReversed")
+     greatest :: [Type] -> [Type]
+     greatest ts = foldr isc ts [ lkp t | t<-ts]
+      where lkp t = case Data.Map.lookup t stClos of
+                     Just cs -> cs
+                     _ -> fatal 503 ("P_Concept "++show t++" not found in isaClosReversed")
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
@@ -524,7 +545,9 @@ typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
      (stClos, eqType, stClosAdded, stClos1, _ , _ , _) = tableOfTypes p_context st
      typeTerms = Data.Map.keys stClos
      stNr :: Type -> Int
-     stNr typ = stTable Data.Map.! typ
+     stNr typ = case Data.Map.lookup typ stTable of
+                 Just x -> x
+                 _ -> fatal 529 ("Element "++show typ++" not found in stNr")
       where
        stTable = Data.Map.fromAscList [(t,i) | (i,t)<-zip [0..] typeTerms ]
      stTypeGraph :: DotGraph String
@@ -537,7 +560,9 @@ typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
               ++fatal 506 ("No term numbered "++show i++" found by showStVertex\n numbered typeTerms:\n  "++(intercalate "\n  ".map show. zip [0::Int ..]) typeTerms)
              )
      eqNr :: Type -> Int
-     eqNr typ = Data.Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ] Data.Map.! typ
+     eqNr typ = case Data.Map.lookup typ (Data.Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ]) of
+                 Just x -> x
+                 _ -> fatal 544 ("Element "++show typ++" not found in eqNr")
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
      eqClasses = nub (Data.Map.elems eqType)
 
@@ -562,7 +587,9 @@ typeAnimate p_context st = (stTypeGraph, eqTypeGraph)
 -}
      condensedEdges :: [(Int,Int)]
      condensedEdges = nub [ (nr t, nr t') | (t,t')<-flattenMap st, nr t /= nr t' ]
-     nr t = eqNr (head (eqType Data.Map.! t))
+     nr t = case Data.Map.lookup t eqType of
+             Just xs -> eqNr (head xs)
+             _ -> fatal 571 ("Element "++show t++" not found in nr")
 
      condensedEdges2 = nub [(nr t,nr t') | (t,t')<-flattenMap stClosAdded, t' `notElem` findIn t stClos1, nr t /= nr t']
 
@@ -1565,7 +1592,7 @@ pCtx2aCtx p_context
          -- alternatively:  WHY (SJ): Bas, waarom staat dit commentaar hier? kunnen we hier nog iets nuttigs mee? 
          -- f t@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts t; return (ERel (I (pCpt2aCpt c)))}
          f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
-         f t@(PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
+         f   (PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
                                                 ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
                                                 }
          f (PTyp _ a (P_Sign cs))  = ETyp <$> f a <*> return (Sign (pCpt2aCpt (head cs)) (pCpt2aCpt (last cs)))
@@ -1593,11 +1620,12 @@ pCtx2aCtx p_context
                    trg = getConceptsFromTerm (p_flp term)
          getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
          getDeclarationAndSign term@(Prel{})
-          = case bindings Data.Map.! TypExpr term False  of
-             [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
-             ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                               ,cxeDecs   = ds          -- the declarations to which this term has been matched
-                                               }]
+          = case Data.Map.lookup (TypExpr term False) bindings of
+             Just [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
+             Just ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                    ,cxeDecs   = ds          -- the declarations to which this term has been matched
+                                                    }]
+             Nothing -> fatal 1601 ("Term "++showADL term++" was not found in bindings.")
          getDeclarationAndSign term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of

@@ -358,7 +358,7 @@ makeSqlPlug _ obj
                       ++[SQLVarchar 255]
 
 makeSqlType :: A_Concept -> SqlType
-makeSqlType ONE = fatal 324 "ONE has no type."
+makeSqlType ONE = SQLBool -- TODO (SJ):  Martijn, why should ONE have a representation? Or should this rather be a fatal?
 makeSqlType c = makeSqltype' (cpttp c)
 makeSqltype' :: String -> SqlType
 makeSqltype' str = case str of
