@@ -26,8 +26,6 @@ INTERFACE Id : I[A]
       , r          : r
       , s          : s
       , t          : t
-      , "r=s"      : r=s
-      , "r|-s"     : r|-s
       , "r/\\s"    : r/\s
       , "r\\/s"    : r\/s
       , "r;s"      : r;s
