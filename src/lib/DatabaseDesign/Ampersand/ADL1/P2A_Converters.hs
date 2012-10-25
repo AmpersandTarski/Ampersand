@@ -321,7 +321,9 @@ typing p_context
                                                       pidTest (PI{}) r = r
                                                       pidTest (Pid{}) r = r
                                                       pidTest _ _ = nothing
-     uType x uLft uRt   (PRad _ a b)          = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      composition
+{- PRad is the De Morgan dual of PCps. For this reason, its type is derived (look further down this code).
+-- If programmed directly, it might look like this:
+     uType x uLft uRt   (PRad _ a b)          = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
                                                 bm .+. uType a uLft between a .+. uType b between uRt b
                                                 .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
                                                 where (bm,between) = mGeneric (cod a) (dom b) x
@@ -329,6 +331,8 @@ typing p_context
                                                       pnidTest (PCpl _ (Pid{})) r = r
                                                       pnidTest (Pnid{}) r = r
                                                       pnidTest _ _ = nothing
+-- We prefer the type checking by mathematical derivation (below), because that reduces the risk of making mistakes.
+-}
      uType x uLft uRt   (PDif _ a b)          = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                                                  .+. dm .+. cm
                                                  .+. uType a uLft uRt a
@@ -354,17 +358,20 @@ typing p_context
      uType x uLft uRt   (PPrd _ a b)          = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                                                 .+. uType a uLft Anything a .+. uType b Anything uRt b
      -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
+     uType x uLft uRt   (PRad o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
+                                                uType x uLft uRt e                 --  a!b = -(-a;-b) (relative addition, dagger)
+                                                where e = PCpl o (PCps o (PCpl (origin a) a) (PCpl (origin b) b))
      uType x uLft uRt   (Pimp o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
                                                 uType x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                 where e = Pequ o a (PIsc o a b)
      uType x uLft uRt   (PLrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                uType x uLft uRt e                 -- a/b = a!-b~ = -(-a;b~)
+                                                uType x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
                                                 where e = PCpl o (PCps o (complement a) (p_flp b))
      uType x uLft uRt   (PRrs o a b)          = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                uType x uLft uRt e                 -- a\b = -a~!b = -(a~;-b)
+                                                uType x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
                                                 where e = PCpl o (PCps o (p_flp a) (complement b))
      uType x uLft uRt   (PCpl o a)            = dom x.=.dom e .+. cod x.=.cod e .+.  
-                                                uType x uLft uRt e                 -- -a = V - a
+                                                uType x uLft uRt e                 --  -a = V - a
                                                 where e = PDif o (PVee (origin x)) a
      nothing :: (Typemap,Typemap)
      nothing = (Data.Map.empty,Data.Map.empty)
@@ -473,7 +480,7 @@ tableOfTypes p_context st
         f dataMap o@(TypLub a b _) = Data.Map.insertWith mrgUnion o (lkp a `mrgIntersect` lkp b) dataMap
                                      where lkp x = case Data.Map.lookup x dataMap of                            
                                                     Just xs -> xs                                               
-                                                    _ -> fatal 477 ("Element "++show x++" not found in dataMap")
+                                                    _ -> fatal 477 ("Element "++show x++" was not found in dataMap")
         f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
      stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
      stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
@@ -484,7 +491,7 @@ tableOfTypes p_context st
      isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-lkp s ]  -- there are too many tuples in isas. Because isas=isas*, it may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
             where lkp c = case Data.Map.lookup c isaClos of
                            Just cs -> cs
-                           _ -> fatal 487 ("P_Concept "++show c++" not found in isaClos")
+                           _ -> fatal 487 ("P_Concept "++show c++" was not found in isaClos")
      stConcepts :: Data.Map.Map Type [P_Concept]
      stConcepts = Data.Map.map f stClos
                   where f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
@@ -492,7 +499,7 @@ tableOfTypes p_context st
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
                                      lkp c = case Data.Map.lookup c isaClosReversed of
                                               Just cs -> cs
-                                              _ -> fatal 495 ("P_Concept "++show c++" not found in isaClosReversed")
+                                              _ -> fatal 495 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Data.Map.lookup typ stConcepts of
                      Just cs -> cs
@@ -500,17 +507,17 @@ tableOfTypes p_context st
      compatible a b = (not.null) (lkp a `isc` lkp b)
       where lkp c = case Data.Map.lookup c isaClosReversed of
                      Just cs -> cs
-                     _ -> fatal 503 ("P_Concept "++show c++" not found in isaClosReversed")
+                     _ -> fatal 503 ("P_Concept "++show c++" was not found in isaClosReversed")
      tGlb :: Type -> Type -> [P_Concept]
      tGlb a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
       where lkp c = case Data.Map.lookup c stClosReversed of
                      Just cs -> cs
-                     _ -> fatal 508 ("P_Concept "++show c++" not found in stClosReversed")
+                     _ -> fatal 508 ("P_Concept "++show c++" was not found in stClosReversed")
      greatest :: [Type] -> [Type]
      greatest ts = foldr isc ts [ lkp t | t<-ts]
       where lkp t = case Data.Map.lookup t stClos of
                      Just cs -> cs
-                     _ -> fatal 503 ("P_Concept "++show t++" not found in isaClosReversed")
+                     _ -> fatal 503 ("P_Concept "++show t++" was not found in isaClosReversed")
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
@@ -1538,19 +1545,10 @@ pCtx2aCtx p_context
                                                                                      }]
                                              }
          f t@(PDif _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; let srcs = srcTypes (TypLub (TypExpr        a  False) (TypExpr        b  False) t)
-                                                   trgs = srcTypes (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
-                                             ; case (srcs, trgs) of
-                                                    ([_], [_]) -> return (EDif (a', b'))
-                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
-                                                                                     ,cxeLhs     = a
-                                                                                     ,cxeRhs     = b
-                                                                                     ,cxeSrcCpts = srcs
-                                                                                     ,cxeTrgCpts = trgs
-                                                                                     }]
+                                             ; return (EDif (a', b'))
                                              }
          f t@(PLrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a/b = a!-b~ = -(-a;b~)
-                                             ; case srcTypes (TypLub (TypExpr (p_flp a) True) (TypExpr (p_flp b) True) t) of
+                                             ; case srcTypes (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) t) of
                                                 [_] -> return (ELrs (a', b'))
                                                 cs  -> Errors [ CxeCpsLike {cxeExpr   = t
                                                                            ,cxeCpts   = cs
@@ -1558,7 +1556,7 @@ pCtx2aCtx p_context
                                                               ]
                                              }
          f t@(PRrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a\b = -a~!b = -(a~;-b)
-                                             ; case srcTypes (TypLub (TypExpr a False) (TypExpr b False) t) of
+                                             ; case srcTypes (TypGlb (TypExpr a False) (TypExpr (complement b) False) t) of
                                                 [_] -> return (ERrs (a', b'))
                                                 cs  -> Errors [ CxeCpsLike {cxeExpr   = t
                                                                            ,cxeCpts   = cs
@@ -1574,7 +1572,7 @@ pCtx2aCtx p_context
                                                               ]
                                              }
          f t@(PRad _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; case srcTypes (TypLub (TypExpr (p_flp a) True) (TypExpr b False) t) of
+                                             ; case srcTypes (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (complement b) False) t) of
                                                 [_] -> return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
                                                 cs  -> Errors [ CxeCpsLike {cxeExpr   = t
                                                                            ,cxeCpts   = cs
