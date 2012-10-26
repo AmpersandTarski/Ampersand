@@ -371,7 +371,7 @@ where
 
    data P_KeyDef = 
             P_Kd { kd_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                 , kd_lbl :: String         -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                 , kd_lbl :: String         -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                  , kd_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
                  , kd_ats :: [P_KeySegment] -- ^ the constituent segments of this key.
                  } deriving (Show)
