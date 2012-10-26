@@ -58,13 +58,17 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
               | CxeCpsLike    {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
+              | CxeViol       {cxeViol :: P_PairViewSegment
+                              ,cxeRcpt :: P_Concept
+                              ,cxeVcpt :: P_Concept
+                              }       
               | CxeOrig       {cxeSubErrors :: [CtxError] -- ^ context information of an error   
                               ,cxetype :: String         -- ^ the type of context e.g. a rule
                               ,cxename :: String         -- ^ its name
                               ,cxeorigin:: Origin}        -- ^ the origin of the context e.g. a file position
               | Cxe           {cxeSubErrors :: [CtxError] -- ^ lower level errors
                               ,cxemsg :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
-              | PE            {cxeMsgs :: [ParseError]}  -- ^ list of parse-time messages 
+              | PE            {cxeMsgs :: [ParseError]}  -- ^ list of parse-time messages
 
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
