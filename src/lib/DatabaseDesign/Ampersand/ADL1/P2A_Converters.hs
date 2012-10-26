@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      Guarded(..)
      )
 where
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima)
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Basics (name, isc, uni, eqCl, eqClass, getCycles, (>-), fatalMsg)
 import DatabaseDesign.Ampersand.Classes
@@ -239,6 +239,7 @@ isFull (TypExpr (Pfull _ _) _) = True
 isFull (TypLub a b _) = isFull a && isFull b
 isFull (TypGlb a b _) = isFull a && isFull b
 isFull _ = False -}
+isNull :: Type -> Bool
 isNull (TypExpr Pnull _) = True
 isNull (TypLub a b _) = isNull a && isNull b
 isNull (TypGlb a b _) = isNull a && isNull b
@@ -302,7 +303,7 @@ typing p_context
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      (firstSetOfEdges,secondSetOfEdges)
-      = (foldr (.+.) nothing [uType (p_declarations p_context, compat) term Anything Anything term | term <- terms p_context])
+      = foldr (.+.) nothing [uType (p_declarations p_context, compat) term Anything Anything term | term <- terms p_context]
      compat :: Type -> Type -> Bool
      compat a b = null set1 -- approve compatibility for isolated types, such as "Nothing", "Anything" and singleton elements
                       || null set2
@@ -368,7 +369,7 @@ typing p_context
                                | cl<-eqClass compatible cs]
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
                                      lkp c = case Data.Map.lookup c isaClosReversed of
-                                              Just cs -> cs
+                                              Just cs' -> cs'
                                               _ -> fatal 495 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Data.Map.lookup typ stConcepts of
@@ -413,8 +414,8 @@ In such cases, we want to give that candidate to the user by way of suggestion t
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
-typeAnimate :: P_Context -> Typemap -> Typemap -> Typemap -> Typemap -> Typemap -> (DotGraph String,DotGraph String)
-typeAnimate p_context st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
+typeAnimate :: Typemap -> Typemap -> Typemap -> Typemap -> Typemap -> (DotGraph String,DotGraph String)
+typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
    where
      -- testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
@@ -512,7 +513,18 @@ instance Expr P_Context where
          terms (ctx_php   pContext) ++
          terms (ctx_pops  pContext)
         )
-
+ uType dcls _ uLft uRt pContext
+  = (let x=ctx_pats  pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_PPrcs pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_rs    pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_ds    pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_ks    pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_gs    pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_ifcs  pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_sql   pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_php   pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_pops  pContext in uType dcls x uLft uRt x)
+         
 instance Expr P_Pattern where
  p_gens pPattern
   = pt_gns pPattern
@@ -525,6 +537,12 @@ instance Expr P_Pattern where
          terms (pt_kds pPattern) ++
          terms (pt_pop pPattern)
         )
+ uType dcls _ uLft uRt pPattern
+  = (let x=pt_rls pPattern in uType dcls x uLft uRt x) .+.
+    (let x=pt_gns pPattern in uType dcls x uLft uRt x) .+.
+    (let x=pt_dcs pPattern in uType dcls x uLft uRt x) .+.
+    (let x=pt_kds pPattern in uType dcls x uLft uRt x) .+.
+    (let x=pt_pop pPattern in uType dcls x uLft uRt x)
 
 instance Expr P_Process where
  p_gens pProcess
@@ -538,46 +556,81 @@ instance Expr P_Process where
          terms (procKds   pProcess) ++
          terms (procPop   pProcess)
         )
+ uType dcls _ uLft uRt pProcess
+  = (let x=procRules pProcess in uType dcls x uLft uRt x) .+.
+    (let x=procGens  pProcess in uType dcls x uLft uRt x) .+.
+    (let x=procDcls  pProcess in uType dcls x uLft uRt x) .+.
+    (let x=procKds   pProcess in uType dcls x uLft uRt x) .+.
+    (let x=procPop   pProcess in uType dcls x uLft uRt x)
 
 instance Expr P_Rule where
  terms r = terms (rr_exp r)++
            case rr_viol r of
             Nothing                    -> []
             Just (P_PairView segments) -> [ term | P_PairViewExp _ term <- segments ]
-
+ uType dcls _ uLft uRt r
+  = let x=rr_exp r in
+    uType dcls x uLft uRt x .+.
+    case rr_viol r of
+     Nothing                    -> nothing
+     Just (P_PairView segments) -> foldr (.+.) nothing 
+                                   [ uType dcls term (if srcOrTgt==Src then TypGlb (dom term) uLft (PCps (origin term) (p_flp term) x) else uLft)
+                                                     (if srcOrTgt==Tgt then TypGlb (cod term) uRt  (PCps (origin term)     x     term) else uRt )  term
+                                   | P_PairViewExp srcOrTgt term <- segments
+                                   ]
+  
 instance Expr P_Sign where
  terms _ = []
+ uType _ _ _ _ _ = nothing
 
 instance Expr P_Gen where
- terms g          =                [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
-
+ terms g = [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
+ uType dcls _ uLft uRt g
+  = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType dcls x uLft uRt x
+  
 instance Expr P_Declaration where
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
+ uType _ _ _ _ _ = nothing
 
 instance Expr P_KeyDef where
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
+ uType dcls _ uLft uRt k
+  = let x=Pid (kd_cpt k) in
+    uType dcls x uLft uRt x .+.
+    foldr (.+.) nothing [ uType dcls obj (thing (kd_cpt k)) uRt obj | P_KeyExp obj <- kd_ats k]
 
 instance Expr P_Interface where
- terms k = terms (ifc_Obj k)
+ terms ifc = terms (ifc_Obj ifc)
+ uType dcls _ uLft uRt ifc = let x=ifc_Obj ifc in uType dcls x uLft uRt x
 
 instance Expr P_ObjectDef where
  terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
-
+ uType dcls _ uLft uRt o
+  = let x=obj_ctx o in
+    uType dcls x uLft uRt x .+. 
+    foldr (.+.) nothing [ uType dcls subIfc (cod x) uRt subIfc | Just subIfc <- [obj_msub o]]
+ 
 instance Expr P_SubInterface where
  terms x@(P_Box{}) = terms (si_box x)
- terms _ = []
+ terms _           = []
+ uType dcls _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType dcls x uLft uRt x
+ uType _    _ _    _   _              = nothing
 
 instance Expr P_Population where
  terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
  terms pop@(P_Popu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (p_popm pop)) (p_type pop)]
  terms pop@(P_CptPopu{})              = [Pid (PCpt (p_popm pop))]
+ uType dcls _ uLft uRt pop = let x=terms pop in  uType dcls x uLft uRt x
 
 instance Expr a => Expr (Maybe a) where
- terms Nothing = []
+ terms Nothing  = []
  terms (Just x) = terms x
+ uType _    _ _    _   Nothing  = nothing
+ uType dcls _ uLft uRt (Just x) = uType dcls x uLft uRt x
 
 instance Expr a => Expr [a] where
  terms = concat.map terms
+ uType dcls _ uLft uRt xs = foldr (.+.) nothing [ uType dcls x uLft uRt x | x <- xs]
 
 instance Expr Term where
  terms e = [e]
@@ -847,7 +900,7 @@ pCtx2aCtx p_context
        | (TypExpr (Pid{}) _, equals)<-Data.Map.toAscList eqType
        , let eqs=[c | TypExpr (Pid c) _<-equals ]
        , length eqs>1]
-    (stTypeGraph,eqTypeGraph) = typeAnimate p_context st stClos eqType stClosAdded stClos1
+    (stTypeGraph,eqTypeGraph) = typeAnimate st stClos eqType stClosAdded stClos1
     cxerrs = patcxes++rulecxes++keycxes++interfacecxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
@@ -1085,7 +1138,7 @@ pCtx2aCtx p_context
                   , amPandoc = string2Blocks fmt (mString pm)
                   }
                where fmt = fromMaybe defFormat (mFormat pm)
-               
+
     -- | pKDef2aKDef checks compatibility of composition with key concept on equality
     pKDef2aKDef :: P_KeyDef -> Guarded KeyDef
   --pKDef2aKDef :: P_KeyDef -> (KeyDef, [CtxError])
@@ -1449,7 +1502,7 @@ pCtx2aCtx p_context
                                                                                      ,cxeTrgCpts = trgs
                                                                                      }]
                                              }
-         f t@(PDif _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
+         f   (PDif _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
                                              ; return (EDif (a', b'))
                                              }
          f t@(PLrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a/b = a!-b~ = -(-a;b~)
