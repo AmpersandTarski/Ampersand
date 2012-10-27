@@ -320,41 +320,35 @@ typing p_context
 -- In order to compute the condensed graph, we need the transitive closure of st:
      stClos1 :: Typemap
      stClos1 = setClosure st "st"       -- represents (st)* .   stClos1 is transitive
-     someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeTerms]
-      where
-      -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
-       compr a b  = if b `elem` (lookups a stClos1) then LT else -- note: by LT we mean: less than or equal
-                    if a `elem` (lookups b stClos1) then GT -- likewise, GT means: greater or equal
-                     else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
-      -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
-      -- This explains why we did the sorting:
-      --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
-      --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
-      -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
-     someWhatSortedGlbs = sortBy compr [l | l@(TypGlb _ _ _) <- typeTerms]
-      where
-      -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
-       compr a b  = if b `elem` (lookups a stClos1) then LT else -- note: by LT we mean: less than or equal
-                    if a `elem` (lookups b stClos1) then GT -- likewise, GT means: greater or equal
-                     else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
-      -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
-      -- This explains why we did the sorting:
-      --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
-      --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
-      -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
      stClosAdded :: Typemap
-     stClosAdded = foldl f (setClosure (foldl f stClos1 (someWhatSortedGlbs++someWhatSortedLubs)) "intermediate") (someWhatSortedGlbs++someWhatSortedLubs)
+     stClosAdded = fixPoint stClosAdd (addIdentity stClos1)
+     fixPoint :: Eq a => (a->a) -> a -> a
+     fixPoint f a = if a==b then a else fixPoint f b
+       where b = f a
+     stClosAdd :: Typemap -> Typemap
+     stClosAdd tm = reverseMap (foldl f' (reverseMap (foldl f tm someWhatSortedGlbs)) (reverse someWhatSortedLubs))
        where
-        f :: Typemap -> Type -> Typemap 
---        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
-        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [o| a `elem` cs, b `elem` cs]) dataMap
-        f dataMap o@(TypLub a b _) = Data.Map.insertWith mrgUnion o (lkp a `mrgIntersect` lkp b) dataMap
-                                     where lkp x = case Data.Map.lookup x dataMap of                            
-                                                    Just xs -> xs                                               
-                                                    _ -> fatal 477 ("Element "++show x++" was not found in dataMap")
-        f _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: "++show o)
-     stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
-     stClos = addIdentity (setClosure stClosAdded "stClosAdded")  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
+        f :: Typemap -> Type -> Typemap
+        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+        --        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [o| a `elem` cs, b `elem` cs]) dataMap
+        f  _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: " ++show o)
+        f' dataMap o@(TypLub a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+        f' _ o = fatal 407 ("Inexhaustive pattern in f' in stClosAdded in tableOfTypes: "++show o)
+        -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
+        -- This explains why we did the sorting:
+        --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
+        --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
+        -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
+        someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeTerms]
+        someWhatSortedGlbs = sortBy compr [l | l@(TypGlb _ _ _) <- typeTerms]
+        -- Compr uses the stClos1 to decide how (a ./\. b) and ((a ./\. b) ./\. c) should be sorted
+        compr a b  = if b `elem` (lookups a stClos1) then LT else -- note: by LT we mean: less than or equal
+                     if a `elem` (lookups b stClos1) then GT -- likewise, GT means: greater or equal
+                      else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
+
+     -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
+     stClos = if (stClosAdded == (addIdentity $ setClosure stClosAdded "stClosAdded")) then
+                 stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
      eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
      isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
@@ -709,8 +703,7 @@ instance Expr Term where
                                                         pidTest (PI{}) r = r
                                                         pidTest (Pid{}) r = r
                                                         pidTest _ _ = nothing
-{- PRad is the De Morgan dual of PCps. For this reason, its type is derived (look further down this code).
--- If programmed directly, it might look like this:
+-- PRad is the De Morgan dual of PCps. However, since PUni and UIsc, mGeneric and mSpecific are not derived, neither can PRad
  uType dcls x uLft uRt   (PRad _ a b)           = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
                                                   bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
                                                   .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
@@ -719,8 +712,6 @@ instance Expr Term where
                                                         pnidTest (PCpl _ (Pid{})) r = r
                                                         pnidTest (Pnid{}) r = r
                                                         pnidTest _ _ = nothing
--- We prefer the type checking by mathematical derivation (below), because that reduces the risk of making mistakes.
--}
  uType dcls x uLft uRt   (PDif _ a b)           = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                                                    .+. dm .+. cm
                                                    .+. uType dcls a uLft uRt a
@@ -732,6 +723,8 @@ instance Expr Term where
  uType dcls x uLft uRt   (PFlp _ e)             = cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
  uType dcls x uLft uRt   (PBrk _ e)             = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                                                     -- (e) brackets
+ uType dcls x uLft uRt   (PCpl _ (PCpl _ e))    = dom x.=.dom e .+. cod x.=.cod e .+.
+                                                  uType dcls x uLft uRt e                                                     -- -(-e) double complement
  uType _    _  _    _    (PTyp _ _ (P_Sign [])) = fatal 196 "P_Sign is empty"
  uType _    _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
  uType dcls x  _    _    (PTyp o e (P_Sign cs)) = dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
@@ -747,9 +740,6 @@ instance Expr Term where
  uType dcls x uLft uRt   (PPrd _ a b)           = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                                                   .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
- uType dcls x uLft uRt   (PRad o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                 --  a!b = -(-a;-b) (relative addition, dagger)
-                                                  where e = PCpl o (PCps o (PCpl (origin a) a) (PCpl (origin b) b))
  uType dcls x uLft uRt   (Pimp o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                   where e = Pequ o a (PIsc o a b)
@@ -1530,7 +1520,7 @@ pCtx2aCtx p_context
                                                               ]
                                              }
          f t@(PRad _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; case srcTypes (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (complement b) False) t) of
+                                             ; case srcTypes (TypLub (TypExpr (p_flp a) True) (TypExpr b False) t) of
                                                 [_] -> return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
                                                 cs  -> Errors [ CxeCpsLike {cxeExpr   = t
                                                                            ,cxeCpts   = cs
@@ -1545,8 +1535,6 @@ pCtx2aCtx p_context
          f (PFlp _ a)                   = EFlp <$> f a
          f (PCpl _ a)                   = ECpl <$> f a
          f (PBrk _ a)      = EBrk <$> f a
-         -- alternatively:  WHY (SJ): Bas, waarom staat dit commentaar hier? kunnen we hier nog iets nuttigs mee? 
-         -- f t@(PTyp _ (Pid _) (P_Sign _))   = do{ c<-returnIConcepts t; return (ERel (I (pCpt2aCpt c)))}
          f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
          f   (PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
                                                 ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
