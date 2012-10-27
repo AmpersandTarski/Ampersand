@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}  
 import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
@@ -5,8 +6,11 @@ import Distribution.PackageDescription
 import System.Time
 import System.Process
 import System.IO
+import Control.Exception
+import Prelude hiding (catch)
 import Data.List
 
+main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
 -- Before each build, generate a BuildInfo_Generated module that exports the project version from cabal,
@@ -18,15 +22,11 @@ generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> Bu
 generateBuildInfoHook pd  lbi uh bf = 
  do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
 
-    ; svnRevisionStr <- do { r <- catch getSVNRevisionStr $ \err -> 
-                                do { print err
-                                   ; noSVNRevisionStr
-                                   }
-                        ; if r == "" 
-                          then noSVNRevisionStr
-                          else return r
-                        }
-
+    ; svnRevisionStr <- do { r <- catch getSVNRevisionStr myHandler 
+                           ; if r == "" 
+                             then noSVNRevisionStr
+                             else return r
+                           }
     ; clockTime <- getClockTime
     ; calendarTime <- toCalendarTime clockTime
     ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
@@ -38,30 +38,41 @@ generateBuildInfoHook pd  lbi uh bf =
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
  where showPadded n = (if n<10 then "0" else "") ++ show n
- 
-buildInfoModule cabalVersion revision time =
-  "module DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where\n" ++ 
-  "\n" ++
-  "-- This module is generated automatically by Setup.hs before building. Do not edit!\n" ++
-  "\n" ++
-  "{-# NOINLINE cabalVersionStr #-}\n" ++ -- disable inlining to prevent recompilation of dependent modules on each build
-  "cabalVersionStr = \"" ++ cabalVersion ++ "\"\n" ++
-  "\n" ++
-  "{-# NOINLINE svnRevisionStr #-}\n" ++
-  "svnRevisionStr = \"" ++ revision ++ "\"\n" ++
-  "\n" ++
-  "{-# NOINLINE buildTimeStr #-}\n" ++
-  "buildTimeStr = \"" ++ time ++ "\"\n"
+       myHandler :: IOException -> IO String
+       myHandler err = do { print err
+                          ; noSVNRevisionStr
+                          }
 
+buildInfoModule :: String -> String -> String -> String
+buildInfoModule cabalVersion revision time = unlines
+ [ "module DatabaseDesign.Ampersand.Basics.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where"
+ , ""
+ , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
+ , ""
+ , "{-# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
+ , "cabalVersionStr :: String"
+ , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
+ , ""
+ , "{-# NOINLINE svnRevisionStr #-}"
+ , "svnRevisionStr :: String"
+ , "svnRevisionStr = \"" ++ revision ++ "\""
+ , ""
+ , "{-# NOINLINE buildTimeStr #-}"
+ , "buildTimeStr :: String"
+ , "buildTimeStr = \"" ++ time ++ "\""
+ ]
+
+getSVNRevisionStr :: IO String
 getSVNRevisionStr = 
  do { (inh,outh,errh,proch) <- runInteractiveProcess "svnversion" ["."] Nothing Nothing
     ; hClose inh
     ; hClose errh
     ; version <- hGetContents outh
-    ; seq version $ waitForProcess proch
+    ; _ <- seq version $ waitForProcess proch
     ; return (unwords . lines $ version)
     }
 
+noSVNRevisionStr :: IO String
 noSVNRevisionStr =
  do { putStrLn "\n\n\nWARNING: Execution of 'svnversion' command failed."
     ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
