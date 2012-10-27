@@ -102,10 +102,9 @@ instance Eq Type where
 p_flp :: Term -> Term
 p_flp a@(PI{})     = a
 p_flp a@(Pid{})    = a
-p_flp a@(Pnid{})   = a
 p_flp a@(Patm{})   = a
 p_flp Pnull        = Pnull
-p_flp a@(PVee _)   = a
+-- p_flp a@(PVee _)   = PFlp a -- This was earlier: a, which is a mistake. (V[A*B])~ = V[B*A])
 p_flp (Pfull s t)  = Pfull t s
 p_flp (Prel o a)   = Pflp o a
 p_flp (Pflp o a)   = Prel o a
