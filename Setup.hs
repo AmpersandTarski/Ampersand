@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}  
 import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
@@ -9,7 +10,10 @@ import Data.List
 import System.Directory
 import System.FilePath
 import qualified Data.ByteString as BS
+import Control.Exception
+import Prelude hiding (catch)
 
+main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
 -- Before each build, generate a BuildInfo_Generated module that exports the project version from cabal,
@@ -21,10 +25,7 @@ generateBuildInfoHook :: PackageDescription -> LocalBuildInfo -> UserHooks -> Bu
 generateBuildInfoHook pd  lbi uh bf = 
  do { let cabalVersionStr = intercalate "." (map show . versionBranch . pkgVersion . package $ pd)
 
-    ; svnRevisionStr <- do { r <- catch getSVNRevisionStr $ \err -> 
-                                do { print err
-                                   ; noSVNRevisionStr
-                                   }
+    ; svnRevisionStr <- do { r <- catch getSVNRevisionStr myHandler
                         ; if r == "" 
                           then noSVNRevisionStr
                           else return r
@@ -44,32 +45,43 @@ generateBuildInfoHook pd  lbi uh bf =
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
  where showPadded n = (if n<10 then "0" else "") ++ show n
-       pathFromModule mod = "src/" ++ [if c == '.' then '/' else c | c <- mod] ++ ".hs"
-       
+       pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
+       myHandler :: IOException -> IO String
+       myHandler err = do { print err
+                          ; noSVNRevisionStr
+                          }
 
-buildInfoModule cabalVersion revision time =
-  "module DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where\n" ++ 
-  "\n" ++
-  "-- This module is generated automatically by Setup.hs before building. Do not edit!\n" ++
-  "\n" ++
-  "{-# NOINLINE cabalVersionStr #-}\n" ++ -- disable inlining to prevent recompilation of dependent modules on each build
-  "cabalVersionStr = \"" ++ cabalVersion ++ "\"\n" ++
-  "\n" ++
-  "{-# NOINLINE svnRevisionStr #-}\n" ++
-  "svnRevisionStr = \"" ++ revision ++ "\"\n" ++
-  "\n" ++
-  "{-# NOINLINE buildTimeStr #-}\n" ++
-  "buildTimeStr = \"" ++ time ++ "\"\n"
-
+buildInfoModule :: String -> String -> String -> String
+buildInfoModule cabalVersion revision time = unlines
+  [ "module DatabaseDesign.Ampersand_Prototype.BuildInfo_Generated (cabalVersionStr, svnRevisionStr, buildTimeStr) where" 
+  , ""
+  , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
+  , ""
+  , "{-# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
+  , "cabalVersionStr :: String"
+  , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
+  , ""
+  , "{-# NOINLINE svnRevisionStr #-}"
+  , "svnRevisionStr :: String"
+  , "svnRevisionStr = \"" ++ revision ++ "\""
+  , ""
+  , "{-# NOINLINE buildTimeStr #-}"
+  , "buildTimeStr :: String"
+  , "buildTimeStr = \"" ++ time ++ "\""
+  , ""
+  ]
+  
+getSVNRevisionStr :: IO String
 getSVNRevisionStr = 
  do { (inh,outh,errh,proch) <- runInteractiveProcess "svnversion" ["."] Nothing Nothing
     ; hClose inh
     ; hClose errh
     ; version <- hGetContents outh
-    ; seq version $ waitForProcess proch
+    ; _ <- seq version $ waitForProcess proch
     ; return (unwords . lines $ version)
     }
 
+noSVNRevisionStr :: IO String
 noSVNRevisionStr =
  do { putStrLn "\n\n\nWARNING: Execution of 'svnversion' command failed."
     ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
@@ -85,8 +97,10 @@ noSVNRevisionStr =
    
 -}
 
+staticFileModuleName :: String
 staticFileModuleName = "DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated"
 
+getStaticFilesModuleContents :: IO String
 getStaticFilesModuleContents =
  do { staticFiles       <- readStaticFiles False "static" ""
     ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
@@ -106,6 +120,7 @@ getStaticFilesModuleContents =
                "\n  ]\n"
     }
     
+readStaticFiles :: Bool -> FilePath -> FilePath -> IO [String]
 readStaticFiles isBin base fileOrDir = 
   do { let path = combine base fileOrDir
      ; isDir <- doesDirectoryExist path
@@ -122,4 +137,5 @@ readStaticFiles isBin base fileOrDir =
            }
      }
      
+getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth 
