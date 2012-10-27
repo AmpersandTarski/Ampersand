@@ -73,6 +73,8 @@ instance Prelude.Ord Type where
   compare (TypExpr (Pnid _)       _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Pnid _)         _) = Prelude.GT
   compare (TypExpr (Patm _ x [c]) _) (TypExpr (Patm _ x' [c']) _) = Prelude.compare (x,c) (x',c')
+  compare (TypExpr (Patm _ _ [_]) _) (TypExpr (Patm _ _   _  ) _) = Prelude.LT
+  compare (TypExpr (Patm _ _  _ ) _) (TypExpr (Patm _ _  [_ ]) _) = Prelude.GT
   compare (TypExpr (Patm o x cs)  _) (TypExpr (Patm o' x' cs') _) = Prelude.compare (o,x,cs) (o',x',cs')
   compare (TypExpr (Patm _ _ _)   _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Patm _ _ _)     _) = Prelude.GT
@@ -190,7 +192,7 @@ mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge co
               else fatal 190 ("mrgIntersect should be called on sorted distinct lists, but its first argument is:\n "++show l)
         merge :: (Show a,Ord a) => [a] -> [a] -> [a]
         merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then merge as (b:bs) else fatal 192 ("Compare is not antisymmetric for: "++show a++" and "++show b)
-                            | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
+                            | a==b = if b==a then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
                             | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
         merge _ _ = [] -- since either a or b is the empty list
 
@@ -996,12 +998,12 @@ pCtx2aCtx p_context
                            , prcRules = prules
                            , prcGens  = agens'          -- The generalizations defined in this pattern
                            , prcDcls  = adecs'          -- The declarations declared in this pattern
-                           , prcRRuls = arruls         -- The assignment of roles to rules.
-                           , prcRRels = arrels         -- The assignment of roles to Relations.
+                           , prcRRuls = arruls          -- The assignment of roles to rules.
+                           , prcRRels = arrels          -- The assignment of roles to Relations.
                            , prcKds   = keys'           -- The key definitions defined in this process
                            , prcXps   = expls          -- The purposes of elements defined in this process
                            } )
-        _  -> Errors [CxeOrig typeErrs "process" (name pproc) (origin pproc) | (not.null) typeErrs]
+        _  -> Errors [CxeOrig typeErrs "process" (name pproc) (origin pproc)]
        where
         typeErrs = concat ([rulecxes']++[keycxes']++[deccxes']++[rrcxes]++editcxes++[explcxes])
         (prules,rulecxes') = case (parallelList . map (pRul2aRul (name pproc)) . procRules) pproc of
@@ -1032,7 +1034,7 @@ pCtx2aCtx p_context
         _  -> Errors [CxeOrig rrcxes "role rule" "" (origin prrul) | (not.null) rrcxes]
        where
          rrcxes = [ newcxe ("Rule '"++r++" does not exist.")
-                  | r<-mRules prrul, null [rul | rul<-rules contxt, name rul==r]]
+                  | r<-mRules prrul, null [rul | rul<-ctx_rs p_context++(concat.map pt_rls.ctx_pats) p_context++(concat.map procRules.ctx_PPrcs) p_context, name rul==r]]
          
     pRRel2aRRel :: P_RoleRelation -> (RoleRelation,[CtxError])
     pRRel2aRRel prrel
