@@ -44,7 +44,7 @@ where
     linenr x = case origin x of 
                      FileLoc (FilePos (_,Pos l _,_)) -> l
                      _ -> 0
-    colnr x = case origin x of 
+    colnr x  = case origin x of 
                      FileLoc (FilePos (_,Pos _ c,_)) -> c
                      _ -> 0
 
