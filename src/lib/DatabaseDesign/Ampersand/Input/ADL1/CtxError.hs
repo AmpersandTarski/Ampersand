@@ -39,12 +39,12 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
                               }       
-              | CxeCast       {cxeExpr    :: Term
-                              ,cxeDomCast :: [P_Concept]
-                              ,cxeCodCast :: [P_Concept]
-                              ,cxeDomTerm :: [P_Concept]
-                              ,cxeCodTerm :: [P_Concept]
-                              }       
+--              | CxeCast       {cxeExpr    :: Term
+--                              ,cxeDomCast :: [P_Concept]
+--                              ,cxeCodCast :: [P_Concept]
+--                              ,cxeDomTerm :: [P_Concept]
+--                              ,cxeCodTerm :: [P_Concept]
+--                              }       
               | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeV instead?
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
@@ -120,20 +120,20 @@ showErr err = case err of
           ds                -> "    Relation  "++showADL expr++"  is bound to multiple declarations on"++
                                "    "++commaEng "and" [show (origin d) | (d,_,_)<-ds ]++"."
          where expr=cxeExpr err
-  CxeCast{}
-     -> case cxeExpr err of
-         PTyp _ r@(Prel _ _) sgnCast 
-           -> concat
-               ( [show (origin (cxeExpr err))++":\n"]++
-                 case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
-                      (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
-                      (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
-                      (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL (cxeExpr err)++" "++
-                                                         "\ncxeDomCast err\n = "++show dcs++
-                                                         "\ncxeCodCast err\n = "++show ccs++
-                                                         "\ncxeDomTerm err\n = "++show dts++
-                                                         "\ncxeCodTerm err\n = "++show cts)
-               )
+--  CxeCast{}
+--     -> case cxeExpr err of
+--         PTyp _ r@(Prel _ _) sgnCast 
+--           -> concat
+--               ( [show (origin (cxeExpr err))++":\n"]++
+--                 case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
+--                      (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
+--                      (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
+--                      (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL (cxeExpr err)++" "++
+--                                                         "\ncxeDomCast err\n = "++show dcs++
+--                                                         "\ncxeCodCast err\n = "++show ccs++
+--                                                         "\ncxeDomTerm err\n = "++show dts++
+--                                                         "\ncxeCodTerm err\n = "++show cts)
+--               )
   CxeEquLike{}
      -> case cxeExpr err of
           Pequ{}  -> showErrEquation err
