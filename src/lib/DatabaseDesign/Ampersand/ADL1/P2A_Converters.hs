@@ -913,7 +913,7 @@ pCtx2aCtx p_context
                             Errors  errs  -> (fatal 938 "Do not refer to undefined patterns", errs)
     (procs,   proccxes)  = case (parallelList . map (pProc2aProc allpops)     . ctx_PPrcs) p_context of
                             Checked prcs -> (prcs, [])
-                            Errors errs  -> (fatal 938 "Do not refer to undefined processes", errs)
+                            Errors errs  -> (fatal 938 $ "Do not refer to undefined processes" ++ show errs, errs)
     (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")   . ctx_rs   ) p_context of
                             Checked ruls -> (ruls, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined rules", errs)
@@ -1065,15 +1065,15 @@ pCtx2aCtx p_context
     p2aPairView srcCpt trgCpt (P_PairView ppvs) = do { guardedPpvs <- (parallelList . map (p2aPairViewSegment srcCpt trgCpt)) ppvs ; return (PairView guardedPpvs) }
 
     p2aPairViewSegment :: P_Concept -> P_Concept -> P_PairViewSegment -> Guarded PairViewSegment
-    p2aPairViewSegment srcCpt trgCpt   (P_PairViewText str)          = Checked (PairViewText str)
-    p2aPairViewSegment srcCpt trgCpt v@(P_PairViewExp srcOrTgt pexp) = do { (aexp,s,t) <- pExpr2aExpr pexp
+    p2aPairViewSegment _      _        (P_PairViewText str)          = Checked (PairViewText str)
+    p2aPairViewSegment srcCpt trgCpt v@(P_PairViewExp srcOrTgt pexp) = do { (aexp,s,_) <- pExpr2aExpr pexp
                                                                           ; case srcOrTgt of
                                                                              Src -> if s==srcCpt
                                                                                     then Checked (PairViewExp srcOrTgt aexp)
                                                                                     else Errors [CxeViol v s srcCpt]
-                                                                             Tgt -> if t==trgCpt
+                                                                             Tgt -> if s==trgCpt
                                                                                     then Checked (PairViewExp srcOrTgt aexp)
-                                                                                    else Errors [CxeViol v t trgCpt]
+                                                                                    else Errors [CxeViol v s trgCpt]
                                                                           }
     pRul2aRul :: String -> P_Rule -> Guarded Rule
     pRul2aRul patname prul        -- for debugging the parser, this is a good place to put     error (show (rr_exp prul))

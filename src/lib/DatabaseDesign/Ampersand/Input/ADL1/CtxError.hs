@@ -74,90 +74,104 @@ instance Show CtxError where
     showsPrec _ err = showString (showErr err)
 
 showErr :: CtxError -> String
--- * CxeEqConcepts tells us that there are concepts with different names, which can be proven equal by the type checker.
-showErr err@(CxeEqConcepts{})
- = concat
-     ["The following concepts are equal:\n"++commaEng "and" (map show (cxeConcepts err))++"." | not (null (cxeConcepts err)) ]
--- * CxeEqAttribs tells us that there are concepts with different names, which can be proven equal by the type checker.
-showErr err@(CxeEqAttribs{})
- = show (cxeOrig err)++": Different attributes share the same name \""++cxeName err++"\":\n   "++
-   intercalate "\n   " [ show (origin term)++" : "++showADL term | term<-cxeAtts err ]
-showErr err@(CxeILike{ cxeCpts=[] })
- = concat
-     ( [show (origin (cxeExpr err))++":\n"]++
-       ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
-     )
-showErr err@(CxeILike{})
- = concat
-     ( [show (origin (cxeExpr err))++":\n"]++
-       ["    Term  "++showADL (cxeExpr err)++",\n"]++
-       ["    cannot be "++commaEng "and" (map showADL (cxeCpts err)) | (not.null) (cxeCpts err)]++[" at the same time."]
-     )
-showErr err@(CxeTyp{})
- = concat
-     ( [show (origin (cxeExpr err))++":\n"]++
-       ["    Relation  "++showADL (cxeExpr err)++"  is ambiguous." | null (cxeDcls err)]++
-       ["    Relation  "++showADL (cxeExpr err)++"  has conflicting bindings:\n    "++
-        intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
-     ) where sh term = termString++[' ' | _<-[length termString..maxLen]]++showADL term
-                       where termString = show (origin term)
-                             maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
-showErr err@(CxeRel{})
- = show (origin expr)++":\n"++
-   case cxeDecs err of
-    []                -> "    Relation  "++showADL expr++"  is not declared."
-    [(d, [], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                         "    but it is ambiguous."
-    [(d, [],[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                         "    but it is ambiguous in its source concept."
-    [(d,[_], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                         "    but it is ambiguous in its target concept."
-    [(d, ss,[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                         "    but its source concept, "++showADL s++", is not compatible with "++commaEng "and" (map show conflicts)++"."
-                         where conflicts = ss>-[s]; P_Sign sgn = dec_sign d; s=head sgn
-    [(d,[_], ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                         "    but its target concept, "++showADL t++", is not compatible with "++commaEng "and" (map show conflicts)++"."
-                         where conflicts = ts>-[t]; P_Sign sgn = dec_sign d; t=last sgn
-    [(d, ss, ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                         "    but its source concept cannot be both "++commaEng "and" (map show ss)++", and"++
-                         "    its target concept cannot be "++commaEng "and" (map show ts)++" all at the same time."
-    ds                -> "    Relation  "++showADL expr++"  is bound to multiple declarations on"++
-                         "    "++commaEng "and" [show (origin d) | (d,_,_)<-ds ]++"."
-   where expr=cxeExpr err
-
-showErr err@(CxeCast{ cxeExpr=x@(PTyp _ r@(Prel _ _) sgnCast) })
- = concat
-     ( [show (origin (cxeExpr err))++":\n"]++
-       case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
-            (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
-            (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
-            (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL x++" "++show (origin x)++
-                                               "\ncxeDomCast err\n = "++show dcs++
-                                               "\ncxeCodCast err\n = "++show ccs++
-                                               "\ncxeDomTerm err\n = "++show dts++
-                                               "\ncxeCodTerm err\n = "++show cts)
-     )
-showErr err@(CxeEquLike { cxeExpr=Pequ _ _ _ }) = showErrEquation err
-showErr err@(CxeEquLike { cxeExpr=Pimp _ _ _ }) = showErrEquation err
-showErr err@(CxeEquLike { cxeExpr=PIsc _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeEquLike { cxeExpr=PUni _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeEquLike { cxeExpr=PDif _ _ _ }) = showErrBoolTerm err
-showErr err@(CxeCpsLike { cxeExpr=PLrs _ a b})  = showErrBetweenTerm err a b "target" "target"
-showErr err@(CxeCpsLike { cxeExpr=PRrs _ a b})  = showErrBetweenTerm err a b "source" "source"
-showErr err@(CxeCpsLike { cxeExpr=PCps _ a b})  = showErrBetweenTerm err a b "target" "source"
-showErr err@(CxeCpsLike { cxeExpr=PRad _ a b})  = showErrBetweenTerm err a b "target" "source"
-showErr (CxeOrig typeErrors t nm o)
- | null typeErrors                              = ""
- | t `elem` ["pattern", "process", "interface"] = "The " ++ t ++ " named \""++ nm ++ "\" contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
- | otherwise                                    = "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
-showErr (Cxe typeErrors x)                      = x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
-showErr (PE msg)                                = "Parse error:\n"++ show (case msg of 
-                                                                             []  -> fatal 35 "No messages??? The impossible happened!" 
-                                                                             x:_ -> x)
-showErr err@(CxeCpl{})
- = show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
-showErr err@(CxeV{})
- = show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
+showErr err = case err of
+  CxeEqConcepts{} -- * CxeEqConcepts tells us that there are concepts with different names, which can be proven equal by the type checker.
+     -> concat
+           ["The following concepts are equal:\n"++commaEng "and" (map show (cxeConcepts err))++"." | not (null (cxeConcepts err)) ]
+  CxeEqAttribs{} -- * CxeEqAttribs tells us that there are concepts with different names, which can be proven equal by the type checker.
+     -> show (cxeOrig err)++": Different attributes share the same name \""++cxeName err++"\":\n   "++
+        intercalate "\n   " [ show (origin term)++" : "++showADL term | term<-cxeAtts err ]
+  CxeILike{}
+     -> concat
+          ( [show (origin (cxeExpr err))++":\n"]++
+              case cxeCpts err of
+                 []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
+                 cs  -> ["    Term  "++showADL (cxeExpr err)++",\n"]++
+                        ["    cannot be "++commaEng "and" (map showADL cs) ++" at the same time."]
+          )
+  CxeTyp{}
+     -> concat
+          ( [show (origin (cxeExpr err))++":\n"]++
+            ["    Relation  "++showADL (cxeExpr err)++"  is ambiguous." | null (cxeDcls err)]++
+            ["    Relation  "++showADL (cxeExpr err)++"  has conflicting bindings:\n    "++
+             intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
+          ) where sh term = termString++[' ' | _<-[length termString..maxLen]]++showADL term
+                            where termString = show (origin term)
+                                  maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
+  CxeRel{}
+     -> show (origin expr)++":\n"++
+         case cxeDecs err of
+          []                -> "    Relation  "++showADL expr++"  is not declared."
+          [(d, [], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                               "    but it is ambiguous."
+          [(d, [],[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                               "    but it is ambiguous in its source concept."
+          [(d,[_], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                               "    but it is ambiguous in its target concept."
+          [(d, ss,[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                               "    but its source concept, "++showADL s++", is not compatible with "++commaEng "and" (map show conflicts)++"."
+                               where conflicts = ss>-[s]; P_Sign sgn = dec_sign d; s=head sgn
+          [(d,[_], ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                               "    but its target concept, "++showADL t++", is not compatible with "++commaEng "and" (map show conflicts)++"."
+                               where conflicts = ts>-[t]; P_Sign sgn = dec_sign d; t=last sgn
+          [(d, ss, ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+                               "    but its source concept cannot be both "++commaEng "and" (map show ss)++", and"++
+                               "    its target concept cannot be "++commaEng "and" (map show ts)++" all at the same time."
+          ds                -> "    Relation  "++showADL expr++"  is bound to multiple declarations on"++
+                               "    "++commaEng "and" [show (origin d) | (d,_,_)<-ds ]++"."
+         where expr=cxeExpr err
+  CxeCast{}
+     -> case cxeExpr err of
+         PTyp _ r@(Prel _ _) sgnCast 
+           -> concat
+               ( [show (origin (cxeExpr err))++":\n"]++
+                 case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
+                      (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
+                      (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
+                      (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL (cxeExpr err)++" "++
+                                                         "\ncxeDomCast err\n = "++show dcs++
+                                                         "\ncxeCodCast err\n = "++show ccs++
+                                                         "\ncxeDomTerm err\n = "++show dts++
+                                                         "\ncxeCodTerm err\n = "++show cts)
+               )
+  CxeEquLike{}
+     -> case cxeExpr err of
+          Pequ{}  -> showErrEquation err
+          Pimp{}  -> showErrEquation err
+          PIsc{}  -> showErrBoolTerm err
+          PUni{}  -> showErrBoolTerm err
+          PDif{}  -> showErrBoolTerm err
+          _          -> fatal 144 "No match for this term!"
+  CxeCpsLike{}
+     -> case cxeExpr err of
+          PLrs _ a b -> showErrBetweenTerm err a b "target" "target"
+          PRrs _ a b -> showErrBetweenTerm err a b "source" "source"
+          PCps _ a b -> showErrBetweenTerm err a b "target" "source"
+          PRad _ a b -> showErrBetweenTerm err a b "target" "source"
+          _          -> fatal 151 "No match for this term!"
+  CxeOrig typeErrors t nm o
+    | null typeErrors                              -> ""
+    | t `elem` ["pattern", "process", "interface"] -> "The " ++ t ++ " named \""++ nm ++ "\" contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
+    | otherwise                                    -> "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
+  Cxe typeErrors x
+    -> x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
+  PE msg
+    -> "Parse error:\n"++ show (case msg of 
+                                  []  -> fatal 35 "No messages??? The impossible happened!" 
+                                  x:_ -> x)
+  CxeCpl{}
+    -> show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
+  CxeV{}
+    -> show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
+  CxeViol v a b
+    -> case v of
+         P_PairViewExp srcOrTgt pexp
+           -> show (origin pexp)++":\n"++
+              "    Couldn't match the "++showADL srcOrTgt++" of the violation ("++name b++")\n"++
+              "    with the source ("++name a++") of `"++showADL pexp++"`."
+         P_PairViewText{} 
+           -> fatal 172 "showErr is not defined for `P_PairViewTxt`."           
+showErrSrcsTrgs :: CtxError -> [String]
 showErrSrcsTrgs err 
  = let x = cxeExpr err in
    case (cxeSrcs err, cxeTrgs err) of
