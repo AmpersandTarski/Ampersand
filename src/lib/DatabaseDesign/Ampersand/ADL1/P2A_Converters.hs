@@ -304,7 +304,7 @@ typing p_context
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      (firstSetOfEdges,secondSetOfEdges)
-      = foldr (.+.) nothing [uType (p_declarations p_context, compat) term Anything Anything term | term <- terms p_context]
+      = uType (p_declarations p_context, compat) p_context Anything Anything p_context
      compat :: Type -> Type -> Bool
      compat a b = null set1 -- approve compatibility for isolated types, such as "Nothing", "Anything" and singleton elements
                       || null set2
@@ -585,7 +585,8 @@ instance Expr P_Gen where
   
 instance Expr P_Declaration where
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
- uType _ _ _ _ _ = nothing
+ uType dcls _ uLft uRt d
+  = let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType dcls x uLft uRt x
 
 instance Expr P_KeyDef where
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
