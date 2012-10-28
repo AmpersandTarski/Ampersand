@@ -559,21 +559,30 @@ instance Expr P_Process where
     (let x=procPop   pProcess in uType dcls x uLft uRt x)
 
 instance Expr P_Rule where
- terms r = terms (rr_exp r)++
-           case rr_viol r of
-            Nothing                    -> []
-            Just (P_PairView segments) -> [ term | P_PairViewExp _ term <- segments ]
+ terms r = terms (rr_exp r)++terms (rr_viol r)
+
  uType dcls _ uLft uRt r
-  = let x=rr_exp r in
-    uType dcls x uLft uRt x .+.
-    case rr_viol r of
-     Nothing                    -> nothing
-     Just (P_PairView segments) -> foldr (.+.) nothing 
-                                   [ uType dcls term (if srcOrTgt==Src then TypGlb (dom term) uLft (PCps (origin term) (p_flp term) x) else uLft)
-                                                     (if srcOrTgt==Tgt then TypGlb (cod term) uRt  (PCps (origin term)     x     term) else uRt )  term
-                                   | P_PairViewExp srcOrTgt term <- segments
-                                   ]
+  = let x=rr_exp r; v=rr_viol r in
+    uType dcls x uLft uRt x .+. uType dcls v (dom x) (cod x) v
+
+{- PairViews are made for the purpose of assembling nice messages for violations. E.g. VIOLATION lateEntry : (afmaken)
+   data P_PairView = P_PairView [P_PairViewSegment] deriving Show
+   data P_PairViewSegment = P_PairViewText String
+                          | P_PairViewExp SrcOrTgt Term
+
+-}
+
+instance Expr P_PairViewSegment where
+ terms (P_PairViewExp _ term) = [term]
+ terms _                      = []
+ uType dcls _ uLft uRt (P_PairViewExp Src term) = uType dcls term uLft Anything term
+ uType dcls _ uLft uRt (P_PairViewExp Tgt term) = uType dcls term Anything uRt  term
+ uType _ _ _ _ _ = nothing
   
+instance Expr P_PairView where
+ terms (P_PairView segments) = terms segments
+ uType dcls _ uLft uRt (P_PairView segments) = uType dcls segments uLft uRt segments
+
 instance Expr P_Sign where
  terms _ = []
  uType _ _ _ _ _ = nothing
@@ -582,7 +591,7 @@ instance Expr P_Gen where
  terms g = [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
  uType dcls _ uLft uRt g
   = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType dcls x uLft uRt x
-  
+
 instance Expr P_Declaration where
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
  uType dcls _ uLft uRt d
