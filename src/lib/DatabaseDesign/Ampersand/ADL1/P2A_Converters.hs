@@ -565,18 +565,13 @@ instance Expr P_Rule where
   = let x=rr_exp r; v=rr_viol r in
     uType dcls x uLft uRt x .+. uType dcls v (dom x) (cod x) v
 
-{- PairViews are made for the purpose of assembling nice messages for violations. E.g. VIOLATION lateEntry : (afmaken)
-   data P_PairView = P_PairView [P_PairViewSegment] deriving Show
-   data P_PairViewSegment = P_PairViewText String
-                          | P_PairViewExp SrcOrTgt Term
-
--}
-
 instance Expr P_PairViewSegment where
  terms (P_PairViewExp _ term) = [term]
  terms _                      = []
- uType dcls _ uLft uRt (P_PairViewExp Src term) = uType dcls term uLft Anything term
- uType dcls _ uLft uRt (P_PairViewExp Tgt term) = uType dcls term Anything uRt  term
+ uType dcls _ uLft uRt (P_PairViewExp Src term) = uType dcls term uLft Anything term .+. dm
+  where (dm,_) = mSpecific (dom term) uLft term
+ uType dcls _ uLft uRt (P_PairViewExp Tgt term) = uType dcls term Anything uRt  term .+. cm
+  where (cm,_) = mSpecific (cod term) uRt term
  uType _ _ _ _ _ = nothing
   
 instance Expr P_PairView where
