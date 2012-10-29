@@ -1280,7 +1280,19 @@ pCtx2aCtx p_context
                                             Checked decl:_ -> (ExplDeclaration decl, [])
                                             Errors ers:_   -> (undef, ers)
                                             []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
-                                          where undef = fatal 1284 "Do not refer to an undefine declaration"
+                                          where undef = fatal 1269 "Do not refer to an undefine declaration"
+-- TODO : @Stef: Should it be possible to have Prel constructors for terms over here??? (currently it happens...)
+    pExOb2aExOb (PRef2Declaration x@(Prel o nm )) 
+                                        = case [d | d<-ctx_ds p_context, name d==nm ] of
+                                            []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
+                                            [pd]  -> case pDecl2aDecl [] pd of
+                                                       Checked decl -> (ExplDeclaration decl, [])
+                                                       Errors ers   -> (undef, ers)
+                                            _     -> (undef, [CxeOrig [newcxe ("Ambigious declaration of '"++showADL x++"'")] "relation" nm o ])
+                                          where undef = fatal 1275 "Do not refer to an undefine declaration"
+                                        
+    pExOb2aExOb (PRef2Declaration term) = fatal 1270 $ "Nothing defined for "++show term
+          
     pExOb2aExOb (PRef2Rule str        ) = (ExplRule str, newcxeif(null ruls)("No rule named '"++str++"'") )
                                           where ruls = [rul | rul<-ctx_rs p_context, name rul==str ]
     pExOb2aExOb (PRef2KeyDef str      ) = (ExplKeyDef str, newcxeif(null kds)("No key definition named '"++str++"'") )
@@ -1290,7 +1302,6 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-ctx_ifcs  p_context, name ifc==str]) ("No interface named '"++str++"'") )
     pExOb2aExOb (PRef2Context str     ) = (ExplContext str,   newcxeif(name p_context/=str) ("No context named '"++str++"'") )  
     pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name p_context/=str) ("No specification named '"++str++"'") )
-    pExOb2aExOb po = fatal 1150 ("pExOb2aExOb is non-exhaustive, unexpected PO: "++show po)
     
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop pop
