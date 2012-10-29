@@ -29,6 +29,19 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
               | CxeILike      {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
+              | CxeUnsupRoles {cxeIfc  :: P_Interface
+                              ,cxeRoles :: [String]
+                              }       
+              | CxeNoRoles    {cxeIfc  :: P_Interface
+                              }       
+              | CxeNoIfcs     {cxeName :: String
+                              ,cxePos  :: Origin
+                              ,cxeIfcs :: [P_Interface]
+                              }       
+              | CxeObjMismatch{cxeExpr :: Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
+                              ,cxeEnv  :: [P_Concept]
+                              ,cxeSrcs :: [P_Concept]
+                              }       
               | CxeTyp        {cxeExpr :: Term
                               ,cxeDcls :: [Term]
                               }       
@@ -39,12 +52,10 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of co
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
                               }       
---              | CxeCast       {cxeExpr    :: Term
---                              ,cxeDomCast :: [P_Concept]
---                              ,cxeCodCast :: [P_Concept]
---                              ,cxeDomTerm :: [P_Concept]
---                              ,cxeCodTerm :: [P_Concept]
---                              }       
+              | CxeCast       {cxeExpr    :: Term
+                              ,cxeDomCast :: [P_Concept]
+                              ,cxeCodCast :: [P_Concept]
+                              }       
               | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeV instead?
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
@@ -79,15 +90,40 @@ showErr err = case err of
      -> concat
            ["The following concepts are equal:\n"++commaEng "and" (map show (cxeConcepts err))++"." | not (null (cxeConcepts err)) ]
   CxeEqAttribs{} -- * CxeEqAttribs tells us that there are concepts with different names, which can be proven equal by the type checker.
-     -> show (cxeOrig err)++": Different attributes share the same name \""++cxeName err++"\":\n   "++
-        intercalate "\n   " [ show (origin term)++" : "++showADL term | term<-cxeAtts err ]
+     -> show (cxeOrig err)++": Different attributes have the same name:"++
+        concat [ "\n   ("++show (origin term)++")\t \""++cxeName err++"\" : "++showADL term | term<-cxeAtts err ]
   CxeILike{}
      -> concat
           ( [show (origin (cxeExpr err))++":\n"]++
               case cxeCpts err of
                  []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
-                 cs  -> ["    Term  "++showADL (cxeExpr err)++",\n"]++
+                 cs  -> ["    The term  "++showADL (cxeExpr err)++",\n"]++
                         ["    cannot be "++commaEng "and" (map showADL cs) ++" at the same time."]
+          )
+  CxeNoRoles{}
+     -> concat
+          ( [show (origin (cxeIfc err))++":\n"]++
+            ["    Interface "++name (cxeIfc err)++" supports no roles."]
+          )
+  CxeUnsupRoles{}
+     -> concat
+          ( [show (origin (cxeIfc err))++":\n"]++
+            ["    Interface "++name (cxeIfc err)++" does not support the following roles:\n   "]++[commaEng "and" (cxeRoles err)]
+          )
+  CxeNoIfcs{}
+     -> concat
+          ( [show (origin (cxePos err))++":\n"]++
+              case cxeIfcs err of
+                 []   -> ["    There are no interfaces called \""++cxeName err++"\"."]
+                 ifcs -> ["    There are multiple interfaces named " ++commaEng "and" (map (show.origin) ifcs) ++ "."]
+          )
+  CxeObjMismatch{}
+     -> concat
+          ( [show (origin (cxeExpr err))++":\n"]++
+              case cxeSrcs err of
+                 []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
+                 cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL (cxeSrcs err))++"\n"]++
+                        ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
   CxeTyp{}
      -> concat
@@ -120,20 +156,17 @@ showErr err = case err of
           ds                -> "    Relation  "++showADL expr++"  is bound to multiple declarations on"++
                                "    "++commaEng "and" [show (origin d) | (d,_,_)<-ds ]++"."
          where expr=cxeExpr err
---  CxeCast{}
---     -> case cxeExpr err of
---         PTyp _ r@(Prel _ _) sgnCast 
---           -> concat
---               ( [show (origin (cxeExpr err))++":\n"]++
---                 case (cxeDomCast err, cxeCodCast err, cxeDomTerm err, cxeCodTerm err) of
---                      (   _          ,    _          ,    []         ,    _          ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
---                      (   _          ,    _          ,    _          ,    []         ) -> [ "    No relation declaration matches  "++showADL r++show sgnCast++"."]
---                      (dcs, ccs, dts, cts) -> fatal 161 ("make better error messages for term  "++showADL (cxeExpr err)++" "++
---                                                         "\ncxeDomCast err\n = "++show dcs++
---                                                         "\ncxeCodCast err\n = "++show ccs++
---                                                         "\ncxeDomTerm err\n = "++show dts++
---                                                         "\ncxeCodTerm err\n = "++show cts)
---               )
+  CxeCast{}
+     -> concat
+          ( [show (origin (cxeExpr err))++":\n"]++
+            case (cxeDomCast err, cxeCodCast err) of
+                 (    []        ,    []         ) -> [ "    Ambiguous  "++showADL (cxeExpr err)++"."]
+                 (    []        ,    _          ) -> [ "    Ambiguous source in term  "++showADL (cxeExpr err)++"."]
+                 (    _         ,    []         ) -> [ "    Ambiguous target in term  "++showADL (cxeExpr err)++"."]
+                 (    srcs      ,    [_]        ) -> [ "    Conflicts in the source of  "++showADL (cxeExpr err)++".\n    Concepts "++commaEng "and" (map show srcs)++" do not match." ]
+                 (    [_]       ,    trgs       ) -> [ "    Conflicts in the target of  "++showADL (cxeExpr err)++".\n    Concepts "++commaEng "and" (map show trgs)++" do not match." ]
+                 (    srcs      ,    trgs       ) -> [ "    Conflicting concepts in  "++showADL (cxeExpr err)++":\n    concepts "++commaEng "and" (map show srcs)++" do not match, and\n    concepts "++commaEng "and" (map show trgs)++" do not match."]
+          )
   CxeEquLike{}
      -> case cxeExpr err of
           Pequ{}  -> showErrEquation err

@@ -44,6 +44,16 @@ data Type =  TypExpr Term Bool       -- term is deriving Ord
            | Anything
             -- note: do not put "deriving Ord", because Eq is specified (and not derived)
 
+-- | We create a normal form for lubs and glbs, in order to get comparable type expressions.
+normalType :: Type -> Type
+normalType (TypGlb Anything v _) = normalType v
+normalType (TypGlb v Anything _) = normalType v
+normalType t@(TypGlb u v e) = if u<=v then t else TypGlb v u e
+normalType (TypLub Anything _ _) = Anything
+normalType (TypLub _ Anything _) = Anything
+normalType t@(TypLub u v e) = if u<=v then t else TypLub v u e
+normalType t = t
+
 instance Show Type where
     showsPrec _ typTerm = showString (showType typTerm)
 
@@ -262,8 +272,8 @@ dom, cod :: Term -> Type
 dom x    = TypExpr x         False -- the domain of x, and make sure to check subterms of x as well
 cod x    = TypExpr (p_flp x) True 
 mSpecific, mGeneric :: Type -> Type -> Term -> ( (Typemap , Typemap) ,Type)
-mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = TypLub a b e
-mSpecific a b e = (r .<. a .+. r .<. b , r) where r = TypGlb a b e
+mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = normalType (TypLub a b e)
+mSpecific a b e = (r .<. a .+. r .<. b , r) where r = normalType (TypGlb a b e)
 
 flattenMap :: Data.Map.Map t [t1] -> [(t, t1)]
 flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
@@ -310,10 +320,9 @@ typing p_context
                       || null set2
                       || (not.null) (isc set1 set2)
       where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
-       included = setClosure (reverseMap firstSetOfEdges) "firstSetOfEdges~"
-       getAtoms x = findIn x included
-       set1 = getAtoms a
-       set2 = getAtoms b
+       included = addIdentity (setClosure (reverseMap firstSetOfEdges) "firstSetOfEdges~")
+       set1 = findIn a included
+       set2 = findIn b included
    -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
      st = Data.Map.unionWith mrgUnion firstSetOfEdges secondSetOfEdges
      typeTerms :: [Type]          -- The list of all type terms in st.
@@ -478,14 +487,13 @@ class Expr a where
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
   --   the tuples of a relation st :: Type * Type. Each tuple (TypExpr t, TypExpr t') means that the domain of t is a subset of the domain of t'.
   --   These tuples are produced in two Typemaps. The second Typemap is kept separate, because it depends on the existence of the first Typemap.
-  uType :: ([P_Declaration], Type -> Type -> Bool)  -- The declaration table from the script and a compatibility test
+  uType :: ([P_Declaration], Type -> Type -> Bool)  -- The declaration table from the script, a compatibility test.
         -> a               -- x:    the original term from the script, meant for representation in the graph.
         -> Type            -- uLft: the type of the universe for the domain of x 
         -> Type            -- uRt:  the type of the universe for the codomain of x
         -> a               -- z:    the term to be analyzed, which must be logically equivalent to x
         -> ( Typemap   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
            , Typemap ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
-  uType _ _ _ _ _ = nothing
 
 instance Expr P_Context where
  p_gens pContext
@@ -565,18 +573,49 @@ instance Expr P_Rule where
   = let x=rr_exp r; v=rr_viol r in
     uType dcls x uLft uRt x .+. uType dcls v (dom x) (cod x) v
 
-instance Expr P_PairViewSegment where
- terms (P_PairViewExp _ term) = [term]
- terms _                      = []
- uType dcls _ uLft uRt (P_PairViewExp Src term) = uType dcls term uLft Anything term .+. dm
-  where (dm,_) = mSpecific (dom term) uLft term
- uType dcls _ uLft uRt (P_PairViewExp Tgt term) = uType dcls term Anything uRt  term .+. cm
-  where (cm,_) = mSpecific (cod term) uRt term
- uType _ _ _ _ _ = nothing
-  
 instance Expr P_PairView where
  terms (P_PairView segments) = terms segments
  uType dcls _ uLft uRt (P_PairView segments) = uType dcls segments uLft uRt segments
+
+instance Expr P_PairViewSegment where
+ terms (P_PairViewExp _ term) = [term]
+ terms _                      = []
+ uType dcls _ uLft _   (P_PairViewExp Src term) = uType dcls term t Anything term .+. dm
+  where (dm,t) = mSpecific (dom term) uLft term
+ uType dcls _ _    uRt (P_PairViewExp Tgt term) = uType dcls term t Anything term .+. dm
+  where (dm,t) = mSpecific (dom term) uRt term
+ uType _ _ _ _ _ = nothing
+  
+instance Expr P_KeyDef where
+ terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
+ uType dcls _ uLft uRt k
+  = let x=Pid (kd_cpt k) in
+    uType dcls x uLft uRt x .+.
+    foldr (.+.) nothing [ uType dcls obj t Anything obj .+. dm
+                        | P_KeyExp obj <- kd_ats k
+                        , let (dm,t) = mSpecific (dom x) (dom (obj_ctx obj)) (obj_ctx obj)
+                        ]
+    where 
+
+instance Expr P_Interface where
+ terms ifc = terms (ifc_Obj ifc)
+ uType dcls _ uLft uRt ifc = let x=ifc_Obj ifc in uType dcls x uLft uRt x
+
+instance Expr P_ObjectDef where
+ terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
+ uType dcls _ uLft uRt o
+  = let x=obj_ctx o in
+    uType dcls x uLft uRt x .+.
+    foldr (.+.) nothing [ uType dcls obj t Anything obj .+. dm
+                        | Just subIfc <- [obj_msub o], obj <- si_box subIfc
+                        , let (dm,t) = mSpecific (cod x) (dom (obj_ctx obj)) (obj_ctx obj)
+                        ]
+ 
+instance Expr P_SubInterface where
+ terms x@(P_Box{}) = terms (si_box x)
+ terms _           = []
+ uType dcls _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType dcls x uLft uRt x
+ uType _    _ _    _   _              = nothing
 
 instance Expr P_Sign where
  terms _ = []
@@ -591,30 +630,6 @@ instance Expr P_Declaration where
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
  uType dcls _ uLft uRt d
   = let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType dcls x uLft uRt x
-
-instance Expr P_KeyDef where
- terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
- uType dcls _ uLft uRt k
-  = let x=Pid (kd_cpt k) in
-    uType dcls x uLft uRt x .+.
-    foldr (.+.) nothing [ uType dcls obj (thing (kd_cpt k)) uRt obj | P_KeyExp obj <- kd_ats k]
-
-instance Expr P_Interface where
- terms ifc = terms (ifc_Obj ifc)
- uType dcls _ uLft uRt ifc = let x=ifc_Obj ifc in uType dcls x uLft uRt x
-
-instance Expr P_ObjectDef where
- terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
- uType dcls _ uLft uRt o
-  = let x=obj_ctx o in
-    uType dcls x uLft uRt x .+. 
-    foldr (.+.) nothing [ uType dcls subIfc (cod x) uRt subIfc | Just subIfc <- [obj_msub o]]
- 
-instance Expr P_SubInterface where
- terms x@(P_Box{}) = terms (si_box x)
- terms _           = []
- uType dcls _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType dcls x uLft uRt x
- uType _    _ _    _   _              = nothing
 
 instance Expr P_Population where
  terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
@@ -679,8 +694,8 @@ instance Expr Term where
                                                                        , uLft == thing (head cs)
                                                                        , uRt  == thing (last cs) ] 
                                                         spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
-                                                                       , compatible uLft (thing (head cs))  -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
-                                                                       , compatible uRt  (thing (last cs))
+                                                                       , compatible uLft (TypExpr decl False)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
+                                                                       , compatible uRt (TypExpr (p_flp decl) True)
                                                                        ]
                                                         carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
                                                         carefully tt = (fst nothing,fst tt.++.snd tt)
@@ -702,6 +717,12 @@ instance Expr Term where
                                                         (cm,interCod) = mGeneric (cod a) (cod b)  x
                                                         (d2,interDom2) = mSpecific interDom uLft  x
                                                         (c2,interCod2) = mSpecific interCod uRt   x
+ uType dcls x uLft uRt   (PDif _ a b)           = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
+                                                   .+. dm .+. cm
+                                                   .+. uType dcls a uLft uRt a
+                                                   .+. uType dcls b interDom interCod b
+                                                  where (dm,interDom) = mSpecific uLft (dom a) x
+                                                        (cm,interCod) = mSpecific uRt  (cod a) x
  uType dcls x uLft uRt   (PCps _ a b)           = dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
                                                   bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
                                                   .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
@@ -718,16 +739,10 @@ instance Expr Term where
                                                         pnidTest (PCpl _ (Pid{})) r = r
                                                         pnidTest (Pnid{}) r = r
                                                         pnidTest _ _ = nothing
- uType dcls x uLft uRt   (PDif _ a b)           = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
-                                                   .+. dm .+. cm
-                                                   .+. uType dcls a uLft uRt a
-                                                   .+. uType dcls b interDom interCod b
-                                                  where (dm,interDom) = (mSpecific uLft (dom a) x)
-                                                        (cm,interCod) = (mSpecific uRt  (cod a) x)
  uType dcls x uLft uRt   (PKl0 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PKl1 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PFlp _ e)             = cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
- uType dcls x uLft uRt   (PBrk _ e)             = dom x.=.dom e .+. cod x.=.cod e .+.
+ uType dcls x uLft uRt   (PBrk _ e)             = -- dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                                                     -- (e) brackets
  uType dcls x uLft uRt   (PCpl _ (PCpl _ e))    = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                                                     -- -(-e) double complement
@@ -758,7 +773,6 @@ instance Expr Term where
  uType dcls x uLft uRt   (PCpl o a)             = dom x.=.dom e .+. cod x.=.cod e .+.  
                                                   uType dcls x uLft uRt e                 --  -a = V - a
                                                   where e = PDif o (PVee (origin x)) a
-
 
 --  The following is for drawing graphs.
 
@@ -1204,45 +1218,46 @@ pCtx2aCtx p_context
     pODef2aODef :: [String]              -- a list of roles that may use this object
                 -> Type                  -- the universe for type checking this object. anything if the type checker decides freely, thing c if it must be of type c.
                 -> P_ObjectDef           -- the object definition as specified in the parse tree
-                -> Guarded ObjectDef -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
+                -> Guarded ObjectDef     -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
     pODef2aODef parentIfcRoles universe podef 
-     = do { (expr, _, tTrg) <- pExpr2aExpr (obj_ctx podef)
-          ; let (msub,msubcxes) = p2a_MaybeSubInterface parentIfcRoles tTrg (obj_msub podef)
-                -- Step 1: A name check ensures that all attributes have unique names
-          ; let nmchk = [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl)
-                        |cl<-eqCl name (getSubPObjs podef),length cl>1]
-                 where getSubPObjs P_Obj { obj_msub = Just (P_Box objs) } = objs
-                       getSubPObjs _                                      = []
-          ; case nmchk++msubcxes of
-             [] -> return ( Obj { objnm   = obj_nm podef   
-                                , objpos  = obj_pos podef  
-                                , objctx  = expr           
-                                , objmsub = msub           
-                                , objstrs = obj_strs podef 
-                                } )                        
-             typeErrs -> Errors typeErrs
+     = do { let oTerm = obj_ctx podef
+          ; _ <- case (srcTypes.normalType) (TypGlb universe (dom oTerm) oTerm) of
+                    [s] -> return s
+                    _   -> Errors [CxeObjMismatch oTerm (srcTypes universe) (srcTypes (dom oTerm))]
+          ; msub <- p2a_MaybeSubInterface parentIfcRoles oTerm (obj_msub podef)
+          ; (expr, _, _) <- pExpr2aExpr oTerm
+                -- A name check ensures that all attributes have unique names
+          ; _ <- case [ cl | Just (P_Box objs)<-[obj_msub podef], cl<-eqCl name objs, length cl>1] of
+                   []  -> return []
+                   cls -> Errors [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl) | cl<-cls ]
+          ; return ( Obj { objnm   = obj_nm podef   
+                         , objpos  = obj_pos podef  
+                         , objctx  = expr           
+                         , objmsub = msub           
+                         , objstrs = obj_strs podef 
+                         } )                        
           }
-    p2a_MaybeSubInterface :: [String] -> P_Concept -> Maybe P_SubInterface -> (Maybe SubInterface, [CtxError])
-    p2a_MaybeSubInterface _              _    Nothing               = (Nothing, [])
-    p2a_MaybeSubInterface parentIfcRoles conc (Just (P_Box p_objs)) =
-      case (parallelList . map (pODef2aODef parentIfcRoles (thing conc))) p_objs of
-        Checked objects -> (Just (Box objects), [])
-        Errors  errs    -> (fatal 1254 "Do not refer to undefined objects", errs)
-    p2a_MaybeSubInterface parentIfcRoles conc (Just (P_InterfaceRef pos nm)) =
-      (Just (InterfaceRef nm), errs)
-     where errs = case [ifc | ifc <- interfaces contxt, name ifc == nm ] of
-                   []                                     -> [newcxe $ "Undeclared interface \""++nm++"\" at " ++show pos ++ "."]
-                   (_:_:_)                                -> fatal 350 $ "Multiple interfaces for ref "++nm
-                   [Ifc { ifcObj = Obj {objctx= ifcExp}, ifcRoles = thisIfcRoles }] ->
-                     if source ifcExp DatabaseDesign.Ampersand.Core.Poset.< pCpt2aCpt conc
-                     then [newcxe $ "Incompatible interface "++show nm++" at "++show pos++":"++
-                                    "\nInterface source concept "++name (source ifcExp)++" is not equal to or a supertype of "++name conc]
-                     else let unsupportedRoles = if null thisIfcRoles
-                                                 then [] -- no roles specified means all roles are supported
-                                                 else parentIfcRoles \\ thisIfcRoles
-                          in  newcxeif (not $ null unsupportedRoles) $
-                             "Interface "++show nm++", referenced at "++show pos++", does not support all roles of the containing interface. "++
-                             "Unsupported roles: "++ intercalate ", " unsupportedRoles ++"."
+    p2a_MaybeSubInterface :: [String] -> Term -> Maybe P_SubInterface -> Guarded (Maybe SubInterface)
+    p2a_MaybeSubInterface _              _    Nothing               = return Nothing
+    p2a_MaybeSubInterface parentIfcRoles env (Just (P_Box p_objs))
+     = do { objects <- parallelList [pODef2aODef parentIfcRoles (cod env) p_obj | p_obj<-p_objs]
+          ; return (Just (Box objects))
+          }
+    p2a_MaybeSubInterface parentIfcRoles env (Just (P_InterfaceRef pos nm))
+     = do { p_ifc <- case [p_ifc | p_ifc <- ctx_ifcs p_context, name p_ifc == nm ] of
+                       [p_ifc] -> return p_ifc
+                       ifs     -> Errors [CxeNoIfcs nm pos ifs]
+          ; let oTerm  = obj_ctx (ifc_Obj p_ifc)
+          ; _ <- case (srcTypes.normalType) (TypGlb (cod env) (dom oTerm) oTerm) of
+                    [s] -> return s
+                    _   -> Errors [CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))]
+          ; thisIfcRoles <- case ifc_Roles p_ifc of
+                             [] -> Errors [CxeNoRoles p_ifc]
+                             rs -> return rs
+          ; case parentIfcRoles \\ thisIfcRoles of
+              [] -> return (Just (InterfaceRef nm))
+              rs -> Errors [CxeUnsupRoles p_ifc rs]
+          }
       
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp pexpl
@@ -1426,127 +1441,136 @@ pCtx2aCtx p_context
        --  Errors errs -> Errors errs
        where
          f :: Term -> Guarded Expression
-         f t@(PI _)                     = do { c<-returnIConcepts t
-                                             ; return (ERel (I (pCpt2aCpt c)))
-                                             }
-         f   (Pid c)                    = return (ERel (I (pCpt2aCpt c)))
-         f   (Pnid c)                   = return (ECpl (ERel (I (pCpt2aCpt c))))
-         f t@(Patm _ atom [])           = do { c<-returnIConcepts t
-                                             ; return (ERel (Mp1 atom (pCpt2aCpt c)))
-                                             }
-         f   (Patm _ atom [c])          = return (ERel (Mp1 atom (pCpt2aCpt c)))
-         f t@Pnull                      = fatal 988 ("pExpr2aExpr cannot transform "++show t++" to a term.")
-         f t@(PVee _)                   = ERel <$> (V <$> getSignFromTerm t)
-         f (Pfull s t)                  = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
-         f t@(Prel o a)                 = do { (decl,sgn) <- getDeclarationAndSign t
-                                             ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
-                                             }
-         f (Pflp o a)                   = do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
-                                             ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
-                                             }
-         f t@(Pequ _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; let srcAs = srcTypes (TypExpr        a  False)
-                                                   trgAs = srcTypes (TypExpr (p_flp a) True )
-                                                   srcBs = srcTypes (TypExpr        b  False)
-                                                   trgBs = srcTypes (TypExpr (p_flp b) True )
-                                                   srcTyps = srcAs `uni` srcBs
-                                                   trgTyps = trgAs `uni` trgBs
-                                             ; case (srcTyps, trgTyps) of
-                                                    ([_], [_]) -> return (EEqu (a', b'))
-                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
-                                                                                     ,cxeLhs     = a
-                                                                                     ,cxeRhs     = b
-                                                                                     ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
-                                                                                     ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
-                                                                                     }]
-                                             }
-         f t@(Pimp _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; let srcAs = srcTypes (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
-                                                   trgAs = srcTypes (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
-                                                   srcBs = srcTypes (TypExpr        b  False)
-                                                   trgBs = srcTypes (TypExpr (p_flp b) True )
-                                             ; case (srcAs, trgBs) of
-                                                    ([_], [_]) -> return (EImp (a', b'))
-                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
-                                                                                     ,cxeLhs     = a
-                                                                                     ,cxeRhs     = b
-                                                                                     ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
-                                                                                     ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
-                                                                                     }]
-                                             }
-         f t@(PIsc _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; let srcs = srcTypes (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
-                                                   trgs = srcTypes (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
-                                             ; case (srcs, trgs) of
-                                                    ([_], [_]) -> return (EIsc (case a' of {EIsc ts -> ts; t'-> [t']} ++ case b' of {EIsc ts -> ts; t'-> [t']}))
-                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
-                                                                                     ,cxeLhs     = a
-                                                                                     ,cxeRhs     = b
-                                                                                     ,cxeSrcCpts = srcs
-                                                                                     ,cxeTrgCpts = trgs
-                                                                                     }]
-                                             }
-         f t@(PUni _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; let srcs = srcTypes (TypLub (TypExpr        a  False) (TypExpr        b  False) t)
-                                                   trgs = srcTypes (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
-                                             ; case (srcs, trgs) of
-                                                    ([_], [_]) -> return (EUni (case a' of {EUni ts -> ts; t'-> [t']} ++ case b' of {EUni ts -> ts; t'-> [t']}))
-                                                    _          -> Errors [CxeEquLike {cxeExpr    = t
-                                                                                     ,cxeLhs     = a
-                                                                                     ,cxeRhs     = b
-                                                                                     ,cxeSrcCpts = srcs
-                                                                                     ,cxeTrgCpts = trgs
-                                                                                     }]
-                                             }
-         f   (PDif _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; return (EDif (a', b'))
-                                             }
-         f t@(PLrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a/b = a!-b~ = -(-a;b~)
-                                             ; case srcTypes (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) t) of
-                                                [_] -> return (ELrs (a', b'))
-                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
-                                                                           ,cxeCpts   = cs
-                                                                           }
-                                                              ]
-                                             }
-         f t@(PRrs _ a b)               = do { (a',b') <- (,) <$> f a <*> f b    -- a\b = -a~!b = -(a~;-b)
-                                             ; case srcTypes (TypGlb (TypExpr a False) (TypExpr (complement b) False) t) of
-                                                [_] -> return (ERrs (a', b'))
-                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
-                                                                           ,cxeCpts   = cs
-                                                                           }
-                                                              ]
-                                             }
-         f t@(PCps _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; case srcTypes (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) t) of
-                                                [_] -> return (ECps (case a' of {ECps ts -> ts; t'-> [t']} ++ case b' of {ECps ts -> ts; t'-> [t']}))
-                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
-                                                                           ,cxeCpts   = cs
-                                                                           }
-                                                              ]
-                                             }
-         f t@(PRad _ a b)               = do { (a',b') <- (,) <$> f a <*> f b
-                                             ; case srcTypes (TypLub (TypExpr (p_flp a) True) (TypExpr b False) t) of
-                                                [_] -> return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
-                                                cs  -> Errors [ CxeCpsLike {cxeExpr   = t
-                                                                           ,cxeCpts   = cs
-                                                                           }
-                                                              ]
-                                             }
-         f (PPrd _ a b)                 = do { (fa, fb) <- (,) <$> f a <*> f b
-                                             ; return (EPrd [fa,fb]) }
-         f (PKl0 _ a)                   = do { a' <- f a
-                                             ; return (EKl0 a') }
-         f (PKl1 _ a)                   = EKl1 <$> f a
-         f (PFlp _ a)                   = EFlp <$> f a
-         f (PCpl _ a)                   = ECpl <$> f a
-         f (PBrk _ a)      = EBrk <$> f a
+         f t@(PI _)            = do { c<-returnIConcepts t
+                                    ; return (ERel (I (pCpt2aCpt c)))
+                                    }
+         f   (Pid c)           = return (ERel (I (pCpt2aCpt c)))
+         f   (Pnid c)          = return (ECpl (ERel (I (pCpt2aCpt c))))
+         f t@(Patm _ atom [])  = do { c<-returnIConcepts t
+                                    ; return (ERel (Mp1 atom (pCpt2aCpt c)))
+                                    }
+         f   (Patm _ atom [c]) = return (ERel (Mp1 atom (pCpt2aCpt c)))
+         f t@(Patm _ _     _ ) = fatal 1459 ("multiple concepts in "++show t++".")
+         f t@Pnull             = fatal 988 ("pExpr2aExpr cannot transform "++show t++" to a term.")
+         f t@(PVee _)          = ERel <$> (V <$> getSignFromTerm t)
+         f (Pfull s t)         = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
+         f t@(Prel o a)        = do { (decl,sgn) <- getDeclarationAndSign t
+                                    ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
+                                    }
+         f (Pflp o a)          = do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
+                                    ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
+                                    }
+         f t@(Pequ _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; let srcAs = srcTypes (TypExpr        a  False)
+                                          trgAs = srcTypes (TypExpr (p_flp a) True )
+                                          srcBs = srcTypes (TypExpr        b  False)
+                                          trgBs = srcTypes (TypExpr (p_flp b) True )
+                                          srcTyps = srcAs `uni` srcBs
+                                          trgTyps = trgAs `uni` trgBs
+                                    ; case (srcTyps, trgTyps) of
+                                           ([_], [_]) -> return (EEqu (a', b'))
+                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                            ,cxeLhs     = a
+                                                                            ,cxeRhs     = b
+                                                                            ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                            ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                            }]
+                                    }
+         f t@(Pimp _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; let srcAs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
+                                          trgAs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                          srcBs = srcTypes (TypExpr        b  False)
+                                          trgBs = srcTypes (TypExpr (p_flp b) True )
+                                    ; case (srcAs, trgBs) of
+                                           ([_], [_]) -> return (EImp (a', b'))
+                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                            ,cxeLhs     = a
+                                                                            ,cxeRhs     = b
+                                                                            ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                            ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                            }]
+                                    }
+         f t@(PIsc _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
+                                          trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                    ; case (srcs, trgs) of
+                                           ([_], [_]) -> return (EIsc (case a' of {EIsc ts -> ts; t'-> [t']} ++ case b' of {EIsc ts -> ts; t'-> [t']}))
+                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                            ,cxeLhs     = a
+                                                                            ,cxeRhs     = b
+                                                                            ,cxeSrcCpts = srcs
+                                                                            ,cxeTrgCpts = trgs
+                                                                            }]
+                                    }
+         f t@(PUni _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; let srcs = (srcTypes.normalType) (TypLub (TypExpr        a  False) (TypExpr        b  False) t)
+                                          trgs = (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+                                    ; case (srcs, trgs) of
+                                           ([_], [_]) -> return (EUni (case a' of {EUni ts -> ts; t'-> [t']} ++ case b' of {EUni ts -> ts; t'-> [t']}))
+                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                                                            ,cxeLhs     = a
+                                                                            ,cxeRhs     = b
+                                                                            ,cxeSrcCpts = srcs
+                                                                            ,cxeTrgCpts = trgs
+                                                                            }]
+                                    }
+         f   (PDif _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; return (EDif (a', b'))
+                                    }
+         f t@(PLrs _ a b)      = do { (a',b') <- (,) <$> f a <*> f b    -- a/b = a!-b~ = -(-a;b~)
+                                    ; case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) t) of
+                                       [_] -> return (ELrs (a', b'))
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                  ,cxeCpts   = cs
+                                                                  }
+                                                     ]
+                                    }
+         f t@(PRrs _ a b)      = do { (a',b') <- (,) <$> f a <*> f b    -- a\b = -a~!b = -(a~;-b)
+                                    ; case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) t) of
+                                       [_] -> return (ERrs (a', b'))
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                  ,cxeCpts   = cs
+                                                                  }
+                                                     ]
+                                    }
+         f t@(PCps _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) t) of
+                                       [_] -> return (ECps (case a' of {ECps ts -> ts; t'-> [t']} ++ case b' of {ECps ts -> ts; t'-> [t']}))
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                  ,cxeCpts   = cs
+                                                                  }
+                                                     ]
+                                    }
+         f t@(PRad _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) t) of
+                                       [_] -> return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+                                                                  ,cxeCpts   = cs
+                                                                  }
+                                                     ]
+                                    }
+         f (PPrd _ a b)        = do { (fa, fb) <- (,) <$> f a <*> f b
+                                    ; return (EPrd [fa,fb]) }
+         f (PKl0 _ a)          = do { a' <- f a
+                                    ; return (EKl0 a')
+                                    }
+         f (PKl1 _ a)          = EKl1 <$> f a
+         f (PFlp _ a)          = EFlp <$> f a
+         f (PCpl _ a)          = ECpl <$> f a
+         f (PBrk _ a)          = EBrk <$> f a
          f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
          f   (PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
                                                 ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
                                                 }
-         f (PTyp _ a (P_Sign cs))  = ETyp <$> f a <*> return (Sign (pCpt2aCpt (head cs)) (pCpt2aCpt (last cs)))
-         f t = fatal 1542 ("Pattern match on f in pExpr2aExpr failed for "++show t)
+         f t@(PTyp _ a (P_Sign _))
+                               = do { a' <- f a
+                                    ; case (srcTypes (TypExpr t False), srcTypes (TypExpr (p_flp t) True )) of
+                                        ([src],[trg]) -> return (ETyp a' (Sign (pCpt2aCpt src) (pCpt2aCpt trg)))
+                                        (srcs , trgs) -> Errors [CxeCast {cxeExpr    = t
+                                                                         ,cxeDomCast = srcs
+                                                                         ,cxeCodCast = trgs
+                                                                         }]
+                                    }
          returnIConcepts term
           = case getConceptsFromTerm term of
              [c] -> return c
