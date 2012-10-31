@@ -42,15 +42,20 @@ data Type =  TypExpr Term Bool       -- term is deriving Ord
            | TypLub  Type Type Term  -- a term is smaller if it represents a smaller set
            | TypGlb  Type Type Term  -- a term is larger if it represents a larger set
            | Anything
+           | Nothng
             -- note: do not put "deriving Ord", because Eq is specified (and not derived)
 
 -- | We create a normal form for lubs and glbs, in order to get comparable type expressions.
 normalType :: Type -> Type
 normalType (TypGlb Anything v _) = normalType v
 normalType (TypGlb v Anything _) = normalType v
+normalType (TypGlb Nothng _ _)   = Nothng
+normalType (TypGlb _ Nothng _)   = Nothng
 normalType t@(TypGlb u v e) = if u<=v then t else TypGlb v u e
 normalType (TypLub Anything _ _) = Anything
 normalType (TypLub _ Anything _) = Anything
+normalType (TypLub Nothng v _)   = normalType v
+normalType (TypLub v Nothng _)   = normalType v
 normalType t@(TypLub u v e) = if u<=v then t else TypLub v u e
 normalType t = t
 
@@ -65,6 +70,7 @@ showType (TypExpr term _)             = showADL term     ++"("++ shOrig (origin 
 showType (TypLub a b _)               = showType a++" .\\/. "++showType b  -- The Lub is the smallest set in which both a and b are contained.
 showType (TypGlb a b _)               = showType a++" ./\\. "++showType b  -- The Glb is the largest set that a and b have in common
 showType Anything                     = "Anything"
+showType Nothng                       = "Nothing"
 
 
 -- | Equality of Type is needed for the purpose of making graphs of types.
@@ -76,6 +82,9 @@ instance Prelude.Ord Type where
   compare Anything                   Anything                     = Prelude.EQ
   compare Anything                   _                            = Prelude.LT  -- Anything  < everything
   compare _                          Anything                     = Prelude.GT  -- everyting > Anything
+  compare Nothng                     Nothng                       = Prelude.EQ
+  compare Nothng                     _                            = Prelude.LT
+  compare _                          Nothng                       = Prelude.GT
   compare (TypExpr (Pid c)        _) (TypExpr (Pid c')         _) = Prelude.compare c c'
   compare (TypExpr (Pid _)        _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Pid _)          _) = Prelude.GT
@@ -122,9 +131,16 @@ p_flp (PFlp _ a)   = a
 p_flp a            = PFlp (origin a) a
 
 complement :: Term -> Term
-complement (PCpl _ a)     = a
-complement (Pnid c)       = Pid c
-complement a              = PCpl (origin a) a
+complement (PCpl _ a) = a
+complement (Pnid c)   = Pid c
+complement a          = PCpl (origin a) a
+
+cmpl :: Type -> Type
+cmpl (TypExpr e b)  = TypExpr (complement e) b
+cmpl (TypLub a b e) = TypGlb (cmpl a) (cmpl b) (complement e)
+cmpl (TypGlb a b e) = TypLub (cmpl a) (cmpl b) (complement e)
+cmpl Anything       = Nothng
+cmpl Nothng         = Anything
 
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False
@@ -260,6 +276,7 @@ infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset o
 infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
 (.<.) :: Type -> Type -> (Typemap , Typemap)
 _ .<. Anything = nothing
+Nothng .<. _   = nothing
 a .<. _ | isNull a = nothing
 a .<. b  = (Data.Map.fromList [(a, [b]),(b, [])],snd nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
 (.=.) :: Type -> Type -> (Typemap, Typemap)
@@ -316,9 +333,9 @@ typing p_context
      (firstSetOfEdges,secondSetOfEdges)
       = uType (p_declarations p_context, compat) p_context Anything Anything p_context
      compat :: Type -> Type -> Bool
-     compat a b = null set1 -- approve compatibility for isolated types, such as "Nothing", "Anything" and singleton elements
+     compat a b = null set1 -- approve compatibility for isolated types, such as "Nothng", "Anything" and singleton elements
                       || null set2
-                      || (not.null) (isc set1 set2)
+                      || (not.null) (set1 `isc` set2)
       where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
        included = addIdentity (setClosure (reverseMap firstSetOfEdges) "firstSetOfEdges~")
        set1 = findIn a included
@@ -366,7 +383,7 @@ typing p_context
      isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-lkp s ]  -- there are too many tuples in isas. Because isas=isas*, it may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
             where lkp c = case Data.Map.lookup c isaClos of
                            Just cs -> cs
-                           _ -> fatal 487 ("P_Concept "++show c++" was not found in isaClos")
+                           _ -> fatal 379 ("P_Concept "++show c++" was not found in isaClos")
      stConcepts :: Data.Map.Map Type [P_Concept]
      stConcepts = Data.Map.map f stClos
                   where f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
@@ -374,25 +391,25 @@ typing p_context
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
                                      lkp c = case Data.Map.lookup c isaClosReversed of
                                               Just cs' -> cs'
-                                              _ -> fatal 495 ("P_Concept "++show c++" was not found in isaClosReversed")
+                                              _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Data.Map.lookup typ stConcepts of
                      Just cs -> cs
-                     _ -> fatal 499 ("Type "++show typ++" was not found in stConcepts")
+                     _ -> fatal 391 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Data.Map.toAscList stConcepts ])
      compatible a b = (not.null) (lkp a `isc` lkp b)
       where lkp c = case Data.Map.lookup c isaClosReversed of
                      Just cs -> cs
-                     _ -> fatal 503 ("P_Concept "++show c++" was not found in isaClosReversed")
+                     _ -> fatal 395 ("P_Concept "++show c++" was not found in isaClosReversed")
      tGlb :: Type -> Type -> [P_Concept]
      tGlb a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
       where lkp c = case Data.Map.lookup c stClosReversed of
                      Just cs -> cs
-                     _ -> fatal 508 ("P_Concept "++show c++" was not found in stClosReversed")
+                     _ -> fatal 400 ("P_Concept "++show c++" was not found in stClosReversed")
      greatest :: [Type] -> [Type]
      greatest ts = foldr isc ts [ lkp t | t<-ts]
       where lkp t = case Data.Map.lookup t stClos of
                      Just cs -> cs
-                     _ -> fatal 503 ("P_Concept "++show t++" was not found in isaClosReversed")
+                     _ -> fatal 405 ("P_Concept "++show t++" was not found in isaClosReversed")
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
@@ -481,6 +498,10 @@ class Expr a where
 --  p_concs :: a -> [P_Concept]
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
+  p_rules :: a -> [P_Rule]
+  p_rules _ = []
+  p_keys :: a -> [P_KeyDef]
+  p_keys _ = []
   terms :: a -> [Term]
   subterms :: a -> [Term]
   subterms x = subterms (terms x)
@@ -504,6 +525,14 @@ instance Expr P_Context where
   = concat [ p_declarations pat | pat<-ctx_pats  pContext] ++
     concat [ p_declarations prc | prc<-ctx_PPrcs pContext] ++
     ctx_ds pContext
+ p_rules pContext
+  = concat [ p_rules pat | pat<-ctx_pats  pContext] ++
+    concat [ p_rules prc | prc<-ctx_PPrcs pContext] ++
+    ctx_rs pContext
+ p_keys pContext
+  = concat [ p_keys pat | pat<-ctx_pats  pContext] ++
+    concat [ p_keys prc | prc<-ctx_PPrcs pContext] ++
+    ctx_ks pContext
  terms pContext
   = nub (terms (ctx_pats  pContext) ++
          terms (ctx_PPrcs pContext) ++
@@ -533,6 +562,10 @@ instance Expr P_Pattern where
   = pt_gns pPattern
  p_declarations pPattern
   = pt_dcs pPattern
+ p_rules pPattern
+  = pt_rls pPattern
+ p_keys pPattern
+  = pt_kds pPattern
  terms pPattern
   = nub (terms (pt_rls pPattern) ++
          terms (pt_gns pPattern) ++
@@ -552,6 +585,10 @@ instance Expr P_Process where
   = procGens pProcess
  p_declarations pProcess
   = procDcls pProcess
+ p_rules pProcess
+  = procRules pProcess
+ p_keys pProcess
+  = procKds pProcess
  terms pProcess
   = nub (terms (procRules pProcess) ++
          terms (procGens  pProcess) ++
@@ -568,7 +605,7 @@ instance Expr P_Process where
 
 instance Expr P_Rule where
  terms r = terms (rr_exp r)++terms (rr_viol r)
-
+ p_rules r = [r]
  uType dcls _ uLft uRt r
   = let x=rr_exp r; v=rr_viol r in
     uType dcls x uLft uRt x .+. uType dcls v (dom x) (cod x) v
@@ -588,6 +625,7 @@ instance Expr P_PairViewSegment where
   
 instance Expr P_KeyDef where
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
+ p_keys k = [k]
  uType dcls _ uLft uRt k
   = let x=Pid (kd_cpt k) in
     uType dcls x uLft uRt x .+.
@@ -628,8 +666,12 @@ instance Expr P_Gen where
 
 instance Expr P_Declaration where
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
- uType dcls _ uLft uRt d
-  = let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType dcls x uLft uRt x
+ uType _ _ _ _ d
+  = dom decl.<.thing src .+. cod decl.<.thing trg
+    where [decl] = terms d
+          P_Sign sgn = dec_sign d
+          src = head sgn; trg = last sgn
+   -- let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType dcls x uLft uRt x
 
 instance Expr P_Population where
  terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
@@ -675,32 +717,6 @@ instance Expr Term where
  uType _    _ _    _      Pnull                 = nothing                                                              -- -V     (the empty set)
  uType _    x uLft uRt   (PVee _)               = dom x.<.uLft .+. cod x.<.uRt
  uType _    x _    _     (Pfull s t)            = dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
- uType dcls x uLft uRt   (Prel _ nm)            = -- WHY is:
-                                                  -- dom x.<.uLft .+. cod x.<.uRt 
-                                                  -- correct for PVee but not for Prel?
-                                                  -- Explanation:
-                                                  -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
-                                                  -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                                                  if length decls == 1 then dom x.=.dom (head decls) .+. cod x.=.cod (head decls) else
-                                                  carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                                              if length spcls == 1
-                                                              then dom x.=.dom (head spcls) .+. cod x.=.cod (head spcls)
-                                                              else nothing
-                                                            )
-                                                  where (declarationTable, compatible) = dcls
-                                                        decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
-                                                        decls  = if length decls' == 1 then decls' else
-                                                                 [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
-                                                                       , uLft == thing (head cs)
-                                                                       , uRt  == thing (last cs) ] 
-                                                        spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
-                                                                       , compatible uLft (TypExpr decl False)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
-                                                                       , compatible uRt (TypExpr (p_flp decl) True)
-                                                                       ]
-                                                        carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
-                                                        carefully tt = (fst nothing,fst tt.++.snd tt)
- uType dcls x uLft uRt   (Pflp o nm)            = dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
-                                                  where e = Prel o nm
  uType dcls x _    _     (Pequ _ a b)           = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                                                    .+. uType dcls a (dom x) (cod x) a .+. uType dcls b (dom x) (cod x) b 
  uType dcls x uLft uRt   (PIsc _ a b)           = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
@@ -731,6 +747,7 @@ instance Expr Term where
                                                         pidTest (Pid{}) r = r
                                                         pidTest _ _ = nothing
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc, mGeneric and mSpecific are not derived, neither can PRad
+{-
  uType dcls x uLft uRt   (PRad _ a b)           = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
                                                   bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
                                                   .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
@@ -739,40 +756,79 @@ instance Expr Term where
                                                         pnidTest (PCpl _ (Pid{})) r = r
                                                         pnidTest (Pnid{}) r = r
                                                         pnidTest _ _ = nothing
+-}
+ uType dcls x uLft uRt   (PPrd _ a b)           = dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
+                                                  .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
+ uType dcls x uLft uRt   (PCpl _ a)             = dom x.<.c .+. cod x.<.c' .+.
+                                                  dom a.<.c .+. cod a.<.c' .+.
+                                                  uType dcls a uLft uRt a
+                                                  where c = normalType (TypLub (dom a) (dom t) x)
+                                                        c'= normalType (TypLub (cod a) (cod t) x)
+                                                        t = complement a
  uType dcls x uLft uRt   (PKl0 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PKl1 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PFlp _ e)             = cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
- uType dcls x uLft uRt   (PBrk _ e)             = -- dom x.=.dom e .+. cod x.=.cod e .+.
+ uType dcls x uLft uRt   (PBrk _ e)             = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                                                     -- (e) brackets
- uType dcls x uLft uRt   (PCpl _ (PCpl _ e))    = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                                                     -- -(-e) double complement
  uType _    _  _    _    (PTyp _ _ (P_Sign [])) = fatal 196 "P_Sign is empty"
  uType _    _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
- uType dcls x  _    _    (PTyp o e (P_Sign cs)) = dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
-                                                  if o `elem` [origin d| d<-declarationTable]       -- if this is a declaration
-                                                  then nothing                          -- then nothing
-                                                  else dom x.<.dom e .+. cod x.<.cod e  -- else treat as type restriction
-                                                       .+. dom x.<.iSrc .+. cod x.<.iTrg
-                                                       -- NOT TRUE (see WHY at Prel) .+. iSrc.<.uLft .+. iTrg.<.uRt
-                                                       .+. uType dcls e iSrc iTrg e
+ uType dcls x  _    _    (PTyp o e@(Prel _ nm) sgn@(P_Sign cs))
+                                                = dom x.<.iSrc  .+. cod x.<.iTrg  .+.
+                                                  dom x.<.dom e .+. cod x.<.cod e .+.
+                                                  case decls of
+                                                       [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                                                       _   -> nothing
                                                   where (declarationTable, _) = dcls
                                                         iSrc = thing (head cs)
                                                         iTrg = thing (last cs)
- uType dcls x uLft uRt   (PPrd _ a b)           = dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
-                                                  .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
+                                                        y=complement x
+                                                        decls = [term | decl<-declarationTable, name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
+ uType dcls x  _    _    (PTyp _ e (P_Sign cs)) = dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
+                                                  dom x.<.dom e .+. cod x.<.cod e .+.
+                                                  uType dcls e iSrc iTrg e
+                                                  where (declarationTable, _) = dcls
+                                                        iSrc = thing (head cs)
+                                                        iTrg = thing (last cs)
+ uType dcls x uLft uRt   (Prel _ nm)            = -- WHY is:
+                                                  -- dom x.<.uLft .+. cod x.<.uRt 
+                                                  -- correct for PVee but not for Prel?
+                                                  -- Explanation:
+                                                  -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
+                                                  -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
+                                                  case (decls, decls) of
+                                                       ([d], _) -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                                                       (_, [c]) -> carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+                                                                               dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
+                                                                             )
+                                                       _        -> nothing
+                                                  where (declarationTable, compatible) = dcls
+                                                        y=complement x
+                                                        decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
+                                                        decls  = if length decls' == 1 then decls' else
+                                                                 [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
+                                                                       , uLft == thing (head cs)
+                                                                       , uRt  == thing (last cs) ] 
+                                                        spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
+                                                                       , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
+                                                                       , compatible uRt  (cod decl)
+                                                                       ]
+                                                        carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
+                                                        carefully tt = (fst nothing,fst tt.++.snd tt)
+ uType dcls x uLft uRt   (Pflp o nm)            = dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
+                                                  where e = Prel o nm
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
+ uType dcls x uLft uRt   (PRad o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.     -- a!b      relative addition, dagger
+                                                  uType dcls x uLft uRt e                 --  a|-b   implication (aka: subset)
+                                                  where e = complement (PCps o (complement a) (complement b))
  uType dcls x uLft uRt   (Pimp o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                 --  a|-b   implication (aka: subset)
                                                   where e = Pequ o a (PIsc o a b)
  uType dcls x uLft uRt   (PLrs o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
-                                                  where e = PCpl o (PCps o (complement a) (p_flp b))
+                                                  where e = complement (PCps o (complement a) (p_flp b))
  uType dcls x uLft uRt   (PRrs o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
-                                                  where e = PCpl o (PCps o (p_flp a) (complement b))
- uType dcls x uLft uRt   (PCpl o a)             = dom x.=.dom e .+. cod x.=.cod e .+.  
-                                                  uType dcls x uLft uRt e                 --  -a = V - a
-                                                  where e = PDif o (PVee (origin x)) a
+                                                  where e = complement (PCps o (p_flp a) (complement b))
 
 --  The following is for drawing graphs.
 
@@ -927,7 +983,7 @@ pCtx2aCtx p_context
                             Errors  errs  -> (fatal 938 "Do not refer to undefined patterns", errs)
     (procs,   proccxes)  = case (parallelList . map (pProc2aProc allpops)     . ctx_PPrcs) p_context of
                             Checked prcs -> (prcs, [])
-                            Errors errs  -> (fatal 938 $ "Do not refer to undefined processes" ++ show errs, errs)
+                            Errors errs  -> (fatal 938 ("Do not refer to undefined processes" ++ show errs), errs)
     (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")   . ctx_rs   ) p_context of
                             Checked ruls -> (ruls, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined rules", errs)
@@ -1269,40 +1325,40 @@ pCtx2aCtx p_context
                              , explUserdefd = True
                             -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
                              })
-        _  -> Errors [CxeOrig xplcxe "explanation" "" (origin pexpl) | (not.null) xplcxe]
-       where (explobs,xplcxe) = pExOb2aExOb (pexObj   pexpl)
+        _  -> Errors [CxeOrig xplcxe "explanation" "" (origin pexpl) ]
+       where (explobs,xplcxe) = pExOb2aExOb (pexObj pexpl)
     
     pExOb2aExOb :: PRef2Obj -> (ExplObj, [CtxError])
-    pExOb2aExOb (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)("No concept definition for '"++str++"'"))
-                                          where cds = [cd | cd<-ctx_cs p_context, cdcpt cd==str ]
+    pExOb2aExOb (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)(" No concept definition for '"++str++"'"))
+                                          where cds = [cd | cd<-acds, cdcpt cd==str ]
     pExOb2aExOb (PRef2Declaration x@(PTyp o (Prel _ nm) sgn))
-                                        = case [pDecl2aDecl [] d | d<-ctx_ds p_context, name d==nm, dec_sign d== sgn ] of
+                                        = case [pDecl2aDecl [] d | d<-p_declarations p_context, name d==nm, dec_sign d== sgn ] of
                                             Checked decl:_ -> (ExplDeclaration decl, [])
                                             Errors ers:_   -> (undef, ers)
-                                            []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
-                                          where undef = fatal 1269 "Do not refer to an undefine declaration"
+                                            []             -> (undef, [CxeOrig [newcxe (error (show (length (acds))++"No declaration for '"++showADL x++"'"))] "relation" nm o ])
+                                          where undef = fatal 1269 "Do not refer to an undefined declaration"
 -- TODO : @Stef: Should it be possible to have Prel constructors for terms over here??? (currently it happens...)
     pExOb2aExOb (PRef2Declaration x@(Prel o nm )) 
-                                        = case [d | d<-ctx_ds p_context, name d==nm ] of
+                                        = case [d | d<-p_declarations p_context, name d==nm ] of
                                             []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
                                             [pd]  -> case pDecl2aDecl [] pd of
                                                        Checked decl -> (ExplDeclaration decl, [])
                                                        Errors ers   -> (undef, ers)
                                             _     -> (undef, [CxeOrig [newcxe ("Ambigious declaration of '"++showADL x++"'")] "relation" nm o ])
-                                          where undef = fatal 1275 "Do not refer to an undefine declaration"
+                                          where undef = fatal 1275 "Do not refer to an undefined declaration"
                                         
     pExOb2aExOb (PRef2Declaration term) = fatal 1270 $ "Nothing defined for "++show term
           
     pExOb2aExOb (PRef2Rule str        ) = (ExplRule str, newcxeif(null ruls)("No rule named '"++str++"'") )
-                                          where ruls = [rul | rul<-ctx_rs p_context, name rul==str ]
+                                          where ruls = [rul | rul<-p_rules p_context, name rul==str ]
     pExOb2aExOb (PRef2KeyDef str      ) = (ExplKeyDef str, newcxeif(null kds)("No key definition named '"++str++"'") )
-                                          where kds = [kd | kd<-ctx_ks p_context, name kd==str]
+                                          where kds = [kd | kd<-p_keys p_context, name kd==str]
     pExOb2aExOb (PRef2Pattern str     ) = (ExplPattern str,   newcxeif(null[pat |pat<-ctx_pats  p_context, name pat==str]) ("No pattern named '"++str++"'") )
     pExOb2aExOb (PRef2Process str     ) = (ExplProcess str,   newcxeif(null[prc |prc<-ctx_PPrcs p_context, name prc==str]) ("No process named '"++str++"'") )
     pExOb2aExOb (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-ctx_ifcs  p_context, name ifc==str]) ("No interface named '"++str++"'") )
     pExOb2aExOb (PRef2Context str     ) = (ExplContext str,   newcxeif(name p_context/=str) ("No context named '"++str++"'") )  
     pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name p_context/=str) ("No specification named '"++str++"'") )
-    
+
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop pop
      = case pExpr2aExpr expr of
@@ -1610,7 +1666,7 @@ pCtx2aCtx p_context
              Just ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
                                                     ,cxeDecs   = ds          -- the declarations to which this term has been matched
                                                     }]
-             Nothing -> fatal 1601 ("Term "++showADL term++" was not found in bindings.")
+             Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings ])
          getDeclarationAndSign term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of
