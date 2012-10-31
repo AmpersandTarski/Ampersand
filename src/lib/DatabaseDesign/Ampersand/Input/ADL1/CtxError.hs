@@ -122,7 +122,7 @@ showErr err = case err of
           ( [show (origin (cxeExpr err))++":\n"]++
               case cxeSrcs err of
                  []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
-                 cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL (cxeSrcs err))++"\n"]++
+                 cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
                         ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
   CxeTyp{}
@@ -184,8 +184,8 @@ showErr err = case err of
           _          -> fatal 151 "No match for this term!"
   CxeOrig typeErrors t nm o
     | null typeErrors                              -> ""
-    | t `elem` ["pattern", "process", "interface"] -> "The " ++ t ++ " named \""++ nm ++ "\" contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
-    | otherwise                                    -> "in the " ++ t ++ " at "++ shOrig o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
+    | t `elem` ["pattern", "process", "interface"] -> "The " ++ t ++ " named \""++ nm ++ "\" in file "++ filenm o ++ " contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
+    | otherwise                                    -> "in the " ++ t ++ " at "++ shOrig o ++ " in file "++ filenm o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
   Cxe typeErrors x
     -> x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
   PE msg
