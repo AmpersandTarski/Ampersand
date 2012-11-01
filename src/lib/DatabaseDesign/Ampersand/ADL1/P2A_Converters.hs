@@ -803,7 +803,8 @@ instance Expr Term where
                                                                               dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
                                                                              )
                                                               else nothing
-                                                  where (declarationTable, compatible) = dcls
+                                                  where declarationTable = fst dcls
+                                                        compatible = snd dcls
                                                         y=complement x
                                                         decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
                                                         decls  = if length decls' == 1 then decls' else
