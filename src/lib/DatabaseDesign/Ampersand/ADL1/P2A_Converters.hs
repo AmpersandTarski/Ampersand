@@ -1341,14 +1341,14 @@ pCtx2aCtx p_context
                                             []             -> (undef, [CxeOrig [newcxe (error (show (length (acds))++"No declaration for '"++showADL x++"'"))] "relation" nm o ])
                                           where undef = fatal 1269 "Do not refer to an undefined declaration"
 -- TODO : @Stef: Should it be possible to have Prel constructors for terms over here??? (currently it happens...)
-    pExOb2aExOb (PRef2Declaration x@(Prel o nm )) 
-                                        = case [d | d<-p_declarations p_context, name d==nm ] of
-                                            []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
-                                            [pd]  -> case pDecl2aDecl [] pd of
-                                                       Checked decl -> (ExplDeclaration decl, [])
-                                                       Errors ers   -> (undef, ers)
-                                            _     -> (undef, [CxeOrig [newcxe ("Ambigious declaration of '"++showADL x++"'")] "relation" nm o ])
-                                          where undef = fatal 1275 "Do not refer to an undefined declaration"
+--    pExOb2aExOb (PRef2Declaration x@(Prel o nm )) 
+--                                        = case [d | d<-p_declarations p_context, name d==nm ] of
+--                                            []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
+--                                            [pd]  -> case pDecl2aDecl [] pd of
+--                                                       Checked decl -> (ExplDeclaration decl, [])
+--                                                       Errors ers   -> (undef, ers)
+--                                            _     -> (undef, [CxeOrig [newcxe ("Ambigious declaration of '"++showADL x++"'")] "relation" nm o ])
+--                                          where undef = fatal 1275 "Do not refer to an undefined declaration"
                                         
     pExOb2aExOb (PRef2Declaration term) = fatal 1270 $ "Nothing defined for "++show term
           
