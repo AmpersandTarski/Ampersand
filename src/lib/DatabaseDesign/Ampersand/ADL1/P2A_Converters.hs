@@ -765,6 +765,7 @@ instance Expr Term where
                                                   where c = normalType (TypLub (dom a) (dom t) x)
                                                         c'= normalType (TypLub (cod a) (cod t) x)
                                                         t = complement a
+                                                  --    (dm,_) = mGeneric (dom a) (dom t) x
  uType dcls x uLft uRt   (PKl0 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PKl1 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PFlp _ e)             = cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
@@ -772,7 +773,7 @@ instance Expr Term where
                                                   uType dcls x uLft uRt e                                                     -- (e) brackets
  uType _    _  _    _    (PTyp _ _ (P_Sign [])) = fatal 196 "P_Sign is empty"
  uType _    _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
- uType dcls x  _    _    (PTyp o e@(Prel _ nm) sgn@(P_Sign cs))
+ uType dcls x  _    _    (PTyp _ e@(Prel _ nm) sgn@(P_Sign cs))
                                                 = dom x.<.iSrc  .+. cod x.<.iTrg  .+.
                                                   dom x.<.dom e .+. cod x.<.cod e .+.
                                                   case decls of
@@ -786,8 +787,7 @@ instance Expr Term where
  uType dcls x  _    _    (PTyp _ e (P_Sign cs)) = dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
                                                   dom x.<.dom e .+. cod x.<.cod e .+.
                                                   uType dcls e iSrc iTrg e
-                                                  where (declarationTable, _) = dcls
-                                                        iSrc = thing (head cs)
+                                                  where iSrc = thing (head cs)
                                                         iTrg = thing (last cs)
  uType dcls x uLft uRt   (Prel _ nm)            = -- WHY is:
                                                   -- dom x.<.uLft .+. cod x.<.uRt 
@@ -795,12 +795,14 @@ instance Expr Term where
                                                   -- Explanation:
                                                   -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
                                                   -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                                                  case (decls, decls) of
-                                                       ([d], _) -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                       (_, [c]) -> carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                                                               dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
+                                                  case decls of
+                                                       [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                                                       _   -> if False --length spcls==1
+                                                              then let c=head spcls in
+                                                                   carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+                                                                              dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
                                                                              )
-                                                       _        -> nothing
+                                                              else nothing
                                                   where (declarationTable, compatible) = dcls
                                                         y=complement x
                                                         decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
