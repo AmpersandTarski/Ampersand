@@ -795,24 +795,34 @@ instance Expr Term where
                                                   -- Explanation:
                                                   -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
                                                   -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                                                  case decls of
-                                                       [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                       _   -> if False --length spcls==1
-                                                              then let c=head spcls in
-                                                                   carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                                                              dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
-                                                                             )
-                                                              else nothing
-                                                  where declarationTable = fst dcls
-                                                        compatible = snd dcls
+                                                  if length decls==1
+                                                  then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                                                  else if False -- length spcls==1
+                                                       then let c=head spcls in
+                                                            carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+                                                                       dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
+                                                                      )
+                                                       else nothing
+                                                  where declarationTable = fst dcls -- keep this lazy
+                                                        compatible = snd dcls       -- keep this lazy. Do not turn into a pattern, because that would cause a loop. Patterns are strict...
                                                         y=complement x
                                                         decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
                                                         decls  = if length decls' == 1 then decls' else
                                                                  [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
                                                                        , uLft == thing (head cs)
                                                                        , uRt  == thing (last cs) ] 
-                                                        spcls  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
+                                                        spcls  = case (dSrcs, dTrgs) of
+                                                                      ( []  ,  []  ) -> []
+                                                                      ( [d] ,  []  ) -> [d]
+                                                                      ( []  ,  [d] ) -> [d]
+                                                                      ( [d] ,  _   ) -> [d]
+                                                                      ( _   ,  [d] ) -> [d]
+                                                                      ( _   ,  _   ) -> dSrcs `isc` dTrgs
+                                                        dSrcs, dTrgs ::  [Term]
+                                                        dSrcs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
                                                                        , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
+                                                                       ]
+                                                        dTrgs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
                                                                        , compatible uRt  (cod decl)
                                                                        ]
                                                         carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
@@ -1524,10 +1534,10 @@ pCtx2aCtx p_context
          f t@Pnull             = fatal 988 ("pExpr2aExpr cannot transform "++show t++" to a term.")
          f t@(PVee _)          = ERel <$> (V <$> getSignFromTerm t)
          f (Pfull s t)         = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
-         f t@(Prel o a)        = do { (decl,sgn) <- getDeclarationAndSign t
+         f t@(Prel o a)        = do { (decl,sgn) <- getDeclarationAndSign (p_declarations p_context) t
                                     ; return (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl}))
                                     }
-         f (Pflp o a)          = do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
+         f (Pflp o a)          = do { (decl,sgn) <- getDeclarationAndSign (p_declarations p_context) (Prel o a)
                                     ; return (EFlp (ERel (Rel{relnm=a, relpos=o, relsgn=sgn, reldcl=decl})))
                                     }
          f t@(Pequ _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
@@ -1629,7 +1639,7 @@ pCtx2aCtx p_context
          f (PCpl _ a)          = ECpl <$> f a
          f (PBrk _ a)          = EBrk <$> f a
          f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
-         f   (PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
+         f   (PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign (p_declarations p_context) e
                                                 ; return (ERel (Rel{relnm=a, relpos=o, relsgn=pSign2aSign sgnCast, reldcl=decl}))
                                                 }
          f t@(PTyp _ a (P_Sign _))
@@ -1662,15 +1672,20 @@ pCtx2aCtx p_context
              (_  ,_  ) -> Errors (e src trg)
              where src = getConceptsFromTerm term
                    trg = getConceptsFromTerm (p_flp term)
-         getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
-         getDeclarationAndSign term@(Prel{})
+         getDeclarationAndSign :: [P_Declaration] -> Term -> Guarded (Declaration, Sign)
+         getDeclarationAndSign decls term@(Prel _ relname)
           = case Data.Map.lookup (TypExpr term False) bindings of
              Just [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
-             Just ds              -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                                    ,cxeDecs   = ds          -- the declarations to which this term has been matched
-                                                    }]
+             Just ds              -> case [(decl,[],[]) | decl<-decls, name decl==relname] of
+                                      []  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                            ,cxeDecs   = ds          -- the declarations to which this term has been matched
+                                                            }]
+                                      ds' -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                            ,cxeDecs   = ds'         -- the declarations to which this term has been matched
+                                                            }]
+                                      
              Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings ])
-         getDeclarationAndSign term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
+         getDeclarationAndSign _ term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of
                          [c] -> c
