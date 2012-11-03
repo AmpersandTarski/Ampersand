@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
  , (<==>),join,order,meet,greatest,least,maxima,minima,sortWith 
  , makeDeclaration
- , showExpr
+ , showExpr, showSign
  , aMarkup2String
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
