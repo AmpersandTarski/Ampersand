@@ -747,7 +747,6 @@ instance Expr Term where
                                                         pidTest (Pid{}) r = r
                                                         pidTest _ _ = nothing
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc, mGeneric and mSpecific are not derived, neither can PRad
-{-
  uType dcls x uLft uRt   (PRad _ a b)           = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
                                                   bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
                                                   .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
@@ -756,7 +755,6 @@ instance Expr Term where
                                                         pnidTest (PCpl _ (Pid{})) r = r
                                                         pnidTest (Pnid{}) r = r
                                                         pnidTest _ _ = nothing
--}
  uType dcls x uLft uRt   (PPrd _ a b)           = dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
                                                   .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
  uType dcls x uLft uRt   (PCpl _ a)             = dom x.<.c .+. cod x.<.c' .+.
@@ -779,7 +777,7 @@ instance Expr Term where
                                                   case decls of
                                                        [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
                                                        _   -> nothing
-                                                  where (declarationTable, _) = dcls
+                                                  where declarationTable = fst dcls
                                                         iSrc = thing (head cs)
                                                         iTrg = thing (last cs)
                                                         y=complement x
@@ -797,7 +795,7 @@ instance Expr Term where
                                                   -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
                                                   if length decls==1
                                                   then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                  else if False -- length spcls==1
+                                                  else if length spcls==1
                                                        then let c=head spcls in
                                                             carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                                        dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
@@ -810,7 +808,8 @@ instance Expr Term where
                                                         decls  = if length decls' == 1 then decls' else
                                                                  [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
                                                                        , uLft == thing (head cs)
-                                                                       , uRt  == thing (last cs) ] 
+                                                                       , uRt  == thing (last cs) ]
+                                                        {- to exclude the possibility that the following pattern matching causes a loop, it is rewritten fully lazily.
                                                         spcls  = case (dSrcs, dTrgs) of
                                                                       ( []  ,  []  ) -> []
                                                                       ( [d] ,  []  ) -> [d]
@@ -818,6 +817,15 @@ instance Expr Term where
                                                                       ( [d] ,  _   ) -> [d]
                                                                       ( _   ,  [d] ) -> [d]
                                                                       ( _   ,  _   ) -> dSrcs `isc` dTrgs
+                                                        -}
+                                                        spcls = if null dSrcs && null dTrgs then [] else
+                                                                if null dTrgs  then [head dSrcs ] else
+                                                                if null dSrcs  then [head dTrgs ] else
+                                                                if null dSrcs' then [head dSrcs'] else
+                                                                if null dTrgs' then [head dTrgs'] else
+                                                                dSrcs `isc` dTrgs
+                                                                where dSrcs' = tail dSrcs
+                                                                      dTrgs' = tail dTrgs
                                                         dSrcs, dTrgs ::  [Term]
                                                         dSrcs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
                                                                        , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
@@ -830,11 +838,12 @@ instance Expr Term where
  uType dcls x uLft uRt   (Pflp o nm)            = dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
                                                   where e = Prel o nm
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
- uType dcls x uLft uRt   (PRad o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.     -- a!b      relative addition, dagger
-                                                  uType dcls x uLft uRt e                 --  a|-b   implication (aka: subset)
+{- uType dcls x uLft uRt   (PRad o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
+                                                  uType dcls x uLft uRt e                 --  a!b     relative addition, dagger
                                                   where e = complement (PCps o (complement a) (complement b))
+-}
  uType dcls x uLft uRt   (Pimp o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                 --  a|-b   implication (aka: subset)
+                                                  uType dcls x uLft uRt e                 --  a|-b    implication (aka: subset)
                                                   where e = Pequ o a (PIsc o a b)
  uType dcls x uLft uRt   (PLrs o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
@@ -842,6 +851,10 @@ instance Expr Term where
  uType dcls x uLft uRt   (PRrs o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
                                                   uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
                                                   where e = complement (PCps o (p_flp a) (complement b))
+
+fst3 (x,_,_) = x
+snd3 (_,y,_) = y
+thd3 (_,_,z) = z
 
 --  The following is for drawing graphs.
 
