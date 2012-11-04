@@ -795,7 +795,7 @@ instance Expr Term where
                                                   -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
                                                   if length decls==1
                                                   then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                  else if length spcls==1
+                                                  else if length spcls==1 -- if you replace this condition with 'False', the loop will disappear
                                                        then let c=head spcls in
                                                             carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                                        dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
