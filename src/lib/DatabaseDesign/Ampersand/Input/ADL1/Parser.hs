@@ -573,12 +573,14 @@ In practice, we have it a little different.
                    f combinator (orig, y) x = combinator orig x y
 
    pTrm5 :: Parser Token Term
-   pTrm5  =  f <$> pList (pKey_pos "-") <*> pTrm6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
-             where f ms pe (("~",orig):ps) = PFlp orig (f ms pe ps)
-                   f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)
-                   f ms pe (("+",orig):ps) = PKl1 orig (f ms pe ps)
-                   f (orig:ms) pe ps = PCpl orig (f ms pe ps)
-                   f _ pe _          = pe
+   pTrm5  =  f <$> pList (pKey "-") <*> pTrm6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
+             where f ms pe (("~",_):("~",_):ps) = f ms pe ps                     -- e~  converse       (flip, wok)
+                   f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
+                   f ms pe (("*",orig):ps) = PKl0 orig (f ms pe ps)              -- e*  Kleene closure (star)
+                   f ms pe (("+",orig):ps) = PKl1 orig (f ms pe ps)              -- e+  Kleene closure (plus)
+                   f (_:_:ms) pe ps = f ms pe ps                                 -- -e  complement     (unary minus)
+                   f (_:ms) pe ps   = let x=f ms pe ps in PCpl (origin x) x      -- the type checker requires that the origin of x is equal to the origin of its complement.
+                   f _ pe _         = pe
 
    pTrm6 :: Parser Token Term
    pTrm6  =  pRelationRef                                                        <|>
