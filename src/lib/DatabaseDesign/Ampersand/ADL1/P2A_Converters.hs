@@ -708,148 +708,153 @@ instance Expr Term where
  subterms e@(PBrk _ a)   = [e]++subterms a
  subterms e@(PTyp _ a _) = [e]++subterms a
  subterms e              = [e]
- uType _    _ _    _     (Pnid _)               = fatal 136 "Pnid has no representation"
- uType _    x uLft uRt   (PI{})                 = dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt    -- I
- uType _    x _    _     (Pid{})                = dom x.=.cod x                                     -- I[C]
- uType _    x uLft uRt   (Patm _ _ [])          = dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt    -- 'Piet'   (an untyped singleton)
- uType _    x _    _     (Patm _ _ cs)          = dom x.<.thing (head cs) .+. cod x.<.thing (last cs)      -- 'Piet'[Persoon]  (a typed singleton)
-                                                  .+. dom x.=.cod x
- uType _    _ _    _      Pnull                 = nothing                                                              -- -V     (the empty set)
- uType _    x uLft uRt   (PVee _)               = dom x.<.uLft .+. cod x.<.uRt
- uType _    x _    _     (Pfull s t)            = dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
- uType dcls x _    _     (Pequ _ a b)           = dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                                                   .+. uType dcls a (dom x) (cod x) a .+. uType dcls b (dom x) (cod x) b 
- uType dcls x uLft uRt   (PIsc _ a b)           = dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
-                                                  .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
-                                                  .+. uType dcls a interDom2 interCod2 a .+. uType dcls b interDom2 interCod2 b
-                                                  where (dm,interDom) = mSpecific (dom a) (dom b)  x
-                                                        (cm,interCod) = mSpecific (cod a) (cod b)  x
-                                                        (d2,interDom2) = mSpecific interDom uLft  x
-                                                        (c2,interCod2) = mSpecific interCod uRt   x
- uType dcls x uLft uRt   (PUni _ a b)           = dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
-                                                  .+. dm .+. cm .+. d2 .+. c2
-                                                  .+. uType dcls a interDom2 interCod2 a .+. uType dcls b interDom2 interCod2 b
-                                                  where (dm,interDom) = mGeneric (dom a) (dom b)  x
-                                                        (cm,interCod) = mGeneric (cod a) (cod b)  x
-                                                        (d2,interDom2) = mSpecific interDom uLft  x
-                                                        (c2,interCod2) = mSpecific interCod uRt   x
- uType dcls x uLft uRt   (PDif _ a b)           = dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
-                                                   .+. dm .+. cm
-                                                   .+. uType dcls a uLft uRt a
-                                                   .+. uType dcls b interDom interCod b
-                                                  where (dm,interDom) = mSpecific uLft (dom a) x
-                                                        (cm,interCod) = mSpecific uRt  (cod a) x
- uType dcls x uLft uRt   (PCps _ a b)           = dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                                                  bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
-                                                  .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
-                                                  where (bm,between) = mSpecific (cod a) (dom b) x
-                                                        pidTest (PI{}) r = r
-                                                        pidTest (Pid{}) r = r
-                                                        pidTest _ _ = nothing
+ 
+ uType dcls x uLft uRt expr 
+  = case expr of
+     Pnid{}       -> fatal 136 "Pnid has no representation"
+     PI{}         -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt             -- I
+     Pid{}        -> dom x.=.cod x                                              -- I[C]
+     (Patm _ _ []) -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt      -- 'Piet'   (an untyped singleton)
+     (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
+                       .+. dom x.=.cod x
+     Pnull        ->nothing                                                  -- -V     (the empty set)
+     PVee{}       -> dom x.<.uLft .+. cod x.<.uRt
+     (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
+     (Pequ _ a b) -> dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
+                     .+. uType dcls a (dom x) (cod x) a .+. uType dcls b (dom x) (cod x) b 
+     (PIsc _ a b) -> let (dm,interDom)  = mSpecific (dom a) (dom b)  x
+                         (cm,interCod)  = mSpecific (cod a) (cod b)  x
+                         (d2,interDom2) = mSpecific interDom uLft  x
+                         (c2,interCod2) = mSpecific interCod uRt   x
+                     in dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
+                        .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
+                        .+. uType dcls a interDom2 interCod2 a .+. uType dcls b interDom2 interCod2 b
+     (PUni _ a b) -> let (dm,interDom) = mGeneric (dom a) (dom b)  x
+                         (cm,interCod) = mGeneric (cod a) (cod b)  x
+                         (d2,interDom2) = mSpecific interDom uLft  x
+                         (c2,interCod2) = mSpecific interCod uRt   x
+                     in dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
+                        .+. dm .+. cm .+. d2 .+. c2
+                        .+. uType dcls a interDom2 interCod2 a .+. uType dcls b interDom2 interCod2 b
+     (PDif _ a b) -> let (dm,interDom) = mSpecific uLft (dom a) x
+                         (cm,interCod) = mSpecific uRt  (cod a) x
+                     in dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
+                        .+. dm .+. cm
+                        .+. uType dcls a uLft uRt a
+                        .+. uType dcls b interDom interCod b
+     (PCps _ a b) -> let (bm,between) = mSpecific (cod a) (dom b) x
+                         pidTest (PI{}) r = r
+                         pidTest (Pid{}) r = r
+                         pidTest _ _ = nothing
+                     in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
+                        bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
+                        .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc, mGeneric and mSpecific are not derived, neither can PRad
- uType dcls x uLft uRt   (PRad _ a b)           = dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
-                                                  bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
-                                                  .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
-                                                  where (bm,between) = mGeneric (cod a) (dom b) x
-                                                        pnidTest (PCpl _ (PI{})) r = r
-                                                        pnidTest (PCpl _ (Pid{})) r = r
-                                                        pnidTest (Pnid{}) r = r
-                                                        pnidTest _ _ = nothing
- uType dcls x uLft uRt   (PPrd _ a b)           = dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
-                                                  .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
- uType dcls x uLft uRt   (PCpl o a)             = dom x.<.c .+. cod x.<.c' .+.
-                                                  dom a.<.c .+. cod a.<.c' .+.
-                                                  uType dcls x uLft uRt (PDif o (PVee o) a)
-                                                  where c = normalType (TypLub (dom a) (dom t) x)
-                                                        c'= normalType (TypLub (cod a) (cod t) x)
-                                                        t = complement a
- uType dcls x uLft uRt   (PKl0 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
- uType dcls x uLft uRt   (PKl1 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
- uType dcls x uLft uRt   (PFlp _ e)             = cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
- uType dcls x uLft uRt   (PBrk _ e)             = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                                                     -- (e) brackets
- uType _    _  _    _    (PTyp _ _ (P_Sign [])) = fatal 196 "P_Sign is empty"
- uType _    _  _    _    (PTyp _ _ (P_Sign (_:_:_:_))) = fatal 197 "P_Sign too large"
- uType dcls x  _    _    (PTyp _ e@(Prel _ nm) sgn@(P_Sign cs))
-                                                = dom x.<.iSrc  .+. cod x.<.iTrg  .+.
-                                                  dom x.<.dom e .+. cod x.<.cod e .+.
-                                                  case decls of
-                                                       [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                       _   -> nothing
-                                                  where declarationTable = fst dcls
-                                                        iSrc = thing (head cs)
-                                                        iTrg = thing (last cs)
-                                                        y=complement x
-                                                        decls = [term | decl<-declarationTable, name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
- uType dcls x  _    _    (PTyp _ e (P_Sign cs)) = dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
-                                                  dom x.<.dom e .+. cod x.<.cod e .+.
-                                                  uType dcls e iSrc iTrg e
-                                                  where iSrc = thing (head cs)
-                                                        iTrg = thing (last cs)
- uType dcls x uLft uRt   (Prel _ nm)            = -- WHY is:
-                                                  -- dom x.<.uLft .+. cod x.<.uRt 
-                                                  -- correct for PVee but not for Prel?
-                                                  -- Explanation:
-                                                  -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
-                                                  -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                                                  if length decls==1
-                                                  then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                  else if False -- length spcls==1 -- if you replace this condition with 'False', the loop will disappear
-                                                       then let c=head spcls in
-                                                            carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                                                       dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
-                                                                      )
-                                                       else nothing
-                                                  where declarationTable = fst dcls -- keep this lazy
-                                                        compatible = snd dcls       -- keep this lazy. Do not turn into a pattern, because that would cause a loop. Patterns are strict...
-                                                        y=complement x
-                                                        decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
-                                                        decls  = if length decls' == 1 then decls' else
-                                                                 [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
-                                                                       , uLft == thing (head cs)
-                                                                       , uRt  == thing (last cs) ]
-                                                        {- to exclude the possibility that the following pattern matching causes a loop, it is rewritten fully lazily.
-                                                        spcls  = case (dSrcs, dTrgs) of
-                                                                      ( []  ,  []  ) -> []
-                                                                      ( [d] ,  []  ) -> [d]
-                                                                      ( []  ,  [d] ) -> [d]
-                                                                      ( [d] ,  _   ) -> [d]
-                                                                      ( _   ,  [d] ) -> [d]
-                                                                      ( _   ,  _   ) -> dSrcs `isc` dTrgs
-                                                        -}
-                                                        spcls = if null dSrcs && null dTrgs then [] else
-                                                                if null dTrgs  then [head dSrcs ] else
-                                                                if null dSrcs  then [head dTrgs ] else
-                                                                if null dSrcs' then [head dSrcs'] else
-                                                                if null dTrgs' then [head dTrgs'] else
-                                                                dSrcs `isc` dTrgs
-                                                                where dSrcs' = tail dSrcs
-                                                                      dTrgs' = tail dTrgs
-                                                        dSrcs, dTrgs ::  [Term]
-                                                        dSrcs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
-                                                                       , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
-                                                                       ]
-                                                        dTrgs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
-                                                                       , compatible uRt  (cod decl)
-                                                                       ]
-                                                        carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
-                                                        carefully tt = (fst nothing,fst tt.++.snd tt)
- uType dcls x uLft uRt   (Pflp o nm)            = dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
-                                                  where e = Prel o nm
+     (PRad _ a b) -> let (bm,between) = mGeneric (cod a) (dom b) x
+                         pnidTest (PCpl _ (PI{})) r = r
+                         pnidTest (PCpl _ (Pid{})) r = r
+                         pnidTest (Pnid{}) r = r
+                         pnidTest _ _ = nothing
+                     in dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
+                        bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
+                        .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
+     (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
+                     .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
+     (PCpl o a)   -> let c = normalType (TypLub (dom a) (dom t) x)
+                         c'= normalType (TypLub (cod a) (cod t) x)
+                         t = complement a
+                     in dom x.<.c .+. cod x.<.c' .+.
+                        dom a.<.c .+. cod a.<.c' .+.
+                        uType dcls x uLft uRt (PDif o (PVee o) a)
+     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
+     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
+     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
+     (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+.
+                    uType dcls x uLft uRt e                                                     -- (e) brackets
+     (PTyp _ e sgn) ->
+       case sgn of
+         (P_Sign [])        -> fatal 196 "P_Sign is empty"
+         (P_Sign (_:_:_:_)) -> fatal 197 "P_Sign too large"  
+         (P_Sign cs)        -> let declarationTable = fst dcls
+                                   iSrc = thing (head cs)
+                                   iTrg = thing (last cs)
+                                   y=complement x
+                                   decls nm = [term | decl<-declarationTable, name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
+                               in case e of
+                                 (Prel _ nm) -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.
+                                                dom x.<.dom e .+. cod x.<.cod e .+.
+                                                case decls nm of
+                                                  []  -> fatal 785 "@Stef: TODO: Han heeft dit aangepast. Is de lege verzameling hier een apart geval?"
+                                                  [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                                                  _   -> nothing
+                                 _           -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
+                                                dom x.<.dom e .+. cod x.<.cod e .+.
+                                                uType dcls e iSrc iTrg e
+
+     (Prel _ nm) -> let declarationTable = fst dcls -- keep this lazy
+                        compatible = snd dcls       -- keep this lazy. Do not turn into a pattern, because that would cause a loop. Patterns are strict...
+                        y=complement x
+                        decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
+                        decls  = if length decls' == 1 then decls' else
+                                 [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
+                                       , uLft == thing (head cs)
+                                       , uRt  == thing (last cs) ]
+                        {- to exclude the possibility that the following pattern matching causes a loop, it is rewritten fully lazily.
+                        spcls  = case (dSrcs, dTrgs) of
+                                      ( []  ,  []  ) -> []
+                                      ( [d] ,  []  ) -> [d]
+                                      ( []  ,  [d] ) -> [d]
+                                      ( [d] ,  _   ) -> [d]
+                                      ( _   ,  [d] ) -> [d]
+                                      ( _   ,  _   ) -> dSrcs `isc` dTrgs
+                        -}
+                        spcls = if null dSrcs && null dTrgs then [] else
+                                if null dTrgs  then [head dSrcs ] else
+                                if null dSrcs  then [head dTrgs ] else
+                                if null dSrcs' then [head dSrcs'] else
+                                if null dTrgs' then [head dTrgs'] else
+                                dSrcs `isc` dTrgs
+                                where dSrcs' = tail dSrcs
+                                      dTrgs' = tail dTrgs
+                        dSrcs, dTrgs ::  [Term]
+                        dSrcs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
+                                       , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
+                                       ]
+                        dTrgs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
+                                       , compatible uRt  (cod decl)
+                                       ]
+                        carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
+                        carefully tt = (fst nothing,fst tt.++.snd tt)
+                     in -- WHY is:
+                        -- dom x.<.uLft .+. cod x.<.uRt 
+                        -- correct for PVee but not for Prel?
+                        -- Explanation:
+                        -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
+                        -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
+                        if length decls==1
+                        then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                        else if False -- length spcls==1 -- if you replace this condition with 'False', the loop will disappear
+                             then let c=head spcls in
+                                  carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
+                                             dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
+                                            )
+                             else nothing
+     (Pflp o nm) -> let e = Prel o nm
+                    in dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
-{- uType dcls x uLft uRt   (PRad o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                 --  a!b     relative addition, dagger
-                                                  where e = complement (PCps o (complement a) (complement b))
+{-     (PRad o a b) -> let e = complement (PCps o (complement a) (complement b))
+                     in dom x.=.dom e .+. cod x.=.cod e .+.
+                        uType dcls x uLft uRt e                 --  a!b     relative addition, dagger
 -}
- uType dcls x uLft uRt   (Pimp o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                 --  a|-b    implication (aka: subset)
-                                                  where e = Pequ o a (PIsc o a b)
- uType dcls x uLft uRt   (PLrs o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
-                                                  where e = complement (PCps o (complement a) (p_flp b))
- uType dcls x uLft uRt   (PRrs o a b)           = dom x.=.dom e .+. cod x.=.cod e .+.
-                                                  uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
-                                                  where e = complement (PCps o (p_flp a) (complement b))
+     (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
+                     in dom x.=.dom e .+. cod x.=.cod e .+.
+                        uType dcls x uLft uRt e                 --  a|-b    implication (aka: subset)
+     (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
+                     in dom x.=.dom e .+. cod x.=.cod e .+.
+                        uType dcls x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
+     (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
+                     in dom x.=.dom e .+. cod x.=.cod e .+.
+                        uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
 
 fst3 :: (a,b,c) -> a
 fst3 (x,_,_) = x
