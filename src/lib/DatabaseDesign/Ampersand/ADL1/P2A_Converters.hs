@@ -763,7 +763,6 @@ instance Expr Term where
                                                   where c = normalType (TypLub (dom a) (dom t) x)
                                                         c'= normalType (TypLub (cod a) (cod t) x)
                                                         t = complement a
-                                                  --    (dm,_) = mGeneric (dom a) (dom t) x
  uType dcls x uLft uRt   (PKl0 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PKl1 _ e)             = dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
  uType dcls x uLft uRt   (PFlp _ e)             = cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
@@ -795,7 +794,7 @@ instance Expr Term where
                                                   -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
                                                   if length decls==1
                                                   then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                                                  else if length spcls==1 -- if you replace this condition with 'False', the loop will disappear
+                                                  else if False -- length spcls==1 -- if you replace this condition with 'False', the loop will disappear
                                                        then let c=head spcls in
                                                             carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
                                                                        dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
@@ -852,8 +851,11 @@ instance Expr Term where
                                                   uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
                                                   where e = complement (PCps o (p_flp a) (complement b))
 
+fst3 :: (a,b,c) -> a
 fst3 (x,_,_) = x
+snd3 :: (a,b,c) -> b
 snd3 (_,y,_) = y
+thd3 :: (a,b,c) -> c
 thd3 (_,_,z) = z
 
 --  The following is for drawing graphs.
