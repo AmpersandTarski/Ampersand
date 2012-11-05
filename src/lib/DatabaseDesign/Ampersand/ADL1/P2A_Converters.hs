@@ -757,9 +757,9 @@ instance Expr Term where
                                                         pnidTest _ _ = nothing
  uType dcls x uLft uRt   (PPrd _ a b)           = dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
                                                   .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
- uType dcls x uLft uRt   (PCpl _ a)             = dom x.<.c .+. cod x.<.c' .+.
+ uType dcls x uLft uRt   (PCpl o a)             = dom x.<.c .+. cod x.<.c' .+.
                                                   dom a.<.c .+. cod a.<.c' .+.
-                                                  uType dcls a uLft uRt a
+                                                  uType dcls x uLft uRt (PDif o (PVee o) a)
                                                   where c = normalType (TypLub (dom a) (dom t) x)
                                                         c'= normalType (TypLub (cod a) (cod t) x)
                                                         t = complement a
