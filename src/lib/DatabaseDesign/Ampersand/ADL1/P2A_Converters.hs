@@ -784,7 +784,6 @@ instance Expr Term where
                                  (Prel _ nm) -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.
                                                 dom x.<.dom e .+. cod x.<.cod e .+.
                                                 case decls nm of
-                                                  []  -> fatal 785 "@Stef: TODO: Han heeft dit aangepast. Is de lege verzameling hier een apart geval?"
                                                   [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
                                                   _   -> nothing
                                  _           -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
