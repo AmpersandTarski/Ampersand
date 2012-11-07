@@ -6,6 +6,7 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    , combinations
    , commaEng
    , commaNL
+   , Flippable(..)
    )
   where
    import Data.List (nub,elemIndex)
@@ -59,3 +60,8 @@ module DatabaseDesign.Ampersand.Basics.Auxiliaries
    commaNL  _  [a]    = a
    commaNL str (a:as) = a++", "++commaNL str as
    commaNL  _  []     = ""
+
+   
+   class Flippable a where
+     flp :: a -> a
+   

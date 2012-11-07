@@ -1,14 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances, OverlappingInstances #-}
 module DatabaseDesign.Ampersand.ADL1.Expression (
-                       flp,isTypeable,subst,subsi
+                       isTypeable,subst,subsi
                       ,foldlMapExpression,foldrMapExpression
                       ,isECps,isERad,isEPrd,isEIsc,isEUni -- ,isI
                       ,isPos,isNeg{- ,idsOnly-} ,notCpl, isCpl)
 where
 -- import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-
 
 subst :: (Relation,Expression) -> Expression -> Expression
 subst (rel,f) = subs
@@ -195,25 +194,6 @@ isTypeable (EBrk e)     = isTypeable e
 isTypeable (ETyp e _)   = isTypeable e
 isTypeable (ERel _)     = True
 
-flp :: Expression -> Expression
-flp expr = case expr of
-               EEqu (l,r)        -> EEqu (flp l, flp r)
-               EImp (l,r)        -> EImp (flp l, flp r)
-               EIsc fs           -> EIsc (map flp fs)
-               EUni fs           -> EUni (map flp fs)
-               EDif (l,r)        -> EDif (flp l, flp r)
-               ELrs (l,r)        -> ERrs (flp r, flp l)
-               ERrs (l,r)        -> ELrs (flp r, flp l)
-               ECps ts           -> ECps (map flp (reverse ts))
-               ERad ts           -> ERad (map flp (reverse ts))
-               EPrd ts           -> EPrd (map flp (reverse ts))
-               EFlp e            -> e
-               ECpl e            -> ECpl (flp e)
-               EKl0 e            -> EKl0 (flp e)
-               EKl1 e            -> EKl1 (flp e)
-               EBrk f            -> EBrk (flp f)
-               ETyp e (Sign s t) -> ETyp (flp e) (Sign t s)
-               ERel rel          -> EFlp (ERel rel)
 
 
 -- The origin of an expression is the origin of one of its relations.

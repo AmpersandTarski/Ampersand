@@ -18,13 +18,13 @@ module DatabaseDesign.Ampersand.ADL1
            , Term(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
            , A_Gen(..),P_Gen(..)
-           , Relation(..), flp, isTypeable, makeRelation
-           , Declaration(..), flpDecl, isSgn
+           , Relation(..), isTypeable, makeRelation
+           , Declaration(..), isSgn
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
            , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR
            , RuleType(..)
-           , Prop(..),allprops,endoprops,flipProps
+           , Prop(..),allprops,endoprops
            , isaRule
            , FilePos(..), Origin(..), Pos(..), Traced(..)
            , makeDeclaration
@@ -67,16 +67,16 @@ where
                                          ,showExpr,insParentheses
                                          ,makeDeclaration
                                          )
-   import DatabaseDesign.Ampersand.ADL1.Expression                 (flp,isTypeable,subst,subsi,foldlMapExpression,foldrMapExpression
+   import DatabaseDesign.Ampersand.ADL1.Expression                 (isTypeable,subst,subsi,foldlMapExpression,foldrMapExpression
                                          ,isPos,isNeg,isECps,isERad,isEPrd,isEIsc,isEUni,notCpl, isCpl)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..)
                                          ,Association(..),Relational(..)
-                                         ,Declaration(..),flpDecl
+                                         ,Declaration(..)
                                          ,isSgn
                                          ,makeRelation
                                          )
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
-   import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops,flipProps)
+   import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops)
    import DatabaseDesign.Ampersand.ADL1.Rule                       (
                                           rulefromProp, isaRule, ruleviolations, violationsexpr
                                          ,consequent,antecedent,hasantecedent)

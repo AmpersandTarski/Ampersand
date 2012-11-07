@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..),flpDecl,Relational(..)
+module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..),Relational(..)
                                   ,Declaration(..)
                                   ,makeRelation
                                   ,isSgn
@@ -8,8 +8,8 @@ module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Associ
 import Data.Maybe
                                   
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),flipProps)
-import DatabaseDesign.Ampersand.ADL1.Pair         (flipPair) 
+import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..))
+--import DatabaseDesign.Ampersand.ADL1.Pair         (flipPair) 
 import DatabaseDesign.Ampersand.ADL1.Expression
 import DatabaseDesign.Ampersand.Basics
 
@@ -76,23 +76,6 @@ instance Relational Relation where
                    I{}   -> True
                    Mp1{} -> False
    
-
-flpDecl :: Declaration -> Declaration
-flpDecl d
-    = case d of
-           Sgn {} -> d{ decsgn  = flpSign (decsgn d)
-                      , decprps = flipProps (decprps d)
-                      , decprps_calc = flipProps (decprps_calc d)
-                      , decprL  = ""
-                      , decprM  = ""
-                      , decprR  = ""
-                      , decpopu = map flipPair (decpopu d)
-                      }
-           Vs {}  -> d{ decsgn  = flpSign (decsgn d) }
-           _      -> d
-
-flpSign :: Sign -> Sign
-flpSign (Sign s t) = Sign t s
    
 
 instance Relational Declaration where
