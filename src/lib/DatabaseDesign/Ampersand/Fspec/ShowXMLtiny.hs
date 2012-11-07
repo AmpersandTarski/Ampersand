@@ -284,7 +284,7 @@ where
                 ->  [Node (Tag "Source" [mkAttr "concept" (name(source d))])]
                   ++[Node (Tag "Target" [mkAttr "concept" (name(target d))])]
                   ++[Elem (simpleTag "MultFrom") [PlainText (multiplicity (multiplicities d))]]
-                  ++[Elem (simpleTag "MultTo") [PlainText (multiplicity (flipProps (multiplicities d)))]]
+                  ++[Elem (simpleTag "MultTo") [PlainText (multiplicity (map flp (multiplicities d)))]]
                   ++[Elem (simpleTag "Pragma") 
                              [PlainText (show (prL++"%f"++prM++"%t"++prR))] 
                                 | not (null (prL++prM++prR))]

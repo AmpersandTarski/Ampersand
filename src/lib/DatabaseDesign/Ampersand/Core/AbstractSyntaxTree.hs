@@ -44,8 +44,9 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
 import qualified Prelude
+import Data.Tuple
 import Prelude hiding (Ord(..), Ordering(..))
-import DatabaseDesign.Ampersand.Basics           (fatalMsg,Identified(..))
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
@@ -230,6 +231,22 @@ instance Show Declaration where
                             ++ ["{+",aMarkup2String m,"-}"]                
                             -- then [] else ["MEANING",show (decMean d)] ))
 
+instance Flippable Declaration where
+  flp d
+    = case d of
+           Sgn {} -> d{ decsgn  = flp (decsgn d)
+                      , decprps = map flp (decprps d)
+                      , decprps_calc = map flp (decprps_calc d)
+                      , decprL  = ""
+                      , decprM  = ""
+                      , decprR  = ""
+                      , decpopu = map swap (decpopu d)
+                      }
+           Vs {}  -> d{ decsgn  = flp (decsgn d) }
+           _      -> d
+
+
+
 aMarkup2String :: A_Markup -> String
 aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
 
@@ -376,6 +393,26 @@ data Expression
 instance Show Expression where
  showsPrec _ = showString . showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
 -}
+instance Flippable Expression where
+  flp expr = case expr of
+               EEqu (l,r)        -> EEqu (flp l, flp r)
+               EImp (l,r)        -> EImp (flp l, flp r)
+               EIsc fs           -> EIsc (map flp fs)
+               EUni fs           -> EUni (map flp fs)
+               EDif (l,r)        -> EDif (flp l, flp r)
+               ELrs (l,r)        -> ERrs (flp r, flp l)
+               ERrs (l,r)        -> ELrs (flp r, flp l)
+               ECps ts           -> ECps (map flp (reverse ts))
+               ERad ts           -> ERad (map flp (reverse ts))
+               EPrd ts           -> EPrd (map flp (reverse ts))
+               EFlp e            -> e
+               ECpl e            -> ECpl (flp e)
+               EKl0 e            -> EKl0 (flp e)
+               EKl1 e            -> EKl1 (flp e)
+               EBrk f            -> EBrk (flp f)
+               ETyp e (Sign s t) -> ETyp (flp e) (Sign t s)
+               ERel rel          -> EFlp (ERel rel)
+
 
 showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
@@ -604,6 +641,8 @@ instance Association Sign where
   target (Sign _ t) = t
   sign sgn = sgn
 
+instance Flippable Sign where
+ flp (Sign s t) = Sign t s
 
 
 class Association rel where
