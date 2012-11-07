@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
    where
 
    import Data.List
-   import DatabaseDesign.Ampersand.Basics (fatalMsg,Collection((>-)),Identified(..),eqCl)
+   import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Misc

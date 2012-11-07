@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
    import Prelude hiding (Ord(..))
-   import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Collection(..),Identified(..),uniqueNames,eqCl, eqClass)
+   import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec

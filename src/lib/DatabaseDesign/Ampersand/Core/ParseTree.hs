@@ -46,7 +46,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
   )
 where
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos           
-   import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Identified(..))
+   import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
    import Data.List   (intercalate)
    
@@ -473,6 +473,7 @@ where
    data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
 
    type Props = [Prop]
+
    data Prop      = Uni          -- ^ univalent
                   | Inj          -- ^ injective
                   | Sur          -- ^ surjective
@@ -493,6 +494,13 @@ where
     showsPrec _ Trn = showString "TRN"
     showsPrec _ Rfx = showString "RFX"
     showsPrec _ Irf = showString "IRF"
+
+   instance Flippable Prop where
+    flp Uni = Inj
+    flp Tot = Sur
+    flp Sur = Tot
+    flp Inj = Uni
+    flp x = x
 
    data Label = Lbl { lblnm :: String
                     , lblpos :: Origin

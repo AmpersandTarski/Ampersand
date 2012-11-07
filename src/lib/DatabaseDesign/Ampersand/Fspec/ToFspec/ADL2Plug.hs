@@ -9,7 +9,7 @@ where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Basics     (fatalMsg,Collection(..),Identified(..),eqCl)
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug

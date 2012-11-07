@@ -5,12 +5,11 @@ module DatabaseDesign.Ampersand.ADL1.Pair
                     ( Paire,Pairs
                     , kleenejoin
                     , srcPaire,trgPaire
-                    , flipPair,mkPair
+                    , mkPair
                     , closPair
                     , clos1
                     ) 
 where
---   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
    import DatabaseDesign.Ampersand.Basics (Collection(isc,uni),eqCl)
    import Data.List (nub)
    import GHC.Exts (sortWith)
@@ -24,8 +23,6 @@ where
    srcPaire = fst
    trgPaire = snd
 
-   flipPair :: Paire -> Paire
-   flipPair p = mkPair (trgPaire p) (srcPaire p)
 
    -- | Operations for representations that act as a Kleene algebra (RA without complement and with the closure operators)
    -- | A Kleene algebra has two binary operations 'union' and 'kleenejoin', and one function 'closure' (usually written as +, � and * respectively)
