@@ -1349,47 +1349,51 @@ pCtx2aCtx p_context
       
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp pexpl
-     = case xplcxe of
-        [] -> Checked ( Expl { explPos      = pexPos   pexpl
-                             , explObj      = explobs
-                             , explMarkup   = pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt) (pexMarkup pexpl)
-                             , explRefId    = pexRefID pexpl
-                             , explUserdefd = True
-                            -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
-                             })
-        _  -> Errors [CxeOrig xplcxe "explanation" "" (origin pexpl) ]
-       where (explobs,xplcxe) = pExOb2aExOb (pexObj pexpl)
+     = do { explobs <- pExOb2aExOb (pexObj pexpl)
+          ; return ( Expl { explPos      = pexPos   pexpl
+                          , explObj      = explobs
+                          , explMarkup   = pMarkup2aMarkup (ctxlang contxt) (ctxmarkup contxt) (pexMarkup pexpl)
+                          , explRefId    = pexRefID pexpl
+                          , explUserdefd = True
+                         -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
+                          })
+          }
     
-    pExOb2aExOb :: PRef2Obj -> (ExplObj, [CtxError])
-    pExOb2aExOb (PRef2ConceptDef str  ) = (ExplConceptDef (head cds), newcxeif(null cds)(" No concept definition for '"++str++"'"))
-                                          where cds = [cd | cd<-acds, cdcpt cd==str ]
-    pExOb2aExOb (PRef2Declaration x@(PTyp o (Prel _ nm) sgn))
+    pExOb2aExOb :: PRef2Obj -> Guarded ExplObj
+    pExOb2aExOb (PRef2ConceptDef str  ) = case [cd | cd<-acds, cdcpt cd==str ] of
+                                           []   ->  Errors [newcxe (" No concept definition for '"++str++"'")]
+                                           cd:_ ->  Checked (ExplConceptDef cd)
+    pExOb2aExOb (PRef2Declaration t@(PTyp o (Prel _ nm) sgn))
                                         = case [pDecl2aDecl [] d | d<-p_declarations p_context, name d==nm, dec_sign d== sgn ] of
-                                            Checked decl:_ -> (ExplDeclaration decl, [])
-                                            Errors ers:_   -> (undef, ers)
-                                            []             -> (undef, [CxeOrig [newcxe (error (show (length (acds))++"No declaration for '"++showADL x++"'"))] "relation" nm o ])
-                                          where undef = fatal 1269 "Do not refer to an undefined declaration"
--- TODO : @Stef: Should it be possible to have Prel constructors for terms over here??? (currently it happens...)
---    pExOb2aExOb (PRef2Declaration x@(Prel o nm )) 
---                                        = case [d | d<-p_declarations p_context, name d==nm ] of
---                                            []             -> (undef, [CxeOrig [newcxe ("No declaration for '"++showADL x++"'")] "relation" nm o ])
---                                            [pd]  -> case pDecl2aDecl [] pd of
---                                                       Checked decl -> (ExplDeclaration decl, [])
---                                                       Errors ers   -> (undef, ers)
---                                            _     -> (undef, [CxeOrig [newcxe ("Ambigious declaration of '"++showADL x++"'")] "relation" nm o ])
---                                          where undef = fatal 1275 "Do not refer to an undefined declaration"
-                                        
+                                            Checked decl:_ -> Checked (ExplDeclaration decl)
+                                            Errors ers:_   -> Errors ers
+                                            []             -> Errors [CxeOrig [newcxe ("No declaration for '"++showADL t++"'")] "relation" nm o ]
+    pExOb2aExOb (PRef2Declaration t@(Prel o _ ))
+                                        = do { (decl,_) <- getDeclarationAndSign (p_declarations p_context) t
+                                             ; return (ExplDeclaration decl)
+                                             }
     pExOb2aExOb (PRef2Declaration term) = fatal 1270 $ "Nothing defined for "++show term
-          
-    pExOb2aExOb (PRef2Rule str        ) = (ExplRule str, newcxeif(null ruls)("No rule named '"++str++"'") )
-                                          where ruls = [rul | rul<-p_rules p_context, name rul==str ]
-    pExOb2aExOb (PRef2KeyDef str      ) = (ExplKeyDef str, newcxeif(null kds)("No key definition named '"++str++"'") )
-                                          where kds = [kd | kd<-p_keys p_context, name kd==str]
-    pExOb2aExOb (PRef2Pattern str     ) = (ExplPattern str,   newcxeif(null[pat |pat<-ctx_pats  p_context, name pat==str]) ("No pattern named '"++str++"'") )
-    pExOb2aExOb (PRef2Process str     ) = (ExplProcess str,   newcxeif(null[prc |prc<-ctx_PPrcs p_context, name prc==str]) ("No process named '"++str++"'") )
-    pExOb2aExOb (PRef2Interface str   ) = (ExplInterface str, newcxeif(null[ifc |ifc<-ctx_ifcs  p_context, name ifc==str]) ("No interface named '"++str++"'") )
-    pExOb2aExOb (PRef2Context str     ) = (ExplContext str,   newcxeif(name p_context/=str) ("No context named '"++str++"'") )  
-    pExOb2aExOb (PRef2Fspc str        ) = (ExplFspc str,      newcxeif(name p_context/=str) ("No specification named '"++str++"'") )
+    pExOb2aExOb (PRef2Rule str        ) = case [rul | rul<-p_rules p_context, name rul==str ] of
+                                           [] -> Errors [newcxe (" No rule named '"++str++"'")]
+                                           _  -> Checked (ExplRule str)
+    pExOb2aExOb (PRef2KeyDef str      ) = case [kd | kd<-p_keys p_context, name kd==str] of
+                                           [] -> Errors [newcxe (" No key definition named '"++str++"'")]
+                                           _  -> Checked (ExplKeyDef str)
+    pExOb2aExOb (PRef2Pattern str     ) = case [pat |pat<-ctx_pats  p_context, name pat==str] of
+                                           [] -> Errors [newcxe (" No pattern named '"++str++"'")]
+                                           _  -> Checked (ExplPattern str)
+    pExOb2aExOb (PRef2Process str     ) = case [prc |prc<-ctx_PPrcs p_context, name prc==str] of
+                                           [] -> Errors [newcxe (" No process named '"++str++"'")]
+                                           _  -> Checked (ExplProcess str)
+    pExOb2aExOb (PRef2Interface str   ) = case [ifc |ifc<-ctx_ifcs  p_context, name ifc==str] of
+                                           [] -> Errors [newcxe (" No interface named '"++str++"'")]
+                                           _  -> Checked (ExplInterface str)
+    pExOb2aExOb (PRef2Context str     ) = if name p_context/=str
+                                          then Errors [newcxe (" No context named '"++str++"'")]
+                                          else Checked (ExplContext str)
+    pExOb2aExOb (PRef2Fspc str        ) = if name p_context/=str
+                                          then Errors [newcxe (" No cospecificationntext named '"++str++"'")]
+                                          else Checked (ExplFspc str)
 
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop pop
@@ -1691,25 +1695,26 @@ pCtx2aCtx p_context
              (_  ,_  ) -> Errors (e src trg)
              where src = getConceptsFromTerm term
                    trg = getConceptsFromTerm (p_flp term)
-         getDeclarationAndSign :: [P_Declaration] -> Term -> Guarded (Declaration, Sign)
-         getDeclarationAndSign decls term@(Prel _ relname)
-          = case Data.Map.lookup (TypExpr term False) bindings of
-             Just [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
-             Just ds              -> case [(decl,[],[]) | decl<-decls, name decl==relname] of
-                                      []  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                                            ,cxeDecs   = ds          -- the declarations to which this term has been matched
-                                                            }]
-                                      ds' -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                                            ,cxeDecs   = ds'         -- the declarations to which this term has been matched
-                                                            }]
-                                      
-             Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings ])
-         getDeclarationAndSign _ term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of
                          [c] -> c
                          []  -> fatal 1586 ("No type found for term "++show t)
                          cs  -> fatal 1586 ("Multiple types found for term "++show t++": "++show cs)
+
+    getDeclarationAndSign :: [P_Declaration] -> Term -> Guarded (Declaration, Sign)
+    getDeclarationAndSign decls term@(Prel _ relname)
+     = case Data.Map.lookup (TypExpr term False) bindings of
+        Just [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
+        Just ds              -> case [(decl,[],[]) | decl<-decls, name decl==relname] of
+                                 []  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                       ,cxeDecs   = ds          -- the declarations to which this term has been matched
+                                                       }]
+                                 ds' -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
+                                                       ,cxeDecs   = ds'         -- the declarations to which this term has been matched
+                                                       }]
+                                 
+        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings ])
+    getDeclarationAndSign _ term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
 
 --the type checker always returns a term with sufficient type casts, it should remove redundant ones.
 --applying the type checker on an complete, explicitly typed term is equivalent to disambiguating the term
