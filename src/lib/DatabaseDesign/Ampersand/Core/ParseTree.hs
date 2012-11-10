@@ -393,6 +393,7 @@ where
 --                       Constructor      name          RefID  Explanation
    data PRef2Obj = PRef2ConceptDef String
                  | PRef2Declaration Term -- typically PTyp (Prel nm) sgn,   with nm::String and sgn::P_Sign
+                                         -- or        Prel nm; Other terms become fatals
                  | PRef2Rule String
                  | PRef2KeyDef String
                  | PRef2Pattern String
@@ -406,6 +407,7 @@ where
      name pe = case pe of 
         PRef2ConceptDef str -> str
         PRef2Declaration (PTyp _ (Prel _ nm) sgn) -> nm++if null (psign sgn) then "" else show sgn
+        PRef2Declaration (Prel _ nm) -> nm
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
         PRef2Rule str -> str
         PRef2KeyDef str -> str
