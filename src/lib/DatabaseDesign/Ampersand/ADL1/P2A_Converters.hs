@@ -135,12 +135,12 @@ complement (PCpl _ a) = a
 complement (Pnid c)   = Pid c
 complement a          = PCpl (origin a) a
 
-cmpl :: Type -> Type
-cmpl (TypExpr e b)  = TypExpr (complement e) b
-cmpl (TypLub a b e) = TypGlb (cmpl a) (cmpl b) (complement e)
-cmpl (TypGlb a b e) = TypLub (cmpl a) (cmpl b) (complement e)
-cmpl Anything       = Nothng
-cmpl Nothng         = Anything
+--cmpl :: Type -> Type
+--cmpl (TypExpr e b)  = TypExpr (complement e) b
+--cmpl (TypLub a b e) = TypGlb (cmpl a) (cmpl b) (complement e)
+--cmpl (TypGlb a b e) = TypLub (cmpl a) (cmpl b) (complement e)
+--cmpl Anything       = Nothng
+--cmpl Nothng         = Anything
 
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False
@@ -868,12 +868,6 @@ instance Expr Term where
                      in dom x.=.dom e .+. cod x.=.cod e .+.
                         uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
 
-fst3 :: (a,b,c) -> a
-fst3 (x,_,_) = x
-snd3 :: (a,b,c) -> b
-snd3 (_,y,_) = y
-thd3 :: (a,b,c) -> c
-thd3 (_,_,z) = z
 
 --  The following is for drawing graphs.
 
@@ -1033,10 +1027,10 @@ pCtx2aCtx p_context
                             Checked ruls -> (ruls, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined rules", errs)
     (keys,    keycxes)   = case (parallelList . map pKDef2aKDef               . ctx_ks   ) p_context of
-                            Checked keys -> (keys, [])
+                            Checked ks   -> (ks, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined keys", errs)
     (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                . ctx_ifcs ) p_context of
-                            Checked ifcs -> (ifcs, [])
+                            Checked is -> (is, [])
                             Errors errs  -> (fatal 938 "Do not refer to undefined interfaces", errs)
     (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef [] Anything) . ctx_sql  ) p_context of
                             Checked plugs -> (plugs, [])
@@ -1045,7 +1039,7 @@ pCtx2aCtx p_context
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 954 "Do not refer to undefined phpPlugs", errs)
     (allpops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
-                            Checked pops -> (pops, [])
+                            Checked ps -> (ps, [])
                             Errors errs  -> (fatal 957 "Do not refer to undefined populations", errs)
     allExplicitAtoms :: [(String,[String])]
     allExplicitAtoms = [(p_popm cptos',[a | (a,_)<-p_popps cptos']) | cptos'@P_CptPopu{}<-pops p_context]
@@ -1095,14 +1089,14 @@ pCtx2aCtx p_context
        where
         typeErrs = rulecxes'++keycxes'++deccxes'++xplcxes'
         (prules,rulecxes') = case (parallelList . map (pRul2aRul (name ppat)) .pt_rls) ppat of
-                              Checked ruls -> (ruls, [])
-                              Errors errs  -> (fatal 995 "Do not refer to undefined rules", errs)
+                              Checked ruls  -> (ruls, [])
+                              Errors errs   -> (fatal 995 "Do not refer to undefined rules", errs)
         (keys',keycxes')   = case (parallelList . map pKDef2aKDef .pt_kds) ppat of
-                              Checked keys -> (keys, [])
-                              Errors errs  -> (fatal 998 "Do not refer to undefined keys", errs)
+                              Checked ks    -> (ks, [])
+                              Errors errs   -> (fatal 998 "Do not refer to undefined keys", errs)
         (adecs',deccxes')  = case (parallelList . map (pDecl2aDecl pops') . pt_dcs) ppat of
-                              Checked decs -> ([d{decpat=name ppat} | d<-decs], [])
-                              Errors  errs -> (fatal 1001 "Do not refer to undefined declarations", errs)
+                              Checked decs  -> ([d{decpat=name ppat} | d<-decs], [])
+                              Errors  errs  -> (fatal 1001 "Do not refer to undefined declarations", errs)
         (xpls,xplcxes')    = case (parallelList . map pPurp2aPurp . pt_xps) ppat of
                               Checked purps -> (purps, [])
                               Errors  errs  -> (fatal 1005 "Do not refer to undefined purposes", errs)
@@ -1133,15 +1127,15 @@ pCtx2aCtx p_context
         agens'  = map (pGen2aGen (name pproc)) (procGens pproc)
         arruls = [(rol,rul) |rul<-rules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
         (adecs',deccxes') = case (parallelList . map (pDecl2aDecl pops') . procDcls) pproc of
-                             Checked decs -> ([d{decpat=name pproc} | d<-decs], [])
-                             Errors  errs -> (fatal 1030 "Do not refer to undefined declarations", errs)
+                             Checked decs  -> ([d{decpat=name pproc} | d<-decs], [])
+                             Errors  errs  -> (fatal 1030 "Do not refer to undefined declarations", errs)
         (rruls,rrcxes)    = case (parallelList . map pRRul2aRRul . procRRuls) pproc of
-                             Checked rrls -> (rrls, [])
-                             Errors errs  -> (fatal 1029 "Do not refer to undefined roleRules", errs)
+                             Checked rrls  -> (rrls, [])
+                             Errors errs   -> (fatal 1029 "Do not refer to undefined roleRules", errs)
     --  (keys',keycxes')    = (unzip . map  pKDef2aKDef                    . procKds) pproc
         (keys',keycxes')  = case (parallelList . map pKDef2aKDef . procKds) pproc of
-                             Checked keys -> (keys, [])
-                             Errors errs  -> (fatal 1029 "Do not refer to undefined keys", errs)
+                             Checked ks    -> (ks, [])
+                             Errors errs   -> (fatal 1029 "Do not refer to undefined keys", errs)
         (expls,explcxes)  = case (parallelList . map pPurp2aPurp . procXps) pproc of
                              Checked purps -> (purps, [])
                              Errors  errs  -> (fatal 1032 "Do not refer to undefined purposes", errs)
