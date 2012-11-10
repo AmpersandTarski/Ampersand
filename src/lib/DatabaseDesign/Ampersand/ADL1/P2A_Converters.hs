@@ -395,7 +395,7 @@ typing p_context
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Data.Map.lookup typ stConcepts of
                      Just cs -> cs
-                     _ -> fatal 391 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Data.Map.toAscList stConcepts ])
+                     _ -> fatal 391 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Data.Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
      compatible a b = (not.null) (lkp a `isc` lkp b)
       where lkp c = case Data.Map.lookup c isaClosReversed of
                      Just cs -> cs
@@ -553,6 +553,7 @@ instance Expr P_Context where
     (let x=ctx_ks    pContext in uType dcls x uLft uRt x) .+.
     (let x=ctx_gs    pContext in uType dcls x uLft uRt x) .+.
     (let x=ctx_ifcs  pContext in uType dcls x uLft uRt x) .+.
+    (let x=ctx_ps    pContext in uType dcls x uLft uRt x) .+.
     (let x=ctx_sql   pContext in uType dcls x uLft uRt x) .+.
     (let x=ctx_php   pContext in uType dcls x uLft uRt x) .+.
     (let x=ctx_pops  pContext in uType dcls x uLft uRt x)
@@ -578,6 +579,7 @@ instance Expr P_Pattern where
     (let x=pt_gns pPattern in uType dcls x uLft uRt x) .+.
     (let x=pt_dcs pPattern in uType dcls x uLft uRt x) .+.
     (let x=pt_kds pPattern in uType dcls x uLft uRt x) .+.
+    (let x=pt_xps pPattern in uType dcls x uLft uRt x) .+.
     (let x=pt_pop pPattern in uType dcls x uLft uRt x)
 
 instance Expr P_Process where
@@ -601,6 +603,7 @@ instance Expr P_Process where
     (let x=procGens  pProcess in uType dcls x uLft uRt x) .+.
     (let x=procDcls  pProcess in uType dcls x uLft uRt x) .+.
     (let x=procKds   pProcess in uType dcls x uLft uRt x) .+.
+    (let x=procXps   pProcess in uType dcls x uLft uRt x) .+.
     (let x=procPop   pProcess in uType dcls x uLft uRt x)
 
 instance Expr P_Rule where
@@ -654,6 +657,16 @@ instance Expr P_SubInterface where
  terms _           = []
  uType dcls _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType dcls x uLft uRt x
  uType _    _ _    _   _              = nothing
+
+instance Expr PPurpose where
+ terms _ = []
+ uType dcls _ uLft uRt purp = let x=pexObj purp in uType dcls x uLft uRt x
+
+instance Expr PRef2Obj where
+ terms _ = []
+ uType dcls _ uLft uRt (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType dcls x uLft uRt x
+ uType dcls _ uLft uRt (PRef2Declaration t)  = uType dcls t uLft uRt t
+ uType _    _ _    _   _                     = nothing
 
 instance Expr P_Sign where
  terms _ = []
@@ -717,7 +730,7 @@ instance Expr Term where
      (Patm _ _ []) -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt      -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
-     Pnull        ->nothing                                                  -- -V     (the empty set)
+     Pnull        -> nothing                                                  -- -V     (the empty set)
      PVee{}       -> dom x.<.uLft .+. cod x.<.uRt
      (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
      (Pequ _ a b) -> dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
@@ -1368,7 +1381,7 @@ pCtx2aCtx p_context
                                             Checked decl:_ -> Checked (ExplDeclaration decl)
                                             Errors ers:_   -> Errors ers
                                             []             -> Errors [CxeOrig [newcxe ("No declaration for '"++showADL t++"'")] "relation" nm o ]
-    pExOb2aExOb (PRef2Declaration t@(Prel o _ ))
+    pExOb2aExOb (PRef2Declaration t@(Prel{}))
                                         = do { (decl,_) <- getDeclarationAndSign (p_declarations p_context) t
                                              ; return (ExplDeclaration decl)
                                              }
@@ -1713,7 +1726,7 @@ pCtx2aCtx p_context
                                                        ,cxeDecs   = ds'         -- the declarations to which this term has been matched
                                                        }]
                                  
-        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings ])
+        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings, take 7 (show b)==take 7 (show term) ])
     getDeclarationAndSign _ term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
 
 --the type checker always returns a term with sufficient type casts, it should remove redundant ones.
