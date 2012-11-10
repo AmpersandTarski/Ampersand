@@ -14,7 +14,6 @@ where
    import DatabaseDesign.Ampersand.Classes
    import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
    import DatabaseDesign.Ampersand.Misc
-   --import DatabaseDesign.Ampersand.Fspec.FPA        (FPA(..),FPcompl)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowHS"
@@ -811,14 +810,14 @@ where
     showHS flags _ rel 
        = case rel of
             Rel{} -> "Rel "++show (relnm rel)++" "++showPos
-                         ++" "++showSign++" "++showHSName (reldcl rel)
+                         ++" "++showSign'++" "++showHSName (reldcl rel)
             I{}   -> "I "++show1Typ
             V{}   -> "V "++showSgn
             Mp1{} -> "Mp1 "++relval rel++" "++show1Typ
   -- WHY wordt relval rel zonder quotes afgedrukt?
   -- BECAUSE: relval rel wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
            where showPos  = "("++showHS flags "" (origin rel)++")"
-                 showSign = "("++showHS flags "" (relsgn  rel)++")"
+                 showSign' = "("++showHS flags "" (relsgn  rel)++")"
                  show1Typ = "("++showHS flags "" (rel1typ rel)++")"
                  showSgn  = "("++showHS flags "" (reltyp  rel)++")"
    
