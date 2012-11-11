@@ -196,6 +196,19 @@ setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains
    res   = foldl f xs (Data.Map.keys xs `isc` nub (concat (Data.Map.elems xs)))
 
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
+                       | a==b      = distinctCons a b (mrgUnion as bs)
+                       | otherwise = b:mrgUnion (a:as) bs
+mrgUnion a b = a ++ b -- since either a or b is the empty list
+
+mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgIntersect (a:as) (b:bs) | a<b       = mrgIntersect as (b:bs)
+                           | a==b      = distinctCons a b (mrgIntersect as bs)
+                           | otherwise = mrgIntersect (a:as) bs
+mrgIntersect _ _ = [] -- since either a or b is the empty list
+
+{- The following mrgUnion and mrgIntersect are for debug purposes
+mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct l then
                 (if isSortedAndDistinct r then merge l r
@@ -220,6 +233,7 @@ mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge co
                             | a==b = if b==a then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
                             | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
         merge _ _ = [] -- since either a or b is the empty list
+-}
 
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
