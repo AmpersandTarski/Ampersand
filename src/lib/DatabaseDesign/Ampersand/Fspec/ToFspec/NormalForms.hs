@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
   (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute,isI)
 where
-   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),eqCl,eqClass,Flippable(..))
+   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEng,eqCl,eqClass,Flippable(..))
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.ECArule
    import DatabaseDesign.Ampersand.ADL1.Expression 
@@ -63,7 +63,7 @@ where
                        | (not.null) [d | d<-ds, isAll d] = (All (nub [ d' | d<-ds, d'<-if isAll d then let All ops' _ = d in ops' else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop | Nop{}<-ops] = (All [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEngString "and" [(name.head.(morlist::Expression->[Relation]).paTo.head) cl |cl<-long]++"together"])
+                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.(morlist::Expression->[Relation]).paTo.head) cl |cl<-long]++"together"])
                        | otherwise = (All ds ms, [])
                        where ds' = [ let p=head cl in
                                      if length cl==1 then p else p{paTo=disjNF (EUni[paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
@@ -94,13 +94,6 @@ where
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
      norm p                   = (p, [])
-
-     commaEngString :: String -> [String] -> String
-     commaEngString str [a,b,c]= a++", "++b++", "++str++" "++c
-     commaEngString str [a,b]  = a++" "++str++" "++b
-     commaEngString _ [a]    = a
-     commaEngString str (a:as) = a++", "++commaEngString str as
-     commaEngString _ []     = ""
 
 
 {- Normalization of expressions -}
