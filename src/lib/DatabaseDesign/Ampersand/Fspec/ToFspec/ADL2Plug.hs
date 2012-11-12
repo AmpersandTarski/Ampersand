@@ -16,7 +16,7 @@ import DatabaseDesign.Ampersand.Fspec.Plug
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Fspec.Fspec 
 import Data.Char
-import Data.List (nub)
+import Data.List (nub,intercalate)
 import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
@@ -135,7 +135,16 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
                             -> not $ 
                                  isSur rel &&
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
-                   _ -> fatal 152 ("Illegal Plug Expression: "++show expr)
+                   _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
+                                   " ***kernel:*** \n   "++
+                                   intercalate "\n   " (map show kernel)++"\n"++
+                                   " ***Attributes:*** \n   "++
+                                   intercalate "\n   " (map show plugAtts)++"\n"++
+                                   " ***e:*** \n   "++
+                                   ( show e)
+                                  )
+                                   
+                                   
    kernelpaths = clos kernel
    --    Warshall's transitive closure algorithm, adapted for this purpose:
    clos :: [Expression] -> [Expression]
