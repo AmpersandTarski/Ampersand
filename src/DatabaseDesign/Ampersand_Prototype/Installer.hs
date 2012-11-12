@@ -175,7 +175,7 @@ createTablePHP :: Int -> CreateTable -> [String]
 createTablePHP i (crtbl,crflds,crengine)
          = [ "mysql_query(\""++ crtbl]
            ++ indentBlock i crflds
-           ++ [spaces i ++ crengine ++ "\");"]
+           ++ [replicate i ' ' ++ crengine ++ "\");"]
            
 plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
