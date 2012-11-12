@@ -65,6 +65,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                              , ref <- splitOn ";" refStr
                              , art <- splitOn (" "++separator++" ") $ getArtikelen ref
                              ]
+                    where trimSpaces = let f = reverse . dropWhile (' '==)
+                                       in f . f
                              
                allRefs = map (\(w,a) -> (w, unscanRef a)) sortedScannedRefs
                
@@ -83,8 +85,6 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
 
                unscanRef :: [Either String Int] -> String
                unscanRef scannedRef = concat $ map (either id show) scannedRef
-
-               trimSpaces str = dropWhile (==' ') $ reverse (dropWhile (==' ') $ reverse str)
 
   dpIntro :: [Block]
   dpIntro = 
