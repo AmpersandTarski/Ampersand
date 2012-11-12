@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
   (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute,isI)
 where
-   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEngString,eqCl,eqClass,Flippable(..))
+   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),eqCl,eqClass,Flippable(..))
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.ECArule
    import DatabaseDesign.Ampersand.ADL1.Expression 
@@ -94,6 +94,14 @@ where
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
      norm p                   = (p, [])
+
+     commaEngString :: String -> [String] -> String
+     commaEngString str [a,b,c]= a++", "++b++", "++str++" "++c
+     commaEngString str [a,b]  = a++" "++str++" "++b
+     commaEngString _ [a]    = a
+     commaEngString str (a:as) = a++", "++commaEngString str as
+     commaEngString _ []     = ""
+
 
 {- Normalization of expressions -}
 

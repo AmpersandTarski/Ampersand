@@ -82,7 +82,6 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.hPutStrLn
    , DatabaseDesign.Ampersand.Basics.readFile
    , DatabaseDesign.Ampersand.Basics.writeFile
-   , spaces
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp, allprops, endoprops

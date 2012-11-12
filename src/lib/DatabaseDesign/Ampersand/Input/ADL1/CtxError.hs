@@ -20,11 +20,11 @@ shOrig (DBLoc str)   = "Database location: "++str
 shOrig (Origin str)  = str
 shOrig OriginUnknown = "Unknown origin"
 
-data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]    -- ^ The list of concepts that have been proven equal.
+data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of concepts with different names, that have been proven equal.
                               }
-              | CxeEqAttribs  {cxeOrig :: Origin          -- ^ The location of the object/key definition in which different attributes have the same name.
-                              ,cxeName :: String          -- ^ The name shared by different attributes.
-                              ,cxeAtts :: [Term]  -- ^ The list of attributes with the same name.
+              | CxeEqAttribs  {cxeOrig :: Origin           -- ^ The location of the object/key definition in which different attributes have the same name.
+                              ,cxeName :: String           -- ^ The name shared by different attributes.
+                              ,cxeAtts :: [Term]           -- ^ The list of attributes with the same name.
                               }
               | CxeILike      {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
@@ -86,10 +86,10 @@ instance Show CtxError where
 
 showErr :: CtxError -> String
 showErr err = case err of
-  CxeEqConcepts{} -- * CxeEqConcepts tells us that there are concepts with different names, which can be proven equal by the type checker.
+  CxeEqConcepts{}
      -> concat
            ["The following concepts are equal:\n"++commaEng "and" (map show (cxeConcepts err))++"." | not (null (cxeConcepts err)) ]
-  CxeEqAttribs{} -- * CxeEqAttribs tells us that there are concepts with different names, which can be proven equal by the type checker.
+  CxeEqAttribs{}
      -> show (cxeOrig err)++": Different attributes have the same name:"++
         concat [ "\n   ("++show (origin term)++")\t \""++cxeName err++"\" : "++showADL term | term<-cxeAtts err ]
   CxeILike{}
