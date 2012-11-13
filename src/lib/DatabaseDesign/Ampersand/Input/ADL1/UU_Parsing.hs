@@ -302,10 +302,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
     firstState  (s:ss) = Just s
     getPosition []     = "unexpected end of input"
     getPosition (s:ss) = "before " ++ show s
+    {-# INLINE splitStateE #-}
+    {-# INLINE splitState  #-}
+    
    instance OutputState Pair  where
      acceptR            = Pair
      nextR       acc  f   ~(Pair a r) = acc  (f a) r  
      dollarR     acc  f  v = acc  (f v)
+     {-# INLINE acceptR #-}
+     {-# INLINE nextR   #-}
+     {-# INLINE dollarR #-}
 
    instance (Symbol s, InputState state s, OutputState result) => Sequence (AnaParser state result s)    where
      (<*>) = anaSeq libDollar  libSeq  ($) 
@@ -381,16 +387,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
     splitState :: state s            -> ({-L-} s, state s {-R-})
     firstState :: state s            -> Maybe s
     getPosition :: state s            -> String
---    {-# INLINE splitStateE #-}
---    {-# INLINE splitState  #-}
 
    class OutputState r  where
      acceptR      ::                              v             -> rest        -> r v rest
      nextR        ::  (a ->     rest -> rest') -> (b -> a)      -> r b rest  -> rest'
      dollarR      ::  (a -> r c rest -> rest') -> (b -> a) -> b -> r c rest  -> rest'
---     {-# INLINE acceptR #-}
---     {-# INLINE nextR   #-}
---     {-# INLINE dollarR #-}
 
    class (Ord s, Show s) => Symbol s where
     deleteCost :: s -> Int{-I-}
