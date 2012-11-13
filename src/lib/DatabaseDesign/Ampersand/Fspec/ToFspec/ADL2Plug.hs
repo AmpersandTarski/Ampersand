@@ -128,6 +128,7 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
     | length(map target kernel) > length(nub(map target kernel))
        = fatal 146 "more than one kernel field for the same concept"
     | otherwise = case expr of
+                   ECps [childExp] -> maybenull childExp
                    ERel rel -> not $
                                  isTot rel && 
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isTot k || target k==target rel && isSur k ]
