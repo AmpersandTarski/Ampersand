@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -fno-enable-rewrite-rules #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.Input.ADL1.Parser 
    (pContext, pPopulations,pTerm, keywordstxt, keywordsops, specialchars, opchars) where

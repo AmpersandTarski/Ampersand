@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -fno-enable-rewrite-rules #-}
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 --THIS IS THE PARSER VERSION (rev.664 in svnou) AS USED IN THE PREVIOUS RELEASE OF STUDENT TOOL.
 --IT HAS BEEN MODIFIED TO FIT CHANGES IN module Adl
