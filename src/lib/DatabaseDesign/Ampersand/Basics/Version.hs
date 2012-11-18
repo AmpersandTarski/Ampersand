@@ -1,15 +1,20 @@
 {-# OPTIONS_GHC -Wall #-}
+-- | This module contains Version of Ampersand
 module DatabaseDesign.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatalMsg) where
 
 import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
 
+-- | a function to create error message in a structured way, containing the version of Ampersand. 
+--   It throws an error, showing a (module)name and a number. This makes debugging pretty easy. 
 fatalMsg :: String -> Int -> String -> a
 fatalMsg haskellModuleName lineNr msg
  = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++ampersandVersionWithoutBuildTimeStr++")\n  "++msg)
 
+-- | String, containing the Ampersand version, including the build timestamp.
 ampersandVersionStr :: String
 ampersandVersionStr = ampersandVersionWithoutBuildTimeStr ++", build time: "++buildTimeStr
 
+-- | String, containing the Ampersand version
 ampersandVersionWithoutBuildTimeStr :: String
 ampersandVersionWithoutBuildTimeStr = "Ampersand v"++cabalVersionStr++"."++svnRevisionStr
 {- 
