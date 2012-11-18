@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}  
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug 
-  (rel2plug --make a binary sqlplug for a morphism that is neither inj nor uni
-  ,makeEntities --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
-  ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
-  ,rel2fld --create field for TblSQL or ScalarSQL plugs 
+  (rel2plug 
+  ,makeEntities 
+  ,makeSqlPlug 
+--  ,rel2fld 
   )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
@@ -35,6 +35,9 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 --           and not in a BinSQL with a pair of columns (I/\r;r~, r)
 --
 -- a relation r (or r~) is stored in the trgFld of this plug
+
+
+-- | Make a binary sqlplug for a morphism that is neither inj nor uni
 rel2plug :: Relation -> [Expression] -> PlugSQL
 rel2plug  r totals
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
@@ -90,7 +93,18 @@ rel2plug  r totals
 -- flduniq=isInj (kernelpath);r
 -- 
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
+
+-- | Create field for TblSQL or ScalarSQL plugs 
 rel2fld :: [Expression] -> [Expression] -> Expression -> SqlField
+rel2fld kernel plugAtts (ECps [childExp]) 
+     = fatal 100 ("Illegal Plug Expression:\n"++
+                  " ***kernel:*** \n   "++
+                  intercalate "\n   " (map show kernel)++"\n"++
+                  " ***Attributes:*** \n   "++
+                  intercalate "\n   " (map show plugAtts)++"\n"++
+                  " ***e:*** \n   "++
+                  ( show (ECps [childExp]))
+                                  )
 rel2fld kernel                  -- > all relations (in the form either ERel r or EFlp (ERel r)) that may be represented as attributes of this entity.
         plugAtts                -- > all relations (in the form either ERel r or EFlp (ERel r)) that are defined as attributes by the user.
         e                       -- > either ERel r or EFlp (ERel r), representing the relation from some kernel field k1 to f1
@@ -128,7 +142,8 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
     | length(map target kernel) > length(nub(map target kernel))
        = fatal 146 "more than one kernel field for the same concept"
     | otherwise = case expr of
-                   ECps [childExp] -> maybenull childExp
+             --  Han, 20121118: Removed following code, because it is not a solution. 
+             --    ECps [childExp] -> maybenull childExp
                    ERel rel -> not $
                                  isTot rel && 
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isTot k || target k==target rel && isSur k ]
@@ -147,14 +162,15 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
                                    
                                    
    kernelpaths = clos kernel
-   --    Warshall's transitive closure algorithm, adapted for this purpose:
-   clos :: [Expression] -> [Expression]
-   clos xs
-    = foldl f [ECps [x]| x<-xs] (nub (map source xs) `isc` nub (map target xs))
-      where
-       f q x = q ++
-               [ECps (ls ++ rs) | lft@(ECps ls) <- q, x <= target lft,
-                rgt@(ECps rs) <- q, x <= source rgt, null (ls `isc` rs)]
+    where
+     -- Warshall's transitive closure algorithm, adapted for this purpose:
+     clos :: [Expression] -> [Expression]
+     clos xs
+      = foldl f [ECps [x]| x<-xs] (nub (map source xs) `isc` nub (map target xs))
+        where
+         f q x = q ++
+                 [ECps (ls ++ rs) | lft@(ECps ls) <- q, x <= target lft,
+                  rgt@(ECps rs) <- q, x <= source rgt, null (ls `isc` rs)]
                   
 -- ^ Explanation:  rel is a relation from some kernel field k to f
 -- ^ (fldexpr k) is the relation from the plug's ID to k
@@ -181,8 +197,9 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
    This parameter allRels was added to makePlugs to avoid recomputation of the extra multiplicities.
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
-makeEntities :: ConceptStructure a => A_Context -> [Relation] -> [a] -> [PlugSQL]
-makeEntities _ allRels exclusions
+-- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
+makeEntities :: ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
+makeEntities allRels exclusions
  = sortWith ((0-).length.tblfields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
@@ -298,6 +315,7 @@ So the first step is create the kernels ...   -}
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
                   | island<-sortWith ((0-).length) islands ]
          otherFields :: [Expression]
+         -- TODO: @Stef: Dit is verdacht: Waarom een composition van één parameter aanmaken?? 
          otherFields = [ECps (head (sortWith length cl)) | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
          closure :: [[Expression]]
          closure = clos1 [ [r] | r<-kernelRels, null [ () |island<-islands, source r `elem` island, target r `elem` island] ]
@@ -327,6 +345,7 @@ So the first step is create the kernels ...   -}
 --              When do you want to define your own Scalar or BinPlug
 --rel2fld  (keyDefs context) kernel plugAtts r
 
+-- | Make a sqlplug from an ObjectDef (user-defined sql plug)
 makeSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeSqlPlug _ obj
  | null(objatsLegacy obj) && isI(objctx obj)
