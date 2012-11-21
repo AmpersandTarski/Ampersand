@@ -61,7 +61,7 @@ data Options = Options { showVersion :: Bool
                        , genGraphics :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
-                       , haskell :: Bool   -- if True, generate the ECps-structure as a Haskell source file
+                       , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , dirOutput :: String -- the directory to generate the output in.
                        , outputfile :: String -- the file to generate the output in.
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
