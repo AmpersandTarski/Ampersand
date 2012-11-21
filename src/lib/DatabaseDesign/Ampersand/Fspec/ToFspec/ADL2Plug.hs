@@ -240,11 +240,10 @@ makeEntities allRels exclusions
 -- all relations that are univalent and injective are flipped if that makes them surjective.
 -- kernelRels contains all relations that occur in kernels.
     kernelRels :: [Expression]
-    kernelRels   = [ERel r |r<-unis, isSur r]++[EFlp (ERel r) |r<-unis, not (isSur r), isTot r]
+    kernelRels   = [ERel r | r<-unis, isSur r] ++ [EFlp (ERel r) | r<-unis, not (isSur r), isTot r]
 -- attRels contains all relations that will be attribute of a kernel.
     attRels :: [Expression]
-    attRels      = [ERel r | r<-rs, isUni r]
-                ++ [EFlp (ERel r) | r<-rs, not (isUni r), isInj r]
+    attRels      = [ERel r | r<-rs,   isUni r] ++ [EFlp (ERel r) | r<-rs,   not (isUni r), isInj r]
                    where rs = rels>-mors kernelRels
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
@@ -307,13 +306,14 @@ So the first step is create the kernels ...   -}
               | c<-concs rels, not (c `elem` (map target (concat kerns)))
               ]
        where
-         (_,islands) = case concs rels of
-                         []  -> (\x y -> if x==y then DatabaseDesign.Ampersand.Core.Poset.EQ else DatabaseDesign.Ampersand.Core.Poset.NC,[])
-                         c:_ -> cptgE c
+         islands = error ("Diagnosis : "++ show (sortWith ((0-).length)
+                   (case concs rels of
+                     []  -> []
+                     c:_ -> snd (cptgE c))))
          kerns :: [[Expression]]
          kerns =  [ [ERel (I c) | c<-island ] ++
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
-                  | island<-sortWith ((0-).length) islands ]
+                  | island<-islands ]
          otherFields :: [Expression]
          otherFields = [case head (sortWith length cl) of [e] -> e; es -> ECps es | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
          closure :: [[Expression]]
