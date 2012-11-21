@@ -306,10 +306,10 @@ So the first step is create the kernels ...   -}
               | c<-concs rels, not (c `elem` (map target (concat kerns)))
               ]
        where
-         islands = error ("Diagnosis : "++ show (sortWith ((0-).length)
-                   (case concs rels of
-                     []  -> []
-                     c:_ -> snd (cptgE c))))
+         islands = sortWith ((0-).length)
+                            (case concs rels of
+                              []  -> []
+                              c:_ -> snd (cptgE c))
          kerns :: [[Expression]]
          kerns =  [ [ERel (I c) | c<-island ] ++
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
