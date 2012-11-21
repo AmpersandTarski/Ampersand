@@ -805,11 +805,12 @@ instance Expr Term where
          (P_Sign cs)        -> let declarationTable = fst dcls
                                    iSrc = thing (head cs)
                                    iTrg = thing (last cs)
-                                   y=complement x
+                                   x'=complement x
                                    decls nm = [term | decl<-declarationTable, name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
                                in case e of
                                  (Prel _ nm) -> case decls nm of
-                                                  d:_ -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                                                  d:_ -> dom x.=.dom e .+. cod x.=.cod e .+.
+                                                         dom x.=.dom d .+. cod x.=.cod d .+. dom x'.<.iSrc .+. cod x'.<.iTrg
                                                   _   -> dom x.<.iSrc  .+. cod x.<.iTrg  .+. dom x.<.dom e .+. cod x.<.cod e
                                  _           -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
                                                 dom x.<.dom e .+. cod x.<.cod e .+.
