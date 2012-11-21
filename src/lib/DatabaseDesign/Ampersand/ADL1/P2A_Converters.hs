@@ -1001,7 +1001,15 @@ pCtx2aCtx p_context
     specializationTuples :: [(A_Concept,A_Concept)]
     specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
     gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
-    gEandClasses = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+    gEandClasses = error ("Diagnosis : "++show (nub (map (sortWith name) classes)))   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+     where (_, cls) = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples
+           classes  = rd [] (map (DatabaseDesign.Ampersand.Core.Poset.sortBy DatabaseDesign.Ampersand.Core.Poset.compare) cls)
+           rd seen (cs:css)
+            = case cs>-seen of
+               [] -> rd seen css
+               _  -> cs: rd (seen++cs) css
+           rd _ [] = []
+               
     typeErrors :: [CtxError]
     typeErrors
      | (not.null) derivedEquals = derivedEquals
