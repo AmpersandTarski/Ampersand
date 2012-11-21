@@ -315,8 +315,7 @@ So the first step is create the kernels ...   -}
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
                   | island<-sortWith ((0-).length) islands ]
          otherFields :: [Expression]
-         -- TODO: @Stef: Dit is verdacht: Waarom een composition van één parameter aanmaken?? 
-         otherFields = [ECps (head (sortWith length cl)) | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
+         otherFields = [case head (sortWith length cl) of [e] -> e; es -> ECps es | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
          closure :: [[Expression]]
          closure = clos1 [ [r] | r<-kernelRels, null [ () |island<-islands, source r `elem` island, target r `elem` island] ]
          clos1 :: [[Expression]] -> [[Expression]]

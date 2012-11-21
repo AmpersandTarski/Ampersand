@@ -373,14 +373,14 @@ data ExplObj = ExplConceptDef ConceptDef
 data Expression
       = EEqu (Expression,Expression)       -- ^ equivalence             =
       | EImp (Expression,Expression)       -- ^ implication             |-
-      | EIsc [Expression]                  -- ^ intersection            /\
-      | EUni [Expression]                  -- ^ union                   \/
+      | EIsc [Expression]                  -- ^ intersection            /\  -- EIsc [e] should not occur
+      | EUni [Expression]                  -- ^ union                   \/  -- EUni [e] should not occur
       | EDif (Expression,Expression)       -- ^ difference              -
       | ELrs (Expression,Expression)       -- ^ left residual           /
       | ERrs (Expression,Expression)       -- ^ right residual          \
-      | ECps [Expression]                  -- ^ composition             ;
-      | ERad [Expression]                  -- ^ relative addition       !
-      | EPrd [Expression]                  -- ^ cartesian product       *  -- The argument is a list of Expressions rather than a tuple (l,r), only because * is associative.
+      | ECps [Expression]                  -- ^ composition             ;   -- ECps [e] should not occur
+      | ERad [Expression]                  -- ^ relative addition       !   -- ERad [e] should not occur
+      | EPrd [Expression]                  -- ^ cartesian product       *   -- The argument is a list of Expressions rather than a tuple (l,r), only because * is associative.
       | EKl0 Expression                    -- ^ Rfx.Trn closure         *  (Kleene star)
       | EKl1 Expression                    -- ^ Transitive closure      +  (Kleene plus)
       | EFlp Expression                    -- ^ conversion (flip, wok)  ~
