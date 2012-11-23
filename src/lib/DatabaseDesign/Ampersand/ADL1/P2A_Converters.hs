@@ -23,7 +23,8 @@ import Data.Maybe
 import Data.List
 import Data.Char
 import Control.Applicative
-import qualified Data.Map
+import Data.Map (Map)
+import qualified Data.Map as Map hiding (Map)
 
 -- TODO: this module should import Database.Ampersand.Core.ParseTree directly, and it should be one 
 --       of the very few modules that imports it. (might require some refactoring due to shared stuff)
@@ -145,7 +146,7 @@ complement a          = PCpl (origin a) a
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False
 
-type Typemap = Data.Map.Map Type [Type]
+type Typemap = Map Type [Type]
 
 {- The type  Typemap  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
 For the following, let m be a Typemap that represents relation r[Type*Type]
@@ -156,44 +157,44 @@ Invariants are:
 1b.      m is total (dom m=I[source r])
    By the way, keys m produces the elements in ascending order without duplicates.
 2. All elements of the codomain of r are obtained by 'elems'
-         concat (Data.Map.elems m)     represents    cod r
+         concat (Map.elems m)     represents    cod r
 3. The map contains sorted lists without duplicates:
          let isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
              isSortedAndDistinct _ = True
-         in Data.Map.fold (&&) True (Data.Map.map isSortedAndDistinct m)
+         in Map.fold (&&) True (Map isSortedAndDistinct m)
 -}
 
 -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
 -- | note that the domain must be preserved!
 -- | reverseMap r = r~
-reverseMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reverseMap lst = (Data.Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Data.Map.toAscList lst]))
+reverseMap :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
+reverseMap lst = (Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Map.toAscList lst]))
 -- note: reverseMap is relatively slow, but only needs to be calculated once
 
 -- | addIdentity r = r\/I
-addIdentity :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-addIdentity mp = Data.Map.mapWithKey (\k a->mrgUnion a [k]) mp
+addIdentity :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
+addIdentity mp = Map.mapWithKey (\k a->mrgUnion a [k]) mp
 
 -- | if lst represents a binary relation r, then reflexiveMap lst represents r/\r~
 {-
-reflexiveMap :: (Prelude.Ord a, Show a) => Data.Map.Map a [a] -> Data.Map.Map a [a]
-reflexiveMap lst = Data.Map.map sort (Data.Map.intersectionWith isc lst (reverseMap lst))
+reflexiveMap :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
+reflexiveMap lst = Map.map sort (Map.intersectionWith isc lst (reverseMap lst))
 -}
 
-mapIsOk :: (Show a,Ord a) => Data.Map.Map k [a] -> Bool
-mapIsOk m = Data.Map.fold (&&) True (Data.Map.map (isSortedAndDistinct . checkRfx) m)
+mapIsOk :: (Show a,Ord a) => Map k [a] -> Bool
+mapIsOk m = Map.fold (&&) True (Map.map (isSortedAndDistinct . checkRfx) m)
 isSortedAndDistinct :: Ord a => [a] -> Bool
 isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
 isSortedAndDistinct _ = True
--- | The purpose of 'setClosure' is to compute the transitive closure of relations that are represented as a Map (Data.Map.Map a [a]).
+-- | The purpose of 'setClosure' is to compute the transitive closure of relations that are represented as a Map (Map a [a]).
 --   For that purpose we use a Warshall algorithm.
-setClosure :: (Show a,Ord a) => Data.Map.Map a [a] -> String -> Data.Map.Map a [a]
+setClosure :: (Show a,Ord a) => Map a [a] -> String -> Map a [a]
 setClosure xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
 setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
   where
---   f q x = Data.Map.map (\bs->foldl mrgUnion bs [b' | b<-bs, b == x, (a', b') <- Data.Map.toList q, a' == x]) q
-   f q x = Data.Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Data.Map.lookup x q]]) q
-   res   = foldl f xs (Data.Map.keys xs `isc` nub (concat (Data.Map.elems xs)))
+--   f q x = Map.map (\bs->foldl mrgUnion bs [b' | b<-bs, b == x, (a', b') <- Map.toList q, a' == x]) q
+   f q x = Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
+   res   = foldl f xs (Map.keys xs `isc` nub (concat (Map.elems xs)))
 
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
@@ -249,14 +250,14 @@ checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show 
 checkRfx [] = []        
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
-lookups :: (Show a,Ord a) => a -> Data.Map.Map a [a] -> [a]
-lookups o q = head ([mrgUnion [o] e | Just e<-[Data.Map.lookup o q]]++[[o]])
+lookups :: (Show a,Ord a) => a -> Map a [a] -> [a]
+lookups o q = head ([mrgUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])
 -- To Stef: lookups was not designed in this way: once upon a time it returned findIn unless the element did not exist.
 -- This is a fundamental difference and wherever lookups was used, there might be bugs now.
 {- Trying to understand lookups:
 lookups "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]
 = 
-head ([mrgUnion [o] e | (Just e)<-[Data.Map.lookup "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]]]++[["2"]])
+head ([mrgUnion [o] e | (Just e)<-[Map.lookup "2" [("1",["aap","noot","mies"]), ("2",["vuur","mus"])]]]++[["2"]])
 = 
 head ([mrgUnion ["2"] e | (Just e)<-[Just ["vuur","mus"]]]++[["2"]])
 = 
@@ -267,14 +268,14 @@ head (["2", "vuur","mus"]++[["2"]])
 ["2", "vuur","mus"]
 -}
 -- | findIn(k,R) yields all l such that: k R l.
-findIn :: Ord k => k -> Data.Map.Map k [a] -> [a]
-findIn t cl = getList (Data.Map.lookup t cl)
+findIn :: Ord k => k -> Map k [a] -> [a]
+findIn t cl = getList (Map.lookup t cl)
                  where getList Nothing = []
                        getList (Just a) = a
 
 
 nothing :: (Typemap,Typemap)
-nothing = (Data.Map.empty,Data.Map.empty)
+nothing = (Map.empty,Map.empty)
 {-
 isFull (TypExpr (Pfull _ _) _) = True
 isFull (TypLub a b _) = isFull a && isFull b
@@ -292,11 +293,11 @@ infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t i
 _ .<. Anything = nothing
 Nothng .<. _   = nothing
 a .<. _ | isNull a = nothing
-a .<. b  = (Data.Map.fromList [(a, [b]),(b, [])],snd nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
+a .<. b  = (Map.fromList [(a, [b]),(b, [])],snd nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
 (.=.) :: Type -> Type -> (Typemap, Typemap)
-a .=. b  = (Data.Map.fromList [(a, [b]),(b, [a])],snd nothing)
+a .=. b  = (Map.fromList [(a, [b]),(b, [a])],snd nothing)
 (.++.) :: Typemap -> Typemap -> Typemap
-m1 .++. m2  = Data.Map.unionWith mrgUnion m1 m2
+m1 .++. m2  = Map.unionWith mrgUnion m1 m2
 (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
 (a,b) .+. (c,d) = (c.++.a,d.++.b)
 dom, cod :: Term -> Type
@@ -306,9 +307,9 @@ mSpecific, mGeneric :: Type -> Type -> Term -> ( (Typemap , Typemap) ,Type)
 mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = normalType (TypLub a b e)
 mSpecific a b e = (r .<. a .+. r .<. b , r) where r = normalType (TypGlb a b e)
 
-flattenMap :: Data.Map.Map t [t1] -> [(t, t1)]
-flattenMap = Data.Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
--- alternatively: flattenMap mp = [ (a,b) | (a,bs)<-Data.Map.toList mp , b<-bs])
+flattenMap :: Map t [t1] -> [(t, t1)]
+flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
+-- alternatively: flattenMap mp = [ (a,b) | (a,bs)<-Map.toList mp , b<-bs])
 
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
 --   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
@@ -325,7 +326,7 @@ typing :: P_Context -> ( Typemap                                   -- st        
                        , Typemap                                   -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
                        , Typemap                                   -- stClosAdded -- additional links added to stClos
                        , Typemap                                   -- stClos1     -- st*  (transitive)
-                       , Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])] -- bindings    -- declarations that may be bound to relations
+                       , Map Type [(P_Declaration,[P_Concept],[P_Concept])] -- bindings    -- declarations that may be bound to relations
                        , Type -> [P_Concept]                       --  srcTypes -- 
                        , [(P_Concept,P_Concept)]                   -- isas        -- 
                        )                                   
@@ -335,7 +336,7 @@ typing p_context
     , eqType
     , stClosAdded
     , stClos1
-    , bindings -- for debugging: (error.concat) ["\n  "++show b | b<-Data.Map.toAscList bindings] -- 
+    , bindings -- for debugging: (error.concat) ["\n  "++show b | b<-Map.toAscList bindings] -- 
     , srcTypes
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
@@ -355,9 +356,9 @@ typing p_context
        set1 = findIn a included
        set2 = findIn b included
    -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
-     st = Data.Map.unionWith mrgUnion firstSetOfEdges secondSetOfEdges
+     st = Map.unionWith mrgUnion firstSetOfEdges secondSetOfEdges
      typeTerms :: [Type]          -- The list of all type terms in st.
-     typeTerms = Data.Map.keys st -- Because a Typemap is total, it is sufficient to compute  Data.Map.keys st
+     typeTerms = Map.keys st -- Because a Typemap is total, it is sufficient to compute  Map.keys st
 -- In order to compute the condensed graph, we need the transitive closure of st:
      stClos1 :: Typemap
      stClos1 = setClosure st "st"       -- represents (st)* .   stClos1 is transitive
@@ -370,10 +371,10 @@ typing p_context
      stClosAdd tm = reverseMap (foldl f' (reverseMap (foldl f tm someWhatSortedGlbs)) (reverse someWhatSortedLubs))
        where
         f :: Typemap -> Type -> Typemap
-        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
-        --        f dataMap o@(TypGlb a b _) = Data.Map.map (\cs -> mrgUnion cs [o| a `elem` cs, b `elem` cs]) dataMap
+        f dataMap o@(TypGlb a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+        --        f dataMap o@(TypGlb a b _) = Map.map (\cs -> mrgUnion cs [o| a `elem` cs, b `elem` cs]) dataMap
         f  _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: " ++show o)
-        f' dataMap o@(TypLub a b _) = Data.Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+        f' dataMap o@(TypLub a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
         f' _ o = fatal 407 ("Inexhaustive pattern in f' in stClosAdded in tableOfTypes: "++show o)
         -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
         -- This explains why we did the sorting:
@@ -391,37 +392,37 @@ typing p_context
      stClos = if (stClosAdded == (addIdentity $ setClosure stClosAdded "stClosAdded")) then
                  stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
-     eqType = Data.Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
-     isaClos = Data.Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Data.Map.toAscList stClos]
+     eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
+     isaClos = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
-     isas = [ (s,g) | s<-Data.Map.keys isaClos, g<-lkp s ]  -- there are too many tuples in isas. Because isas=isas*, it may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
-            where lkp c = case Data.Map.lookup c isaClos of
+     isas = [ (s,g) | s<-Map.keys isaClos, g<-lkp s ]  -- there are too many tuples in isas. Because isas=isas*, it may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
+            where lkp c = case Map.lookup c isaClos of
                            Just cs -> cs
                            _ -> fatal 379 ("P_Concept "++show c++" was not found in isaClos")
-     stConcepts :: Data.Map.Map Type [P_Concept]
-     stConcepts = Data.Map.map f stClos
+     stConcepts :: Map Type [P_Concept]
+     stConcepts = Map.map f stClos
                   where f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
                                | cl<-eqClass compatible cs]
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
-                                     lkp c = case Data.Map.lookup c isaClosReversed of
+                                     lkp c = case Map.lookup c isaClosReversed of
                                               Just cs' -> cs'
                                               _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
-     srcTypes typ = case Data.Map.lookup typ stConcepts of
+     srcTypes typ = case Map.lookup typ stConcepts of
                      Just cs -> cs
-                     _ -> fatal 391 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Data.Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
+                     _ -> fatal 391 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
      compatible a b = (not.null) (lkp a `isc` lkp b)
-      where lkp c = case Data.Map.lookup c isaClosReversed of
+      where lkp c = case Map.lookup c isaClosReversed of
                      Just cs -> cs
                      _ -> fatal 395 ("P_Concept "++show c++" was not found in isaClosReversed")
      tGlb :: Type -> Type -> [P_Concept]
      tGlb a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
-      where lkp c = case Data.Map.lookup c stClosReversed of
+      where lkp c = case Map.lookup c stClosReversed of
                      Just cs -> cs
                      _ -> fatal 400 ("P_Concept "++show c++" was not found in stClosReversed")
      greatest :: [Type] -> [Type]
      greatest ts = foldr isc ts [ lkp t | t<-ts]
-      where lkp t = case Data.Map.lookup t stClos of
+      where lkp t = case Map.lookup t stClos of
                      Just cs -> cs
                      _ -> fatal 405 ("P_Concept "++show t++" was not found in isaClosReversed")
 {- Bindings:
@@ -430,8 +431,8 @@ When it is just 'r', and there are multiple declarations to which it can be boun
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 -}
-     bindings :: Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])]
-     bindings    = Data.Map.fromListWith union
+     bindings :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]
+     bindings    = Map.fromListWith union
                    ( [ tuple
                      | decl<-p_declarations p_context
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
@@ -452,16 +453,16 @@ In such cases, we want to give that candidate to the user by way of suggestion t
 typeAnimate :: Typemap -> Typemap -> Typemap -> Typemap -> Typemap -> (DotGraph String,DotGraph String)
 typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
    where
-     -- testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Data.Map.toAscList eqType]
+     -- testTable = concat [ "\n  "++show (stNr t, eqNr t, t, map stNr eqs, map eqNr eqs)| (t,eqs)<-Map.toAscList eqType]
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
-     typeTerms = Data.Map.keys stClos -- stClos contains more than st, because some terms were added through stClosAdded.
+     typeTerms = Map.keys stClos -- stClos contains more than st, because some terms were added through stClosAdded.
      stNr :: Type -> Int
-     stNr typ = case Data.Map.lookup typ stTable of
+     stNr typ = case Map.lookup typ stTable of
                  Just x -> x
                  _ -> fatal 529 ("Element "++show typ++" not found in stNr")
       where
-       stTable = Data.Map.fromAscList [(t,i) | (i,t)<-zip [0..] typeTerms ]
+       stTable = Map.fromAscList [(t,i) | (i,t)<-zip [0..] typeTerms ]
      stTypeGraph :: DotGraph String
      stTypeGraph = toDotGraph showStVertex show [0..length typeTerms-1] [] stEdges []
      stEdges :: [(Int,Int)]
@@ -472,11 +473,11 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
               ++fatal 506 ("No term numbered "++show i++" found by showStVertex\n numbered typeTerms:\n  "++(intercalate "\n  ".map show. zip [0::Int ..]) typeTerms)
              )
      eqNr :: Type -> Int
-     eqNr typ = case Data.Map.lookup typ (Data.Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ]) of
+     eqNr typ = case Map.lookup typ (Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ]) of
                  Just x -> x
                  _ -> fatal 544 ("Element "++show typ++" not found in eqNr")
      eqClasses :: [[Type]]             -- The strongly connected components of stGraph
-     eqClasses = nub (Data.Map.elems eqType)
+     eqClasses = nub (Map.elems eqType)
 
      eqTypeGraph :: DotGraph String
      eqTypeGraph = toDotGraph showVtx show [0..length eqClasses-1] [] condensedEdges condensedEdges2
@@ -486,10 +487,10 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
      original t@(TypExpr (Pid _)     _) = t
      original t@(TypExpr (Pfull _ _) _) = t
      original (TypExpr t b)
-      = case Data.Map.lookup (origin t) origMap of
+      = case Map.lookup (origin t) origMap of
                    Just term -> TypExpr (if b then p_flp term else term) b
                    Nothing   -> fatal 586 ("wrong argument for original ("++show t++")")
-        where origMap = Data.Map.fromList [ (origin subTerm,subTerm) | subTerm<-subterms p_context ]
+        where origMap = Map.fromList [ (origin subTerm,subTerm) | subTerm<-subterms p_context ]
      original (TypLub a b e) = TypLub (original a) (original b) e
      original (TypGlb a b e) = TypGlb (original a) (original b) e
      original t = t
@@ -501,7 +502,7 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
 -}
      condensedEdges :: [(Int,Int)]
      condensedEdges = nub [ (nr t, nr t') | (t,t')<-flattenMap st, nr t /= nr t' ]
-     nr t = case Data.Map.lookup t eqType of
+     nr t = case Map.lookup t eqType of
              Just xs -> eqNr (head xs)
              _ -> fatal 571 ("Element "++show t++" not found in nr")
      condensedEdges2 = nub [(nr t,nr t') | (t,t')<-flattenMap stClosAdded, nr t /= nr t', t' `notElem` findIn t stClos1]>-condensedEdges
@@ -847,11 +848,11 @@ instance Expr Term where
                         -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
                         case decls of
                           [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                          _   -> ( Data.Map.empty -- produce first element outside of case to prevent loop
+                          _   -> ( Map.empty -- produce first element outside of case to prevent loop
                                  , case spcls of
                                      [c] -> let (t1,t2) = dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c 
                                             in  t1 .++. t2
-                                     _   -> Data.Map.empty
+                                     _   -> Map.empty
                                  )
      (Pflp o nm) -> let e = Prel o nm
                     in dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
@@ -985,7 +986,7 @@ pCtx2aCtx p_context
              , ctxatoms  = allExplicitAtoms
              }
     st, eqType  :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    bindings    :: Data.Map.Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    bindings    :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isas        :: [(P_Concept,P_Concept)]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindings, srcTypes, isas) = typing p_context
     specializationTuples :: [(A_Concept,A_Concept)]
@@ -1008,7 +1009,7 @@ pCtx2aCtx p_context
     derivedEquals :: [CtxError]
     derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the terms derived from the script).
      = [ CxeEqConcepts eqs
-       | (TypExpr (Pid{}) _, equals)<-Data.Map.toAscList eqType
+       | (TypExpr (Pid{}) _, equals)<-Map.toAscList eqType
        , let eqs=[c | TypExpr (Pid c) _<-equals ]
        , length eqs>1]
     (stTypeGraph,eqTypeGraph) = typeAnimate st stClos eqType stClosAdded stClos1
@@ -1716,7 +1717,7 @@ pCtx2aCtx p_context
 
     getDeclarationAndSign :: [P_Declaration] -> Term -> Guarded (Declaration, Sign)
     getDeclarationAndSign decls term@(Prel _ relname)
-     = case Data.Map.lookup (TypExpr term False) bindings of
+     = case Map.lookup (TypExpr term False) bindings of
         Just [(d, [s], [t])] -> do { decl <- pDecl2aDecl [] d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
         Just ds              -> case [(decl,[],[]) | decl<-decls, name decl==relname] of
                                  []  -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
@@ -1726,7 +1727,7 @@ pCtx2aCtx p_context
                                                        ,cxeDecs   = ds'         -- the declarations to which this term has been matched
                                                        }]
                                  
-        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Data.Map.toAscList bindings, take 7 (show b)==take 7 (show term) ])
+        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 (show b)==take 7 (show term) ])
     getDeclarationAndSign _ term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
 
 --the type checker always returns a term with sufficient type casts, it should remove redundant ones.
