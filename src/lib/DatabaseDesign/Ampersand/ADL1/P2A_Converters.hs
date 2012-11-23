@@ -847,8 +847,6 @@ instance Expr Term where
                         dTrgs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
                                        , compatible uRt  (cod decl)
                                        ]
-                        carefully :: (Typemap , Typemap ) -> (Typemap, Typemap)
-                        carefully tt = (fst nothing,fst tt.++.snd tt)
                      in -- WHY is:
                         -- dom x.<.uLft .+. cod x.<.uRt 
                         -- correct for PVee but not for Prel?
@@ -857,12 +855,13 @@ instance Expr Term where
                         -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
                         if length decls==1
                         then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                        else if False -- length spcls==1 -- if you replace this condition with 'False', the loop will disappear
-                             then let c=head spcls in
-                                  carefully ( -- what is to come will use the first iteration of edges, so to avoid loops, we carefully only create second edges instead
-                                             dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c
-                                            )
-                             else nothing
+                        else ( Data.Map.empty
+                             , if length spcls==1
+                               then let c = head spcls
+                                        (t1,t2) = dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c 
+                                    in  t1 .++. t2
+                               else Data.Map.empty
+                             )
      (Pflp o nm) -> let e = Prel o nm
                     in dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
