@@ -815,15 +815,15 @@ instance Expr Term where
                                  _           -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
                                                 dom x.<.dom e .+. cod x.<.cod e .+.
                                                 uType dcls e iSrc iTrg e
-     (Prel _ nm) -> let declarationTable = fst dcls -- keep this lazy
-                        compatible = snd dcls       -- keep this lazy. Do not turn into a pattern, because that would cause a loop. Patterns are strict...
+     (Prel _ nm) -> let (declarationTable, compatible) = dcls 
                         y=complement x
+                        
                         decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
                         decls  = if length decls' == 1 then decls' else
                                  [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
                                        , uLft == thing (head cs)
                                        , uRt  == thing (last cs) ]
-                        {- to exclude the possibility that the following pattern matching causes a loop, it is rewritten fully lazily.
+
                         spcls  = case (dSrcs, dTrgs) of
                                       ( []  ,  []  ) -> []
                                       ( [d] ,  []  ) -> [d]
@@ -831,15 +831,7 @@ instance Expr Term where
                                       ( [d] ,  _   ) -> [d]
                                       ( _   ,  [d] ) -> [d]
                                       ( _   ,  _   ) -> dSrcs `isc` dTrgs
-                        -}
-                        spcls = if null dSrcs && null dTrgs then [] else
-                                if null dTrgs  then [head dSrcs ] else
-                                if null dSrcs  then [head dTrgs ] else
-                                if null dSrcs' then [head dSrcs'] else
-                                if null dTrgs' then [head dTrgs'] else
-                                dSrcs `isc` dTrgs
-                                where dSrcs' = tail dSrcs
-                                      dTrgs' = tail dTrgs
+
                         dSrcs, dTrgs ::  [Term]
                         dSrcs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
                                        , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
@@ -853,15 +845,14 @@ instance Expr Term where
                         -- Explanation:
                         -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
                         -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                        if length decls==1
-                        then let d=head decls in dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
-                        else ( Data.Map.empty
-                             , if length spcls==1
-                               then let c = head spcls
-                                        (t1,t2) = dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c 
-                                    in  t1 .++. t2
-                               else Data.Map.empty
-                             )
+                        case decls of
+                          [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
+                          _   -> ( Data.Map.empty -- produce first element outside of case to prevent loop
+                                 , case spcls of
+                                     [c] -> let (t1,t2) = dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c 
+                                            in  t1 .++. t2
+                                     _   -> Data.Map.empty
+                                 )
      (Pflp o nm) -> let e = Prel o nm
                     in dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
