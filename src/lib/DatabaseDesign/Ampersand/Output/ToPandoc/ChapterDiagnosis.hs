@@ -252,7 +252,7 @@ chpDiagnosis lev fSpec opts
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMath . ERel . makeRelation) d  -- makeRelation d is always typeable, so showMathDamb may be used.
+     where notUsed = nub [(Math InlineMath . showMath . ERel . makeUnpopulatedRelation 9) d  -- makeRelation d is always typeable, so showMathDamb may be used.
                          | d@(Sgn{}) <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d
@@ -502,15 +502,15 @@ chpDiagnosis lev fSpec opts
 
   populationReport :: [Block]
   populationReport
-   = [ Para (case (language opts, ds, declarations fSpec) of
+   = [ Para (case (language opts, ps, declarations fSpec) of
         (Dutch,  [], [] ) -> [ Str "Dit script is leeg. " ]
         (English,[], [] ) -> [ Str "This script is empty. " ]
         (Dutch,  [],  _ ) -> [ Str "Geen relatie bevat enige populatie. " ]
         (English,[],  _ ) -> [ Str "No relation contains any population. " ]
-        (Dutch,  [d],[_]) -> [ Str "Relatie ", Math InlineMath (showMath d), Str " heeft een populatie van ", Str (count opts (length (decpopu d)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
-        (English,[d],[_]) -> [ Str "Relation ", Math InlineMath (showMath d), Str " has ", Str (count opts (length (decpopu d)) "pair"), Str " in its population. " ]
-        (Dutch,  [d], _ ) -> [ Str "Alleen relatie ", Math InlineMath (showMath d), Str " heeft een populatie. Deze bevat ", Str (count opts (length (decpopu d)) "paar"), Str ". " ]
-        (English,[d], _ ) -> [ Str "Only relation ", Math InlineMath (showMath d), Str " is populated. It contains ", Str (count opts (length (decpopu d)) "pair"), Str ". " ]
+        (Dutch,  [p],[_]) -> [ Str "Relatie ", Math InlineMath ((showMath.popdcl) p), Str " heeft een populatie van ", Str (count opts (length (contents p)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
+        (English,[p],[_]) -> [ Str "Relation ", Math InlineMath ((showMath.popdcl) p), Str " has ", Str (count opts (length (contents p)) "pair"), Str " in its population. " ]
+        (Dutch,  [p], _ ) -> [ Str "Alleen relatie ", Math InlineMath ((showMath.popdcl) p), Str " heeft een populatie. Deze bevat ", Str (count opts (length (contents p)) "paar"), Str ". " ]
+        (English,[p], _ ) -> [ Str "Only relation ", Math InlineMath ((showMath.popdcl) p), Str " is populated. It contains ", Str (count opts (length (contents p)) "pair"), Str ". " ]
         (Dutch,   _ , _ ) -> [ Str "De onderstaande tabel geeft de populatie van de verschillende relaties weer. " ]
         (English, _ , _ ) -> [ Str "The following table represents the population of various relations. " ])
      ] ++
@@ -532,14 +532,14 @@ chpDiagnosis lev fSpec opts
           Dutch   -> [[Plain [Str "Relatie"]],  [Plain [Str "Populatie"]  ]]
           English -> [[Plain [Str "Relation"]], [Plain [Str "Population"] ]]
         )
-        [ [[Plain [Math InlineMath (showMath d)]], [Plain [(Str . show . length . decpopu) d]]]  -- Every d is typeable, so showMathDamb may be used.
-        | d<-ds
+        [ [[Plain [Math InlineMath ((showMath .popdcl) p)]], [Plain [(Str . show . length . contents) p]]]  -- Every d is typeable, so showMathDamb may be used.
+        | p<-ps
         ]
-     | length ds>1 ]
+     | length ps>1 ]
      where
-      ds  = [d | d<-declarations fSpec
-               , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
-               , (not.null.decpopu) d]
+      ps  = [p | p<-populations fSpec
+               , null (themes fSpec) || (decpat.popdcl) p `elem` themes fSpec  -- restrict if the documentation is partial.
+               , (not.null.contents) p]
       cs  = [c | c@C{}<-ccs, (not.null.atomsOf) c]
       ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
 
@@ -547,9 +547,9 @@ chpDiagnosis lev fSpec opts
   wipReport
    = [ Para (case (language opts, concat popwork,popwork) of
               (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | (not.null) [d | d<-declarations fSpec, not (null (decpopu d))] ]
+                                      | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
               (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | (not.null) [d | d<-declarations fSpec, not (null (decpopu d))] ]
+                                      | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
               (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count opts (length ps) "taak"++" zien.") ]
               (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count opts (length ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
@@ -628,13 +628,13 @@ chpDiagnosis lev fSpec opts
   violationReport
    = [ Para (case (language opts, popviols, multviols) of
         (Dutch,  [],[])      -> [ Str "De populatie in dit script overtreedt geen regels. "
-                                | (not.null) [d | d<-declarations fSpec, not (null (decpopu d))] ]
+                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
         (English,[],[])      -> [ Str "The population in this script violates no rule. "
-                                | (not.null) [d | d<-declarations fSpec, not (null (decpopu d))] ]
+                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
         (Dutch,  [], _:_:_ )  -> [ Str "De populatie in dit script overtreedt alleen multipliciteitsregels. "
-                                | (not.null) [d | d<-declarations fSpec, not (null (decpopu d))] ]
+                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
         (English,[], _:_:_ ) -> [ Str "The population in this script violates multiplicity rules only. "
-                                | (not.null) [d | d<-declarations fSpec, not (null (decpopu d))] ]
+                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
         (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" veroorzaakt "++count opts (length ps) "overtreding"++". ") ]
         (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" causes "++count opts (length ps) "violation"++". ") ]
         (Dutch,  _,_)        -> [ Str "De onderstaande tabellen geven overtredingen van regels weer. " ]

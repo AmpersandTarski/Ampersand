@@ -5,6 +5,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
    import Prelude hiding (Ord(..))
+   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (makePopulatedRel)
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
@@ -64,8 +65,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                   | xpl<-ctxps context]
                  , metas        = ctxmetas context
                  , vctxenv      = ctxenv context
+                 , fPopulations = populations context
                  }
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
+        makeRelation d = makePopulatedRel (populations context) d
         allProcs = [ FProc {fpProc = p
                            ,fpActivities =selectActs p
                            } | p<-ctxprocs context ]
@@ -622,7 +625,8 @@ while maintaining all invariants.
 
    delta :: Sign -> Expression
    delta (Sign s t)
-    = ERel (makeRelation Sgn { decnm   = "Delta"
+    = ERel (makeUnpopulatedRelation 7
+                         Sgn { decnm   = "Delta"
                              , decsgn  = Sign s t
                              , decprps = []
                              , decprps_calc = []
@@ -633,7 +637,6 @@ while maintaining all invariants.
                                                   , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
                                                   ]
                              , decConceptDef = Nothing
-                             , decpopu = []
                              , decfpos = Origin "generated relation (Delta)"
                              , deciss  = True
                              , decusr  = False

@@ -18,6 +18,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , Activity(..)
           , PlugSQL(..)
           , lookupCpt
+          , popOfDcl
           , SqlField(..)
           , FPA(..)
           , FPcompl(..)
@@ -31,6 +32,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics           --      (fatalMsg,Identified(..))
 import Data.List(nub)
+import Data.Maybe
 import DatabaseDesign.Ampersand.ADL1.Rule (ruleviolations)
 import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
@@ -67,6 +69,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , vctxenv ::      ( Expression
                                    , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
+                 , fPopulations :: [Population]    -- ^ a lookup table for the contents of declarations
                  }
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
@@ -83,6 +86,7 @@ instance Language Fspc where
   conceptDefs fSpec = nub (concatMap cptdf (concs fSpec)) --use vConceptDefs to get CDs of concepts not in concs too
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
+  populations  = fPopulations
   rules        = vrules -- only user defined rules
   invariants   fSpec = [r | r<-vrules fSpec, not (isSignal r)]
   keyDefs      = vkeys
@@ -102,6 +106,7 @@ instance Language FProcess where
   objectdef    = objectdef.fpProc
   conceptDefs  = conceptDefs.fpProc
   declarations = declarations.fpProc
+  populations _ = fatal 106 "Populations is not defined. (there is probably no need for it)"
   rules        = rules.fpProc
   invariants   = invariants.fpProc
   keyDefs      = keyDefs.fpProc
@@ -395,3 +400,10 @@ getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
 getSpecializations :: Fspc -> A_Concept -> [A_Concept]
 getSpecializations fSpec c = filter (c Poset.>) $ concs fSpec
 
+popOfDcl :: Fspc -> Declaration -> Population
+popOfDcl fSpec d = 
+  case filter isTheDecl (populations fSpec) of
+       []    -> Popu d []
+       [pop] -> Popu d (contents pop)
+       _     -> fatal 408 $ "Multiple entries in lookup table found for declaration."
+    where isTheDecl pop = popdcl pop == d

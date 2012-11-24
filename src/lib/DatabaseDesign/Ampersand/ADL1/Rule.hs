@@ -5,7 +5,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos             
    import DatabaseDesign.Ampersand.Basics                         ( fatalMsg,Identified(..), (>-))
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( makeRelation)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( makeUnpopulatedRelation)
    import DatabaseDesign.Ampersand.ADL1.Prop                      ( Prop(..))
    import DatabaseDesign.Ampersand.Classes.Populated              (contents)
    import DatabaseDesign.Ampersand.Misc
@@ -92,8 +92,9 @@ where
            h sgn   | isEndo sgn = sgn
                    | otherwise = fatal 241 "Bad rule, the source and target of the relation must be identical."
            r:: Expression
-           r = ERel (makeRelation d) 
-           
+           r = ERel (makeUnpopulatedRelation 2 d) 
+           -- TODO: Bovenstaande aanroep is verantwoordelijk voor een fatal error 114 (module ADL1.MorphismAndDeclaration)
+           -- Er moet voor worden gezorgd dat de populatie gevuld is. Deze relatie bevat de overtredingen van deze regel.
            explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                                  case prop of
                                    Sym-> state isPositive English (name d++"["++s++"]") "symmetric"    

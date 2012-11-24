@@ -118,7 +118,7 @@ instance ShowADL Lang where
 instance ShowADL ExplObj where
  showADL e = case e of
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
-      ExplDeclaration d  -> "RELATION "++showADL (makeRelation d)
+      ExplDeclaration d  -> "RELATION "++showADL (makeUnpopulatedRelation 8 d)
       ExplRule str       -> "RULE "++showstr str
       ExplKeyDef str     -> "KEY "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
@@ -279,13 +279,13 @@ instance ShowADL A_Context where
     ++ (if null (ctxks context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxks context))   ++ "\n")
     ++ (if null (ctxgs context)    then "" else "\n"      ++intercalate "\n"   (map showADL (ctxgs context))   ++ "\n")
     ++ (if null cds                then "" else "\n"      ++intercalate "\n"   (map showADL  cds           )   ++ "\n")
-    ++ (if null showADLpops        then "" else "\n"++intercalate "\n\n" showADLpops                           ++ "\n")
+    ++ (if null (ctxpopus context) then "" else "\n"      ++intercalate "\n"   (map showADL (ctxpopus context))++ "\n")
     ++ (if null (ctxsql context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxsql context)) ++ "\n")
     ++ (if null (ctxphp context)   then "" else "\n"      ++intercalate "\n\n" (map showADL (ctxphp context)) ++ "\n")
     ++ "\n\nENDCONTEXT"
-    where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
-                        | d<-declarations context, decusr d, not (null (decpopu d))]
-                        ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs context, c/=ONE, not(null (atomsOf c))]
+    where --showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
+     --                   | d<-declarations context, decusr d, not (null (decpopu d))]
+     --                   ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs context, c/=ONE, not(null (atomsOf c))]
           cds = conceptDefs context >- (concatMap conceptDefs (ctxpats context) ++ concatMap conceptDefs (ctxprocs context))
 
 instance ShowADL Fspc where
@@ -302,12 +302,13 @@ instance ShowADL Fspc where
     ++ (if null (declarations fSpec) then "" else "\n"++intercalate "\n"   (map showADL (declarations fSpec >- concatMap declarations (patterns fSpec))) ++ "\n")
     ++ (if null (rules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (rules fSpec >- concatMap rules (patterns fSpec))) ++ "\n")
     ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")
-    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
+    ++ "TODO: Populations are not shown..\n" --TODO.
+--    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
     ++ (if null (interfaceS fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (interfaceS fSpec))    ++ "\n")
     ++ "\n\nENDCONTEXT"
-    where showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
-                        | d<-declarations fSpec, decusr d, not (null (decpopu d))]
-                        ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
+    where --showADLpops = [ showADL Popu{popm=makeRelation d, popps=decpopu d}
+      --                  | d<-declarations fSpec, decusr d, not (null (decpopu d))]
+      --                  ++ [showADL (P_CptPopu{p_popm=name c, p_popps=[(a,a) | a<-atomsOf c]}) | c<-concs fSpec, c/=ONE, not(null (atomsOf c))]
           cds = vConceptDefs fSpec >- (concatMap conceptDefs patts ++ concatMap (conceptDefs.fpProc) procs)
           patts = if null (themes fSpec)
                   then patterns fSpec
