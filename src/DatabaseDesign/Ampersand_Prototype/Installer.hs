@@ -78,7 +78,7 @@ installer fSpec opts = intercalate "\n  "
         ++
         ["  fwrite($dumpfile, dumprel(\""++showADL rel++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
-        , let rel=makeRelation d
+        , let rel=makeUnpopulatedRelation 20 d
         , let dbrel = sqlRelPlugNames fSpec (ERel rel)
         , not(null dbrel)
         , let (_,src,trg) = head dbrel

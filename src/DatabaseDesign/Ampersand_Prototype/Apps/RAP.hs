@@ -49,7 +49,8 @@ theonly xs err
  | otherwise = error ("more than one x: " ++ err)
 therel :: Fspc -> String -> String -> String -> Relation
 therel fSpec relname relsource reltarget 
- = theonly [makeRelation d |d<-declarations fSpec
+ = theonly [makeUnpopulatedRelation 20 d |
+                        d<-declarations fSpec
                           ,relname==name d
                           ,null relsource || relsource==name(source d)
                           ,null reltarget || reltarget==name(target d)]

@@ -17,6 +17,11 @@ import qualified GHC.Exts (sortWith)
 import Control.Monad
 import Data.List (intercalate)
 import Data.List.Split (splitOn)
+import DatabaseDesign.Ampersand.Basics
+import Data.Maybe
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "RAPImport"
 
 -----------------------------------------------------------------------------
 --exported functions---------------------------------------------------------
@@ -194,7 +199,7 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("countcpts","Context","Int")   [(fsid (cns,fs), nonsid (show (length (concs fs))))]
     ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | r<-raprules, (x,y)<-ruleviolations r]
     ,makepopu ("decexample","Declaration","PragmaSentence") [(decid d , nonsid (decprL d++x++decprM d++y++decprR d))
-                                                            | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(contents d++[("...","...")])]
+                                                            | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(pairsOf d++[("...","...")])]
     --see trunk/apps/Atlas/AST.adl
     ,makepopu ("ctxnm","Context","Conid")     [(fsid (cns,fs), nonsid (name fs))]
     ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fs), cptid c)                | c<-concs fs] 
@@ -229,20 +234,20 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("decpurpose","Declaration","Blob")           [(decid d , nonsid (aMarkup2String (explMarkup ex)))
                                                                                           | d<-userdeclarations, ex<-explanations fs, explForObj d (explObj ex)]
     ,makepopu ("decpopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
-                                                                                          | d<-userdeclarations, (x,y)<-contents d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("inipopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
-                                                                                          | d<-userdeclarations, (x,y)<-contents d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("inileft","PairID","Atom")                   [(pairidid (x,y) (decns d,d), nonsid x) 
-                                                                                          | d<-userdeclarations, (x,y)<-contents d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("iniright","PairID","Atom")                   [(pairidid (x,y) (decns d,d), nonsid y) 
-                                                                                          | d<-userdeclarations, (x,y)<-contents d]
+                                                                                          | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("reldcl","Relation","Declaration") [(relid (name d) (sign d), decid d)        | d<-userdeclarations]
     ,makepopu ("relnm","Relation","Varid")        [(relid (name d) (sign d), nonsid(name d)) | d<-userdeclarations]
     ,makepopu ("relsgn","Relation","Sign")        [(relid (name d) (sign d), sgnid (sign d)) | d<-userdeclarations]
     ,relsrc                          userdeclarations
     ,reltrg                          userdeclarations
-    ,relleft  [(decns d, d)     | d<-userdeclarations]
-    ,relright [(decns d, d)     | d<-userdeclarations]
+    ,relleft  [(decns d, d, pairsOf d)     | d<-userdeclarations]
+    ,relright [(decns d, d, pairsOf d)     | d<-userdeclarations]
     ,makepopu ("rrnm","Rule","ADLid")         [(ruleid r, nonsid (name r))                           | r<-raprules]
     ,makepopu ("rrexp","Rule","ExpressionID") [(ruleid r, expridid (rulens r,rrexp r))               | r<-raprules]
     ,makepopu ("rrmean","Rule","Blob")        [(ruleid r, nonsid (aMarkup2String rdf))               | r<-raprules, Just rdf <- [meaning Dutch r, meaning English r]]
@@ -257,10 +262,19 @@ makeRAPPops fs opts usrfiles pics
     ,relrelsgn    (map       rrexp                 (rules fs))
     ,relreldcl    (map       rrexp                 (rules fs))
      --create pairs for violations (see rrviols above)
-    ,relleft  [(rulens r,violationsexpr r) | r<-raprules]
-    ,relright [(rulens r,violationsexpr r) | r<-raprules]
+    ,relleft  [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
+    ,relright [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
     ]
-   where 
+   where
+   pairsOf :: Declaration -> [(String,String)]
+   pairsOf d = case filter theDecl (fPopulations fs) of
+                 []    -> []
+                 [pop] -> popps pop
+                 _     -> fatal 273 "Multiple entries found in populationTable"
+     where
+       theDecl :: Population -> Bool
+       theDecl p = popdcl p == d
+   
    --SPEC PropertyRule ISA Rule
    raprules = rules fs ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
@@ -279,9 +293,13 @@ makeRAPPops fs opts usrfiles pics
    relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
    reltrg rs = makepopu ("trg","Sign","Concept")      [(sgnid (sign r), cptid (target r)) | r<-rs]
    --populate relleft and relright for populated and typed data structures
-   relleft,relright :: (Populated r,Association r) => [(IdentifierNamespace,r)] -> P_Population
-   relleft rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (ns,r)<-rs, (x,y)<-contents r]
-   relright rs = makepopu ("right","PairID","AtomID")              [(pairidid (x,y) (ns,r), atomidid y (getisa$target r)) | (ns,r)<-rs, (x,y)<-contents r]
+   relleft,relright :: (Association r) => [(IdentifierNamespace,r,[(String,String)])] -> P_Population
+   relleft rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (ns,r,pairs)<-rs, (x,y)<-pairs]
+   relright rs = makepopu ("right","PairID","AtomID")              [(pairidid (x,y) (ns,r), atomidid y (getisa$target r)) | (ns,r,pairs)<-rs, (x,y)<-pairs]
+   --makeLeft,makeRight :: [(IdentifierNamespace, [(ConceptIdentifier,ConceptIdentifier)])] -> P_Population
+   --makeLeft  rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (x,y)<-ps]
+   --makeRight rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (x,y)<-ps]
+   
    getisa c = concat [isanm isa | isa<-isas, c `elem` isa]
    --populate relrels, relrelnm, relreldcl and relrelsgn for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
