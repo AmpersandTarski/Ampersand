@@ -703,12 +703,12 @@ where
 -- \***********************************************************************
 
    instance  ShowHSName Population where
-    showHSName pop = haskellIdentifier ("pop_"++name rel++"_"++uniqueIDfromOrigin (relpos rel))
-        where rel = popm pop
+    showHSName pop = haskellIdentifier ("pop_"++name d++"_"++uniqueIDfromOrigin (decfpos d))
+        where d = popdcl pop
 
    instance  ShowHS Population where
     showHS flags indent pop
-     = "Popu ("++showHS flags "" (popm pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
+     = "Popu ("++showHS flags "" (popdcl pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
@@ -843,7 +843,7 @@ where
                         ,"   , decprR  = " ++ show (decprR d)
                         ,"   , decMean = " ++ show (decMean d)
                         ,"   , decConceptDef = " ++ show (decConceptDef d)
-                        ,"   , decpopu = " ++ show (decpopu d)
+              --          ,"   , decpopu = " ++ show (decpopu d)
                         ,"   , decfpos = " ++ showHS flags "" (decfpos d)
                         ,"   , deciss  = " ++ show (deciss d)
                         ,"   , decusr  = " ++ show (decusr d)

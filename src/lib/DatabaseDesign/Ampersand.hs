@@ -44,7 +44,7 @@ module DatabaseDesign.Ampersand
    -- * Functions on concepts
    , (<==>),meet,order,join,sortWith
    -- * Functions on declarations
-   , makeRelation
+   , makeUnpopulatedRelation
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
