@@ -8,12 +8,12 @@ import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, rule
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
 import DatabaseDesign.Ampersand.Classes.Populated            (atomsOf)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
-import DatabaseDesign.Ampersand.Basics                       (Collection(..), Identified(..),eqClass)
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
  
---fatal :: Int -> String -> a
---fatal = fatalMsg "Classes.ViewPoint"
+fatal :: Int -> String -> a
+fatal = fatalMsg "Classes.ViewPoint"
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
@@ -22,10 +22,11 @@ class Language a where
   objectdef :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
   conceptDefs :: a -> [ConceptDef]  -- ^ all concept definitions that are valid within this viewpoint
   declarations :: a -> [Declaration] -- ^ all relations that exist in the scope of this viewpoint.
-                                     -- ^ These are user defined declarations and all generated declarations,
-                                     -- ^ i.e. one declaration for each GEN and one for each signal rule.
-                                     -- ^ Don't confuse declarations with mors, which gives the relations that are
-                                     -- ^ used in a.)
+                                     --   These are user defined declarations and all generated declarations,
+                                     --   i.e. one declaration for each GEN and one for each signal rule.
+                                     --   Don't confuse declarations with mors, which gives the relations that are
+                                     --   used in a.)
+  populations :: a -> [Population]   -- ^ all populations defined in this viewpoint
   rules :: a -> [Rule] -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not key rules.
   invariants :: a -> [Rule] -- ^ all rules that are not maintained by users will be maintained by the computer.
@@ -58,7 +59,7 @@ makeDecl g
                         , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" moet een " ++ name(target g)++" zijn."))
                         ]
          , decConceptDef = Nothing
-         , decpopu = [(a,b) | a <- (atomsOf.source) g, b <- (atomsOf.target) g, a==b]
+   --      , decpopu = [(a,b) | a <- (atomsOf.source) g, b <- (atomsOf.target) g, a==b]
          , decfpos = origin g
          , deciss  = True
          , decusr  = False
@@ -164,8 +165,9 @@ instance Language A_Context where
                          uniteRels ds = [ d | cl<-eqClass (==) ds
                                             , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                                              , decprps_calc = (foldr1 uni.map decprps_calc) cl
-                                                             , decpopu      = (foldr1 uni.map decpopu) cl
+                                                    --         , decpopu      = (foldr1 uni.map decpopu) cl
                                                              }]
+  populations          = ctxpopus
   rules        context = concatMap rules (ctxpats context) ++ concatMap rules (ctxprocs context) ++ ctxrs context  -- all user defined rules
   invariants   context = [r | r<-rules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
   keyDefs      context = concatMap keyDefs (ctxpats context) ++ concatMap keyDefs (ctxprocs context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
@@ -192,6 +194,7 @@ instance Language Process where
                          }
   conceptDefs proc  = nub [cd | c<-concs proc,cd<-cptdf c,posIn (prcPos proc) cd (prcEnd proc)]
   declarations proc = prcDcls proc `uni` map makeDecl (gens proc)
+  populations _     = fatal 197 "Populations is not defined. (there is probably no need for it)"
   rules             = prcRules -- all user defined rules in this process
   invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
   keyDefs           = prcKds
@@ -217,6 +220,7 @@ instance Language Pattern where
                          }
   conceptDefs  pat = nub [cd | c<-concs pat,cd<-cptdf c,posIn (ptpos pat) cd (ptend pat)]
   declarations pat = ptdcs pat `uni` map makeDecl (gens pat)
+  populations  _    = fatal 223 "Populations is not defined. (there is probably no need for it)"
   rules            = ptrls   -- all user defined rules in this pattern
   invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
   keyDefs          = ptkds 
@@ -241,6 +245,7 @@ instance Language Rule where
                        }
   conceptDefs  _ = []
   declarations r = [srrel r | isSignal r]
+  populations  _ = fatal 248 "Populations is not defined. (there is probably no need for it)"
   rules        r = [r]
   invariants   r = [r | not (isSignal r)]
   keyDefs      _ = []

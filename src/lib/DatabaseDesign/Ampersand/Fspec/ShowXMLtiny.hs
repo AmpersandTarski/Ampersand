@@ -291,9 +291,9 @@ where
                   ++[Elem (simpleTag "Meaning") [PlainText "Still 2 be done"]
                     --         [PlainText (explainContent2String LaTeX True (decMean d))]
                     ]
-                  ++[Elem (simpleTag "Population") 
-                             (map mkXmlTree (decpopu d)) 
-                                | not (null (decpopu d))]                 
+--                  ++[Elem (simpleTag "Population") 
+--                             (map mkXmlTree (decpopu d)) 
+--                                | not (null (decpopu d))]                 
           Isn{}
                 ->  [Elem (simpleTag "Type") [mkXmlTree (source d)]]
           Iscompl{}

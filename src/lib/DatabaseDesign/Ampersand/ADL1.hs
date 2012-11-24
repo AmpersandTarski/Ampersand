@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Term(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
            , A_Gen(..),P_Gen(..)
-           , Relation(..), isTypeable, makeRelation
+           , Relation(..), isTypeable, makeUnpopulatedRelation
            , Declaration(..), isSgn
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
@@ -73,7 +73,7 @@ where
                                          ,Association(..),Relational(..)
                                          ,Declaration(..)
                                          ,isSgn
-                                         ,makeRelation
+                                         ,makeUnpopulatedRelation
                                          )
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
    import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops)

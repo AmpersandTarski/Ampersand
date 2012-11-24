@@ -131,8 +131,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                 , let pps = [p | p <- purposesDefinedIn fSpec (language opts) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ rel | d@Sgn{decusr=True} <- declarations fSpec
-                , let rel = makeRelation d
+              = [ rel{relps=popOfDcl fSpec d} | d@Sgn{decusr=True} <- declarations fSpec
+                , let rel = makeUnpopulatedRelation 10 d
                 , not . null $ purposesDefinedIn fSpec (language opts) rel
                 ]
                  
@@ -339,7 +339,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (language opts) rel
                        d         = makeDeclaration rel
-                       samplePop = take 3 (decpopu d)
+                       samplePop = take 3 (contents rel)
                        sampleSentences =
                          [ Para $ mkSentence (development opts) d srcKeyAtom tgtKeyAtom 
                          | (srcAtom,tgtAtom)<-samplePop

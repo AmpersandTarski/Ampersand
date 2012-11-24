@@ -24,18 +24,20 @@ where
     contents (Sign s t)
        = [mkPair a b |a<-atomsOf s, b<-atomsOf t]
 
-   instance Populated Declaration where
-    contents d 
-       = case d of
-           Sgn{}     -> decpopu d
-           Isn{}     -> contents (detyp d)
-           Iscompl{} -> [mkPair a b |(a,_)<-contents (detyp d),(_,b)<-contents (detyp d),a/=b]
-           Vs{}      -> [mkPair a b |a<-(atomsOf.source) d, b<-(atomsOf.target) d]
+   instance Populated Population where
+    contents = popps
+--   instance Populated Declaration where
+--    contents d 
+--       = case d of
+--           Sgn{}     -> decpopu d
+--           Isn{}     -> contents (detyp d)
+--           Iscompl{} -> [mkPair a b |(a,_)<-contents (detyp d),(_,b)<-contents (detyp d),a/=b]
+--           Vs{}      -> [mkPair a b |a<-(atomsOf.source) d, b<-(atomsOf.target) d]
 
    instance Populated Relation where
     contents (Mp1 _ (C {cptnm="SESSION"})) = [] -- TODO: HACK to prevent populating SESSION
     contents (Mp1 x _)                     = [mkPair x x]
-    contents rel                           = contents (makeDeclaration rel)
+    contents rel                           = contents (relps rel)
 
    instance Populated Expression where
     contents expr  
