@@ -347,7 +347,7 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
                      , explRefId :: String     -- ^ The reference of the explaination
-                     } deriving Show  --handy for XML creation
+                     } 
 instance Eq Purpose where
   x0 == x1  =  explObj x0 == explObj x1 && 
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1

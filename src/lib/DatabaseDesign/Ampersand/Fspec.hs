@@ -11,7 +11,6 @@ import DatabaseDesign.Ampersand.Fspec.ShowHS as X
 import DatabaseDesign.Ampersand.Fspec.ShowADL as X (ShowADL(..), LanguageDependent(..))
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters as X (disambiguate)
 import DatabaseDesign.Ampersand.Fspec.ShowECA as X (showECA)
-import DatabaseDesign.Ampersand.Fspec.ShowXMLtiny as X (showXML)
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram as X
        (clAnalysis, plugs2classdiagram, cdAnalysis, ClassDiag(..))
 import DatabaseDesign.Ampersand.Fspec.Graphic.Graphics as X
