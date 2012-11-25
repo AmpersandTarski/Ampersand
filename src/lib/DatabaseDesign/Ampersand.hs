@@ -65,7 +65,6 @@ module DatabaseDesign.Ampersand
    , doGenADL
    , prove
    , doGenHaskell
-   , doGenXML
    , doGenDocument
    -- * Prettyprinters
    , ShowADL(..), showSQL
