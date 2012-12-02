@@ -117,7 +117,7 @@ where
           
    instance ConceptStructure Pattern where
     concs     pat = concs (ptgns pat) `uni` concs (ptdcs pat) `uni` concs (ptrls pat) `uni` concs (ptkds pat)
-    mors      pat = mors (ptrls pat) `uni` mors (ptkds pat) `uni` mors [makeUnpopulatedRelation 3 d | d<-ptdcs pat, (not.null) (multiplicities d)]
+    mors      pat = mors (ptrls pat) `uni` mors (ptkds pat) `uni` mors [makeRelation d | d<-ptdcs pat, (not.null) (multiplicities d)]
     morlist   pat = morlist (ptrls pat)++morlist (ptkds pat)
 --  closExprs pat = closExprs (ptrls pat)
 

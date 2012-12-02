@@ -129,11 +129,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pPopulation :: Parser Token P_Population
    pPopulation = ppop <$> pKey_pos "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
        where
-         ppop orig (PTyp _ (Prel _ nm) sgn) content = P_Popu { p_popm   = nm
-                                                             , p_type   = sgn
-                                                             , p_orig   = orig
-                                                             , p_popps  = content
-                                                             }
+         ppop orig (PTyp _ (Prel _ nm) sgn) content = P_RelPopu { p_rnme   = nm
+                                                                , p_type   = sgn
+                                                                , p_orig   = orig
+                                                                , p_popps  = content
+                                                                }
          ppop _ x _ = fatal 138 ("ppop must have an argument of the form PTyp _ (Prel _ nm) sgn, but has been called with\n"++show x)
 
    pPattern :: Parser Token P_Pattern

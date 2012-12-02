@@ -1,9 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..),atomsOf)
 where
-   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair)
+   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair,srcPaire,trgPaire)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg)   
+   import qualified DatabaseDesign.Ampersand.Core.Poset
+   import Data.List (nub)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Populated.hs"
@@ -13,19 +15,63 @@ where
    foldr1' rowNr _ [] = fatal rowNr "Call to foldr1 with empty list! (see Ticket #71 ) "
    foldr1' _ f lst = foldr1 f lst
    
+    
+    
    class Populated a where
-    contents :: a -> Pairs
+--    contents :: a -> Pairs
+    -- | this function returns the content of a specific a, given a list of populations. 
+    --   The list of populations should contain all user-defined populations. 
+    fullContents :: [UserDefPop] -> a -> Pairs
    
-   instance Populated A_Concept where
-    contents c
-       = [mkPair s s |s<-atomsOf c]
 
-   instance Populated Sign where
-    contents (Sign s t)
-       = [mkPair a b |a<-atomsOf s, b<-atomsOf t]
+   atomsOf :: [UserDefPop] -> A_Concept -> [String] 
+   atomsOf _ ONE  = ["1(ONE)"] -- fatal 126 "Asking for the value of the universal singleton"
+   atomsOf pt c@C{}
+     = nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
+         ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
+         ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
+         ++[trgPaire p | pop<-pt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
+   -- TODO: Is dit nog relevant hier?     ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
+         
+   -- | This function returns the atoms of a concept
+--   atomsOf :: A_Concept -> [String]
+--   atomsOf C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
+--   atomsOf C{cptos=x} = x
+--   atomsOf ONE = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
+    
+   instance Populated Declaration where
+    fullContents pt dcl
+      = case filter (isTheDecl dcl) pt of
+         []    -> []
+         [pop] -> popps pop
+         _     -> fatal 31 $ "Multiple entries in lookup table found for declaration."
+     where isTheDecl d pop =
+             case pop of
+               PRelPopu{}  -> d == popdcl pop
+               PCptPopu{}  -> False
 
-   instance Populated Population where
-    contents = popps
+   instance Populated Relation where
+{- The atoms in a relation are accessible as follows:
+   Atoms in a Rel{} are found through the declaration (via decpopu.reldcl).
+   Atoms in a I{} and V{} are found in the concept (via rel1typ and reltyp).
+   Mp1{} has precisely one atom, which must be an element of its type, i.e. relatom m `elem` atoms (rel1typ c)
+-}    fullContents pt rel
+       = case rel of
+           Rel{}     -> fullContents pt (reldcl rel)
+           I  {}     -> [mkPair a a | a <- atomsOf pt (rel1typ rel)]
+           V  {}     -> [mkPair s t | s <- atomsOf pt (source rel)
+                                    , t <- atomsOf pt (target rel) ]
+           (Mp1 _ (C {cptnm="SESSION"})) -> [] -- TODO: HACK to prevent populating SESSION
+           (Mp1 x _) -> [mkPair x x]
+
+
+--   instance Populated Sign where
+--    contents (Sign s t)
+--       = [mkPair a b |a<-atomsOf s, b<-atomsOf t]
+
+--   instance Populated Population where
+--    contents = popps
+     
 --   instance Populated Declaration where
 --    contents d 
 --       = case d of
@@ -34,52 +80,56 @@ where
 --           Iscompl{} -> [mkPair a b |(a,_)<-contents (detyp d),(_,b)<-contents (detyp d),a/=b]
 --           Vs{}      -> [mkPair a b |a<-(atomsOf.source) d, b<-(atomsOf.target) d]
 
-   instance Populated Relation where
-    contents (Mp1 _ (C {cptnm="SESSION"})) = [] -- TODO: HACK to prevent populating SESSION
-    contents (Mp1 x _)                     = [mkPair x x]
-    contents rel                           = contents (relps rel)
 
    instance Populated Expression where
-    contents expr  
+    fullContents pt = contents
+     where
+      contents expr
        = case expr of
             EEqu (l,r) -> contents (EIsc [EImp (l,r),EImp (r,l)])
             EImp (l,r) -> contents (EUni [ECpl l,r])
             EUni es    -> foldr (uni . contents) [] es
             EIsc []    -> fatal 47 "Cannot compute contents of EIsc []"
-            EIsc es    -> foldr1 isc (map contents es)
+            EIsc es    -> foldr1 isc (map (contents) es)
             EDif (l,r) -> contents l >- contents r
             -- The left residual lRel/rRel is defined by y(left/rRel)x if and only if for all z in X, x rRel z implies y lRel z.
-            ELrs (l,r) -> [(y,x) | x<-(atomsOf.source) l, y <-(atomsOf.source) r
-                                 , null [z |z<-(atomsOf.target) r, (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
+            ELrs (l,r) -> [(y,x) | x <- atomsOf pt (source l)
+                                 , y <- atomsOf pt (source r)
+                                 , null [z |z<- atomsOf pt (target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
             -- The right residual lRel\rRel is defined by x(lRel\rRel)y if and only if for all z in X, z lRel x implies z rRel y.
-            ERrs (l,r) -> [(x,y) | x<-(atomsOf.target) l, y <-(atomsOf.target) r
-                                 , null [z |z<-(atomsOf.source) l, (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
-            ERad es    -> if null es 
-                          then fatal 55 "Cannot compute contents of ERad []"
-                          else let (dx,_,_,_)
-                                    = foldr1' 59 dagg [ (ct,compl ct st tt,map fst st,map fst tt)
-                                                      | t<-es, ct<-[contents t]
-                                                      , st<-[contents (source t)]
-                                                      , tt<-[contents (target t)] ]
-                               in dx
+            ERrs (l,r) -> [(x,y) | x <- atomsOf pt (target l)
+                                 , y <- atomsOf pt (target r)
+                                 , null [z |z<- atomsOf pt (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
+            ERad es     -> fatal 104 "Relative addition needs rework. Sorry. "
+--            ERad es    -> if null es 
+--                          then fatal 55 "Cannot compute contents of ERad []"
+--                          else let (dx,_,_,_)
+--                                    = foldr1' 59 dagg [ (ct,compl ct atomsInSource atomsInTarget,atomsInSource,atomsInTarget)
+--                                                      | t<-es, ct<-[contents t]
+--                                                      , atomsInSource <- atomsOf pt (source t)
+--                                                      , atomsInTarget <- atomsOf pt (target t) ]
+--                               in dx
             EPrd es    -> if null es 
                           then fatal 63 "Cannot compute contents of EPrd []"
                           else [ (a,b)
-                               | (a,_)<-contents (source (head es))
-                               , (b,_)<-contents (target (last es)) ]
+                               | a <- atomsOf pt (source (head es))
+                               , b <- atomsOf pt (target (last es)) ]
             ECps es    -> if null es 
                           then []
-                          else foldr1 kleenejoin (map contents es)
+                          else foldr1 kleenejoin (map (contents) es)
             EKl0 e     -> if source e == target e --see #166
-                          then closPair (contents e `uni` contents (source e))
+                          then fatal 122 "This type of expression needs rework. Sorry. "
+                             -- TODO: Was: closPair (contents e `uni` contents (source e))
                           else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
             EKl1 e     -> closPair (contents e)
             EFlp e     -> [(b,a) | (a,b)<-contents e]
-            ECpl e     -> [apair | apair <-cartesianProduct (contents (source e)) (contents (target e))
+            ECpl e     -> [apair | apair <-cartesianProduct (atomsOf pt (source e)) (atomsOf pt (target e))
                                    , apair `notElem` contents e  ]
             EBrk e     -> contents e
-            ETyp e sgn -> if sign e==sgn then contents e else [x | x<-contents e, x `elem` contents sgn]
-            ERel rel   -> contents rel
+            ETyp e sgn -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
+                                                                     , a `elem` atomsOf pt (source sgn)
+                                                                     , b `elem` atomsOf pt (target sgn)]
+            ERel rel   -> fullContents pt rel
 
 {- Derivation of contents (ERrs (l,r)):
 Let cL = contents l
@@ -108,13 +158,8 @@ Let cL = contents l
              dagg (_,ca,sa,_)  (_,cb,_ ,tb)
                = ([mkPair x y | x<-sa, y<-tb, mkPair x y `notElem` jnab], [mkPair x y | x<-sa, y<-tb, mkPair x y `elem` jnab], sa, tb)
                  where jnab = kleenejoin ca cb
-             compl (a) (sa) (ta) = [mkPair (fst x) (fst y) |x<-sa, y<-ta, mkPair (fst x) (fst y) `notElem` a]  -- complement van a
-             cartesianProduct :: Pairs -> Pairs -> Pairs
-             xs `cartesianProduct` ys = [ mkPair (fst x) (fst y) | x<-xs,y<-ys] 
+             compl (a) (sa) (ta) = [mkPair x y |x<-sa, y<-ta, mkPair x y `notElem` a]  -- complement van a
+             cartesianProduct :: [String] -> [String] -> Pairs
+             xs `cartesianProduct` ys = [ mkPair x y | x<-xs,y<-ys] 
 
-   -- | This function returns the atoms of a concept
-   atomsOf :: A_Concept -> [String]
-   atomsOf C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
-   atomsOf C{cptos=x} = x
-   atomsOf ONE = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
   

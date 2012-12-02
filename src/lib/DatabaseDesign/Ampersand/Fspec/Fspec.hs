@@ -18,7 +18,6 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , Activity(..)
           , PlugSQL(..)
           , lookupCpt
-          , popOfDcl
           , SqlField(..)
           , FPA(..)
           , FPcompl(..)
@@ -27,13 +26,11 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , getGeneralizations, getSpecializations
           )
 where
---import DatabaseDesign.Ampersand.ADL1          
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Basics           --      (fatalMsg,Identified(..))
+import DatabaseDesign.Ampersand.Basics
 import Data.List(nub)
-import Data.Maybe
-import DatabaseDesign.Ampersand.ADL1.Rule (ruleviolations)
+import DatabaseDesign.Ampersand.ADL1.Pair
 import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
 fatal :: Int -> String -> a
@@ -54,6 +51,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
                  , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and key rules
+                 , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                  , vkeys ::        [KeyDef]                 -- ^ All keys that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
                  , vconjs ::       [Expression]             -- ^ All conjuncts generated (by ADL2Fspec)
@@ -69,7 +67,10 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , vctxenv ::      ( Expression
                                    , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
-                 , fPopulations :: [Population]    -- ^ a lookup table for the contents of declarations
+               --  , fPopulations :: [UserDefPop]             -- ^ a lookup table for the contents of all relations and concepts
+                 , hasPopulations :: Bool
+                 , userDefPops    :: [UserDefPop]           -- all user defined populations of relations and concepts
+                 , allViolations  :: [(Rule,[Paire])]       -- all rules with violations.
                  }
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
@@ -86,13 +87,12 @@ instance Language Fspc where
   conceptDefs fSpec = nub (concatMap cptdf (concs fSpec)) --use vConceptDefs to get CDs of concepts not in concs too
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
-  populations  = fPopulations
-  rules        = vrules -- only user defined rules
-  invariants   fSpec = [r | r<-vrules fSpec, not (isSignal r)]
+  udefrules    = vrules -- only user defined rules
+  invariants fSpec = [r | r<-vrules fSpec, not (isSignal r)]  -- HJO, 20121202: @Stef: Is dit goed? waarom worden de multipliciteiten en keys niet als invariant gerekend?
   keyDefs      = vkeys
   gens         = vgens
   patterns     = vpatterns
-  violations fSpec = [(r,viol) |r<- invariants fSpec ++ grules fSpec, viol<-ruleviolations r]
+--  violations udp fSpec = [(r,viol) |r<- invariants fSpec ++ grules fSpec, viol<-ruleviolations udp r]
                      -- default violations computes al rules again from declarations
 
 data FProcess
@@ -106,13 +106,12 @@ instance Language FProcess where
   objectdef    = objectdef.fpProc
   conceptDefs  = conceptDefs.fpProc
   declarations = declarations.fpProc
-  populations _ = fatal 106 "Populations is not defined. (there is probably no need for it)"
-  rules        = rules.fpProc
+  udefrules    = udefrules.fpProc
   invariants   = invariants.fpProc
   keyDefs      = keyDefs.fpProc
   gens         = gens.fpProc
   patterns     = patterns.fpProc
-  violations   = violations.fpProc
+--  violations pt= (violations pt).fpProc
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
@@ -400,10 +399,4 @@ getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
 getSpecializations :: Fspc -> A_Concept -> [A_Concept]
 getSpecializations fSpec c = filter (c Poset.>) $ concs fSpec
 
-popOfDcl :: Fspc -> Declaration -> Population
-popOfDcl fSpec d = 
-  case filter isTheDecl (populations fSpec) of
-       []    -> Popu d []
-       [pop] -> Popu d (contents pop)
-       _     -> fatal 408 $ "Multiple entries in lookup table found for declaration."
-    where isTheDecl pop = popdcl pop == d
+  

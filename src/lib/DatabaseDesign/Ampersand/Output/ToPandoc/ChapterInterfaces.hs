@@ -80,7 +80,7 @@ interfaceChap lev fSpec flags act
                           _ -> [Space,Str "During that activity, rules",Space]++commaEngPandoc (Str "and") auts++[Space,Str "will be maintained without intervention of a user."]
                  )]
      where
-        auts = nub [ Quoted  SingleQuote [Str (name r)] | q<-actQuads act, let r=(cl_rule.qClauses) q, r_usr r]
+        auts = nub [ Quoted  SingleQuote [Str (name r)] | q<-actQuads act, let r=(cl_rule.qClauses) q, r_usr r == UserDefined]
         rols = nub [Str r | (r,rul)<-fRoleRuls fSpec, rul==actRule act]
 
   ifcEcaRules :: [Block]

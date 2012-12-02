@@ -29,7 +29,7 @@ chpDiagnosis lev fSpec opts
      ruleRelationRefTable ++  -- table that shows percentages of relations and rules that have references
      invariantsInProcesses ++ -- 
      processrulesInPatterns++ -- 
-     populationReport++       -- says which relations are populated.
+-- TODO: Needs rework.     populationReport++       -- says which relations are populated.
      wipReport++              -- sums up the work items (i.e. the violations of process rules)
      violationReport          -- sums up the violations caused by the population of this script.
    , pics )
@@ -88,8 +88,8 @@ chpDiagnosis lev fSpec opts
                  [r | (r,_) <- fRoleRels fSpec] )
       ruls = if null (themes fSpec)
              then [r | r<-vrules fSpec, isSignal r ]
-             else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-rules pat,         isSignal r ] ++
-                  [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r<-rules (fpProc prc) , isSignal r ]
+             else [r | pat<-patterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ] ++
+                  [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r<-udefrules (fpProc prc) , isSignal r ]
       f r rul | (r,rul) `elem` maintained      = [Plain [Math InlineMath "\\surd"]]
               | (r,rul) `elem` dead            = [Plain [Math InlineMath "\\times"]]
               | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
@@ -118,7 +118,7 @@ chpDiagnosis lev fSpec opts
                 Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
                        , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
                        ]
-          | (null.fRoleRuls) fSpec && (not.null.rules) fSpec] ++
+          | (null.fRoleRuls) fSpec && (not.null.udefrules) fSpec] ++
           [ case language opts of
               Dutch   ->
                 Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
@@ -164,7 +164,7 @@ chpDiagnosis lev fSpec opts
    = case (language opts, missing) of
       (Dutch,[])  -> [Para 
                        [Str "Alle relaties in dit document zijn voorzien van een reden van bestaan (purpose)."]
-                     | (not.null.mors.rules) fSpec]
+                     | (not.null.mors.udefrules) fSpec]
       (Dutch,[r]) -> [Para 
                        [ Str "De reden waarom relatie ", r
                        , Str " bestaat wordt niet uitgelegd."
@@ -175,7 +175,7 @@ chpDiagnosis lev fSpec opts
                      ] ]
       (English,[])  -> [Para 
                          [Str "All relations in this document have been provided with a purpose."]
-                       | (not.null.mors.rules) fSpec]
+                       | (not.null.mors.udefrules) fSpec]
       (English,[r]) -> [Para 
                          [ Str "The purpose of relation ", r
                          , Str " remains unexplained."
@@ -199,7 +199,7 @@ chpDiagnosis lev fSpec opts
    = ( ( case (language opts, notUsed) of
           (Dutch,[])  -> [Para 
                            [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
-                         | (not.null.mors.rules) fSpec]
+                         | (not.null.mors.udefrules) fSpec]
           (Dutch,[r]) -> [Para 
                            [ Str "De relatie ", r
                            , Str " wordt in geen enkele regel gebruikt. "
@@ -210,7 +210,7 @@ chpDiagnosis lev fSpec opts
                          ] ]
           (English,[])  -> [Para 
                              [Str "All relations in this document are being used in one or more rules."]
-                           | (not.null.mors.rules) fSpec]
+                           | (not.null.mors.udefrules) fSpec]
           (English,[r]) -> [Para 
                              [ Str "Relation ", r
                              , Str " is not being used in any rule. "
@@ -252,11 +252,11 @@ chpDiagnosis lev fSpec opts
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMath . ERel . makeUnpopulatedRelation 9) d  -- makeRelation d is always typeable, so showMathDamb may be used.
+     where notUsed = nub [(Math InlineMath . showMath . ERel . makeRelation) d  -- makeRelation d is always typeable, so showMathDamb may be used.
                          | d@(Sgn{}) <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d
-                         , d `notElem` (nub . map makeDeclaration . mors . rules) fSpec
+                         , d `notElem` (nub . map makeDeclaration . mors . udefrules) fSpec
                          ]
            pats  = [ pat | pat<-patterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
@@ -267,7 +267,7 @@ chpDiagnosis lev fSpec opts
   missingRules
    = case (language opts, missingPurp, missingMeaning) of
       (Dutch,[],[])    -> [ Para [Str "Alle regels in dit document zijn voorzien van een uitleg."]
-                          | (length.rules) fSpec>1]
+                          | (length.udefrules) fSpec>1]
       (Dutch,rs,rs')   -> [Para 
                            (case rs>-rs' of
                               []  -> []
@@ -312,7 +312,7 @@ chpDiagnosis lev fSpec opts
                            )
                           ]
       (English,[],[])  -> [ Para [Str "All rules in this document have been provided with a meaning and a purpose."]
-                          | (length.rules) fSpec>1]
+                          | (length.udefrules) fSpec>1]
       (English,rs,rs') -> [Para $
                            ( case rs>-rs' of
                               []  -> []
@@ -367,9 +367,9 @@ chpDiagnosis lev fSpec opts
                   , null [m | m <- ameaMrk (rrmean r), amLang m == language opts]
                   ]
            ruls = if null (themes fSpec)
-                  then rules fSpec
-                  else concat [rules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                       concat [rules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                  then udefrules fSpec
+                  else concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                       concat [udefrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
            upC (Str str:strs) = Str (upCap str):strs
            upC str = str
            fn r = locnm (origin r)
@@ -495,61 +495,61 @@ chpDiagnosis lev fSpec opts
        | (p,rol,rul)<-prs
        ] 
      | length prs>1]
-     where prs = [(p,rol,rul) | p<-procs, (rol,rul)<-maintains p, name rul `notElem` map name (rules p) ]
+     where prs = [(p,rol,rul) | p<-procs, (rol,rul)<-maintains p, name rul `notElem` map name (udefrules p) ]
            multProcs = length procs>1
            procs = [fpProc fp | fp<-vprocesses fSpec
                             , null (themes fSpec) || name fp `elem` themes fSpec]  -- restrict if this is partial documentation.
 
-  populationReport :: [Block]
-  populationReport
-   = [ Para (case (language opts, ps, declarations fSpec) of
-        (Dutch,  [], [] ) -> [ Str "Dit script is leeg. " ]
-        (English,[], [] ) -> [ Str "This script is empty. " ]
-        (Dutch,  [],  _ ) -> [ Str "Geen relatie bevat enige populatie. " ]
-        (English,[],  _ ) -> [ Str "No relation contains any population. " ]
-        (Dutch,  [p],[_]) -> [ Str "Relatie ", Math InlineMath ((showMath.popdcl) p), Str " heeft een populatie van ", Str (count opts (length (contents p)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
-        (English,[p],[_]) -> [ Str "Relation ", Math InlineMath ((showMath.popdcl) p), Str " has ", Str (count opts (length (contents p)) "pair"), Str " in its population. " ]
-        (Dutch,  [p], _ ) -> [ Str "Alleen relatie ", Math InlineMath ((showMath.popdcl) p), Str " heeft een populatie. Deze bevat ", Str (count opts (length (contents p)) "paar"), Str ". " ]
-        (English,[p], _ ) -> [ Str "Only relation ", Math InlineMath ((showMath.popdcl) p), Str " is populated. It contains ", Str (count opts (length (contents p)) "pair"), Str ". " ]
-        (Dutch,   _ , _ ) -> [ Str "De onderstaande tabel geeft de populatie van de verschillende relaties weer. " ]
-        (English, _ , _ ) -> [ Str "The following table represents the population of various relations. " ])
-     ] ++
-     [ Table []
-        [AlignLeft,AlignRight]
-        [0.0,0.0]
-        (case language opts of
-          Dutch   -> [[Plain [Str "Concept"]], [Plain [Str "Populatie"]  ]]
-          English -> [[Plain [Str "Concept"]], [Plain [Str "Population"] ]]
-        )
-        [ [[Plain [Str (name c)]], [Plain [(Str . show . length . atomsOf) c]]]
-        | c<-cs
-        ]
-     | length cs>=1 ] ++
-     [ Table []
-        [AlignLeft,AlignRight]
-        [0.0,0.0]
-        (case language opts of
-          Dutch   -> [[Plain [Str "Relatie"]],  [Plain [Str "Populatie"]  ]]
-          English -> [[Plain [Str "Relation"]], [Plain [Str "Population"] ]]
-        )
-        [ [[Plain [Math InlineMath ((showMath .popdcl) p)]], [Plain [(Str . show . length . contents) p]]]  -- Every d is typeable, so showMathDamb may be used.
-        | p<-ps
-        ]
-     | length ps>1 ]
-     where
-      ps  = [p | p<-populations fSpec
-               , null (themes fSpec) || (decpat.popdcl) p `elem` themes fSpec  -- restrict if the documentation is partial.
-               , (not.null.contents) p]
-      cs  = [c | c@C{}<-ccs, (not.null.atomsOf) c]
-      ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+--  populationReport :: [Block]
+--  populationReport
+--   = [ Para (case (language opts, ps, declarations fSpec) of
+--        (Dutch,  [], [] ) -> [ Str "Dit script is leeg. " ]
+--        (English,[], [] ) -> [ Str "This script is empty. " ]
+--        (Dutch,  [],  _ ) -> [ Str "Geen relatie bevat enige populatie. " ]
+--        (English,[],  _ ) -> [ Str "No relation contains any population. " ]
+--        (Dutch,  [p],[_]) -> [ Str "Relatie ", Math InlineMath ((showMath.popdcl) p), Str " heeft een populatie van ", Str (count opts (length (popps p)) "paar"), Str ". " ]  -- Every d is typeable, so showMathDamb may be used.
+--        (English,[p],[_]) -> [ Str "Relation ", Math InlineMath ((showMath.popdcl) p), Str " has ", Str (count opts (length (popps p)) "pair"), Str " in its population. " ]
+--        (Dutch,  [p], _ ) -> [ Str "Alleen relatie ", Math InlineMath ((showMath.popdcl) p), Str " heeft een populatie. Deze bevat ", Str (count opts (length (popps p)) "paar"), Str ". " ]
+--        (English,[p], _ ) -> [ Str "Only relation ", Math InlineMath ((showMath.popdcl) p), Str " is populated. It contains ", Str (count opts (length (popps p)) "pair"), Str ". " ]
+--        (Dutch,   _ , _ ) -> [ Str "De onderstaande tabel geeft de populatie van de verschillende relaties weer. " ]
+--        (English, _ , _ ) -> [ Str "The following table represents the population of various relations. " ])
+--     ] ++
+--     [ Table []
+--        [AlignLeft,AlignRight]
+--        [0.0,0.0]
+--        (case language opts of
+--          Dutch   -> [[Plain [Str "Concept"]], [Plain [Str "Populatie"]  ]]
+--          English -> [[Plain [Str "Concept"]], [Plain [Str "Population"] ]]
+--        )
+--        [ [[Plain [Str (name c)]], [Plain [(Str . show . length . atomsOf) c]]]
+--        | c<-cs
+--        ]
+--     | length cs>=1 ] ++
+--     [ Table []
+--        [AlignLeft,AlignRight]
+--        [0.0,0.0]
+--        (case language opts of
+--          Dutch   -> [[Plain [Str "Relatie"]],  [Plain [Str "Populatie"]  ]]
+--          English -> [[Plain [Str "Relation"]], [Plain [Str "Population"] ]]
+--        )
+--        [ [[Plain [Math InlineMath ((showMath .popdcl) p)]], [Plain [(Str . show . length . popps) p]]]  -- Every d is typeable, so showMathDamb may be used.
+--        | p<-ps
+--        ]
+--     | length ps>1 ]
+--     where
+--      ps  = [p | p<-userDefPops fSpec
+--               , null (themes fSpec) || (decpat.popdcl) p `elem` themes fSpec  -- restrict if the documentation is partial.
+--               , (not.null.popps) p]
+--      cs  = [c | c@C{}<-ccs, (not.null.atomsOf) c]
+--      ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
 
   wipReport :: [Block]
   wipReport
    = [ Para (case (language opts, concat popwork,popwork) of
               (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
+                                      | hasPopulations fSpec ]
               (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
+                                      | hasPopulations fSpec ]
               (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count opts (length ps) "taak"++" zien.") ]
               (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count opts (length ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
@@ -617,57 +617,58 @@ chpDiagnosis lev fSpec opts
          then [Quoted  SingleQuote [Str (name (source r)),Space,Str a]]
          else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
-      popwork :: [[(Rule,[(String, String)])]]
-      popwork  = eqCl (locnm.origin.fst) [(r,ps) | r<-[r | r<-ruls, isSignal r ], let ps=ruleviolations r, not (null ps)]
-      ruls = if null (themes fSpec)
-             then rules fSpec
-             else concat [rules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [rules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+      popwork :: [[(Rule,[(String, String)])]];
+      popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
+  partofThemes r = 
+        or [ null (themes fSpec) 
+           , r `elem` concat [udefrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]
+           , r `elem` concat [udefrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+           ]
 
   violationReport :: [Block]
   violationReport
    = [ Para (case (language opts, popviols, multviols) of
         (Dutch,  [],[])      -> [ Str "De populatie in dit script overtreedt geen regels. "
-                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
+                                | hasPopulations fSpec ]
         (English,[],[])      -> [ Str "The population in this script violates no rule. "
-                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
+                                | hasPopulations fSpec ]
         (Dutch,  [], _:_:_ )  -> [ Str "De populatie in dit script overtreedt alleen multipliciteitsregels. "
-                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
+                                | hasPopulations fSpec ]
         (English,[], _:_:_ ) -> [ Str "The population in this script violates multiplicity rules only. "
-                                | (not.null) [p | p<-populations fSpec, not (null (contents p))] ]
+                                | hasPopulations fSpec ]
         (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" veroorzaakt "++count opts (length ps) "overtreding"++". ") ]
         (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" causes "++count opts (length ps) "violation"++". ") ]
         (Dutch,  _,_)        -> [ Str "De onderstaande tabellen geven overtredingen van regels weer. " ]
         (English,_,_)        -> [ Str "The following tables represent rule violations. " ])
      ]        ++          
--- the table containing the rule violation counts
-     [ Table []
-       [AlignLeft,AlignRight,AlignRight]
-       [0.0,0.0,0.0]
-       ( case language opts of
-          Dutch   ->
-             [[Plain [Str "regel"]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popviol>1]++[Str "regel#"]], [Plain [Str "#overtredingen"] ]]
-          English ->
-             [[Plain [Str "rule" ]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popviol>1]++[Str "line#"]], [Plain [Str "#violations"] ]]
-       )
-       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
-       | (r,ps)<-cl, length ps>0
-       ]
-     | (length.concat) popviol>1, cl<-popviol, not (null cl) ]        ++          
--- the table containing the multiplicity counts
-     [ Table []
-       [AlignLeft,AlignRight,AlignRight]
-       [0.0,0.0,0.0]
-       ( case language opts of
-           Dutch   ->
-              [[Plain [Str "regel"]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length multviol>1]++[Str "regel#"]], [Plain [Str "#overtredingen"] ]]
-           English ->
-              [[Plain [Str "rule" ]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length multviol>1]++[Str "line#"]], [Plain [Str "#violations"] ]]
-       )
-       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
-       | (r,ps)<-cl, length ps>0
-       ]
-     | (length.concat) multviol>1, cl<-multviol, not (null cl) ]        ++          
+---- the table containing the rule violation counts
+--     [ Table []
+--       [AlignLeft,AlignRight,AlignRight]
+--       [0.0,0.0,0.0]
+--       ( case language opts of
+--          Dutch   ->
+--             [[Plain [Str "regel"]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popviol>1]++[Str "regel#"]], [Plain [Str "#overtredingen"] ]]
+--          English ->
+--             [[Plain [Str "rule" ]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popviol>1]++[Str "line#"]], [Plain [Str "#violations"] ]]
+--       )
+--       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
+--       | (r,ps)<-cl, length ps>0
+--       ]
+--     | (length.concat) popviol>1, cl<-popviol, not (null cl) ]        ++          
+---- the table containing the multiplicity counts
+--     [ Table []
+--       [AlignLeft,AlignRight,AlignRight]
+--       [0.0,0.0,0.0]
+--       ( case language opts of
+--           Dutch   ->
+--              [[Plain [Str "regel"]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length multviol>1]++[Str "regel#"]], [Plain [Str "#overtredingen"] ]]
+--           English ->
+--              [[Plain [Str "rule" ]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length multviol>1]++[Str "line#"]], [Plain [Str "#violations"] ]]
+--       )
+--       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
+--       | (r,ps)<-cl, length ps>0
+--       ]
+--     | (length.concat) multviol>1, cl<-multviol, not (null cl) ]        ++          
 -- the tables containing the actual violations of user defined rules
      concat
      [ [ Para ( (case language opts of
@@ -724,26 +725,30 @@ chpDiagnosis lev fSpec opts
         then [Quoted  SingleQuote [Str (name (source r)),Space,Str a]]
         else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
      oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
-     popviols = [(r,ps) | r<-invs++keyrs
-                        , let ps=ruleviolations r, not (null ps)]
-     multviols = [(r,ps) | r<-mults
-                         , let ps=ruleviolations r, not (null ps)]
-     popviol :: [[(Rule,[(String, String)])]]
-     popviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-invs, let ps=ruleviolations r, not (null ps)]
-     multviol :: [[(Rule,[(String, String)])]]
-     multviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-mults, let ps=ruleviolations r, not (null ps)]
-     invs  = if null (themes fSpec)
-             then invariants fSpec
-             else concat [invariants pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [invariants (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
-     mults = if null (themes fSpec)
-             then multrules fSpec
-             else concat [multrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [multrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
-     keyrs = if null (themes fSpec)
-             then keyrules fSpec
-             else concat [keyrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                  concat [keyrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+     popviols  = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r,      r_usr r == UserDefined ]
+     multviols = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r, not (r_usr r == UserDefined)]
+     
+
+--     popviols = [(r,ps) | r<-invs++keyrs
+--                        , let ps=ruleviolations r, not (null ps)]
+--     multviols = [(r,ps) | r<-mults
+--                         , let ps=ruleviolations r, not (null ps)]
+--     popviol :: [[(Rule,[(String, String)])]]
+--     popviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-invs, let ps=ruleviolations r, not (null ps)]
+--     multviol :: [[(Rule,[(String, String)])]]
+--     multviol  = eqCl (locnm.origin.fst) [(r,ps) | r<-mults, let ps=ruleviolations r, not (null ps)]
+--     invs  = if null (themes fSpec)
+--             then invariants fSpec
+--             else concat [invariants pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+--                  concat [invariants (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+--     mults = if null (themes fSpec)
+--             then multrules fSpec
+--             else concat [multrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+--                  concat [multrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+--     keyrs = if null (themes fSpec)
+--             then keyrules fSpec
+--             else concat [keyrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+--                  concat [keyrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.

@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand.ADL1
            , SrcOrTgt(..)
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations, violationsexpr
            , P_KeyDef(..), P_KeySegment(..), KeyDef(..), KeySegment(..)
-           , P_Population(..), Population(..)
+           , P_Population(..), UserDefPop(..)
            , P_ObjectDef(..)
            , ObjectDef(..), P_Interface(..)
            , objAts, objatsLegacy
@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Term(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
            , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
            , A_Gen(..),P_Gen(..)
-           , Relation(..), isTypeable, makeUnpopulatedRelation
+           , Relation(..), isTypeable, makeRelation
            , Declaration(..), isSgn
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
@@ -62,7 +62,7 @@ where
                                          ,Rule(..)
                                          ,RuleType(..)
                                          ,RoleRelation(..)
-                                         ,Population(..)
+                                         ,UserDefPop(..)
                                          ,Purpose(..), ExplObj(..)
                                          ,showExpr,insParentheses
                                          ,makeDeclaration
@@ -73,7 +73,7 @@ where
                                          ,Association(..),Relational(..)
                                          ,Declaration(..)
                                          ,isSgn
-                                         ,makeUnpopulatedRelation
+                                         ,makeRelation
                                          )
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
    import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops)
