@@ -65,7 +65,7 @@ chpProcessAnalysis lev fSpec flags
 
   roleRuleBlocks :: [Block]
   roleRuleBlocks
-   = if null (fRoleRuls fSpec) && (not.null.rules) fSpec then [] else
+   = if null (fRoleRuls fSpec) && (not.null.udefrules) fSpec then [] else
      [ case language flags of
           Dutch   ->
             Para [ Str $ upCap (name fSpec)++" kent regels aan rollen toe. "
@@ -127,7 +127,7 @@ chpProcessAnalysis lev fSpec flags
       rolelessRels = [ d | d<-declarations fSpec, d `notElem` (nub.map (makeDeclaration.snd)) (fRoleRels fSpec) ]
 
   emptyProcess :: Process -> Bool
-  emptyProcess p = null (rules p)
+  emptyProcess p = null (udefrules p)
   
 -- the sections in which processes are analyzed
   procSections :: [FProcess] -> [([Block],[Picture])]
@@ -147,7 +147,7 @@ chpProcessAnalysis lev fSpec flags
           = purposes2Blocks flags purps
          purps = purposesDefinedIn fSpec (language flags) fproc
          sctRules :: [([Inline], [[Block]])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (rules (fpProc fproc)) i seenConcepts seenDeclarations
+         (sctRules,i',seenCrs,seenDrs) = dpRule fSpec flags (udefrules (fpProc fproc)) i seenConcepts seenDeclarations
 
   txtLangModel :: FProcess->[Block]
   txtLangModel fp

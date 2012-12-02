@@ -2,7 +2,7 @@
 {-# LANGUAGE RelaxedPolyRec #-} -- -RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
-     pCtx2aCtx, disambiguate, makePopulatedRel,
+     pCtx2aCtx, disambiguate,
      Guarded(..)
      )
 where
@@ -702,9 +702,9 @@ instance Expr P_Declaration where
    -- let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType dcls x uLft uRt x
 
 instance Expr P_Population where
- terms pop@(P_Popu{p_type=P_Sign []}) = [Prel (p_orig pop) (p_popm pop)]
- terms pop@(P_Popu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (p_popm pop)) (p_type pop)]
- terms pop@(P_CptPopu{})              = [Pid (PCpt (p_popm pop))]
+ terms pop@(P_RelPopu{p_type=P_Sign []}) = [Prel (p_orig pop) (name pop)]
+ terms pop@(P_RelPopu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (name pop)) (p_type pop)]
+ terms pop@(P_CptPopu{})                 = [Pid (PCpt (name pop))]
  uType dcls _ uLft uRt pop = let x=terms pop in  uType dcls x uLft uRt x
 
 instance Expr a => Expr (Maybe a) where
@@ -989,7 +989,7 @@ pCtx2aCtx p_context
     populationTable = map combine (eqClass sameDecl allpops)
       where 
         sameDecl a b = popdcl a == popdcl b 
-        combine ps = p{popps = nub (concatMap contents ps)}
+        combine ps = p{popps = nub (concatMap popps ps)}
            where p = head ps -- This is safe, because eqClass produces a list of non-empty lists.
         
     st, eqType  :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
@@ -1056,7 +1056,7 @@ pCtx2aCtx p_context
                             Checked ps -> (ps, [])
                             Errors errs  -> (fatal 1057 ("Do not refer to undefined populations\n"++show errs), errs)
     allExplicitAtoms :: [(String,[String])]
-    allExplicitAtoms = [(p_popm cptos',[a | (a,_)<-p_popps cptos']) | cptos'@P_CptPopu{}<-pops p_context]
+    allExplicitAtoms = [(name cptos',[a | (a,_)<-p_popps cptos']) | cptos'@P_CptPopu{}<-pops p_context]
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
@@ -1068,7 +1068,7 @@ pCtx2aCtx p_context
                 where orphans = ctxthms contxt>-themenames
                       themenames=[name p |p<-pats]++[name p |p<-procs]
     rulenmchk = [ newcxe ("Rules with identical names at positions "++show(map origin cl))
-                | cl<-eqCl name (rules contxt),length cl>1]
+                | cl<-eqCl name (udefrules contxt),length cl>1]
     ifcnmchk  = [newcxe ("Interfaces with identical names at positions "++show(map origin cl))
                 | cl<-eqCl name ifcs,length cl>1]
     patnmchk  = [newcxe ("Patterns or processes with identical names at positions "++show(map fst cl))
@@ -1087,7 +1087,7 @@ pCtx2aCtx p_context
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
-    pPat2aPat :: [Population] -> P_Pattern -> Guarded Pattern
+    pPat2aPat :: [UserDefPop] -> P_Pattern -> Guarded Pattern
     pPat2aPat pops' ppat 
      = case typeErrs of
         [] -> Checked (A_Pat { ptnm  = name ppat    -- Name of this pattern
@@ -1116,7 +1116,7 @@ pCtx2aCtx p_context
                               Errors  errs  -> (fatal 1005 ("Do not refer to undefined purposes\n"++show errs), errs)
         agens'  = map (pGen2aGen (name ppat)) (pt_gns ppat)
 
-    pProc2aProc :: [Population] -> P_Process -> Guarded Process
+    pProc2aProc :: [UserDefPop] -> P_Process -> Guarded Process
     pProc2aProc pops' pproc
      = case typeErrs of
         [] -> Checked(Proc { prcNm    = procNm pproc
@@ -1139,7 +1139,7 @@ pCtx2aCtx p_context
         arrels = [(rol,rel) |rr<-rrels, rol<-rrRoles rr, rel<-rrRels rr]
         (rrels,editcxes)  = (unzip . map pRRel2aRRel            . procRRels) pproc
         agens'  = map (pGen2aGen (name pproc)) (procGens pproc)
-        arruls = [(rol,rul) |rul<-rules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
+        arruls = [(rol,rul) |rul<-udefrules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr]
         (adecs',deccxes') = case (parallelList . map pDecl2aDecl . procDcls) pproc of
                              Checked decs  -> ([d{decpat=name pproc} | d<-decs], [])
                              Errors  errs  -> (fatal 1030 ("Do not refer to undefined declarations\n"++show errs), errs)
@@ -1216,9 +1216,8 @@ pCtx2aCtx p_context
                        , rrtyp  = sign aexpr                 -- Allocated type
                        , rrdcl  = Nothing                    -- The property, if this rule originates from a property on a Declaration
                        , r_env  = patname                    -- Name of pattern in which it was defined.
-                       , r_usr  = True                       -- True if this rule was specified explicitly as a rule in the Ampersand script;
-                                                             -- False if it follows implicitly from the Ampersand script and generated by a computer
-                       , r_sgl  = or [rr_nm prul `elem` map (name.snd) (prcRRuls p) | p<-ctxprocs contxt]  -- True if this is a signal; False if it is an ALWAYS rule
+                       , r_usr  = UserDefined 
+                       , r_sgl  = or [rr_nm prul `elem` map (name.snd) (prcRRuls p) | p<-ctxprocs contxt]
                        , srrel  = Sgn { decnm = rr_nm prul        -- the signal relation
                                       , decsgn = sign aexpr
                                       , decprps = []
@@ -1416,22 +1415,28 @@ pCtx2aCtx p_context
                                           then Errors [newcxe (" No cospecificationntext named '"++str++"'")]
                                           else Checked (ExplFspc str)
 
-    pPop2aPop :: P_Population -> Guarded Population
+    pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop pop
      = case pExpr2aExpr expr of
-        Checked (ERel aRel,_,_)          -> Checked ( Popu { popdcl = makeDeclaration aRel
-                                                           , popps  = p_popps pop
-                                                           } )
-        Checked (ETyp (ERel aRel) _,_,_) -> Checked ( Popu { popdcl = makeDeclaration aRel
-                                                           , popps  = p_popps pop
-                                                           } )
+        Checked (ERel aRel,_,_)          -> Checked ( thePop aRel )
+        Checked (ETyp (ERel aRel) _,_,_) -> Checked ( thePop aRel )
         Checked _                        -> fatal 1223 "illegal call of pPop2aPop"
         Errors errs                      -> Errors errs
        where expr = case pop of
-                      P_CptPopu{}              -> Pid (PCpt (name pop))
-                      P_Popu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
-                      P_Popu{}                 -> PTyp (origin pop) (Prel (origin pop) (name pop)) (p_type pop)
-                    
+                      P_CptPopu{}                 -> Pid (PCpt (name pop))
+                      P_RelPopu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
+                      P_RelPopu{}                 -> PTyp (origin pop) (Prel (origin pop) (name pop)) (p_type pop)
+             thePop rel = case rel of
+                            Rel{} -> PRelPopu { popdcl = reldcl rel
+                                              , popps  = case pop of
+                                                           P_RelPopu{} -> p_popps pop
+                                                           P_CptPopu{} -> fatal 1438 ("Unexpected issue with population of "++name pop) 
+                                              }
+                            I{}   -> PCptPopu { popcpt = rel1typ rel
+                                              , popas  = case pop of
+                                                           P_RelPopu{} -> fatal 1441 ("Unexpected issue with population of "++name pop)
+                                                           P_CptPopu{} -> p_popas pop
+                                              }
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
        = Gen{genfp  = gen_fp  pg
@@ -1452,10 +1457,10 @@ pCtx2aCtx p_context
           where 
           c = C {cptnm = p_cptnm pc
                 ,cptgE = genE contxt
-                ,cptos = nub$[srcPaire p | pop<-ctxpopus contxt,decusr (popdcl pop),p<-contents pop, source (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
-                           ++[trgPaire p | pop<-ctxpopus contxt,decusr (popdcl pop),p<-contents pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
-                           ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
-                           ++[x | (cnm,xs)<-initialatoms contxt, cnm==p_cptnm pc, x<-xs]
+--                ,cptos = nub$[srcPaire p | pop<-popTable contxt,decusr (popdcl pop),p<-popps pop, source (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
+--                           ++[trgPaire p | pop<-popTable contxt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
+--                           ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
+--                           ++[x | (cnm,xs)<-initialatoms contxt, cnm==p_cptnm pc, x<-xs]
                 ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
@@ -1524,13 +1529,13 @@ pCtx2aCtx p_context
                               , [newcxe ("Relation undeclared: '"++nm++"'.")]
                               )
                               --        "relation" "" (origin prel) )
-        ([d],[] ,[] , _  ) -> (makeRelation d, [])
+        ([d],[] ,[] , _  ) -> (makeRelation d,[])
         ([d],[] , _ , _  ) -> ( fatal 334 ("Relation undeclared: '"++nm++".")
                               , [newcxe ("Relation undeclared: '"++nm++show sgn++"'."
                                         ++".\nDo you intend the one with type "++(show.sign) d++"?")]
                               )
                               --        "relation" "" (origin prel) )
-        ( _ ,[d], _ , _  ) -> (makeRelation d, [])
+        ( _ ,[d], _ , _  ) -> (makeRelation d,[])
         ( _ ,[] ,[] , _  ) -> ( fatal 340 ("Ambiguous reference to a relation named: '"++nm++".")
                               , [newcxe ("Ambiguous relation: '"++nm++"'.\nUse the full relation signature."
                                         ++"\nPossible types are "++concatMap (show.sign) ds++".")]
@@ -1550,7 +1555,6 @@ pCtx2aCtx p_context
         dts = [d | d<-ds, not(null sgn)
                         , name (head sgn)==name (source d) &&
                           name (last sgn)==name (target d)   ]
-        makeRelation d = makePopulatedRel (populations contxt) d
     pRel2aRel _ r = fatal 1314 ("pRel2aRel could not patternmatch on "++show r)
     
     pExpr2aExpr :: Term                               -- The term to be typed
@@ -1584,7 +1588,6 @@ pCtx2aCtx p_context
                                                        , relpos=o
                                                        , relsgn=sgn
                                                        , reldcl=decl
-                                                       , relps= fatal 1596 "Population of this relation needs attention."
                                                        }))
                                     }
          f (Pflp o a)          = do { (decl,sgn) <- getDeclarationAndSign (p_declarations p_context) (Prel o a)
@@ -1592,7 +1595,6 @@ pCtx2aCtx p_context
                                                              , relpos=o
                                                              , relsgn=sgn
                                                              , reldcl=decl
-                                                             , relps= fatal 1604 "Population of this relation needs attention."
                                                              })))
                                     }
          f t@(Pequ _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
@@ -1699,7 +1701,6 @@ pCtx2aCtx p_context
                                                                    , relpos=o
                                                                    , relsgn=pSign2aSign sgnCast
                                                                    , reldcl=decl
-                                                                   , relps= fatal 1711 "Population of this relation needs attention."
                                                                    }))
                                                 }
          f t@(PTyp _ a (P_Sign _))
@@ -1814,13 +1815,3 @@ flpcast (TargetCast x) = SourceCast x
 flpcast (Cast x y) = Cast y x
 -}
 
-makePopulatedRel :: [Population] -> Declaration -> Relation
-makePopulatedRel pops d = r {relps = p}
-  where
-    r = makeUnpopulatedRelation 1 d
-    p = case [pop | pop <- pops, popdcl pop == d] of
-           []    -> Popu { popdcl = d
-                         , popps  = [] 
-                         }
-           [pop] -> pop
-           _     -> fatal 1813 ("Multiple entries in population table found for declaration "++showADL d)  

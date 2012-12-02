@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..),Relational(..)
                                   ,Declaration(..)
-                                  ,makeUnpopulatedRelation
+                                  ,makeRelation
                                   ,isSgn
                                   ) where
 
@@ -104,15 +104,12 @@ isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
 isSingleton _   = False
 
-makeUnpopulatedRelation :: Int -> Declaration -> Relation
-makeUnpopulatedRelation i d
+makeRelation :: Declaration -> Relation
+makeRelation d
     = Rel { relnm  = name d
           , relpos = origin d 
           , relsgn = decsgn d
           , reldcl = d
-          , relps  = Popu { popdcl = d
-                          , popps  = fatal 114 $"(call number "++ show i++").\n " ++show d
-                          } 
           }
 
 isSgn :: Declaration -> Bool

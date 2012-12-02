@@ -118,7 +118,7 @@ instance ShowADL Lang where
 instance ShowADL ExplObj where
  showADL e = case e of
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
-      ExplDeclaration d  -> "RELATION "++showADL (makeUnpopulatedRelation 8 d)
+      ExplDeclaration d  -> "RELATION "++showADL (makeRelation d)
       ExplRule str       -> "RULE "++showstr str
       ExplKeyDef str     -> "KEY "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
@@ -135,7 +135,7 @@ showstr str = "\""++str++"\""
 instance ShowADL Process where
  showADL prc
   = "PROCESS " ++ name prc 
-    ++ (if null (rules prc)     then "" else "\n  " ++intercalate "\n  " (map showADL (rules prc))     ++ "\n")
+    ++ (if null (udefrules prc) then "" else "\n  " ++intercalate "\n  " (map showADL (udefrules prc)) ++ "\n")
     ++ (if null (maintains prc) then "" else "\n  " ++                        showRM prc               ++ "\n")
     ++ (if null (mayEdit prc)   then "" else "\n  " ++                        showRR prc               ++ "\n")
     ++ (if null (conceptDefs prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs prc))    ++ "\n")
@@ -300,7 +300,7 @@ instance ShowADL Fspc where
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec >- concatMap gens (patterns fSpec))) ++ "\n")
     ++ (if null (keyDefs fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (keyDefs fSpec >- concatMap keyDefs (patterns fSpec)))       ++ "\n")
     ++ (if null (declarations fSpec) then "" else "\n"++intercalate "\n"   (map showADL (declarations fSpec >- concatMap declarations (patterns fSpec))) ++ "\n")
-    ++ (if null (rules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (rules fSpec >- concatMap rules (patterns fSpec))) ++ "\n")
+    ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
     ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")
     ++ "TODO: Populations are not shown..\n" --TODO.
 --    ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
@@ -325,22 +325,60 @@ instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
 instance ShowADL P_Population where
- showADL pop@(P_Popu{})
-  = "POPULATION "++name pop++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps pop))++indent++"]"
-    where indent = "   "; P_Sign pConcepts=p_type pop
- showADL pop@(P_CptPopu{})
-  = "POPULATION "++p_popm pop++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,_)-> showatom x) (p_popps pop)) ++indent++"]"
+ showADL pop
+  = "POPULATION "++name pop
+  ++ case pop of
+        P_RelPopu{} -> "["++(name.head.psign.p_type) pop++"*"++(name.last.psign.p_type) pop++"]"
+        P_CptPopu{} -> ""
+  ++ " CONTAINS\n"
+  ++ if (case pop of
+            P_RelPopu{} -> null (p_popps pop)
+            P_CptPopu{} -> null (p_popas pop)
+        ) 
+     then "" 
+     else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
+          showContent = case pop of
+                          P_RelPopu{} -> map showPaire (p_popps pop)
+                          P_CptPopu{} -> map showAtom  (p_popas pop)
+showPaire :: Paire -> String
+showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
+--  @(P_RelPopu{})
+--  = "POPULATION "++name pop++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
+--    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps pop))++indent++"]"
+--    where indent = "   "; P_Sign pConcepts=p_type pop
+-- showADL pop@(P_CptPopu{})
+--  = "POPULATION "++p_popm pop++" CONTAINS\n"++
+--    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,_)-> showatom x) (p_popps pop)) ++indent++"]"
+--    where indent = "   "
 
-instance ShowADL Population where
- showADL (Popu r pairs)
-  = "POPULATION "++showADL r++" CONTAINS\n"++
-    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
+instance ShowADL UserDefPop where
+ showADL pop
+  = "POPULATION "
+  ++ case pop of
+        PRelPopu{} -> (name.popdcl) pop++(show.sign.popdcl) pop
+        PCptPopu{} -> (name.popcpt) pop
+  ++ " CONTAINS\n"
+  ++ if (case pop of
+            PRelPopu{} -> null (popps pop)
+            PCptPopu{} -> null (popas pop)
+        ) 
+     then "" 
+     else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
     where indent = "   "
-showatom :: String -> String
-showatom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
+          showContent = case pop of
+                          PRelPopu{} -> map showPaire (popps pop)
+                          PCptPopu{} -> map showAtom  (popas pop)
+
+
+-- showADL (PRelPopu r pairs)
+--  = "POPULATION "++showADL r++" CONTAINS\n"++
+--    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
+--    where indent = "   "
+
+
+showAtom :: String -> String
+showAtom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
 
 --used to compose error messages at p2a time
 instance ShowADL Term where

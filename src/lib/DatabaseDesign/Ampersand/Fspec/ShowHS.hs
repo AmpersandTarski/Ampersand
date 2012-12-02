@@ -702,11 +702,11 @@ where
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***
 -- \***********************************************************************
 
-   instance  ShowHSName Population where
+   instance  ShowHSName UserDefPop where
     showHSName pop = haskellIdentifier ("pop_"++name d++"_"++uniqueIDfromOrigin (decfpos d))
         where d = popdcl pop
 
-   instance  ShowHS Population where
+   instance  ShowHS UserDefPop where
     showHS flags indent pop
      = "Popu ("++showHS flags "" (popdcl pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
    

@@ -567,7 +567,7 @@ chpDataAnalysis lev fSpec flags
                                                 | e<-es ]
                               ]
           where irs = [EUni fs | Quad r ccrs<-vquads fSpec
-                             , r_usr (cl_rule ccrs), isIdent r, source r `elem` pcpts
+                             , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
                              , (_,shifts)<-cl_conjNF ccrs
                              , EUni fs<-shifts
                              , let ns=[t | ECpl t<-fs], length ns==1, ERel nega<-ns

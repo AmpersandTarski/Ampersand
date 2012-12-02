@@ -80,7 +80,7 @@ instance Dotable ClassDiag where
 instance Dotable A_Concept where
    conceptualGraph fSpec flags _ c = conceptual2Dot flags (name c) cpts rels idgs
          where 
-          rs    = [r | r<-rules fSpec, c `elem` concs r, not (isaRule r)]
+          rs    = [r | r<-udefrules fSpec, c `elem` concs r, not (isaRule r)]
           idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           gs    = fsisa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
@@ -159,7 +159,7 @@ instance Dotable Activity where
    conceptualGraph fSpec flags _ ifc = conceptual2Dot flags (name ifc) cpts rels idgs
          where
          -- involve all rules from the specification that are affected by this interface
-          rs         = [r | r<-rules fSpec, affected r]
+          rs         = [r | r<-udefrules fSpec, affected r]
           affected r = not (null (mors r `isc` mors ifc))
          -- involve all isa links from concepts touched by one of the affected rules
           idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges

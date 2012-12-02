@@ -5,9 +5,9 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos             
    import DatabaseDesign.Ampersand.Basics                         ( fatalMsg,Identified(..), (>-))
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( makeUnpopulatedRelation)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( makeRelation)
    import DatabaseDesign.Ampersand.ADL1.Prop                      ( Prop(..))
-   import DatabaseDesign.Ampersand.Classes.Populated              (contents)
+   import DatabaseDesign.Ampersand.Classes.Populated              ( Populated(..))
    import DatabaseDesign.Ampersand.Misc
    
    fatal :: Int -> String -> a
@@ -40,12 +40,13 @@ where
                    
    --WHY -> why isn't this implemented as contents (violationsexpr r)?
    --ANSWER -> to avoid performance issues, probably only in most cases (ticket #319)
-   ruleviolations :: Rule -> Pairs
-   ruleviolations r = case rrexp r of
+   ruleviolations :: [UserDefPop] -> Rule -> Pairs
+   ruleviolations pt r = case rrexp r of
         EEqu {} -> (cra >- crc) ++ (crc >- cra)
         EImp {} -> cra >- crc
-        _     -> contents (V (rrtyp r)) >- crc  --everything not in con
-        where cra = contents (antecedent r) ; crc = contents (consequent r)
+        _     -> fullContents pt (V (rrtyp r)) >- crc  --everything not in con
+        where cra = fullContents pt (antecedent r)
+              crc = fullContents pt (consequent r)
    violationsexpr :: Rule -> Expression
    violationsexpr r = EDif (ERel (V (rrtyp r)), rrexp r)
  
@@ -80,7 +81,7 @@ where
                         Irf-> h$sign r
            , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
            , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-           , r_usr = False                
+           , r_usr = Multiplicity              
            , r_sgl = False
            , srrel = d{decnm=show prp++name d}
            }
@@ -92,9 +93,7 @@ where
            h sgn   | isEndo sgn = sgn
                    | otherwise = fatal 241 "Bad rule, the source and target of the relation must be identical."
            r:: Expression
-           r = ERel (makeUnpopulatedRelation 2 d) 
-           -- TODO: Bovenstaande aanroep is verantwoordelijk voor een fatal error 114 (module ADL1.MorphismAndDeclaration)
-           -- Er moet voor worden gezorgd dat de populatie gevuld is. Deze relatie bevat de overtredingen van deze regel.
+           r = ERel (makeRelation d) 
            explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                                  case prop of
                                    Sym-> state isPositive English (name d++"["++s++"]") "symmetric"    
