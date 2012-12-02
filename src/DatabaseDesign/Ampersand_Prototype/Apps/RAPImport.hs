@@ -18,7 +18,6 @@ import Control.Monad
 import Data.List (intercalate)
 import Data.List.Split (splitOn)
 import DatabaseDesign.Ampersand.Basics
-import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "RAPImport"
@@ -73,7 +72,8 @@ rapfiles opts usrfiles
 type RAPRelation = (String,String,String)
 makepopu :: RAPRelation -> [(ConceptIdentifier,ConceptIdentifier)] -> P_Population
 makepopu (r,src,trg) xys
- = P_Popu{ p_popm  = r
+ = P_RelPopu
+         { p_rnme  = r
          , p_orig  = Origin "RAPImport.hs"
          , p_type  = P_Sign [PCpt src, PCpt trg]
          , p_popps = [mkPair (getid x) (getid y) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
@@ -192,12 +192,12 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])
                                                                        | pic<-pics]
     ,makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fs, name p==origName pic]
-    ,makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-rules fs   , name r==origName pic]
+    ,makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-udefrules fs   , name r==origName pic]
     ,makepopu ("cptpic","Concept","Image") [(cptid c    , imageid pic) | pic<-pics, pType pic==PTConcept, c<-concs fs   , name c==origName pic]
-    ,makepopu ("countrules","Context","Int")  [(fsid (cns,fs), nonsid (show (length (rules fs))))]
+    ,makepopu ("countrules","Context","Int")  [(fsid (cns,fs), nonsid (show (length (udefrules fs))))]
     ,makepopu ("countdecls","Context","Int")  [(fsid (cns,fs), nonsid (show (length userdeclarations)))]
     ,makepopu ("countcpts","Context","Int")   [(fsid (cns,fs), nonsid (show (length (concs fs))))]
-    ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | r<-raprules, (x,y)<-ruleviolations r]
+    ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | (r,vs) <- allViolations fs, r `elem` raprules, (x,y)<-vs]
     ,makepopu ("decexample","Declaration","PragmaSentence") [(decid d , nonsid (decprL d++x++decprM d++y++decprR d))
                                                             | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(pairsOf d++[("...","...")])]
     --see trunk/apps/Atlas/AST.adl
@@ -216,7 +216,7 @@ makeRAPPops fs opts usrfiles pics
     ,makepopu ("genspc","Gen","Concept") [(genid g, cptid (source g)) | g<-gens fs]
     ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), patid p)         | p<-patterns fs]
     ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fs]
-    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, r<-rules p]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, r<-udefrules p]
     ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp pr d]
     ,makepopu ("ptgns","Pattern","Gen")         [(patid p      , genid g)         | p<-patterns fs, g<-gens p]
     ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fs, d<-declarations p,decusr d]
@@ -258,25 +258,25 @@ makeRAPPops fs opts usrfiles pics
      -- and create those of user-defined rules (those of property rules have already been created above).
      -- multiple creations of the same relation terms is not harmfull, because p2aconverters nubs populations.
     ,relrels      [(rulens r,rrexp r)          | r<-raprules]    
-    ,relrelnm     (map       rrexp                 (rules fs))
-    ,relrelsgn    (map       rrexp                 (rules fs))
-    ,relreldcl    (map       rrexp                 (rules fs))
+    ,relrelnm     (map       rrexp                 (udefrules fs))
+    ,relrelsgn    (map       rrexp                 (udefrules fs))
+    ,relreldcl    (map       rrexp                 (udefrules fs))
      --create pairs for violations (see rrviols above)
     ,relleft  [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
     ,relright [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
     ]
    where
    pairsOf :: Declaration -> [(String,String)]
-   pairsOf d = case filter theDecl (fPopulations fs) of
+   pairsOf d = case filter theDecl (userDefPops fs) of
                  []    -> []
                  [pop] -> popps pop
                  _     -> fatal 273 "Multiple entries found in populationTable"
      where
-       theDecl :: Population -> Bool
+       theDecl :: UserDefPop -> Bool
        theDecl p = popdcl p == d
    
    --SPEC PropertyRule ISA Rule
-   raprules = rules fs ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
+   raprules = udefrules fs ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
    userdeclarations = filter decusr (declarations fs)
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (isa,x)

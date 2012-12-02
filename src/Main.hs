@@ -97,7 +97,7 @@ generateProtoStuff opts fSpec | otherwise        =
     ; when (genBericht opts)   $ doGenBericht fSpec opts
     ; case testRule opts of Just ruleName -> ruleTest fSpec opts ruleName
                             Nothing       -> return ()
-    ; when ((not . null $ violations fSpec) && (development opts || theme opts==StudentTheme)) $
+    ; when ((not . null $ allViolations fSpec) && (development opts || theme opts==StudentTheme)) $
         verboseLn opts "\nWARNING: There are rule violations (see above)."
     ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
@@ -105,10 +105,10 @@ generateProtoStuff opts fSpec | otherwise        =
 doGenProto :: Fspc -> Options -> IO ()
 doGenProto fSpec opts =
  do { verboseLn opts "Checking on rule violations..."
-    ; let allViolations = violations fSpec
-    ; reportViolations allViolations
+  --  ; let allViolations = violations fSpec
+    ; reportViolations (allViolations fSpec)
     
-    ; if (not . null) allViolations && not (development opts) && theme opts/=StudentTheme 
+    ; if (not . null) (allViolations fSpec) && not (development opts) && theme opts/=StudentTheme 
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               } 
@@ -137,8 +137,7 @@ ruleTest fSpec _ ruleName =
                   ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
                   ; putStrLn $ showContents ruleComplement
                   } 
- where showContents rule = let pairs = [ "("++f++"," ++s++")" | (f,s) <- ruleviolations $ rule { rrexp = ECpl $ rrexp rule }]
-                           in  "[" ++ intercalate ", " pairs ++ "]" -- getting the contents is not implemented for rules in Rules.hs, 
-                                                                    -- so we get the violations of the complement instead
+ where showContents rule = let pairs = [ "("++f++"," ++s++")" | (r,vs) <- allViolations fSpec, r == rule, (f,s) <- vs]
+                           in  "[" ++ intercalate ", " pairs ++ "]" 
        
     

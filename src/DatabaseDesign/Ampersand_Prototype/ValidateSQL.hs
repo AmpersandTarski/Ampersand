@@ -101,7 +101,7 @@ validateExp _     _    vExp@(ERel _, _)   = -- skip all simple relations
 validateExp fSpec opts vExp@(exp, _ {-origin-}) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
     ; violationsSQL <- fmap sort . evaluateExpSQL fSpec opts $ exp
-    ; let violationsAmp = sort $ contents exp
+    ; let violationsAmp = sort $ fullContents (userDefPops fSpec) exp
     
     ; if violationsSQL == violationsAmp 
       then 

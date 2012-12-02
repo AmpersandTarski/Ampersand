@@ -78,7 +78,7 @@ installer fSpec opts = intercalate "\n  "
         ++
         ["  fwrite($dumpfile, dumprel(\""++showADL rel++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
-        , let rel=makeUnpopulatedRelation 20 d
+        , let rel=makeRelation d
         , let dbrel = sqlRelPlugNames fSpec (ERel rel)
         , not(null dbrel)
         , let (_,src,trg) = head dbrel
@@ -148,12 +148,12 @@ createTablesPHP fSpec =
          = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-           ++ if null $ tblcontents plug then [] else
+           ++ if null $ tblcontents (userDefPops fSpec) plug then [] else
                [ "else"
                                , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
                                ]++ indentBlock 12
                                                  [ comma++ " (" ++valuechain md++ ")"
-                                                 | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")
+                                                 | (md,comma)<-zip (tblcontents (userDefPops fSpec) plug) ("VALUES":repeat "      ,")
                                                  ]
                                                
                                ++ ["            \");"

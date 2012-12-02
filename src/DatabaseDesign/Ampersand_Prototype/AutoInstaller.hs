@@ -27,7 +27,7 @@ odbcinstall flags fSpec dsn =
       verboseLn flags "Creating tables..."
       _ <- creates conn (historytbl : sessiontbl : [plug2tbl p |InternalPlug p<-plugInfos fSpec])
       verboseLn flags "Populating tables..."
-      _ <- inserts conn [p |InternalPlug p<-plugInfos fSpec]
+      _ <- inserts conn (userDefPops fSpec) [p |InternalPlug p<-plugInfos fSpec]
       commit conn
       verboseLn flags "Committed."
       disconnect conn
@@ -41,14 +41,14 @@ drops conn (x:xs)  =
       drops conn xs
 
 --insert population
-inserts :: (IConnection conn) => conn -> [PlugSQL] -> IO Integer
-inserts _ [] = return 1
-inserts conn (plug:plugs) = 
+inserts :: (IConnection conn) => conn -> [UserDefPop] -> [PlugSQL] -> IO Integer
+inserts _ _ [] = return 1
+inserts conn udp (plug:plugs) = 
    do stmt<- prepare conn
              ("INSERT INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
                                 ++" VALUES ("++placeholders(tblfields plug)++")")
-      executeMany stmt (map (map (toSql . mbnullstring)) (tblcontents plug))
-      inserts conn plugs
+      executeMany stmt (map (map (toSql . mbnullstring)) (tblcontents udp plug))
+      inserts conn udp plugs
    where 
    -- empty string = Nothing => toSql Nothing = NULL
    mbnullstring [] = Nothing

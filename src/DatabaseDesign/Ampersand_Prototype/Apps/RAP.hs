@@ -26,7 +26,7 @@ fillAtlas fSpec flags = odbcinstall flags fSpec dsnatlas
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
    = [makePicture flags fSpec Plain_CG p | p <- patterns fSpec] ++
-     [makePicture flags fSpec Plain_CG userRule | userRule <- rules fSpec]++
+     [makePicture flags fSpec Plain_CG userRule | userRule <- udefrules fSpec]++
      [makePicture flags fSpec Plain_CG cpt | cpt <- concs fSpec]
 
 ----------------------------------------------------
@@ -49,11 +49,11 @@ theonly xs err
  | otherwise = error ("more than one x: " ++ err)
 therel :: Fspc -> String -> String -> String -> Relation
 therel fSpec relname relsource reltarget 
- = theonly [makeUnpopulatedRelation 20 d |
-                        d<-declarations fSpec
-                          ,relname==name d
-                          ,null relsource || relsource==name(source d)
-                          ,null reltarget || reltarget==name(target d)]
+ = theonly [makeRelation d |
+              d<-declarations fSpec
+             ,relname==name d
+             ,null relsource || relsource==name(source d)
+             ,null reltarget || reltarget==name(target d)]
            ("when searching for the relation x with searchpattern (name,source,target)" ++ show (relname,relsource,reltarget))
 geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
@@ -286,18 +286,19 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
 
 atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
 atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue 
- = [ P_Popu { p_popm  = rnm
-            , p_orig  = OriginUnknown
-            , p_type  = rsgn
-            , p_popps = rpop
-            }
+ = [ P_RelPopu { p_rnme  = rnm
+               , p_orig  = OriginUnknown
+               , p_type  = rsgn
+               , p_popps = rpop
+               }
    | (rid,rnm)<-r_decnm
    , let rsgn = atlas2sign rid r_decsgn r_src r_trg r_cptnm
    , let rpop = [makepair pid | (rid',pid)<-r_decpopu, rid==rid']
    ]
    ++
-   [P_CptPopu { p_popm=geta r_cptnm (fst(head cl)) (error "while geta r_cptnm for CptPopu.")
-              , p_popps=[(a,a) | (_,aid)<-cl, let a=geta r_atomvalue aid (error "while geta r_atomvalue of aid.")]
+   [P_CptPopu { p_cnme=geta r_cptnm (fst(head cl)) (error "while geta r_cptnm for CptPopu.")
+              , p_orig  = OriginUnknown
+              , p_popas=[a | (_,aid)<-cl, let a=geta r_atomvalue aid (error "while geta r_atomvalue of aid.")]
               }
    | cl<-eqCl fst r_cptos, not (null cl)]
    where 
