@@ -70,7 +70,7 @@ instance Motivated A_Concept where
 
 instance Motivated Relation where
 --  meaning l r = meaning l (makeDeclaration r)
-  explForObj r (ExplDeclaration d) =  r == makeUnpopulatedRelation 11 d
+  explForObj r (ExplDeclaration d) =  r == makeRelation d
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning l r = autoMeaning l (makeDeclaration r)

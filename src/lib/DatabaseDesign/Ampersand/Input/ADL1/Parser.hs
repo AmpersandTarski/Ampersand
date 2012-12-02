@@ -442,20 +442,24 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
        where
          prelpop :: Origin -> Term -> Pairs -> P_Population
          prelpop orig (PTyp _ (Prel _ nm) sgn) contents
-          = P_Popu { p_popm   = nm
-                   , p_type   = sgn
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
+          = P_RelPopu { p_rnme   = nm
+                      , p_type   = sgn
+                      , p_orig   = orig
+                      , p_popps  = contents
+                      }
          prelpop orig (Prel _ nm) contents
-          = P_Popu { p_popm   = nm
-                   , p_type   = P_Sign []
-                   , p_orig   = orig
-                   , p_popps  = contents
-                   }
+          = P_RelPopu { p_rnme   = nm
+                      , p_type   = P_Sign []
+                      , p_orig   = orig
+                      , p_popps  = contents
+                      }
          prelpop _ expr _ = fatal 429 ("Expression "++show expr++" should never occur in prelpop.")
          pcptpop :: Origin -> String -> [String] -> P_Population
-         pcptpop _ cnm contents = P_CptPopu{p_popm=cnm,p_popps=[(a,a) | a<-contents]}
+         pcptpop orig cnm contents 
+          = P_CptPopu { p_cnme   = cnm
+                      , p_orig   = orig
+                      , p_popas  = contents
+                      }
 
    pRoleRelation :: Parser Token P_RoleRelation
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>

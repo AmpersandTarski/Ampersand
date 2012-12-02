@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
    import Prelude hiding (Ord(..))
-   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (makePopulatedRel)
+   import DatabaseDesign.Ampersand.ADL1.Rule
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1
@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    makeFspec :: Options -> A_Context -> Fspc
    makeFspec flags context = fSpec
     where
-        allQuads = quads flags (\_->True) (rules context++multrules context++keyrules context)
+        allQuads = quads flags (\_->True) allrules
         fSpec =
             Fspc { fsName       = name context
                  , fspos        = ctxpos context
@@ -47,8 +47,9 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fActivities  = [ makeActivity fSpec rul | rul <-processRules context]
                  , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
                  , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
-                 , vrules       = rules context   -- all user defined rules
+                 , vrules       = udefrules context   -- all user defined rules
                  , grules       = multrules context++keyrules context
+                 , allRules     = allrules
                  , vconjs       = nub [conj | Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
@@ -65,10 +66,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                   | xpl<-ctxps context]
                  , metas        = ctxmetas context
                  , vctxenv      = ctxenv context
-                 , fPopulations = populations context
-                 }
+                 , hasPopulations = (not.null.ctxpopus) context
+                 , userDefPops  = userdefpops
+                 , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
+                 } 
+        userdefpops = ctxpopus context
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
-        makeRelation d = makePopulatedRel (populations context) d
+        allrules = multrules context++keyrules context++udefrules context
         allProcs = [ FProc {fpProc = p
                            ,fpActivities =selectActs p
                            } | p<-ctxprocs context ]
@@ -625,24 +629,24 @@ while maintaining all invariants.
 
    delta :: Sign -> Expression
    delta (Sign s t)
-    = ERel (makeUnpopulatedRelation 7
-                         Sgn { decnm   = "Delta"
-                             , decsgn  = Sign s t
-                             , decprps = []
-                             , decprps_calc = []
-                             , decprL  = ""
-                             , decprM  = ""
-                             , decprR  = ""
-                             , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST "TODO: Doel van deze Delta relatie opschrijven")
-                                                  , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
-                                                  ]
-                             , decConceptDef = Nothing
-                             , decfpos = Origin "generated relation (Delta)"
-                             , deciss  = True
-                             , decusr  = False
-                             , decpat  = ""
-                             , decplug = True
-                             }) 
+    = ERel (makeRelation
+             Sgn { decnm   = "Delta"
+                 , decsgn  = Sign s t
+                 , decprps = []
+                 , decprps_calc = []
+                 , decprL  = ""
+                 , decprM  = ""
+                 , decprR  = ""
+                 , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST "TODO: Doel van deze Delta relatie opschrijven")
+                                      , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
+                                      ]
+                 , decConceptDef = Nothing
+                 , decfpos = Origin "generated relation (Delta)"
+                 , deciss  = True
+                 , decusr  = False
+                 , decpat  = ""
+                 , decplug = True
+                 }) 
 
    -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.

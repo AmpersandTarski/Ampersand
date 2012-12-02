@@ -158,8 +158,8 @@ where
       ++
       intercalate [LineBreak, Str "--------------", LineBreak]
          [ derivation rule
-         | rule<-rules fSpec]++
-      [Str ("Aantal Rules: "++(show.length.rules) fSpec)]
+         | rule<-udefrules fSpec]++
+      [Str ("Aantal Rules: "++(show.length.udefrules) fSpec)]
 {-
       ++
       [ LineBreak, Str "--------------", LineBreak]
@@ -404,7 +404,7 @@ where
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , r_env = ""
-                                       , r_usr = False
+                                       , r_usr = Multiplicity
                                        , r_sgl = fatal 336 $ "erroneous reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        , srrel = fatal 337 $ "erroneous reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        }
@@ -419,7 +419,7 @@ where
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , r_env = ""
-                                       , r_usr = False
+                                       , r_usr = Multiplicity
                                        , r_sgl = fatal 352 $ "illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        , srrel = fatal 353 $ "illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")"
                                        }

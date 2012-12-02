@@ -123,7 +123,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
       toBeProcessedStuff = ( conceptsWith
                            , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
                              else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
-                           , [r | r<-vrules fSpec, r_usr r ] )  -- All user declared rules
+                           , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
          where
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  
               = [ (c, pps)
@@ -131,8 +131,8 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                 , let pps = [p | p <- purposesDefinedIn fSpec (language opts) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ rel{relps=popOfDcl fSpec d} | d@Sgn{decusr=True} <- declarations fSpec
-                , let rel = makeUnpopulatedRelation 10 d
+              = [ rel | d@Sgn{decusr=True} <- declarations fSpec
+                , let rel = makeRelation d
                 , not . null $ purposesDefinedIn fSpec (language opts) rel
                 ]
                  
@@ -150,7 +150,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
            (thm:thms) = allThemes
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just thm) thisThemeStuff iPre
            (blocksOfThemes,iPost)        = printThemes stuff2PrintLater iPostFirst thms
-           thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
+           thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r == UserDefined])
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name thm ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ r | r@Rel{reldcl=d} <- still2doRelsPre
@@ -339,7 +339,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (language opts) rel
                        d         = makeDeclaration rel
-                       samplePop = take 3 (contents rel)
+                       samplePop = take 3 (fullContents (userDefPops fSpec) rel)
                        sampleSentences =
                          [ Para $ mkSentence (development opts) d srcKeyAtom tgtKeyAtom 
                          | (srcAtom,tgtAtom)<-samplePop
@@ -401,7 +401,7 @@ showKeyAtom fSpec mRel cncpt atom =
      where showKeySegment (KeyText str) = str
            showKeySegment (KeyHtml str) = str
            showKeySegment (KeyExp objDef) = 
-             case [ tgtAtom | (srcAtom, tgtAtom) <- contents (objctx objDef), atom == srcAtom ] of
+             case [ tgtAtom | (srcAtom, tgtAtom) <- fullContents (userDefPops fSpec)(objctx objDef), atom == srcAtom ] of
                []        -> ""
                keyAtom:_ -> keyAtom  
                

@@ -214,7 +214,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                   Pred nm v'          -> nm++"{"++v'++"}"
          makeRel :: String -> Relation -- This function exists solely for the purpose of dom and cod
          makeRel str
-             = makeUnpopulatedRelation 12
+             = makeRelation
                   Sgn { decnm   = str
                       , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
                       , decprps = [Uni,Tot]

@@ -4,14 +4,14 @@ module DatabaseDesign.Ampersand
      A_Context
    , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
-   , A_Concept(..), A_Gen, atomsOf
+   , A_Concept(..), A_Gen
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Pattern(..)
    , Declaration(..)
    , KeyDef(..)
    , KeySegment(..)
    , Expression(..)
-   , Population(..)
+   , UserDefPop(..)
    , Fspc(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
    , Relation(..)
@@ -44,7 +44,7 @@ module DatabaseDesign.Ampersand
    -- * Functions on concepts
    , (<==>),meet,order,join,sortWith
    -- * Functions on declarations
-   , makeUnpopulatedRelation
+   , makeRelation
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify

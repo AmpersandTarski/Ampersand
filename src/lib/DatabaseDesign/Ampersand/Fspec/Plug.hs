@@ -14,7 +14,7 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      )
 where
 import DatabaseDesign.Ampersand.ADL1 
-import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),ConceptStructure(..))
+import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),atomsOf,ConceptStructure(..))
 import DatabaseDesign.Ampersand.Basics
 import Data.List(elemIndex,nub)
 import GHC.Exts (sortWith)
@@ -140,24 +140,24 @@ instance FPAble PlugSQL where
 --REMARK151210 -> one would expect I[entityconcept p], 
 --                but any p (as instance of Object) has one always existing concept p suitable to replace entityconcept p.
 --                concept p and entityconcept p are related uni,tot,inj,sur.
-entityfield :: PlugSQL -> SqlField
-entityfield p
-  = Fld (name (entityconcept p)) --name of imaginary entity concept stored in plug
+entityfield :: [UserDefPop] -> PlugSQL -> SqlField
+entityfield udp p
+  = Fld (name (entityconcept udp p)) --name of imaginary entity concept stored in plug
         (ERel (I (concept p)) ) --fldexpr
         SQLId --fldtype
         False --isnull
         True --isuniq
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
-entityconcept :: PlugSQL -> A_Concept
-entityconcept p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
+entityconcept :: [UserDefPop] -> PlugSQL -> A_Concept
+entityconcept udp p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
   = C { cptnm = "ID"
       , cptgE = (\x y -> if x==y then EQ else NC,[])  -- TODO: Is this the right place to define this ordering??
-      , cptos = [show idnr | (idnr,_)<-zip [(1::Int)..] (contents (mLkp p))]
+      , cptos = [show idnr | (idnr,_)<-zip [(1::Int)..] (fullContents udp (mLkp p))]
       , cpttp = []
       , cptdf = []
       }
-entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
+entityconcept _ p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
   = case concept p of
      C{} -> (concept p){cptnm=name(concept p)++ "ID"} 
      _   ->  fatal 225 $ "entityconcept error in PlugSQL: "++name p++"."
@@ -467,12 +467,12 @@ tblfields plug = case plug of
     ScalarSQL{} -> [sqlColumn plug]
 
 type TblRecord = [String]
-tblcontents :: PlugSQL -> [TblRecord]
-tblcontents plug@(ScalarSQL{})
-   = [[x] |(x,_)<-contents(cLkp plug)]
-tblcontents plug@(BinSQL{})
-   = [[x,y] |(x,y)<-contents(mLkp plug)]
-tblcontents plug@(TblSQL{})
+tblcontents :: [UserDefPop] -> PlugSQL -> [TblRecord]
+tblcontents udp plug@(ScalarSQL{})
+   = [[x] | x<-atomsOf udp (cLkp plug)]
+tblcontents udp plug@(BinSQL{})
+   = [[x,y] |(x,y)<-fullContents udp (mLkp plug)]
+tblcontents udp plug@(TblSQL{})
  --TODO151210 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other, 
  --where NULL in a kernel field implies NULL in the following kernel fields
@@ -487,13 +487,13 @@ tblcontents plug@(TblSQL{})
      rels fld = [ ((pos s,pos t),xy) | (_,s,t)<-mLkpTbl plug
                 , s /= t 
                 , fld==s
-                , xy<-contents (fldexpr t)
+                , xy<-fullContents udp (fldexpr t)
                 ]
      in --add relation values to the record, from left to right field (concat=rels with source idfld++rels with source fld2++..) 
      [ foldl insertrel --(a -> b -> a)
              (take (length (fields plug)) (idval:[[] |_<-[(1::Int)..]])) --new record for id
              (concatMap rels (fields plug))  
-     | idval<-map fst (contents (fldexpr idfld))  ]
+     | idval<-map fst (fullContents udp (fldexpr idfld))  ]
  | otherwise = fatal 609 "fields are assumed to be in the order kernel+other, starting with an id-field."
    where idfld = head (fields plug)
 --if x at position n of some record, then position r is replaced by y (position starts at 1, not 0!)
