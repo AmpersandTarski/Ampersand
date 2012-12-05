@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
- (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,getRelationTableInfo,selectExpr,selectExprMorph,selectExprBrac,isOne,isOne'
+ (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,getRelationTableInfo,selectExpr,selectExprRelation,selectExprBrac,isOne,isOne'
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..))
@@ -233,7 +233,7 @@ selectExpr fSpec i src trg expr
 
         (I ONE) -> sqlcomment i "I[ONE]"$ 
                     selectExpr fSpec i src trg (ERel (V (Sign ONE ONE)))
-        _        -> selectExprMorph fSpec i src trg mrph
+        _        -> selectExprRelation fSpec i src trg mrph
     (EBrk e) -> selectExpr fSpec i src trg e
 
     (ECpl (ERel (V _))) -> sqlcomment i "case: ECpl (ERel (V _))"$   -- yields empty
@@ -352,26 +352,26 @@ noCollideUnlessTm' :: Expression
 noCollideUnlessTm' (ERel _) _ nm = quote nm
 noCollideUnlessTm' _  names nm = noCollide' names nm
 
-selectExprMorph :: Fspc
-                -> Int
-                -> String -- ^ source
-                -> String -- ^ target
-                -> Relation
-                -> Maybe String
+selectExprRelation :: Fspc
+                   -> Int
+                   -> String -- ^ source
+                   -> String -- ^ target
+                   -> Relation
+                   -> Maybe String
 
-selectExprMorph fSpec i src trg rel@V{}
+selectExprRelation fSpec i src trg rel@V{}
  = selectGeneric i (src',src) (trg',trg)
                    (sqlConcept fSpec (source rel) +++ " AS vfst, "++sqlConcept fSpec (target rel)++ " AS vsnd")
                    (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
  where src'="vfst."++sqlAttConcept fSpec (source rel)
        trg'="vsnd."++sqlAttConcept fSpec (target rel)
-selectExprMorph _ _ src trg rel@Mp1{}
+selectExprRelation _ _ src trg rel@Mp1{}
  | src == ""&&trg=="" = fatal 394 "Source and target are \"\", use selectExists' for this purpose"
  | src == ""  = Just$ "SELECT \\'"++relval rel++"\\' AS "++trg
  | trg == ""  = Just$ "SELECT \\'"++relval rel++"\\' AS "++src
  | src == trg = Just$ "SELECT \\'"++relval rel++"\\' AS "++src
  | otherwise  = Just$ "SELECT \\'"++relval rel++"\\' AS "++src++", \\'"++relval rel++"\\' AS "++trg
-selectExprMorph fSpec i src trg rel -- made for both Rel and I
+selectExprRelation fSpec i src trg rel -- made for both Rel and I
  = case sqlRelPlugNames fSpec (ERel rel) of
      []        -> fatal 344 $ "No plug for relation "++show rel
      (p,s,t):_ -> Just $ selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
@@ -486,9 +486,9 @@ sqlPlugFields p e'
   because1 e fld0 fld1=
      --if e=r;m1;s;m2;t 
      --   where
-     --   m1 and m2 are morphisms in p
+     --   m1 and m2 are relations in p
      --   optional r, s and t are compositions of (fldexpr kernelfield)s of p (i.e. at least uni+inj(+sur or tot))
-     --           (note: fldexpr kernelfields are assumed to be morphisms)
+     --           (note: fldexpr kernelfields are assumed to be relations)
      --   r  is stored in p from fldx to fldr (maybe fldx==fldr i.e. r=I)
      --   m1 is stored in p from fldr to fld1 (maybe fldr==fld1 i.e. m1=I)
      --   s  is stored in p from fld1 to flds (maybe fld1==flds i.e. s=I)
@@ -501,7 +501,7 @@ sqlPlugFields p e'
      --      t = plugpath p fld2 fldt
      --   if p is BinSQL then 
      --      r,s,t = I because BinSQL has no kernel
-     --      m1==m2~ (assuming that BinSQL stores at exactly one morphism and no concepts)
+     --      m1==m2~ (assuming that BinSQL stores at exactly one relation and no concepts)
      --then
      --   plugpath p fldx fldt =  r;m1;m2;t = r;m1;s;m2;t (TODO)  
      --   plugpath p fldr fldt =  m1;m2;t   =   m1;s;m2;t (TODO)

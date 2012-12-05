@@ -39,7 +39,7 @@ selectdecl :: (IConnection conn) => conn -> Fspc -> Relation -> IO RelTbl
 selectdecl conn fSpec rel
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where stmt = fromMaybe [] (selectExprMorph fSpec (-1) "fld1" "fld2" rel)
+   where stmt = fromMaybe [] (selectExprRelation fSpec (-1) "fld1" "fld2" rel)
 
 
 theonly :: [t] -> String -> t

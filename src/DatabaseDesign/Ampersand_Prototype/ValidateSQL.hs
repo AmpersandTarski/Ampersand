@@ -109,7 +109,8 @@ validateExp fSpec opts vExp@(exp, _ {-origin-}) =
           ; return (vExp, True)
           }    
       else
-       do { putStrLn "\nMismatch between SQL and Ampersand"
+       do { putStr $ "Checking "++origin ++": expression = "++showADL exp
+          ; putStrLn "\nMismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
           ; putStrLn $ "SQL violations:\n"++show violationsSQL
           ; putStrLn $ "Ampersand violations:\n" ++ show violationsAmp

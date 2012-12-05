@@ -6,7 +6,7 @@ import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprMorph,sqlRelPlugNames)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugNames)
   
 --  import Debug.Trace
 
@@ -82,7 +82,7 @@ installer fSpec opts = intercalate "\n  "
         , let dbrel = sqlRelPlugNames fSpec (ERel rel)
         , not(null dbrel)
         , let (_,src,trg) = head dbrel
-        , let qry = fromMaybe [] (selectExprMorph fSpec (-1) src trg rel)]
+        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) src trg rel)]
         ++
         ["  fwrite($dumpfile, \"ENDCONTEXT\");"
         ,"  fclose($dumpfile);"
