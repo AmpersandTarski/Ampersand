@@ -1078,12 +1078,12 @@ pCtx2aCtx p_context
                                   unlines [ "- " ++ show ifcNm ++ " at " ++ show (origin $ lookupInterface ifcNm)
                                           | ifcNm <- iCycle ]
                        | iCycle <- getCycles refsPerInterface ]
-      where refsPerInterface = [(ifcName ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ifcs ]
+      where refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ifcs ]
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                -> []
                                    Just (InterfaceRef nm) -> [nm]
                                    Just (Box objs)        -> concatMap getDeepIfcRefs objs
-            lookupInterface nm = case [ ifc | ifc <- ifcs, ifcName ifc == nm ] of
+            lookupInterface nm = case [ ifc | ifc <- ifcs, name ifc == nm ] of
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
@@ -1292,8 +1292,7 @@ pCtx2aCtx p_context
     pIFC2aIFC :: P_Interface -> Guarded Interface
     pIFC2aIFC pifc 
      = case typeErrors' of
-        [] -> Checked (Ifc { ifcName   = ifc_Name pifc
-                           , ifcParams = prms
+        [] -> Checked (Ifc { ifcParams = prms
                            , ifcViols  = fatal 206 "not implemented ifcViols"
                            , ifcArgs   = ifc_Args pifc
                            , ifcRoles  = ifc_Roles pifc

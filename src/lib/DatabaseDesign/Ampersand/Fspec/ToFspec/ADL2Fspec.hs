@@ -86,7 +86,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
      -- determine relations that are total (as many as possible, but not necessarily all)
         totals :: [Expression]
         totals
-         = nub [rel | q<-quads flags visible (invariants fSpec), isIdent (qMorph q)
+         = nub [rel | q<-quads flags visible (invariants fSpec), isIdent (qRel q)
                     , (_,hcs)<-cl_conjNF (qClauses q), EUni fus<-hcs
                     , antc<-[(conjNF.EIsc) [notCpl f | f<-fus, isNeg f]], isI antc
                     , f<-fus, isPos f
@@ -199,8 +199,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         interfaceGen = step4a ++ step4b
         step4a
          | theme flags == StudentTheme 
-         = [Ifc { ifcName   = name c ++ " (instantie)"
-                , ifcParams = map makeRelation directdecls
+         = [Ifc { ifcParams = map makeRelation directdecls
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
@@ -244,8 +243,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                getfchead (ECps (t:_)) = t
                getfchead _ = fatal 305 "not an ECps expression"  
            in
-           [Ifc { ifcName   = name c
-                , ifcParams = [ rel | rel<-mors objattributes, not (isIdent rel)]
+           [Ifc { ifcParams = [ rel | rel<-mors objattributes, not (isIdent rel)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
@@ -267,8 +265,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         --end otherwise: default theme
         --end stap4a
         step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a 
-         = [Ifc { ifcName   = nm
-                , ifcParams = ifcParams ifcc
+         = [Ifc { ifcParams = ifcParams ifcc
                 , ifcViols  = ifcViols  ifcc
                 , ifcArgs   = ifcArgs   ifcc
                 , ifcObj    = Obj { objnm   = nm
@@ -347,7 +344,7 @@ while maintaining all invariants.
         invQs       = [q | q@(Quad _ ccrs)<-vquads fSpec, (not.isSignal.cl_rule.qClauses) q
                          , (not.null) ((nub.mors.cl_rule) ccrs `isc` rels)]
 -- a relation affects another if there is a quad (i.e. an automated action) that links them
-        affectPairs = [(qMorph q,[q],r) | q<-invQs, r<-(mors.cl_rule.qClauses) q]
+        affectPairs = [(qRel q,[q],r) | q<-invQs, r<-(mors.cl_rule.qClauses) q]
 -- the relations affected by automated action
 --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
 ----------------------------------------------------

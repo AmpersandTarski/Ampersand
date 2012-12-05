@@ -197,7 +197,7 @@ where
                 }
         | P_I
         | P_V
-        | P_Mp1 { rel_1val :: String }          -- ^ the value of the one morphism
+        | P_Mp1 { rel_1val :: String }          -- ^ the value of the one relation
         deriving (Eq, Ord)
 
    instance Show P_Relation where

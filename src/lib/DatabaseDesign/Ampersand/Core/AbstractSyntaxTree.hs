@@ -306,8 +306,7 @@ instance Association A_Gen where
   sign r = Sign (genspc r) (gengen r)
 
 
-data Interface = Ifc { ifcName :: String
-                     , ifcParams :: [Relation]
+data Interface = Ifc { ifcParams :: [Relation]
                      , ifcViols :: [Rule]
                      , ifcArgs :: [[String]]
                      , ifcRoles :: [String]
@@ -316,9 +315,9 @@ data Interface = Ifc { ifcName :: String
                      , ifcExpl :: String
                      } deriving Show
 instance Eq Interface where
-  s==s' = ifcName s==ifcName s'
+  s==s' = name s==name s'
 instance Identified Interface where
-  name = ifcName
+  name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
 
@@ -538,8 +537,8 @@ instance Association Expression where
 
 data Relation = 
   Rel { relnm :: String           -- ^ the name of the relation. This is the same name as the name of reldcl.
-                                    --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration reldcl ....
-                                    --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn reldcl.
+                                    --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van de relation is immers altijd gelijk aan de naam van de Declaration reldcl ....
+                                    --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan de relation is gekoppeld, moet de naam van de relation bekend zijn. Nadat de relation gebonden is aan een declaration moet de naam van de relation gelijk zijn aan de naam van zijn reldcl.
       , relpos :: Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
       , relsgn :: Sign             -- ^ the allocated signature. May differ from the signature in the reldcl.
       , reldcl :: Declaration      -- ^ the declaration bound to this relation.
@@ -549,7 +548,7 @@ data Relation =
  V    { reltyp :: Sign             -- ^ the allocated type.
       } |
  --   An Mp1 is a subset of I. Shouldn't we replace it by an I?
- Mp1  { relval :: String          -- ^ the value of the singleton morphism
+ Mp1  { relval :: String          -- ^ the value of the singleton relation
       , rel1typ :: A_Concept               -- ^ the allocated type.
       } 
 instance Eq Relation where

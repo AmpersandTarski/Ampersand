@@ -194,14 +194,14 @@ where
    instance ShowHSName Quad where
    -- TODO: is showHSName injective? Make sure it is!
     showHSName q
-      = haskellIdentifier ("quad_"++(name.qMorph) q++"_"++sgnt++"_"++(name.cl_rule.qClauses) q)
+      = haskellIdentifier ("quad_"++(name.qRel) q++"_"++sgnt++"_"++(name.cl_rule.qClauses) q)
         where sgnt = if source r==target r then name (source r) else name (source r)++"_"++name (target r)
-              r    = qMorph q
+              r    = qRel q
 
    instance ShowHS Quad where
     showHS flags indent q 
       = intercalate indent
-          [ "Quad{ qMorph   = " ++ showHS flags newindent (qMorph q)
+          [ "Quad{ qRel     = " ++ showHS flags newindent (qRel q)
           , "    , qClauses = " ++ showHS flags newindent (qClauses q)
           , "    }"
           ]
@@ -720,10 +720,10 @@ where
    instance ShowHS ObjectDef where
     showHS flags indent r 
      = intercalate indent
-           ["Obj{ objnm = " ++ show(objnm r)
-           ,"   , objpos = " ++ showHS flags "" (objpos r)  
-           ,"   , objctx = " ++ showHS flags "" (objctx r)
-           ,"   , objmsub = " ++ showHS flags "" (objmsub r)
+           ["Obj{ objnm   = " ++ show(objnm r)
+           ,"   , objpos  = " ++ showHS flags "" (objpos r)  
+           ,"   , objctx  = " ++ showHS flags (indent++"               ") (objctx r)
+           ,"   , objmsub = " ++ showHS flags (indent++"                    ") (objmsub r)
            ,"   , objstrs = " ++ show(objstrs r)
            ]++indent++"   }"
 
@@ -737,15 +737,14 @@ where
    instance ShowHS Interface where
     showHS flags indent ifc
      = intercalate indent 
-           [ "Ifc { ifcName   = " ++ show(ifcName ifc)
-           , "    , ifcParams = " ++ "["++intercalate ", " [showHS flags "" rel | rel<-ifcParams ifc] ++ "]"
+           [ wrap "Ifc { ifcParams = " (indent++"                  ") (showHS flags) (ifcParams ifc)
            --, "    , ifcViols  = " ++ "["++intercalate ", " [showHSName rel | rel<-ifcViols ifc] ++ "]" -- TODO: uncomment when ifcViols is implemented
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
            , "    , ifcRoles  = " ++ show(ifcRoles ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS flags (indent++"         ") (ifcObj ifc)
            , "    , ifcPos    = " ++ showHS flags "" (ifcPos ifc)
            , "    , ifcExpl   = " ++ show(ifcExpl ifc)
-           ]++"    }"
+           ]++indent++"    }"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: SubInterface                  ***
@@ -753,7 +752,7 @@ where
 
    instance ShowHS SubInterface where
     showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n 
-    showHS flags indent (Box objs) = "Box ("++showHS flags (indent++"  ") objs++")" 
+    showHS flags indent (Box objs) = "Box ("++showHS flags (indent++"     ") objs++")" 
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***

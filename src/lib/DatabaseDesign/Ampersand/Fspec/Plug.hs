@@ -92,8 +92,8 @@ instance FPAble PlugSQL where
 --           all kernel fields can be related to an imaginary concept ID for the plug (a SqlField with type=SQLID)
 --             i.e. For all kernel fields k1,k2, where concept k1=A, concept k2=B, fldexpr k1=r~, fldexpr k2=s~
 --                  You can imagine :
---                    - a morphism value::ID->A[INJ] or value::ID->A[INJ,SUR]
---                    - a morphism value::ID->B[INJ] or value::ID->B[INJ,SUR]
+--                    - a relation value::ID->A[INJ] or value::ID->A[INJ,SUR]
+--                    - a relation value::ID->B[INJ] or value::ID->B[INJ,SUR]
 --                    such that s~=value~;value;r~ and r~=value~;value;s~
 --                    because value is at least uni,tot,inj, all NULL in k0 imply NULL in k1 xor v.v.
 --                    if value also sur then all NULL in k0 imply NULL in k1 and v.v.
@@ -168,7 +168,7 @@ entityconcept _ p --copy (concept p) to create the entityconcept of the plug, us
 
 --Maintain rule: Object ObjectDef = Object (makeSqlPlug :: ObjectDef -> PlugSQL)
 --TODO151210 -> Build a check which checks this rule for userdefined/showADL generated plugs(::[ObjectDef]) 
---TODO151210 -> The ObjectDef of a BinSQL plug for morphism r is that:
+--TODO151210 -> The ObjectDef of a BinSQL plug for relation r is that:
 --           1) SQLPLUG mybinplug: r      , or
 --           2) SQLPLUG labelforsourcem : I /\ r;r~ --(or just I if r is TOT)
 --               = [labelfortargetm : r]

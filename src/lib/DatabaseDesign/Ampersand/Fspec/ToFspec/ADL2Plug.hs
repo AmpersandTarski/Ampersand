@@ -37,7 +37,7 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 -- a relation r (or r~) is stored in the trgFld of this plug
 
 
--- | Make a binary sqlplug for a morphism that is neither inj nor uni
+-- | Make a binary sqlplug for a relation that is neither inj nor uni
 rel2plug :: Relation -> [Expression] -> PlugSQL
 rel2plug  r totals
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
