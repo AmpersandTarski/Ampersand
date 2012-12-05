@@ -223,7 +223,7 @@ data Activity = Act { actRule :: Rule
 instance Identified Activity where
   name act = name (actRule act)
 -- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
---   whenever qMorph is affected (i.e. tuples in qMorph are inserted or deleted), qRule may have to be restored using functionality from qClauses.
+--   whenever qRel is affected (i.e. tuples in qRel are inserted or deleted), qRule may have to be restored using functionality from qClauses.
 --   The rule is taken along for traceability.
        
 instance ConceptStructure Activity where
@@ -233,7 +233,7 @@ instance ConceptStructure Activity where
 --  closExprs act = closExprs (actRule act)                          -- The closure expressions of this Activity
 
 data Quad     = Quad
-          { qMorph :: Relation        -- The relation that, when affected, triggers a restore action.
+          { qRel :: Relation        -- The relation that, when affected, triggers a restore action.
           , qClauses :: Clauses         -- The clauses
           } deriving Eq
 
@@ -344,7 +344,7 @@ data PlugSQL
            , cLkpTbl :: [(A_Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
                                                 --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                 --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
-           , mLkp :: Expression -- the morphism links concepts implemented by this plug
+           , mLkp :: Expression -- the relation links concepts implemented by this plug
            , sqlfpa :: FPA -- ^ function point analysis
            }
  | ScalarSQL

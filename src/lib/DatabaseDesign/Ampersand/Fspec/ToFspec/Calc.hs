@@ -52,7 +52,7 @@ where
       " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [(showADL . ERel) r  | r<-vis])++"\n"
     where
 --        showQ i (rel, shs,conj,r)
---         = "\nQuad "++show i++":\nmorphism: "++(showADL . ERel) rel++":\nshifts: "++concat ["\n"++showADLe s |s<-shs]++"\nconjunct: "++showADL conj++"\nrule: "++showADL r++""
+--         = "\nQuad "++show i++":\nrelation: "++(showADL . ERel) rel++":\nshifts: "++concat ["\n"++showADLe s |s<-shs]++"\nconjunct: "++showADL conj++"\nrule: "++showADL r++""
 --TODO: Deze code komt ook voor in ADL2Fspec.hs. Dat lijkt dubbelop, en derhalve niet goed.
         rels = nub (recur (ifcObj ifc))
          where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]

@@ -114,7 +114,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                               }
                     | ev<-eventsOut
                     ]
-        --DESCR -> Each edge represents an insert relation between a morphism on the left and a term on the right to which the relation contributes to an insert.
+        --DESCR -> Each edge represents an insert between a relation on the left and a term on the right to which the relation contributes to an insert.
         edgesEvCj = [ DotEdge { fromNode = nameINode eventsIn ev
                               , toNode   = nameCNode (fsbConjs fsb) (rul,c)
                               , edgeAttributes = [Dir Forward]
@@ -196,7 +196,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
                                   }
                         | (rul,c)<-conjuncts]
 
-        --DESCR -> Each edge represents an insert relation between a morphism on the left and a term on the right to which the relation contributes to an insert.
+        --DESCR -> Each edge represents an insert between a relation on the left and a term on the right to which the relation contributes to an insert.
         edgesIn       = [ DotEdge { fromNode       = nameINode fromRels r
                                   , toNode         = nameCNode conjuncts (rul,c)
                                   , edgeAttributes = [Label (StrLabel (fromString 
