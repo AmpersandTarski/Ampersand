@@ -1209,7 +1209,6 @@ pCtx2aCtx p_context
                                       , decprR = ""
                                       , decMean = meanings
                                       , decConceptDef = Nothing
-                                   --   , decpopu = []
                                       , decfpos = rr_fps prul
                                       , deciss = True
                                       , decusr = False
@@ -1241,7 +1240,6 @@ pCtx2aCtx p_context
 
     -- | pKDef2aKDef checks compatibility of composition with key concept on equality
     pKDef2aKDef :: P_KeyDef -> Guarded KeyDef
-  --pKDef2aKDef :: P_KeyDef -> (KeyDef, [CtxError])
     pKDef2aKDef pkdef
      = case typeErrors' of
         [] -> Checked (Kd { kdpos = kd_pos pkdef
@@ -1428,10 +1426,7 @@ pCtx2aCtx p_context
           where 
           c = C {cptnm = p_cptnm pc
                 ,cptgE = genE contxt
---                ,cptos = nub$[srcPaire p | pop<-popTable contxt,decusr (popdcl pop),p<-popps pop, source (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
---                           ++[trgPaire p | pop<-popTable contxt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
---                           ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
---                           ++[x | (cnm,xs)<-initialatoms contxt, cnm==p_cptnm pc, x<-xs]
+                ,cptos = fatal 1458 "The population of an A_Concept must be calculated based on the population table. (this field is obsolete)"
                 ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
@@ -1455,12 +1450,6 @@ pCtx2aCtx p_context
                              , decprR  = dec_prR pd
                              , decMean = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) (dec_Mean pd)
                              , decConceptDef = dec_conceptDef pd
-                --             , decpopu = nub$    -- All populations from the P_structure will be assembled in the decpopu field of the corresponding declaratio
-                --                         dec_popu pd ++ 
-                --                         concat [popps pop | pop<-pops', let ad=popm pop
-                --                                           , name ad==name pd
-                --                                           , relsgn ad==pSign2aSign (dec_sign pd)
-                --                                           ]
                              , decfpos = dec_fpos pd 
                              , deciss  = True
                              , decusr  = True
