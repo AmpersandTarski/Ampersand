@@ -11,19 +11,12 @@ where
    fatal = fatalMsg "Populated.hs"
 
    
-   foldr1' :: Int -> (a -> a -> a) -> [a] -> a
-   foldr1' rowNr _ [] = fatal rowNr "Call to foldr1 with empty list! (see Ticket #71 ) "
-   foldr1' _ f lst = foldr1 f lst
-   
-    
-    
    class Populated a where
---    contents :: a -> Pairs
-    -- | this function returns the content of a specific a, given a list of populations. 
+    -- | this function returns the pairs as content of a specific a, given a list of populations. 
     --   The list of populations should contain all user-defined populations. 
     fullContents :: [UserDefPop] -> a -> Pairs
    
-
+   -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
    atomsOf :: [UserDefPop] -> A_Concept -> [String] 
    atomsOf _ ONE  = ["1(ONE)"] -- fatal 126 "Asking for the value of the universal singleton"
    atomsOf pt c@C{}
@@ -31,14 +24,10 @@ where
          ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[trgPaire p | pop<-pt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
-   -- TODO: Is dit nog relevant hier?     ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
+   -- TODO: @Han : Er moet nog een fix worden geregeld, want ook de atomen verstopt in relaties van het type Mp1{} moeten worden opgeleverd. Niet alleen voor het huidige concept, maar voor alle concepten waarvan c een specialisatie is. 
+   -- was:  ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
          
-   -- | This function returns the atoms of a concept
---   atomsOf :: A_Concept -> [String]
---   atomsOf C{cptnm="SESSION"} = [] -- TODO: HACK to prevent populating SESSION
---   atomsOf C{cptos=x} = x
---   atomsOf ONE = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
-    
+   
    instance Populated Declaration where
     fullContents pt dcl
       = case filter (isTheDecl dcl) pt of
@@ -63,22 +52,6 @@ where
                                     , t <- atomsOf pt (target rel) ]
            (Mp1 _ (C {cptnm="SESSION"})) -> [] -- TODO: HACK to prevent populating SESSION
            (Mp1 x _) -> [mkPair x x]
-
-
---   instance Populated Sign where
---    contents (Sign s t)
---       = [mkPair a b |a<-atomsOf s, b<-atomsOf t]
-
---   instance Populated Population where
---    contents = popps
-     
---   instance Populated Declaration where
---    contents d 
---       = case d of
---           Sgn{}     -> decpopu d
---           Isn{}     -> contents (detyp d)
---           Iscompl{} -> [mkPair a b |(a,_)<-contents (detyp d),(_,b)<-contents (detyp d),a/=b]
---           Vs{}      -> [mkPair a b |a<-(atomsOf.source) d, b<-(atomsOf.target) d]
 
 
    instance Populated Expression where
@@ -161,5 +134,8 @@ Let cL = contents l
              compl (a) (sa) (ta) = [mkPair x y |x<-sa, y<-ta, mkPair x y `notElem` a]  -- complement van a
              cartesianProduct :: [String] -> [String] -> Pairs
              xs `cartesianProduct` ys = [ mkPair x y | x<-xs,y<-ys] 
+             foldr1' :: Int -> (a -> a -> a) -> [a] -> a
+             foldr1' rowNr _ [] = fatal rowNr "Call to foldr1 with empty list! (see Ticket #71 ) "
+             foldr1' _ f lst = foldr1 f lst
 
   
