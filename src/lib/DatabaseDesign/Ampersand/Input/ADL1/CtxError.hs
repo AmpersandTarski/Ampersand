@@ -34,6 +34,9 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
                               }       
               | CxeNoRoles    {cxeIfc  :: P_Interface
                               }       
+              | CxeNoRules    {cxePos  :: Origin
+                              ,cxeRules:: [String]
+                              }       
               | CxeNoIfcs     {cxeName :: String
                               ,cxePos  :: Origin
                               ,cxeIfcs :: [P_Interface]
@@ -100,6 +103,12 @@ showErr err = case err of
                  cs  -> ["    The term  "++showADL (cxeExpr err)++",\n"]++
                         ["    cannot be "++commaEng "and" (map showADL cs) ++" at the same time."]
           )
+  CxeNoRules{}
+     -> show (cxePos err)++":\n"++
+        case cxeRules err of
+         []  -> ""
+         [r] -> "Rule '"++r++"' does not exist."
+         rs  -> "Rules "++commaEng "and" [ "'"++r++"'" | r<-rs]++" do not exist."
   CxeNoRoles{}
      -> concat
           ( [show (origin (cxeIfc err))++":\n"]++
