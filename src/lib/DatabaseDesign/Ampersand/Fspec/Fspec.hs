@@ -67,7 +67,6 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , vctxenv ::      ( Expression
                                    , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
-               --  , fPopulations :: [UserDefPop]             -- ^ a lookup table for the contents of all relations and concepts
                  , hasPopulations :: Bool
                  , userDefPops    :: [UserDefPop]           -- all user defined populations of relations and concepts
                  , allViolations  :: [(Rule,[Paire])]       -- all rules with violations.
@@ -92,8 +91,6 @@ instance Language Fspc where
   keyDefs      = vkeys
   gens         = vgens
   patterns     = vpatterns
---  violations udp fSpec = [(r,viol) |r<- invariants fSpec ++ grules fSpec, viol<-ruleviolations udp r]
-                     -- default violations computes al rules again from declarations
 
 data FProcess
   = FProc { fpProc :: Process
@@ -111,7 +108,6 @@ instance Language FProcess where
   keyDefs      = keyDefs.fpProc
   gens         = gens.fpProc
   patterns     = patterns.fpProc
---  violations pt= (violations pt).fpProc
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard

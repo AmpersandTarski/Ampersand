@@ -77,7 +77,6 @@ data A_Context
          , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxenv :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
          , ctxmetas :: [Meta]
-         , ctxatoms :: [(String,[String])] -- ^ (the name of a concept, explicit initial population of that concept)
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)

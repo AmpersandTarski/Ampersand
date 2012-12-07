@@ -6,14 +6,13 @@ import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
-import DatabaseDesign.Ampersand.Classes.Populated            (atomsOf)
 import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
  
-fatal :: Int -> String -> a
-fatal = fatalMsg "Classes.ViewPoint"
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Classes.ViewPoint"
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
@@ -37,11 +36,6 @@ class Language a where
   keyDefs :: a -> [KeyDef]      -- ^ all keys that are defined in a
   gens :: a -> [A_Gen]       -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]     -- ^ all patterns that are used in this viewpoint
-  --TODO -> there are more rules than rules+multrules that can be violated
---  violations :: [UserDefPop] -> a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
---  violations udp x = [(r,viol) |r<-invariants x++multrules x++keyrules x, viol<-ruleviolations udp r]
---  initialatoms :: a -> [(String,[String])] -- ^ all atoms explicitly mentioned to be in the initial population of a concept
---  initialatoms _ = []
   
 -- | In a language, a declaration must be made for each gen.
 makeDecl :: A_Gen -> Declaration
@@ -75,8 +69,8 @@ class ProcessStructure a where
                                        -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
   maintains :: a -> [(String,Rule)] -- ^ the string represents a Role
   mayEdit :: a -> [(String,Relation)] -- ^ the string represents a Role
-  workTBD :: [UserDefPop] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
-  workTBD  udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations udp r]
+  workFromProcessRules :: [UserDefPop] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
+  workFromProcessRules  udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations udp r]
    
 rulesFromKey :: KeyDef -> [Rule]
 rulesFromKey _ = [] --see #276 mkProductInjectivityRule keyExps : 
@@ -143,7 +137,6 @@ instance ProcessStructure a => ProcessStructure [a] where
   processRules  = concatMap processRules
   maintains     = concatMap maintains
   mayEdit       = concatMap mayEdit
-  workTBD pt    = concatMap (workTBD pt)
 
 instance Language A_Context where
   objectdef    context = Obj { objnm   = name context
