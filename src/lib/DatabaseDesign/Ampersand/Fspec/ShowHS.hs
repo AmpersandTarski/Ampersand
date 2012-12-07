@@ -38,9 +38,6 @@ where
              ++"\n  main :: IO ()"
              ++"\n  main = do flags <- getOptions"
              ++"\n            putStr (showHS flags \"\\n  \" fSpec_"++baseName flags++")"
-     -- TODO: I temporarily disabled the following line, during work at ticket #85
-     -- WHY was this text here in the first place?
-     --        ++"\n"++"{- \n"++show [x |p<-vpatterns fSpec,x<-testexpr p]++show [x |p<-vpatterns fSpec,x<-inftestexpr p] ++ "\n-}\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS flags "\n     " fSpec
 
@@ -281,6 +278,7 @@ where
                    _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
            ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fspec)
            ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
+           ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
            ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
            ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
@@ -289,12 +287,12 @@ where
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
            ,     ", fsisa         = isa'"
            ,wrap ", vpatterns     = " indentA (\_->showHSName) (patterns fspec)
-           ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
+           ,wrap ", vConceptDefs  = " indentA (\_->showHSName) (vConceptDefs fspec)
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
-           
---           ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
            ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
+           ,     ", hasPopulations= "++show (hasPopulations fspec)
+           
            ,"}" 
            ] ++   
        indent++"where"++
@@ -366,7 +364,10 @@ where
         concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns ***: "++
-        concat [indent++" "++showHSName pat++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")
+        concat [indent++" "++showHSName pat++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")++
+       (if null (vConceptDefs fspec) then "" else
+        "\n -- *** ConceptDefs ***: "++
+        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | cd<-vConceptDefs fspec]++"\n")
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
@@ -862,7 +863,7 @@ where
 
    instance ShowHS ConceptDef where
     showHS flags _ cd
-     = " Cd ("++showHS flags "" (cdpos cd)++") "++cdcpt cd++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
+     = " Cd ("++showHS flags "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Concept                     ***
@@ -870,7 +871,7 @@ where
 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
-                       C{} -> "C "++show (name c) ++ " gE [] "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"    -- contents not shown. Adapt this code if you must see the contents too.
+                       C{} -> "C "++show (name c) ++ " gE "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
                        ONE -> "ONE"
 
 -- \***********************************************************************
