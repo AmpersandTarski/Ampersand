@@ -251,34 +251,34 @@ data Event = On { eSrt :: InsDel
                   } deriving (Show,Eq)
 data PAclause
               = Chc { paCls :: [PAclause]
-                    , paMotiv :: [(Expression,[Rule] )] -- tells which conjunct from whichule is being maintained
+                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
                     }
               | All { paCls :: [PAclause]
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Do  { paSrt :: InsDel                   -- do Insert or Delete
-                    , paTo :: Expression               -- into toExpr    or from toExpr
+              | Do  { paSrt :: InsDel                     -- do Insert or Delete
+                    , paTo :: Expression                  -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Sel { paCpt :: A_Concept                -- pick an existing instance of type c
-                    , paExp :: Expression               -- the expression to pick from
-                    , paCl :: String->PAclause         -- the completion of the clause
+              | Sel { paCpt :: A_Concept                  -- pick an existing instance of type c
+                    , paExp :: Expression                 -- the expression to pick from
+                    , paCl :: String->PAclause            -- the completion of the clause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | New { paCpt :: A_Concept                -- make a new instance of type c
-                    , paCl :: String->PAclause         -- to be done after creating the concept
+              | New { paCpt :: A_Concept                  -- make a new instance of type c
+                    , paCl :: String->PAclause            -- to be done after creating the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
-              | Rmv { paCpt :: A_Concept                -- Remove an instance of type c
-                    , paCl :: String->PAclause         -- to be done afteremoving the concept
+              | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
+                    , paCl :: String->PAclause            -- to be done afteremoving the concept
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
                     }
               | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
                     }
-              | Let { paExpr :: PAclause               -- the expression that represents a condition to be tested.
+              | Let { paExpr :: PAclause                  -- the expression that represents a condition to be tested.
                     , paBody :: PAclause -> PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
