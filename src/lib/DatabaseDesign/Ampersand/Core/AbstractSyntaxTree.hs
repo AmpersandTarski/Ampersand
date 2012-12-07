@@ -605,7 +605,6 @@ data A_Concept
          , cptgE :: GenR           -- ^This is the generalization relation between concepts.
                                    --  It is included in every concept, for the purpose of comparing concepts in the Ord class.
                                    --  As a result, you may write  c<=d  in your Haskell code for any two A_Concepts c and d that are in the same context.
-    --     , cptos :: [String]       -- TODO (HJO, 20121203): This has become obsolete and should be removed. Now use the function `atomsOf`
          , cpttp :: String         -- ^The type of this Concept
          , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
          }  -- ^C nm gE cs represents the set of instances cs by name nm.

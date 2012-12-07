@@ -330,30 +330,30 @@ where
                            indent ++ "  = " ++ showHS flags (indent ++ "    ") s
                      | s <- uni (interfaceS fspec) (interfaceG fspec)]++"\n")++
        (if null (vrels fspec)     then "" else
-        "\n -- *** Relations ***: "++
-        concat [indent++" "++showHSName d++indent++"  = "++showHS flags (indent++"    ") d |d<- vrels fspec, decusr d]++"\n") ++
+        "\n -- *** Declarations ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<- vrels fspec, decusr x]++"\n") ++
        (if null (vkeys fspec)     then "" else
         "\n -- *** Keys ***: "++
-        concat [indent++" "++showHSName k++indent++"  = "++showHS flags (indent++"    ") k |k<- vkeys fspec]++"\n") ++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<- vkeys fspec]++"\n") ++
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes ***: "++
-        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-vprocesses fspec ]++"\n")++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- *** User defined rules ***: "++
-        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-vrules     fspec ]++"\n"++
-        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s |s<-map srrel (vrules fspec)]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrules     fspec ]++"\n"++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (vrules fspec)]++"\n"
         )++        
        (if null (grules   fspec ) then "" else
         "\n -- *** Generated rules ***: "++
-        concat [indent++" "++showHSName r++indent++"  = "++showHS flags (indent++"    ") r |r<-grules     fspec ]++"\n"++
-        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s |s<-map srrel (grules fspec)]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fspec ]++"\n"++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
         )++        
        (if null (interfaceG fspec ) then "" else
         "\n -- *** Generated interfaces ***: "++
-        concat [indent++" "++showHSName ifc++indent++"  = "++showHS flags (indent++"    ") ifc |ifc<-interfaceG fspec ]++"\n")++        
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n")++        
        (if null (vquads fspec ) then "" else
         "\n -- *** Quads ***: "++
-        concat [indent++" "++showHSName q++indent++"  = "++showHS flags (indent++"    ") q |q<-vquads     fspec ]++"\n")++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n")++
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules ***: "++
         concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
@@ -364,10 +364,13 @@ where
         concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns ***: "++
-        concat [indent++" "++showHSName pat++indent++"  = "++showHS flags (indent++"    ") pat |pat<-vpatterns fspec]++"\n")++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fspec]++"\n")++
        (if null (vConceptDefs fspec) then "" else
         "\n -- *** ConceptDefs ***: "++
-        concat [indent++" "++showHSName cd++indent++"  = "++showHS flags (indent++"    ") cd | cd<-vConceptDefs fspec]++"\n")
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-vConceptDefs fspec]++"\n")++
+       (if null (morlist fspec) then "" else
+        "\n -- *** Relations ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-mors fspec]++"\n")
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
@@ -787,7 +790,7 @@ where
     showHS flags indent (EBrk e)       = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ETyp e sgn)   = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
     showHS flags   _    (ERel rel)     = "ERel ("++showHS flags "" rel++") "
-
+--    showHS flags   _    (ERel rel)     = "ERel "++showHSName rel++" "
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***
 -- \***********************************************************************
@@ -806,6 +809,14 @@ where
 -- \*** Eigenschappen met betrekking tot: Relation Concept            ***
 -- \***********************************************************************
 
+   instance ShowHSName Relation where
+    showHSName rel
+       = case rel of
+            Rel{} -> haskellIdentifier ("rrel_"++name rel++name (source rel)++name ( target rel))
+            I{}   -> haskellIdentifier ("irel_"++          name (source rel)                    )
+            V{}   -> haskellIdentifier ("vrel_"++          name (source rel)++name ( target rel))
+            Mp1{} -> haskellIdentifier ("mp1r_"++relval rel++"_"++showHSName (rel1typ rel))
+       
    instance  ShowHS Relation where
     showHS flags _ rel 
        = case rel of
@@ -826,7 +837,7 @@ where
 -- \***********************************************************************
 
    instance ShowHSName Declaration where
-    showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++name (target d)) -- user defined relations
+    showHSName d | decusr d  = haskellIdentifier ("dcl_"++name d++name (source d)++name (target d)) -- user defined relations
                  | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++name (target d)) -- relations generated for signalling
                  | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++name (target d)) -- relations generated per rule
    
@@ -843,7 +854,6 @@ where
                         ,"   , decprR  = " ++ show (decprR d)
                         ,"   , decMean = " ++ show (decMean d)
                         ,"   , decConceptDef = " ++ show (decConceptDef d)
-              --          ,"   , decpopu = " ++ show (decpopu d)
                         ,"   , decfpos = " ++ showHS flags "" (decfpos d)
                         ,"   , deciss  = " ++ show (deciss d)
                         ,"   , decusr  = " ++ show (decusr d)
@@ -868,7 +878,9 @@ where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Concept                     ***
 -- \***********************************************************************
-
+   instance ShowHSName A_Concept where
+    showHSName ONE = haskellIdentifier "cptOne"
+    showHSName c = haskellIdentifier ("cpt_"++name c) 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
                        C{} -> "C "++show (name c) ++ " gE "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
