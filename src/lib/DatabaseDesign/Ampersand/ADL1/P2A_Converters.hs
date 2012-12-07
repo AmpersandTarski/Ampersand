@@ -1426,7 +1426,6 @@ pCtx2aCtx p_context
           where 
           c = C {cptnm = p_cptnm pc
                 ,cptgE = genE contxt
-                ,cptos = fatal 1458 "The population of an A_Concept must be calculated based on the population table. (this field is obsolete)"
                 ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
