@@ -972,14 +972,13 @@ pCtx2aCtx p_context
    , stTypeGraph, eqTypeGraph)
    where
     contxt = 
-         ACtx{ ctxnm     = name p_context     -- The name of this context
+         ACtx{ ctxnm     = name p_context
              , ctxpos    = ctx_pos p_context
              , ctxlang   = fromMaybe Dutch (ctx_lang p_context)
-             , ctxmarkup = fromMaybe ReST  (ctx_markup p_context) -- The default markup format for free text in this context
+             , ctxmarkup = fromMaybe ReST  (ctx_markup p_context)
              , ctxpo     = gEandClasses
-             , ctxthms   = ctx_thms p_context -- The patterns/processes to be printed in the functional specification. (for making partial documentation)
-             , ctxpats   = pats          -- The patterns defined in this context
-                                         -- Each pattern contains all user defined rules inside its scope
+             , ctxthms   = ctx_thms p_context
+             , ctxpats   = pats
              , ctxprocs  = procs         -- The processes defined in this context
              , ctxrs     = ctxrules
              , ctxds     = adecs         -- The declarations defined in this context, outside the scope of patterns
@@ -1067,12 +1066,27 @@ pCtx2aCtx p_context
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 1054 ("Do not refer to undefined phpPlugs\n"++show errs), errs)
     (allpops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
-                            Checked ps -> (ps, [])
+                            Checked ps -> (ps ++ popsFromMp1Rels, [])
                             Errors errs  -> (fatal 1057 ("Do not refer to undefined populations\n"++show errs), errs)
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
+    popsFromMp1Rels = [mp1Rel2Pop r | r<-allMp1Rels]
+      where 
+        allMp1Rels =    mp1Rels pats
+                  `uni` mp1Rels procs
+                  `uni` mp1Rels ctxrules
+                  `uni` mp1Rels keys
+                  `uni` mp1Rels ifcs 
+        mp1Rel2Pop :: Relation -> UserDefPop
+        mp1Rel2Pop r =
+           case r of 
+             Mp1{} -> PCptPopu { popcpt = rel1typ r
+                               , popas  = [relval r]
+                               }
+             _     -> fatal 1088 "This function must not be called with just any relation"
+             
     themeschk = case orphans of
                  []   -> []
                  [nm] -> [newcxe ("Theme '"++nm++"' is selected for output, but is not defined.")]
