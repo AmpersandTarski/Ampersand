@@ -153,7 +153,6 @@ entityconcept :: [UserDefPop] -> PlugSQL -> A_Concept
 entityconcept udp p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
   = C { cptnm = "ID"
       , cptgE = (\x y -> if x==y then EQ else NC,[])  -- TODO: Is this the right place to define this ordering??
-      , cptos = [show idnr | (idnr,_)<-zip [(1::Int)..] (fullContents udp (mLkp p))]
       , cpttp = []
       , cptdf = []
       }
