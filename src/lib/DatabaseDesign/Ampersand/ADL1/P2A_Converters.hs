@@ -993,13 +993,18 @@ pCtx2aCtx p_context
              , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas p_context ]
-             , ctxatoms  = allExplicitAtoms
              }
-    populationTable = map combine (eqClass sameDecl allpops)
+    populationTable = map (foldl1 addPops) (eqClass sameClass allpops)
       where 
-        sameDecl a b = popdcl a == popdcl b 
-        combine ps = p{popps = nub (concatMap popps ps)}
-           where p = head ps -- This is safe, because eqClass produces a list of non-empty lists.
+        sameClass a b = 
+           case (a , b) of 
+             (PRelPopu{},PRelPopu{}) -> popdcl a == popdcl b
+             (PCptPopu{},PCptPopu{}) -> popcpt a == popcpt b
+             _                       -> False
+        addPops :: UserDefPop -> UserDefPop -> UserDefPop
+        addPops (PRelPopu d ps1) (PRelPopu _ ps2) = PRelPopu d (ps1 `union` ps2)
+        addPops (PCptPopu c as1) (PCptPopu _ as2) = PCptPopu c (as1 `union` as2)
+        addPops _                 _    = fatal 1009 "Two different population types must not be added!"
         
     st, eqType  :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
     bindings    :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
@@ -1040,10 +1045,10 @@ pCtx2aCtx p_context
     (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp              . ctx_ps   ) p_context of
                             Checked purps -> (purps, [])
                             Errors  errs  -> (fatal 1033 ("Do not refer to undefined purposes\n"++show errs), errs)
-    (pats,    patcxes)   = case (parallelList . map (pPat2aPat   allpops)     . ctx_pats ) p_context of
+    (pats,    patcxes)   = case (parallelList . map pPat2aPat                 . ctx_pats ) p_context of
                             Checked pats' -> (pats', [])
                             Errors  errs  -> (fatal 1036 ("Do not refer to undefined patterns\n"++show errs), errs)
-    (procs,   proccxes)  = case (parallelList . map (pProc2aProc allpops)     . ctx_PPrcs) p_context of
+    (procs,   proccxes)  = case (parallelList . map pProc2aProc               . ctx_PPrcs) p_context of
                             Checked prcs -> (prcs, [])
                             Errors errs  -> (fatal 1039 ("Do not refer to undefined processes\n" ++ show errs), errs)
     (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")   . ctx_rs   ) p_context of
@@ -1064,8 +1069,6 @@ pCtx2aCtx p_context
     (allpops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
                             Checked ps -> (ps, [])
                             Errors errs  -> (fatal 1057 ("Do not refer to undefined populations\n"++show errs), errs)
-    allExplicitAtoms :: [(String,[String])]
-    allExplicitAtoms = [(name cptos',[a | (a,_)<-p_popps cptos']) | cptos'@P_CptPopu{}<-pops p_context]
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
@@ -1096,8 +1099,8 @@ pCtx2aCtx p_context
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
-    pPat2aPat :: [UserDefPop] -> P_Pattern -> Guarded Pattern
-    pPat2aPat pops' ppat
+    pPat2aPat :: P_Pattern -> Guarded Pattern
+    pPat2aPat ppat
      = f <$> parRuls ppat <*> parKeys ppat <*> parDcls ppat <*> parPrps ppat
        where
         f prules keys' decs xpls
@@ -1116,8 +1119,8 @@ pCtx2aCtx p_context
         parDcls = parallelList . map pDecl2aDecl . pt_dcs
         parPrps = parallelList . map pPurp2aPurp . pt_xps
 
-    pProc2aProc :: [UserDefPop] -> P_Process -> Guarded Process
-    pProc2aProc pops' pproc
+    pProc2aProc :: P_Process -> Guarded Process
+    pProc2aProc pproc
      = f <$> parRuls pproc <*> parKeys pproc <*> parDcls pproc <*> parRRels pproc <*> parRRuls pproc <*> parPrps pproc
        where
         f prules keys' decs rrels rruls expls
