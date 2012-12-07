@@ -281,8 +281,8 @@ makeRAPPops fs opts usrfiles pics
    userdeclarations = filter decusr (declarations fs)
    --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (isa,x)
    atoms = [(isa , c , x) 
-           | isa<-isas, c<-isa, x<-cptos c
-           , x `notElem` concat [cptos s | s<-isa, s < c]]
+           | isa<-isas, c<-isa, x<-atomsOf (userDefPops fs) c
+           , x `notElem` concat [atomsOf (userDefPops fs) s | s<-isa, s < c]]
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
    isanm isa = intercalate "/" (map name (maxima isa))
    --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
