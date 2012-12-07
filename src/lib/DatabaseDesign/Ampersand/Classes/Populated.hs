@@ -23,7 +23,7 @@ where
      = nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
-         ++[trgPaire p | pop<-pt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
+   --      ++[trgPaire p | pop<-pt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
 
    instance Populated Declaration where
     fullContents pt dcl
