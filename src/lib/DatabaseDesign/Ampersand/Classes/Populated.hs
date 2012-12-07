@@ -24,10 +24,7 @@ where
          ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[trgPaire p | pop<-pt,decusr (popdcl pop),p<-popps pop, target (popdcl pop) DatabaseDesign.Ampersand.Core.Poset.<= c]
-   -- TODO: @Han : Er moet nog een fix worden geregeld, want ook de atomen verstopt in relaties van het type Mp1{} moeten worden opgeleverd. Niet alleen voor het huidige concept, maar voor alle concepten waarvan c een specialisatie is. 
-   -- was:  ++[v | r<-rules contxt,Mp1 v c'<-mors r,c' DatabaseDesign.Ampersand.Core.Poset.<=c]
-         
-   
+
    instance Populated Declaration where
     fullContents pt dcl
       = case filter (isTheDecl dcl) pt of
@@ -55,7 +52,7 @@ where
 
 
    instance Populated Expression where
-    fullContents pt = contents
+    fullContents pt expr = contents expr
      where
       contents expr
        = case expr of
@@ -73,15 +70,16 @@ where
             ERrs (l,r) -> [(x,y) | x <- atomsOf pt (target l)
                                  , y <- atomsOf pt (target r)
                                  , null [z |z<- atomsOf pt (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
-            ERad es     -> fatal 104 "Relative addition needs rework. Sorry. "
---            ERad es    -> if null es 
---                          then fatal 55 "Cannot compute contents of ERad []"
---                          else let (dx,_,_,_)
---                                    = foldr1' 59 dagg [ (ct,compl ct atomsInSource atomsInTarget,atomsInSource,atomsInTarget)
---                                                      | t<-es, ct<-[contents t]
---                                                      , atomsInSource <- atomsOf pt (source t)
---                                                      , atomsInTarget <- atomsOf pt (target t) ]
---                               in dx
+--            ERad es     -> fatal 104 "Relative addition needs rework. Sorry. "
+            ERad es    -> if null es 
+                          then fatal 55 "Cannot compute contents of ERad []"
+                          else let (dx,_,_,_)
+                                    = foldr1' 59 dagg [ (ct,compl ct (atomsInSource t) (atomsInTarget t),atomsInSource t,atomsInTarget t)
+                                                      | t<-es, ct<-[contents t]]
+                                            where 
+                                              atomsInSource t = atomsOf pt (source t)
+                                              atomsInTarget t = atomsOf pt (target t) 
+                               in dx
             EPrd es    -> if null es 
                           then fatal 63 "Cannot compute contents of EPrd []"
                           else [ (a,b)
@@ -91,8 +89,7 @@ where
                           then []
                           else foldr1 kleenejoin (map (contents) es)
             EKl0 e     -> if source e == target e --see #166
-                          then fatal 122 "This type of expression needs rework. Sorry. "
-                             -- TODO: Was: closPair (contents e `uni` contents (source e))
+                          then closPair (contents e `uni` contents (ERel (I (source e))))
                           else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
             EKl1 e     -> closPair (contents e)
             EFlp e     -> [(b,a) | (a,b)<-contents e]
