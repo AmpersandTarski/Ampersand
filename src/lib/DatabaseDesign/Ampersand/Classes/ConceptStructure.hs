@@ -103,16 +103,16 @@ where
     mp1Rels (InterfaceRef _) = [] 
           
    instance ConceptStructure Pattern where
-    concs     pat = concs (ptgns pat) `uni` concs (ptdcs pat) `uni` concs (ptrls pat) `uni` concs (ptkds pat)
-    mors      pat = mors (ptrls pat) `uni` mors (ptkds pat) `uni` mors [makeRelation d | d<-ptdcs pat, (not.null) (multiplicities d)]
-    morlist   pat = morlist (ptrls pat)++morlist (ptkds pat)
-    mp1Rels   pat = mp1Rels (ptrls pat) `uni` mp1Rels (ptkds pat)
+    concs     p = concs (ptgns p)   `uni` concs (ptdcs p)   `uni` concs (ptrls p)    `uni` concs (ptkds p)
+    mors      p = mors  (ptrls p) `uni` mors (ptkds p) `uni` mors [makeRelation d | d<-ptdcs p, (not.null) (multiplicities d)]
+    morlist   p = morlist (ptrls p)++morlist (ptkds p)
+    mp1Rels   p = mp1Rels (ptrls p) `uni` mp1Rels (ptkds p)
 
    instance ConceptStructure Process where
-    concs     proc = concs   (prcRules proc)
-    mors      proc = mors    (prcRules proc)
-    morlist   proc = morlist (prcRules proc)
-    mp1Rels   proc = mp1Rels (prcRules proc) `uni` mp1Rels (prcKds proc)
+    concs     p = concs (prcGens p) `uni` concs (prcDcls p) `uni` concs (prcRules p) `uni` concs (prcKds p)
+    mors      p = mors  (prcRules p) `uni` mors (prcKds p) `uni` mors [makeRelation d | d<-prcDcls p, (not.null) (multiplicities d)]
+    morlist   p = morlist (prcRules p)++morlist (prcKds p)
+    mp1Rels   p = mp1Rels (prcRules p) `uni` mp1Rels (prcKds p)
 
 
    instance ConceptStructure Interface where
