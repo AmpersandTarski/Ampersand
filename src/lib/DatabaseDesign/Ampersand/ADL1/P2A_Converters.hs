@@ -982,17 +982,17 @@ pCtx2aCtx p_context
              , ctxpo     = gEandClasses
              , ctxthms   = ctx_thms p_context
              , ctxpats   = pats
-             , ctxprocs  = procs         -- The processes defined in this context
+             , ctxprocs  = procs
              , ctxrs     = ctxrules
-             , ctxds     = adecs         -- The declarations defined in this context, outside the scope of patterns
-             , ctxpopus  = populationTable -- The table of populations known in this context.
-             , ctxcds    = acds          -- All concept definitions
-             , ctxks     = keys          -- The key definitions defined in this context, outside the scope of patterns
-             , ctxgs     = agens         -- The gen definitions defined in this context, outside the scope of patterns
-             , ctxifcs   = ifcs          -- The interfaces defined in this context, outside the scope of patterns
-             , ctxps     = apurp         -- The purposes defined in this context, outside the scope of patterns
-             , ctxsql    = sqlPlugs      -- user defined sqlplugs, taken from the Ampersand script
-             , ctxphp    = phpPlugs      -- user defined phpplugs, taken from the Ampersand script
+             , ctxds     = map fst adecsNPops
+             , ctxpopus  = populationTable
+             , ctxcds    = acds
+             , ctxks     = keys
+             , ctxgs     = agens
+             , ctxifcs   = ifcs
+             , ctxps     = apurp
+             , ctxsql    = sqlPlugs
+             , ctxphp    = phpPlugs
              , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas p_context ]
              }
@@ -1007,7 +1007,13 @@ pCtx2aCtx p_context
         addPops (PRelPopu d ps1) (PRelPopu _ ps2) = PRelPopu d (ps1 `union` ps2)
         addPops (PCptPopu c as1) (PCptPopu _ as2) = PCptPopu c (as1 `union` as2)
         addPops _                 _    = fatal 1009 "Two different population types must not be added!"
-        
+        allpops = popsfrompops    -- Populations declared as separate population statement.
+               ++ popsfromdecls   -- Populations declared inside declaration statements
+               ++ popsFromMp1Rels -- Populations from singletons. (defined all over the place)
+        popsfromdecls = concatMap ptups pats    -- Populations from declarations inside all patterns
+                     ++ concatMap prcUps procs  -- Populations from declarations inside all processes
+                     ++ mapMaybe snd adecsNPops      -- Populations from declarations directly in side the context
+                      
     st, eqType  :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
     bindings    :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isas        :: [(P_Concept,P_Concept)]                   -- 
@@ -1041,8 +1047,8 @@ pCtx2aCtx p_context
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
     agens = map (pGen2aGen "NoPattern") (ctx_gs p_context)
-    (adecs,   deccxes)   = case (parallelList . map pDecl2aDecl               . ctx_ds   ) p_context of
-                            Checked decs -> ([d{decpat="NoPattern"} | d<-decs], [])
+    (adecsNPops,deccxes)   = case (parallelList . map pDecl2aDecl               . ctx_ds   ) p_context of
+                            Checked decs -> ([(d{decpat="NoPattern"},mp) | (d,mp)<-decs], [])
                             Errors  errs -> (fatal 1030 ("Do not refer to undefined declarations\n"++show errs), errs)
     (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp              . ctx_ps   ) p_context of
                             Checked purps -> (purps, [])
@@ -1068,8 +1074,8 @@ pCtx2aCtx p_context
     (phpPlugs,pPlugcxes) = case (parallelList . map (pODef2aODef [] Anything) . ctx_php  ) p_context of
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 1054 ("Do not refer to undefined phpPlugs\n"++show errs), errs)
-    (allpops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
-                            Checked ps -> (ps ++ popsFromMp1Rels, [])
+    (popsfrompops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
+                            Checked ps -> (ps, [])
                             Errors errs  -> (fatal 1057 ("Do not refer to undefined populations\n"++show errs), errs)
     pops pc
      = ctx_pops pc ++
@@ -1120,15 +1126,16 @@ pCtx2aCtx p_context
     pPat2aPat ppat
      = f <$> parRuls ppat <*> parKeys ppat <*> parDcls ppat <*> parPrps ppat
        where
-        f prules keys' decs xpls
-         = A_Pat { ptnm  = name ppat    -- Name of this pattern
-                 , ptpos = pt_pos ppat  -- the position in the file in which this pattern was declared.
-                 , ptend = pt_end ppat  -- the position in the file in which this pattern was declared.
-                 , ptrls = prules       -- The user defined rules in this pattern
-                 , ptgns = agens'       -- The generalizations defined in this pattern
-                 , ptdcs = [d{decpat=name ppat} | d<-decs] -- The declarations declared in this pattern
-                 , ptkds = keys'        -- The key definitions defined in this pattern
-                 , ptxps = xpls         -- The purposes of elements defined in this pattern
+        f prules keys' decsNpops xpls
+         = A_Pat { ptnm  = name ppat
+                 , ptpos = pt_pos ppat
+                 , ptend = pt_end ppat
+                 , ptrls = prules
+                 , ptgns = agens'
+                 , ptdcs = [d{decpat=name ppat} | (d,_)<-decsNpops]
+                 , ptups = catMaybes (map snd decsNpops)
+                 , ptkds = keys'
+                 , ptxps = xpls
                  }
         agens'  = map (pGen2aGen (name ppat)) (pt_gns ppat)
         parRuls = parallelList . map (pRul2aRul (name ppat)) . pt_rls
@@ -1140,13 +1147,14 @@ pCtx2aCtx p_context
     pProc2aProc pproc
      = f <$> parRuls pproc <*> parKeys pproc <*> parDcls pproc <*> parRRels pproc <*> parRRuls pproc <*> parPrps pproc
        where
-        f prules keys' decs rrels rruls expls
+        f prules keys' decsNpops rrels rruls expls
          = Proc { prcNm    = procNm pproc
                 , prcPos   = procPos pproc
                 , prcEnd   = procEnd pproc
                 , prcRules = prules
                 , prcGens  = map (pGen2aGen (name pproc)) (procGens pproc)            -- The generalizations defined in this pattern
-                , prcDcls  = [d{decpat=name pproc} | d<-decs]                         -- The declarations declared in this pattern
+                , prcDcls  = [d{decpat=name pproc} | (d,_)<-decsNpops]                         -- The declarations declared in this pattern
+                , prcUps   = catMaybes (map snd decsNpops)
                 , prcRRuls = [(rol,rul) |rul<-udefrules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr] -- The assignment of roles to rules.
                 , prcRRels = [(rol,rel) |rr<-rrels, rol<-rrRoles rr, rel<-rrRels rr]  -- The assignment of roles to Relations.
                 , prcKds   = keys'                                                    -- The key definitions defined in this process
@@ -1374,7 +1382,7 @@ pCtx2aCtx p_context
                                            cd:_ ->  Checked (ExplConceptDef cd)
     pExOb2aExOb (PRef2Declaration t@(PTyp o (Prel _ nm) sgn))
                                         = case [pDecl2aDecl d | d<-p_declarations p_context, name d==nm, dec_sign d== sgn ] of
-                                            Checked decl:_ -> Checked (ExplDeclaration decl)
+                                            Checked (decl,_):_ -> Checked (ExplDeclaration decl)
                                             Errors ers:_   -> Errors ers
                                             []             -> Errors [CxeOrig [newcxe ("No declaration for '"++showADL t++"'")] "relation" nm o ]
     pExOb2aExOb (PRef2Declaration t@(Prel{}))
@@ -1450,7 +1458,7 @@ pCtx2aCtx p_context
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
     
-    pDecl2aDecl :: P_Declaration -> Guarded Declaration
+    pDecl2aDecl :: P_Declaration -> Guarded (Declaration , Maybe UserDefPop)
     pDecl2aDecl pd =
      case dec_conceptDef pd of 
           Just (RelConceptDef srcOrTgt _) | relConceptName (dec_nm pd) `elem` map name (concs contxt)
@@ -1460,7 +1468,8 @@ pCtx2aCtx p_context
                where showSRCorTGT = if srcOrTgt == Src then "SRC" else "TGT"
                      relConceptName ""     = fatal 472 "empty concept"
                      relConceptName (c:cs) = toUpper c : cs
-          _ -> Checked ( Sgn { decnm   = dec_nm pd
+          _ -> Checked ( d,mp )
+               where d = Sgn { decnm   = dec_nm pd
                              , decsgn  = pSign2aSign (dec_sign pd)
                              , decprps = dec_prps pd
                              , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
@@ -1474,7 +1483,11 @@ pCtx2aCtx p_context
                              , decusr  = True
                              , decpat  = ""
                              , decplug = dec_plug pd
-                             } )
+                             } 
+                     mp = case dec_popu pd of
+                            [] -> Nothing
+                            ps -> Just (PRelPopu {popdcl = d, popps  = ps}) 
+                       
 
     pExpr2aExpr :: Term                               -- The term to be typed
                 -> Guarded ( Expression               -- the resulting expression.
@@ -1661,11 +1674,11 @@ pCtx2aCtx p_context
     getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
     getDeclarationAndSign term@(Prel _ _)
      = case Map.lookup (TypExpr term False) bindings of
-        Just [(d, [s], [t])] -> do { decl <- pDecl2aDecl d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
+        Just [(d, [s], [t])] -> do { (decl,_) <- pDecl2aDecl d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
         Just ds -> 
           case nub [(name d, ss, ts) | (d, ss, ts)<-ds] of  -- multiple declarations of the same relation are allowed.
              [(_, [s], [t])] -> do { let (d, _, _) = head ds
-                                   ; decl <- pDecl2aDecl d
+                                   ; (decl,_) <- pDecl2aDecl d
                                    ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
                                    }
              _   -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
