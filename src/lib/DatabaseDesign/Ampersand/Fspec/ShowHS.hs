@@ -27,7 +27,6 @@ where
              ++"\n  import DatabaseDesign.Ampersand.Core.ParseTree"
              ++"\n  import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.ShowHS (showHS)"
-             ++"\n--import DatabaseDesign.Ampersand.Fspec.FPA"
              ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
              ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
              ++"\n  import DatabaseDesign.Ampersand.Basics"
@@ -292,7 +291,8 @@ where
            ,     ", metas         = allMetas"
            ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
            ,     ", hasPopulations= "++show (hasPopulations fspec)
-           
+           ,wrap ", userDefPops   = " indentA (showHS flags)   (userDefPops fspec)
+           ,wrap ", allViolations = " indentA (showHS flags)   (allViolations fspec)
            ,"}" 
            ] ++   
        indent++"where"++
@@ -377,10 +377,8 @@ where
                  showbinding :: (Declaration,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: PlugInfo   ***
--- \***********************************************************************
+   instance ShowHS Char where
+    showHS _ _ c = show c
 
    instance ShowHS Meta where
     showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val 
