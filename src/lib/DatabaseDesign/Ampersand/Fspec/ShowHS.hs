@@ -704,13 +704,17 @@ where
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***
 -- \***********************************************************************
 
-   instance  ShowHSName UserDefPop where
-    showHSName pop = haskellIdentifier ("pop_"++name d++"_"++uniqueIDfromOrigin (decfpos d))
-        where d = popdcl pop
+--   instance  ShowHSName UserDefPop where
+--    showHSName pop = haskellIdentifier ("pop_"++name d++"_"++uniqueIDfromOrigin (decfpos d))
+--        where d = popdcl pop
 
    instance  ShowHS UserDefPop where
     showHS flags indent pop
-     = "Popu ("++showHS flags "" (popdcl pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
+     = case pop of 
+         PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
+             ++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
+         PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
+             ++indent++"     [ "++intercalate (indent++"     , ") (map show (popas pop))++indent++"     ]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
