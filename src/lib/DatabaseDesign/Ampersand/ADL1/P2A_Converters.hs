@@ -668,7 +668,10 @@ instance Expr P_ObjectDef where
   = let x=obj_ctx o in
     uType dcls x uLft uRt x .+.
     foldr (.+.) nothing [ uType dcls obj t Anything obj .+. dm
-                        | Just subIfc <- [obj_msub o], obj <- si_box subIfc
+                        | Just subIfc <- [obj_msub o], obj <- case subIfc of
+                                                                 P_Box{}          -> si_box subIfc
+                                                                 -- HJO, 20121208: Ik denk dat hieronder een lege lijst moet worden teruggegeven. Is dat ook zo?
+                                                                 P_InterfaceRef{} -> fatal 673 "@Stef: Kijk jij hier even naar? dit was niet gespecificeerd." 
                         , let (dm,t) = mSpecific (cod x) (dom (obj_ctx obj)) (obj_ctx obj)
                         ]
  
