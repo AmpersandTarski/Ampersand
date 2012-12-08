@@ -709,12 +709,18 @@ where
 --        where d = popdcl pop
 
    instance  ShowHS UserDefPop where
-    showHS flags indent pop
+    showHS _ indent pop
      = case pop of 
          PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
-             ++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
+             ++indent++"         , popps  = [ "++intercalate 
+              (indent++"                    , ") (map show (popps pop))
+             ++indent++"                    ]"
+             ++indent++"         }"
          PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
-             ++indent++"     [ "++intercalate (indent++"     , ") (map show (popas pop))++indent++"     ]"
+             ++indent++"         , popas  = [ "++intercalate
+              (indent++"                    , ") (map show (popas pop))
+             ++indent++"                    ]"
+             ++indent++"         }"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***

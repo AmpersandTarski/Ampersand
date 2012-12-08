@@ -108,6 +108,7 @@ data Process = Proc { prcNm :: String
                     , prcRules :: [Rule]
                     , prcGens :: [A_Gen]
                     , prcDcls :: [Declaration]
+                    , prcUps :: [UserDefPop]  -- ^ The user defined populations in this process
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
                     , prcRRels :: [(String,Relation)] -- ^ The assignment of roles to Relations.
                     , prcKds :: [KeyDef]            -- ^ The key definitions defined in this process
@@ -136,6 +137,7 @@ data Pattern
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
+           , ptups :: [UserDefPop]  -- ^ The user defined populations in this pattern
            , ptkds :: [KeyDef]      -- ^ The key definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
            }   --deriving (Show)    -- for debugging purposes
