@@ -119,9 +119,7 @@ where
     concs     ifc = concs (ifcObj ifc)
     mors      ifc = mors (ifcObj ifc)
     morlist   ifc = morlist (ifcObj ifc)
-    mp1Rels   ifc =      mp1Rels (ifcViols ifc) 
-                   `uni` mp1Rels (ifcObj ifc)
-                   `uni` mp1Rels (ifcViols ifc)
+    mp1Rels   ifc = mp1Rels (ifcObj ifc)
 
    instance ConceptStructure Relation where
     concs rel   = nub [source rel,target rel]
