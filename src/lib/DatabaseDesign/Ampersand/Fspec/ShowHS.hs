@@ -243,6 +243,14 @@ where
             where newindent = indent ++"    "
                   indentA = newindent
 
+   showViolatedRule :: String -> (Rule,Pairs) -> String
+   showViolatedRule indent (r,ps)
+      = intercalate indent
+          [        " ( "++showHSName r++" -- This is "++(if r_sgl r then "a process rule." else "an invariant")++
+           indent++" , "++ wrap "" (indent++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
+                                                        in showPair) ps++
+           indent++" )"
+          ] 
 
 
 -- \***********************************************************************
@@ -290,9 +298,8 @@ where
            ,wrap ", fSexpls       = " indentA (showHS flags)   (fSexpls fspec)
            ,     ", metas         = allMetas"
            ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
-           ,     ", hasPopulations= "++show (hasPopulations fspec)
            ,wrap ", userDefPops   = " indentA (showHS flags)   (userDefPops fspec)
-           ,wrap ", allViolations = " indentA (showHS flags)   (allViolations fspec)
+           ,wrap ", allViolations = " indentA showViolatedRule (allViolations fspec)
            ,"}" 
            ] ++   
        indent++"where"++
@@ -377,9 +384,6 @@ where
                  showbinding :: (Declaration,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
-   instance ShowHS Char where
-    showHS _ _ c = show c
-
    instance ShowHS Meta where
     showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val 
 
@@ -704,10 +708,6 @@ where
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***
 -- \***********************************************************************
 
---   instance  ShowHSName UserDefPop where
---    showHSName pop = haskellIdentifier ("pop_"++name d++"_"++uniqueIDfromOrigin (decfpos d))
---        where d = popdcl pop
-
    instance  ShowHS UserDefPop where
     showHS _ indent pop
      = case pop of 
@@ -939,12 +939,6 @@ where
     showHS _ _ OriginUnknown
       = "OriginUnknown"
 
-   uniqueIDfromOrigin :: Origin -> String
-   uniqueIDfromOrigin (FileLoc (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l _,_)))
-     = show fn++show l
-   uniqueIDfromOrigin (Origin s) =  s
-   uniqueIDfromOrigin _          = fatal 868 "Cannot make a unique id from argument"
-   
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Block                         ***
