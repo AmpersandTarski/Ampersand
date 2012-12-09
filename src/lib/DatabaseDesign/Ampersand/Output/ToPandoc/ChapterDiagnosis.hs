@@ -547,9 +547,9 @@ chpDiagnosis lev fSpec opts
   wipReport
    = [ Para (case (language opts, concat popwork,popwork) of
               (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | hasPopulations fSpec ]
+                                      | (not.null.userDefPops) fSpec ]
               (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | hasPopulations fSpec ]
+                                      | (not.null.userDefPops) fSpec ]
               (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count opts (length ps) "taak"++" zien.") ]
               (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count opts (length ps) "task"++".") ]
               (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
@@ -629,13 +629,13 @@ chpDiagnosis lev fSpec opts
   violationReport
    = [ Para (case (language opts, popviols, multviols) of
         (Dutch,  [],[])      -> [ Str "De populatie in dit script overtreedt geen regels. "
-                                | hasPopulations fSpec ]
+                                | (not.null.userDefPops) fSpec ]
         (English,[],[])      -> [ Str "The population in this script violates no rule. "
-                                | hasPopulations fSpec ]
+                                | (not.null.userDefPops) fSpec ]
         (Dutch,  [], _:_:_ )  -> [ Str "De populatie in dit script overtreedt alleen multipliciteitsregels. "
-                                | hasPopulations fSpec ]
+                                | (not.null.userDefPops) fSpec ]
         (English,[], _:_:_ ) -> [ Str "The population in this script violates multiplicity rules only. "
-                                | hasPopulations fSpec ]
+                                | (not.null.userDefPops) fSpec ]
         (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" veroorzaakt "++count opts (length ps) "overtreding"++". ") ]
         (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" causes "++count opts (length ps) "violation"++". ") ]
         (Dutch,  _,_)        -> [ Str "De onderstaande tabellen geven overtredingen van regels weer. " ]
