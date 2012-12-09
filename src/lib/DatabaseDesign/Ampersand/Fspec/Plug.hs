@@ -62,7 +62,9 @@ instance ConceptStructure PlugInfo where
   mors    (ExternalPlug obj)  = mors    obj
   morlist (InternalPlug psql) = morlist psql
   morlist (ExternalPlug obj)  = morlist obj
-
+  mp1Rels (InternalPlug psql) = mp1Rels psql
+  mp1Rels (ExternalPlug obj)  = mp1Rels obj
+   
 instance FPAble PlugSQL where
   fpa = sqlfpa
 
@@ -140,23 +142,23 @@ instance FPAble PlugSQL where
 --REMARK151210 -> one would expect I[entityconcept p], 
 --                but any p (as instance of Object) has one always existing concept p suitable to replace entityconcept p.
 --                concept p and entityconcept p are related uni,tot,inj,sur.
-entityfield :: [UserDefPop] -> PlugSQL -> SqlField
-entityfield udp p
-  = Fld (name (entityconcept udp p)) --name of imaginary entity concept stored in plug
+entityfield :: PlugSQL -> SqlField
+entityfield p
+  = Fld (name (entityconcept p)) --name of imaginary entity concept stored in plug
         (ERel (I (concept p)) ) --fldexpr
         SQLId --fldtype
         False --isnull
         True --isuniq
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
-entityconcept :: [UserDefPop] -> PlugSQL -> A_Concept
-entityconcept udp p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
+entityconcept :: PlugSQL -> A_Concept
+entityconcept BinSQL{} --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
   = C { cptnm = "ID"
       , cptgE = (\x y -> if x==y then EQ else NC,[])  -- TODO: Is this the right place to define this ordering??
       , cpttp = []
       , cptdf = []
       }
-entityconcept _ p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
+entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
   = case concept p of
      C{} -> (concept p){cptnm=name(concept p)++ "ID"} 
      _   ->  fatal 225 $ "entityconcept error in PlugSQL: "++name p++"."
@@ -447,12 +449,13 @@ clusterBy f cs xs
 instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
   morlist   f = morlist   (fldexpr f)
--- closExprs f = closExprs (fldexpr f)  
+  mp1Rels = fatal 452 "mp1Rels is not ment to be for a plug."
+
 instance ConceptStructure PlugSQL where
   concs     p = concs     (localfunction p)
   mors      p = mors      (localfunction p)
   morlist   p = morlist   (localfunction p)
--- closExprs p = closExprs (localfunction p)
+  mp1Rels = fatal 458 "mp1Rels is not ment to be for a plug."
 
 localfunction::PlugSQL -> [SqlField]
 localfunction p@(TblSQL{}) = fields p

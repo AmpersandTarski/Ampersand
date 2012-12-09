@@ -51,7 +51,7 @@ where
 
 
    instance Populated Expression where
-    fullContents pt expr = contents expr
+    fullContents pt = contents
      where
       contents expr
        = case expr of

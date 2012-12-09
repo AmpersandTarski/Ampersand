@@ -12,6 +12,7 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
+import Text.Pandoc.Builder hiding (header,str)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis.hs"
@@ -31,7 +32,7 @@ chpDiagnosis lev fSpec opts
      processrulesInPatterns++ -- 
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
      wipReport++              -- sums up the work items (i.e. the violations of process rules)
-     violationReport          -- sums up the violations caused by the population of this script.
+     toList violationReport          -- sums up the violations caused by the population of this script.
    , pics )
   where
   header :: [Block]
@@ -625,22 +626,48 @@ chpDiagnosis lev fSpec opts
            , r `elem` concat [udefrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
            ]
 
-  violationReport :: [Block]
+  violationReport :: Blocks    
   violationReport
-   = [ Para (case (language opts, popviols, multviols) of
-        (Dutch,  [],[])      -> [ Str "De populatie in dit script overtreedt geen regels. "
-                                | (not.null.userDefPops) fSpec ]
-        (English,[],[])      -> [ Str "The population in this script violates no rule. "
-                                | (not.null.userDefPops) fSpec ]
-        (Dutch,  [], _:_:_ )  -> [ Str "De populatie in dit script overtreedt alleen multipliciteitsregels. "
-                                | (not.null.userDefPops) fSpec ]
-        (English,[], _:_:_ ) -> [ Str "The population in this script violates multiplicity rules only. "
-                                | (not.null.userDefPops) fSpec ]
-        (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" veroorzaakt "++count opts (length ps) "overtreding"++". ") ]
-        (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" causes "++count opts (length ps) "violation"++". ") ]
-        (Dutch,  _,_)        -> [ Str "De onderstaande tabellen geven overtredingen van regels weer. " ]
-        (English,_,_)        -> [ Str "The following tables represent rule violations. " ])
-     ]        ++          
+   = let (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
+         showViolatedRule :: (Rule,Pairs) -> Blocks
+         showViolatedRule (r,ps) 
+             = let capt = case language opts of
+                               Dutch   -> text "Overtredingen van regel "
+                               English -> text "Violations of rule "
+                         <>  text (name r)
+                   showRow :: Paire -> [Blocks]
+                   showRow p = [(para.text.fst) p,(para.text.snd) p]
+               in para ( case language opts of
+                            Dutch   -> text "Regel "
+                            English -> text "Rule "
+                         <>  text (name r)
+                       )
+               <> para (text ("Totaal aantal overtredingen: "++show (length ps))
+                       )
+               <> table capt 
+                   [(AlignLeft,0)           ,(AlignLeft,0)          ]
+                   [(para.strong .text)"Source" ,(para.strong .text)"Target"]
+                   (map showRow ps)
+            
+     in (para (case (language opts, invariantViolations, processViolations) of
+                (Dutch  ,[] , [] ) -> text "De populatie in dit script overtreedt geen regels. "
+                (English,[] , [] ) -> text "The population in this script violates no rule. "
+                (Dutch  ,iVs, pVs) 
+                   -> text ("De populatie in dit script overtreedt "
+                             ++show(length iVs)++" invariant"++(if length iVs == 1 then "" else "en")++" en "
+                             ++show(length pVs)++" procesregel"++if length pVs == 1 then "" else "s"++"."
+                           )
+                (English,iVs, pVs) 
+                   -> text ("The population in this script violates "
+                             ++show(length iVs)++" invariant"++(if length iVs == 1 then "" else "s")++" and "
+                             ++show(length pVs)++" process rule"++if length pVs == 1 then "" else "s"++"."
+                           )
+              )
+        )
+     <> bulletList  [showViolatedRule vs | vs<- invariantViolations]
+     <> bulletList  [showViolatedRule vs | vs<- processViolations]
+        
+             
 ---- the table containing the rule violation counts
 --     [ Table []
 --       [AlignLeft,AlignRight,AlignRight]
@@ -670,63 +697,63 @@ chpDiagnosis lev fSpec opts
 --       ]
 --     | (length.concat) multviol>1, cl<-multviol, not (null cl) ]        ++          
 -- the tables containing the actual violations of user defined rules
-     concat
-     [ [ Para ( (case language opts of
-                   Dutch   -> Str "Regel"
-                   English -> Str "Rule"):
-                [Space,quoterule r,Space]++
-                if fspecFormat opts==FLatex then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
-                (case language opts of
-                    Dutch   -> [ Str "luidt: " ]
-                    English -> [ Str "says: "])
-              )]  ++meaning2Blocks (language opts) r++
-       [Plain ( case language opts of
-                  Dutch   ->
-                     Str "Deze regel wordt overtreden":
-                     (if length ps == 1 then [Str " door "]++oneviol r ps++[Str ". "] else
-                      [ Str (". De volgende tabel laat de "++if length ps>10 then "eerste tien " else ""++"overtredingen zien.")]
-                     )
-                  English ->
-                     Str "This rule is violated":
-                     (if length ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
-                      [ Str ("The following table shows the "++if length ps>10 then "first ten " else ""++"violations.")]
-                     )
-              )]++
-       [ violtable r ps | length ps>1]
-     | (r,ps)<-popviols, length popviols>1 ]++
--- the tables containing the actual violations of multiplicity rules
-     [ BulletList
-       [ textMult r++
-         [Plain ( case language opts of
-                   Dutch   ->
-                     if length ps == 1 then [Str "Deze regel wordt overtreden door "]++oneviol r ps++[Str ". "] else
-                      [ Str ("De volgende tabel laat de "++(if length ps>10 then "eerste tien overtredingen zien." else count opts (length ps) ((unCap.name.source)r)++" zien die deze regel overtreden."))]
-                     
-                   English ->
-                     if length ps == 1 then [Str "This rule is violated by "]++oneviol r ps++[Str ". "] else
-                      [ Str ("The following table shows the "++(if length ps>10 then "first ten violations." else count opts (length ps) ((unCap.name.source)r)++" that violate this rule."))]
-                     
-                )]++
-         [ violtable r ps | length ps>1]
-       | (r,ps)<-multviols, length multviols>1 ]
-     | not (null multviols) ]
-     where
-     textMult r
-       = concat [    [Plain [Str "De relatie ",Space]]
-                  ++ amPandoc mrkup
-                  ++ [Plain [Str ".",Space]]
-                  
-                 | mrkup <- (ameaMrk . rrmean) r, amLang mrkup==language opts]
-     quoterule r = if name r==""
-                   then Str ("on "++show (origin r))
-                   else Quoted SingleQuote [Str (name r)]
-     oneviol r [(a,b)]
-      = if source r==target r && a==b
-        then [Quoted  SingleQuote [Str (name (source r)),Space,Str a]]
-        else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
-     oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
-     popviols  = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r,      r_usr r == UserDefined ]
-     multviols = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r, not (r_usr r == UserDefined)]
+--     concat
+--     [ [ Para ( (case language opts of
+--                   Dutch   -> Str "Regel"
+--                   English -> Str "Rule"):
+--                [Space,quoterule r,Space]++
+--                if fspecFormat opts==FLatex then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
+--                (case language opts of
+--                    Dutch   -> [ Str "luidt: " ]
+--                    English -> [ Str "says: "])
+--              )]  ++meaning2Blocks (language opts) r++
+--       [Plain ( case language opts of
+--                  Dutch   ->
+--                     Str "Deze regel wordt overtreden":
+--                     (if length ps == 1 then [Str " door "]++oneviol r ps++[Str ". "] else
+--                      [ Str (". De volgende tabel laat de "++if length ps>10 then "eerste tien " else ""++"overtredingen zien.")]
+--                     )
+--                  English ->
+--                     Str "This rule is violated":
+--                     (if length ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
+--                      [ Str ("The following table shows the "++if length ps>10 then "first ten " else ""++"violations.")]
+--                     )
+--              )]++
+--       [ violtable r ps | length ps>1]
+--     | (r,ps)<-popviols, length popviols>1 ]++
+---- the tables containing the actual violations of multiplicity rules
+--     [ BulletList
+--       [ textMult r++
+--         [Plain ( case language opts of
+--                   Dutch   ->
+--                     if length ps == 1 then [Str "Deze regel wordt overtreden door "]++oneviol r ps++[Str ". "] else
+--                      [ Str ("De volgende tabel laat de "++(if length ps>10 then "eerste tien overtredingen zien." else count opts (length ps) ((unCap.name.source)r)++" zien die deze regel overtreden."))]
+--                     
+--                   English ->
+--                     if length ps == 1 then [Str "This rule is violated by "]++oneviol r ps++[Str ". "] else
+--                      [ Str ("The following table shows the "++(if length ps>10 then "first ten violations." else count opts (length ps) ((unCap.name.source)r)++" that violate this rule."))]
+--                     
+--                )]++
+--         [ violtable r ps | length ps>1]
+--       | (r,ps)<-multviols, length multviols>1 ]
+--     | not (null multviols) ]
+--     where
+--     textMult r
+--       = concat [    [Plain [Str "De relatie ",Space]]
+--                  ++ amPandoc mrkup
+--                  ++ [Plain [Str ".",Space]]
+--                  
+--                 | mrkup <- (ameaMrk . rrmean) r, amLang mrkup==language opts]
+--     quoterule r = if name r==""
+--                   then Str ("on "++show (origin r))
+--                   else Quoted SingleQuote [Str (name r)]
+--     oneviol r [(a,b)]
+--      = if source r==target r && a==b
+--        then [Quoted  SingleQuote [Str (name (source r)),Space,Str a]]
+--        else [Str "(",Str (name (source r)),Space,Str a,Str ", ",Str (name (target r)),Space,Str b,Str ")"]
+--     oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
+--     popviols  = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r,      r_usr r == UserDefined ]
+--     multviols = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r, not (r_usr r == UserDefined)]
      
 
 --     popviols = [(r,ps) | r<-invs++keyrs
