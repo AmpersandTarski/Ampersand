@@ -67,7 +67,6 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , vctxenv ::      ( Expression
                                    , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
-                 , hasPopulations :: Bool
                  , userDefPops    :: [UserDefPop]           -- all user defined populations of relations and concepts
                  , allViolations  :: [(Rule,[Paire])]       -- all rules with violations.
                  }

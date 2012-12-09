@@ -66,7 +66,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                   | xpl<-ctxps context]
                  , metas        = ctxmetas context
                  , vctxenv      = ctxenv context
-                 , hasPopulations = (not.null.ctxpopus) context
                  , userDefPops  = userdefpops
                  , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
                  } 
