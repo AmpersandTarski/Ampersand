@@ -63,10 +63,10 @@ where
                        | (not.null) [d | d<-ds, isAll d] = (All (nub [ d' | d<-ds, d'<-if isAll d then let All ops' _ = d in ops' else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop | Nop{}<-ops] = (All [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.(morlist::Expression->[Relation]).paTo.head) cl |cl<-long]++"together"])
+                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.(morlist::Expression->[Relation]).ERel .paTo.head) cl |cl<-long]++"together"])
                        | otherwise = (All ds ms, [])
                        where ds' = [ let p=head cl in
-                                     if length cl==1 then p else p{paTo=disjNF (EUni[paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
+                                       if length cl==1 then p else p{paDelta=disjNF (EUni[paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
                                    | cl<-dCls ]
                                    ++[d | d<-ds, not (isDo d)]
                              nds  = map norm ds

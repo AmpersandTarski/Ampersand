@@ -131,7 +131,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                               , edgeAttributes = [Dir Forward]
                               }
                     | eca<-fsbECAs fsb, not (isBlk (ecaAction eca))
-                    , Do tOp (ERel rel) _ _<-dos (ecaAction eca)
+                    , Do tOp rel _ _<-dos (ecaAction eca)
 {- for testing purposes:
                     , doAct<-dos (ecaAction eca)
                     , if not (isDo doAct) then fatal 136 ("not in \"Do\" shape: "++showECA fSpec "\n  " doAct) else True
@@ -151,7 +151,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
         nameENode = nmLkp fSpec "eca_"
         nameONode = nmLkp fSpec "out_"
         eventsIn  = nub [ecaTriggr eca | eca<-fsbECAs fsb, not (isBlk (ecaAction eca)) ]
-        eventsOut = nub [On tOp rel | eca<-fsbECAs fsb, let act=ecaAction eca, not (isBlk act), Do tOp (ERel rel) _ _<-dos act]
+        eventsOut = nub [On tOp rel | eca<-fsbECAs fsb, let act=ecaAction eca, not (isBlk act), Do tOp rel _ _<-dos act]
 
    switchboardAct :: Fspc -> Activity -> SwitchBdDiagram
    switchboardAct fSpec act

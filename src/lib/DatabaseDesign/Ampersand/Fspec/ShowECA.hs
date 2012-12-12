@@ -32,7 +32,7 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
        = ( case paSrt pa of
             Ins -> "INSERT INTO "
             Del -> "DELETE FROM ")++
-         (showADL . disambiguate fSpec) (paTo pa)++
+         (showADL . disambiguate fSpec) (ERel $ paTo pa)++
          " SELECTFROM"++indent++"  "++
          (showADL . disambiguate fSpec) (paDelta pa)++
          motivate indent "TO MAINTAIN" (paMotiv pa)
