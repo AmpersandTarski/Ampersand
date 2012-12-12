@@ -256,7 +256,7 @@ data PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Expression                  -- into toExpr    or from toExpr
+                    , paTo :: Relation                  -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }

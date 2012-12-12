@@ -581,7 +581,7 @@ while maintaining all invariants.
        uncasced = [er |                    er<-new, let (c,_)       = cascade (eRel (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
 --     cascade :: Relation -> PAclause -> (Bool, PAclause)
-     cascade rel (Do srt (ERel to) _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
+     cascade rel (Do srt to _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
       where blkErs = [er | er<-ers
                          , Blk _<-[ecaAction er]
                          , let t = ecaTriggr er
@@ -902,7 +902,7 @@ Chc [ if isRel e
           (_  , EKl1 x)    -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
           (_  , ERel m)   -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
-                             if editAble m then Do tOp exprX deltaX motiv else Blk [(ERel m ,nub [r |(_,rs)<-motiv, r<-rs])]
+                             if editAble m then Do tOp m deltaX motiv else Blk [(ERel m ,nub [r |(_,rs)<-motiv, r<-rs])]
           (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\ndoCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
                                          "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++
                                          concat
@@ -925,7 +925,7 @@ Chc [ if isRel e
         ecas      = assembleECAs qs
         conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
-        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, ERel rel<-[e,flp e]]
+        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, ERel rel<-[ERel e, flp $ ERel e]]
         visible _ = True
         
 -- Auxiliaries
