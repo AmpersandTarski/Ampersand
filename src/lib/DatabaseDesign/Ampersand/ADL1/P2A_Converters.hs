@@ -432,7 +432,7 @@ Sometimes, there is only one candidate, even though the type checker cannot prov
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 -}
      bindings :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]
-     bindings    = Map.fromListWith union
+     bindings    = ({- Map.map unDouble . -} Map.fromListWith union)
                    ( [ tuple
                      | decl<-p_declarations p_context
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
@@ -445,6 +445,13 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                      ] ++
                      [ (t,[]) | t<-typeTerms]
                    )
+      where
+       unDouble (tr@(d,_,_):triples) = tr : unDouble [tr' | tr'@(d',_,_)<-triples, d `neq` d']
+       unDouble [] = []
+       d `neq` d'
+        = let P_Sign sgn  = dec_sign d
+              P_Sign sgn' = dec_sign d'
+          in dec_nm d/=dec_nm d || head sgn/=head sgn' || last sgn/=last sgn'
 
 -- The TypGlb types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
 
@@ -1628,13 +1635,23 @@ pCtx2aCtx p_context
          f (PCpl _ a)          = ECpl <$> f a
          f (PBrk _ a)          = EBrk <$> f a
          f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
-         f   (PTyp _ e@(Prel o a) sgnCast) = do { (decl,_) <- getDeclarationAndSign e
-                                                ; return (ERel (Rel{ relnm=a
-                                                                   , relpos=o
-                                                                   , relsgn=pSign2aSign sgnCast
-                                                                   , reldcl=decl
-                                                                   }))
-                                                }
+         f t@(PTyp _ r@(Prel o a) sgnCast)
+                               = do { (decl,_) <- getDecl
+                                    ; return (ETyp (ERel (Rel{ relnm=a
+                                                             , relpos=o
+                                                             , relsgn=sign decl
+                                                             , reldcl=decl
+                                                             }))
+                                                   (pSign2aSign sgnCast))
+                                    }
+                                 where -- getDecl is needed to obtain the full term (which is t) in the error message,
+                                       -- rather than only the relation (which is r).
+                                  getDecl = case getDeclarationAndSign r of
+                                             Errors errs -> Errors [CxeRel {cxeExpr = t
+                                                                           ,cxeDecs = cxeDecs err  
+                                                                           ,cxeSNDs = [ decl | decl<-p_declarations p_context, name decl==a ]
+                                                                           } | err<-errs ]
+                                             gDaS -> gDaS
          f t@(PTyp _ a (P_Sign _))
                                = do { a' <- f a
                                     ; case (srcTypes (TypExpr t False), srcTypes (TypExpr (p_flp t) True )) of
@@ -1672,7 +1689,7 @@ pCtx2aCtx p_context
                          cs  -> fatal 1586 ("Multiple types found for term "++show t++": "++show cs)
 
     getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
-    getDeclarationAndSign term@(Prel _ _)
+    getDeclarationAndSign term@(Prel _ a)
      = case Map.lookup (TypExpr term False) bindings of
         Just [(d, [s], [t])] -> do { (decl,_) <- pDecl2aDecl d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
         Just ds -> 
@@ -1681,8 +1698,9 @@ pCtx2aCtx p_context
                                    ; (decl,_) <- pDecl2aDecl d
                                    ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
                                    }
-             _   -> Errors [CxeRel {cxeExpr   = term        -- the erroneous term
-                                   ,cxeDecs   = ds          -- the declarations to which this term has been matched
+             _   -> Errors [CxeRel {cxeExpr = term        -- the erroneous term
+                                   ,cxeDecs = ds          -- the declarations to which this term has been matched
+                                   ,cxeSNDs = [ decl | decl<-p_declarations p_context, name decl==a ]
                                    }]
                                  
         Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])

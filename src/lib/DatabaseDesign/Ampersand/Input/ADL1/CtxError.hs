@@ -49,7 +49,8 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
                               ,cxeDcls :: [Term]
                               }       
               | CxeRel        {cxeExpr :: Term
-                              ,cxeDecs :: [(P_Declaration,[P_Concept],[P_Concept])]
+                              ,cxeDecs :: [(P_Declaration,[P_Concept],[P_Concept])]  -- possibilities for bindings.
+                              ,cxeSNDs :: [P_Declaration]                            -- Declarations with the same name
                               }       
               | CxeV          {cxeExpr :: Term
                               ,cxeSrcs :: [P_Concept]
@@ -146,7 +147,12 @@ showErr err = case err of
   CxeRel{}
      -> show (origin expr)++":\n"++
          case cxeDecs err of
-          []                -> "    Relation  "++showADL expr++"  is not declared."
+          []                -> "    Relation  "++showADL expr++"  is not declared."++
+                               case cxeSNDs err of
+                                []  -> ""
+                                [d] -> "\n    One relation with the same name was found on "++show (origin d)++": "++name d++show (dec_sign d)
+                                ds  -> "\n    The following relations have the same name:"++
+                                       concat [ "\n      "++name d++show (dec_sign d)++":\t "++show (origin d) | d<-ds ]
           [(d, [], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but it is ambiguous."
           [(d, [],[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
