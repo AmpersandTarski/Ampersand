@@ -1304,6 +1304,7 @@ pCtx2aCtx p_context
                                                   }
     
     -- TODO -> Does pIFC2aIFC require more checks?
+    -- The parameters must be checked! see try22.adl
     -- The intention of the parameters is to specify the relations that can be edited in the interface. 
     -- TODO -> What is the intention of ifcViols?
     -- TODO -> What is the intention of ifcArgs?
