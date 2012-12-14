@@ -9,6 +9,7 @@ module DatabaseDesign.Ampersand.Components
    , doGenADL
    , prove
    , doGenHaskell
+   , doGenXML
    , doGenUML
    , doGenDocument
    , doGenExcel
@@ -26,6 +27,7 @@ import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Basics 
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.GenerateUML
+import DatabaseDesign.Ampersand.Fspec.ShowXMLtiny (showXML)
 import DatabaseDesign.Ampersand.Output
 import Control.Monad
 import System.FilePath
@@ -73,6 +75,14 @@ doGenHaskell fSpec flags =
     }
  where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".hs"
    
+doGenXML :: Fspc -> Options -> IO()
+doGenXML fSpec flags =
+ do { verboseLn flags "Generating XML..."
+    ; writeFile outputFile $ showXML fSpec (genTime flags)   
+    ; verboseLn flags $ "XML written into " ++ outputFile ++ "."
+    }
+   where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".xml"
+               
 doGenUML :: Fspc -> Options -> IO()
 doGenUML fSpec flags =
  do { verboseLn flags "Generating UML..."
