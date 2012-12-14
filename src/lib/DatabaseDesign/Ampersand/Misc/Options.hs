@@ -54,6 +54,7 @@ data Options = Options { showVersion :: Bool
                                                    --class Populated a where populate::a->b->a
                        , fileformat :: FileFormat --file format e.g. of importfile or export2adl
                        , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
+                       , genXML :: Bool
                        , genFspec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FspecFormat
@@ -117,6 +118,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , customCssFile = Nothing
                       , importfile    = []
                       , fileformat  = fatal 101 "--fileformat is required for --import."
+                      , genXML        = False
                       , genFspec      = False 
                       , diag          = False 
                       , fspecFormat   = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFspecFormats++"."
@@ -289,6 +291,7 @@ options = map pp
           , (Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics.", Public)
           , (Option []        ["ECA"]         (NoArg genEcaDocOpt)        "generate documentation with ECA rules.", Public)
           , (Option []        ["proofs"]      (NoArg proofsOpt)           "generate derivations.", Public)
+          , (Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging).", Public)
           , (Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell (for debugging).", Public)
           , (Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics.", Public)
           , (Option []        ["blackWhite"]  (NoArg blackWhiteOpt)       "do not use colours in generated graphics", Public)
@@ -376,6 +379,8 @@ dbNameOpt nm opts = opts{dbName = if nm == ""
                         }                          
 namespaceOpt :: String -> Options -> Options
 namespaceOpt x opts = opts{namespace = x}
+xmlOpt :: Options -> Options
+xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
 fspecRenderOpt w opts = opts{ genFspec=True
                             , fspecFormat= case map toUpper w of
