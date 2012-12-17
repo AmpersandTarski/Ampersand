@@ -383,7 +383,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                                            , obj_strs  = args
                                                            }
                                       , ifc_Pos    = p
-                                      , ifc_Expl   = ""
+                                      , ifc_Prp    = ""
                                     }
                              pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign        <* pSpec ')' 
                              pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'

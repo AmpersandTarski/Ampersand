@@ -755,7 +755,7 @@ where
            , "    , ifcRoles  = " ++ show(ifcRoles ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS flags (indent++"         ") (ifcObj ifc)
            , "    , ifcPos    = " ++ showHS flags "" (ifcPos ifc)
-           , "    , ifcExpl   = " ++ show(ifcExpl ifc)
+           , "    , ifcPrp    = " ++ show(ifcPrp ifc)
            ]++indent++"    }"
 
 -- \***********************************************************************

@@ -384,7 +384,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                              , obj_strs = args
                                              }
                         , ifc_Pos    = p
-                        , ifc_Expl   = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
+                        , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                         }
              pParams = pSpec '(' *> pList1Sep (pSpec ',') pRelSign          <* pSpec ')' 
              pArgs   = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid)   <* pSpec '}'

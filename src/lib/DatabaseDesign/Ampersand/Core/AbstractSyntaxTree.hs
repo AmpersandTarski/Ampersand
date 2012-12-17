@@ -42,7 +42,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , aMarkup2String
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
- -- TODO: Remove the next constructors from here: (start with removing [Activity]  in Process! This should be moved to the Fspec.
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
@@ -309,11 +308,11 @@ instance Association A_Gen where
 
 data Interface = Ifc { ifcParams :: [Relation]
                      , ifcViols :: [Rule]
-                     , ifcArgs :: [[String]]
+                     , ifcArgs  :: [[String]]
                      , ifcRoles :: [String]
-                     , ifcObj :: ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcPos :: Origin
-                     , ifcExpl :: String
+                     , ifcObj   :: ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+                     , ifcPos   :: Origin
+                     , ifcPrp   :: String
                      } deriving Show
 instance Eq Interface where
   s==s' = name s==name s'
