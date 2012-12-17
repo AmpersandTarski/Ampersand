@@ -1322,7 +1322,7 @@ pCtx2aCtx p_context
                , ifcRoles  = parentIfcRoles
                , ifcObj    = obj
                , ifcPos    = ifc_Pos pifc
-               , ifcExpl   = ifc_Expl pifc
+               , ifcPrp    = ifc_Prp pifc
                }
         parParams = parallelList . map pExpr2aExpr . ifc_Params
         parentIfcRoles = if null $ ifc_Roles pifc then roles contxt else nub (ifc_Roles pifc) -- if no roles are specified, the interface supports all roles

@@ -343,7 +343,7 @@ where
               , ifc_Roles :: [String]               -- ^ a list of roles that may use this interface
               , ifc_Obj :: P_ObjectDef            -- ^ the context expression (mostly: I[c])
               , ifc_Pos :: Origin
-              , ifc_Expl :: String
+              , ifc_Prp :: String
               } deriving Show
 
    instance Identified P_Interface where
