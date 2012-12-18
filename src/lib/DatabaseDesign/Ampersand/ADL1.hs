@@ -15,11 +15,10 @@ module DatabaseDesign.Ampersand.ADL1
            , objAts, objatsLegacy
            , P_SubInterface(..), SubInterface(..)
            , Interface(..)
-           , Term(..),Expression(..), subst, subsi, foldlMapExpression, foldrMapExpression
-           , showExpr, isPos, isNeg, insParentheses, isECps, isERad, isEPrd, isEIsc, isEUni
+           , Term(..),Expression(..) 
            , A_Gen(..),P_Gen(..)
-           , Relation(..), isTypeable, makeRelation
-           , Declaration(..), isSgn
+           , Relation(..), makeRelation
+           , Declaration(..)
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
            , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR
@@ -28,7 +27,7 @@ module DatabaseDesign.Ampersand.ADL1
            , isaRule
            , FilePos(..), Origin(..), Pos(..), Traced(..)
            , makeDeclaration
-           , antecedent,hasantecedent, notCpl, isCpl
+           , antecedent,hasantecedent,notCpl,isCpl
            , Signaling(..)
            , Association(..), Relational(..)
            , Label(..)
@@ -47,6 +46,7 @@ where
                                          , (<==>),meet,order,join
                                          ,Signaling(..)
                                          ,A_Context(..),Process(..)
+                                         ,Association(..)
                                          ,Expression(..)
                                          ,A_Gen(..)
                                          ,KeyDef(..)
@@ -55,24 +55,23 @@ where
                                          ,objAts
                                          ,objatsLegacy
                                          ,SubInterface(..)
+                                         ,Declaration(..)
                                          ,Interface(..)
                                          ,Pattern(..)
                                          ,PairView(..)
                                          ,PairViewSegment(..) 
+                                         ,Relation(..)
                                          ,Rule(..)
                                          ,RuleType(..)
                                          ,RoleRelation(..)
                                          ,UserDefPop(..)
                                          ,Purpose(..), ExplObj(..)
-                                         ,showExpr,insParentheses
                                          ,makeDeclaration
                                          )
-   import DatabaseDesign.Ampersand.ADL1.Expression                 (isTypeable,subst,subsi,foldlMapExpression,foldrMapExpression
-                                         ,isPos,isNeg,isECps,isERad,isEPrd,isEIsc,isEUni,notCpl, isCpl)
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..)
-                                         ,Association(..),Relational(..)
-                                         ,Declaration(..)
-                                         ,isSgn
+   import DatabaseDesign.Ampersand.ADL1.Expression                 (
+                                          notCpl, isCpl)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (
+                                          Relational(..)
                                          ,makeRelation
                                          )
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
