@@ -342,30 +342,25 @@ plugpath p@(ScalarSQL{}) srcfld trgfld
   | otherwise = fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
 plugpath p@(TblSQL{}) srcfld trgfld  
   | srcfld==trgfld && iskey p trgfld = ERel (I (target(fldexpr trgfld))) 
-  | srcfld==trgfld && not(iskey p trgfld) = ECps [flp (fldexpr trgfld), fldexpr trgfld] --codomain of r of morAtt
-  | otherwise = path
-  where
-  path
-    | (not . null) (paths srcfld trgfld) =
-      if length (head (paths srcfld trgfld)) == 1 then
-        head (head (paths srcfld trgfld)) else
-        ECps (head (paths srcfld trgfld))
-    | (not . null) (paths trgfld srcfld) =
-      if length (head (paths trgfld srcfld)) == 1 then
-        flp (head (head (paths trgfld srcfld))) else
-        flp (ECps (head (paths trgfld srcfld)))
-    | otherwise = pathoverI
-  --paths from s to t by connecting r from mLkpTbl
-  --the (r,srcfld,trgfld) from mLkpTbl form paths longer paths if connected: (trgfld m1==srcfld m2) => (m1;m2,srcfld m1,trgfld m2)
-  paths s t = [e |(e,es,et)<-eLkpTbl p,s==es,t==et]
+  | srcfld==trgfld && not(iskey p trgfld) = ECps [flp (fldexpr srcfld), fldexpr trgfld] --codomain of r of morAtt
+  | (not . null) (paths srcfld trgfld) = if length (head (paths srcfld trgfld)) == 1
+                                         then head (head (paths srcfld trgfld))
+                                         else ECps (head (paths srcfld trgfld))
+      
+  | (not . null) (paths trgfld srcfld) = if length (head (paths trgfld srcfld)) == 1
+                                         then flp (head (head (paths trgfld srcfld)))
+                                         else flp (ECps (head (paths trgfld srcfld)))
   --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
   --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
   --      because these kernel fields connect to themselves by r=I[X] (i.e. end of path).
   --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
-  pathoverI
-   | (not.null) (pathsoverIs srcfld trgfld) =      ECps (head (pathsoverIs srcfld trgfld))
-   | (not.null) (pathsoverIs trgfld srcfld) = flp (ECps (head (pathsoverIs trgfld srcfld)))
-   | otherwise = fatal 406 $ "no kernelpath:"++show(fldname srcfld,fldname trgfld,name p,[(show es,fldname s,fldname t) |(es,s,t)<-eLkpTbl p])
+  | (not.null) (pathsoverIs srcfld trgfld) =      ECps (head (pathsoverIs srcfld trgfld))
+  | (not.null) (pathsoverIs trgfld srcfld) = flp (ECps (head (pathsoverIs trgfld srcfld)))
+  | otherwise = fatal 406 $ "no kernelpath:"++show(fldname srcfld,fldname trgfld,name p,[(show es,fldname s,fldname t) |(es,s,t)<-eLkpTbl p])
+  --paths from s to t by connecting r from mLkpTbl
+  --the (r,srcfld,trgfld) from mLkpTbl form paths longer paths if connected: (trgfld m1==srcfld m2) => (m1;m2,srcfld m1,trgfld m2)
+  where
+  paths s t = [e |(e,es,et)<-eLkpTbl p,s==es,t==et]
   --paths from I to field t
   pathsfromIs t = [(e,es,et) |(e,es,et)<-eLkpTbl p,et==t,not (null e),isIdent(head e)] 
   --paths from s to t over I[X]

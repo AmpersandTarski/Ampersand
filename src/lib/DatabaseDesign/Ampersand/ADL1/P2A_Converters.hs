@@ -346,7 +346,7 @@ typing p_context
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      (firstSetOfEdges,secondSetOfEdges)
-      = uType (p_declarations p_context, compat) p_context Anything Anything p_context
+      = uType (p_context, compat) p_context Anything Anything p_context
      compat :: Type -> Type -> Bool
      compat a b = null set1 -- approve compatibility for isolated types, such as "Nothng", "Anything" and singleton elements
                       || null set2
@@ -530,7 +530,10 @@ class Expr a where
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
   --   the tuples of a relation st :: Type * Type. Each tuple (TypExpr t, TypExpr t') means that the domain of t is a subset of the domain of t'.
   --   These tuples are produced in two Typemaps. The second Typemap is kept separate, because it depends on the existence of the first Typemap.
-  uType :: ([P_Declaration], Type -> Type -> Bool)  -- The declaration table from the script, a compatibility test.
+  --   The first element of the first argument is a P_Context that represents the parse tree of one context.
+  --   This is provided to obtain a declaration table and a list of interfaces from the script.
+  --   The second element of the first argument is a compatibility function, that determines whether two types are compatible.
+  uType :: (P_Context, Type -> Type -> Bool)
         -> a               -- x:    the original term from the script, meant for representation in the graph.
         -> Type            -- uLft: the type of the universe for the domain of x 
         -> Type            -- uRt:  the type of the universe for the codomain of x
@@ -567,18 +570,18 @@ instance Expr P_Context where
          terms (ctx_php   pContext) ++
          terms (ctx_pops  pContext)
         )
- uType dcls _ uLft uRt pContext
-  = (let x=ctx_pats  pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_PPrcs pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_rs    pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_ds    pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_ks    pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_gs    pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_ifcs  pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_ps    pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_sql   pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_php   pContext in uType dcls x uLft uRt x) .+.
-    (let x=ctx_pops  pContext in uType dcls x uLft uRt x)
+ uType ctxt _ uLft uRt pContext
+  = (let x=ctx_pats  pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_PPrcs pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_rs    pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_ds    pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_ks    pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_gs    pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_ifcs  pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_ps    pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_sql   pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_php   pContext in uType ctxt x uLft uRt x) .+.
+    (let x=ctx_pops  pContext in uType ctxt x uLft uRt x)
          
 instance Expr P_Pattern where
  p_gens pPattern
@@ -597,13 +600,13 @@ instance Expr P_Pattern where
          terms (pt_xps pPattern) ++
          terms (pt_pop pPattern)
         )
- uType dcls _ uLft uRt pPattern
-  = (let x=pt_rls pPattern in uType dcls x uLft uRt x) .+.
-    (let x=pt_gns pPattern in uType dcls x uLft uRt x) .+.
-    (let x=pt_dcs pPattern in uType dcls x uLft uRt x) .+.
-    (let x=pt_kds pPattern in uType dcls x uLft uRt x) .+.
-    (let x=pt_xps pPattern in uType dcls x uLft uRt x) .+.
-    (let x=pt_pop pPattern in uType dcls x uLft uRt x)
+ uType ctxt _ uLft uRt pPattern
+  = (let x=pt_rls pPattern in uType ctxt x uLft uRt x) .+.
+    (let x=pt_gns pPattern in uType ctxt x uLft uRt x) .+.
+    (let x=pt_dcs pPattern in uType ctxt x uLft uRt x) .+.
+    (let x=pt_kds pPattern in uType ctxt x uLft uRt x) .+.
+    (let x=pt_xps pPattern in uType ctxt x uLft uRt x) .+.
+    (let x=pt_pop pPattern in uType ctxt x uLft uRt x)
 
 instance Expr P_Process where
  p_gens pProcess
@@ -622,41 +625,41 @@ instance Expr P_Process where
          terms (procXps   pProcess) ++
          terms (procPop   pProcess)
         )
- uType dcls _ uLft uRt pProcess
-  = (let x=procRules pProcess in uType dcls x uLft uRt x) .+.
-    (let x=procGens  pProcess in uType dcls x uLft uRt x) .+.
-    (let x=procDcls  pProcess in uType dcls x uLft uRt x) .+.
-    (let x=procKds   pProcess in uType dcls x uLft uRt x) .+.
-    (let x=procXps   pProcess in uType dcls x uLft uRt x) .+.
-    (let x=procPop   pProcess in uType dcls x uLft uRt x)
+ uType ctxt _ uLft uRt pProcess
+  = (let x=procRules pProcess in uType ctxt x uLft uRt x) .+.
+    (let x=procGens  pProcess in uType ctxt x uLft uRt x) .+.
+    (let x=procDcls  pProcess in uType ctxt x uLft uRt x) .+.
+    (let x=procKds   pProcess in uType ctxt x uLft uRt x) .+.
+    (let x=procXps   pProcess in uType ctxt x uLft uRt x) .+.
+    (let x=procPop   pProcess in uType ctxt x uLft uRt x)
 
 instance Expr P_Rule where
  terms r = terms (rr_exp r)++terms (rr_viol r)
  p_rules r = [r]
- uType dcls _ uLft uRt r
+ uType ctxt _ uLft uRt r
   = let x=rr_exp r; v=rr_viol r in
-    uType dcls x uLft uRt x .+. uType dcls v (dom x) (cod x) v
+    uType ctxt x uLft uRt x .+. uType ctxt v (dom x) (cod x) v
 
 instance Expr P_PairView where
  terms (P_PairView segments) = terms segments
- uType dcls _ uLft uRt (P_PairView segments) = uType dcls segments uLft uRt segments
+ uType ctxt _ uLft uRt (P_PairView segments) = uType ctxt segments uLft uRt segments
 
 instance Expr P_PairViewSegment where
  terms (P_PairViewExp _ term) = [term]
  terms _                      = []
- uType dcls _ uLft _   (P_PairViewExp Src term) = uType dcls term t Anything term .+. dm
+ uType ctxt _ uLft _   (P_PairViewExp Src term) = uType ctxt term t Anything term .+. dm
   where (dm,t) = mSpecific (dom term) uLft term
- uType dcls _ _    uRt (P_PairViewExp Tgt term) = uType dcls term t Anything term .+. dm
+ uType ctxt _ _    uRt (P_PairViewExp Tgt term) = uType ctxt term t Anything term .+. dm
   where (dm,t) = mSpecific (dom term) uRt term
  uType _ _ _ _ _ = nothing
   
 instance Expr P_KeyDef where
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
  p_keys k = [k]
- uType dcls _ uLft uRt k
+ uType ctxt _ uLft uRt k
   = let x=Pid (kd_cpt k) in
-    uType dcls x uLft uRt x .+.
-    foldr (.+.) nothing [ uType dcls obj t Anything obj .+. dm
+    uType ctxt x uLft uRt x .+.
+    foldr (.+.) nothing [ uType ctxt obj t Anything obj .+. dm
                         | P_KeyExp obj <- kd_ats k
                         , let (dm,t) = mSpecific (dom x) (dom (obj_ctx obj)) (obj_ctx obj)
                         ]
@@ -664,38 +667,38 @@ instance Expr P_KeyDef where
 
 instance Expr P_Interface where
  terms ifc = terms (ifc_Obj ifc)
- uType dcls _ uLft uRt ifc
+ uType ctxt _ uLft uRt ifc
   = let x=ifc_Obj ifc in
-    uType dcls x uLft uRt x .+.
-    foldr (.+.) nothing [ uType dcls param uLft uRt param | param<-ifc_Params ifc ]
+    uType ctxt x uLft uRt x .+.
+    foldr (.+.) nothing [ uType ctxt param uLft uRt param | param<-ifc_Params ifc ]
 
 instance Expr P_ObjectDef where
  terms o = [obj_ctx o | null (terms (obj_msub o))]++terms [PCps (origin e) (obj_ctx o) e | e<-terms (obj_msub o)]
- uType dcls _ uLft uRt o
+ uType ctxt _ uLft uRt o
   = let x=obj_ctx o in
-    uType dcls x uLft uRt x .+.
-    foldr (.+.) nothing [ uType dcls obj t Anything obj .+. dm
-                        | Just subIfc <- [obj_msub o], obj <- case subIfc of
-                                                                 P_Box{}          -> si_box subIfc
-                                                                 -- HJO, 20121208: Ik denk dat hieronder een lege lijst moet worden teruggegeven. Is dat ook zo?
-                                                                 P_InterfaceRef{} -> fatal 673 "@Stef: Kijk jij hier even naar? dit was niet gespecificeerd." 
+    uType ctxt x uLft uRt x .+.
+    foldr (.+.) nothing [ uType ctxt obj t Anything obj .+. dm
+                        | Just subIfc <- [obj_msub o]
+                        , obj <- case subIfc of
+                                   P_Box{}          -> si_box subIfc
+                                   P_InterfaceRef{} -> [ifc_Obj ifc | ifc<-ctx_ifcs (fst ctxt), name ifc==si_str subIfc]
                         , let (dm,t) = mSpecific (cod x) (dom (obj_ctx obj)) (obj_ctx obj)
                         ]
  
 instance Expr P_SubInterface where
  terms x@(P_Box{}) = terms (si_box x)
  terms _           = []
- uType dcls _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType dcls x uLft uRt x
+ uType ctxt _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType ctxt x uLft uRt x
  uType _    _ _    _   _              = nothing
 
 instance Expr PPurpose where
  terms _ = []
- uType dcls _ uLft uRt purp = let x=pexObj purp in uType dcls x uLft uRt x
+ uType ctxt _ uLft uRt purp = let x=pexObj purp in uType ctxt x uLft uRt x
 
 instance Expr PRef2Obj where
  terms _ = []
- uType dcls _ uLft uRt (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType dcls x uLft uRt x
- uType dcls _ uLft uRt (PRef2Declaration t)  = uType dcls t uLft uRt t
+ uType ctxt _ uLft uRt (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType ctxt x uLft uRt x
+ uType ctxt _ uLft uRt (PRef2Declaration t)  = uType ctxt t uLft uRt t
  uType _    _ _    _   _                     = nothing
 
 instance Expr P_Sign where
@@ -704,8 +707,8 @@ instance Expr P_Sign where
 
 instance Expr P_Gen where
  terms g = [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
- uType dcls _ uLft uRt g
-  = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType dcls x uLft uRt x
+ uType ctxt _ uLft uRt g
+  = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType ctxt x uLft uRt x
 
 instance Expr P_Declaration where
  terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
@@ -714,14 +717,14 @@ instance Expr P_Declaration where
     where [decl] = terms d
           P_Sign sgn = dec_sign d
           src = head sgn; trg = last sgn
-   -- let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType dcls x uLft uRt x
+   -- let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType ctxt x uLft uRt x
 
 instance Expr P_Population where
  terms pop@(P_RelPopu{p_type=P_Sign []}) = [Prel (p_orig pop) (name pop)]
  terms pop@(P_RelPopu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (name pop)) (p_type pop)]
  terms pop@(P_CptPopu{})                 = [Pid (PCpt (name pop))]
- uType dcls _ uLft uRt pop
-  = foldr (.+.) nothing [ uType dcls x uLft uRt x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
+ uType ctxt _ uLft uRt pop
+  = foldr (.+.) nothing [ uType ctxt x uLft uRt x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
     -- the reason for inserting dom x.=.dom x .+. cod x.=.cod x on this location,
     -- is possibility that a population without type signature might be overlooked by the type checker,
     -- resulting in a fatal 1601, i.e. a term that is not in the TypeMap bindings.
@@ -730,11 +733,11 @@ instance Expr a => Expr (Maybe a) where
  terms Nothing  = []
  terms (Just x) = terms x
  uType _    _ _    _   Nothing  = nothing
- uType dcls _ uLft uRt (Just x) = uType dcls x uLft uRt x
+ uType ctxt _ uLft uRt (Just x) = uType ctxt x uLft uRt x
 
 instance Expr a => Expr [a] where
  terms = concat.map terms
- uType dcls _ uLft uRt xs = foldr (.+.) nothing [ uType dcls x uLft uRt x | x <- xs]
+ uType ctxt _ uLft uRt xs = foldr (.+.) nothing [ uType ctxt x uLft uRt x | x <- xs]
 
 instance Expr Term where
  terms e = [e]
@@ -756,7 +759,7 @@ instance Expr Term where
  subterms e@(PTyp _ a _) = [e]++subterms a
  subterms e              = [e]
  
- uType dcls x uLft uRt expr 
+ uType ctxt x uLft uRt expr 
   = case expr of
      Pnid{}       -> fatal 136 "Pnid has no representation"
      PI{}         -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt             -- I
@@ -768,33 +771,33 @@ instance Expr Term where
      PVee{}       -> dom x.<.uLft .+. cod x.<.uRt
      (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
      (Pequ _ a b) -> dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                     .+. uType dcls a (dom x) (cod x) a .+. uType dcls b (dom x) (cod x) b 
+                     .+. uType ctxt a (dom x) (cod x) a .+. uType ctxt b (dom x) (cod x) b 
      (PIsc _ a b) -> let (dm,interDom)  = mSpecific (dom a) (dom b)  x
                          (cm,interCod)  = mSpecific (cod a) (cod b)  x
                          (d2,interDom2) = mSpecific interDom uLft  x
                          (c2,interCod2) = mSpecific interCod uRt   x
                      in dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
                         .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
-                        .+. uType dcls a interDom2 interCod2 a .+. uType dcls b interDom2 interCod2 b
+                        .+. uType ctxt a interDom2 interCod2 a .+. uType ctxt b interDom2 interCod2 b
      (PUni _ a b) -> let (dm,interDom) = mGeneric (dom a) (dom b)  x
                          (cm,interCod) = mGeneric (cod a) (cod b)  x
                          (d2,interDom2) = mSpecific interDom uLft  x
                          (c2,interCod2) = mSpecific interCod uRt   x
                      in dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
                         .+. dm .+. cm .+. d2 .+. c2
-                        .+. uType dcls a interDom2 interCod2 a .+. uType dcls b interDom2 interCod2 b
+                        .+. uType ctxt a interDom2 interCod2 a .+. uType ctxt b interDom2 interCod2 b
      (PDif _ a b) -> let (dm,interDom) = mSpecific uLft (dom a) x
                          (cm,interCod) = mSpecific uRt  (cod a) x
                      in dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                         .+. dm .+. cm
-                        .+. uType dcls a uLft uRt a
-                        .+. uType dcls b interDom interCod b
+                        .+. uType ctxt a uLft uRt a
+                        .+. uType ctxt b interDom interCod b
      (PCps _ a b) -> let (bm,between) = mSpecific (cod a) (dom b) x
                          pidTest (PI{}) r = r
                          pidTest (Pid{}) r = r
                          pidTest _ _ = nothing
                      in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                        bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
+                        bm .+. uType ctxt a uLft between a .+. uType ctxt b between uRt b
                         .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc, mGeneric and mSpecific are not derived, neither can PRad
      (PRad _ a b) -> let (bm,between) = mGeneric (cod a) (dom b) x
@@ -803,30 +806,29 @@ instance Expr Term where
                          pnidTest (Pnid{}) r = r
                          pnidTest _ _ = nothing
                      in dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
-                        bm .+. uType dcls a uLft between a .+. uType dcls b between uRt b
+                        bm .+. uType ctxt a uLft between a .+. uType ctxt b between uRt b
                         .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
      (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
-                     .+. uType dcls a uLft Anything a .+. uType dcls b Anything uRt b
+                     .+. uType ctxt a uLft Anything a .+. uType ctxt b Anything uRt b
      (PCpl o a)   -> let c = normalType (TypLub (dom a) (dom t) x)
                          c'= normalType (TypLub (cod a) (cod t) x)
                          t = complement a
                      in dom x.<.c .+. cod x.<.c' .+.
                         dom a.<.c .+. cod a.<.c' .+.
-                        uType dcls x uLft uRt (PDif o (PVee o) a)
-     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
-     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType dcls e uLft uRt e
-     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType dcls e uRt uLft e
+                        uType ctxt x uLft uRt (PDif o (PVee o) a)
+     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType ctxt e uLft uRt e
+     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType ctxt e uLft uRt e
+     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType ctxt e uRt uLft e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+.
-                    uType dcls x uLft uRt e                                                     -- (e) brackets
+                    uType ctxt x uLft uRt e                                                     -- (e) brackets
      (PTyp _ e sgn) ->
        case sgn of
          (P_Sign [])        -> fatal 196 "P_Sign is empty"
          (P_Sign (_:_:_:_)) -> fatal 197 "P_Sign too large"  
-         (P_Sign cs)        -> let declarationTable = fst dcls
-                                   iSrc = thing (head cs)
+         (P_Sign cs)        -> let iSrc = thing (head cs)
                                    iTrg = thing (last cs)
                                    x'=complement x
-                                   decls nm = [term | decl<-declarationTable, name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
+                                   decls nm = [term | decl<-p_declarations (fst ctxt), name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
                                in case e of
                                  (Prel _ nm) -> case decls nm of
                                                   d:_ -> dom x.=.dom e .+. cod x.=.cod e .+.
@@ -834,11 +836,11 @@ instance Expr Term where
                                                   _   -> dom x.<.iSrc  .+. cod x.<.iTrg  .+. dom x.<.dom e .+. cod x.<.cod e
                                  _           -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
                                                 dom x.<.dom e .+. cod x.<.cod e .+.
-                                                uType dcls e iSrc iTrg e
-     (Prel _ nm) -> let (declarationTable, compatible) = dcls 
+                                                uType ctxt e iSrc iTrg e
+     (Prel _ nm) -> let (p_context, compatible) = ctxt
                         y=complement x
                         
-                        decls' = [term | decl<-declarationTable, name decl==nm, term<-terms decl ]
+                        decls' = [term | decl<-p_declarations p_context, name decl==nm, term<-terms decl ]
                         decls  = if length decls' == 1 then decls' else
                                  [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
                                        , uLft == thing (head cs)
@@ -874,21 +876,21 @@ instance Expr Term where
                                      _   -> Map.empty
                                  )
      (Pflp o nm) -> let e = Prel o nm
-                    in dom x.=.cod e .+. cod x.=.dom e .+. uType dcls e uRt uLft e
+                    in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
 {-     (PRad o a b) -> let e = complement (PCps o (complement a) (complement b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType dcls x uLft uRt e                 --  a!b     relative addition, dagger
+                        uType ctxt x uLft uRt e                 --  a!b     relative addition, dagger
 -}
      (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType dcls x uLft uRt e                 --  a|-b    implication (aka: subset)
+                        uType ctxt x uLft uRt e                 --  a|-b    implication (aka: subset)
      (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType dcls x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
+                        uType ctxt x uLft uRt e                 --  a/b = a!-b~ = -(-a;b~)
      (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType dcls x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
+                        uType ctxt x uLft uRt e                 --  a\b = -a~!b = -(a~;-b)
 
 
 --  The following is for drawing graphs.
@@ -1303,9 +1305,6 @@ pCtx2aCtx p_context
                                                   ; return (KeyExp objDef)
                                                   }
     
-    -- TODO -> Does pIFC2aIFC require more checks?
-    -- The parameters must be checked! see try22.adl
-    -- The intention of the parameters is to specify the relations that can be edited in the interface. 
     -- TODO -> What is the intention of ifcViols?
     -- TODO -> What is the intention of ifcArgs?
     pIFC2aIFC :: P_Interface -> Guarded Interface
