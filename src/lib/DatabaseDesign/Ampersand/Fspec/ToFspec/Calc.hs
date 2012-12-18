@@ -13,6 +13,8 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
+   import DatabaseDesign.Ampersand.ADL1.Expression                 (subst
+                                         ,isPos,isNeg,isEUni)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Quad(..),ECArule(..),InsDel(..),PAclause(..))
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))

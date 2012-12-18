@@ -6,12 +6,13 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.ADL1.Expression (isTypeable) -- TODO: This function is here as a doubleCheck of the typechecker. It should be removed if we are convident in the typechecker. 
+
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
---import DatabaseDesign.Ampersand.Fspec.Switchboard      (SwitchBdDiagram(..), sbDiagram)
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List (nub, intercalate)
 

@@ -101,4 +101,4 @@ import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components 
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Output.AdlExplanation
-
+import DatabaseDesign.Ampersand.ADL1.Expression (isPos,isNeg)

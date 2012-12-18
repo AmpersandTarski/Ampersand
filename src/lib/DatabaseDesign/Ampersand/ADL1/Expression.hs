@@ -4,9 +4,8 @@ module DatabaseDesign.Ampersand.ADL1.Expression (
                        isTypeable,subst,subsi
                       ,foldlMapExpression,foldrMapExpression
                       ,isECps,isERad,isEPrd,isEIsc,isEUni -- ,isI
-                      ,isPos,isNeg{- ,idsOnly-} ,notCpl, isCpl)
+                      ,isPos,isNeg ,notCpl, isCpl)
 where
--- import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
 subst :: (Relation,Expression) -> Expression -> Expression
@@ -215,25 +214,4 @@ isPos (ECpl _) = False
 isPos _ = True
 isNeg :: Expression -> Bool
 isNeg = not . isPos 
-
-{-
-idsOnly :: Expression -> Bool
-idsOnly e' = and [isIdent r | r<-mors e'] -- > tells whether all the arguments are equivalent to I
-             where mors :: Expression -> [Relation]
-                   mors = foldrMapExpression rdcons id []   -- yields a list of relations from e
-                   rdcons :: Eq a => a -> [a] -> [a]
-                   rdcons r ms = if r `elem` ms then ms else r:ms
--}             
-
-{-
- isNot expr = case expr of         -- > says whether the root operator is a complement.
-     EDif (V,_)   -> True
-     ERel rel     -> isNot rel    
-     EBrk f       -> isNot f
-     ECps [t]     -> isNot t        
-     ERad [t]     -> isNot t
-     EUni [t]     -> isNot t
-     EIsc [t]     -> isNot t
-     _          -> False
--}
 

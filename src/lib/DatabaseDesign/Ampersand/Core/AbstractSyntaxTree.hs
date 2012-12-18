@@ -38,7 +38,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
  , (<==>),join,order,meet,greatest,least,maxima,minima,sortWith 
  , makeDeclaration
- , showExpr, showSign
+ , showSign
  , aMarkup2String
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
@@ -396,10 +396,7 @@ data Expression
       | ETyp Expression Sign               -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | ERel Relation                      -- ^ simple relation
       deriving (Eq, Show)
-{- The following definition of Show is already covered by ShowADL. Therefore Show is the plain old derived show, which is useful for debugging purposes.
-instance Show Expression where
- showsPrec _ = showString . showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
--}
+
 instance Flippable Expression where
   flp expr = case expr of
                EEqu (l,r)        -> EEqu (flp l, flp r)
@@ -420,40 +417,6 @@ instance Flippable Expression where
                ETyp e (Sign s t) -> ETyp (flp e) (Sign t s)
                ERel rel          -> EFlp (ERel rel)
 
-
-showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
-            -> Expression -> String
-showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
- = showchar
-   where
-     showchar (EEqu (l,r)) = showchar l++equi++showchar r
-     showchar (EImp (l,r)) = showchar l++impl++showchar r
-     showchar (EIsc [])    = "V"
-     showchar (EIsc es)    = intercalate inter  [showchar e | e<-es]
-     showchar (EUni [])    = "-V"
-     showchar (EUni es)    = intercalate union' [showchar e | e<-es]
-     showchar (EDif (l,r)) = showchar l++diff ++showchar r
-     showchar (ELrs (l,r)) = showchar l++lresi++showchar r
-     showchar (ERrs (l,r)) = showchar l++rresi++showchar r
-     showchar (ECps [])    = "I"
-     showchar (ECps es)    = intercalate rMul [showchar e | e<-es]
-     showchar (ERad [])    = "-I"
-     showchar (ERad es)    = intercalate rAdd [showchar e | e<-es]
-     showchar (EPrd [])    = "ONE"
-     showchar (EPrd es)    = intercalate rPrd [showchar e | e<-es]
-     showchar (EKl0 e)     = showchar e++closK0
-     showchar (EKl1 e)     = showchar e++closK1
-     showchar (EFlp e)     = showchar e++flp'
-     showchar (ECpl e)     = compl (showchar e)
-     showchar (EBrk e)     = lpar++showchar e++rpar
-     showchar (ETyp e sgn) 
-      | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
-      | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
-     -- relations in expressions are printed without type signature, use ETyp to print signatures
-     showchar (ERel rel@(Rel{})) = name rel
-     showchar (ERel      I{})    = "I"
-     showchar (ERel      V{})    = "V"
-     showchar (ERel rel@(Mp1{})) = "'"++relval rel++"'"
 
 insParentheses :: Expression -> Expression
 insParentheses = insPar 0
