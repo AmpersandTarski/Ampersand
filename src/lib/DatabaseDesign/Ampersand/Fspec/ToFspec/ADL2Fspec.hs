@@ -920,7 +920,7 @@ Chc [ if isRel e
        , fsbECAs  = ecas
        }
       where
-        qs        = quads flags visible (invariants fSpec++multrules fSpec++keyrules fSpec)
+        qs        = quads flags visible (invariants fSpec)
         ecas      = assembleECAs qs
         conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]

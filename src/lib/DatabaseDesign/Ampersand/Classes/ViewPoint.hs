@@ -18,24 +18,26 @@ import Data.List
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
 
 class Language a where
-  objectdef :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
-  conceptDefs :: a -> [ConceptDef]  -- ^ all concept definitions that are valid within this viewpoint
+  objectdef :: a -> ObjectDef        -- ^ The objectdef that characterizes this viewpoint
+  conceptDefs :: a -> [ConceptDef]   -- ^ all concept definitions that are valid within this viewpoint
   declarations :: a -> [Declaration] -- ^ all relations that exist in the scope of this viewpoint.
                                      --   These are user defined declarations and all generated declarations,
                                      --   i.e. one declaration for each GEN and one for each signal rule.
                                      --   Don't confuse declarations with mors, which gives the relations that are
                                      --   used in a.)
-  udefrules :: a -> [Rule] -- ^ all user defined rules that are maintained within this viewpoint,
+  udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not key rules.
-  invariants :: a -> [Rule] -- ^ all rules that are not maintained by users will be maintained by the computer.
+  invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
+                                     --   That includes multiplicity rules and key rules, but excludes rules that are assigned to a role.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  multrules :: a -> [Rule] -- ^ all multiplicityrules that are maintained within this viewpoint.
+  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ keyrules x
+  multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
-  keyrules :: a -> [Rule] -- all key rules that are maintained within this viewpoint.
+  keyrules :: a -> [Rule]            -- all key rules that are maintained within this viewpoint.
   keyrules x    = concatMap rulesFromKey $ keyDefs x
-  keyDefs :: a -> [KeyDef]      -- ^ all keys that are defined in a
-  gens :: a -> [A_Gen]       -- ^ all generalizations that are valid within this viewpoint
-  patterns :: a -> [Pattern]     -- ^ all patterns that are used in this viewpoint
+  keyDefs :: a -> [KeyDef]           -- ^ all keys that are defined in a
+  gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
+  patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
   
 -- | In a language, a declaration must be made for each gen.
 makeDecl :: A_Gen -> Declaration
@@ -158,8 +160,7 @@ instance Language A_Context where
                                             , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                                              , decprps_calc = (foldr1 uni.map decprps_calc) cl
                                                              }]
-  udefrules    context = concatMap udefrules (ctxpats context) ++ concatMap udefrules (ctxprocs context) ++ ctxrs context  -- all user defined rules
-  invariants   context = [r | r<-udefrules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
+  udefrules    context = concatMap udefrules (ctxpats context) ++ concatMap udefrules (ctxprocs context) ++ ctxrs context    -- all user defined rules
   keyDefs      context = concatMap keyDefs (ctxpats context) ++ concatMap keyDefs (ctxprocs context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
   gens         context = concatMap gens (ctxpats context) `uni` concatMap gens (ctxprocs context) `uni` ctxgs context
   patterns             = ctxpats
@@ -184,7 +185,6 @@ instance Language Process where
   conceptDefs proc  = nub [cd | c<-concs proc,cd<-cptdf c,posIn (prcPos proc) cd (prcEnd proc)]
   declarations proc = prcDcls proc `uni` map makeDecl (gens proc)
   udefrules         = prcRules -- all user defined rules in this process
-  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
   keyDefs           = prcKds
   gens              = prcGens
   patterns      _   = []
@@ -209,7 +209,6 @@ instance Language Pattern where
   conceptDefs  pat = nub [cd | c<-concs pat,cd<-cptdf c,posIn (ptpos pat) cd (ptend pat)]
   declarations pat = ptdcs pat `uni` map makeDecl (gens pat)
   udefrules        = ptrls   -- all user defined rules in this pattern
-  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
   keyDefs          = ptkds 
   gens             = ptgns 
   patterns     pat = [pat]
@@ -233,7 +232,6 @@ instance Language Rule where
   conceptDefs  _ = []
   declarations r = [srrel r | isSignal r]
   udefrules    r = [r | r_usr r == UserDefined ]
-  invariants   r = [r | not (isSignal r)]
   keyDefs      _ = []
   gens         _ = []
   patterns r     = [A_Pat{ ptnm  = ""
