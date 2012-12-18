@@ -227,6 +227,41 @@ instance ShowADL Relation where
 instance ShowADL Expression where
  showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
 -- NOTE: retain space after \\, because of unexpected side effects if it is used just before an 'r' or 'n'....
+   where 
+     showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
+            -> Expression -> String
+     showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
+      = showchar
+        where
+          showchar (EEqu (l,r)) = showchar l++equi++showchar r
+          showchar (EImp (l,r)) = showchar l++impl++showchar r
+          showchar (EIsc [])    = "V"
+          showchar (EIsc es)    = intercalate inter  [showchar e | e<-es]
+          showchar (EUni [])    = "-V"
+          showchar (EUni es)    = intercalate union' [showchar e | e<-es]
+          showchar (EDif (l,r)) = showchar l++diff ++showchar r
+          showchar (ELrs (l,r)) = showchar l++lresi++showchar r
+          showchar (ERrs (l,r)) = showchar l++rresi++showchar r
+          showchar (ECps [])    = "I"
+          showchar (ECps es)    = intercalate rMul [showchar e | e<-es]
+          showchar (ERad [])    = "-I"
+          showchar (ERad es)    = intercalate rAdd [showchar e | e<-es]
+          showchar (EPrd [])    = "ONE"
+          showchar (EPrd es)    = intercalate rPrd [showchar e | e<-es]
+          showchar (EKl0 e)     = showchar e++closK0
+          showchar (EKl1 e)     = showchar e++closK1
+          showchar (EFlp e)     = showchar e++flp'
+          showchar (ECpl e)     = compl (showchar e)
+          showchar (EBrk e)     = lpar++showchar e++rpar
+          showchar (ETyp e sgn) 
+           | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
+           | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
+          -- relations in expressions are printed without type signature, use ETyp to print signatures
+          showchar (ERel rel@(Rel{})) = name rel
+          showchar (ERel      I{})    = "I"
+          showchar (ERel      V{})    = "V"
+          showchar (ERel rel@(Mp1{})) = "'"++relval rel++"'"
+
 
 instance ShowADL Declaration where
  showADL decl = 

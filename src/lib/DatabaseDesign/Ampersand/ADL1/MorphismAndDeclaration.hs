@@ -1,8 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..),Relational(..)
-                                  ,Declaration(..)
+module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relational(..)
                                   ,makeRelation
-                                  ,isSgn
                                   ) where
 
 import Data.Maybe
@@ -112,11 +110,6 @@ makeRelation d
           , reldcl = d
           }
 
-isSgn :: Declaration -> Bool
-isSgn Sgn{} = True
-isSgn  _    = False
-
-   
 -- The function "multiplicities" does not only provide the multiplicities provided by the Ampersand user,
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
 -- the better the data structure that is derived.

@@ -12,13 +12,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify,isI)
---   import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug       (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
---   import DatabaseDesign.Ampersand.Fspec.ShowHS
---   import DatabaseDesign.Ampersand.Fspec.FPA (FPA(..))
    import Text.Pandoc
    import Data.List (nub,intercalate)
+   import DatabaseDesign.Ampersand.ADL1.Expression              (isTypeable,subst,foldrMapExpression
+                                         ,isPos,isNeg)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
