@@ -86,6 +86,7 @@ instance Language Fspc where
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
   udefrules    = vrules -- only user defined rules
+  invariants fSpec = [r | r<-vrules fSpec, not (isSignal r)]  -- HJO, 20121202: @Stef: Is dit goed? waarom worden de multipliciteiten en keys niet als invariant gerekend?
   keyDefs      = vkeys
   gens         = vgens
   patterns     = vpatterns
@@ -102,6 +103,7 @@ instance Language FProcess where
   conceptDefs  = conceptDefs.fpProc
   declarations = declarations.fpProc
   udefrules    = udefrules.fpProc
+  invariants   = invariants.fpProc
   keyDefs      = keyDefs.fpProc
   gens         = gens.fpProc
   patterns     = patterns.fpProc
