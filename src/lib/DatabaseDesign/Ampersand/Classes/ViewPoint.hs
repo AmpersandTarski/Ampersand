@@ -30,7 +30,7 @@ class Language a where
   invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
                                      --   That includes multiplicity rules and key rules, but excludes rules that are assigned to a role.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
---  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ keyrules x
+  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ keyrules x
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
   keyrules :: a -> [Rule]            -- all key rules that are maintained within this viewpoint.
@@ -161,7 +161,7 @@ instance Language A_Context where
                                                              , decprps_calc = (foldr1 uni.map decprps_calc) cl
                                                              }]
   udefrules    context = concatMap udefrules (ctxpats context) ++ concatMap udefrules (ctxprocs context) ++ ctxrs context  -- all user defined rules
-  invariants   context = [r | r<-udefrules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
+--  invariants   context = [r | r<-udefrules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
   keyDefs      context = concatMap keyDefs (ctxpats context) ++ concatMap keyDefs (ctxprocs context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
   gens         context = concatMap gens (ctxpats context) `uni` concatMap gens (ctxprocs context) `uni` ctxgs context
   patterns             = ctxpats
@@ -186,7 +186,7 @@ instance Language Process where
   conceptDefs proc  = nub [cd | c<-concs proc,cd<-cptdf c,posIn (prcPos proc) cd (prcEnd proc)]
   declarations proc = prcDcls proc `uni` map makeDecl (gens proc)
   udefrules         = prcRules -- all user defined rules in this process
-  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
+--  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
   keyDefs           = prcKds
   gens              = prcGens
   patterns      _   = []
@@ -211,7 +211,7 @@ instance Language Pattern where
   conceptDefs  pat = nub [cd | c<-concs pat,cd<-cptdf c,posIn (ptpos pat) cd (ptend pat)]
   declarations pat = ptdcs pat `uni` map makeDecl (gens pat)
   udefrules        = ptrls   -- all user defined rules in this pattern
-  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
+--  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
   keyDefs          = ptkds 
   gens             = ptgns 
   patterns     pat = [pat]
@@ -235,7 +235,7 @@ instance Language Rule where
   conceptDefs  _ = []
   declarations r = [srrel r | isSignal r]
   udefrules    r = [r | r_usr r == UserDefined ]
-  invariants   r = [r | not (isSignal r)]
+--  invariants   r = [r | not (isSignal r)]
   keyDefs      _ = []
   gens         _ = []
   patterns r     = [A_Pat{ ptnm  = ""
