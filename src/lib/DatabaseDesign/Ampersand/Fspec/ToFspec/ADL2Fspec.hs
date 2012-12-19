@@ -48,6 +48,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
                  , vrules       = udefrules context   -- all user defined rules
                  , grules       = multrules context++keyrules context
+                 , invars       = invariants context
                  , allRules     = allrules
                  , vconjs       = nub [conj | Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
