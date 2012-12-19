@@ -5,7 +5,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos             
    import DatabaseDesign.Ampersand.Basics                         ( fatalMsg,Identified(..), (>-))
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( makeRelation)
+   import DatabaseDesign.Ampersand.Classes.Relational    ( makeRelation)
    import DatabaseDesign.Ampersand.ADL1.Prop                      ( Prop(..))
    import DatabaseDesign.Ampersand.Classes.Populated              ( Populated(..))
    import DatabaseDesign.Ampersand.Misc

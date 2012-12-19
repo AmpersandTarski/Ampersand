@@ -28,8 +28,8 @@ module DatabaseDesign.Ampersand
    , Collection(..)
    , Identified(..)
    , ProcessStructure(..)
-   , Relational(..)
    , ObjectDef(..)
+   , Relational(..)
    , objAts, objatsLegacy
    , Interface(..)
    , SubInterface(..)

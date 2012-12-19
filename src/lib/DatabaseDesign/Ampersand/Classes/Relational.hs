@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relational(..)
+module DatabaseDesign.Ampersand.Classes.Relational (Relational(..)
                                   ,makeRelation
                                   ) where
 
@@ -7,12 +7,11 @@ import Data.Maybe
                                   
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..))
---import DatabaseDesign.Ampersand.ADL1.Pair         (flipPair) 
 import DatabaseDesign.Ampersand.ADL1.Expression
 import DatabaseDesign.Ampersand.Basics
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.MorphismAndDeclaration"
+fatal = fatalMsg "Relational"
 
 class Association r => Relational r where
     multiplicities :: r -> [Prop]

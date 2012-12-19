@@ -7,7 +7,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec(FProcess(..),Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
---import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Classes (makeRelation)
 import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc
 --import DatabaseDesign.Ampersand.Output.PredLogic

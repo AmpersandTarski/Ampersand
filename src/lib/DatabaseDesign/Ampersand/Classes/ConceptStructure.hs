@@ -8,7 +8,7 @@ where
    import Data.List
    import Data.Maybe
    import DatabaseDesign.Ampersand.ADL1.Expression
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration
+   import DatabaseDesign.Ampersand.Classes.Relational(multiplicities,makeRelation)
    import Prelude hiding (Ordering(..))
    fatal :: Int -> String -> a
    fatal = fatalMsg "ConceptStructure"

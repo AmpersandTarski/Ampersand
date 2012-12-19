@@ -5,7 +5,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
-import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relational(..))
+import DatabaseDesign.Ampersand.Classes.Relational  (Relational(multiplicities))
 import DatabaseDesign.Ampersand.Classes.ConceptStructure     (ConceptStructure(..))
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc.Explain

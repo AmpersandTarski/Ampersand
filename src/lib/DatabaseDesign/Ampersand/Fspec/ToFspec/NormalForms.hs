@@ -6,7 +6,6 @@ where
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.ECArule
    import DatabaseDesign.Ampersand.ADL1.Expression 
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relational(..))
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Data.List (nub)

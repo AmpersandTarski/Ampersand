@@ -5,5 +5,7 @@ import DatabaseDesign.Ampersand.Classes.Populated as X
 import DatabaseDesign.Ampersand.Classes.ConceptStructure as X
        (ConceptStructure(..))
 import DatabaseDesign.Ampersand.Classes.Object as X (Object(..))
+import DatabaseDesign.Ampersand.Classes.Relational as X
+       (Relational(..),makeRelation)
 import DatabaseDesign.Ampersand.Classes.ViewPoint as X
        (Language(..), ProcessStructure(..))
