@@ -51,6 +51,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
                  , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and key rules
+                 , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                  , vkeys ::        [KeyDef]                 -- ^ All keys that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
@@ -86,7 +87,7 @@ instance Language Fspc where
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
   udefrules    = vrules -- only user defined rules
-  invariants fSpec = [r | r<-vrules fSpec, not (isSignal r)]  -- HJO, 20121202: @Stef: Is dit goed? waarom worden de multipliciteiten en keys niet als invariant gerekend?
+  invariants    = invars
   keyDefs      = vkeys
   gens         = vgens
   patterns     = vpatterns
