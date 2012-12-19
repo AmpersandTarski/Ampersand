@@ -17,7 +17,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Interface(..)
            , Term(..),Expression(..) 
            , A_Gen(..),P_Gen(..)
-           , Relation(..), makeRelation
+           , Relation(..)
            , Declaration(..)
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
@@ -29,7 +29,7 @@ module DatabaseDesign.Ampersand.ADL1
            , makeDeclaration
            , antecedent,hasantecedent,notCpl,isCpl
            , Signaling(..)
-           , Association(..), Relational(..)
+           , Association(..)
            , Label(..)
            , Paire, Pairs, mkPair , srcPaire, trgPaire
            , isAll, isChc, isBlk, isNop, isDo, dos
@@ -70,10 +70,6 @@ where
                                          )
    import DatabaseDesign.Ampersand.ADL1.Expression                 (
                                           notCpl, isCpl)
-   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (
-                                          Relational(..)
-                                         ,makeRelation
-                                         )
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
    import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops)
    import DatabaseDesign.Ampersand.ADL1.Rule                       (
