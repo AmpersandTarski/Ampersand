@@ -8,11 +8,9 @@ import Text.CSV
 import System.FilePath
 import System.Directory
 import Control.Monad
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand.Basics(fatalMsg,escapeNonAlphaNum)
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree(RelConceptDef(..))
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 
@@ -45,7 +43,7 @@ doGenBericht fSpec opts =
            ; verboseLn opts $ "\nGenerated file "++filename
            }
    genEntity_Interfaces :: [Interface] -> [Entity]
-   genEntity_Interfaces interfaces = map genEntity_Interface interfaces
+   genEntity_Interfaces interfaces' = map genEntity_Interface interfaces'
      where
        genEntity_Interface :: Interface -> Entity
        genEntity_Interface interface = genEntity_ObjDef 0 (ifcObj interface)
@@ -79,7 +77,7 @@ doGenBericht fSpec opts =
        
                   objsForInterfaceNamed :: String -> [ObjectDef]
                   objsForInterfaceNamed nm =
-                    case objmsub $ ifcObj $ getInterfaceByName interfaces nm of
+                    case objmsub $ ifcObj $ getInterfaceByName interfaces' nm of
                       Just (Box objs) -> objs
                       _               -> fatal 81 "Bericht interfaces have wrong format"
                   -- NOTE: We ignore the interface relation for interfaces refs
@@ -95,7 +93,7 @@ entityToCSV (Entity nm dpth card def refTp props) =
 -- Utils
 
 getInterfaceByName :: [Interface] -> String -> Interface
-getInterfaceByName interfaces nm = case [ ifc | ifc <- interfaces, name ifc == nm ] of
+getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
                                 [ifc] -> ifc
                                 _     -> fatal 63 $ "getInterface by name: multiple or no interfaces named "++show nm 
 layout :: [[String]] -> String
@@ -127,24 +125,24 @@ genGegevensWB entities = gegevensWB_Header ++
  where
   gegevensWB_Toc :: String
   gegevensWB_Toc = unlines
-    [ "      <li>" ++ mkLocalLink concept concept ++ "</li>"
-    | Entity{ entName = concept } <- entities
+    [ "      <li>" ++ mkLocalLink concept' concept' ++ "</li>"
+    | Entity{ entName = concept' } <- entities
     ]
 
 
   -- TODO: it's not the concept, but the interface name, yet refTp is a concept? or also an interface name?
   gegevensWB_Element :: Entity -> String
-  gegevensWB_Element (Entity concept _ _ _ _ props) =
+  gegevensWB_Element (Entity concept' _ _ _ _ props) =
     wbElement_Header ++
-    concatMap (wbElement_Element concept) props ++ 
+    concatMap (wbElement_Element concept') props ++ 
     wbElement_Footer 
    where
       wbElement_Header :: String
       wbElement_Header  =
-        "    " ++ mkAnchor concept ++
+        "    " ++ mkAnchor concept' ++
         "    <div class=\"gegevenselement\">\n" ++
-        "      <div class=\"objectclass\">"++concept++"</div>\n" ++
-        "      <div class=\"definition\">"++concept++"</div>\n" ++
+        "      <div class=\"objectclass\">"++concept'++"</div>\n" ++
+        "      <div class=\"definition\">"++concept'++"</div>\n" ++
         "      <table class=\"properties\">\n" ++
         "        <tr><td class=\"head\">Property term</td><td class=\"head\">Cardinality</td><td class=\"head\">Representation term</td></tr>\n" 
        where
