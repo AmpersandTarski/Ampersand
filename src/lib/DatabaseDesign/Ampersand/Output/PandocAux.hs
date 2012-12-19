@@ -25,6 +25,7 @@ import Data.Char hiding (Space)
 import Text.Pandoc
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Basics hiding (hPutStrLn)
+import DatabaseDesign.Ampersand.Classes (Relational(isTrue))
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
 import System.Process      (system)

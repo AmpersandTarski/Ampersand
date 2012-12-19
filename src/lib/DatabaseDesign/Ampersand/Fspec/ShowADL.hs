@@ -14,7 +14,6 @@ where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
-import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import Data.List
