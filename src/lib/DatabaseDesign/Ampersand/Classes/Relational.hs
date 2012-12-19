@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Classes.Relational (Relational(..)
 import Data.Maybe
                                   
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..))
+import DatabaseDesign.Ampersand.Core.ParseTree       (Prop(..))
 import DatabaseDesign.Ampersand.ADL1.Expression
 import DatabaseDesign.Ampersand.Basics
 

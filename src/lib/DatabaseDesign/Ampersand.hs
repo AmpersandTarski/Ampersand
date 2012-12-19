@@ -84,7 +84,7 @@ module DatabaseDesign.Ampersand
    , DatabaseDesign.Ampersand.Basics.writeFile
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
-   , rulefromProp, allprops, endoprops
+   , rulefromProp
    , Populated(..), Paire, Purpose(..), ExplObj(..), PictType(..)
    )
 where
