@@ -90,7 +90,6 @@ library
                     DatabaseDesign.Ampersand.ADL1.Expression,
                     DatabaseDesign.Ampersand.ADL1.P2A_Converters,
                     DatabaseDesign.Ampersand.ADL1.Pair,
-                    DatabaseDesign.Ampersand.ADL1.Prop,
                     DatabaseDesign.Ampersand.ADL1.Rule,
                     DatabaseDesign.Ampersand.Basics,
                     DatabaseDesign.Ampersand.Basics.Auxiliaries,

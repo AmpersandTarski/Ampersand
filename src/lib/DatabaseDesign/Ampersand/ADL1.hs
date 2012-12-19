@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand.ADL1
            , ConceptDef(..)
            , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR
            , RuleType(..)
-           , Prop(..),allprops,endoprops
+           , Prop(..)
            , isaRule
            , FilePos(..), Origin(..), Pos(..), Traced(..)
            , makeDeclaration
@@ -71,7 +71,6 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression                 (
                                           notCpl, isCpl)
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
-   import DatabaseDesign.Ampersand.ADL1.Prop                       (allprops,endoprops)
    import DatabaseDesign.Ampersand.ADL1.Rule                       (
                                           rulefromProp, isaRule, ruleviolations, violationsexpr
                                          ,consequent,antecedent,hasantecedent)
