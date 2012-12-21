@@ -243,15 +243,6 @@ where
             where newindent = indent ++"    "
                   indentA = newindent
 
-   showViolatedRule :: String -> (Rule,Pairs) -> String
-   showViolatedRule indent (r,ps)
-      = intercalate indent
-          [        " ( "++showHSName r++" -- This is "++(if r_sgl r then "a process rule." else "an invariant")++
-           indent++" , "++ wrap "" (indent++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
-                                                        in showPair) ps++
-           indent++" )"
-          ] 
-
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
@@ -285,6 +276,7 @@ where
                    _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHSName rul++")" | (r,rul)<-fRoleRuls fspec]++indentA++"]"
            ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fspec)
            ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
+           ,wrap ", invars        = " indentA (\_->showHSName) (invars fspec)
            ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
            ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
@@ -384,6 +376,18 @@ where
                  showbinding :: (Declaration,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
+                 showViolatedRule :: String -> (Rule,Pairs) -> String
+                 showViolatedRule indent (r,ps)
+                    = intercalate indent
+                        [        " ( "++showHSName r++" -- This is "++(if r_sgl r then "a process rule." else "an invariant")++
+                         indent++" , "++ wrap "" (indent++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
+                                                                      in showPair) ps++
+                         indent++" )"
+                        ] 
+
+
+
+
    instance ShowHS Meta where
     showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val 
 
