@@ -84,7 +84,8 @@ library
                     time >= 1.4 && < 1.5,
                     SpreadsheetML >= 0.1 && < 0.2,
                     array >= 0.4 && < 0.5
-  exposed-modules:   DatabaseDesign.Ampersand,
+  exposed-modules:   
+                    DatabaseDesign.Ampersand,
                     DatabaseDesign.Ampersand.ADL1,
                     DatabaseDesign.Ampersand.ADL1.ECArule,
                     DatabaseDesign.Ampersand.ADL1.Expression,
@@ -113,6 +114,7 @@ library
                     DatabaseDesign.Ampersand.Fspec,
                     DatabaseDesign.Ampersand.Fspec.FPA,
                     DatabaseDesign.Ampersand.Fspec.Fspec,
+                    DatabaseDesign.Ampersand.Fspec.GenerateUML,
                     DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram,
                     DatabaseDesign.Ampersand.Fspec.Graphic.Graphics,
                     DatabaseDesign.Ampersand.Fspec.Graphic.Picture,
@@ -146,9 +148,6 @@ library
                     DatabaseDesign.Ampersand.Output.PandocAux,
                     DatabaseDesign.Ampersand.Output.PredLogic,
                     DatabaseDesign.Ampersand.Output.Statistics,
-                    DatabaseDesign.Ampersand.Parsing,
-                    Paths_ampersand
-  other-modules:     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis,
@@ -160,7 +159,9 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    DatabaseDesign.Ampersand.Fspec.GenerateUML
+                    DatabaseDesign.Ampersand.Parsing,
+                    Paths_ampersand
+  other-modules:     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
   Default-Language:  Haskell2010
 
   if flag(library)
