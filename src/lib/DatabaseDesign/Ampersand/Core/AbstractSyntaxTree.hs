@@ -272,11 +272,6 @@ instance Traced Declaration where
   origin d = case d of
               Sgn{}     -> decfpos d
               _         -> OriginUnknown
-instance Signaling Declaration where
-  isSignal d = case d of
-              Sgn {}    -> deciss d
-              _         -> False
-
 
 data KeyDef = Kd { kdpos :: Origin       -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                  , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
@@ -550,16 +545,6 @@ showSign :: Identified a => [a] -> String
 showSign cs = "["++(intercalate "*".nub.map name) cs++"]"
 instance Traced Relation where
  origin = relpos
-instance Signaling Relation where
- isSignal r = isSignal (makeDeclaration r)
-
-
-
-
-
-
-
-
 
 -- The following definition of concept is used in the type checker only.
 -- It is called Concept, meaning "type checking concept"

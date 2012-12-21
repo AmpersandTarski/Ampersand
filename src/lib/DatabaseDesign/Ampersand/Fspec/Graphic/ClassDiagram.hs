@@ -80,6 +80,16 @@ where
        lookup' c = [p |InternalPlug p@(TblSQL{})<-plugInfos fSpec , (c',_)<-cLkpTbl p, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
         
+{- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
+   instance Signaling Declaration where
+     isSignal d = case d of
+                 Sgn {}    -> deciss d
+                 _         -> False
+
+   instance Signaling Relation where
+    isSignal r = isSignal (makeDeclaration r)
+-}
+
 -- The following function, plugs2classdiagram, is useful to make a technical data model.
 -- It draws on the plugs, which are meant to implement database tables for OLTP purposes.
 -- Plugs come in three flavours: TblSQL, which is an entity (class),
@@ -99,7 +109,7 @@ where
        assocs'    = [ OOAssoc (nm source s) (mults $ EFlp rel) "" (nm target t) (mults rel) relname
                     | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec
                     , let rel=mLkp plug
-                    , not ((isSignal.head.mors) rel)
+       --           , not ((isSignal.head.mors) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
                     , let relname=case rel of
                            ERel r -> name r
                            EFlp (ERel r) -> name r
