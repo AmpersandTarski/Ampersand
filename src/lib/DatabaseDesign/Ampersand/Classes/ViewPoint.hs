@@ -233,7 +233,7 @@ instance Language Rule where
                        , objstrs = []
                        }
   conceptDefs  _ = []
-  declarations r = [srrel r | isSignal r]
+  declarations r = [srrel r | isSignal r] -- a process rule "declares" a new relation to store violations in. That relation is "stored" in that rule. Therefore it counts as a declaration.
   udefrules    r = [r | r_usr r == UserDefined ]
 --  invariants   r = [r | not (isSignal r)]
   keyDefs      _ = []
