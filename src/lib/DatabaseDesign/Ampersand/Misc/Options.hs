@@ -246,15 +246,15 @@ data DocTheme = DefaultTheme   -- Just the functional specification
     
 usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.  
-usageInfo' opts = usageInfo (infoHeader (progrName opts)) (if verboseP opts then each options else publics options)
+usageInfo' flags = usageInfo (infoHeader (progrName flags)) (if verboseP flags then each options else publics options)
           
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
 
 publics :: [(a, DisplayMode) ] -> [a]
-publics opts = [o | (o,Public)<-opts]
+publics flags = [o | (o,Public)<-flags]
 each :: [(a, DisplayMode) ] -> [a]
-each opts = [o |(o,_) <- opts]
+each flags = [o |(o,_) <- flags]
 
 options :: [(OptDescr (Options -> Options), DisplayMode) ]
 options = map pp
@@ -263,7 +263,7 @@ options = map pp
           , (Option "h?"    ["help"]        (NoArg helpOpt)             "get (this) usage information.", Public)
           , (Option ""      ["verbose"]     (NoArg verboseOpt)          "verbose error message format.", Public)
           , (Option ""      ["dev"]         (NoArg developmentOpt)      "Report and generate extra development information", Hidden)
-          , (Option ""      ["validate"]    (NoArg (\opts -> opts{validateSQL = True}))  "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)", Hidden)
+          , (Option ""      ["validate"]    (NoArg (\flags -> flags{validateSQL = True}))  "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)", Hidden)
           , (Option "p"     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype (overwrites environment variable "
                                                                            ++ envdirPrototype ++ ")."), Public)
           , (Option "d"     ["dbName"]      (ReqArg dbNameOpt "name")   ("database name (overwrites environment variable "
@@ -282,11 +282,11 @@ options = map pp
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
-          , (Option []        ["deprecated"]  (NoArg (\opts -> opts{deprecated = True})) "Force generation of old php prototype (strongly discouraged!)", Hidden)
+          , (Option []        ["deprecated"]  (NoArg (\flags -> flags{deprecated = True})) "Force generation of old php prototype (strongly discouraged!)", Hidden)
           , (Option []        ["refresh"]     (OptArg autoRefreshOpt "interval") "Experimental auto-refresh feature", Hidden)
-          , (Option []        ["testRule"]    (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }) "rule name")
+          , (Option []        ["testRule"]    (ReqArg (\ruleName flags -> flags{ testRule = Just ruleName }) "rule name")
                                                                           "Show contents and violations of specified rule.", Hidden)
-          , (Option []        ["css"]         (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
+          , (Option []        ["css"]         (ReqArg (\pth flags -> flags{ customCssFile = Just pth }) "file")
                                                                           "Custom.css file to customize the style of the prototype.", Public)
           , (Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics.", Public)
           , (Option []        ["ECA"]         (NoArg genEcaDocOpt)        "generate documentation with ECA rules.", Public)
@@ -299,13 +299,13 @@ options = map pp
           , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicate logic." , Public)
           , (Option []        ["noDiagnosis"] (NoArg noDiagnosisOpt)      "omit the diagnosis chapter from the functional specification document." , Public)
           , (Option []        ["diagnosis"]   (NoArg diagnosisOpt)        "diagnose your Ampersand script (generates a .pdf file).", Public)
-          , (Option []        ["legalrefs"]   (NoArg (\opts -> opts{genLegalRefs = True}))
+          , (Option []        ["legalrefs"]   (NoArg (\flags -> flags{genLegalRefs = True}))
                                                                           "generate a table of legal references in Natural Language chapter.", Public)
-          , (Option []        ["uml"]         (NoArg (\opts -> opts{genUML = True}))
+          , (Option []        ["uml"]         (NoArg (\flags -> flags{genUML = True}))
                                                                           "Generate a UML 2.0 data model.", Hidden)
-          , (Option []        ["excel"]       (NoArg (\opts -> opts{genExcel = True}))
+          , (Option []        ["excel"]       (NoArg (\flags -> flags{genExcel = True}))
                                                                           "Generate a Excel workbook (.xls).", Hidden)
-          , (Option []        ["bericht"]     (NoArg (\opts -> opts{genBericht = True}))
+          , (Option []        ["bericht"]     (NoArg (\flags -> flags{genBericht = True}))
                                                                           "Generate definitions for 'berichten' (specific to INDOORS project).", Hidden)
           , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'EN').", Public)
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
@@ -337,52 +337,52 @@ envlogName :: String
 envlogName="CClogName"
 
 versionOpt :: Options -> Options
-versionOpt       opts = opts{showVersion  = True}            
+versionOpt       flags = flags{showVersion  = True}            
 typeGraphsOpt :: Options -> Options
-typeGraphsOpt    opts = opts{typeGraphs  = True}            
+typeGraphsOpt    flags = flags{typeGraphs  = True}            
 helpOpt :: Options -> Options
-helpOpt          opts = opts{showHelp     = True}            
+helpOpt          flags = flags{showHelp     = True}            
 verboseOpt :: Options -> Options
-verboseOpt       opts = opts{ verboseP     = True} 
+verboseOpt       flags = flags{ verboseP     = True} 
 developmentOpt :: Options -> Options
-developmentOpt opts = opts{ development   = True}
+developmentOpt flags = flags{ development   = True}
 autoRefreshOpt :: Maybe String -> Options -> Options
-autoRefreshOpt (Just interval) opts | [(i,"")] <- reads interval = opts{autoRefresh = Just i}
-autoRefreshOpt _               opts                              = opts{autoRefresh = Just 5}
+autoRefreshOpt (Just interval) flags | [(i,"")] <- reads interval = flags{autoRefresh = Just i}
+autoRefreshOpt _               flags                              = flags{autoRefresh = Just 5}
 prototypeOpt :: Maybe String -> Options -> Options
-prototypeOpt nm opts 
-  = opts { dirPrototype = fromMaybe (dirPrototype opts) nm
+prototypeOpt nm flags 
+  = flags { dirPrototype = fromMaybe (dirPrototype flags) nm
          , genPrototype = True}
 importOpt :: String -> Options -> Options
-importOpt nm opts 
-  = opts { importfile = nm }
+importOpt nm flags 
+  = flags { importfile = nm }
 formatOpt :: String -> Options -> Options
-formatOpt f opts = case map toUpper f of
-     "ADL" -> opts{fileformat = Adl1Format}
-     "ADL1"-> opts{fileformat = Adl1Format}
-     "POP" -> opts{fileformat = Adl1PopFormat}
-     "POP1"-> opts{fileformat = Adl1PopFormat}
-     _     -> opts
+formatOpt f flags = case map toUpper f of
+     "ADL" -> flags{fileformat = Adl1Format}
+     "ADL1"-> flags{fileformat = Adl1Format}
+     "POP" -> flags{fileformat = Adl1PopFormat}
+     "POP1"-> flags{fileformat = Adl1PopFormat}
+     _     -> flags
 maxInterfacesOpt :: Options -> Options
-maxInterfacesOpt  opts = opts{allInterfaces  = True}                            
+maxInterfacesOpt  flags = flags{allInterfaces  = True}                            
 themeOpt :: String -> Options -> Options
-themeOpt t opts = opts{theme = case map toUpper t of 
+themeOpt t flags = flags{theme = case map toUpper t of 
                                     "STUDENT" -> StudentTheme
                                     "STUDENTDESIGNER" -> StudentDesignerTheme
                                     "DESIGNER" -> DesignerTheme
                                     "PROOF"   -> ProofTheme
                                     _         -> DefaultTheme}
 dbNameOpt :: String -> Options -> Options
-dbNameOpt nm opts = opts{dbName = if nm == "" 
-                                    then baseName opts
+dbNameOpt nm flags = flags{dbName = if nm == "" 
+                                    then baseName flags
                                     else nm
                         }                          
 namespaceOpt :: String -> Options -> Options
-namespaceOpt x opts = opts{namespace = x}
+namespaceOpt x flags = flags{namespace = x}
 xmlOpt :: Options -> Options
-xmlOpt          opts = opts{genXML       = True}
+xmlOpt          flags = flags{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
-fspecRenderOpt w opts = opts{ genFspec=True
+fspecRenderOpt w flags = flags{ genFspec=True
                             , fspecFormat= case map toUpper w of
                                   ('A': _ )         -> Fasciidoc
                                   ('C': _ )         -> Fcontext
@@ -400,64 +400,64 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                   ('R':'T': _ )     -> Frtf
                                   ('T':'E':'X':'I': _ ) -> Ftexinfo
                                   ('T':'E':'X':'T': _ ) -> Ftextile
-                                  _         -> fspecFormat opts
+                                  _         -> fspecFormat flags
 
                                                 
                             }
 allFileFormats :: String
 allFileFormats                    = "ADL (.adl), ADL1 (.adl), POP (.pop), POP1 (.pop)"
 noGraphicsOpt :: Options -> Options
-noGraphicsOpt opts                  = opts{genGraphics   = False}
+noGraphicsOpt flags                  = flags{genGraphics   = False}
 genEcaDocOpt :: Options -> Options
-genEcaDocOpt opts                   = opts{genEcaDoc     = True}
+genEcaDocOpt flags                   = flags{genEcaDoc     = True}
 proofsOpt :: Options -> Options
-proofsOpt opts                      = opts{proofs        = True}
+proofsOpt flags                      = flags{proofs        = True}
 exportOpt :: Maybe String -> Options -> Options
-exportOpt mbnm opts                 = opts{export2adl    = True
+exportOpt mbnm flags                 = flags{export2adl    = True
                                           ,outputfile    = fromMaybe "Export.adl" mbnm}
 haskellOpt :: Options -> Options
-haskellOpt opts                     = opts{haskell       = True}
+haskellOpt flags                     = flags{haskell       = True}
 outputDirOpt :: String -> Options -> Options
-outputDirOpt nm opts                = opts{dirOutput     = nm}
+outputDirOpt nm flags                = flags{dirOutput     = nm}
 crowfootOpt :: Options -> Options
-crowfootOpt opts                    = opts{crowfoot      = True}
+crowfootOpt flags                    = flags{crowfoot      = True}
 blackWhiteOpt :: Options -> Options
-blackWhiteOpt opts                  = opts{blackWhite    = True}
+blackWhiteOpt flags                  = flags{blackWhite    = True}
 altGraphicsOpt :: Options -> Options
-altGraphicsOpt opts                 = opts{altGraphics   = not (altGraphics opts)}
+altGraphicsOpt flags                 = flags{altGraphics   = not (altGraphics flags)}
 predLogicOpt :: Options -> Options
-predLogicOpt opts                   = opts{showPredExpr  = True}
+predLogicOpt flags                   = flags{showPredExpr  = True}
 noDiagnosisOpt :: Options -> Options
-noDiagnosisOpt opts                 = opts{noDiagnosis   = True}
+noDiagnosisOpt flags                 = flags{noDiagnosis   = True}
 diagnosisOpt :: Options -> Options
-diagnosisOpt opts                   = opts{diagnosisOnly = True}
+diagnosisOpt flags                   = flags{diagnosisOnly = True}
 languageOpt :: String -> Options -> Options
-languageOpt l opts                  = opts{language = case map toUpper l of
+languageOpt l flags                  = flags{language = case map toUpper l of
                                                        "NL"  -> Dutch
                                                        "UK"  -> English
                                                        "US"  -> English
                                                        "EN"  -> English
                                                        _     -> Dutch}
 forceSyntaxOpt :: String -> Options -> Options
-forceSyntaxOpt s opts               = opts{forcedParserVersion = case s of
+forceSyntaxOpt s flags               = flags{forcedParserVersion = case s of
                                               "1" -> Just Legacy
                                               "2" -> Just Current
                                               "0" -> Just Current --indicates latest
                                               _   -> error $ "Unknown value for syntax version: "++s++". Known values are 0, 1 or 2. 0 indicates latest."
                                           } 
 logOpt :: String -> Options -> Options
-logOpt nm opts                      = opts{logName       = nm}
+logOpt nm flags                      = flags{logName       = nm}
 pangoOpt :: Maybe String -> Options -> Options
-pangoOpt (Just nm) opts             = opts{pangoFont     = nm}
-pangoOpt Nothing  opts              = opts
+pangoOpt (Just nm) flags             = flags{pangoFont     = nm}
+pangoOpt Nothing  flags              = flags
 sqlHostOpt :: Maybe String -> Options -> Options
-sqlHostOpt mnm opts           = opts{sqlHost       = mnm}
+sqlHostOpt mnm flags           = flags{sqlHost       = mnm}
 sqlLoginOpt :: Maybe String -> Options -> Options
-sqlLoginOpt mnm opts          = opts{sqlLogin      = mnm}
+sqlLoginOpt mnm flags          = flags{sqlLogin      = mnm}
 sqlPwdOpt :: Maybe String -> Options -> Options
-sqlPwdOpt mnm opts            = opts{sqlPwd        = mnm}
+sqlPwdOpt mnm flags            = flags{sqlPwd        = mnm}
 testOpt :: Options -> Options
-testOpt opts                        = opts{test          = True}
+testOpt flags                        = flags{test          = True}
 
 verbose :: Options -> String -> IO ()
 verbose flags x
