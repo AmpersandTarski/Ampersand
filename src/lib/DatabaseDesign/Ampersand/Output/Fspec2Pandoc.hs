@@ -4,10 +4,9 @@ module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtempla
 where
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Fspec
-import Text.Pandoc hiding (Meta)
-import qualified Text.Pandoc as Pandoc
+import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis
@@ -18,9 +17,8 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
-import System.Locale
 import Data.Time.Format
-
+import qualified Data.Sequence as Seq
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -70,64 +68,71 @@ import Data.Time.Format
 
 --TODO [Picture] should be separated from here. Now it is too much entangled, which makes it too complex (and hence errorprone). 
 fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
-fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
-    where meta = Pandoc.Meta titl authors date
-          titl = [ Str (case (language flags, diagnosisOnly flags) of
-                        (Dutch  , False) -> "Functionele Specificatie van "
-                        (English, False) -> "Functional Specification of "
-                        (Dutch  ,  True) -> "Diagnose van "
-                        (English,  True) -> "Diagnosis of "
-                       )
-                 , Quoted SingleQuote [Str (name fSpec)]
-                 ] 
-          authors = case [ val  | Meta _ ContextMeta "authors" val <- metas fSpec ] of
-                      authrs:_ -> [[Str authrs]]
-                      [] -> case language flags of
-                              Dutch   -> [[Str "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]]
-                              English -> [[Str "Specify authors in ADL with: META \"authors\" \"<author names>\""]]
-          date = [ Str $ formatTime lclForLang "%-d %B %Y" (genTime flags) ]
-          
-          lclForLang | language flags == Dutch = defaultTimeLocale{ months = [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr"),
-                                                                               ("mei","mei"),("juni","jun"),("juli","jul"),("augustus","aug")
-                                                                               ,("september","sep"),("oktober","okt"),("november","nov"),("december","dec")]}
-                     | otherwise               = defaultTimeLocale{ months = [ ("January","Jan"),("February","Feb"),("March","Mar"),("April","Apr"),
-                                                                               ("May","May"),("June","Jun"),("July","Jul"),("August","Aug")
-                                                                               ,("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]}
-           
-          -- | The following code controls the structure of the document.
-          docContents
-           | diagnosisOnly flags         = diagTxt
-           | studentversion              =
-               chpIntroduction  level fSpec flags          ++
-               chpNatLangReqs   level fSpec flags          ++
-               caTxt                                       ++
-               daTxt                                       ++
-               glossary level fSpec flags
-           | otherwise                   =
-               chpIntroduction  level fSpec flags          ++   -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
-               chpNatLangReqs   level fSpec flags          ++   -- this chapter gives an account of this context in natural language.
-                                                                --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
-                                                                --   any skills in formal specification or information systems modeling.
-               (if noDiagnosis flags then [] else diagTxt) ++   -- This chapter is meant for the author. It points to places in the text that might need work.
-               caTxt                                       ++   -- This chapter is the conceptual analysis. It is meant for the design team to verify whether the natural language phrases and their formal counterparts match.
-               (if noProcesses fSpec then [] else paTxt)   ++   -- This chapter discusses the processes and patterns in this context.
-               fpAnalysis level fSpec flags                ++   -- This chapter does a function point analysis on the specification.
-               daTxt                                       ++   -- This chapter provides a data analysis together with a data model.
-                                                                --   It is meant for implementors who must build the system.
-               actsTxt                                     ++
-               (if genEcaDoc flags then chpECArules level fSpec flags else [])    ++ -- This chapter reports on the ECA rules generated in this system.
-               glossary level fSpec flags                        -- At the end, a glossary is generated.
-               
-          pictures 
-           | diagnosisOnly flags         = diagPics
-           | studentversion              = daPics++caPics
-           | otherwise                   = daPics++caPics++diagPics++paPics++actsPics 
-          (caTxt  ,caPics)   = chpConceptualAnalysis      level fSpec flags
-          (diagTxt,diagPics) = chpDiagnosis               level fSpec flags
-          (paTxt  ,paPics)   = chpProcessAnalysis         level fSpec flags
-          (daTxt  ,daPics)   = chpDataAnalysis            level fSpec flags
-          (actsTxt,actsPics) = let acts=[interfaceChap level fSpec flags act | act <-fActivities fSpec] in (concat$map fst acts,concat$map snd acts)
-          studentversion = theme flags == StudentTheme
-          level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
-
-
+fSpec2Pandoc fSpec flags = ( myDoc , pictures )
+  where 
+    myDoc = 
+      ( (setTitle  
+           (str
+             (case (language flags, diagnosisOnly flags) of
+               (Dutch  , False) -> "Functionele Specificatie van "
+               (English, False) -> "Functional Specification of "
+               (Dutch  ,  True) -> "Diagnose van "
+               (English,  True) -> "Diagnosis of "
+             )
+            <>
+            (singleQuoted.str.name) fSpec
+           )
+        )
+      . (setAuthors (case metaValues "authors" fSpec of
+                [] -> case language flags of
+                        Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
+                        English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
+                xs -> map text xs)
+        )
+      . (setDate (text (formatTime (lclForLang flags) "%-d %B %Y" (genTime flags))))
+      ) 
+      (doc docContents)
+    
+     
+    -- | The following code controls the structure of the document.
+    docContents :: Blocks
+    docContents
+     | diagnosisOnly flags         = fromList diagTxt
+     | studentversion              =
+         fromList (chpIntroduction  level fSpec flags) <>
+         fromList (chpNatLangReqs   level fSpec flags) <>
+         fromList caTxt                                <>
+         fromList daTxt                                <>
+         fromList (glossary level fSpec flags)
+     | otherwise                   =
+         fromList (chpIntroduction  level fSpec flags) <> -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
+         fromList (chpNatLangReqs   level fSpec flags) <> -- this chapter gives an account of this context in natural language.
+                                                          --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
+                                                          --   any skills in formal specification or information systems modeling.
+         (if noDiagnosis flags 
+          then Blocks Seq.empty
+          else fromList diagTxt)                       <> -- This chapter is meant for the author. It points to places in the text that might need work.
+         fromList caTxt                                <> -- This chapter is the conceptual analysis. It is meant for the design team to verify whether the natural language phrases and their formal counterparts match.
+         (if noProcesses fSpec 
+          then Blocks Seq.empty 
+          else fromList paTxt)                         <> -- This chapter discusses the processes and patterns in this context.
+         fromList (fpAnalysis level fSpec flags)       <> -- This chapter does a function point analysis on the specification.
+         fromList daTxt                                <> -- This chapter provides a data analysis together with a data model.
+                                                          --   It is meant for implementors who must build the system.
+         fromList actsTxt                              <>
+         (if genEcaDoc flags 
+          then fromList (chpECArules level fSpec flags)   -- This chapter reports on the ECA rules generated in this system.
+          else Blocks Seq.empty)                       <>
+         fromList (glossary level fSpec flags)            -- At the end, a glossary is generated.
+         
+    pictures 
+     | diagnosisOnly flags         = diagPics
+     | studentversion              = daPics++caPics
+     | otherwise                   = daPics++caPics++diagPics++paPics++actsPics 
+    (caTxt  ,caPics)   = chpConceptualAnalysis      level fSpec flags
+    (diagTxt,diagPics) = chpDiagnosis               level fSpec flags
+    (paTxt  ,paPics)   = chpProcessAnalysis         level fSpec flags
+    (daTxt  ,daPics)   = chpDataAnalysis            level fSpec flags
+    (actsTxt,actsPics) = let acts=[interfaceChap level fSpec flags act | act <-fActivities fSpec] in (concat$map fst acts,concat$map snd acts)
+    studentversion = theme flags == StudentTheme
+    level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text

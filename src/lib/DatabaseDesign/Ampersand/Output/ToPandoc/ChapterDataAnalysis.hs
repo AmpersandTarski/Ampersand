@@ -49,10 +49,10 @@ chpDataAnalysis lev fSpec flags
              then [p | InternalPlug p<-plugInfos fSpec]
              else nub [p | c<-concs remainingRels, (p,_)<-lookupCpt fSpec c ]
   header :: [Block]
-  header = labeledHeader lev (xLabel DataAnalysis) (case language flags of
+  header = toList (labeledHeader flags lev (xLabel DataAnalysis) (case language flags of
                                               Dutch   ->  "Gegevensstructuur"   
                                               English ->  "Data structure"
-                                        )
+                                        ))
   -- | a short summary of the statistics. This text also serves as an introduction
   daIntro :: [Block]
   daIntro = 
@@ -423,7 +423,7 @@ chpDataAnalysis lev fSpec flags
   daPlug p
    = if null content then [] else plugHeader ++ content
      where
-       plugHeader = labeledHeader (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
+       plugHeader = toList $ labeledHeader flags (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of

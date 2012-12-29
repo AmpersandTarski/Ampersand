@@ -1,5 +1,5 @@
 ﻿{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-{-# LANGUAGE RelaxedPolyRec #-} -- -RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
+{-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
      pCtx2aCtx, disambiguate,

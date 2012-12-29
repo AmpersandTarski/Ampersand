@@ -20,11 +20,11 @@ fpAnalysis :: Int -> Fspc -> Options ->  [Block]
 fpAnalysis lev fSpec flags = if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
   header :: [Block]
-  header = labeledHeader lev (xLabel SoftwareMetrics)
+  header = toList (labeledHeader flags lev (xLabel SoftwareMetrics)
                          (case language flags of
                                Dutch   ->  "Functiepunt Analyse"   
                                English ->  "Function Point Analysis"
-                         )
+                         ))
   caIntro :: [Block]
   caIntro = 
    case language flags of
