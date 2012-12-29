@@ -21,19 +21,19 @@ fatal = fatalMsg "Main"
 -- TODO: this should be cleaned up more. Also, type checking should return Either.
 main :: IO ()
 main =
- do { opts <- getOptions
-    ; if showVersion opts || showHelp opts
-        then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
-        else do { actx <- parseAndTypeCheck opts
-                ; let fspc = makeFspec opts actx
-                ; generate opts fspc
+ do { flags <- getOptions
+    ; if showVersion flags || showHelp flags
+        then mapM_ putStr (helpNVersionTexts ampersandVersionStr flags)
+        else do { actx <- parseAndTypeCheck flags
+                ; let fspc = makeFspec flags actx
+                ; generate flags fspc
                 }
     }             
   where
       parseAndTypeCheck :: Options -> IO A_Context 
-      parseAndTypeCheck opts =
-       do { verboseLn opts "Start parsing...."
-          ; pCtxOrErr <- parseContext opts (fileName opts)
+      parseAndTypeCheck flags =
+       do { verboseLn flags "Start parsing...."
+          ; pCtxOrErr <- parseContext flags (fileName flags)
           ; case pCtxOrErr of
               Left pErr ->
                do { Prelude.putStrLn $ "Parsing error:"
@@ -41,22 +41,22 @@ main =
                   ; exitWith $ ExitFailure 10 
                   }
               Right p_context -> 
-               do { pPops <- case importfile opts of
+               do { pPops <- case importfile flags of
                                []             -> return []
                                importFilename -> do { popsText <- readFile importFilename
-                                                    ; parsePopulations popsText opts importFilename
+                                                    ; parsePopulations popsText flags importFilename
                                                     }
-                  ; verboseLn opts "Type checking..."
+                  ; verboseLn flags "Type checking..."
                   ; let (actxOrErrs,stTypeGraph,condensedGraph) = typeCheck p_context pPops
 -- For the purpose of debugging the type checker, or for educational purposes, the switch "--typing" can be used.
 -- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
 -- Use only for very small scripts, or else the results will not be very informative.
 -- For the large scripts that are used in projects, the program may abort due to insufficient resources.
-                  ; if typeGraphs opts
-                    then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
-                            ; verboseLn opts (condensedGraphPath++" written.")
-                            ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
-                            ; verboseLn opts (stDotGraphPath++" written.")
+                  ; if typeGraphs flags
+                    then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".png")
+                            ; verboseLn flags (condensedGraphPath++" written.")
+                            ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName flags) ".png")
+                            ; verboseLn flags (stDotGraphPath++" written.")
                             }
                     else do { putStr "" }
                   ; case actxOrErrs of
@@ -73,18 +73,18 @@ main =
 --  | The Fspc is the datastructure that contains everything to generate the output. This monadic function
 --    takes the Fspc as its input, and spits out everything the user requested.
 generate :: Options -> Fspc -> IO ()
-generate opts fSpec = 
- do { verboseLn opts "Generating..."
-    ; when (genXML opts)      $ doGenXML      fSpec opts
-    ; when (genUML opts)      $ doGenUML      fSpec opts 
-    ; when (haskell opts)     $ doGenHaskell  fSpec opts 
-    ; when (export2adl opts)  $ doGenADL      fSpec opts
-    ; when (genFspec opts)    $ doGenDocument fSpec opts 
-    ; when (genExcel opts)    $ doGenExcel    fSpec opts
-    ; when (proofs opts)      $ prove         fSpec opts
+generate flags fSpec = 
+ do { verboseLn flags "Generating..."
+    ; when (genXML flags)      $ doGenXML      fSpec flags
+    ; when (genUML flags)      $ doGenUML      fSpec flags 
+    ; when (haskell flags)     $ doGenHaskell  fSpec flags 
+    ; when (export2adl flags)  $ doGenADL      fSpec flags
+    ; when (genFspec flags)    $ doGenDocument fSpec flags 
+    ; when (genExcel flags)    $ doGenExcel    fSpec flags
+    ; when (proofs flags)      $ prove         fSpec flags
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
-    ; verboseLn opts "Done."
+    ; verboseLn flags "Done."
     }
 
