@@ -15,6 +15,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 
 interfaceChap :: Int -> Fspc -> Options -> Activity ->  ([Block],[Picture])
 interfaceChap lev fSpec flags act
+-- TODO: This should be one chapter for all interfaces.
  = ( header ++ ifcIntro
       ++ (if genGraphics flags then txtKnowledgeGraph else [])
       -- ifcFieldTables
@@ -25,7 +26,7 @@ interfaceChap lev fSpec flags act
   graphic :: Bool
   graphic = genGraphics flags && theme flags /= StudentTheme
   header :: [Block]
-  header = toList (labeledHeader flags lev ("chpIfc"++name act) (name act))
+  header = toList (labeledThing flags lev ("chpIfc"++name act) (name act))
   ifcIntro :: [Block]
   ifcIntro
    = purposes2Blocks flags purps
