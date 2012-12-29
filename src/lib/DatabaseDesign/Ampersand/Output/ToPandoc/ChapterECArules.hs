@@ -13,7 +13,7 @@ chpECArules lev fSpec flags
  = header ++ ecaIntro ++ ifcECA
  where
   header :: [Block]
-  header = labeledHeader lev "chpECA" "ECA rules"
+  header = toList $ labeledHeader flags lev "chpECA" "ECA rules"
   ecaIntro :: [Block]
   ecaIntro
    = [ Plain $ case language flags of

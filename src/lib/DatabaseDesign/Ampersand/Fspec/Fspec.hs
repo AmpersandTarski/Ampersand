@@ -18,6 +18,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , Activity(..)
           , PlugSQL(..)
           , lookupCpt
+          , metaValues
           , SqlField(..)
           , FPA(..)
           , FPcompl(..)
@@ -71,6 +72,10 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , userDefPops    :: [UserDefPop]           -- all user defined populations of relations and concepts
                  , allViolations  :: [(Rule,[Paire])]       -- all rules with violations.
                  }
+metaValues :: String -> Fspc -> [String]
+metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
+  
+
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
   morlist   fSpec = morlist (interfaceS fSpec) ++ morlist (vrules fSpec)

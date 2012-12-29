@@ -7,21 +7,20 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
-import System.Locale
 import Data.Time.Format
 
 
 chpIntroduction :: Int -> Fspc -> Options ->  [Block]
 chpIntroduction lev fSpec flags = header ++ introContents (language flags)
     where 
-        header = labeledHeader lev (xLabel Intro) (case language flags of
+        header = toList $ labeledHeader flags lev (xLabel Intro) (case language flags of
                                                      Dutch   ->  "Inleiding"   
                                                      English ->  "Introduction"
                                                   )
         contextPurposes = purposesDefinedIn fSpec (language flags) fSpec
         --TODO: different intro for theme flags == "student"
-        date = formatTime defaultTimeLocale "%-d-%-m-%Y" (genTime flags)
-        time = formatTime defaultTimeLocale "%H:%M:%S" (genTime flags)
+        date = formatTime (lclForLang flags) "%-d-%-m-%Y" (genTime flags)
+        time = formatTime (lclForLang flags) "%H:%M:%S" (genTime flags)
         introContents Dutch = 
           ( if null contextPurposes
             then [ Para 
