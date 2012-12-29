@@ -13,6 +13,7 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , meaning2Blocks
     , amPandoc
     , isMissing
+    , lclForLang
     , dpRule
     , Counter(..),newCounter,incEis)
 where
@@ -28,6 +29,7 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List             (intercalate)
+import System.Locale
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
@@ -208,3 +210,13 @@ isMissing mp =
     Nothing -> True
     Just p  -> (not . explUserdefd) p
 
+lclForLang :: Options -> TimeLocale
+lclForLang flags = defaultTimeLocale { months =
+         case language flags of
+           Dutch   -> [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr")
+                      , ("mei","mei"),("juni","jun"),("juli","jul"),("augustus","aug")
+                      , ("september","sep"),("oktober","okt"),("november","nov"),("december","dec")]
+           English -> [ ("January","Jan"),("February","Feb"),("March","Mar"),("April","Apr")
+                      , ("May","May"),("June","Jun"),("July","Jul"),("August","Aug")
+                      , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
+           }

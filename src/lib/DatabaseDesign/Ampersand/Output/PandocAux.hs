@@ -5,6 +5,7 @@ module DatabaseDesign.Ampersand.Output.PandocAux
     --  , xrefReference
       , symDefLabel, symDefRef
       , symReqLabel, symReqRef, symReqPageRef
+      , xrefferable
     --  , xrefFigure1
       , pandocEqnArray
       , pandocEquation
@@ -23,6 +24,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
 import Data.Char hiding (Space)
 import Text.Pandoc
+import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Basics hiding (hPutStrLn)
 import DatabaseDesign.Ampersand.Classes (Relational(isTrue))
@@ -492,15 +494,20 @@ instance SymRef PlugInfo where
 --         So now he wrote chapters as 0 setting a [Inline] -> [RawInline "latex" "\\chapter{...}"].
 --         We do not know yet how this relates to other formats like rtf.
 
-labeledHeader :: Int -> String -> String -> [Block]
---labeledHeader 0 lbl str =
---                 [Para [RawInline "latex" ("\\chapter{"++latexEscShw str++"}"), xrefLabel lbl]]
-labeledHeader lev lbl str =
-                 Header (lev+1) [Str str]
-                 : [Para [xrefLabel lbl]]
+-- | This function returns a header, which can be refferred to.
+labeledHeader :: Options -> Int -> String -> String -> Blocks
+labeledHeader flags lev lbl t =
+    header (lev+1) 
+       ((text t <> xrefLabel flags lbl))  
  
-xrefLabel :: String -> Inline        -- uitbreidbaar voor andere rendering dan LaTeX
-xrefLabel myLabel = RawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
+-- | A label that can be cross referenced to. (only for output formats that support this feature)
+xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere rendering dan LaTeX
+xrefLabel flags myLabel
+   = if xrefferable flags
+     then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
+     else fatal 508 "Illegal use of xrefLabel."
+xrefferable :: Options -> Bool
+xrefferable flags = fspecFormat flags `elem` [FLatex] 
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
 xrefCitation myLabel = RawInline "latex" ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 

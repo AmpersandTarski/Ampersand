@@ -29,14 +29,14 @@ chpNatLangReqs :: Int -> Fspc -> Options ->  [Block]
 chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs opts then legalRefs else []
   where
   header :: [Block]
-  header = labeledHeader lev (xLabel FunctionalRequirements)
+  header = toList (labeledHeader opts lev (xLabel FunctionalRequirements)
                                          (case language opts of
                                              Dutch   ->  "Gemeenschappelijke taal"   
                                              English ->  "Shared Language"
-                                         )
+                                         ))
                                          
   legalRefs :: [Block]
-  legalRefs = labeledHeader (lev+1) "LegalRefs" sectionTitle ++
+  legalRefs = toList (labeledHeader opts (lev+1) "LegalRefs" sectionTitle) ++
               [  Plain [ RawInline "latex" $  unlines $
                          [ "\\begin{longtable}{lp{10cm}}"
                          , "\\hline "
@@ -211,7 +211,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                            --Just (PatternTheme pat) -> "Pattern "++name pat
                            --Just (ProcessTheme prc) -> "Process "++name prc
               header' :: [Block]
-              header' = labeledHeader (lev+1) (xLabel DataAnalysis++case mTheme of
+              header' = toList (labeledHeader opts (lev+1) (xLabel DataAnalysis++case mTheme of
                                                                        Nothing ->  "_LooseEnds"
                                                                        _       -> themeName
                                               )
@@ -219,7 +219,7 @@ chpNatLangReqs lev fSpec opts = header ++ dpIntro ++ dpRequirements ++ if genLeg
                                               (Nothing, Dutch  ) -> "Losse eindjes..."
                                               (Nothing, English) -> "Loose ends..."
                                               _                  -> themeName
-                                          )
+                                          ))
                                           
               explainsPat :: [Block]
               explainsPat

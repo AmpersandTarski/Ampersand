@@ -25,7 +25,7 @@ interfaceChap lev fSpec flags act
   graphic :: Bool
   graphic = genGraphics flags && theme flags /= StudentTheme
   header :: [Block]
-  header = labeledHeader lev ("chpIfc"++name act) (name act)
+  header = toList (labeledHeader flags lev ("chpIfc"++name act) (name act))
   ifcIntro :: [Block]
   ifcIntro
    = purposes2Blocks flags purps
