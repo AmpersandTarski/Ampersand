@@ -20,11 +20,7 @@ chpConceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures)
   where
   header :: [Block]
-  header = toList $ labeledHeader flags lev (xLabel ConceptualAnalysis)
-                                        (case language flags of
-                                            Dutch   ->  "Conceptuele Analyse"   
-                                            English ->  "Conceptual Analysis"
-                                        )
+  header = toList $ chptHeader flags ConceptualAnalysis
   caIntro :: [Block]
   caIntro
    = (case language flags of
@@ -38,7 +34,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
                    ]]
         English -> [Para
 --                    [ Str "This chapter provides an analysis of the principles described in chapter "
---                    , xrefReference FunctionalRequirements
+--                    , xrefReference FunctReqts
 --                    , Str ". Each section in that chapter is analysed in terms of relations "
 --                    , Str "and each principle is then translated in a rule. "
                     [ Str "This chapter defines the formal language, in which functional requirements of "
@@ -62,7 +58,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
   caSection :: Pattern -> [Block]
   caSection pat
    =    -- new section to explain this pattern  
-        toList ( labeledHeader flags (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
+        toList ( labeledThing flags (lev+1) (xLabel ConceptualAnalysis++"_"++name pat) (name pat))
         -- The section starts with the reason why this pattern exists 
      ++ purposes2Blocks flags (purposesDefinedIn fSpec (language flags) pat)
         -- followed by a conceptual model for this pattern
@@ -78,20 +74,20 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
      ++ (case language flags of
            Dutch   -> [Para [Str "De definities van concepten zijn te vinden in de index."]
                       ]++
-                      toList (labeledHeader flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
+                      toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Gedeclareerde relaties")
                       ++
                       [Para [Str "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en een betekenis."]]
            English -> [Para [Str "The definitions of concepts can be found in the glossary."]
                       ]++
-                      toList (labeledHeader flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
+                      toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_relationsOf_"++name pat) "Declared relations")
                       ++
                       [Para [Str "This section itemizes the declared relations with properties and a meaning."]])
      ++ [DefinitionList blocks | let blocks = map caRelation (declarations pat), not(null blocks)]
      ++ (case language flags of
-           Dutch   -> toList (labeledHeader flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
+           Dutch   -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formele regels")
                       ++
                       [Plain [Str "Deze paragraaf geeft een opsomming van de formele regels met een verwijzing naar de gemeenschappelijke taal van de belanghebbenden ten behoeve van de traceerbaarheid."]]
-           English -> toList (labeledHeader flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
+           English -> toList (labeledThing flags (lev+2) (xLabel ConceptualAnalysis++"_rulesOf_"++name pat) "Formal rules")
                       ++
                       [Plain [Str "This section itemizes the formal rules with a reference to the shared language of stakeholders for the sake of traceability."]])
      ++ [DefinitionList blocks | let blocks = map caRule (invariants pat `isc` udefrules pat), not(null blocks)]

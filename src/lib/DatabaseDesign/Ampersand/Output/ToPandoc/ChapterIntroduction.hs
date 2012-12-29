@@ -6,17 +6,13 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.Time.Format
 
 
 chpIntroduction :: Int -> Fspc -> Options ->  [Block]
 chpIntroduction lev fSpec flags = header ++ introContents (language flags)
     where 
-        header = toList $ labeledHeader flags lev (xLabel Intro) (case language flags of
-                                                     Dutch   ->  "Inleiding"   
-                                                     English ->  "Introduction"
-                                                  )
+        header = toList $ chptHeader flags Intro
         contextPurposes = purposesDefinedIn fSpec (language flags) fSpec
         --TODO: different intro for theme flags == "student"
         date = formatTime (lclForLang flags) "%-d-%-m-%Y" (genTime flags)
@@ -33,7 +29,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                         , Str "Een aantal van deze afspraken is gebruikt als functionele eis om de onderhavige functionele specificatie"
                         , Note [Para [Str "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "]]
                         , Str " samen te stellen. "
-                        , Str "Deze eisen staan opgesomd in hoofdstuk ", xrefReference FunctionalRequirements, Str ", geordend op thema. "
+                        , Str "Deze eisen staan opgesomd in hoofdstuk ", xrefReference FunctReqts, Str ", geordend op thema. "
                         ]]
             else concat [amPandoc (explMarkup p) | p<-contextPurposes] )++
           [ Para 
@@ -43,7 +39,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
           , Para 
                 [ Str "De conceptuele analyse in hoofdstuk ", xrefReference ConceptualAnalysis
                 , Str " is bedoeld voor requirements engineers en architecten om de afspraken uit hoofdstuk "
-                , xrefReference FunctionalRequirements, Str " te valideren en te formaliseren. "
+                , xrefReference FunctReqts, Str " te valideren en te formaliseren. "
                 , Str "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
                 , Str "De formalisatie in dit hoofdstuk maakt consistentie van de functionele specificatie bewijsbaar. "
                 , Str "Ook garandeert het een eenduidige interpretatie van de eisen."
@@ -55,9 +51,9 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                 , Str " beschrijft de gegevensverzamelingen waarop ", Quoted  SingleQuote [Str (name fSpec)], Str " wordt gebouwd. "
                 , Str "Elk volgend hoofdstuk definieert één business service. "
                 , Str "Hierdoor kunnen bouwers zich concentreren op één service tegelijk. "
-                , Str "Tezamen ondersteunen deze services alle afspraken uit hoofdstuk ", xrefReference FunctionalRequirements, Str ". "
+                , Str "Tezamen ondersteunen deze services alle afspraken uit hoofdstuk ", xrefReference FunctReqts, Str ". "
                 , Str "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt ", Quoted  SingleQuote [Str (name fSpec)]
-                , Str " compliance ten aanzien van alle eisen uit hoofdstuk ", xrefReference FunctionalRequirements, Str " ."
+                , Str " compliance ten aanzien van alle eisen uit hoofdstuk ", xrefReference FunctReqts, Str " ."
                 ]
          ]
 
@@ -72,7 +68,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                 , Str "A number of these rules have been used as functional requirement to assemble this functional specification"
                 , Note [Para [Str "To use agreements as functional requirements characterizes the Ampersand approach, which has been used to produce this document. "]]
                 , Str ". "
-                , Str "Those rules are listed in chapter ", xrefReference FunctionalRequirements, Str ", ordered by theme. "
+                , Str "Those rules are listed in chapter ", xrefReference FunctReqts, Str ", ordered by theme. "
                 ]
           , Para 
                 [ Str "The diagnosis in chapter ", xrefReference Diagnosis
@@ -81,7 +77,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
           , Para 
                 [ Str "The conceptual analysis in chapter ", xrefReference ConceptualAnalysis
                 , Str " is meant for requirements engineers and architects to validate and formalize the requirements from chapter "
-                , xrefReference FunctionalRequirements, Str ". "
+                , xrefReference FunctReqts, Str ". "
                 , Str "It is also meant for testers to come up with correct test cases. "
                 , Str "The formalization in this chapter makes consistency of the functional specification provable. "
                 , Str "It also yields an unambiguous interpretation of all requirements."
@@ -93,7 +89,7 @@ chpIntroduction lev fSpec flags = header ++ introContents (language flags)
                 , Str " describes the data sets upon which ", Quoted  SingleQuote [Str (name fSpec)], Str " is built. "
                 , Str "Each subsequent chapter defines one business service. "
                 , Str "This allows builders focus on a single service at a time. "
-                , Str "Together, these services fulfill all commitments from chapter ", xrefReference FunctionalRequirements, Str ". "
+                , Str "Together, these services fulfill all commitments from chapter ", xrefReference FunctReqts, Str ". "
                 , Str "By disclosing all functionality exclusively through these services, ", Quoted  SingleQuote [Str (name fSpec)]
-                , Str " ensures compliance to all rules from chapter ", xrefReference FunctionalRequirements, Str ". "
+                , Str " ensures compliance to all rules from chapter ", xrefReference FunctReqts, Str ". "
                 ]]  

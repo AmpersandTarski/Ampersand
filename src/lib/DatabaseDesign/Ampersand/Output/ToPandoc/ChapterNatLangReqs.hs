@@ -29,14 +29,9 @@ chpNatLangReqs :: Int -> Fspc -> Options ->  [Block]
 chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else []
   where
   header :: [Block]
-  header = toList (labeledHeader flags lev (xLabel FunctionalRequirements)
-                                         (case language flags of
-                                             Dutch   ->  "Gemeenschappelijke taal"   
-                                             English ->  "Shared Language"
-                                         ))
-                                         
+  header = toList (chptHeader flags FunctReqts)
   legalRefs :: [Block]
-  legalRefs = toList (labeledHeader flags (lev+1) "LegalRefs" sectionTitle) ++
+  legalRefs = toList (labeledThing flags (lev+1) "LegalRefs" sectionTitle) ++
               [  Plain [ RawInline "latex" $  unlines $
                          [ "\\begin{longtable}{lp{10cm}}"
                          , "\\hline "
@@ -211,7 +206,7 @@ chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLe
                            --Just (PatternTheme pat) -> "Pattern "++name pat
                            --Just (ProcessTheme prc) -> "Process "++name prc
               header' :: [Block]
-              header' = toList (labeledHeader flags (lev+1) (xLabel DataAnalysis++case mTheme of
+              header' = toList (labeledThing flags (lev+1) (xLabel DataAnalysis++case mTheme of
                                                                        Nothing ->  "_LooseEnds"
                                                                        _       -> themeName
                                               )

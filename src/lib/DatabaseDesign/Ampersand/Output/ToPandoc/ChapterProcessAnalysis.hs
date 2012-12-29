@@ -35,11 +35,7 @@ chpProcessAnalysis lev fSpec flags
 
   header :: [Block]
   header
-   = toList (labeledHeader flags lev (xLabel ProcessAnalysis)
-                                       (case language flags of
-                                              Dutch   ->  "Procesanalyse"   
-                                              English ->  "Process Analysis"
-                                        )) ++
+   = toList (chptHeader flags ProcessAnalysis) ++
      purposes2Blocks flags purps ++ -- This explains the purpose of this context.
      [ case language flags of
          Dutch   ->
@@ -136,7 +132,7 @@ chpProcessAnalysis lev fSpec flags
     iterat :: [FProcess] -> Int -> [A_Concept] -> [Declaration] -> [([Block],[Picture])]
     iterat [] _ _ _ = []
     iterat (fproc:fps) i seenConcepts seenDeclarations
-     = (  toList (labeledHeader flags (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
+     = (  toList (labeledThing flags (lev+1) (xLabel ProcessAnalysis++"_"++name fproc) (name fproc))    -- new section to explain this theme
        ++ sctMotivation                       -- The section startss with the reason why this process exists,
        ++ txtProcessModel fproc
        ++ txtLangModel fproc

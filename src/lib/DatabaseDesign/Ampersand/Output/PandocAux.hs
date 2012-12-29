@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Output.PandocAux
       ( writepandoc
-      , labeledHeader
+      , labeledThing
     --  , xrefReference
       , symDefLabel, symDefRef
       , symReqLabel, symReqRef, symReqPageRef
-      , xrefferable
+      , xrefSupported
     --  , xrefFigure1
       , pandocEqnArray
       , pandocEquation
@@ -330,20 +330,20 @@ instance SymRef PlugInfo where
 --         So now he wrote chapters as 0 setting a [Inline] -> [RawInline "latex" "\\chapter{...}"].
 --         We do not know yet how this relates to other formats like rtf.
 
--- | This function returns a header, which can be refferred to.
-labeledHeader :: Options -> Int -> String -> String -> Blocks
-labeledHeader flags lev lbl t =
+-- TODO: Fix the other labeled 'things', to make a neat reference.
+labeledThing :: Options -> Int -> String -> String -> Blocks
+labeledThing flags lev lbl t =
     header (lev+1) 
        ((text t <> xrefLabel flags lbl))  
  
 -- | A label that can be cross referenced to. (only for output formats that support this feature)
 xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere rendering dan LaTeX
 xrefLabel flags myLabel
-   = if xrefferable flags
+   = if xrefSupported flags
      then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
      else fatal 508 "Illegal use of xrefLabel."
-xrefferable :: Options -> Bool
-xrefferable flags = fspecFormat flags `elem` [FLatex] 
+xrefSupported :: Options -> Bool
+xrefSupported flags = fspecFormat flags `elem` [FLatex] 
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
 xrefCitation myLabel = RawInline "latex" ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 

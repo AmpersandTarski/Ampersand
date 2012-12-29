@@ -49,10 +49,7 @@ chpDataAnalysis lev fSpec flags
              then [p | InternalPlug p<-plugInfos fSpec]
              else nub [p | c<-concs remainingRels, (p,_)<-lookupCpt fSpec c ]
   header :: [Block]
-  header = toList (labeledHeader flags lev (xLabel DataAnalysis) (case language flags of
-                                              Dutch   ->  "Gegevensstructuur"   
-                                              English ->  "Data structure"
-                                        ))
+  header = toList (chptHeader flags DataAnalysis)
   -- | a short summary of the statistics. This text also serves as an introduction
   daIntro :: [Block]
   daIntro = 
@@ -62,13 +59,13 @@ chpDataAnalysis lev fSpec flags
                     then 
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
                        [ Str "Een aantal concepten uit hoofdstuk "
-                       , xrefReference FunctionalRequirements
+                       , xrefReference FunctReqts
                        , Str " zit in een classificatiestructuur. Deze is in figuur "
                        , xrefReference classificationPicture
                        , Str " weergegeven. " ] 
                      ) ++
                      [ Str "De eisen, die in hoofdstuk "
-                     , xrefReference FunctionalRequirements
+                     , xrefReference FunctReqts
                      , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
                      , xrefReference classDiagramPicture
                      , Str ". " ]
@@ -91,12 +88,12 @@ chpDataAnalysis lev fSpec flags
                     then 
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
                        [ Str "A number of concepts from chapter "
-                       , xrefReference FunctionalRequirements
+                       , xrefReference FunctReqts
                        , Str " is organized in a classification structure. This is represented in figure "
                        , xrefReference classificationPicture
                        , Str ". " ] ) ++
                      [ Str "The requirements, which are listed in chapter "
-                     , xrefReference FunctionalRequirements
+                     , xrefReference FunctReqts
                      , Str ", have been translated into the data model in figure "
                      , xrefReference classDiagramPicture
                      , Str ". " ]
@@ -124,13 +121,13 @@ chpDataAnalysis lev fSpec flags
                     then 
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
                        [ Str "Een aantal concepten uit hoofdstuk "
-                       , xrefReference FunctionalRequirements
+                       , xrefReference FunctReqts
                        , Str " zit in een classificatiestructuur. Deze is in figuur "
                        , xrefReference classificationPicture
                        , Str " weergegeven. " ] 
                      ) ++
                      [ Str "De eisen, die in hoofdstuk "
-                     , xrefReference FunctionalRequirements
+                     , xrefReference FunctReqts
                      , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
                      , xrefReference classDiagramPicture
                      , Str ". " ]
@@ -141,12 +138,12 @@ chpDataAnalysis lev fSpec flags
                     then 
                      ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
                        [ Str "A number of concepts from chapter "
-                       , xrefReference FunctionalRequirements
+                       , xrefReference FunctReqts
                        , Str " is organized in a classification structure. This is represented in figure "
                        , xrefReference classificationPicture
                        , Str ". " ] ) ++
                      [ Str "The requirements, which are listed in chapter "
-                     , xrefReference FunctionalRequirements
+                     , xrefReference FunctReqts
                      , Str ", have been translated into the data model in figure "
                      , xrefReference classDiagramPicture
                      , Str ". " ]
@@ -423,7 +420,7 @@ chpDataAnalysis lev fSpec flags
   daPlug p
    = if null content then [] else plugHeader ++ content
      where
-       plugHeader = toList $ labeledHeader flags (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
+       plugHeader = toList $ labeledThing flags (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of

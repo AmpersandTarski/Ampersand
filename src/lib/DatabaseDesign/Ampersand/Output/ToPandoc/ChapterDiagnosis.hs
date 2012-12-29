@@ -36,11 +36,7 @@ chpDiagnosis lev fSpec flags
    , pics )
   where
   header :: [Block]
-  header = toList (labeledHeader flags lev (xLabel Diagnosis)
-                                         (case language flags of
-                                             Dutch   ->  "Diagnose"   
-                                             English ->  "Diagnosis"
-                                         ))
+  header = toList (chptHeader flags Diagnosis)
   diagIntro :: [Block]
   diagIntro = 
     case language flags of
@@ -579,7 +575,7 @@ chpDiagnosis lev fSpec flags
                   Dutch   -> Str "Regel"
                   English -> Str "Rule"):
                 [Space,quoterule r,Space]++
-                if xrefferable flags then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
+                if xrefSupported flags then [ Str "(", RawInline "latex" $ symReqRef r, Str ") "] else []++
                 (case language flags of
                   Dutch   -> [ Str "luidt: " ]
                   English -> [ Str "says: "  ]
