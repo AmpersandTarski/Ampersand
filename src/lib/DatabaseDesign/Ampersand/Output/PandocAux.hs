@@ -132,35 +132,12 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                  Ftextile      -> ".textile"
                                        )
          makeOutput
-            = if False -- (fspecFormat flags == FLatex && not (test flags)) -- temporary still support old LaTeX version 
-              then 
-               do verboseLn flags ("Generating to LaTeX: "++outputFile)
-                  writeFile outputFile (writeLaTeX (writerOptions(Just (theOldLatexTemplate flags))) thePandoc)
-                  verboseLn flags "... done." 
-              else 
-               do template <- readDefaultTemplate fSpecFormatString
+            =  do template <- readDefaultTemplate fSpecFormatString
                   verboseLn flags ("Generating "++fSpecFormatString++" to : "++outputFile)
                   writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
                   verboseLn flags "Variables to set in the template:"
                   verboseLn flags (intercalate "\n   " (map show (writerVariables (writerOptions template))))
                   verboseLn flags "... done."
---          =  case fspecFormat flags of
---              FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
---                            writeFile outputFile (writeNative defaultWriterOptions  thePandoc)
---                            verboseLn flags "... done."
---              FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
---                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
---                            verboseLn flags "... done."
---              FLatex  -> do verboseLn flags ("Generating to LaTeX: "++outputFile)
---                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
---                            verboseLn flags "... done."
---              FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
---                            writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
---                            verboseLn flags "... done."
---              FOpenDocument 
---                      -> do verboseLn flags ("Generating to Open Document Format: "++outputFile)
---                            writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
---                            verboseLn flags "... done."
            where 
               pandocWriter :: WriterOptions -> Pandoc -> String
               pandocWriter =
@@ -201,9 +178,9 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Ftexinfo -> "texinfo"
                   Ftextile -> "textile"                  
               readDefaultTemplate :: String -> IO(Maybe String)
-              readDefaultTemplate  str = 
+              readDefaultTemplate  s = 
                 do { dataDir <- getDataDir
-                   ; let fp = dataDir </> "outputTemplates" </> "default."++str
+                   ; let fp = dataDir </> "outputTemplates" </> "default."++s
                    ; exists <- doesFileExist fp
                    ; (if exists 
                       then do contents <- readFile fp
@@ -286,147 +263,6 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       -- even with --interaction=nonstopmode.
                _  -> return()            
 
--- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
--- De onderstaande code is een vrij rauwe combinatie van de oude LaTeX header en het
--- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
--- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
--- Wellicht wordt e.e.a. daardoor simpeler.
-theOldLatexTemplate :: Options -> String
-theOldLatexTemplate flags 
-  = concat $
-               [ "% This header is the default LaTeX template for generating documents with Ampersand.\n"
-               , "% It was generated with "++ampersandVersionStr++"\n"
-               , "% You can modify this file to make it fit your needs. However, the required knowledge of \n"
-               , "% LaTeX is not documented here. You can find help with that at http://en.wikibooks.org/wiki/LaTeX\n"
-               , "% see the ampersand user guide (TODO) for more information on how to apply your own LaTeX header\n"
-               , "%\n"
-               , "\\documentclass[10pt,a4paper]{report}              % Define the document class\n"
-               , "\\parskip 12pt plus 2.5pt minus 4pt                % Extra vertical space between paragraphs.\n"
-               , "\\parindent 0em                                    % Width of paragraph indentation.\n\n"
-               , "% -- packages used for several purposes:\n"
-               , "\\usepackage{ucs}             % Provides various features for UTF8 (internationalization) stuff\n"
-               , "\\usepackage[utf8x]{inputenc} %\n"
-               , "\\usepackage{float}\n"
-               , "\\usepackage{ctable}\n"
-               , "\\usepackage{theorem}\n"
-               , "\\usepackage{amssymb}\n"
-               , "\\usepackage{amsmath}         % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output.\n"
-               , "\\usepackage{breqn}\n"
-               , "\\usepackage{colonequals}\n"
-            --   , "\\usepackage{hyperref}\n"
-               ] ++
-               ( case theme flags of
-                  ProofTheme -> [ "\\usepackage[landscape]{geometry}\n"
-                                , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/logicmatters/l4llogiciansnew.html\n"
-                                , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/LaTeX/guides/BussGuide2.pdf\n"
-                                , "\\usepackage{bussproofs}\n"
-                                , "\\def\\defaultHypSeparation{\\hskip.0in}\n"
-                                , "\\def\\ScoreOverhang{1pt}\n"]
-                  _ -> []
-               )++
-               ( case language flags of
-                  Dutch   -> [ "\\usepackage[dutch]{babel}\n"
-                             , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]\n"
-                             , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}\n" ]
-                  English -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]\n"
-                             , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}\n" ]
-               )++
-               [ "\\usepackage{graphicx}\n" | genGraphics flags] ++
-          --     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
-               ["\\selectlanguage{dutch}\n" | language flags == Dutch ] ++
-               [ "% =====================================================================================\n"
-               , "% == The hyperref package will take care of turning all internal references of your  ==\n"
-               , "% == document into hyperlinks. For this to work properly some magic is necessary,    ==\n"
-               , "% == so you have to put \\usepackage[pdftex]{hyperref} as the last command            ==\n"
-               , "% == into the preamble of your document.                                             ==\n"
-               , "% == Many options are available to customize the behaviour of the hyperref           ==\n"
-               , "% == package. See http://ctan.tug.org/tex-archive/info/lshort/english/lshort.pdf     ==\n"
-               , "% =====================================================================================\n"
-               , "\\usepackage[pdftex,colorlinks=false]{hyperref}\n"
-               ] ++
-               [ "%  -- end of Ampersand specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template.\n"
-          {-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
-               , "$if(xetex)$\n"
-               , "\\usepackage{ifxetex}\n"
-               , "\\ifxetex\n"
-               , "  \\usepackage{fontspec,xltxtra,xunicode}\n"
-               , "  \\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}\n"
-               , "\\else\n"
-               , "  \\usepackage[mathletters]{ucs}\n"
-               , "  \\usepackage[utf8x]{inputenc}\n"
-               , "\\fi\n"
-               , "$else$\n"
-               , "\\usepackage[mathletters]{ucs}\n"
-               , "\\usepackage[utf8x]{inputenc}\n"
-               , "$endif$\n" -}
-               , "\\setlength{\\parindent}{0pt}\n"
-               , "\\setlength{\\parskip}{6pt plus 2pt minus 1pt}\n"
-               , "$if(verbatim-in-note)$\n"
-               , "\\usepackage{fancyvrb}\n"
-               , "$endif$\n"
-               , "$if(fancy-enums)$\n"
-               , "\\usepackage{enumerate}\n"
-               , "$endif$\n"
-               , "$if(tables)$\n"
-               , "\\usepackage{array}\n"
-               , "% This is needed because raggedright in table elements redefines \\\\:\n"
-               , "\\newcommand{\\PreserveBackslash}[1]{\\let\\temp=\\\\#1\\let\\\\=\\temp}\n"
-               , "\\let\\PBS=\\PreserveBackslash\n"
-               , "$endif$\n"
-               , "$if(strikeout)$\n"
-               , "\\usepackage[normalem]{ulem}\n"
-               , "$endif$\n"
-               , "$if(subscript)$\n"
-               , "\\newcommand{\\textsubscr}[1]{\\ensuremath{_{\\scriptsize\\textrm{#1}}}}\n"
-               , "$endif$\n"
-               , "$if(links)$\n"
-               , "\\usepackage[breaklinks=true]{hyperref}\n"
-               , "$endif$\n"
-               , "$if(url)$\n"
-               , "\\usepackage{url}\n"
-               , "$endif$\n"
-               , "$if(numbersections)$\n"
-               , "$else$\n"
-               , "\\setcounter{secnumdepth}{0}\n"
-               , "$endif$\n"
-               , "$if(verbatim-in-note)$\n"
-               , "\\VerbatimFootnotes % allows verbatim text in footnotes\n"
-               , "$endif$\n"
-               , "$for(header-includes)$\n"
-               , "$header-includes$\n"
-               , "$endfor$\n"
-               , "\n"
-               , "$if(title)$\n"
-               , "\\title{$title$}\n"
-               , "$endif$\n"
-               , "\\author{$for(author)$$author$$sep$\\\\$endfor$}\n"
-               , "$if(date)$\n"
-               , "\\date{$date$}\n"
-               , "$endif$\n"
-               , "\n"
-                 {- "Note that the glossaries package must be loaded after the hyperref package (contrary
-                  -  to the general advice that hyperref should be loaded last). The glossaries
-                  -  package should also be loaded after html, inputenc, babel and ngerman."
-                  - http://ftp.snt.utwente.nl/pub/software/tex/macros/latex/contrib/glossaries/glossariesbegin.pdf -}
-               , "\\usepackage{glossaries}\n"
-               , "\\makeglossaries\n" -- The glossary entries are created by makeDefinition
-               , "\\begin{document}\n"
-               , "$if(title)$\n"
-               , "\\maketitle\n"
-               , "$endif$\n"
-               ] ++
-               ( if diagnosisOnly flags
-                 then []
-                 else [ "\n"
-                      , "$if(toc)$\n"
-                      , "\\tableofcontents\n"
-                      , "\n"
-                      , "$endif$\n"
-                      ] ) ++
-               [ "$body$\n"
-               , "\\end{document}\n"
-               ]
- 
 -----Linguistic goodies--------------------------------------
 
 count :: Options -> Int -> String -> String
@@ -607,11 +443,11 @@ instance ShowMath Declaration where
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
 latexEscShw :: String -> String
 latexEscShw ""           = ""
-latexEscShw ('\"':c:str) | isAlphaNum c = "``"++latexEscShw (c:str)
-                         | otherwise    = "''"++latexEscShw (c:str)
-latexEscShw "\""         = "''"
-latexEscShw (c:str)      | isAlphaNum c && isAscii c = c:latexEscShw str
-                         | otherwise    = f c++latexEscShw str
+latexEscShw ('\"':c:cs) | isAlphaNum c = "``"++latexEscShw (c:cs)
+                        | otherwise    = "''"++latexEscShw (c:cs)
+latexEscShw "\""        = "''"
+latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
+                        | otherwise    = f c++latexEscShw cs
  where
   f '"' = "\\textquotedbl "
   f '#' = "\\#"
@@ -763,20 +599,20 @@ makeDefinition flags i nm lbl def ref =
  where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}" 
        defStr = latexEscShw def
        -- by putting the ref after the first word of the definition, it aligns nicely with the definition
-       insertAfterFirstWord str wordsStr = let (fstWord, rest) = break (==' ') wordsStr
-                                           in  fstWord ++ str ++ rest
+       insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
+                                         in  fstWord ++ s ++ rest
  
 commaEngPandoc :: Inline -> [Inline] -> [Inline]
-commaEngPandoc str [a,b,c]= [a,Str ", ",b,Str ", ",str, Str " ", c]
-commaEngPandoc str [a,b]  = [a,Str " ",str, Str " ", b]
+commaEngPandoc s [a,b,c]= [a,Str ", ",b,Str ", ",s, Str " ", c]
+commaEngPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
 commaEngPandoc _   [a]    = [a]
-commaEngPandoc str (a:as) = [a, Str ", "]++commaEngPandoc str as
+commaEngPandoc s (a:as) = [a, Str ", "]++commaEngPandoc s as
 commaEngPandoc _   []     = []
 
 commaNLPandoc :: Inline -> [Inline] -> [Inline]
-commaNLPandoc str [a,b]  = [a,Str " ",str, Str " ", b]
+commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
 commaNLPandoc  _  [a]    = [a]
-commaNLPandoc str (a:as) = [a, Str ", "]++commaNLPandoc str as
+commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
 commaNLPandoc  _  []     = []
 
 ---------------------------
