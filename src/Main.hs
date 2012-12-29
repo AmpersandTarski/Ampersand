@@ -22,17 +22,17 @@ fatal = fatalMsg "Main"
 -- TODO: should be cleaned up
 main :: IO ()
 main
- = do opts <- getOptions
-      if showVersion opts || showHelp opts
-       then mapM_ putStr (helpNVersionTexts prototypeVersionStr opts)
-       else do aCtx <- parseAndTypeCheck opts
-               let fspc = makeFspec opts aCtx
-               generateProtoStuff opts fspc
+ = do flags <- getOptions
+      if showVersion flags || showHelp flags
+       then mapM_ putStr (helpNVersionTexts prototypeVersionStr flags)
+       else do aCtx <- parseAndTypeCheck flags
+               let fspc = makeFspec flags aCtx
+               generateProtoStuff flags fspc
   where
   parseAndTypeCheck :: Options -> IO A_Context 
-  parseAndTypeCheck opts 
-   = do { verboseLn opts "Start parsing...."
-        ; pCtxOrErr <- parseContext opts (fileName opts)
+  parseAndTypeCheck flags 
+   = do { verboseLn flags "Start parsing...."
+        ; pCtxOrErr <- parseContext flags (fileName flags)
         ; case pCtxOrErr of
            Left pErr ->
             do { Prelude.putStrLn $ "Parse error:"
@@ -40,26 +40,26 @@ main
                ; exitWith $ ExitFailure 10 
                }
            Right p_context ->  
-            do { let importFilename = importfile opts
+            do { let importFilename = importfile flags
                ; pPops <- if null importFilename then return [] 
                           else
                            do popsText <- readFile importFilename
-                              case fileformat opts of
-                                Adl1PopFormat -> parsePopulations popsText opts importFilename
-                                Adl1Format -> do verbose opts ("Importing "++importFilename++" in RAP... ")
-                                                 imppCtxOrErr <- parseContext opts (importfile opts)
+                              case fileformat flags of
+                                Adl1PopFormat -> parsePopulations popsText flags importFilename
+                                Adl1Format -> do verbose flags ("Importing "++importFilename++" in RAP... ")
+                                                 imppCtxOrErr <- parseContext flags (importfile flags)
                                                  case imppCtxOrErr of
                                                    (Right imppcx) -> let (aCtxOrErr,_,_) = typeCheck imppcx [] in
                                                                      case aCtxOrErr of
-                                                                      Checked a_context  -> importfspec  (makeFspec opts a_context) opts
-                                                                      Errors _           -> importfailed imppCtxOrErr opts 
-                                                   (Left _)       -> importfailed imppCtxOrErr opts 
-               ; verboseLn opts "Type checking..."
+                                                                      Checked a_context  -> importfspec  (makeFspec flags a_context) flags
+                                                                      Errors _           -> importfailed imppCtxOrErr flags 
+                                                   (Left _)       -> importfailed imppCtxOrErr flags 
+               ; verboseLn flags "Type checking..."
                ; let (actxOrErrs,stTypeGraph,condensedGraph) = typeCheck p_context pPops
-               ; if typeGraphs opts
-                 then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
+               ; if typeGraphs flags
+                 then do { condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".png")
                          ; putStr ("\n"++condensedGraphPath++" written.")
-                         ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
+                         ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName flags) ".png")
                          ; putStr ("\n"++stDotGraphPath++" written.")
                          }
                  else do { putStr "" }
@@ -73,52 +73,53 @@ main
         }
 
 generateProtoStuff :: Options -> Fspc -> IO ()
-generateProtoStuff opts fSpec | validateSQL opts =
- do { verboseLn opts "Validating SQL expressions..."
-    ; isValid <- validateRuleSQL fSpec opts
+generateProtoStuff flags fSpec | validateSQL flags =
+ do { verboseLn flags "Validating SQL expressions..."
+    ; isValid <- validateRuleSQL fSpec flags
     ; when (not isValid) $
         exitWith $ ExitFailure 30
     }
-generateProtoStuff opts fSpec | export2adl opts && fileformat opts==Adl1Format =
- do { verboseLn opts "Exporting Atlas DB content to .adl-file..."
-    ; cx<-atlas2context fSpec opts
-    ; writeFile (combine (dirOutput opts) (outputfile opts)) (showADL cx)
-    ; verboseLn opts $ "Context written to " ++ combine (dirOutput opts) (outputfile opts) ++ "."
+generateProtoStuff flags fSpec | export2adl flags && fileformat flags==Adl1Format =
+ do { verboseLn flags "Exporting Atlas DB content to .adl-file..."
+    ; cx<-atlas2context fSpec flags
+    ; writeFile (combine (dirOutput flags) (outputfile flags)) (showADL cx)
+    ; verboseLn flags $ "Context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
     }
-generateProtoStuff opts fSpec | export2adl opts && fileformat opts==Adl1PopFormat =
- do { verboseLn opts "Exporting Atlas DB content to .pop-file..."
-    ; cxstr<-atlas2populations fSpec opts
-    ; writeFile (combine (dirOutput opts) (outputfile opts)) cxstr
-    ; verboseLn opts $ "Population of context written to " ++ combine (dirOutput opts) (outputfile opts) ++ "."
+generateProtoStuff flags fSpec | export2adl flags && fileformat flags==Adl1PopFormat =
+ do { verboseLn flags "Exporting Atlas DB content to .pop-file..."
+    ; cxstr<-atlas2populations fSpec flags
+    ; writeFile (combine (dirOutput flags) (outputfile flags)) cxstr
+    ; verboseLn flags $ "Population of context written to " ++ combine (dirOutput flags) (outputfile flags) ++ "."
     }
-generateProtoStuff opts fSpec | otherwise        =
- do { verboseLn opts "Generating..."
-    ; when (genPrototype opts) $ doGenProto fSpec opts
-    ; when (genBericht opts)   $ doGenBericht fSpec opts
-    ; case testRule opts of Just ruleName -> ruleTest fSpec opts ruleName
-                            Nothing       -> return ()
-    ; when ((not . null $ allViolations fSpec) && (development opts || theme opts==StudentTheme)) $
-        verboseLn opts "\nWARNING: There are rule violations (see above)."
-    ; verboseLn opts "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
+generateProtoStuff flags fSpec | otherwise        =
+ do { verboseLn flags "Generating..."
+    ; when (genPrototype flags) $ doGenProto fSpec flags
+    ; when (genBericht flags)   $ doGenBericht fSpec flags
+    ; case testRule flags of 
+        Just ruleName -> ruleTest fSpec flags ruleName
+        Nothing       -> return ()
+    ; when ((not . null $ allViolations fSpec) && (development flags || theme flags==StudentTheme)) $
+        verboseLn flags "\nWARNING: There are rule violations (see above)."
+    ; verboseLn flags "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
     }
                
 doGenProto :: Fspc -> Options -> IO ()
-doGenProto fSpec opts =
- do { verboseLn opts "Checking on rule violations..."
+doGenProto fSpec flags =
+ do { verboseLn flags "Checking on rule violations..."
   --  ; let allViolations = violations fSpec
     ; reportViolations (allViolations fSpec)
     
-    ; if (not . null) (allViolations fSpec) && not (development opts) && theme opts/=StudentTheme 
+    ; if (not . null) (allViolations fSpec) && not (development flags) && theme flags/=StudentTheme 
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               } 
-      else do { verboseLn opts "Generating prototype..."
-              ; phpObjInterfaces fSpec opts  
-              ; verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts ++ "."
-              ; if test opts then verboseLn opts $ show (vplugInfos fSpec) else verboseLn opts ""
+      else do { verboseLn flags "Generating prototype..."
+              ; phpObjInterfaces fSpec flags  
+              ; verboseLn flags $ "Prototype files have been written to " ++ dirPrototype flags ++ "."
+              ; if test flags then verboseLn flags $ show (vplugInfos fSpec) else verboseLn flags ""
               }
     }
- where reportViolations []    = verboseLn opts "No violations found."
+ where reportViolations []    = verboseLn flags "No violations found."
        reportViolations viols =
          let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"

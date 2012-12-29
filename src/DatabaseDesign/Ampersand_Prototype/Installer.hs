@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRel
 --  import Debug.Trace
 
 installer :: Fspc -> Options -> String
-installer fSpec opts = intercalate "\n  "
+installer fSpec flags = intercalate "\n  "
    (
       [ "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0 Strict//EN\">"
       , "<html>"
@@ -34,21 +34,21 @@ installer fSpec opts = intercalate "\n  "
       , "  $included = false; // get user/pass elsewhere"
       , "  if(file_exists(\"dbSettings.php\")) include \"dbSettings.php\";"
       , "  else { // no settings found.. try some default settings"
-      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"',$DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"',$DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd opts)++"')))"
+      , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"',$DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"',$DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"')))"
       , "    { // we still have no working settings.. ask the user!"
       , "      die(\"Install failed: cannot connect to MySQL\"); // todo" --todo
       , "    }"
       , "  } "
       , "}"
-      , "if($DB_slct = @mysql_select_db('"++dbName opts++"')){"
+      , "if($DB_slct = @mysql_select_db('"++dbName flags++"')){"
       , "  $existing=true;"
       , "}else{"
       , "  $existing = false; // db does not exist, so try to create it" ] ++
-      indentBlock 2 (createDatabasePHP (dbName opts))  ++
-      [ "  $DB_slct = @mysql_select_db('"++dbName opts++"');"
+      indentBlock 2 (createDatabasePHP (dbName flags))  ++
+      [ "  $DB_slct = @mysql_select_db('"++dbName flags++"');"
       , "}"
       , "if(!$DB_slct){"
-      , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database '"++dbName opts++"'\");" --todo: full error report
+      , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database '"++dbName flags++"'\");" --todo: full error report
       , "}else{"
       ] ++ indentBlock 2
       (

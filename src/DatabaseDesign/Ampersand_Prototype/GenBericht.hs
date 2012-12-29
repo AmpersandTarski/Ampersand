@@ -27,20 +27,20 @@ data Entity = Entity { entName       :: String
                      } deriving Show
  
 doGenBericht :: Fspc -> Options -> IO ()
-doGenBericht fSpec opts =
- do { verboseLn opts "Generating 'Berichtendefinities'..."
-    ; createDirectoryIfMissing True $ combine (dirPrototype opts) "Berichten"
+doGenBericht fSpec flags =
+ do { verboseLn flags "Generating 'Berichtendefinities'..."
+    ; createDirectoryIfMissing True $ combine (dirPrototype flags) "Berichten"
     ; let entities = genEntity_Interfaces $ interfaceS fSpec
     ; let berichtenCSV = allEntitiesToCSV entities
-    ; when (development opts) $ verboseLn opts $ layout berichtenCSV
+    ; when (development flags) $ verboseLn flags $ layout berichtenCSV
     ; genFile "Berichten/Berichten.csv" $ printSemicolonSeparated berichtenCSV
     ; genFile "Berichten/Gegevenswoordenboek.html" $ genGegevensWB entities
     ; genFile "Berichten/Berichtdefinitie.html" $ genBerichtDef entities
     }
  where 
    genFile filename contents = 
-        do { writeFile (combine (dirPrototype opts) filename) contents
-           ; verboseLn opts $ "\nGenerated file "++filename
+        do { writeFile (combine (dirPrototype flags) filename) contents
+           ; verboseLn flags $ "\nGenerated file "++filename
            }
    genEntity_Interfaces :: [Interface] -> [Entity]
    genEntity_Interfaces interfaces' = map genEntity_Interface interfaces'

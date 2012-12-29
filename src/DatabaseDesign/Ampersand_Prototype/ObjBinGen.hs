@@ -21,90 +21,90 @@ import System.Time.Utils   -- modification time.
 #endif
 
 phpObjInterfaces :: Fspc -> Options -> IO()
-phpObjInterfaces fSpec opts =
- do { writeStaticFiles opts
-    ; verboseLn opts "---------------------------"
-    ; verboseLn opts "Generating php Object files with Ampersand"
-    ; verboseLn opts "---------------------------"
-    ; write "Installer.php"             (installer fSpec opts)
+phpObjInterfaces fSpec flags =
+ do { writeStaticFiles flags
+    ; verboseLn flags "---------------------------"
+    ; verboseLn flags "Generating php Object files with Ampersand"
+    ; verboseLn flags "---------------------------"
+    ; write "Installer.php"             (installer fSpec flags)
     
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
     -- we generate a dbSettings.php if it doesn't exists, or if a host, login, or password has been specified
-    ; if not dbSettingsExists ||  any isJust [sqlHost opts, sqlLogin opts, sqlPwd opts]
-      then do { verboseLn opts "  Writing dbSettings.php."
+    ; if not dbSettingsExists ||  any isJust [sqlHost flags, sqlLogin flags, sqlPwd flags]
+      then do { verboseLn flags "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings
               }
-      else verboseLn opts "  Using existing dbSettings.php."
+      else verboseLn flags "  Using existing dbSettings.php."
 
-    ; generateAll fSpec opts          
-    ; when (genAtlas opts) $ doGenAtlas fSpec opts
-    ; verboseLn opts "\n"
+    ; generateAll fSpec flags          
+    ; when (genAtlas flags) $ doGenAtlas fSpec flags
+    ; verboseLn flags "\n"
     }
    where
     write fname content =
-     do { verboseLn opts ("  Generating "++fname)
+     do { verboseLn flags ("  Generating "++fname)
         ; writeFile (combine targetDir fname) content
         }
     dbsettings = "<?php $DB_link=mysql_connect("
-                 ++  "$DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
-                 ++", $DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
-                 ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd opts)++"'"
+                 ++  "$DB_host='"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"'"
+                 ++", $DB_user='"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"'"
+                 ++", $DB_pass='"++addSlashes (fromMaybe "" $ sqlPwd flags)++"'"
                  ++") or exit(\"Error connecting to the database: username / password are probably incorrect.\"); $DB_debug = 3; ?>"
-    targetDir = dirPrototype opts
+    targetDir = dirPrototype flags
 
 doGenAtlas :: Fspc -> Options -> IO()
-doGenAtlas fSpec opts =
- do { verboseLn opts "Installing the Atlas application:"
-    ; verboseLn opts ("Importing "++show (importfile opts)++" into namespace "++ show (namespace opts) ++" of the Atlas ...")
-    ; verboseLn opts ("The atlas application should have been installed in " ++ show (dirPrototype opts) ++ ".")
-    ; fillAtlas fSpec opts
+doGenAtlas fSpec flags =
+ do { verboseLn flags "Installing the Atlas application:"
+    ; verboseLn flags ("Importing "++show (importfile flags)++" into namespace "++ show (namespace flags) ++" of the Atlas ...")
+    ; verboseLn flags ("The atlas application should have been installed in " ++ show (dirPrototype flags) ++ ".")
+    ; fillAtlas fSpec flags
     }             
                 
 writeStaticFiles :: Options -> IO()
-writeStaticFiles opts =  
+writeStaticFiles flags =  
  do {
 #ifdef MIN_VERSION_MissingH 
-      verboseLn opts "Updating static files"
+      verboseLn flags "Updating static files"
 #else
-      verboseLn opts "Writing static files"
+      verboseLn flags "Writing static files"
 #endif
-    ; sequence_ [ writeWhenMissingOrOutdated opts sf (writeStaticFile opts sf) | sf <- allStaticFiles ]
+    ; sequence_ [ writeWhenMissingOrOutdated flags sf (writeStaticFile flags sf) | sf <- allStaticFiles ]
     }
     
 writeWhenMissingOrOutdated :: Options -> StaticFile -> IO () -> IO ()
-writeWhenMissingOrOutdated opts staticFile act =
+writeWhenMissingOrOutdated flags staticFile act =
 #ifdef MIN_VERSION_MissingH 
- do { exists <- doesFileExist $ absFilePath opts staticFile 
+ do { exists <- doesFileExist $ absFilePath flags staticFile 
     ; if exists then
-       do { oldTimeStamp <- getModificationTime $ absFilePath opts staticFile
+       do { oldTimeStamp <- getModificationTime $ absFilePath flags staticFile
           ; if oldTimeStamp < timeStamp staticFile then
-             do { verboseLn opts $ "  Replacing static file "++ filePath staticFile ++" with current version."
+             do { verboseLn flags $ "  Replacing static file "++ filePath staticFile ++" with current version."
                 ; act
                 }
             else
               return () -- skip is not really worth logging
           }
       else
-       do { verboseLn opts $ "  Writing static file "++ filePath staticFile
+       do { verboseLn flags $ "  Writing static file "++ filePath staticFile
           ; act
           }
     }       
 #else
 -- On windows we cannot set the file modification time without requiring a cygwin or mingw build environment,
 -- so we simply replace all static files on each generation.
- do { verboseLn opts $ "  Writing static file "++ filePath staticFile
+ do { verboseLn flags $ "  Writing static file "++ filePath staticFile
     ; act
     }
 #endif
                                     
 writeStaticFile :: Options -> StaticFile -> IO()
-writeStaticFile opts sf = 
-  do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
-     ; write (absFilePath opts sf) (contentString sf) 
+writeStaticFile flags sf = 
+  do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
+     ; write (absFilePath flags sf) (contentString sf) 
 #ifdef MIN_VERSION_MissingH 
      ; let t = clockTimeToEpoch (timeStamp sf)
-     ; setFileTimes (absFilePath opts sf) t t
+     ; setFileTimes (absFilePath flags sf) t t
 #endif
      }
  where write a b = if isBinary sf 
@@ -112,4 +112,4 @@ writeStaticFile opts sf =
                    else writeFile a b
 
 absFilePath :: Options -> StaticFile -> FilePath
-absFilePath opts sf = combine (dirPrototype opts) (filePath sf)
+absFilePath flags sf = combine (dirPrototype flags) (filePath sf)

@@ -32,12 +32,12 @@ tempDbName :: String
 tempDbName = "TemporaryValidationDatabase"
 
 validateRuleSQL :: Fspc -> Options -> IO Bool
-validateRuleSQL fSpec opts =
- do { removeTempDatabase opts -- in case it exists when we start, just drop it
+validateRuleSQL fSpec flags =
+ do { removeTempDatabase flags -- in case it exists when we start, just drop it
     ; hSetBuffering stdout NoBuffering
     
     ; putStrLn "Initializing temporary database"
-    ; createTempDatabase fSpec opts
+    ; createTempDatabase fSpec flags
      
     ; let allExps = getAllInterfaceExps fSpec ++ 
                     getAllRuleExps fSpec ++
@@ -45,10 +45,10 @@ validateRuleSQL fSpec opts =
                     getAllKeyExps fSpec
                     
     ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
-    ; results <- mapM (validateExp fSpec opts) allExps 
+    ; results <- mapM (validateExp fSpec flags) allExps 
                    
     ; putStrLn "\nRemoving temporary database"
-    ; removeTempDatabase opts
+    ; removeTempDatabase flags
     
     ; case [ ve | (ve, False) <- results] of
         [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
@@ -98,9 +98,9 @@ validateExp _     _    vExp@(ERel _, _)   = -- skip all simple relations
  do { putStr "."
     ; return (vExp, True)
     }
-validateExp fSpec opts vExp@(exp, origin) =
+validateExp fSpec flags vExp@(exp, origin) =
  do { --putStr $ "Checking "++origin ++": expression = "++showADL exp
-    ; violationsSQL <- fmap sort . evaluateExpSQL fSpec opts $ exp
+    ; violationsSQL <- fmap sort . evaluateExpSQL fSpec flags $ exp
     ; let violationsAmp = sort $ fullContents (userDefPops fSpec) exp
     
     ; if violationsSQL == violationsAmp 
@@ -120,16 +120,16 @@ validateExp fSpec opts vExp@(exp, origin) =
 
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: Fspc -> Options -> Expression -> IO [(String,String)]
-evaluateExpSQL fSpec opts exp =
-  fmap sort (performQuery opts violationsQuery)
+evaluateExpSQL fSpec flags exp =
+  fmap sort (performQuery flags violationsQuery)
  where violationsExpr = conjNF exp
-       violationsQuery = fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" violationsExpr)
+       violationsQuery = fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" violationsExpr)
                                    (selectExpr fSpec 26 "src" "tgt" violationsExpr) 
   
 performQuery :: Options -> String -> IO [(String,String)]
-performQuery opts queryStr =
+performQuery flags queryStr =
  do { queryResult <- executePHP . showPHP $ 
-        connectToServer opts ++
+        connectToServer flags ++
         [ "mysql_select_db('"++tempDbName++"');"
         , "$result=mysql_query('"++queryStr++"');"
         , "if(!$result)"
@@ -154,30 +154,30 @@ performQuery opts queryStr =
     }
 
 createTempDatabase :: Fspc -> Options -> IO ()
-createTempDatabase fSpec opts =
+createTempDatabase fSpec flags =
  do { _ <- executePHP php
     ; return ()
     }
  where php = showPHP $
-               connectToServer opts ++
+               connectToServer flags ++
                createDatabasePHP tempDbName ++
                [ "mysql_select_db('"++tempDbName++"');"
                , "$existing=false;" ] ++ -- used by php code from Installer.php, denotes whether the table already existed
                createTablesPHP fSpec
 
 removeTempDatabase :: Options -> IO ()
-removeTempDatabase opts =
+removeTempDatabase flags =
  do { _ <- executePHP . showPHP $ 
-        connectToServer opts ++
+        connectToServer flags ++
         ["mysql_query('DROP DATABASE "++tempDbName++"');"]
     ; return ()
     }
 
 connectToServer :: Options -> [String]
-connectToServer opts =
-  ["$DB_link = mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost opts)++"'"
-                         ++",'"++addSlashes (fromMaybe "root" $ sqlLogin opts)++"'"
-                         ++",'"++addSlashes (fromMaybe "" $ sqlPwd opts)++"');"] 
+connectToServer flags =
+  ["$DB_link = mysql_connect('"++addSlashes (fromMaybe "localhost" $ sqlHost flags)++"'"
+                         ++",'"++addSlashes (fromMaybe "root" $ sqlLogin flags)++"'"
+                         ++",'"++addSlashes (fromMaybe "" $ sqlPwd flags)++"');"] 
                
 -- call the command-line php with phpStr as input
 executePHP :: String -> IO String

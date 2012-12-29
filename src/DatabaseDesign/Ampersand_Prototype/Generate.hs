@@ -22,23 +22,23 @@ customCssPath :: String
 customCssPath = "css/Custom.css"
 
 generateAll :: Fspc -> Options -> IO ()
-generateAll fSpec opts =
+generateAll fSpec flags =
  do { writePrototypeFile "Generics.php" . genPhp "Generate.hs" "Generics.php" . intercalate [""] $ 
-        [ generateConstants opts
+        [ generateConstants flags
         , generateSpecializations fSpec
         , generateTableInfos fSpec
-        , generateRules fSpec opts
+        , generateRules fSpec flags
         , generateRoles fSpec
-        , generateKeys fSpec opts
-        , generateInterfaces fSpec opts ]
+        , generateKeys fSpec flags
+        , generateInterfaces fSpec flags ]
     
-    ; case customCssFile opts of
+    ; case customCssFile flags of
         Just customCssFilePath ->
          do { customCssContents <- readCustomCssFile customCssFilePath
             ; writePrototypeFile customCssPath customCssContents
             }
         Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-         do { let dedicatedCSSPath = replaceExtension (fileName opts) "css"
+         do { let dedicatedCSSPath = replaceExtension (fileName flags) "css"
             ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
             ; if dedicatedCSSExists then
                do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
@@ -46,18 +46,18 @@ generateAll fSpec opts =
                   ; writePrototypeFile customCssPath customCssContents
                   }
               else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-               do { customExists <- doesFileExist (combine (dirPrototype opts) customCssPath)
+               do { customExists <- doesFileExist (combine (dirPrototype flags) customCssPath)
                   ; if customExists
-                    then verboseLn opts $ "  File " ++ customCssPath ++ " already exists."
-                    else do { verboseLn opts $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
+                    then verboseLn flags $ "  File " ++ customCssPath ++ " already exists."
+                    else do { verboseLn flags $ "  File " ++ customCssPath ++ " does not exist, creating default for Oblomilan style."
                             ; writePrototypeFile customCssPath "@import url(\"Oblomilan.css\");"
                             }
                   }
             }
             
-    ; when (development opts) $ 
-       do { verboseLn opts "Generated tables\n"
-          ; verboseLn opts ( unlines ( concatMap showPlug [ plug | InternalPlug plug <- plugInfos fSpec]))
+    ; when (development flags) $ 
+       do { verboseLn flags "Generated tables\n"
+          ; verboseLn flags ( unlines ( concatMap showPlug [ plug | InternalPlug plug <- plugInfos fSpec]))
           }
     }
   where
@@ -67,20 +67,20 @@ generateAll fSpec opts =
                       _ <- error ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
                       return "")
     writePrototypeFile fname content =
-     do { verboseLn opts ("  Generating "++fname)
-        --; verboseLn opts $ content
-        ; writeFile (combine (dirPrototype opts) fname) content
+     do { verboseLn flags ("  Generating "++fname)
+        --; verboseLn flags $ content
+        ; writeFile (combine (dirPrototype flags) fname) content
         }
 
 generateConstants :: Options -> [String]
-generateConstants opts = 
+generateConstants flags = 
   [ "$versionInfo = "++showPhpStr prototypeVersionStr++";" -- so we can show the version in the php-generated html
   , ""
-  , "$dbName = "++showPhpStr (dbName opts)++";"
+  , "$dbName = "++showPhpStr (dbName flags)++";"
   , ""
-  , "$isDev = "++showPhpBool (development opts)++";"
+  , "$isDev = "++showPhpBool (development flags)++";"
   , ""
-  , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
+  , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh flags)++";"
   ]
   
 generateSpecializations :: Fspc -> [String]
@@ -153,7 +153,7 @@ generateTableInfos fSpec =
        groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
  
 generateRules :: Fspc -> Options -> [String]
-generateRules fSpec opts =
+generateRules fSpec flags =
   [ "$allRulesSql ="
   , "  array" 
   ] ++
@@ -169,14 +169,14 @@ generateRules fSpec opts =
            , "        , 'srcConcept' => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept' => "++(showPhpStr.name.target.rrexp) rule
            ] ++
-           ( if (ECpl . rrexp) rule /= violationsExpr && verboseP opts
+           ( if (ECpl . rrexp) rule /= violationsExpr && verboseP flags
              then   ["        // Normalization steps:"]
                   ++["        // "++escapePhpStr ls | ls<-(showPrf showADL . cfProof showADL . ECpl . rrexp) rule]
                   ++["        // "]
              else   []
            ) ++
            [ "        // Normalized complement (== violationsSQL): "++ (escapePhpStr.show) violationsExpr
-           , "        , 'violationsSQL' => '"++ fromMaybe (fatal 100 ( "No sql generated for "++showHS opts "" violationsExpr))
+           , "        , 'violationsSQL' => '"++ fromMaybe (fatal 100 ( "No sql generated for "++showHS flags "" violationsExpr))
                                                           (selectExpr fSpec 26 "src" "tgt" violationsExpr)
                                              ++"'" 
            ] ++
@@ -186,10 +186,10 @@ generateRules fSpec opts =
                   ECps [] -> "/* EIsc [], not handled by selectExpr */'"
                   contentsExpr -> fromMaybe
                                     ("/*ERROR: no sql generated for " ++
-                                       escapePhpStr (showHS opts "" contentsExpr) ++ "*/")
+                                       escapePhpStr (showHS flags "" contentsExpr) ++ "*/")
                                     (selectExpr fSpec 26 "src" "tgt" contentsExpr)
                                     ++ "'"
-           | development opts -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
+           | development flags -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
            ] ++
            [ "        , 'pairView' =>" -- a list of sql queries for the pair-view segments 
@@ -205,8 +205,8 @@ generateRules fSpec opts =
     ) ) ++
   [ ""
   , "$invariantRuleNames = array ("++ intercalate ", " (map (showPhpStr . name) invRules) ++");" ]
- where showMeaning rule = maybe "" aMarkup2String (meaning (language opts) rule)
-       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language opts ] of
+ where showMeaning rule = maybe "" aMarkup2String (meaning (language flags) rule)
+       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == language flags ] of
                             []    -> ""
                             markup:_ -> aMarkup2String markup
        rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
@@ -222,7 +222,7 @@ generateRules fSpec opts =
          , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
          , "      , 'expTgt' => "++showPhpStr (show $ target exp)
          , "      , 'expSQL' =>"
-         , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" exp)
+         , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" exp)
                                       (selectExpr fSpec 33 "src" "tgt" exp)++"'"
          , "      )"
          ] 
@@ -245,7 +245,7 @@ generateRoles fSpec =
  where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        
 generateKeys :: Fspc -> Options -> [String]
-generateKeys fSpec opts =
+generateKeys fSpec flags =
   [ "//$allKeys is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getKey())."
   , "$allKeys ="
   , "  array" 
@@ -268,36 +268,36 @@ generateKeys fSpec opts =
        genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
                                    , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                    , "      , 'expSQL' =>"
-                                   , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS opts "" (objctx objDef))
+                                   , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" (objctx objDef))
                                                                 (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)
                                                    ++"' )"
                                    ] 
                 
 generateInterfaces :: Fspc -> Options -> [String]
-generateInterfaces fSpec opts =
+generateInterfaces fSpec flags =
   [ "$allInterfaceObjects ="
   , "  array"
   ] ++
   addToLastLine ";" 
      (indent 4 
        (blockParenthesize  "(" ")" ","
-         (map (generateInterface fSpec opts) (interfaceS fSpec ++ interfaceG fSpec))
+         (map (generateInterface fSpec flags) (interfaceS fSpec ++ interfaceG fSpec))
      ) )
  
 
 generateInterface :: Fspc -> Options -> Interface -> [String]
-generateInterface fSpec opts interface =
+generateInterface fSpec flags interface =
   [ let roleStr = case ifcRoles interface of []    -> " for all roles"
                                              rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (ifcRoles interface)
     in  "// Top-level interface " ++ name interface ++ roleStr  ++ ":" 
   , showPhpStr (name interface) ++ " => " ] ++
-  genInterfaceObjects fSpec opts (ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface) 
+  genInterfaceObjects fSpec flags (ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface) 
   
 -- two arrays: one for the object and one for the list of subinterfaces
 genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
+genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
-  ++ (if objctx object /= normalizedInterfaceExp && verboseP opts
+  ++ (if objctx object /= normalizedInterfaceExp && verboseP flags
       then   ["      // Normalization steps:"]
            ++["      // "++escapePhpStr ls | ls<-showPrf showADL (cfProof showADL (objctx object))] -- escape for the pathological case that one of the names in the relation contains a newline
            ++["      //"]      
@@ -326,11 +326,11 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
-  , "      , 'expressionSQL' => '" ++ fromMaybe (fatal 151 ("No sql generated for "++showHS opts "" normalizedInterfaceExp))
+  , "      , 'expressionSQL' => '" ++ fromMaybe (fatal 151 ("No sql generated for "++showHS flags "" normalizedInterfaceExp))
                                                 (selectExpr fSpec (20+14*depth) "src" "tgt" normalizedInterfaceExp) 
                                    ++ "'"                                                  
   ] 
-  ++ generateMSubInterface fSpec opts editableRels depth (objmsub object) ++
+  ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
   ]
  where isEditable rel = rel `elem` editableRels
@@ -342,7 +342,7 @@ genInterfaceObjects fSpec opts editableRels mInterfaceRoles depth object =
                                  ++ concatMap getEditableConcepts (objAts obj)
   
 generateMSubInterface :: Fspc -> Options -> [Relation] -> Int -> Maybe SubInterface -> [String] 
-generateMSubInterface fSpec opts editableRels depth subIntf =
+generateMSubInterface fSpec flags editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ] 
     Just (InterfaceRef nm) -> [ "      // InterfaceRef" 
@@ -354,7 +354,7 @@ generateMSubInterface fSpec opts editableRels depth subIntf =
                               ] ++ 
                               indent 12 
                                 (blockParenthesize "(" ")" "," 
-                                  (map (genInterfaceObjects fSpec opts editableRels Nothing (depth + 1)) objects))
+                                  (map (genInterfaceObjects fSpec flags editableRels Nothing (depth + 1)) objects))
   
 
 -- utils
