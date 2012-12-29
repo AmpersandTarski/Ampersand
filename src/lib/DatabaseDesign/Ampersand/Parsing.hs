@@ -30,20 +30,20 @@ fatal = fatalMsg "Parsing"
 parseContext :: Options       -- ^ flags to be taken into account
             -> FilePath      -- ^ the full path to the file to parse 
             -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
-parseContext opts file = tryAll versions2try
+parseContext flags file = tryAll versions2try
     where 
       versions2try :: [ParserVersion]
-      versions2try = case forcedParserVersion opts of
+      versions2try = case forcedParserVersion flags of
          Just pv  -> [pv]
          Nothing  -> [Current] -- ,Legacy,Current] --the errors of the last will be printed on the output stream
       
       try :: ParserVersion -> IO (Either ParseError P_Context)
-      try pv = do { verboseLn opts $ "Parsing with "++show pv++"..."
-                  ; eRes <- parseADL opts pv file
+      try pv = do { verboseLn flags $ "Parsing with "++show pv++"..."
+                  ; eRes <- parseADL flags pv file
                   ; case eRes of 
-                      Right ctx  -> verboseLn opts "Parsing successful"
+                      Right ctx  -> verboseLn flags "Parsing successful"
                                 >> return (Right ctx)
-                      Left err -> verboseLn opts "Parsing failed"
+                      Left err -> verboseLn flags "Parsing failed"
                                  >> return (Left err)
                   }
                   
@@ -80,10 +80,10 @@ parseADL :: Options
          -> ParserVersion -- ^ The specific version of the parser to be used
          -> FilePath      -- ^ The name of the .adl file
          -> IO (Either ParseError P_Context) -- ^ The result: Either some errors, or the parsetree.
-parseADL opts parserVersion file =
- do { when (parserVersion==Current) $ verboseLn opts $ "Files read:"
-    ; (result, parsedFiles) <- readAndParseFile opts parserVersion 0 [] Nothing "" file
-    ; when (parserVersion==Current) $ verboseLn opts $ "\n"
+parseADL flags parserVersion file =
+ do { when (parserVersion==Current) $ verboseLn flags $ "Files read:"
+    ; (result, parsedFiles) <- readAndParseFile flags parserVersion 0 [] Nothing "" file
+    ; when (parserVersion==Current) $ verboseLn flags $ "\n"
     ; return result
     }
 
@@ -95,7 +95,7 @@ parseADL opts parserVersion file =
 
 readAndParseFile :: Options -> ParserVersion -> Int -> [String] -> Maybe String -> String -> String ->
                     IO (Either ParseError P_Context, [String])
-readAndParseFile opts parserVersion depth alreadyParsed mIncluderFilepath fileDir relativeFilepath =
+readAndParseFile flags parserVersion depth alreadyParsed mIncluderFilepath fileDir relativeFilepath =
  catch myMonad myHandler
    where 
      myMonad =
@@ -103,12 +103,12 @@ readAndParseFile opts parserVersion depth alreadyParsed mIncluderFilepath fileDi
             -- Legacy parser has no includes, so no need to print here
       
           ; if canonicFilepath `elem` alreadyParsed 
-            then do { when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
+            then do { when (parserVersion==Current) $ verboseLn flags $ replicate (3*depth) ' ' ++ "(" ++ filepath ++ ")"
                     ; return (Right emptyContext, alreadyParsed) -- returning an empty context is easier than a maybe (leads to some plumbing in readAndParseIncludeFiles)
                     } 
             else do { fileContents <- DatabaseDesign.Ampersand.Basics.readFile filepath
-                    ; when (parserVersion==Current) $ verboseLn opts $ replicate (3*depth) ' ' ++ filepath
-                    ; parseFileContents opts parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
+                    ; when (parserVersion==Current) $ verboseLn flags $ replicate (3*depth) ' ' ++ filepath
+                    ; parseFileContents flags parserVersion  (depth+1) (canonicFilepath:alreadyParsed)
                                         fileContents newFileDir newFilename     
                     }
           }
@@ -133,13 +133,13 @@ parseFileContents :: Options -- ^ command-line options
          -> String        -- ^ The path to the .adl file 
          -> String        -- ^ The name of the .adl file
          -> IO (Either ParseError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
-parseFileContents opts parserVersion depth alreadyParsed fileContents fileDir filename =
+parseFileContents flags parserVersion depth alreadyParsed fileContents fileDir filename =
   do { let filepath = combine fileDir filename
      ; case parseSingleADL parserVersion fileContents filepath of
            Left err -> return (Left err, alreadyParsed)
            Right (parsedContext, includeFilenames) ->
              do { (includeParseResults, alreadyParsed') <-
-                     readAndParseIncludeFiles opts alreadyParsed depth (Just $ combine fileDir filename) fileDir includeFilenames
+                     readAndParseIncludeFiles flags alreadyParsed depth (Just $ combine fileDir filename) fileDir includeFilenames
                 ; return ( case includeParseResults of
                              Left err              -> Left err
                              Right includeContexts -> Right $ foldl mergeContexts parsedContext includeContexts
@@ -149,13 +149,13 @@ parseFileContents opts parserVersion depth alreadyParsed fileContents fileDir fi
 
 readAndParseIncludeFiles :: Options -> [String] -> Int -> Maybe String -> String -> [String] ->
                             IO (Either ParseError [P_Context], [String])
-readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir [] = return (Right [], alreadyParsed)
-readAndParseIncludeFiles opts alreadyParsed depth mIncluderFilepath fileDir (relativeFilepath:relativeFilepaths) = 
- do { (result, alreadyParsed') <- readAndParseFile opts Current depth alreadyParsed mIncluderFilepath fileDir relativeFilepath
+readAndParseIncludeFiles flags alreadyParsed depth mIncluderFilepath fileDir [] = return (Right [], alreadyParsed)
+readAndParseIncludeFiles flags alreadyParsed depth mIncluderFilepath fileDir (relativeFilepath:relativeFilepaths) = 
+ do { (result, alreadyParsed') <- readAndParseFile flags Current depth alreadyParsed mIncluderFilepath fileDir relativeFilepath
     ; case result of                               -- Include is only implemented in Current parser
         Left err -> return (Left err, alreadyParsed')
         Right context ->
-         do { (results, alreadyParsed'') <- readAndParseIncludeFiles opts alreadyParsed' depth mIncluderFilepath fileDir relativeFilepaths
+         do { (results, alreadyParsed'') <- readAndParseIncludeFiles flags alreadyParsed' depth mIncluderFilepath fileDir relativeFilepaths
             ; case results of
                 Left err -> return (Left err, alreadyParsed'')
                 Right contexts -> return (Right $ context : contexts, alreadyParsed'') 
