@@ -1441,6 +1441,8 @@ pCtx2aCtx p_context
                                                            P_RelPopu{} -> fatal 1441 ("Unexpected issue with population of "++name pop)
                                                            P_CptPopu{} -> p_popas pop
                                               }
+                            V{}   -> fatal 1444 "V has no population of it's own"
+                            Mp1{} -> fatal 1445 "Mp1 is not expected here."
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
        = Gen{genfp  = gen_fp  pg
