@@ -4,6 +4,7 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
     , Chapter(..)
+    , chptHeader
     , Xreferencable(..)
     , xrefFigure1
     , Purpose(..)
@@ -23,7 +24,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
 import Text.Pandoc
-import Text.Pandoc.Builder  (toList, codeBlock)
+import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
@@ -36,13 +37,45 @@ fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
 
 data Chapter = Intro 
              | NatLangReqs
-             | FunctionalRequirements 
+             | FunctReqts 
              | Diagnosis 
              | ConceptualAnalysis
              | ProcessAnalysis
              | DataAnalysis
              | SoftwareMetrics
+             | EcaRules
+             | Interfaces
              deriving Show
+
+-- | This function returns a header of a chapter
+chptHeader :: Options -> Chapter -> Blocks
+chptHeader flags cpt 
+ = header 1 (chptTitle flags cpt )
+ 
+chptTitle :: Options -> Chapter -> Inlines
+chptTitle flags cpt =
+     (case (cpt,language flags) of
+        (Intro             , Dutch  ) -> text "Inleiding"
+        (Intro             , English) -> text "Introduction"
+        (NatLangReqs       , Dutch  ) -> text "Gemeenschappelijke taal"
+        (NatLangReqs       , English) -> text "Shared Language"
+        (FunctReqts        , Dutch  ) -> text "Functionele eisen en wensen" 
+        (FunctReqts        , English) -> text "Functional requirements" 
+        (Diagnosis         , Dutch  ) -> text "Diagnose" 
+        (Diagnosis         , English) -> text "Diagnosis" 
+        (ConceptualAnalysis, Dutch  ) -> text "Conceptuele Analyse"
+        (ConceptualAnalysis, English) -> text "Conceptual Analysis"
+        (ProcessAnalysis   , Dutch  ) -> text "Procesanalyse"
+        (ProcessAnalysis   , English) -> text "Process Analysis"
+        (DataAnalysis      , Dutch  ) -> text "Gegevensstructuur"
+        (DataAnalysis      , English) -> text "Data structure"
+        (SoftwareMetrics   , Dutch  ) -> text "Functiepunt Analyse"
+        (SoftwareMetrics   , English) -> text "Function Point Analysis"
+        (EcaRules          , Dutch  ) -> text "ECA regels" 
+        (EcaRules          , English) -> text "ECA rules (Flash points)" 
+        (Interfaces        , Dutch  ) -> text "Koppelvlakken" 
+        (Interfaces        , English) -> text "Interfaces" 
+     )
 
 class Xreferencable a where
   xLabel :: a  -> String
