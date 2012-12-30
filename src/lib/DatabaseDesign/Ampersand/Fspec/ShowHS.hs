@@ -233,15 +233,6 @@ where
        where 
          ind = indent ++ "                     "
 
-   instance ShowHS FTheme where
-    showHS flags indent tme 
-     = intercalate newindent
-            ["FTheme{ tconcept   = " ++ showHS flags newindent (tconcept tme)
-            ,wrap  ", trules     = " indentA (\_->showHSName) (trules tme)
-            ,      "}" 
-            ]
-            where newindent = indent ++"    "
-                  indentA = newindent
 
 
 -- \***********************************************************************
@@ -278,6 +269,8 @@ where
            ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
            ,wrap ", invars        = " indentA (\_->showHSName) (invars fspec)
            ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
+           ,wrap ", allRelations  = " indentA (\_->showHSName) (allRelations fspec)
+           ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
            ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
            ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)

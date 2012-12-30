@@ -29,7 +29,7 @@ import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), show
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
-import Data.List             (intercalate)
+import Data.List             (intercalate,partition)
 import System.Locale
 
 fatal :: Int -> String -> a
@@ -101,8 +101,57 @@ xrefFigure1 pict =
    , xrefLabel pict
    , RawInline "latex" "\n\\end{center}\n\\end{figure}"]
 
-
-  
+-- | This function orders the content to print by theme. It returns a list of 
+--   tripples by theme. The last tripple might not have a theme, but will contain everything
+--   that isn't handled in a specific theme.
+orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern of a process. 
+                            , [Rule]        -- The rules of that theme
+                            , [Relation]    -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
+                            , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
+                            )
+                           ]
+orderingByTheme fSpec 
+ = f (allRules fSpec) (allRelations fSpec) (allConcepts fSpec) tms
+ where
+  -- | The themes that should be taken into account for this ordering
+  tms = if null (themes fSpec)
+        then map PatternTheme (patterns fSpec) ++ map (ProcessTheme . fpProc) (vprocesses fSpec)
+        else [ PatternTheme pat           | pat <-patterns   fSpec, name pat  `elem` themes fSpec ]
+           ++[ ProcessTheme (fpProc fprc) | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
+  f ruls rels cpts ts
+   = case ts of
+       t:ts' -> let ( (rulsOfTheme,rulsNotOfTheme)
+                     , (relsOfTheme,relsNotOfTheme)
+                     , (cptsOfTheme,cptsNotOfTheme)
+                     ) = partitionByTheme t ruls rels cpts 
+                in (Just t, rulsOfTheme, relsOfTheme, cptsOfTheme)
+                   : f rulsNotOfTheme relsNotOfTheme cptsNotOfTheme ts'
+       []    -> [(Nothing, ruls, rels, cpts)]
+  -- | This function takes care of partitioning each of the 
+  --   lists in a pair of lists of elements which do and do not belong
+  --   to the theme, respectively 
+  partitionByTheme :: Theme
+                   -> [Rule]
+                   -> [Relation]
+                   -> [A_Concept]
+                   -> ( ([Rule],[Rule])
+                      , ([Relation],[Relation])
+                      , ([A_Concept],[A_Concept])
+                      )
+  partitionByTheme theme ruls rels cpts
+      = ((rulsOfTheme,rulsNotOfTheme), (relsOfTheme,relsNotOfTheme), (cptsOfTheme,cptsNotOfTheme))
+     where 
+       (rulsOfTheme,rulsNotOfTheme) = partition isRulOfTheme ruls
+       isRulOfTheme r = r `elem` (case theme of
+                                    PatternTheme pat -> ptrls pat
+                                    ProcessTheme prc -> prcRules prc
+                                 )
+       (relsOfTheme,relsNotOfTheme) = partition isRelOfTheme rels
+       isRelOfTheme r = r `elem` concatMap mors rulsOfTheme
+       (cptsOfTheme,cptsNotOfTheme) = partition isCptOfTheme cpts
+       isCptOfTheme c = c `elem` concatMap concs relsOfTheme
+        
+        
 --GMI: What's the meaning of the Int?
 dpRule :: Fspc -> Options -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([([Inline], [[Block]])], Int, [A_Concept], [Declaration])
