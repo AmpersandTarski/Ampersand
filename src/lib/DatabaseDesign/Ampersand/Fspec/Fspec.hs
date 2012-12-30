@@ -10,7 +10,6 @@ are merely different ways to show Fspc.
 module DatabaseDesign.Ampersand.Fspec.Fspec 
           ( Fspc(..), Fswitchboard(..), Field(..), Clauses(..), Quad(..)
           , FSid(..), FProcess(..)
-          , FTheme(..)
           , InsDel(..)
           , ECArule(..)
           , Event(..)
@@ -54,6 +53,8 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and key rules
                  , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
+                 , allRelations :: [Relation]               -- ^ All relations in the fspec
+                 , allConcepts  :: [A_Concept]              -- ^ All concepts in the fspec
                  , vkeys ::        [KeyDef]                 -- ^ All keys that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
                  , vconjs ::       [Expression]             -- ^ All conjuncts generated (by ADL2Fspec)
@@ -188,9 +189,6 @@ data Field  = Att { fld_name :: String        -- The name of this field
                   } 
    
 
-data FTheme = FTheme { tconcept :: A_Concept
-                     , trules :: [Rule]
-                     }
 {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
  - "The properties of the Interface Operation component are as follows:
  - ...
