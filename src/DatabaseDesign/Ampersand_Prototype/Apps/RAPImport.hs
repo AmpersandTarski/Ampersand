@@ -45,11 +45,18 @@ importfailed imperr flags
 -----------------------------------------------------------------------------
 getUsrFiles :: Options -> IO [(String,ClockTime)]
 getUsrFiles flags = let fdir = let d=dropFileName (importfile flags) in if null d then "." else d
-                   in  do {fns<-getDirectoryContents fdir >>= filterM (fmap not . (\x -> doesDirectoryExist (combine fdir x) ))
+                   in  do {fns<-getDirectoryContents fdir >>= filterM (fmap not . doesDirectoryExist . combine fdir)
                           ;times<-mapM (getModificationTime . combine fdir) fns
-                          ;if length fns==length times
-                           then return (reverse$GHC.Exts.sortWith snd (zip fns times))
-                           else return (zip fns (repeat (toClockTime $ CalendarTime 1980 February 27 16 15 0 0 Wednesday 0 "UTC" 0 False)))
+                          ;return
+                            (if length fns == length times 
+                             then reverse $ GHC.Exts.sortWith snd (zip fns times)
+                             else zip fns
+                                    (repeat
+                                       (toClockTime $
+                                          CalendarTime 1980 February 27 16 15 0 0 Wednesday 0 "UTC" 0
+                                            False)
+                                    )
+                            )
                           }
 operations :: Options -> [(Int,String)]
 operations flags
