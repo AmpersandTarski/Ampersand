@@ -128,7 +128,7 @@ fspec2Workbook fSpec flags =
                    (English, InternalPlug p@TblSQL{})    ->"Table with "++(show.length.fields) p++" attributes."
                    (Dutch  , InternalPlug p@TblSQL{})    -> "Tabel met "++(show.length.fields) p++" attributen."
                    (English, InternalPlug   BinSQL{})    -> "Link table"
-                   (Dutch  , InternalPlug   BinSQL{})    -> "Koppel table"
+                   (Dutch  , InternalPlug   BinSQL{})    -> "Koppel tabel"
                    (English, InternalPlug   ScalarSQL{}) -> "Enumeration tabel"
                    (Dutch  , InternalPlug   ScalarSQL{}) -> "Toegestane waarden tabel"
                 )
