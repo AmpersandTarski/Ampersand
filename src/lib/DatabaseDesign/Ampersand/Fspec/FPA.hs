@@ -16,7 +16,9 @@ class FPAble a where
   fPoints x = fPoints'(fpa x)
   
 instance FPAble PlugSQL where
-  fpa x = FPA ILGV $
+  fpa x = FPA 
+    ILGV -- It is assumed that all persistent storage of information is done withing the scope of the system.
+    $
     case x of
       TblSQL{}    | (length.fields) x < 2 -> Eenvoudig
                   | (length.fields) x < 6 -> Gemiddeld
@@ -51,13 +53,22 @@ instance ShowLang FPcompl where
  showLang Dutch Eenvoudig   = "Eenvoudig"
  showLang Dutch Gemiddeld   = "Gemiddeld"
  showLang Dutch Moeilijk    = "Moeilijk"
- showLang English Eenvoudig = "Simple"
+ showLang English Eenvoudig = "Low"
  showLang English Gemiddeld = "Average"
- showLang English Moeilijk  = "Difficult"
+ showLang English Moeilijk  = "High"
 
+instance ShowLang FPtype where
+ showLang Dutch t = show t
+ showLang English ILGV = "ILF" -- Internal Logical File
+ showLang English KGV  = "ELF" -- External Logical File
+ showLang English IF   = "EI"  -- External Input
+ showLang English UF   = "EO"  -- External Output
+ showLang English OF   = "EQ"  -- External inQuiry
+ 
 instance ShowLang FPA where
- showLang lang x = show (fpType x)++" "++showLang lang (complexity x)
+ showLang lang x = showLang lang (fpType x)++" "++showLang lang (complexity x)
 
+-- | Valuing of function points according to par. 3.9 (UK) or par. 2.9 (NL) 
 fPoints' :: FPA -> Int
 fPoints' (FPA ILGV Eenvoudig) = 7
 fPoints' (FPA ILGV Gemiddeld) = 10
