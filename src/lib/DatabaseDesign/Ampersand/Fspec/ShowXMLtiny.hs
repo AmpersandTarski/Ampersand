@@ -81,7 +81,6 @@ where
           ++ [ Elem (simpleTag "Affected Relations") (map mkXmlTree (actAffect act)) |not (null (actAffect act))] 
           ++ [ Elem (simpleTag "Affected Quads")     []] -- TODO
           ++ [ Elem (simpleTag "ECArules")           (map mkXmlTree (actEcas   act)) |not (null (actEcas   act))] 
-          ++ [ Elem (simpleTag "FPA")                [mkXmlTree (actFPA act)]]
           ++ [ Elem (simpleTag "Explanations")       (map mkXmlTree (actPurp   act)) |not (null (actPurp   act))] 
            )
 

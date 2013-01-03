@@ -315,7 +315,6 @@ while maintaining all invariants.
                  , actAffect = nub [ r' | (r,_,r')<-clos affectPairs, r `elem` rels]
                  , actQuads  = invQs
                  , actEcas   = [eca | eca<-vEcas fSpec, eRel (ecaTriggr eca) `elem` rels]
-                 , actFPA    = NO   -- TODO: this is erroneous. check with IFPUG standard
                  , actPurp   = [Expl { explPos = OriginUnknown
                                      , explObj = ExplRule (name rul)
                                      , explMarkup = A_Markup { amLang   = Dutch
