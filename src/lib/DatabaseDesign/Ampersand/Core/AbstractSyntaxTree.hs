@@ -326,9 +326,9 @@ objatsLegacy Obj{ objmsub=Nothing } = []
 objatsLegacy Obj{ objmsub=Just (Box objs) } = objs
 objatsLegacy Obj{ objmsub=Just (InterfaceRef _) } = fatal 301 $ "Using functionality that has not been extended to InterfaceRefs"
 
-data ObjectDef = Obj { objnm :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                     , objpos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objctx :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                     , objpos  :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+                     , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
                      , objmsub :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)

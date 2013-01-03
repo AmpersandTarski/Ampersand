@@ -17,7 +17,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
 fpAnalysis :: Int -> Fspc -> Options ->  [Block]
-fpAnalysis lev fSpec flags = if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
+fpAnalysis lev fSpec flags = [] -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
   header :: [Block]
   header = toList (chptHeader flags SoftwareMetrics)
@@ -42,38 +42,38 @@ fpAnalysis lev fSpec flags = if null (themes fSpec) then header ++ caIntro ++ fp
                   ]]
    
 
-  fpa2Blocks :: [Block]
-  fpa2Blocks
-   = [ Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
-             ( case language flags of
-                 Dutch   -> [ [Plain [Str "gegevensverzameling"]]
-                            , [Plain [Str "analyse"]]
-                            , [Plain [Str "FP"]]]
-                 English -> [ [Plain [Str "data set"]]
-                            , [Plain [Str "analysis"]]
-                            , [Plain [Str "FP"]]]
-             )
-             [ [ [Plain [(Str . name)                 plug]]
-               , [Plain [(Str . show . fpa)           plug]]
-               , [Plain [(Str . show . fPoints . fpa) plug]]
-               ]
-             | plug<-plugInfos fSpec, fPoints (fpa plug)>0
-             ]
-     , Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
-             ( case language flags of
-                Dutch   ->
-                    [ [Plain [Str "interface"]]
-                    , [Plain [Str "analyse"]]
-                    , [Plain [Str "FP"]]]
-                English ->
-                    [ [Plain [Str "interface"]]
-                    , [Plain [Str "analysis"]]
-                    , [Plain [Str "FP"]]]
-             )
-             [ [ [Plain [(Str . name)                    act]]
-               , [Plain [(Str . show . actFPA)           act]]
-               , [Plain [(Str . show . fPoints . actFPA) act]]]
-             | act<-fActivities fSpec
-             ]
-     ]            
+  fpa2Blocks' :: [Block]
+  fpa2Blocks' = []
+--   = [ Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
+--             ( case language flags of
+--                 Dutch   -> [ [Plain [Str "gegevensverzameling"]]
+--                            , [Plain [Str "analyse"]]
+--                            , [Plain [Str "FP"]]]
+--                 English -> [ [Plain [Str "data set"]]
+--                            , [Plain [Str "analysis"]]
+--                            , [Plain [Str "FP"]]]
+--             )
+--             [ [ [Plain [(Str . name)                 plug]]
+--               , [Plain [(Str . show . fpa)           plug]]
+--               , [Plain [(Str . show . fPoints . fpa) plug]]
+--               ]
+--             | plug<-plugInfos fSpec, fPoints (fpa plug)>0
+--             ]
+--     , Table [] [AlignLeft,AlignLeft,AlignRight] [0.0,0.0,0.0]
+--             ( case language flags of
+--                Dutch   ->
+--                    [ [Plain [Str "interface"]]
+--                    , [Plain [Str "analyse"]]
+--                    , [Plain [Str "FP"]]]
+--                English ->
+--                    [ [Plain [Str "interface"]]
+--                    , [Plain [Str "analysis"]]
+--                    , [Plain [Str "FP"]]]
+--             )
+--             [ [ [Plain [(Str . name)                    act]]
+--               , [Plain [(Str . show . actFPA)           act]]
+--               , [Plain [(Str . show . fPoints . actFPA) act]]]
+--             | act<-fActivities fSpec
+--             ]
+--     ]            
 

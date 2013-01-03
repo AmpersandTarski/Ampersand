@@ -92,7 +92,7 @@ where
                       ,"       , fields  = ["++intercalate ", " (map showHSName (fields plug))++"]"
                       ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
-                      ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                  --    ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
                       ,"       }"
                       ]
           BinSQL{} -> intercalate indent 
@@ -103,14 +103,14 @@ where
                       ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
                       ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkp = "++showHS flags "" (mLkp plug)
-                      ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                  --    ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
                       ,"       }"
                       ]
           ScalarSQL{} -> intercalate indent 
                       ["ScalarSQL { sqlname   = "++ (show.haskellIdentifier.name) plug
                       ,"          , sqlColumn = "++ showHS flags (indent++"                     ") (sqlColumn plug)
                       ,"          , cLkp      = "++ showHS flags "" (cLkp plug)
-                      ,"          , sqlfpa    = "++ showHS flags "" (fpa plug)
+                  --    ,"          , sqlfpa    = "++ showHS flags "" (fpa plug)
                       ,"          }"
                       ]
 
@@ -562,7 +562,6 @@ where
            []  -> "      , actEcas   = [] {- no relations are affected by this activity -}"
            [e] -> "      , actEcas   = [ "++showHSName e++" ]"
            es  -> "      , actEcas   = [ "++intercalate (indent'++", ") [showHSName e | e<-es] ++indent'++"]"
-        , "      , actFPA    = "++showHS flags "" (actFPA act)
         , case actPurp act of
            []  -> "      , actPurp   = [] {- no explanations in this activity -}"
            [e] -> "      , actPurp   = [ "++showHS flags "" e++" ]"
@@ -899,16 +898,7 @@ where
     showHS _ _   = show
 
    instance ShowHS FPA where
-    showHS _ _ (ILGV c) = "ILGV "++show c
-    showHS _ _ (KGV  c) = "KGV "++show c
-    showHS _ _ (IF   c) = "IF "++show c
-    showHS _ _ (UF   c) = "UF "++show c
-    showHS _ _ (OF   c) = "OF "++show c
-    showHS _ _ NO       = "NO"
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Prop                          ***
--- \***********************************************************************
+    showHS _ _ (FPA t c) = "FPA "++show t++" "++show c
    
    instance ShowHS Prop where
     showHS _ _ Uni = "Uni"
@@ -920,10 +910,6 @@ where
     showHS _ _ Trn = "Trn"
     showHS _ _ Rfx = "Rfx"
     showHS _ _ Irf = "Irf"
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FilePos                       ***
--- \***********************************************************************
 
    instance ShowHS FilePos where
     showHS _ _ (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
