@@ -44,7 +44,7 @@ fatal = fatalMsg "Fspec.Plug"
 --type Plugs = [Plug]
 --data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
 
-class (FPAble p, Identified p, Eq p, Show p) => Plugable p where
+class (Identified p, Eq p, Show p) => Plugable p where
   makePlug :: PlugInfo -> p
   
 instance Plugable PlugSQL where
@@ -52,8 +52,8 @@ instance Plugable PlugSQL where
   makePlug (ExternalPlug _) = fatal 112 "external plug is not Plugable"
  
 instance FPAble PlugInfo where
-  fpa (InternalPlug psql) = fpa psql
-  fpa (ExternalPlug obj)  = fpa obj
+  fpa (InternalPlug _) = fatal 55 "FPA analysis of internal plugs is currently not supported"
+  fpa (ExternalPlug _)  = fatal 56 "FPA analysis of external plugs is currently not supported"
 
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
@@ -65,9 +65,6 @@ instance ConceptStructure PlugInfo where
   mp1Rels (InternalPlug psql) = mp1Rels psql
   mp1Rels (ExternalPlug obj)  = mp1Rels obj
    
-instance FPAble PlugSQL where
-  fpa = sqlfpa
-
 
 
 ----------------------------------------------

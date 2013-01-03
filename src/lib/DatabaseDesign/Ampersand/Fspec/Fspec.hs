@@ -20,6 +20,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , metaValues
           , SqlField(..)
           , FPA(..)
+          , FPtype(..)
           , FPcompl(..)
           , PlugInfo(..)
           , SqlType(..)
@@ -216,7 +217,6 @@ data Activity = Act { actRule :: Rule
                     , actAffect :: [Relation]
                     , actQuads :: [Quad]
                     , actEcas :: [ECArule]
-                    , actFPA :: FPA
                     , actPurp :: [Purpose]
                     }
 instance Identified Activity where
@@ -310,13 +310,18 @@ data Clauses  = Clauses
 instance Eq Clauses where
   cl==cl' = cl_rule cl==cl_rule cl'
     
-data FPA = ILGV FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
-         | KGV  FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
-         | IF   FPcompl -- verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
-         | UF   FPcompl -- presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
-         | OF   FPcompl -- is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
-         | NO           -- een onderdeel waaraan geen functiepunten worden toegekend.
-           deriving (Eq, Show)
+data FPA = FPA { fpType     :: FPtype
+               , complexity :: FPcompl
+               } deriving (Show)
+
+-- | These types are defined bij Nesma. See http://www.nesma.nl/sectie/fpa/hoefpa.asp
+data FPtype 
+ = ILGV -- ^ bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
+ | KGV  -- ^ bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
+ | IF   -- ^ verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
+ | UF   -- ^ presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
+ | OF   -- ^ is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
+          deriving (Eq, Show)
 
 data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
 
@@ -335,7 +340,6 @@ data PlugSQL
            , fields :: [SqlField]
            , cLkpTbl :: [(A_Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
            , mLkpTbl :: [(Expression,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
-           , sqlfpa :: FPA -- ^ function point analysis
            }
  | BinSQL  { --see rel2plug in ADL2Fspec.hs
              sqlname :: String
@@ -344,13 +348,11 @@ data PlugSQL
                                                 --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                 --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
            , mLkp :: Expression -- the relation links concepts implemented by this plug
-           , sqlfpa :: FPA -- ^ function point analysis
            }
  | ScalarSQL
            { sqlname :: String
            , sqlColumn :: SqlField
            , cLkp :: A_Concept -- the concept implemented by this plug
-           , sqlfpa :: FPA -- ^ function point analysis
            }
    deriving (Show) 
 instance Identified PlugSQL where

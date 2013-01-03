@@ -72,7 +72,7 @@ data Options = Options { showVersion :: Bool
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
-                       , genExcel :: Bool   -- Generate an Excel workbook
+                       , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analisys
                        , genBericht :: Bool
                        , language :: Lang
                        , dirExec :: String --the base for relative paths to input files
@@ -134,7 +134,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , diagnosisOnly = False
                       , genLegalRefs  = False
                       , genUML        = False
-                      , genExcel      = False
+                      , genFPAExcel   = False
                       , genBericht    = False
                       , language      = Dutch
                       , progrName     = fatal 118 "No monadic options available."
@@ -303,7 +303,7 @@ options = map pp
                                                                           "generate a table of legal references in Natural Language chapter.", Public)
           , (Option []        ["uml"]         (NoArg (\flags -> flags{genUML = True}))
                                                                           "Generate a UML 2.0 data model.", Hidden)
-          , (Option []        ["excel"]       (NoArg (\flags -> flags{genExcel = True}))
+          , (Option []        ["FPA"]         (NoArg (\flags -> flags{genFPAExcel = True}))
                                                                           "Generate a Excel workbook (.xls).", Hidden)
           , (Option []        ["bericht"]     (NoArg (\flags -> flags{genBericht = True}))
                                                                           "Generate definitions for 'berichten' (specific to INDOORS project).", Hidden)

@@ -47,7 +47,7 @@ rel2plug  r totals
              , columns = (srcFld,trgFld)
              , cLkpTbl = [] --in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
              , mLkp    = trgExpr
-             , sqlfpa  = NO
+          --   , sqlfpa  = NO
              }
    where
    r_is_Tot = Tot `elem` multiplicities r || ERel r `elem` totals
@@ -203,13 +203,13 @@ makeEntities allRels exclusions
  = sortWith ((0-).length.tblfields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
-      ScalarSQL (name c) (rel2fld [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
+      ScalarSQL (name c) (rel2fld [ERel (I c)] [] (ERel (I c))) c 
       else
       TblSQL (name c)               -- plname
              plugFields             -- fields
              conceptLookuptable     -- cLkpTbl
              attributeLookuptable   -- mLkpTbl
-             (ILGV Eenvoudig)       -- plfpa
+             
     | kernel<-kernels
     , let mainkernel = [head cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
                                                          -- note that eqCl guarantees that cl is not empty.
@@ -348,7 +348,7 @@ So the first step is create the kernels ...   -}
 makeSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeSqlPlug _ obj
  | null(objatsLegacy obj) && isI(objctx obj)
-   = ScalarSQL (name obj) (rel2fld [ERel (I c)] [] (ERel (I c))) c (ILGV Eenvoudig)
+   = ScalarSQL (name obj) (rel2fld [ERel (I c)] [] (ERel (I c))) c 
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
  | isI(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
@@ -356,7 +356,7 @@ makeSqlPlug _ obj
      plugFields             -- fields
      conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      attributeLookuptable   -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     (ILGV Eenvoudig)       -- function point analysis
+     
  | otherwise = fatal 279 "Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
