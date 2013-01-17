@@ -153,15 +153,18 @@ getOptions :: IO Options
 getOptions =
    do args     <- getArgs
       progName <- getProgName
-      defaultOpts <- defaultOptionsM
-      (flags,fNames)  <- case getOpt Permute (each options) args of
-                         ([],[],[])   -> return (defaultOpts{showHelp=True} ,[])
-                         (o ,n ,[])   -> return (foldl (flip id) defaultOpts o ,n)
-                         (_, _, errs) -> error $ concat errs ++ "Type '"++ progName++" --help' for usage info."
-      checkNSetOptionsAndFileNameM (flags,fNames)
+      let usage = "\nType '"++ progName++" --help' for usage info."
+      let (o,n,errs) = getOpt Permute (each options) args
+      when ((not.null) errs) (error $ concat errs ++ usage)
+      defaultOpts <- defaultOptionsM (head (n++(error $ "Please supply the name of an ampersand file" ++ usage)))
+      let flags = foldl (flip id) defaultOpts o
+      if showHelp flags || showVersion flags
+      then return flags
+      else checkNSetOptionsAndFileNameM (flags,n) usage
+        
   where 
-     defaultOptionsM :: IO Options 
-     defaultOptionsM  =
+     defaultOptionsM :: String -> IO Options 
+     defaultOptionsM fName =
            do utcTime <- getCurrentTime
               timeZone <- getCurrentTimeZone
               let localTime = utcToLocalTime timeZone utcTime
@@ -172,7 +175,7 @@ getOptions =
                defaultFlags
                       { genTime       = localTime
                       , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
-                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env)
+                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env) </> fName
                       , dbName        = fromMaybe ""        (lookup envdbName       env)
                       , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
                       , dirExec       = case exePath of
@@ -185,12 +188,12 @@ getOptions =
 
 
 
-     checkNSetOptionsAndFileNameM :: (Options,[String]) -> IO Options 
-     checkNSetOptionsAndFileNameM (flags,fNames) = 
+     checkNSetOptionsAndFileNameM :: (Options,[String]) -> String -> IO Options 
+     checkNSetOptionsAndFileNameM (flags,fNames) usage= 
           if showVersion flags || showHelp flags 
           then return flags 
           else case fNames of
-                []      -> fatal 171 $ "no file to parse" ++useHelp
+                []      -> error $ "no file to parse" ++usage
                 [fName] -> verboseLn flags "Checking output directories..."
                         >> checkLogName flags
                         >> checkDirOutput flags
@@ -213,11 +216,9 @@ getOptions =
                                                                 Adl1Format -> addExtension (importfile flags) "adl"
                                                                 Adl1PopFormat -> addExtension (importfile flags) "pop"
                                         }
-                x:xs    -> fatal 216 $ "too many files: "++ intercalate ", " (x:xs) ++useHelp
+                x:xs    -> error $ "too many files: "++ intercalate ", " (x:xs) ++usage
        
        where
-          useHelp :: String
-          useHelp = " (use --help for help) "
           checkLogName :: Options -> IO ()
           checkLogName   f = createDirectoryIfMissing True (takeDirectory (logName f))
           checkDirOutput :: Options -> IO ()
