@@ -25,8 +25,9 @@ fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs.hs"
          a datastructure needs to be added to the fSpec, which contains per theme the concepts, rules and relations
          that need to be printed.  
 -}
-chpNatLangReqs :: Int -> Fspc -> Options ->  [Block]
-chpNatLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else []
+chpNatLangReqs :: Int -> Fspc -> Options ->  Blocks
+chpNatLangReqs lev fSpec flags = 
+   fromList (header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else [])
   where
   header :: [Block]
   header = toList (chptHeader flags FunctReqts)

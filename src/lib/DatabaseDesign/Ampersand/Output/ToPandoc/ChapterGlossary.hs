@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary
+  (chpGlossary)
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.Basics  
@@ -10,9 +11,10 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 
 
-glossary :: Int -> Fspc -> Options ->  [Block]
-glossary _ fSpec flags
- = if fspecFormat flags==FLatex
+chpGlossary :: Int -> Fspc -> Options ->  Blocks
+chpGlossary _ fSpec flags
+ = fromList $
+   if fspecFormat flags==FLatex
    then [ Para [RawInline "latex" "\\printglossaries"] ]
    else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
           ( case language flags of
