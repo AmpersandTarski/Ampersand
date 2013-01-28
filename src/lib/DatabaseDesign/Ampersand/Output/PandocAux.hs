@@ -199,7 +199,7 @@ writepandoc flags fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                           _          -> ampersandDefaultWriterOptions
                      where
                        ampersandDefaultWriterOptions =
-                         defaultWriterOptions
+                         def
                             { writerStandalone=isJust template
                             , writerTableOfContents=True
                             , writerNumberSections=True
