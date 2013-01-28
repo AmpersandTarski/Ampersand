@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces
+  ( chpInterfacesPics
+  , chpInterfacesBlocks
+  )
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.Basics  
@@ -13,26 +16,31 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Switchboard      (switchboardAct)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
-interfaceChap :: Int -> Fspc -> Options -> Activity ->  ([Block],[Picture])
-interfaceChap lev fSpec flags act
--- TODO: This should be one chapter for all interfaces.
- = ( header ++ ifcIntro
-      ++ (if genGraphics flags then txtKnowledgeGraph else [])
-      -- ifcFieldTables
-      ++ (if graphic then txtSwitchboard else [])
-   , picKnowledgeGraph : [picSwitchboard | graphic]
-   )
- where
-  graphic :: Bool
-  graphic = genGraphics flags && theme flags /= StudentTheme
-  header :: [Block]
-  header = toList (labeledThing flags lev ("chpIfc"++name act) (name act))
-  ifcIntro :: [Block]
-  ifcIntro
-   = purposes2Blocks flags purps
-     ++ifcAutoRules++
-     (if genEcaDoc flags then ifcEcaRules else [])
-     where purps = purposesDefinedIn fSpec (language flags) fSpec
+chpInterfacesPics :: Fspc -> Options -> [Picture]
+chpInterfacesPics fSpec flags =
+   concat [picKnowledgeGraph flags fSpec act : [picSwitchboard flags fSpec act | graphic flags] | act <- fActivities fSpec ]
+chpInterfacesBlocks :: Int -> Fspc -> Options -> Blocks
+chpInterfacesBlocks lev fSpec flags =
+   foldr (<>) noBlocks (map interfaceChap (fActivities fSpec))  
+ where 
+   interfaceChap :: Activity -> Blocks
+   interfaceChap act
+   -- TODO: This should be one chapter for all interfaces.
+    = ( fromList $ 
+         header act ++ ifcIntro act
+         ++ (if genGraphics flags then txtKnowledgeGraph act else [])
+         -- ifcFieldTables
+         ++ (if graphic flags then txtSwitchboard act else [])
+ --     , picKnowledgeGraph : [picSwitchboard | graphic]
+      )
+   header :: Activity ->[Block]
+   header act = toList (labeledThing flags lev ("chpIfc"++name act) (name act))
+   ifcIntro :: Activity -> [Block]
+   ifcIntro act
+    = purposes2Blocks flags purps
+      ++ifcAutoRules act++
+      (if genEcaDoc flags then ifcEcaRules act else [])
+      where purps = purposesDefinedIn fSpec (language flags) fSpec
 
 {-
   ifcInsDelConcepts :: [Block]
@@ -65,50 +73,50 @@ interfaceChap lev fSpec flags act
                 f xs  = [Str "s "]++commaEngPandoc (Str "and") (map (Str . name) xs)
 -}
 
-  ifcAutoRules :: [Block]
-  ifcAutoRules
-   = case language flags of
-      Dutch ->   [Plain ([Str "Activiteit",Space, Quoted SingleQuote [(Str . name . actRule) act], Space,Str "moet door een gebruiker met rol "]++commaNLPandoc (Str "of") rols++[Str" worden uitgevoerd."] ++
-                         case length auts of
-                          0 -> []
-                          1 -> [Space,Str "Daarbij wordt regel",Space]++auts++[Space,Str "gehandhaafd zonder interventie van de gebruiker."]
-                          _ -> [Space,Str "Daarbij worden regels",Space]++commaNLPandoc (Str "en") auts++[Space,Str "gehandhaafd zonder interventie van de gebruiker."]
-                 )]
-      English -> [Plain ([Str "Activity",Space, Quoted SingleQuote [(Str . name . actRule) act], Space,Str "must be performed by a user with role "]++commaEngPandoc (Str "or") rols++[Str"."] ++
-                         case length auts of
-                          0 -> []
-                          1 -> [Space,Str "During that activity, rule",Space]++auts++[Space,Str "will be maintained without intervention of a user."]
-                          _ -> [Space,Str "During that activity, rules",Space]++commaEngPandoc (Str "and") auts++[Space,Str "will be maintained without intervention of a user."]
-                 )]
-     where
-        auts = nub [ Quoted  SingleQuote [Str (name r)] | q<-actQuads act, let r=(cl_rule.qClauses) q, r_usr r == UserDefined]
-        rols = nub [Str r | (r,rul)<-fRoleRuls fSpec, rul==actRule act]
+   ifcAutoRules :: Activity -> [Block]
+   ifcAutoRules act
+    = case language flags of
+       Dutch ->   [Plain ([Str "Activiteit",Space, Quoted SingleQuote [(Str . name . actRule) act], Space,Str "moet door een gebruiker met rol "]++commaNLPandoc (Str "of") rols++[Str" worden uitgevoerd."] ++
+                          case length auts of
+                           0 -> []
+                           1 -> [Space,Str "Daarbij wordt regel",Space]++auts++[Space,Str "gehandhaafd zonder interventie van de gebruiker."]
+                           _ -> [Space,Str "Daarbij worden regels",Space]++commaNLPandoc (Str "en") auts++[Space,Str "gehandhaafd zonder interventie van de gebruiker."]
+                  )]
+       English -> [Plain ([Str "Activity",Space, Quoted SingleQuote [(Str . name . actRule) act], Space,Str "must be performed by a user with role "]++commaEngPandoc (Str "or") rols++[Str"."] ++
+                          case length auts of
+                           0 -> []
+                           1 -> [Space,Str "During that activity, rule",Space]++auts++[Space,Str "will be maintained without intervention of a user."]
+                           _ -> [Space,Str "During that activity, rules",Space]++commaEngPandoc (Str "and") auts++[Space,Str "will be maintained without intervention of a user."]
+                  )]
+      where
+         auts = nub [ Quoted  SingleQuote [Str (name r)] | q<-actQuads act, let r=(cl_rule.qClauses) q, r_usr r == UserDefined]
+         rols = nub [Str r | (r,rul)<-fRoleRuls fSpec, rul==actRule act] 
 
-  ifcEcaRules :: [Block]
-  ifcEcaRules
-   = ( case (language flags, actEcas act) of
-        (Dutch,[])   -> [Plain [Str "Alle veranderingen die een gebruiker uitvoert zijn handmatig. Er is geen geautomatiseerde functionaliteit in deze activiteit."]]
-        (English,[]) -> [Plain [Str "All changes a user makes are done by hand. There is no automated functionality in this activity."]]
-        (Dutch,_)    -> [Plain [Str "De volgende tabel laat zien welke edit-acties welke functie aanroepen."]]
-        (English,_)  -> [Plain [Str "The following table shows which edit actions invoke which function."]]
-     )++
-     if length (actEcas act)<1 then [] else
-     [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
-       ( case language flags of
-          Dutch   ->
-              [[Plain [Str "actie"]]
-              ,[Plain [Str "relatie"]]
-              ,[Plain [Str "regel"]]]
-          English   ->
-              [[Plain [Str "action"]]
-              ,[Plain [Str "relation"]]
-              ,[Plain [Str "rule"]]] )
-       [ [ [Plain [ (Str . show . eSrt.ecaTriggr) eca]]
-         , [Plain [ (Str . show . eRel.ecaTriggr) eca]]
-         , [Plain (shwEca eca)]
-         ] 
-       | eca<-actEcas act  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
-       ]]
+   ifcEcaRules :: Activity -> [Block]
+   ifcEcaRules act
+    = ( case (language flags, actEcas act) of
+         (Dutch,[])   -> [Plain [Str "Alle veranderingen die een gebruiker uitvoert zijn handmatig. Er is geen geautomatiseerde functionaliteit in deze activiteit."]]
+         (English,[]) -> [Plain [Str "All changes a user makes are done by hand. There is no automated functionality in this activity."]]
+         (Dutch,_)    -> [Plain [Str "De volgende tabel laat zien welke edit-acties welke functie aanroepen."]]
+         (English,_)  -> [Plain [Str "The following table shows which edit actions invoke which function."]]
+      )++
+      if length (actEcas act)<1 then [] else
+      [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
+        ( case language flags of
+           Dutch   ->
+               [[Plain [Str "actie"]]
+               ,[Plain [Str "relatie"]]
+               ,[Plain [Str "regel"]]]
+           English   ->
+               [[Plain [Str "action"]]
+               ,[Plain [Str "relation"]]
+               ,[Plain [Str "rule"]]] )
+        [ [ [Plain [ (Str . show . eSrt.ecaTriggr) eca]]
+          , [Plain [ (Str . show . eRel.ecaTriggr) eca]]
+          , [Plain (shwEca eca)]
+          ] 
+        | eca<-actEcas act  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
+        ]]
      where
       shwEca :: ECArule -> [Inline]
       shwEca eca
@@ -159,50 +167,30 @@ interfaceChap lev fSpec flags act
                     c:cs   -> c : dealWithUnderscores cs
 -}
 
-  txtKnowledgeGraph :: [Block]
-  txtKnowledgeGraph
-   = (case language flags of                                     -- announce the knowledge graph
-           Dutch   -> [Para [ Str "Figuur ", xrefReference picKnowledgeGraph
+   txtKnowledgeGraph :: Activity -> [Block]
+   txtKnowledgeGraph act
+    = (case language flags of                                     -- announce the knowledge graph
+           Dutch   -> [Para [ Str "Figuur ", xrefReference (picKnowledgeGraph flags fSpec act) 
                             , Str " geeft de kennisgraaf weer voor deze interface."]]
-           English -> [Para [ Str "Figure ", xrefReference picKnowledgeGraph
+           English -> [Para [ Str "Figure ", xrefReference (picKnowledgeGraph flags fSpec act)
                             , Str " shows the knowledge graph of this interface."]]
-     )
-     ++ [Plain (xrefFigure1 picKnowledgeGraph)]                  -- draw the knowledge graph
+      )
+      ++ [Plain (xrefFigure1 (picKnowledgeGraph flags fSpec act))]    -- draw the knowledge graph
 
-  picKnowledgeGraph :: Picture
-  picKnowledgeGraph
-   = (makePicture flags fSpec Plain_CG act)  -- the Picture that represents this interface's knowledge graph
-        {caption = case language flags of
-                    Dutch   ->"Taaldiagram van "++name act
-                    English ->"Language diagram of "++name act}
---     where
---      knGph = conceptualGraph fSpec flags Plain_CG act         -- the DotGraph String that represents this interface's knowledge graph
---      kn    = printDotGraph knGph                     -- the String that represents this interface's knowledge graph
-
-  txtSwitchboard :: [Block]
-  txtSwitchboard
-   = (if name act==name (head (fActivities fSpec)) then switchboardIntro else [])++
+   txtSwitchboard :: Activity ->[Block]
+   txtSwitchboard act
+    = (if name act==name (head (fActivities fSpec)) then switchboardIntro else [])++
      (case language flags of                                     -- announce the switchboard diagram
-           Dutch   -> [Para [ Str "Figuur ", xrefReference picSwitchboard
+           Dutch   -> [Para [ Str "Figuur ", xrefReference (picSwitchboard flags fSpec act)
                             , Str " geeft het schakelpaneel (switchboard diagram) weer voor deze interface."]]
-           English -> [Para [ Str "Figure ", xrefReference picSwitchboard
+           English -> [Para [ Str "Figure ", xrefReference (picSwitchboard flags fSpec act)
                             , Str " shows the switchboard diagram of this interface."]]
      )
-     ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
+     ++ [Plain (xrefFigure1 (picSwitchboard flags fSpec act))]        -- draw the switchboard
 
-  picSwitchboard :: Picture
-  picSwitchboard
-   = (makePicture flags fSpec Plain_CG(switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
-        {caption = case language flags of
-                    Dutch   ->"Schakelpaneel van "++name act
-                    English ->"Switchboard of "++name act}
---     where
---      sbGph = switchboardAct fSpec act                              -- the DotGraph String that represents this interface's knowledge graph
---      sb    = printDotGraph sbGph                                -- the String that represents this interface's knowledge graph
-
-  switchboardIntro :: [Block]
-  switchboardIntro
-   = if not graphic then [] else
+   switchboardIntro :: [Block]
+   switchboardIntro
+    = if not (graphic flags) then [] else
      [ Para $ case language flags of                             -- tells us for who this interface exists
         Dutch   -> [ Str "Iedere sectie in dit hoofdstuk beschrijft één activiteit. "
                    , Str "Tijdens het uitvoeren van een activiteit zal een gebruiker populatie invoegen of verwijderen in verschillende relaties. "
@@ -236,4 +224,27 @@ interfaceChap lev fSpec flags act
                    ]
      ]
 
+picKnowledgeGraph :: Options -> Fspc -> Activity ->Picture
+picKnowledgeGraph flags fSpec act
+    = (makePicture flags fSpec Plain_CG act)  -- the Picture that represents this interface's knowledge graph
+        {caption = case language flags of
+                    Dutch   ->"Taaldiagram van "++name act
+                    English ->"Language diagram of "++name act}
+--     where
+--      knGph = conceptualGraph fSpec flags Plain_CG act         -- the DotGraph String that represents this interface's knowledge graph
+--      kn    = printDotGraph knGph                     -- the String that represents this interface's knowledge graph
+
+picSwitchboard :: Options -> Fspc -> Activity -> Picture
+picSwitchboard flags fSpec act
+    = (makePicture flags fSpec Plain_CG(switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
+        {caption = case language flags of
+                    Dutch   ->"Schakelpaneel van "++name act
+                    English ->"Switchboard of "++name act}
+--     where
+--      sbGph = switchboardAct fSpec act                              -- the DotGraph String that represents this interface's knowledge graph
+--      sb    = printDotGraph sbGph                                -- the String that represents this interface's knowledge graph
+
+
+graphic :: Options -> Bool
+graphic flags = genGraphics flags && theme flags /= StudentTheme
 

@@ -18,7 +18,6 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 import Data.Time.Format
-import qualified Data.Sequence as Seq
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -91,48 +90,65 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
         )
       . (setDate (text (formatTime (lclForLang flags) "%-d %B %Y" (genTime flags))))
       ) 
-      (doc docContents)
+      (doc (foldr (<>) noBlocks docContents))
+
+
+    docContents = map (\chp -> cpt2Blocks chp fSpec flags) (chaptersInDoc flags)
+    cpt2Blocks :: Chapter -> Fspc -> Options -> Blocks
+    cpt2Blocks Intro               = chpIntroduction 
+    cpt2Blocks NatLangReqs         = chpNatLangReqs 0
+    cpt2Blocks FunctReqts          = chpNatLangReqs 0
+    cpt2Blocks Diagnosis           = fake chpDiagnosis
+    cpt2Blocks ConceptualAnalysis  = fake (chpConceptualAnalysis 0)
+    cpt2Blocks ProcessAnalysis     = fake (chpProcessAnalysis    0)
+    cpt2Blocks DataAnalysis        = fake (chpDataAnalysis       0)
+    cpt2Blocks SoftwareMetrics     = fpAnalysis
+    cpt2Blocks EcaRules            = chpECArules
+    cpt2Blocks Interfaces          = chpInterfacesBlocks 0
+    cpt2Blocks Glossary            = chpGlossary 0
     
-     
+    fake x f o = let (bs,_) = x f o
+                 in bs 
     -- | The following code controls the structure of the document.
-    docContents :: Blocks
-    docContents
-     | diagnosisOnly flags         = fromList diagTxt
-     | studentversion              =
-         fromList (chpIntroduction  level fSpec flags) <>
-         fromList (chpNatLangReqs   level fSpec flags) <>
-         fromList caTxt                                <>
-         fromList daTxt                                <>
-         fromList (glossary level fSpec flags)
-     | otherwise                   =
-         fromList (chpIntroduction  level fSpec flags) <> -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
-         fromList (chpNatLangReqs   level fSpec flags) <> -- this chapter gives an account of this context in natural language.
-                                                          --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
-                                                          --   any skills in formal specification or information systems modeling.
-         (if noDiagnosis flags 
-          then Blocks Seq.empty
-          else fromList diagTxt)                       <> -- This chapter is meant for the author. It points to places in the text that might need work.
-         fromList caTxt                                <> -- This chapter is the conceptual analysis. It is meant for the design team to verify whether the natural language phrases and their formal counterparts match.
-         (if noProcesses fSpec 
-          then Blocks Seq.empty 
-          else fromList paTxt)                         <> -- This chapter discusses the processes and patterns in this context.
-         fromList (fpAnalysis level fSpec flags)       <> -- This chapter does a function point analysis on the specification.
-         fromList daTxt                                <> -- This chapter provides a data analysis together with a data model.
-                                                          --   It is meant for implementors who must build the system.
-         fromList actsTxt                              <>
-         (if genEcaDoc flags 
-          then fromList (chpECArules level fSpec flags)   -- This chapter reports on the ECA rules generated in this system.
-          else Blocks Seq.empty)                       <>
-         fromList (glossary level fSpec flags)            -- At the end, a glossary is generated.
-         
+--    docContents' :: Blocks
+--    docContents'
+--     | diagnosisOnly flags         = fromList diagTxt
+--     | studentversion              =
+--         fromList (chpIntroduction  level fSpec flags) <>
+--         fromList (chpNatLangReqs   level fSpec flags) <>
+--         fromList caTxt                                <>
+--         fromList daTxt                                <>
+--         fromList (glossary level fSpec flags)
+--     | otherwise                   =
+--         fromList (chpIntroduction  level fSpec flags) <> -- this chapter gives a general introduction. No text from the script is used other than the name of the context.
+--         fromList (chpNatLangReqs   level fSpec flags) <> -- this chapter gives an account of this context in natural language.
+--                                                          --   It sums up all requirements and explains their purpose. This is intended for stakeholders without
+--                                                          --   any skills in formal specification or information systems modeling.
+--         (if noDiagnosis flags 
+--          then Blocks Seq.empty
+--          else fromList diagTxt)                       <> -- This chapter is meant for the author. It points to places in the text that might need work.
+--         fromList caTxt                                <> -- This chapter is the conceptual analysis. It is meant for the design team to verify whether the natural language phrases and their formal counterparts match.
+--         (if noProcesses fSpec 
+--          then Blocks Seq.empty 
+--          else fromList paTxt)                         <> -- This chapter discusses the processes and patterns in this context.
+--         fromList (fpAnalysis level fSpec flags)       <> -- This chapter does a function point analysis on the specification.
+--         fromList daTxt                                <> -- This chapter provides a data analysis together with a data model.
+--                                                          --   It is meant for implementors who must build the system.
+--         fromList actsTxt                              <>
+--         (if genEcaDoc flags 
+--          then fromList (chpECArules level fSpec flags)   -- This chapter reports on the ECA rules generated in this system.
+--          else Blocks Seq.empty)                       <>
+--         fromList (glossary level fSpec flags)            -- At the end, a glossary is generated.
+--         
     pictures 
      | diagnosisOnly flags         = diagPics
      | studentversion              = daPics++caPics
      | otherwise                   = daPics++caPics++diagPics++paPics++actsPics 
     (caTxt  ,caPics)   = chpConceptualAnalysis      level fSpec flags
-    (diagTxt,diagPics) = chpDiagnosis               level fSpec flags
+    (diagTxt,diagPics) = chpDiagnosis                     fSpec flags
     (paTxt  ,paPics)   = chpProcessAnalysis         level fSpec flags
     (daTxt  ,daPics)   = chpDataAnalysis            level fSpec flags
-    (actsTxt,actsPics) = let acts=[interfaceChap level fSpec flags act | act <-fActivities fSpec] in (concat$map fst acts,concat$map snd acts)
+    actsPics  = chpInterfacesPics                         fSpec flags
+ --   actsPics  = let acts=[interfaceChap level fSpec flags act | act <-fActivities fSpec] in (concat$map fst acts,concat$map snd acts)
     studentversion = theme flags == StudentTheme
     level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text

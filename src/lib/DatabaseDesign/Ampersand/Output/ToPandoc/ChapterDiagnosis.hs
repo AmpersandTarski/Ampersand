@@ -17,9 +17,10 @@ import Text.Pandoc.Builder hiding (header,str)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis.hs"
 
-chpDiagnosis :: Int -> Fspc -> Options -> ([Block],[Picture])
-chpDiagnosis lev fSpec flags
- = ( header ++                -- the chapter header
+chpDiagnosis :: Fspc -> Options -> (Blocks,[Picture])
+chpDiagnosis fSpec flags
+ = ( fromList $
+     header ++                -- the chapter header
      diagIntro ++             -- an introductory text
      roleomissions ++         -- says which role-rule, role-interface, and role-relation assignments are missing
      roleRuleTable ++         -- gives an overview of rule-rule assignments
