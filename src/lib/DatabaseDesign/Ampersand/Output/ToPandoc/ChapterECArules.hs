@@ -8,21 +8,23 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
 
-chpECArules :: Int -> Fspc -> Options ->  [Block]
-chpECArules lev fSpec flags
- = header ++ ecaIntro ++ ifcECA
+chpECArules :: Fspc -> Options ->  Blocks
+chpECArules fSpec flags
+ =   chptHeader flags EcaRules
+  <> ecaIntro
+  <> ifcECA
  where
-  header :: [Block]
-  header = toList $ chptHeader flags EcaRules
-  ecaIntro :: [Block]
+  ecaIntro :: Blocks
   ecaIntro
-   = [ Plain $ case language flags of
+   = fromList
+     [ Plain $ case language flags of
        Dutch   -> [Str "Dit hoofdstuk bevat de ECA regels." ]
        English -> [Str "This chapter lists the ECA rules." ]
      ]
-  ifcECA :: [Block]
+  ifcECA :: Blocks
   ifcECA
-   = case language flags of
+   = fromList $
+     case language flags of
       Dutch   -> Para [ Str "ECA rules:",LineBreak, Str "   ",Str "tijdelijk ongedocumenteerd" ] : 
                  [ BlockQuote (toList (codeBlock
                       ( showECA fSpec "\n     " eca

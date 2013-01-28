@@ -19,11 +19,11 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 noProcesses :: Fspc -> Bool
 noProcesses fSpec = null (fRoleRels fSpec) && null (fRoleRuls fSpec)
 
-chpProcessAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
+chpProcessAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpProcessAnalysis lev fSpec flags
  = if null procs
-   then ([],[])
-   else (header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
+   then (noBlocks,[])
+   else (fromList $ header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
  where
   pictures = [pict | (_,picts)<-procSections procs,pict<-picts]
   procs = if null (themes fSpec)

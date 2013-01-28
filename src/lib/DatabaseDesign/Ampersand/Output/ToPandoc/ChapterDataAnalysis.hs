@@ -22,13 +22,13 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis.hs"
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
+chpDataAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpDataAnalysis lev fSpec flags
  | theme flags == StudentTheme =
-   ( header ++ daPicsOnly
+   ( fromList $ header ++ daPicsOnly
    , [ classificationPicture | Just _<-[classification]] ++[ classDiagramPicture] )
  | otherwise = 
-   ( header ++ 
+   ( fromList $ header ++ 
      daIntro ++
      (if null (themes fSpec)
       then daBasics [d | d<-declarations fSpec, decusr d]

@@ -16,14 +16,14 @@ import Data.List (intercalate)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis.hs"
 
-chpConceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
-chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures)
+chpConceptualAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
+chpConceptualAnalysis lev fSpec flags = (header <> caIntro <> caBlocks, pictures)
   where
-  header :: [Block]
-  header = toList $ chptHeader flags ConceptualAnalysis
-  caIntro :: [Block]
+  header :: Blocks
+  header = chptHeader flags ConceptualAnalysis
+  caIntro :: Blocks
   caIntro
-   = (case language flags of
+   = fromList $ (case language flags of
         Dutch   -> [Para
                     [ Str "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
                     , Quoted  SingleQuote [Str (name fSpec)]
@@ -46,7 +46,7 @@ chpConceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks, pictures
                     ]])
      ++ purposes2Blocks flags (purposesDefinedIn fSpec (language flags) fSpec) -- This explains the purpose of this context.
      
-  caBlocks = concat(map caSection (patterns fSpec))
+  caBlocks = fromList $ concat(map caSection (patterns fSpec))
   pictures =        map pict      (patterns fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph

@@ -4,9 +4,12 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
     , Chapter(..)
+    , chaptersInDoc
     , chptHeader
+    , chptTitle
     , Xreferencable(..)
     , xrefFigure1
+    , canXRefer
     , Purpose(..)
     , purposeOf
     , purposesDefinedIn
@@ -16,7 +19,9 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , isMissing
     , lclForLang
     , dpRule
-    , Counter(..),newCounter,incEis)
+    , Counter(..),newCounter,incEis
+    , noBlocks
+    )
 where
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -31,6 +36,7 @@ import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List             (intercalate,partition)
 import System.Locale
+import qualified Data.Sequence as Seq
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
@@ -45,7 +51,33 @@ data Chapter = Intro
              | SoftwareMetrics
              | EcaRules
              | Interfaces
-             deriving Show
+             | Glossary
+             deriving (Eq, Show)
+
+-- | Define the order of the chapters in the document.
+chaptersInDoc :: Options -> [Chapter]  
+chaptersInDoc flags
+ | diagnosisOnly flags         = [Diagnosis]
+ | theme flags == StudentTheme = [ Intro
+                                 , NatLangReqs
+                                 , FunctReqts 
+                                 , Diagnosis 
+                                 , ConceptualAnalysis
+                                 , ProcessAnalysis
+                                 , DataAnalysis
+                                 ]
+ | otherwise                   = [ Intro 
+                                 , NatLangReqs
+                                 , FunctReqts 
+                                 , Diagnosis 
+                                 , ConceptualAnalysis
+                                 , ProcessAnalysis
+                                 , DataAnalysis
+                                 , SoftwareMetrics
+                                 , EcaRules
+                                 , Interfaces
+                                 , Glossary
+                                 ]
 
 -- | This function returns a header of a chapter
 chptHeader :: Options -> Chapter -> Blocks
@@ -79,11 +111,18 @@ chptTitle flags cpt =
 
 class Xreferencable a where
   xLabel :: a  -> String
-  xrefReference :: a  -> Inline
+  xrefReference :: a  -> Inline   --Depreciated! TODO: use xRefReference instead
   xrefReference a = RawInline "latex" ("\\ref{"++xLabel a++"}")
+  xRefReference :: Options -> a -> Inlines
+  xRefReference flags a 
+    | canXRefer flags = rawInline "latex" ("\\label{"++xLabel a++"}")
+    | otherwise       = fatal 89 "xreferencing is not supported!"
   xrefLabel :: a -> Inline
   xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")
-  
+
+canXRefer :: Options -> Bool
+canXRefer opts = fspecFormat opts `elem` [FLatex] 
+
 instance Xreferencable Chapter where
   xLabel a = "chapter" ++ escapeNonAlphaNum (show a)
   
@@ -302,3 +341,6 @@ lclForLang flags = defaultTimeLocale { months =
                       , ("May","May"),("June","Jun"),("July","Jul"),("August","Aug")
                       , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
            }
+
+noBlocks :: Blocks
+noBlocks = Blocks Seq.empty

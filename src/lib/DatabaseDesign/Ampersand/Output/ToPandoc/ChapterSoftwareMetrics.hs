@@ -16,11 +16,11 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 -- TODO: Engels en Nederlands netjes scheiden.
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
-fpAnalysis :: Int -> Fspc -> Options ->  [Block]
-fpAnalysis lev fSpec flags = [] -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
+fpAnalysis :: Fspc -> Options ->  Blocks
+fpAnalysis fSpec flags = noBlocks -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
-  header :: [Block]
-  header = toList (chptHeader flags SoftwareMetrics)
+  header :: Blocks
+  header = chptHeader flags SoftwareMetrics
   caIntro :: [Block]
   caIntro = 
    case language flags of
