@@ -58,7 +58,7 @@ doGenADL    fSpec flags =
 prove :: Fspc -> Options -> IO()
 prove fSpec flags =
  do { verboseLn flags $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
-    ; writeFile outputFile $ writeHtmlString defaultWriterOptions thePandoc
+    ; writeFile outputFile $ writeHtmlString def thePandoc
     ; verboseLn flags "Proof written."
     }
  where outputFile = combine (dirOutput flags) $ replaceExtension ("proofs_of_"++baseName flags) ".html" 

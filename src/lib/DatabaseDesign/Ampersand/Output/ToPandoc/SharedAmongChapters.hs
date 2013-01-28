@@ -343,4 +343,4 @@ lclForLang flags = defaultTimeLocale { months =
            }
 
 noBlocks :: Blocks
-noBlocks = Blocks Seq.empty
+noBlocks = singleton Null

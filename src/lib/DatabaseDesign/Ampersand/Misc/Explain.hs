@@ -27,17 +27,17 @@ string2Blocks defaultformat str
      (thePandocParser,str') = whatParser2UseOnWhatString
      whatParser2UseOnWhatString :: (String -> Pandoc,String)
      whatParser2UseOnWhatString -- = (readRST, str)
-        | markDownPrefix `isPrefixOf` str = (readMarkdown defaultParserState                    , drop (length markDownPrefix) str)
-        | reSTPrefix     `isPrefixOf` str = (readRST      defaultParserState                    , drop (length reSTPrefix)     str)
-        | hTMLPrefix     `isPrefixOf` str = (readHtml     defaultParserState                    , drop (length hTMLPrefix)     str)
+        | markDownPrefix `isPrefixOf` str = (readMarkdown def, drop (length markDownPrefix) str)
+        | reSTPrefix     `isPrefixOf` str = (readRST      def, drop (length reSTPrefix)     str)
+        | hTMLPrefix     `isPrefixOf` str = (readHtml     def, drop (length hTMLPrefix)     str)
          --stateParseRaw=True e.g. such that "\ref{something}" is not read as "\{something\}". with parse raw it's read as inline latex
          --maybe html should be parsed raw too...
-        | laTeXPrefix    `isPrefixOf` str = (readLaTeX    defaultParserState{stateParseRaw=True}, drop (length laTeXPrefix)    str)
+        | laTeXPrefix    `isPrefixOf` str = (readLaTeX    def, drop (length laTeXPrefix)    str)
         | otherwise   = case defaultformat of
-                               Markdown  -> (readMarkdown defaultParserState , str)
-                               ReST      -> (readRST      defaultParserState, str)
-                               HTML      -> (readHtml     defaultParserState, str)
-                               LaTeX     -> (readLaTeX    defaultParserState{stateParseRaw=True}, str)
+                               Markdown  -> (readMarkdown def, str)
+                               ReST      -> (readRST      def, str)
+                               HTML      -> (readHtml     def, str)
+                               LaTeX     -> (readLaTeX    def, str)
        where markDownPrefix = makePrefix Markdown
              reSTPrefix     = makePrefix ReST
              hTMLPrefix     = makePrefix HTML
@@ -52,7 +52,7 @@ blocks2String format writeprefix ec
  = [c | c<-makePrefix format,writeprefix]
    --you cannot unwords lines for all writers, because white lines have a meaning in LaTeX i.e. \par
    --if your application of blocks2String may not have line breaks, then unwords lines there
-   ++ {- unwords -} ( {-lines $ -} writer defaultWriterOptions (Pandoc (Meta [][][]) ec))
+   ++ {- unwords -} ( {-lines $ -} writer def (Pandoc (Meta [][][]) ec))
    where writer = case format of
             Markdown  -> writeMarkdown
             ReST      -> writeRST
