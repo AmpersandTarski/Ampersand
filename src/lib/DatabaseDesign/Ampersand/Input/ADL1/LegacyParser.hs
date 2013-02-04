@@ -58,7 +58,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                   pList pContextElement <* pKey "ENDCONTEXT"
                        where  
 --                       rebexpr x y = (x,y)
---                       universe = (ERel(V (Anything,Anything)) ,[]) --default: the universe
+--                       universe = (vExpr (Sign Anything Anything),[]) --default: the universe
                        rebuild nm ces = 
                           PCtx{ ctx_nm    = nm                            -- The name of this context
                               , ctx_pos   = []
@@ -148,7 +148,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                   , pt_end       = end
                                   , pt_rls       = [r | Pr r<-pes] --was ooit: [r{r_env=nm} |Pr r<-pes]
                                   , pt_gns       = [g | Pg g<-pes]
-                                  , pt_dcs       = [d | Pm d<-pes] --was ooit: [mph{decpat=nm} | Pm mph@(Sgn{})<-pes]
+                                  , pt_dcs       = [d | Pm d<-pes] --was ooit: [mph{decpat=nm} | Pm mph@Sgn{}<-pes]
                                   , pt_cds       = [c | Pc c<-pes]
                                   , pt_kds       = [k | Pk k<-pes]
                                   , pt_xps       = [e | Pe e<-pes]

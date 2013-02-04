@@ -81,7 +81,7 @@ generate flags fSpec =
     ; when (export2adl flags)  $ doGenADL      fSpec flags
     ; when (genFspec flags)    $ doGenDocument fSpec flags 
     ; when (genFPAExcel flags) $ doGenFPAExcel fSpec flags
-    ; when (proofs flags)      $ prove         fSpec flags
+    ; when (proofs flags)      $ doGenProofs   fSpec flags
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)

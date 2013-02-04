@@ -25,6 +25,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , PlugInfo(..)
           , SqlType(..)
           , getGeneralizations, getSpecializations
+          , HornClause(..), horn2expr, events
           )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -32,6 +33,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Basics
 import Data.List(nub)
 import DatabaseDesign.Ampersand.ADL1.Pair
+import DatabaseDesign.Ampersand.ADL1.Expression (notCpl)
 import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
 fatal :: Int -> String -> a
@@ -55,7 +57,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                  , allRelations :: [Relation]               -- ^ All relations in the fspec
-                 , allConcepts  :: [A_Concept]              -- ^ All concepts in the fspec
+                 , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
                  , vkeys ::        [KeyDef]                 -- ^ All keys that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
                  , vconjs ::       [Expression]             -- ^ All conjuncts generated (by ADL2Fspec)
@@ -71,8 +73,8 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , metas ::        [Meta]                   -- ^ All meta declarations from the entire context      
                  , vctxenv ::      ( Expression
                                    , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
-                 , userDefPops    :: [UserDefPop]           -- all user defined populations of relations and concepts
-                 , allViolations  :: [(Rule,[Paire])]       -- all rules with violations.
+                 , userDefPops ::    [UserDefPop]           -- all user defined populations of relations and concepts
+                 , allViolations ::  [(Rule,[Paire])]       -- all rules with violations.
                  }
 metaValues :: String -> Fspc -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
@@ -81,12 +83,12 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
   morlist   fSpec = morlist (interfaceS fSpec) ++ morlist (vrules fSpec)
-  mp1Rels   _ = fatal 77 "do not use this from an Fspc"
+  mp1Rels   _ = fatal 77 "do not use mp1Rels from an Fspc"
   
 instance Language Fspc where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language Fspc)"
-                           , objctx  = ERel (I ONE) 
+                           , objctx  = ERel (I ONE) (Sign ONE ONE)
                            , objmsub = Just . Box $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
@@ -148,7 +150,7 @@ instance Eq Finterface where -- interface names must be unique throughout the en
   f == f'  =  name f == name f'
 
 instance Show Finterface where
-  showsPrec _ ifc@(Fifc{})
+  showsPrec _ ifc@Fifc{}
     = showString (show (fsv_ifcdef    ifc)++"\n"++
                   show (fsv_insrels   ifc)++"\n"++
                   show (fsv_delrels   ifc)++"\n"++
@@ -165,7 +167,7 @@ instance ConceptStructure Finterface where
   concs     ifc = concs (fsv_ifcdef ifc)
   mors      ifc = mors (fsv_ifcdef ifc)
   morlist   ifc = morlist (fsv_ifcdef ifc)
-  mp1Rels   _ = fatal 160 "do not use this from an Finterface"
+  mp1Rels   _ = fatal 160 "do not use mp1Rels from an Finterface"
 
 
 --   instance Explainable Finterface where
@@ -212,12 +214,12 @@ instance Identified FSid where
   name (FS_id nm) = nm
 
 
-data Activity = Act { actRule :: Rule
-                    , actTrig :: [Relation]
+data Activity = Act { actRule ::   Rule
+                    , actTrig ::   [Relation]
                     , actAffect :: [Relation]
-                    , actQuads :: [Quad]
-                    , actEcas :: [ECArule]
-                    , actPurp :: [Purpose]
+                    , actQuads ::  [Quad]
+                    , actEcas ::   [ECArule]
+                    , actPurp ::   [Purpose]
                     }
 instance Identified Activity where
   name act = name (actRule act)
@@ -229,7 +231,7 @@ instance ConceptStructure Activity where
  concs     act = concs (actRule act) `uni` concs (actAffect act)  -- The set of all concepts used in this Activity
  mors      act = mors (actRule act) `uni` actAffect act           -- The set of all relations used in this Activity
  morlist   act = morlist (actRule act) ++ actAffect act           -- The list of all relations in this Activity
- mp1Rels   _ = fatal 228 "do not use this from an activity"
+ mp1Rels   _ = fatal 228 "do not use this mp1Rels from an activity"
 
 data Quad     = Quad
           { qRel :: Relation        -- The relation that, when affected, triggers a restore action.
@@ -253,14 +255,14 @@ data Event = On { eSrt :: InsDel
                   , eRel :: Relation
                   } deriving (Show,Eq)
 data PAclause
-              = Chc { paCls :: [PAclause]
+              = CHC { paCls :: [PAclause]
                     , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
                     }
-              | All { paCls :: [PAclause]
+              | ALL { paCls :: [PAclause]
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Relation                  -- into toExpr    or from toExpr
+                    , paTo :: Relation                    -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }
@@ -287,12 +289,28 @@ data PAclause
                     }
               | Ref { paVar :: String
                     }
+
+events :: PAclause -> [(InsDel,Relation)]
+events paClause = nub (evs paClause)
+ where evs clause
+        = case clause of
+           CHC{} -> (concat.map evs) (paCls clause)
+           ALL{} -> (concat.map evs) (paCls clause)
+           Do{}  -> [(paSrt paClause, paTo clause)]
+           Sel{} -> evs (paCl clause "")
+           New{} -> evs (paCl clause "")
+           Rmv{} -> evs (paCl clause "")
+           Nop{} -> []
+           Blk{} -> []
+           Let{} -> fatal 305 "events for let undetermined"
+           Ref{} -> fatal 305 "events for let undetermined"
+
    -- The data structure Clauses is meant for calculation purposes.
-   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hcs)<-cl_conjNF cl, disj<-[conj!!i]]
+   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hornClauses)<-cl_conjNF cl, disj<-[conj!!i]]
    -- Every rule is transformed to this form, as a step to derive eca-rules
 instance Eq PAclause where
-   Chc ds _ == Chc ds' _ = ds==ds'
-   All ds _ == All ds' _ = ds==ds'
+   CHC ds _ == CHC ds' _ = ds==ds'
+   ALL ds _ == ALL ds' _ = ds==ds'
    p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && paTo p==paTo p' && paDelta p==paDelta p'
    Nop _    ==     Nop _ = True
    p@New{}  ==  p'@New{} = paCpt p==paCpt p'
@@ -300,17 +318,28 @@ instance Eq PAclause where
    _ == _ = False
 
 
+data HornClause = Hc [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+
+horn2expr :: HornClause -> Expression
+horn2expr (Hc antcs conss)
+ = if null antcs && null conss 
+   then fatal 308 "empty Horn clause"
+   else let acs  = if null antcs then [ERel (I (source sgnc)) sgnc] else antcs
+            cns  = if null conss then [ERel (I (source sgna)) sgna] else conss
+            sgnc = foldr1 join (map sign cns)
+            sgna = foldr1 meet (map sign acs)
+        in foldr1 (.\/.) ((map (notCpl (sgna `join` sgnc)) acs) ++ cns)
+
 data Clauses  = Clauses
                   { cl_conjNF :: [(Expression
-                                  ,[Expression])]   -- The list of pairs (conj, hcs) in which conj is a conjunct of the rule
-                                                    -- and hcs contains all derived expressions to be used for eca-rule construction.
-                                                    -- hcs contains only disjunctive normal forms.
+                                  ,[HornClause])]   -- The list of pairs (conj, hornClauses) in which conj is a conjunct of the rule
+                                                    -- and hornClauses contains all derived expressions to be used for eca-rule construction.
                   , cl_rule :: Rule -- The rule that is restored by this clause (for traceability purposes)
                   }
 instance Eq Clauses where
   cl==cl' = cl_rule cl==cl_rule cl'
     
-data FPA = FPA { fpType     :: FPtype
+data FPA = FPA { fpType :: FPtype
                , complexity :: FPcompl
                } deriving (Show)
 
@@ -366,9 +395,9 @@ instance Ord PlugSQL where
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated 
 lookupCpt :: Fspc -> A_Concept -> [(PlugSQL,SqlField)]
-lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-                 [(plug,fld) |InternalPlug plug@(BinSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-                 [(plug,sqlColumn plug) |InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
+lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+                 [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
+                 [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
 
 data SqlField = Fld { fldname :: String
                     , fldexpr :: Expression

@@ -335,7 +335,7 @@ chpNatLangReqs lev fSpec flags =
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (language flags) rel
                        d         = makeDeclaration rel
-                       samplePop = take 3 (fullContents (userDefPops fSpec) rel)
+                       samplePop = take 3 (fullContents (userDefPops fSpec) d)
                        sampleSentences =
                          [ Para $ mkSentence (development flags) d srcKeyAtom tgtKeyAtom 
                          | (srcAtom,tgtAtom)<-samplePop
@@ -392,7 +392,11 @@ showKeyAtom :: Fspc -> Maybe Relation -> A_Concept -> String -> String
 showKeyAtom fSpec mRel cncpt atom =
   case mapMaybe (getKey fSpec) (cncpt : getGeneralizations fSpec cncpt) of
     []    -> atom
-    key:_ -> if fmap ERel mRel `elem` justKeyRels then atom else concatMap showKeySegment $ kdats key 
+    key:_ -> case mRel of
+              Nothing -> concatMap showKeySegment (kdats key)
+              Just mr -> if (not.null) [() | KeyExp objDef <- kdats key, ERel r _<-[objctx objDef], r==mr]
+                         then atom
+                         else concatMap showKeySegment (kdats key)
              -- if we are showing one of the key relations, don't expand the key
      where showKeySegment (KeyText str) = str
            showKeySegment (KeyHtml str) = str

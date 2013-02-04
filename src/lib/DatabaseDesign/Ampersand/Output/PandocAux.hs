@@ -27,7 +27,6 @@ import Text.Pandoc
 import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Basics hiding (hPutStrLn)
-import DatabaseDesign.Ampersand.Classes (Relational(isTrue))
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import DatabaseDesign.Ampersand.Misc        
 import System.Process      (system)
@@ -382,51 +381,48 @@ instance ShowMath Sign where
  showMath (Sign s t) = showMath s++"\\rel"++showMath t
 
 instance ShowMath Expression where
- showMath             = showMathExp . insParentheses
-
-showMathExp :: Expression -> String
-showMathExp (EEqu (r,s)) = showMathExp r ++ texOnly_equals ++ showMathExp s
-showMathExp (EImp (r,s)) = showMathExp r ++ texOnly_subs ++ showMathExp s
-showMathExp (EIsc [])    = "V"
-showMathExp (EIsc fs)    = intercalate texOnly_inter [showMathExp f | f<-fs]     -- intersection
-showMathExp (EUni [])    = "-V"
-showMathExp (EUni fs)    = intercalate texOnly_union [showMathExp f | f<-fs]     -- union
-showMathExp (EDif (r,s)) = concat[showMathExp r | not(isTrue r)] ++ texOnly_bx ++ showMathExp s
-showMathExp (ELrs (r,s)) = showMathExp r ++ texOnly_lRes ++ showMathExp s
-showMathExp (ERrs (r,s)) = showMathExp r ++ texOnly_rRes ++ showMathExp s
-showMathExp (ECps [])    = "I"
-showMathExp (ECps ts)    = intercalate texOnly_compose [showMathExp t | t<-ts] -- relative multiplication (semicolon)
-showMathExp (ERad [])    = "-I[?]"
-showMathExp (ERad ts)    = intercalate texOnly_relAdd [showMathExp t | t<-ts]  -- relative addition (dagger)
-showMathExp (EPrd [])    = "ONE"
-showMathExp (EPrd ts)    = intercalate texOnly_crtPrd [showMathExp t | t<-ts]  -- cartesian product (asterisk)
-showMathExp (EKl0 e')    = showMathExp (addParensToSuper  e')++"^{"++texOnly_star++"}"
-showMathExp (EKl1 e')    = showMathExp (addParensToSuper  e')++"^{"++texOnly_plus++"}"
-showMathExp (ECpl e')    = "\\cmpl{"++showMathExp e'++"}"
-showMathExp (EFlp e')    = showMathExp (addParensToSuper  e')++"^{"++texOnly_flip++"}"
-showMathExp (ETyp e' sgn)
-       | isEndo sgn = showMathExp e' ++ "_{["++name (source sgn)++"]}"
-       | otherwise  = showMathExp e' ++ "_{["++name (source sgn)++texOnly_rel++name (target sgn)++"]}"
-showMathExp (EBrk f)     = "("++showMathExp f++")"
-showMathExp (ERel r)     = showMath r
+ showMath = showExpr . insParentheses
+   where  showExpr (EEqu (l,r) _) = showExpr l++texOnly_equals++showExpr r
+          showExpr (EImp (l,r) _) = showExpr l++texOnly_subs++showExpr r
+          showExpr (EIsc (l,r) _) = showExpr l++texOnly_inter++showExpr r
+          showExpr (EUni (l,r) _) = showExpr l++texOnly_union++showExpr r
+          showExpr (EDif (l,r) _) = showExpr l++texOnly_bx ++showExpr r
+          showExpr (ELrs (l,r) _) = showExpr l++texOnly_lRes++showExpr r
+          showExpr (ERrs (l,r) _) = showExpr l++texOnly_rRes++showExpr r
+          showExpr (ECps (l,r) _) = showExpr l++texOnly_compose++showExpr r
+          showExpr (ERad (l,r) _) = showExpr l++texOnly_relAdd++showExpr r
+          showExpr (EPrd (l,r) _) = showExpr l++texOnly_crtPrd++showExpr r
+          showExpr (EKl0 e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
+          showExpr (EKl1 e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"
+          showExpr (EFlp e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
+          showExpr (ECpl e _)     = "\\cmpl{"++showExpr e++"}"
+          showExpr (EBrk e)       = "("++showExpr e++")"
+          showExpr (ETyp e sgn) 
+           | source sgn==target sgn = showExpr e++"_{["++show (source sgn)++"]}"
+           | otherwise              = showExpr e++"_{["++show (source sgn)++texOnly_rel++show (target sgn)++"]}"
+          -- relations in expressions are printed without type signature, use ETyp to print signatures
+          showExpr (ERel rel@Rel{} _) = name rel
+          showExpr (ERel     I{} _)   = "I"
+          showExpr (ERel     V{} _)   = "V"
+          showExpr (ERel rel@Mp1{} _) = "'{\tt "++relval rel++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
 addParensToSuper :: Expression -> Expression
-addParensToSuper e@(EKl0 _) = EBrk e
-addParensToSuper e@(EKl1 _) = EBrk e
-addParensToSuper e@(EFlp _) = EBrk e
-addParensToSuper e          = e
+addParensToSuper e@EKl0{} = EBrk e
+addParensToSuper e@EKl1{} = EBrk e
+addParensToSuper e@EFlp{} = EBrk e
+addParensToSuper e        = e
 
 instance ShowMath Relation where
- showMath rel@(Rel{})
+ showMath rel@Rel{}
   = (texOnly_Id.name) rel
  showMath I{}
   = "I"
  showMath V{}
   = "V"
- showMath r@(Mp1{})
-  = "'"++relval r++"'"
+ showMath r@Mp1{}
+  = "'{\tt "++relval r++"}'"
 
 instance ShowMath Declaration where
  showMath decl@(Sgn{})

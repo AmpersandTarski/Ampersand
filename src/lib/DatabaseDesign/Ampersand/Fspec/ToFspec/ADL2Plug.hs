@@ -7,14 +7,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
   )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-import DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
+import DatabaseDesign.Ampersand.Core.Poset as Poset hiding (sortWith)
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
-import DatabaseDesign.Ampersand.Fspec.Fspec 
 import Data.Char
 import Data.List (nub,intercalate)
 import GHC.Exts (sortWith)
@@ -38,8 +36,8 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 
 
 -- | Make a binary sqlplug for a relation that is neither inj nor uni
-rel2plug :: Relation -> [Expression] -> PlugSQL
-rel2plug  r totals
+rel2plug :: Relation -> [Declaration] -> [Declaration] -> PlugSQL
+rel2plug  r totals surjectives
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
   | otherwise
@@ -50,20 +48,20 @@ rel2plug  r totals
           --   , sqlfpa  = NO
              }
    where
-   r_is_Tot = Tot `elem` multiplicities r || ERel r `elem` totals
-   r_is_Sur = Sur `elem` multiplicities r || EFlp (ERel r) `elem` totals
+   
+   r_is_Tot = Tot `elem` multiplicities r || makeDeclaration r `elem` totals
+   r_is_Sur = Sur `elem` multiplicities r || makeDeclaration r `elem` surjectives
    srcNm = (if isEndo r then "s" else "")++name (source trgExpr)
    trgNm = (if isEndo r then "t" else "")++name (target trgExpr)
    --the expr for the source of r
    srcExpr
-    | r_is_Tot = ERel (I (source r))
-    | r_is_Sur = ERel (I (target r))
-    | otherwise =
-      EIsc [ERel (I (source r)), ECps [ERel r, flp (ERel r)]]
+    | r_is_Tot = iExpr (source r)
+    | r_is_Sur = iExpr (target r)
+    | otherwise = let er=ERel r (sign r) in iExpr (source r) ./\. (er .:. flp er)
    --the expr for the target of r
    trgExpr 
-    | not r_is_Tot && r_is_Sur = EFlp (ERel r)
-    | otherwise            = ERel r 
+    | not r_is_Tot && r_is_Sur = flp (ERel r (sign r))
+    | otherwise                = ERel r (sign r)
    srcFld = Fld { fldname = srcNm                       
                 , fldexpr = srcExpr
                 , fldtype = makeSqlType (target srcExpr)
@@ -77,6 +75,12 @@ rel2plug  r totals
                 , flduniq = isInj trgExpr
                 } 
 
+kernelOptimize :: Expression -> Expression
+kernelOptimize e@(ERel I{} _)            = e
+kernelOptimize (EFlp (ERel i@I{} _) sgn) = ERel i sgn
+kernelOptimize (ECps _ sgn@(Sign c _))   = ERel (I c) sgn
+kernelOptimize _ = fatal 81 "Illegal call to kernelOptimize"
+
 -----------------------------------------
 --rel2fld
 -----------------------------------------
@@ -84,7 +88,7 @@ rel2plug  r totals
 -- r is the relation from some kernel field k1 to f1
 -- (fldexpr k1) is the relation from the plug's imaginary ID to k1
 -- (fldexpr k1);r is the relation from ID to f1
--- the rule (fldexpr k1)~;(fldexpr k1);r = r holds because r is uni and (fldexpr k1) is uni,inj,sur
+-- the rule (fldexpr k1)~;(fldexpr k1);r = r holds because (fldexpr k1) is uni and sur, which means that (fldexpr k1)~;(fldexpr k1) = I
 -- REMARK -> r may be tot or sur, but not inj. (fldexpr k1) may be tot.
 --
 -- fldnull and fldunique are based on the multiplicity of the relation (kernelpath);r from ID to (target r)
@@ -96,23 +100,13 @@ rel2plug  r totals
 
 -- | Create field for TblSQL or ScalarSQL plugs 
 rel2fld :: [Expression] -> [Expression] -> Expression -> SqlField
-rel2fld kernel plugAtts (ECps [childExp]) 
-     = fatal 100 ("Illegal Plug Expression:\n"++
-                  " ***kernel:*** \n   "++
-                  intercalate "\n   " (map show kernel)++"\n"++
-                  " ***Attributes:*** \n   "++
-                  intercalate "\n   " (map show plugAtts)++"\n"++
-                  " ***e:*** \n   "++
-                  ( show (ECps [childExp]))
-                                  )
-rel2fld kernel                  -- > all relations (in the form either ERel r or EFlp (ERel r)) that may be represented as attributes of this entity.
-        plugAtts                -- > all relations (in the form either ERel r or EFlp (ERel r)) that are defined as attributes by the user.
-        e                       -- > either ERel r or EFlp (ERel r), representing the relation from some kernel field k1 to f1
+rel2fld kernel                  -- > all relations (in the form either ERel r or EFlp (ERel r) _) that may be represented as attributes of this entity.
+        plugAtts                -- > all relations (in the form either ERel r or EFlp (ERel r) _) that are defined as attributes by the user.
+        e                       -- > either ERel r or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
  = Fld fldName                  -- fldname : 
        e                        -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
        (makeSqlType (target e)) -- fldtype :
        (maybenull e)            -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
-                                --           Error: only if source e is the I-field of this plug.
        (isInj e)                -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
                                 -- all kernel fldexprs are inj
                                 -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
@@ -142,12 +136,10 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
     | length(map target kernel) > length(nub(map target kernel))
        = fatal 146 "more than one kernel field for the same concept"
     | otherwise = case expr of
-             --  Han, 20121118: Removed following code, because it is not a solution. 
-             --    ECps [childExp] -> maybenull childExp
-                   ERel rel -> not $
+                   ERel rel _ -> not $
                                  isTot rel && 
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isTot k || target k==target rel && isSur k ]
-                   EFlp (ERel rel)
+                   EFlp (ERel rel _) _
                             -> not $ 
                                  isSur rel &&
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
@@ -166,11 +158,15 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
      -- Warshall's transitive closure algorithm, adapted for this purpose:
      clos :: [Expression] -> [Expression]
      clos xs
-      = foldl f [ECps [x]| x<-xs] (nub (map source xs) `isc` nub (map target xs))
+      = [ foldr1 (.:.) expr | expr<-exprList ]
         where
+         exprList :: [[Expression]]
+         exprList = foldl f [[x] | x<-nub xs]
+                          (nub [c `meet` c' | c<-nub (map source xs), c'<-nub (map target xs), compare c c' `elem` [Poset.EQ,Poset.LT,Poset.GT]])
+         f :: [[Expression]] -> A_Concept -> [[Expression]]
          f q x = q ++
-                 [ECps (ls ++ rs) | lft@(ECps ls) <- q, x <= target lft,
-                  rgt@(ECps rs) <- q, x <= source rgt, null (ls `isc` rs)]
+                 [ls ++ rs | ls <- q, x <= target (last ls)
+                           , rs <- q, x <= source (head rs), null (ls `isc` rs)]
                   
 -- ^ Explanation:  rel is a relation from some kernel field k to f
 -- ^ (fldexpr k) is the relation from the plug's ID to k
@@ -181,12 +177,13 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
 -----------------------------------------
 {- makeEntities computes a set of plugs to obtain wide tables with little redundancy.
    It computes entities with their attributes.
-   It is based on the principle that each concept is represented in at most one plug, and each relation in at most one plug.
+   It is based on the principle that each concept is represented in at most one plug,
+   and each relation in at most one plug.
    First, we determine the kernels for all plugs.
+   A kernel contains the concept table(s) for all concepts that are administered in the same entity.
    For that, we collect all relations that are univalent, injective, and surjective (the kernel relations).
    By the way, that includes all isa-relations, since they are univalent, injective, and surjective by definition.
-   Two concepts of those relations end up in the same entity iff
-   there is a path between them in the concept graph of the kernel relations.
+   If two concepts a and b are in the same entity, there is a concept g such that a isa g and b isa g.
    Of all concepts in an entity, one most generic concept is designated as root.
    Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
    These relations serve as attributes. Code:  [a| a<-attRels, source a `elem` concs kernel]
@@ -200,10 +197,21 @@ rel2fld kernel                  -- > all relations (in the form either ERel r or
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntities :: ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
 makeEntities allRels exclusions
- = sortWith ((0-).length.tblfields)
+ = {- The following may be useful for debugging: 
+   error 
+    ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
+     "\nrels:"++concat ["\n  "++show r | r<-rels]++
+     "\nunis:"++concat ["\n  "++show r | r<-unis]++
+     "\nkernelSurRels:"++concat ["\n  "++show e | e<-kernelSurRels]++
+     "\nkernelTotRels:"++concat ["\n  "++show e | e<-kernelTotRels]++
+     "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
+     "\nkernels:"++concat ["\n  "++show kernel | kernel<-kernels]++
+     "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]
+    ) ++ -}
+   sortWith ((0-).length.tblfields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
-      ScalarSQL (name c) (rel2fld [ERel (I c)] [] (ERel (I c))) c 
+           let r = iExpr c in ScalarSQL (name c) (rel2fld [r] [] r) c 
       else
       TblSQL (name c)               -- plname
              plugFields             -- fields
@@ -213,9 +221,14 @@ makeEntities allRels exclusions
     | kernel<-kernels
     , let mainkernel = [head cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
                                                          -- note that eqCl guarantees that cl is not empty.
+    {- Examples of mainkernel:
+            [ERel I[A] [A*A],EFlp (ERel ISA[D*A] [D*A]) [A*D]]
+            [ERel I[B] [B*B],EFlp (ERel ISA[D*B] [D*B]) [B*D]]
+            [ERel I[X] [X*X]]
+            [ERel I[Y] [Y*Y]]  -}
           restkernel = kernel >- mainkernel --the complement of mainkernel
           c = if null mainkernel
-              then fatal 198 "null mainkernel."
+              then fatal 198 "null mainkernel. Is this kernel empty???"
               else target (head mainkernel)       -- one concept from the kernel is designated to "lead" this plug.
           plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
           plugMors              = mainkernel++restkernel++plugAtts --all relations for which the target is stored in the plug
@@ -228,7 +241,7 @@ makeEntities allRels exclusions
           lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                                   then fatal 209 "null cLkptable."
                                   else head [f |(c',f)<-conceptLookuptable, cpt==c']
-          fld                   = rel2fld mainkernel (restkernel++plugAtts)
+          fld a                 = rel2fld mainkernel (restkernel++plugAtts) a
     ]
    where   
 -- The first step is to determine which entities to generate.
@@ -236,88 +249,40 @@ makeEntities allRels exclusions
     rels,unis :: [Relation]
     rels = [rel | rel <- allRels>-mors exclusions, not (isIdent rel)]
     unis = [r | r<-rels, isUni r, isInj r]
--- In order to make kernels as large as possible,
--- all relations that are univalent and injective are flipped if that makes them surjective.
--- kernelRels contains all relations that occur in kernels.
-    kernelRels :: [Expression]
-    kernelRels   = [ERel r | r<-unis, isSur r] ++ [EFlp (ERel r) | r<-unis, not (isSur r), isTot r]
+    kernelSurRels :: [Relation]
+    kernelSurRels   = [ r | r<-unis, isSur r]
+    kernelTotRels :: [Relation]
+    kernelTotRels   =  [r | r<-unis, not (isSur r), isTot r]
 -- attRels contains all relations that will be attribute of a kernel.
+-- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
-    attRels      = [ERel r | r<-rs,   isUni r] ++ [EFlp (ERel r) | r<-rs,   not (isUni r), isInj r]
-                   where rs = rels>-mors kernelRels
-{- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
-However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
-So the first step is create the kernels ...   -}
---fst kernels = subset of kernel where no two kernel fields have the same target i.e. cLkpTbl
---              attRels will link (see mLkpTbl) to these kernel fields
---snd kernels = complement of (fst kernels) (thus, we will not link attRels to these kernel fields directly)
-{- originally:
+    attRels      = [     ERel r (sign (makeDeclaration r))  | r<-rs,      isUni r] ++
+                   [flp (ERel r (sign (makeDeclaration r))) | r<-rs, not (isUni r), isInj r]
+                   where rs = rels>-(kernelSurRels++kernelTotRels)
     kernels :: [[Expression]]
     kernels
-     = --error ("Diag ADL2Plug "++show (kernelRels)++"\n"++show (concs rels)++"\n"++show (expand [(c,[])| c<-concs rels]))++
-       -- The recursion (function f) starts with the set of kernels that would arise if kernelRels were empty.
-       [ ERel (I c): ms  -- at least one relation for each concept in the kernel
-       | (c,ms)<-f [(c,[]) | c<-concs rels]    -- the initial kernels
-       ]
-       where
-         f :: [(A_Concept,[Expression])] -> [(A_Concept,[Expression])]
-         f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelRels are surjective, univalent and injective
-          where nks = expand ks
-         expand ks = [(c, ms++[e |e<-kernelRels, e `notElem` ms, source e `elem` c:concs ms]) | (c,ms)<-ks] -- expand a kernel (c,ms) by one step
-         merge ks = if nks==ks then ks else merge nks
-          where nks = oneRun ks
-                oneRun [] = []
-                oneRun ((c,ms):ks') = (c, ms++[r |(c',ms')<-ks', c' `elem` c:concs ms, r<-ms', r `notElem` ms]):
-                                      oneRun [k |k@(c',_)<-ks', c' `notElem` c:concs ms]
-    {- Kernels are built recursively. Kernels expand by adding (sur, uni and inj) relations until there are none left.
-       Step 1: compute the expansion of each kernel (code: ms++[r |r<-rs, source r `elem` concs ms])
-       Step 2: merge kernels if possible (code: recursion over oneRun)
-       Step 3: compute the remaining relations (code: [r | r<-rs, source r `notElem` concs [ms | (_,ms)<-kernels]] )
-       And call recursively until there are none left. -}
--}
-{- attempt (untried) to get more than one root per concept in kernels.
-    kernels :: [[Expression]]
-    kernels
-     = --error ("Diag ADL2Plug "++show (kernelRels)++"\n"++show (concs rels)++"\n"++show (expand [(c,[])| c<-concs rels]))++
-       -- The recursion (function f) starts with the set of kernels that would arise if kernelRels were empty.
-       [ [ERel (I c) | c<-cs ] ++ ms  -- at least one relation for each concept in the kernel
-       | (cs,ms)<-f [(island,[]) | island<-initialKernels ]    -- the initial kernels
-       ]
-       where
-         (gE,islands) = case concs rels of
-                         []  -> (\x y -> if x==y then EQ else NC,[])
-                         c:_ -> cptgE c
-         initialKernels :: [[A_Concept]]
-         initialKernels = sortWith length islands++[ [c] | c<-concs rels, not (c `elem` concat islands)]
-         f :: [([A_Concept],[Expression])] -> [([A_Concept],[Expression])]
-         f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelRels are surjective, univalent and injective
-          where nks = expand ks
-         expand ks = [(cs, ms++[e |e<-kernelRels, e `notElem` ms, source e `elem` cs++concs ms]) | (cs,ms)<-ks] -- expand a kernel (c,ms) by one step
-         merge ks = if nks==ks then ks else merge nks
-          where nks = oneRun ks
-                oneRun [] = []
-                oneRun ((cs,ms):ks') = (cs, ms++[r |(cs',ms')<-ks', (not.null) (cs' `isc` concs ms), r<-ms', r `notElem` ms]):
-                                       oneRun [k |k@(c',_)<-ks', c' `notElem` c:concs ms]
--}
-    kernels :: [[Expression]]
-    kernels
-     = kerns++[ [ERel (I c)] ++
+     = kerns++[ [iExpr c] ++
                 [ rs | rs<-otherFields, source rs==c, target rs/=c]
               | c<-concs rels, not (c `elem` (map target (concat kerns)))
               ]
        where
-         islands = sortWith ((0-).length)
-                            (case concs rels of
-                              []  -> []
-                              c:_ -> snd (cptgE c))
+       -- One kernel starts with a set of concepts, which were put into the same class by the type checker. Here, it is called an island of concepts.
+       -- The first concept of that class is the most generic of the lot. The concepts of one island are placed in the kernel in the same order.
+       -- That order reflects the size of the population. A subset (i.e. a more specific concept) is placed more to the right. This is for no reason in particular.  
+         (_,islands,_,_,_) = case concs rels of
+                              []  -> fatal 318 "No concepts in rels"
+                              c:_ -> cptgE c
          kerns :: [[Expression]]
-         kerns =  [ [ERel (I c) | c<-island ] ++
+         kerns =  [ [iExpr c | c<-island ] ++
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
                   | island<-islands ]
          otherFields :: [Expression]
-         otherFields = [case head (sortWith length cl) of [e] -> e; es -> ECps es | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
+         otherFields = [case head (sortWith length cl) of [e] -> e; es -> foldr1 (.:.) es | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
          closure :: [[Expression]]
-         closure = clos1 [ [r] | r<-kernelRels, null [ () |island<-islands, source r `elem` island, target r `elem` island] ]
+       -- The kernel relations whose source and targets are already contained in an island, need not be taken into account.
+-- In order to make kernels as large as possible,
+-- all relations that are univalent and injective will be flipped if that makes them surjective.
+         closure = clos1 ([ [ERel r (sign r)] | r<-kernelSurRels]++[ [flp (ERel r (sign r))] | r<-kernelTotRels])
          clos1 :: [[Expression]] -> [[Expression]]
          clos1 xs
             = foldl f xs (nub (map src xs) `isc` nub (map trg xs))
@@ -347,16 +312,23 @@ So the first step is create the kernels ...   -}
 -- | Make a sqlplug from an ObjectDef (user-defined sql plug)
 makeSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeSqlPlug _ obj
- | null(objatsLegacy obj) && isI(objctx obj)
-   = ScalarSQL (name obj) (rel2fld [ERel (I c)] [] (ERel (I c))) c 
+ | null(objatsLegacy obj) && isIdent(objctx obj)
+   = ScalarSQL (name obj) (rel2fld [iExpr c] [] (iExpr c)) c 
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
- | isI(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
-   = TblSQL (name obj)     -- plname (table name)
+ | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
+   = error 
+    ("\nc: "++show c++
+     "\nrels:"++concat ["\n  "++show r | r<-rels]++
+     "\nkernel:"++concat ["\n  "++show r | r<-kernel]++
+     "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
+     "\nplugFields:"++concat ["\n  "++show plugField | plugField<-plugFields]
+    ) 
+     {- TblSQL (name obj)     -- plname (table name)
      plugFields             -- fields
      conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      attributeLookuptable   -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     
+     -}
  | otherwise = fatal 279 "Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
@@ -367,7 +339,7 @@ makeSqlPlug _ obj
           --REMARK -> endo r or r~ which are at least uni,inj,sur are inefficient in a way
           --          if also TOT than r=I => duplicates, 
           --          otherwise if r would be implemented as GEN (target r) ISA C then (target r) could become a kernel field
-     = [(ERel (I c),sqltp obj)] 
+     = [(iExpr c,sqltp obj)] 
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isSur r]
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isTot r, not (isSur r)]
    attRels --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))
@@ -376,8 +348,7 @@ makeSqlPlug _ obj
    plugFields            = [fld r tp | (r,tp)<-plugMors] 
    fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r){fldtype=tp} --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
-   attributeLookuptable  = [(ERel r,lookupC (source r),fld (ERel r) tp) | (ERel r,tp)<-plugMors] ++
-                           [(EFlp (ERel r),lookupC (target r),fld (EFlp (ERel r)) tp) | (EFlp (ERel r),tp)<-plugMors]
+   attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                            then fatal 300 "null cLkptable."
                            else head [f |(c',f)<-conceptLookuptable, cpt==c']

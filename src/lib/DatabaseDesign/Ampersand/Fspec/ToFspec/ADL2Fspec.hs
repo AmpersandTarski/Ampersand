@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
-    (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, genPAclause, editable, editMph)
+    (makeFspec,actSem, delta, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable, editMph)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
@@ -11,13 +11,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA,simplify,isI)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA, exprUni2list, exprIsc2list, exprCps2list)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug       (makeSqlPlug,makeEntities,rel2plug)
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
    import Data.List (nub,intercalate)
-   import DatabaseDesign.Ampersand.ADL1.Expression              (isTypeable,subst,foldrMapExpression
-                                         ,isPos,isNeg)
+   import DatabaseDesign.Ampersand.ADL1.Expression              (subst,foldrMapExpression)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
@@ -25,7 +24,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    makeFspec :: Options -> A_Context -> Fspc
    makeFspec flags context = fSpec
     where
-        allQuads = quads flags (\_->True) allrules
         fSpec =
             Fspc { fsName       = name context
                  , fspos        = ctxpos context
@@ -39,7 +37,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , plugInfos    = allplugs
                  , interfaceS   = ctxifcs context -- interfaces specified in the Ampersand script
                  , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
-                                       , isI ctxrel && source ctxrel==ONE
+                                       , isIdent ctxrel && source ctxrel==ONE
                                          || ctxrel `notElem` map (objctx.ifcObj) (interfaceS fSpec)
                                        , allInterfaces flags]  -- generated interfaces
                  , fSwitchboard = switchboard flags fSpec
@@ -56,10 +54,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vrels        = allDecs -- contains all user defined plus all generated relations plus all defined and computed totals.
                  , allRelations = mors context
                  , allConcepts  = concs context
-                 , fsisa        = [(s,g) | let (gE,classes)=ctxpo context, cl<-classes, s<-cl, g<-cl, s `gE` g==DatabaseDesign.Ampersand.Core.Poset.LT
-                                         , null [c | c<-cl, s `gE` c==DatabaseDesign.Ampersand.Core.Poset.LT
-                                                          , c `gE` g==DatabaseDesign.Ampersand.Core.Poset.LT]
-                                  ]
+                 , fsisa        = isas
                  , vpatterns    = patterns context
                  , vgens        = gens context
                  , vkeys        = keyDefs context
@@ -70,7 +65,9 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vctxenv      = ctxenv context
                  , userDefPops  = userdefpops
                  , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
-                 } 
+                 }
+        allQuads = quads flags (\_->True) allrules
+        (_,_,isas,_,_)=ctxpo context
         userdefpops = ctxpopus context
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
         allrules = multrules context++keyrules context++udefrules context
@@ -81,21 +78,23 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                                , (not.null) (selRoles p act)]
                          selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
         -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
-        allDecs = [ d{decprps_calc = decprps d `uni` [Tot |      ERel r <-totals, d==makeDeclaration r]
-                                               `uni` [Sur |EFlp (ERel r)<-totals, d==makeDeclaration r]}
+        allDecs = [ d{decprps_calc = decprps d `uni` [Tot |d'<-totals,      d==d']
+                                               `uni` [Sur |d'<-surjectives, d==d']}
                   | d<-declarations context]
      -- determine relations that are total (as many as possible, but not necessarily all)
-        totals :: [Expression]
-        totals
+        totals      = [ makeDeclaration r |       ERel r _    <- totsurs ]
+        surjectives = [ makeDeclaration r | EFlp (ERel r _) _ <- totsurs ]
+        totsurs :: [Expression]
+        totsurs
          = nub [rel | q<-quads flags visible (invariants fSpec), isIdent (qRel q)
-                    , (_,hcs)<-cl_conjNF (qClauses q), EUni fus<-hcs
-                    , antc<-[(conjNF.EIsc) [notCpl f | f<-fus, isNeg f]], isI antc
-                    , f<-fus, isPos f
-                    , rel<-tots f   -- actually, rel is an expression, but in most cases it will be (ERel r) or (EFlp (ERel r))
+                    , (conj,hornClauses)<-cl_conjNF (qClauses q), Hc antcs conss<-hornClauses
+                    , let antc = conjNF (foldr (./\.) (vExpr (sign conj)) antcs)
+                    , isRfx antc -- We now know that I is a subset of the antecedent of this Horn clause.
+                    , cons<-map exprCps2list conss
+               -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
+                    , rel<-init cons++[flp r | r<-tail cons]
                     ]
-           where tots (ECps fs) = init fs++[flp r | r<-tail fs]  -- let I |- r;s;t be a rule, then r and s and t~ and s~ must all be total.
-                 tots _ = []
-                 visible _ = True -- for computing totality, we take all quads into account.
+        visible _ = True -- for computing totality, we take all quads into account.
 
         --------------
         --making plugs
@@ -110,16 +109,37 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    ]
         -- all plugs with at least one flduniq=True field generated by the compiler
         gPlugs :: [PlugSQL]
-        gPlugs   = makeEntities savedRels [p |InternalPlug p<-vsqlplugs]
-        -- all plugs for relations not touched by definedplugs and gplugs
+        gPlugs   = makeEntities entityRels [p |InternalPlug p<-vsqlplugs]
+        -- all plugs for relations not touched by definedplugs and gPlugs
         relPlugs :: [PlugSQL]
-        relPlugs = [ rel2plug rel totals --(see rel2plug in Plug.hs)
+        relPlugs = [ rel2plug rel totals surjectives --(see rel2plug in Plug.hs)
                    | rel<-savedRels
                    , Inj `notElem` multiplicities rel
                    , Uni `notElem` multiplicities rel]
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
-        savedRels= [makeRelation d | d<-filter (not.decplug) allDecs]
+        savedRels  = [makeRelation d | d<-allDecs, not (decplug d)]
+        entityRels = savedRels ++
+                     [ Rel { relnm  = name s
+                           , relpos = OriginUnknown 
+                           , reldcl = Sgn { decnm = "ISA"
+                                          , decsgn = Sign s g
+                                           --multiplicities returns decprps_calc so if you only need the user defined properties do not use multiplicities but decprps
+                                          , decprps = []     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+                                          , decprps_calc = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]-- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
+                                          , decprL = ""
+                                          , decprM = "is a"
+                                          , decprR = ""
+                                          , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST ("Each "++name s++" is a "++name g++"."))]
+                                          , decConceptDef = Nothing
+                                          , decfpos = OriginUnknown
+                                          , deciss = False
+                                          , decusr = False
+                                          , decpat = ""
+                                          , decplug = False
+                                          }
+                           }
+                     | (s,g)<-isas ]
 
         qlfname x = if null (namespace flags) then x else "ns"++namespace flags++x
 
@@ -156,8 +176,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         -------------------
         --making interfaces
         -------------------
--- WHY don't we use the gplugs that have already been generated? In that way we can be sure that the interfaces
--- are functionally correct!
         -- interfaces (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
         -- of relations together with multiplicity constraints. That is what interfaceG does.
         -- This is meant to help a developer to build his own list of interfaces, by providing a set of interfaces that works.
@@ -173,24 +191,23 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-        cRels = [    ERel (makeRelation d)  | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
-                [EFlp (ERel (makeRelation d)) | d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+        cRels = [     ERel (makeRelation d) (sign d)  | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
+                [flp (ERel (makeRelation d) (sign d)) | d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-        dRels = [    ERel (makeRelation d)  | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
-                [EFlp (ERel (makeRelation d)) | d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
---  Step 3: compute maximally total expressions and maximally injective expressions.
-        maxTotExprs = clos cRels
-        maxInjExprs = clos dRels
+        dRels = [     ERel (makeRelation d) (sign d)  | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
+                [flp (ERel (makeRelation d) (sign d)) | d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+--  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
+        maxTotPaths = clos cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
+        maxInjPaths = clos dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
         --    Warshall's transitive closure algorithm, adapted for this purpose:
-        clos :: [Expression] -> [Expression]
+        clos :: [Expression] -> [[Expression]]
         clos xs
-         = foldl f [ECps [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
+         = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
            where
-             f :: [Expression] -> A_Concept -> [Expression]
-             f q x = q ++
-                        [ECps (ls ++ rs) | l@(ECps ls) <- q, x <= target l,
-                         r@(ECps rs) <- q, x <= source r, null (ls `isc` rs)]
+             f :: [[Expression]] -> A_Concept -> [[Expression]]
+             f q x = q ++ [l ++ r | l <- q, x <= target (last l),
+                                    r <- q, x <= source (head r), null (l `isc` r)]
 
 --  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
 --          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept] 
@@ -205,19 +222,19 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                   , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
-                                  , objctx  = ERel (I c)
+                                  , objctx  = ERel (I c) (Sign c c)
                                   , objmsub = Just . Box $
                                               Obj { objnm   = "I["++name c++"]"
                                                    , objpos  = Origin "generated object: step 4a - default theme"
-                                                   , objctx  = ERel (I c)
+                                                   , objctx  = ERel (I c) (Sign c c)
                                                    , objmsub = Nothing
                                                    , objstrs = [] }
                                               :[Obj { objnm   = name d ++ "::"++name(source d)++"*"++name(target d)
                                                     , objpos  = Origin "generated object: step 4a - default theme"
-                                                    , objctx  = if source rel==c then rel else EFlp rel
+                                                    , objctx  = if source rel==c then rel else flp rel
                                                     , objmsub = Nothing
                                                     , objstrs = [] }
-                                               | d <- directdecls, let rel=ERel (makeRelation d)]
+                                               | d <- directdecls, let rel=ERel (makeRelation d) (sign d)]
                                   , objstrs = [] }
                 , ifcPos    = Origin "generated interface for each concept in TblSQL or ScalarSQL"
                 , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
@@ -229,39 +246,41 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
          | otherwise --note: the uni of maxInj and maxTot may take significant time (e.g. -p while generating index.htm)
                      --note: associations without any multiplicity are not in any Interface
                      --note: scalars with only associations without any multiplicity are not in any Interface
-         = let recur trace es
-                = [ Obj { objnm   = if isTypeable t
-                                    then showADL t
-                                    else fatal 298 ("Expression "++showADL t++" contains untypeable elements.")
+         = let recur es
+                = [ Obj { objnm   = showADL t
                         , objpos  = Origin "generated recur object: step 4a - default theme"
                         , objctx  = t
-                        , objmsub  = Just . Box $ recur (trace++[c]) cl
+                        , objmsub = Just . Box $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                         , objstrs = [] }
-                  | cl<-eqCl getfchead es, ECps (t:_)<-take 1 cl, let c=source t, c `notElem` trace ]
-               --getfchead assumes an ECps expression (see ticket #108).
-               --16 Aug 2011: (recur trace es) is applied once where es originates from (maxTotExprs `uni` maxInjExprs) both based on clos
-               --             By implementation clos returns ECps expression only.
-               getfchead (ECps (t:_)) = t
-               getfchead _ = fatal 305 "not an ECps expression"  
+                  | cl<-eqCl head es, (t:_)<-take 1 cl] -- 
+               -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
+               -- Each expression list represents a path from the origin of a box to the attribute.
+               -- 16 Aug 2011: (recur trace es) is applied once where es originates from (maxTotPaths `uni` maxInjPaths) both based on clos
+               -- Interfaces for I[Concept] are generated only for concepts that have been analysed to be an entity.
+               -- These comcepts are collected in gPlugConcepts
+               gPlugConcepts = [ c | plug@TblSQL{}<-gPlugs, (c,_)<-take 1 (cLkpTbl plug) ]
+               -- Each interface gets all attributes that are required to create and delete the object.
+               -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
            [Ifc { ifcParams = [ rel | rel<-mors objattributes, not (isIdent rel)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
                                   , objpos  = Origin "generated object: step 4a - default theme"
-                                  , objctx  = ERel (I c)
-                                  , objmsub  = Just . Box $ objattributes
+                                  , objctx  = iExpr c
+                                  , objmsub = Just . Box $ objattributes
                                   , objstrs = [] }
                 , ifcPos    = Origin "generated interface: step 4a - default theme"
                 , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
                 , ifcRoles  = []
                 }
-           | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
-           , let objattributes = recur [] cl
+           | cl <- eqCl (source.head) [ pth | pth<-maxTotPaths `uni` maxInjPaths, (source.head) pth `elem` gPlugConcepts ]
+           , let objattributes = recur cl
            , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
            , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs) 
              not (length objattributes==1 && isIdent(objctx(head objattributes)))  
-           , let e0=head cl, let c=source e0
+           , let e0=head cl, if null e0 then fatal 284 "null e0" else True
+           , let c=source (head e0)
            ]
         --end otherwise: default theme
         --end stap4a
@@ -271,7 +290,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                 , ifcArgs   = ifcArgs   ifcc
                 , ifcObj    = Obj { objnm   = nm
                                   , objpos  = Origin "generated object: step 4b"
-                                  , objctx  = ERel (I ONE)
+                                  , objctx  = iExpr ONE
                                   , objmsub = Just . Box $ [att]
                                   , objstrs = [] }
                 , ifcPos    = ifcPos  ifcc
@@ -288,7 +307,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    | theme flags == StudentTheme = name c
                    | null nms = fatal 355 "impossible"
                    | otherwise = head nms
-                 att = Obj (name c) (Origin "generated attribute object: step 4b") (ERel (V (Sign ONE c))) Nothing []
+                 att = Obj (name c) (Origin "generated attribute object: step 4b") (vExpr (Sign ONE c)) Nothing []
            ]
         ----------------------
         --END: making interfaces
@@ -296,12 +315,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
-   editable (ERel Rel{} ) = True
-   editable _            = False
+   editable (ERel Rel{} _) = True
+   editable _              = False
 
    editMph :: Expression -> Relation  --TODO deze functie staat ook in Calc.hs...
-   editMph (ERel r) = r
-   editMph e        = fatal 361 $ "cannot determine an editable declaration in a composite expression: "++show e
+   editMph (ERel r _) = r
+   editMph e          = fatal 361 $ "cannot determine an editable declaration in a composite expression: "++show e
 
 {- makeActivity turns a process rule into an activity definition.
 Each activity can be mapped to a single interface.
@@ -371,13 +390,13 @@ while maintaining all invariants.
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is carried along for traceability.
    quads :: Options -> (Relation->Bool) -> [Rule] -> [Quad]
-   quads flags visible rs
-    = [ Quad r (Clauses [ (conj,allShifts flags conj)
-                        | conj <- conjuncts rule
-      --                , (not.null.lambda Ins (ERel r)) conj  -- causes infinite loop
-      --                , not (checkMono conj Ins r)         -- causes infinite loop
-      --                , let conj' = subst (r, actSem Ins r (delta (sign r))) conj
-      --                , (not.isTrue.conjNF) (EUni[ECpl conj,conj']) -- the system must act to restore invariance     
+   quads _ visible rs
+    = [ Quad r (Clauses [ (horn2expr hornClause,allShifts hornClause)
+                        | hornClause<-conjuncts rule
+      --                , (not.null.lambda Ins (ERel r ??)) hornClause  -- causes infinite loop
+      --                , not (checkMono hornClause Ins r)         -- causes infinite loop
+      --                , let hornClause' = subst (r, actSem Ins r (delta (sign r))) hornClause
+      --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
                         ]
                         rule)
       | rule<-rs, r<-mors rule, visible r
@@ -385,123 +404,86 @@ while maintaining all invariants.
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
    allClauses :: Options -> Rule -> Clauses
-   allClauses flags rule = Clauses [(conj,allShifts flags conj) | conj<-conjuncts rule] rule
+   allClauses _ rule = Clauses [(horn2expr hornClause,allShifts hornClause) | hornClause<-conjuncts rule] rule
 
-   allShifts :: Options -> Expression -> [Expression]
-   allShifts _ conjunct = nub [simplify e' | e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
+   allShifts :: HornClause -> [HornClause]
+   allShifts conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
+-- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
     where
     {-
      diagnostic
       = intercalate "\n  "
-          [ "shft L: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
-          , "shft R: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
+          [ "shiftL: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
+          , "shiftR: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
           ] -}
-     shiftL :: Expression -> [Expression]
-     shiftL r
-      | length antss+length conss /= length fus = fatal 498 $ "shiftL will not handle argument of the form "++showADL r
-      | null antss || null conss                = [disjuncts r |not (null fs)] --  shiftL doesn't work here.
-      | all idsOnly (concat antss)              = [EUni (ECpl (ERel (I srcA)) : map ECps conss)]
-      | otherwise                               = [EUni ([ ECpl (ECps (if null ts then id' css else ts))
-                                                           | ts<-ass++[id' css | null ass]
-                                                         ]++
-                                                         [ ECps (if null ts then id' ass else ts)
-                                                           | ts<-css++[id' ass | null css]
-                                                         ] )
-                                                   | (ass,css)<-nub(move antss conss)
-                                                   , if null css then fatal 506 "null css in shiftL" else True
-                                                   , if null ass then fatal 507 "null ass in shiftL" else True
-                                                  ]
+     shiftL :: HornClause -> [HornClause]
+     shiftL hc@(Hc antcs conss)
+      | null antcs || null conss = [hc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
+      | otherwise                = [ Hc antc (case css of
+                                               [] -> if source antcExpr==target antcExpr then [iExpr (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
+                                               _  ->  map (foldr1 (.:.)) css
+                                             )
+                                   | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
+                                   , let antc=map (foldr1 (.:.)) ass
+                                   , let antcExpr = foldr1 (./\.) antc
+                                   ]
       where
       {-
        diagnostic
         = intercalate "\n  "
           [ "fs:    [ "++intercalate "\n         , " [showHS flags "\n           " f | f<-fs    ]++"\n       ]"
-          , "antss: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antss ]++"\n       ]"
+          , "antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antcs ]++"\n       ]"
           , "conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"
-          , "srcA:  "++showHS flags "" srcA
           ] -}
-       EUni fs = disjuncts r                -- informal example [  "-(r;s)", "-(p;r)", "x;y;z" ] coming from  "r;s /\ p;r |- x;y;z"
-       fus = filter (not.isI) fs
-       antss = [ts | ECpl (ECps ts)<-fus]   -- e.g. [ ["r","s"], ["p","r"] ]
-       conss = [ts | ECps ts<-fus]          -- e.g. [ ["x","y","z"] ]
-       srcA
-        | null antss =
-          fatal 514 $ "empty antecedent in shiftL (" ++ showADL r ++ ")"
-        | length (eqClass (<==>) [source (head ants) | ants <- antss]) > 1 =   -- make sure that foldr1 join [source (head ants) | ants <- antss] is defined...
-          fatal 515 $ "shiftL (" ++ showADL r ++ ")\nin calculation of srcA\n" ++ show (eqClass (<==>) [source (head ants) | ants <- antss])
-        | otherwise = foldr1 join [source (head ants) | ants <- antss]
-       id' ass = if all null (take 1 ass ++ take 1 (reverse ass))
-                 then fatal 474 "It is imperative that ass is not empty"
-                 else [ERel (I c) ]
-        where a = (source.head.head) ass
-              c = if a <==> b then a `join` b else
-                  fatal 519 $ "shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b
-              b = (target.last.last) ass
-     -- It is imperative that both ass and css are not empty.
+          
+      -- informal example coming from  "r;s /\ p;r |- x;y;z"
+      --  antcs =  [ ["r","s"], ["p","r"] ]
+      --  conss =  [ ["x","y","z"] ]
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
        move ass [] = [(ass,[])]
        move ass css
         = (ass,css):
-          if and [not (idsOnly (ECps cs)) | cs<-css] -- idsOnly (ECps [])=True, so:  and [not (null cs) | cs<-css]
-          then [ts | length (eqClass (==) (map head css)) == 1
-                   , isUni h
-                   , ts<-move [flp h : as |as<-ass] (map tail css)]++
+          if and [not (null cs) | cs<-css]
+          then [ts | length (eqClass (==) (map head css)) == 1         -- example: True, because map head css == [ "x" ]
+                   , let h=head (map head css)                         -- example: h= "x"
+                   , isUni h                                           -- example: assume True
+                   , ts<-move [flp h : as |as<-ass] (map tail css)]++  -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
                [ts | length (eqClass (==) (map last css)) == 1
+                   , let l=head (map last css)
                    , isInj l
-                   , ts<-move [as++[flp l] |as<-ass] (map init css)]
+                   , ts<-move [as++[flp l] |as<-ass] (map init css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
           else []
-          where h=head (map head css); l=head (map last css)
 
-     shiftR :: Expression -> [Expression]
-     shiftR r
-      | length antss+length conss /= length fus = fatal 541 $ "shiftR will not handle argument of the form "++showADL r
-      | null antss || null conss                = [disjuncts r |not (null fs)] --  shiftR doesn't work here.
-      | all idsOnly (concat conss)              = [EUni (map (ECpl . ECps) antss ++ [ECps [ERel (I srcA)]])]
-      | otherwise                               = [EUni ([ ECpl (ECps (if null ts then id' css else ts))
-                                                       | ts<-ass++[id' css | null ass]]++
-                                                       [ ECps (if null ts then id' ass else ts)
-                                                       | ts<-css++[id' ass | null css]])
-                                                  | (ass,css)<-nub(move antss conss)]
+     shiftR :: HornClause -> [HornClause]
+     shiftR hc@(Hc antcs conss)
+      | null antcs || null conss = [hc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
+      | otherwise                = [ Hc (case ass of
+                                          [] -> if source consExpr==target consExpr then [iExpr (source consExpr)] else fatal 463 "consExpr should be endorelation"
+                                          _  -> map (foldr1 (.:.)) ass
+                                        ) cons
+                                   | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
+                                   , let cons=map (foldr1 (.:.)) css
+                                   , let consExpr = foldr1 (.\/.) cons
+                                   ]
       where
-      {-
-       diagnostic
-        = intercalate "\n  "
-          [ "fs:    [ "++intercalate "\n         , " [showHS flags "\n           " f | f<-fs    ]++"\n       ]"
-          , "antss: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antss ]++"\n       ]"
-          , "conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"
-          , "srcA:  "++showHS flags "" srcA
-          , "move:  [ "++intercalate "\n         , " [show c | c<-move antss conss ]++"\n       ]"
-          ] -}
-       EUni fs = disjuncts r  -- fs is a list of expressions
-       fus = filter (not.isI) fs
-       antss = [ts | ECpl (ECps ts)<-fus]
-       conss = [ts | ECps ts<-fus]
-       srcA 
-        | null conss =
-           fatal 554 $ "empty consequent in shiftR ("++showADL r++")"
-        | length (eqClass (<==>) [ source (head cons) | cons<-conss]) > 1 =   -- make sure that foldr1 join [ source (head cons) | cons<-conss] is defined
-           fatal 556 $ "shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass (<==>) [ source (head cons) | cons<-conss])
-        | otherwise = foldr1 join [ source (head cons) | cons<-conss]
-       id' css = if all null css then fatal 518 "It is imperative that css is not empty" else
-                 [ERel (I c) ]
-        where a = (source.head.head) css
-              c = if a <==> b then a `join` b
-                  else fatal 561 $ "shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `join` b with a="++show a++" and b="++show b ++ ". "
-              b = (target.last.last) css
+      -- informal example coming from  "r;s /\ p;r |- x;y;z"
+      --  ass =  [ ["r","s"], ["r","r"] ]
+      --  css =  [ ["x","y","z"] ]
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
        move [] css = [([],css)]
        move ass css
         = (ass,css):
           if and [not (null as) | as<-ass]
-          then [ts | length (eqClass (==) (map head ass)) == 1
-                   , isSur h
-                   , ts<-move (map tail ass) [flp h:cs |cs<-css]]++
-               [ts | length (eqClass (==) (map last ass)) == 1
+          then [ts | length (eqClass (==) (map head ass)) == 1       -- example: True, because map head ass == [ "r", "r" ]
+                   , let h=head (map head ass)                       -- example: h= "r"
+                   , isSur h                                         -- example: assume True
+                   , ts<-move (map tail ass) [flp h:cs |cs<-css]]++  -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+               [ts | length (eqClass (==) (map last ass)) == 1       -- example: False, because map last ass == [ ["s"], ["r"] ]
+                   , let l=head (map last ass)
                    , isTot l
                    , ts<-move (map init ass) [cs++[flp l] |cs<-css]]
           else []
-          where h=head (map head ass); l=head (map last ass)
-     
+
 
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
@@ -516,42 +498,44 @@ while maintaining all invariants.
        
        -- First, we harvest the quads from fSpec in quadruples.
        -- rel    is a relation that may be affected by an (insert- or delete-) event.
-       -- shifts is a set of Horn clauses that can restore the truth of conj after rel has been affected.
+       -- hornClauses is a set of Horn clauses that can restore the truth of conj after rel has been affected.
        -- conj   is an expression that must remain true at all times.
        -- rul    is the rule from which the above have been derived (for traceability)
        -- these quadruples are organized per relation.
        -- This puts together all Horn clauses we need for each relation.
-       relEqCls = eqCl fst4 [(rel,shifts,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+       relEqCls = eqCl fst4 [(rel,hornClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
         = [ ECA (On ev rel) delt act
-          | relEq <- relEqCls                 -- The material required for one relation
-          , let (rel,_,_,_) = head relEq      -- This is the relation
-          , let ERel delt = delta (sign rel)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
-          , ev<-[Ins,Del]                     -- This determines the event: On ev rel
-          , let act = All [ Chc [ (if isTrue  clause' || isTrue step then Nop else
+          | relEq <- relEqCls                   -- The material required for one relation
+          , let (rel,_,_,_) = head relEq        -- This is the relation
+          , let ERel delt _ = delta (sign rel)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
+          , ev<-[Ins,Del]                       -- This determines the event: On ev rel
+          , let act = ALL [ CHC [ (if isTrue  clause' || isTrue step then Nop else
                                    if isFalse clause'                then Blk else
 --                                 if not (visible rel) then Blk else
                                    let visible _ = True in genPAclause visible ev toExpr viols
                                   ) [(conj,causes)]  -- the motivation for these actions
-                                | clause@(EUni fus) <- shifts
-                                , let clause' = conjNF (subst (rel, actSem ev rel (delta (sign rel))) clause)
-                                , let step    = conjNF (EUni[ECpl clause,clause'])
-                                , let viols   = conjNF (notCpl clause')
-                                , let negs    = EUni [f | f<-fus, isNeg f]
-                                , let poss    = EUni [f | f<-fus, isPos f]
+                                | clause@(Hc antcs conss) <- hornClauses
+                                , let expr    = horn2expr clause
+                                , let sgn     = sign expr -- different horn clauses may have different signatures
+                                , let clause' = conjNF (subst (rel, actSem ev rel (delta (sign rel))) expr)
+                                , let step    = conjNF (notCpl sgn expr .\/. clause')
+                                , let viols   = conjNF (notCpl sgn clause')
+                                , let negs    = foldr (./\.) (vExpr sgn) antcs
+                                , let poss    = foldr (.\/.) (notCpl sgn (vExpr sgn)) conss
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
                                 , rel `elem` mors frExpr
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
-                                               else conjNF (notCpl negs)
+                                               else conjNF (notCpl sgn negs)
                                 ]
                                 [(conj,causes)]  -- to supply motivations on runtime
-                          | conjEq <- eqCl snd3 [(shifts,conj,rule) | (_,shifts,conj,rule)<-relEq]
-                          , let causes          = nub (map thd3 conjEq)
-                          , let (shifts,conj,_) = head conjEq
+                          | conjEq <- eqCl snd3 [(hornClauses,conj,rule) | (_,hornClauses,conj,rule)<-relEq]
+                          , let causes               = nub (map thd3 conjEq)
+                          , let (hornClauses,conj,_) = head conjEq
                           ]
                           [(conj,nub [r |(_,_,_,r)<-cl]) | cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
           ]
@@ -594,38 +578,33 @@ while maintaining all invariants.
      cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
      cascade rel (Rmv c clause m) = ((fst.cascade rel.clause) "dummystr", Rmv c (snd.cascade rel.clause) m)
      cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (snd.cascade rel.cl)   m)
-     cascade rel (Chc ds m)       = (any (fst.cascade rel) ds, Chc (map (snd.cascade rel) ds) m)
-     cascade rel (All ds m)       = (any (fst.cascade rel) ds, All (map (snd.cascade rel) ds) m)
+     cascade rel (CHC ds m)       = (any (fst.cascade rel) ds, CHC (map (snd.cascade rel) ds) m)
+     cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
      cascade  _  (Nop m)          = (False, Nop m)
      cascade  _  (Blk m)          = (False, Blk m)
-     cascade  _  (Let _ _ _)    = fatal 593 "Undefined cascade. Please contact your dealer!"
-     cascade  _  (Ref _)        = fatal 594 "Undefined cascade. Please contact your dealer!"
-   conjuncts :: Rule -> [Expression]
-   conjuncts = fiRule.conjNF.rrexp
-    where fiRule (EIsc fis) = {- map disjuncts -} fis
-          fiRule r        = [ {- disjuncts -} r]
-
--- The function disjuncts yields an expression which has constructor EUni in every case.
-   disjuncts :: Expression -> Expression
-   disjuncts = uniRule
-    where uniRule (EUni cps) = (EUni . nub . map cplRule) cps
-          uniRule r          = EUni [cplRule r]
-          cplRule (ECpl r)   = ECpl (cpsRule r)
-          cplRule r          = cpsRule r
-          cpsRule (ECps ts)  = ECps ts
-          cpsRule r          = ECps [r]
+   conjuncts :: Rule -> [HornClause]
+   conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
+   disjuncts :: Expression -> HornClause
+   disjuncts conj = (f.split ([],[]).exprUni2list) conj
+    where split (antc, cons) (ECpl e _: rest) = split (e:antc, cons) rest
+          split (antc, cons) (     e  : rest) = split (antc, e:cons) rest
+          split (antc, cons) []               = (antc, cons)
+          f (antcs, conss) = Hc antcs conss
 
    actSem :: InsDel -> Relation -> Expression -> Expression
-   actSem Ins rel (ERel r) | rel==r    = ERel rel 
-                         | otherwise = EUni[ERel rel ,ERel r ]
-   actSem Ins rel delt   = disjNF (EUni[ERel rel ,delt])
-   actSem Del rel (ERel r) | rel==r    = EIsc[]
-                         | otherwise = EIsc[ERel rel , ECpl (ERel r )]
-   actSem Del rel delt   = conjNF (EIsc[ERel rel ,ECpl delt])
- --  actSem Del rel delt = EIsc[rel,ECpl delt]
+   actSem Ins rel e@(ERel r sgn) | sign rel/=sgn = fatal 595 "Type error in actSem Ins"
+                                 | rel==r        = ERel rel sgn
+                                 | otherwise     = ERel rel sgn .\/. e
+   actSem Ins rel delt     | sign rel/=sign delt = fatal 598 "Type error in actSem Ins"
+                           | otherwise           = disjNF (ERel rel (sign rel) .\/. delt)
+   actSem Del rel e@(ERel r sgn) | sign rel/=sgn = fatal 600 "Type error in actSem Del"
+                                 | rel==r        = notCpl sgn (vExpr sgn)
+                                 | otherwise     = ERel rel sgn ./\. notCpl sgn e
+   actSem Del rel delt     | sign rel/=sign delt = fatal 603 "Type error in actSem Del"
+                           | otherwise           = conjNF (ERel rel (sign rel) ./\. notCpl (sign rel) delt)
 
    delta :: Sign -> Expression
-   delta (Sign s t)
+   delta sgn@(Sign s t)
     = ERel (makeRelation
              Sgn { decnm   = "Delta"
                  , decsgn  = Sign s t
@@ -644,65 +623,58 @@ while maintaining all invariants.
                  , decpat  = ""
                  , decplug = True
                  }) 
+           sgn
 
    -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
-   genPAclause :: (Relation->Bool)           -- the relations that may be changed
-             -> InsDel                  -- the type of action: Insert or Delete
-             -> Expression              -- the expression in which a delete or insert takes place
-             -> Expression              -- the delta to be inserted or deleted
-             -> [(Expression,[Rule])]   -- the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
-             -> PAclause
+   genPAclause :: (Relation->Bool)           -- True if a relation may be changed (i.e. is editable)
+                  -> InsDel                  -- the type of action: Insert or Delete
+                  -> Expression              -- the expression in which a delete or insert takes place
+                  -> Expression              -- the delta to be inserted or deleted
+                  -> [(Expression,[Rule])]   -- the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+                  -> PAclause
    genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1 motive
     where
       genPAcl deltaX tOp exprX motiv =
         let err i str = fatal i ("genPAcl ("++showADL deltaX++") "++show tOp++str++
                                  "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").") in
         case (tOp, exprX) of
-          (_ ,  EFlp x)   -> genPAcl (flp deltaX) tOp x motiv
-          (_ ,  EBrk x)   -> genPAcl deltaX tOp x motiv
-          (_ ,  ETyp x t) -> if sign x==sign t then genPAcl deltaX tOp x motiv else
-                             fatal 691 "TODO: implement narrowing."
-          (_ ,  EUni [])  -> Blk motiv
-          (_ ,  EIsc [])  -> Nop motiv
-          (_ ,  ECps [])  -> err 681 " ECps [],\n"
-          (_ ,  ERad [])  -> err 683 " ERad [],\n"
-          (_ ,  EPrd [])  -> err 697 " EPrd [],\n"
-          (_ ,  EUni [t]) -> genPAcl deltaX tOp t motiv
-          (_ ,  EIsc [t]) -> genPAcl deltaX tOp t motiv
-          (_ ,  ECps [t]) -> genPAcl deltaX tOp t motiv
-          (_ ,  ERad [t]) -> genPAcl deltaX tOp t motiv
-          (_ ,  EPrd [t]) -> genPAcl deltaX tOp t motiv
-          (Ins, ECpl x)   -> genPAcl deltaX Del x motiv
-          (Del, ECpl x)   -> genPAcl deltaX Ins x motiv
-          (Ins, EUni fs)  -> Chc [ genPAcl deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Ins, EIsc fs)  -> All [ genPAcl deltaX Ins f []    | f<-fs ] motiv
-          (Ins, ECps ts)  -> Chc [ {- the following might be useful for diagnostics:
-                                   if showADL exprX=="project;partof~"
-                                   then fatal 702 ( "Diagnostic error\n"++
-                                                    "chop ts= "++show [(map showADL ls, map showADL rs)| (ls,rs)<-chop ts ]++
-                                                    "\nConcepts c="++showADL c++",  target (ECps ls)="++showADL (target (ECps ls))++",  source (ECps rs)="++showADL (source (ECps rs))++
-                                                    "\nfLft \"x\"= "++showADL (fLft "x") ++
-                                                    "\nfRht \"x\"= "++showADL (fRht "x")
-                                                  )
-                                   else -}
-                                   if ECps ls==flp (ECps rs)
-                                   then Chc [ New c fLft motiv
-                                            , Sel c (ECps ls) fLft motiv
-                                            ] motiv
-                                   else Chc [ New c (\x->All [fLft x, fRht x] motiv) motiv
-                                            , Sel c (ECps ls) fLft motiv
-                                            , Sel c (flp(ECps rs)) fRht motiv
-                                            ] motiv
-                                 | (ls,rs)<-chop ts
-                                 , if source (ECps rs) <==> target (ECps ls) then True else err 690 " ECps ts,\n" -- ensure that 'join' on the following line may be called
-                                 , let c = source (ECps rs) `join` target (ECps ls)
-                                 , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Ins (ECps rs) []
-                                 , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Ins (ECps ls) []
-                                 ] motiv
+          (_ ,  EFlp x _)   -> genPAcl (flp deltaX) tOp x motiv
+          (_ ,  EBrk x)     -> genPAcl deltaX tOp x motiv
+          (_ ,  ETyp x t)   -> if sign x==sign t then genPAcl deltaX tOp x motiv else
+                               fatal 691 "TODO: implement narrowing."
+          (Ins, ECpl x _)   -> genPAcl deltaX Del x motiv
+          (Del, ECpl x _)   -> genPAcl deltaX Ins x motiv
+          (Ins, e@EUni{})   -> CHC [ genPAcl deltaX Ins f motiv | f<-exprUni2list e{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Ins, e@EIsc{})   -> ALL [ genPAcl deltaX Ins f []    | f<-exprIsc2list e ] motiv
+          (Ins, e@ECps{})   -> CHC [ {- the following might be useful for diagnostics:
+                                     if showADL exprX=="project;partof~"
+                                     then fatal 702 ( "Diagnostic error\n"++
+                                                      "chop (exprCps2list e)= "++show [(map showADL ls, map showADL rs)| (ls,rs)<-chop (exprCps2list e) ]++
+                                                      "\nConcepts c="++showADL c++",  target els="++showADL (target els)++",  source ers="++showADL (source ers)++
+                                                      "\nfLft \"x\"= "++showADL (fLft "x") ++
+                                                      "\nfRht \"x\"= "++showADL (fRht "x")
+                                                    )
+                                     else -}
+                                     if els==flp ers
+                                     then CHC [ New c fLft motiv
+                                              , Sel c els fLft motiv
+                                              ] motiv
+                                     else CHC [ New c (\x->ALL [fLft x, fRht x] motiv) motiv
+                                              , Sel c els fLft motiv
+                                              , Sel c (flp ers) fRht motiv
+                                              ] motiv
+                                   | (ls,rs)<-chop (exprCps2list e)
+                                   , let els=foldr1 (.:.) ls
+                                   , let ers=foldr1 (.:.) rs
+                                   , let c=if source ers<=target els then source ers else target els
+                                   , let fLft atom = genPAcl (disjNF ((ERel (Mp1 atom) (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
+                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. ERel (Mp1 atom) (sign els) ) .\/. notCpl (sign els) els)) Ins els []
+                                   ] motiv
+
 {- Problem: how to insert Delta into r;s
-This corresponds with:  genPAclause editAble Ins (ECps [r,s]) Delta motive
+This corresponds with:  genPAclause editAble Ins (ECps (r,s) sgn) Delta motive
 Let us solve it mathematically,  and gradually transform via pseudo-code into Haskell code.
 The problem is how to find dr and ds such that 
    Delta \/ r;s  |-  (dr\/r) ; (ds\/s)
@@ -715,53 +687,79 @@ Since we make no assumptions on the rules that r and s must satisfy, let us look
 For instance, we might choose dr = d;s~  and ds = r~;d, for that part of Delta that is not in r;s (let d = Delta-r;s)
 The approach is to do this first, then see which links are left and connect these last ones with a bow tie approach.
 
-Here is an algorithm in pseudocode to do just that:  compute the insertion of a Delta into r;s:
-LET d = EVAL (delta - r;s);             -- compute which pairs are to be inserted
-IF not (null d)                         -- if there is nothing to insert, we're done
-THEN BEGIN
-     IF editable(r) THEN INS (d;s~) INTO r;
-     IF editable(s) THEN INS (r~;d) INTO s;
-     LET d' = (delta - r;s);            -- see what is left to evaluate
-     IF not (null d')
-     THEN                               -- get a new element to construct a bow tie
-          Chc [ NEW c FROM target(r) `lub` source(s)
-              , SEL c FROM ( -cod(r) /\ -dom(s) )
-              ];
-          IF editable(r) THEN INS EVAL (d*c) INTO r;
-          IF editable(s) THEN INS EVAL (c*d) INTO s;
-     END
-END
+SEQ [ ASSIGN d (EDif (delta,e) (sign e))
+    , ALL [ FOREACH (x,y) FROM d DO
+              SEQ [ SEL z FROM SELECT (x',z) FROM r WHERE x==x'
+                  , INSERT (z,y) INTO s
+                  ]
+          , FOREACH (x,y) FROM d DO
+              SEQ [ SEL z FROM SELECT (z,y') FROM s WHERE y==y'
+                  , INSERT (x,z) INTO r
+                  ]
+          , SEQ [ ASSIGN delta' [ (x,y) | (x,y)<-d, x `notElem` dom e, y `notElem` cod e]
+                , CHC [ NEW z IN target r `meet` source s
+                      , SEL z FROM contents (target r `meet` source s)
+                      ]
+                , INSERT [ (z,y) | (x,y)<-delta' ] INTO s
+                , INSERT [ (x,z) | (x,y)<-delta' ] INTO r
+                ]
+          ]
+    ]
 
-In practice, we do not have r;s, but ECps es.
-Besides, we must take into account which expressions are evaluated by the SQL server and which by the PHP server.
-Here is the same algorithm, operationalized a bit more yet still in pseudocode. It computes how to insert a Delta into (ECps es):
-let d = EVAL (EDif (delta, ECps es))
-let newAtoms = [ newAtom (target(r) `lub` source(s)) | (r,s)<-zip (init es) (tail es)]
-IN IF not (null d)
-   THEN Seq ( [ All ( (if editable(head es) then [ INS (Ecps [d, flp (ECps (tail es))]) INTO head es ] else []) ++
-                      (if editable(last es) then [ INS (Ecps [flp (ECps (init es)), d]) INTO last es ] else [])  )
-              , IF and [editable e | e<-es] && and [ editable (I c) | c<-cs ]
-                THEN let d' = EVAL (EDif (d, ECps es))
-                     in IF not (null d')
-                        THEN All ( map INS newAtoms ++
-                                   [ INS (EPrd [d, head newAtoms]) INTO (head es) ]++
-                                   [ INS (Eprd [cl, cr]) INTO e | (cl,cr,e)<-zip (init newAtoms) (tail newAtoms) tail (init es))] ++
-                                   [ INS (EPrd [last newAtoms, d]) INTO (last es) ] )
-              ]
-            )
-            
+On this algorithm, there are some attractive optimizations. 
+Some code generation can be prevented, when we know that r or s are not editable.
+Generation of a SEL statement can be prevented, when we know that r is univalent or s is injective.
+
+This is what becomes of it:
+
+SEQ [ ASSIGN d (EDif (delta,e) (sign e))
+    , COMMENT "Variable d contains only those links that need to be inserted into e."
+    , CONDITIONAL not (null d)
+      (ALL((if editable s
+            then [ COMMENT "The following statement inserts tuples only on the right side of the composition."
+                 , FOREACH (x,y) FROM d DO
+                    SEQ [ if injective s
+                          then            SELECT (x',z) FROM r WHERE x==x'
+                          else SEL z FROM SELECT (x',z) FROM r WHERE x==x'
+                        , INSERT (z,y) INTO s
+                        ]
+                 ]
+            else [] )++
+           (if editable r
+            then [ COMMENT "The following statement inserts tuples only on the left side of the composition."
+                 , FOREACH (x,y) FROM d DO
+                    SEQ [ if injective s
+                          then            SELECT (z,y') FROM s WHERE y==y'
+                          else SEL z FROM SELECT (z,y') FROM s WHERE y==y'
+                        , INSERT (x,z) INTO r
+                        ]
+                 ]
+            else [] )++
+           (if editable r && editable s
+            then [ COMMENT "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."
+                 , COMMENT "The following statement inserts tuples both on the left and the right side of the composition."
+                 , SEQ [ ASSIGN delta' [ (x,y) | (x,y)<-d, x `notElem` dom e, y `notElem` cod e]
+                       , CHC [ NEW z IN target r `meet` source s
+                             , SEL z FROM contents (target r `meet` source s)
+                             ]
+                       , INSERT [ (z,y) | (x,y)<-delta' ] INTO s
+                       , INSERT [ (x,z) | (x,y)<-delta' ] INTO r
+                       ]
+                 ]
+            else [] )))
+    ]
+
 We can use an "Algebra of Imperative Programs" to move towards real code. Suppose we have the following data structure of imperative programs:
-data Program = Sequence [Program]          -- execute programs in sequence
-             | Select Cond Program         -- evaluate the computation (Cond), which yields a boolean result, and execute the program if it is true
-             | Sequence [Program]          -- execute programs in sequence
-             | Choice [Program]            -- execute precisely one program from the list
-             | All [Program]               -- execute all programs in arbitrary order (may even be parallel)
+data Program = SEQ [Program]               -- execute programs in sequence
+             | CONDITIONAL Cond Program    -- evaluate the computation (Cond), which yields a boolean result, and execute the program if it is true
+             | CHC [Program]               -- execute precisely one program from the list
+             | ALL [Program]               -- execute all programs in arbitrary order (may even be parallel)
              | New String Concept Program  -- create a named variable (the String) of type C (the concept) and execute the program, which may use this concept.
              | NewAtom PHPRel Concept      -- assign a brand new atom of type Concept to the PHPRel, which must be a PHPvar (i.e. a variable).
-             | Assign PHPRel PHPExpression -- execute a relation expression in PHP and assign its result to the PHPRel, which must be a PHPvar (i.e. a variable).
+             | ASSIGN PHPRel PHPExpression -- execute a relation expression in PHP and assign its result to the PHPRel, which must be a PHPvar (i.e. a variable).
              | Insert PHPExpression DBrel  -- execute the computation and insert its result into the database
              | Delete PHPExpression DBrel  -- execute the computation and delete its result from the database
-             | Comment String              -- ignore this. This is part of the algebra, so we can generate commented code.
+             | COMMENT String              -- ignore this. This is part of the algebra, so we can generate commented code.
              | Nop                         -- do nothing
              | Blk [(Expression,[Rule])]   -- abort, leaving an error message that motivates this. The motivation consists of the conjuncts (traced back to their rules) that are being restored by this code fragment.
 data Cond    = NotNull PHPRel  -- a condition on a PHPRel
@@ -771,100 +769,100 @@ We need a variable in PHP that represents a relation, which gets the label PHPva
 We also need to query an Expression on the SQL server. The result of that query is relation contents in PHP, which gets the label PHPqry.
 The 'almost Haskell' program fragment for generating an insertion of Delta into r;s is now:
 let delta = PHPvar{ phpVar = "delta"       -- this is the input
-                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  , phptyp = phpsign (sign e)    -- the type is used nowhere, but it feels good to know the type.
                   } in
 let d     = PHPvar{ phpVar = "d"           -- this is the input, from which everything already in  Ecps es  is removed.
-                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  , phptyp = phpsign (sign e)    -- the type is used nowhere, but it feels good to know the type.
                   } in
-let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `lub` source(s)] in
-Sequence [ Assign d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))    -- let d = Delta - e0;e1;e2;...
-         , Comment "d contains all links to be inserted in r;s"
-         , Select (NotNull d)
-                  (Sequence([ All ( (if editable(head es)    
-                                     then [ Insert (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) (mkDBrel (head es)) ]
-                                     else []) ++
-                                    (if editable(last es)
-                                     then [ Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (mkDBrel (last es)) ]
-                                     else []) )
-                            , Comment "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
-                            if or [not (editable e) | e<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
-                            [ -- let us see which links are left to be inserted
-                              Assign d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
-                            , Comment "d contains the remaining links to be inserted in r;s"
-                            , Select (NotNull d)
-                                     (Seq ( newAtoms ++
-                                            All ( let vs = [ v | NewAtom v _ <- newAtoms ] in
-                                                  [ Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (mkDBrel (head es)) ]++
-                                                  [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel e) | (cl,cr,e)<-zip (init vs) (tail vs) tail (init es))] ++
-                                                  [ Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (mkDBrel (last es)) ])
-                                     )    )
-                            ])
-                  )
-         ]
+let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `meet` source(s)] in
+SEQ [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry e)))    -- let d = Delta - e0;e1;e2;...
+    , COMMENT "d contains all links that must be inserted in r;s"
+    , CONDITIONAL (NotNull d)
+      (SEQ [ ALL ( (if editable(head es)    
+                    then [ Insert (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) (mkDBrel (head es)) ]
+                    else []) ++
+                   (if editable(last es)
+                    then [ Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (mkDBrel (last es)) ]
+                    else []) )
+           , COMMENT "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
+           if or [not (editable e) | e<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
+           [ -- let us see which links are left to be inserted
+             ASSIGN d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
+           , COMMENT "d contains the remaining links to be inserted in r;s"
+           , CONDITIONAL (NotNull d)
+             (SEQ ( newAtoms ++
+                    ALL ( let vs = [ v | NewAtom v _ <- newAtoms ] in
+                          [ Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (mkDBrel (head es)) ]++
+                          [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel e) | (cl,cr,e)<-zip (init vs) (tail vs) tail (init es))] ++
+                          [ Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (mkDBrel (last es)) ])
+             )    )
+           ]
+      )
+    ]
 
 In order to proceed to the real code, we must realize that mkDBrel is not defined yet.
 The argument of mkDBrel is an Expression. This can be an ERel{} or something different.
 In case it is an ERel{}, the insert can be translated directly to a database action.
 If it is not, the insert can be treated as a recursive call to genPAcl, which breaks down the expression further until it reaches a relation.
 let delta = PHPvar{ phpVar = "delta"       -- this is the input
-                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  , phptyp = phpsign (sign e)    -- the type is used nowhere, but it feels good to know the type.
                   } in
 let d     = PHPvar{ phpVar = "d"           -- this is the input, from which everything already in  Ecps es  is removed.
-                  , phptyp = phpsign (comp2php (ECps es))    -- the type is used nowhere, but it feels good to know the type.
+                  , phptyp = phpsign (sign e)    -- the type is used nowhere, but it feels good to know the type.
                   } in
-let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `lub` source(s)] in
-Sequence [ Assign d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
-         , Comment "d contains all links to be inserted in r;s"
-         , Select (NotNull d)
-                  (Sequence([ All ( (if editable(head es)
-                                     then [ if isRel (head es)
-                                            then Insert (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) (let PHPRel r = head es in r)
-                                            else genPAclause editAble Ins (head es) (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) motive
-                                          ]
-                                     else []) ++
-                                    (if editable(last es)
-                                     then [ if isRel (last es)
-                                            then Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (let PHPRel r = last es in r)
-                                            else genPAclause editAble Ins (last es) (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) motive
-                                          ]
-                                     else []) )
-                            , Comment "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
-                            if or [not (editable e) | e<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
-                            [ -- let us see which links are left to be inserted
-                              Assign d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
-                            , Comment "d contains the remaining links to be inserted in r;s"
-                            , Select (NotNull d)
-                                     (Seq ( newAtoms ++
-                                            All ( let vs = [ v | NewAtom v _ <- newAtoms ] in
-                                                  [ if isRel (head es)
-                                                    then Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (let PHPRel r = head es in r)
-                                                    else genPAclause editAble Ins (head es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive]++
-                                                  [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel e) | (cl,cr,e)<-zip (init vs) (tail vs) tail (init es))] ++
-                                                  [ if isRel (last es)
-                                                    then Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (let PHPRel r = last es in r)
-                                                    else genPAclause editAble Ins (last es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive ])
-                                     )    )
-                            ])
-                  )
+let newAtoms = [ NewAtom (PHPvar (head (name c):show i) c | (r,s,i)<-zip3 (init es) (tail es) [1..], let c=target(r) `meet` source(s)] in
+SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
+         , COMMENT "d contains all links to be inserted in r;s"
+         , CONDITIONAL (NotNull d)
+           (SEQUENCE([ ALL ( (if editable(head es)
+                              then [ if isRel (head es)
+                                     then Insert (PHPECps (PHPERel d, PHPERel (PHPqry (flp (ECps (tail es)))))) (let PHPRel r = head es in r)
+                                     else genPAclause editAble Ins (head es) (PHPECps [PHPERel d, PHPERel (PHPqry (flp (ECps (tail es))))]) motive
+                                   ]
+                              else []) ++
+                             (if editable(last es)
+                              then [ if isRel (last es)
+                                     then Insert (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) (let PHPRel r = last es in r)
+                                     else genPAclause editAble Ins (last es) (PHPECps [PHPERel (PHPqry (flp (ECps (init es)))), PHPERel d]) motive
+                                   ]
+                              else []) )
+                     , COMMENT "All links that can be added just in r or just in s have now been added. Now we finish the rest with a bow tie."] ++
+                     if or [not (editable e) | e<-es] || or [ not (editable (I c)) | NewAtom _ c<-newAtoms ]  then [] else
+                     [ -- let us see which links are left to be inserted
+                       ASSIGN d (PHPEDif (PHPERel d, PHPRel (PHPqry (ECps es))))
+                     , COMMENT "d contains the remaining links to be inserted in r;s"
+                     , CONDITIONAL (NotNull d)
+                       (SEQ ( newAtoms ++
+                              ALL ( let vs = [ v | NewAtom v _ <- newAtoms ] in
+                                    [ if isRel (head es)
+                                      then Insert (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) (let PHPRel r = head es in r)
+                                      else genPAclause editAble Ins (head es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive]++
+                                    [ Insert (PHPEprd [PHPERel cl, PHPERel cr]) (mkDBrel e) | (cl,cr,e)<-zip (init vs) (tail vs) tail (init es))] ++
+                                    [ if isRel (last es)
+                                      then Insert (PHPEPrd [PHPERel (PHPvar (last vs)), PHPERel d]) (let PHPRel r = last es in r)
+                                      else genPAclause editAble Ins (last es) (PHPEPrd [PHPERel d, PHPERel (PHPvar (head vs))]) motive ])
+                       )    )
+                     ])
+           )
          ]
 
 -}
-
-          (Del, ECps ts) -> Chc [ if ECps ls==flp (ECps rs)
-                                  then Chc [ Sel c (disjNF (ECps ls)) (\_->Rmv c fLft motiv) motiv
-                                           , Sel c (disjNF (ECps ls)) fLft motiv
-                                           ] motiv
-                                  else Chc [ Sel c (disjNF (EIsc [ECps ls,flp(ECps rs)])) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
-                                           , Sel c (disjNF (EIsc [ECps ls,flp(ECps rs)])) fLft motiv
-                                           , Sel c (disjNF (EIsc [ECps ls,flp(ECps rs)])) fRht motiv
-                                           ] motiv
-                                | (ls,rs)<-chop ts
-                                , if source (ECps rs) <==> target (ECps ls) then True else err 855 " ECps ts,\n" -- ensure that 'join' on the following line may be called
-                                , let c = source (ECps rs) `join` target (ECps ls)
-                                , let fLft atom = genPAcl (disjNF (EUni[EPrd [ERel (Mp1 atom c),deltaX],ECpl (ECps rs)])) Del (ECps rs) []
-                                , let fRht atom = genPAcl (disjNF (EUni[EPrd [deltaX,ERel (Mp1 atom c)],ECpl (ECps ls)])) Del (ECps ls) []
-                                ] motiv
-{- Problem: how to delete Delta from ECps es
+          (Del, e@ECps{})   -> CHC [ if els==flp ers
+                                     then CHC [ Sel c (disjNF els) (\_->Rmv c fLft motiv) motiv
+                                              , Sel c (disjNF els) fLft motiv
+                                              ] motiv
+                                     else CHC [ Sel c (disjNF (els ./\. flp ers)) (\_->Rmv c (\x->ALL [fLft x, fRht x] motiv) motiv) motiv
+                                              , Sel c (disjNF (els ./\. flp ers)) fLft motiv
+                                              , Sel c (disjNF (els ./\. flp ers)) fRht motiv
+                                              ] motiv
+                                   | (ls,rs)<-chop (exprCps2list e)
+                                   , let ers=foldr1 (.:.) rs
+                                   , let els=foldr1 (.:.) ls
+                                   , let c=if target ers<=source els then target ers else source els
+                                   , let fLft atom = genPAcl (disjNF ((ERel (Mp1 atom) (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
+                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. ERel (Mp1 atom) (sign els)) .\/. notCpl (sign els) els)) Del els []
+                                   ] motiv
+{- Purpose: how to delete Delta from ECps es
 This corresponds with:  genPAclause editAble Del (ECps es) Delta motive
 One way of doing this is to select from es one subexpression, e, that is editable.
 By removing the proper links from that particular e, all chains are broken.
@@ -880,30 +878,30 @@ If e is a relation and editable as well, this relation can be used for deletion.
 The elements from e to be deleted are those, that establish a link between cod(left) and dom(right).
 In order to eliminate these, no link from the expression  left~;e;right~  may survive.
 If we sum up the alternatives in pseudocode, we get:
-Chc [ DELETE ((ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) FROM e
-    | (left,ERel e,right)<-triples
+CHC [ DELETE ((ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) FROM e
+    | (left,ERel e _,right)<-triples
     , editable e ]
 In order to refine further to real code, we must realize that deletion can be done in relations only. Not in expressions.
 So if e is a relation, the DELETE can be executed.
 If it is an expression, the function genPAclause can be called recursively.
 We now get the following code fragment:
-Chc [ if isRel e
+CHC [ if isRel e
       then DELETE (ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) FROM  (let PHPRel r = e in r)
       else genPAclause editAble Del e (ECps (reverse (map flp left) ++ [e] ++ reverse (map flp right))) motive
-    | (left,ERel e,right)<-triples
+    | (left,ERel e _,right)<-triples
     , editable e ]
 
 -}
-          (Del, EUni fs)   -> All [ genPAcl deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Del, EIsc fs)   -> Chc [ genPAcl deltaX Del f motiv | f<-fs ] motiv
--- Op basis van de Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , ERad ts)   -> genPAcl deltaX tOp (ECpl (ECps (map notCpl ts))) motiv
-          (_  , EPrd _)    -> fatal 745 "TODO"
-          (_  , EKl0 x)    -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
-          (_  , EKl1 x)    -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , ERel m)   -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
+          (Del, e@EUni{}) -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Del, e@EIsc{}) -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
+-- Op basis van De Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
+          (_  , e@(ERad (l,r) sgn)) -> genPAcl deltaX tOp (deMorgan sgn e) motiv
+          (_  , EPrd{})   -> fatal 896 "TODO"
+          (_  , EKl0 x _)  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
+          (_  , EKl1 x _)  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
+          (_  , e@(ERel m _)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
-                             if editAble m then Do tOp m deltaX motiv else Blk [(ERel m ,nub [r |(_,rs)<-motiv, r<-rs])]
+                                 if editAble m then Do tOp m deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
           (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\ndoCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
                                          "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++
                                          concat
@@ -922,13 +920,14 @@ Chc [ if isRel e
        , fsbECAs  = ecas
        }
       where
+        qs :: [Quad]
         qs        = quads flags visible (invariants fSpec)
         ecas      = assembleECAs qs
         conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
-        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, ERel rel<-[ERel e, flp $ ERel e]]
+        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, ERel rel _<-[ERel e (sign e), flp $ ERel e (sign e)]] -- TODO (SJ 26-01-2013) silly code: ERel rel _<-[ERel e (sign e), flp $ ERel e (sign e)] Why is this?
         visible _ = True
-        
+
 -- Auxiliaries
    chop :: [t] -> [([t], [t])]
    chop [_]    = []
@@ -941,13 +940,3 @@ Chc [ if isRel e
    deltaK1 :: t -> InsDel -> t1 -> t
    deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x+)
    deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
-
-
-
-   -- TODO: @Stef: Why is this needed?  
-   idsOnly :: Expression -> Bool
-   idsOnly e' = and [isIdent r | r<-mors' e'] -- > tells whether all the arguments are equivalent to I
-             where mors' :: Expression -> [Relation]
-                   mors' = foldrMapExpression rdcons id []   -- yields a list of relations from e
-                   rdcons :: Eq a => a -> [a] -> [a]
-                   rdcons r ms = if r `elem` ms then ms else r:ms

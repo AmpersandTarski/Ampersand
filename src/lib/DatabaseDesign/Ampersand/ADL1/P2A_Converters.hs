@@ -2,16 +2,16 @@
 {-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
-     pCtx2aCtx, disambiguate,
+     pCtx2aCtx,
      Guarded(..)
      )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Basics (name, isc, uni, eqCl, eqClass, getCycles, (>-), fatalMsg)
+import DatabaseDesign.Ampersand.Basics (name, isc, uni, eqCl, eqClass, getCycles, (>-), fatalMsg, flp)
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.Fspec
+-- import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import qualified DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
 import GHC.Exts (sortWith)
@@ -120,9 +120,9 @@ instance Eq Type where
 
 -- | p_flp computes the inverse of a Term.
 p_flp :: Term -> Term
-p_flp a@(PI{})     = a
-p_flp a@(Pid{})    = a
-p_flp a@(Patm{})   = a
+p_flp a@PI{}       = a
+p_flp a@Pid{}      = a
+p_flp a@Patm{}     = a
 p_flp Pnull        = Pnull
 -- p_flp a@(PVee _)   = PFlp a -- This was earlier: a, which is a mistake. (V[A*B])~ = V[B*A])
 p_flp (Pfull s t)  = Pfull t s
@@ -196,19 +196,20 @@ setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains
    f q x = Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
    res   = foldl f xs (Map.keys xs `isc` nub (concat (Map.elems xs)))
 
+{- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
-                       | a==b      = distinctCons a b (mrgUnion as bs)
+                       | a==b      = b: mrgUnion as bs
                        | otherwise = b:mrgUnion (a:as) bs
 mrgUnion a b = a ++ b -- since either a or b is the empty list
 
 mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgIntersect (a:as) (b:bs) | a<b       = mrgIntersect as (b:bs)
-                           | a==b      = distinctCons a b (mrgIntersect as bs)
+                           | a==b      = b: mrgIntersect as bs
                            | otherwise = mrgIntersect (a:as) bs
 mrgIntersect _ _ = [] -- since either a or b is the empty list
-
-{- The following mrgUnion and mrgIntersect are for debug purposes
+-}
+-- The following mrgUnion and mrgIntersect are for debug purposes
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct l then
@@ -234,7 +235,7 @@ mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge co
                             | a==b = if b==a then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
                             | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
         merge _ _ = [] -- since either a or b is the empty list
--}
+
 
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
@@ -327,8 +328,9 @@ typing :: P_Context -> ( Typemap                                   -- st        
                        , Typemap                                   -- stClosAdded -- additional links added to stClos
                        , Typemap                                   -- stClos1     -- st*  (transitive)
                        , Map Type [(P_Declaration,[P_Concept],[P_Concept])] -- bindings    -- declarations that may be bound to relations
-                       , Type -> [P_Concept]                       --  srcTypes -- 
-                       , [(P_Concept,P_Concept)]                   -- isas        -- 
+                       , Type -> [P_Concept]                       -- srcTypes -- 
+                       , Map P_Concept [P_Concept]                 -- isaClos          -- 
+                       , Map P_Concept [P_Concept]                 -- isaClosReversed  -- 
                        )                                   
 typing p_context
   = ( st
@@ -339,7 +341,7 @@ typing p_context
     , bindings -- for debugging: (error.concat) ["\n  "++show b | b<-Map.toAscList bindings] -- 
     , srcTypes
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
-    , isas   -- a list containing all tuples of concepts that are in the subset relation with each other.
+    , isaClos, isaClosReversed   -- a list containing all tuples of concepts that are in the subset relation with each other.
              -- it is used for the purpose of making a poset of concepts in the A-structure.
     ) 
  where
@@ -390,15 +392,11 @@ typing p_context
 
      -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
      stClos = if (stClosAdded == (addIdentity $ setClosure stClosAdded "stClosAdded")) then
-                 stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure).
+                 stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
      eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
      isaClos = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
      isaClosReversed = reverseMap isaClos
-     isas = [ (s,g) | s<-Map.keys isaClos, g<-lkp s ]  -- there are too many tuples in isas. Because isas=isas*, it may contain tuples (s,g) for which there exists q and (s,q) and (q,g) are in isas.
-            where lkp c = case Map.lookup c isaClos of
-                           Just cs -> cs
-                           _ -> fatal 379 ("P_Concept "++show c++" was not found in isaClos")
      stConcepts :: Map Type [P_Concept]
      stConcepts = Map.map f stClos
                   where f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
@@ -446,13 +444,15 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                      [ (t,[]) | t<-typeTerms]
                    )
       where
+      {-
        unDouble (tr@(d,_,_):triples) = tr : unDouble [tr' | tr'@(d',_,_)<-triples, d `neq` d']
        unDouble [] = []
        d `neq` d'
         = let P_Sign sgn  = dec_sign d
               P_Sign sgn' = dec_sign d'
           in dec_nm d/=dec_nm d || head sgn/=head sgn' || last sgn/=last sgn'
-
+      -}
+      
 -- The TypGlb types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
@@ -686,9 +686,9 @@ instance Expr P_ObjectDef where
                         ]
  
 instance Expr P_SubInterface where
- terms x@(P_Box{}) = terms (si_box x)
+ terms x@P_Box{} = terms (si_box x)
  terms _           = []
- uType ctxt _ uLft uRt mIfc@(P_Box{}) = let x=si_box mIfc in uType ctxt x uLft uRt x
+ uType ctxt _ uLft uRt mIfc@P_Box{} = let x=si_box mIfc in uType ctxt x uLft uRt x
  uType _    _ _    _   _              = nothing
 
 instance Expr PPurpose where
@@ -721,8 +721,8 @@ instance Expr P_Declaration where
 
 instance Expr P_Population where
  terms pop@(P_RelPopu{p_type=P_Sign []}) = [Prel (p_orig pop) (name pop)]
- terms pop@(P_RelPopu{})                 = [PTyp (p_orig pop) (Prel (p_orig pop) (name pop)) (p_type pop)]
- terms pop@(P_CptPopu{})                 = [Pid (PCpt (name pop))]
+ terms pop@P_RelPopu{}                   = [PTyp (p_orig pop) (Prel (p_orig pop) (name pop)) (p_type pop)]
+ terms pop@P_CptPopu{}                   = [Pid (PCpt (name pop))]
  uType ctxt _ uLft uRt pop
   = foldr (.+.) nothing [ uType ctxt x uLft uRt x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
     -- the reason for inserting dom x.=.dom x .+. cod x.=.cod x on this location,
@@ -1002,7 +1002,7 @@ pCtx2aCtx p_context
              , ctxps     = apurp
              , ctxsql    = sqlPlugs
              , ctxphp    = phpPlugs
-             , ctxenv    = (ERel(V (Sign ONE ONE)) ,[])
+             , ctxenv    = let sgn = Sign ONE ONE in (vExpr sgn,[])
              , ctxmetas  = [ Meta pos metaObj nm val | P_Meta pos metaObj nm val <- ctx_metas p_context ]
              }
     populationTable = map (foldl1 addPops) (eqClass sameClass allpops)
@@ -1023,22 +1023,54 @@ pCtx2aCtx p_context
                      ++ concatMap prcUps procs  -- Populations from declarations inside all processes
                      ++ mapMaybe snd adecsNPops      -- Populations from declarations directly in side the context
                       
-    st, eqType  :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    bindings    :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
-    isas        :: [(P_Concept,P_Concept)]                   -- 
-    (st, stClos, eqType, stClosAdded, stClos1 , bindings, srcTypes, isas) = typing p_context
-    specializationTuples :: [(A_Concept,A_Concept)]
-    specializationTuples = [(pCpt2aCpt specCpt,pCpt2aCpt genCpt) | (specCpt, genCpt)<-isas]
-    gEandClasses :: (A_Concept->A_Concept->DatabaseDesign.Ampersand.Core.Poset.Ordering, [[A_Concept]])
-    gEandClasses = (gE, classes)   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
-     where (gE, cls) = DatabaseDesign.Ampersand.Core.Poset.makePartialOrder specializationTuples
-           classes  = rd [] {- map (reverse . DatabaseDesign.Ampersand.Core.Poset.sortBy DatabaseDesign.Ampersand.Core.Poset.compare -} cls
-           rd seen (cs:css)
-            = case cs>-seen of
-               [] -> rd seen css
-               _  -> cs: rd (seen++cs) css
-           rd _ [] = []
-               
+    st, eqType :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
+    bindings ::   Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
+    (st, stClos, eqType, stClosAdded, stClos1 , bindings, srcTypes, isaClos, isaClosReversed) = typing p_context
+    gEandClasses :: GenR
+    gEandClasses
+{- The following may be useful for debugging:
+     = (error.concat)
+       (["isaClos:"]++
+        ["\n  "++show b | b<-Map.toAscList isaClos ]++
+        ["\nisaClosReversed:"]++
+        ["\n  "++show b | b<-Map.toAscList isaClosReversed ]++
+        ["\nsorted: "++show sorted]++
+        ["\nclasses: "++show classes]++
+        ["\nisas: "++show isas]
+       )
+-}
+     = (gE, classes, isas,meets,joins)   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+       where 
+          gE a b = pgE (aCpt2pCpt a) (aCpt2pCpt b)
+          pgE a b | a==b                              = DatabaseDesign.Ampersand.Core.Poset.EQ
+                  | b `elem` isaClos Map.! a          = DatabaseDesign.Ampersand.Core.Poset.LT
+                  | b `elem` isaClosReversed Map.! a  = DatabaseDesign.Ampersand.Core.Poset.GT
+                  | null (((isaClosReversed Map.! a) `isc` (isaClosReversed Map.! b)) `uni`
+                          ((isaClos         Map.! a) `isc` (isaClos         Map.! b)))
+                                                      = DatabaseDesign.Ampersand.Core.Poset.NC
+                  | otherwise                         = DatabaseDesign.Ampersand.Core.Poset.CP
+          meets a b = map pCpt2aCpt ((isaClosReversed Map.! aCpt2pCpt a) `isc` (isaClosReversed Map.! aCpt2pCpt b))
+          joins a b = map pCpt2aCpt ((isaClos         Map.! aCpt2pCpt a) `isc` (isaClos         Map.! aCpt2pCpt b))
+          sorted = (GHC.Exts.sortWith ((0-).length.snd) (Map.toList isaClosReversed))
+          classes = [map pCpt2aCpt (x:filter (/=x) xs) | (x,xs)<-recur sorted ]
+           where
+           -- Example: if  sorted == [(E,[A,B,D,E]),(A,[A,D]),(B,[B,D]),(D,[D]),(X,[X]),(Y,[Y])]
+           --          then recur sorted = [(E,[A,B,D,E]),(X,[X]),(Y,[Y])]
+              recur :: [(P_Concept,[P_Concept])] -> [(P_Concept,[P_Concept])]
+              recur ((c,smallerCs):cs)
+               = (c,smallerCs) : recur [ c' | c'<-cs, fst c' `notElem` smallerCs ]
+              recur [] = []
+          isas = [(pCpt2aCpt s, pCpt2aCpt g) | (s,g)<-recur sorted, s/=g ]
+           where
+              recur :: [(P_Concept,[P_Concept])] -> [(P_Concept,P_Concept)]
+              recur ((generic,smallerCs):cs)
+               = tuples++ recur cs
+                 where
+                  tuples = [(specific,generic)
+                           | specific <- smallerCs>-(generic:[ x| (c',cs')<-cs, c' `elem` smallerCs, x<-cs', x/=c' ])
+                           ]
+              recur [] = []
     typeErrors :: [CtxError]
     typeErrors
      | (not.null) derivedEquals = derivedEquals
@@ -1090,17 +1122,17 @@ pCtx2aCtx p_context
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
-    popsFromMp1Rels = [mp1Rel2Pop r | r<-allMp1Rels]
+    popsFromMp1Rels = [mp1Rel2Pop r c | (r,c)<-allMp1Rels]
       where 
         allMp1Rels =    mp1Rels pats
                   `uni` mp1Rels procs
                   `uni` mp1Rels ctxrules
                   `uni` mp1Rels keys
                   `uni` mp1Rels ifcs 
-        mp1Rel2Pop :: Relation -> UserDefPop
-        mp1Rel2Pop r =
+        mp1Rel2Pop :: Relation -> A_Concept -> UserDefPop
+        mp1Rel2Pop r c =
            case r of 
-             Mp1{} -> PCptPopu { popcpt = rel1typ r
+             Mp1{} -> PCptPopu { popcpt = c
                                , popas  = [relval r]
                                }
              _     -> fatal 1088 "This function must not be called with just any relation"
@@ -1190,7 +1222,7 @@ pCtx2aCtx p_context
        where
         f erels = RR { rrRoles = rr_Roles prrel
                      , rrRels  = [ case erel of
-                                    ERel rel -> rel
+                                    ERel rel _ -> rel
                                     _   -> fatal 1149 ("Erroneous expression "++showADL erel++" in pRRel2aRRel.")
                                  | (erel,_,_)<-erels ]
                      , rrPos   = rr_Pos prrel
@@ -1313,7 +1345,7 @@ pCtx2aCtx p_context
        where
         f prms obj
          = Ifc { ifcParams = [ case erel of
-                                ERel rel -> rel
+                                ERel rel _ -> rel
                                 _   -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
                , ifcViols  = fatal 206 "not implemented ifcViols"
@@ -1392,7 +1424,7 @@ pCtx2aCtx p_context
                                             Checked (decl,_):_ -> Checked (ExplDeclaration decl)
                                             Errors ers:_   -> Errors ers
                                             []             -> Errors [CxeOrig [newcxe ("No declaration for '"++showADL t++"'")] "relation" nm o ]
-    pExOb2aExOb (PRef2Declaration t@(Prel{}))
+    pExOb2aExOb (PRef2Declaration t@Prel{})
                                         = do { (decl,_) <- getDeclarationAndSign t
                                              ; return (ExplDeclaration decl)
                                              }
@@ -1422,10 +1454,10 @@ pCtx2aCtx p_context
     pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop pop
      = case pExpr2aExpr expr of
-        Checked (ERel aRel,_,_)          -> Checked ( thePop aRel )
-        Checked (ETyp (ERel aRel) _,_,_) -> Checked ( thePop aRel )
-        Checked _                        -> fatal 1223 "illegal call of pPop2aPop"
-        Errors errs                      -> Errors errs
+        Checked (ERel aRel _,_,_)          -> Checked ( thePop aRel )
+        Checked (ETyp (ERel aRel _) _,_,_) -> Checked ( thePop aRel )
+        Checked _                          -> fatal 1223 "illegal call of pPop2aPop"
+        Errors errs                        -> Errors errs
        where expr = case pop of
                       P_CptPopu{}                 -> Pid (PCpt (name pop))
                       P_RelPopu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
@@ -1467,6 +1499,12 @@ pCtx2aCtx p_context
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 }
     
+    aCpt2pCpt :: A_Concept -> P_Concept
+    aCpt2pCpt c
+        = case c of
+            C{} -> PCpt { p_cptnm = cptnm c }
+            ONE -> P_Singleton
+    
     pDecl2aDecl :: P_Declaration -> Guarded (Declaration , Maybe UserDefPop)
     pDecl2aDecl pd =
      case dec_conceptDef pd of 
@@ -1503,89 +1541,91 @@ pCtx2aCtx p_context
                            , P_Concept, P_Concept     -- the source and target types of the resulting expression.
                            )                          -- The result might be incorrect, so it is guarded with type error messages.
     pExpr2aExpr pTerm
-     = (\r -> (r, lookupType pTerm, lookupType (p_flp pTerm))) <$> f pTerm
-       -- do { r <- f pTerm ; return (r, lookupType pTerm, lookupType (p_flp pTerm))}
-       -- or equivalently:
-       -- case f pTerm of
-       --  Checked r   -> Checked (r, lookupType pTerm, lookupType (p_flp pTerm))
-       --  Errors errs -> Errors errs
+     = do { r <- f pTerm
+          ; return (r, lookupType pTerm, lookupType (p_flp pTerm))
+          }
        where
          f :: Term -> Guarded Expression
-         f t@(PI _)            = do { c<-returnIConcepts t
-                                    ; return (ERel (I (pCpt2aCpt c)))
+         f x@(PI _)            = do { c<-returnIConcepts x
+                                    ; sgn<-getSign x
+                                    ; return (ERel (I (pCpt2aCpt c)) sgn)
                                     }
-         f   (Pid c)           = return (ERel (I (pCpt2aCpt c)))
-         f   (Pnid c)          = return (ECpl (ERel (I (pCpt2aCpt c))))
-         f t@(Patm _ atom [])  = do { c<-returnIConcepts t
-                                    ; return (ERel (Mp1 atom (pCpt2aCpt c)))
+         f   (Pid c)           = return (iExpr (pCpt2aCpt c))
+         f x@(Pnid c)          = do { sgn<-getSign x
+                                    ; return (ECpl (ERel (I (pCpt2aCpt c)) sgn) sgn)
                                     }
-         f   (Patm _ atom [c]) = return (ERel (Mp1 atom (pCpt2aCpt c)))
-         f t@(Patm _ _     _ ) = fatal 1459 ("multiple concepts in "++show t++".")
-         f t@Pnull             = fatal 988 ("pExpr2aExpr cannot transform "++show t++" to a term.")
-         f t@(PVee _)          = ERel <$> (V <$> getSignFromTerm t)
-         f (Pfull s t)         = return (ERel (V (Sign (pCpt2aCpt s) (pCpt2aCpt t))))
-         f t@(Prel o a)        = do { (decl,sgn) <- getDeclarationAndSign t
+         f x@(Patm _ atom _)   = do { sgn<-getSign x
+                                    ; return (ERel (Mp1 atom) sgn)
+                                    }
+         f   Pnull             = fatal 1546 ("unsigned Pnull.")
+         f x@(PVee _)          = do { sgn<-getSign x
+                                    ; return (vExpr sgn)
+                                    }
+         f (Pfull s t)         = return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
+         f x@(Prel o a)        = do { (decl,sgn) <- getDeclarationAndSign x
                                     ; return (ERel (Rel{ relnm=a
                                                        , relpos=o
-                                                       , relsgn=sgn
                                                        , reldcl=decl
-                                                       }))
+                                                       }) sgn)
                                     }
          f (Pflp o a)          = do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
                                     ; return (EFlp (ERel (Rel{ relnm=a
                                                              , relpos=o
-                                                             , relsgn=sgn
                                                              , reldcl=decl
-                                                             })))
+                                                             }) sgn) (flp sgn))
                                     }
-         f t@(Pequ _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; let srcAs = srcTypes (TypExpr        a  False)
+         f x@(Pequ _ a b)      = do { let srcAs = srcTypes (TypExpr        a  False)
                                           trgAs = srcTypes (TypExpr (p_flp a) True )
                                           srcBs = srcTypes (TypExpr        b  False)
                                           trgBs = srcTypes (TypExpr (p_flp b) True )
-                                          srcTyps = srcAs `uni` srcBs
-                                          trgTyps = trgAs `uni` trgBs
+                                          srcTyps  = srcAs `uni` srcBs
+                                          trgTyps  = trgAs `uni` trgBs
                                     ; case (srcTyps, trgTyps) of
-                                           ([_], [_]) -> return (EEqu (a', b'))
-                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                            ; return (a' .==. b')
+                                                            }
+                                           _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                             ,cxeLhs     = a
                                                                             ,cxeRhs     = b
                                                                             ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
                                                                             ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                             }]
                                     }
-         f t@(Pimp _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; let srcAs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
-                                          trgAs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+         f x@(Pimp _ a b)      = do { let srcAs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
+                                          trgAs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
                                           srcBs = srcTypes (TypExpr        b  False)
                                           trgBs = srcTypes (TypExpr (p_flp b) True )
                                     ; case (srcAs, trgBs) of
-                                           ([_], [_]) -> return (EImp (a', b'))
-                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                            ; return (a' .|-. b')
+                                                            }
+                                           _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                             ,cxeLhs     = a
                                                                             ,cxeRhs     = b
                                                                             ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
                                                                             ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                             }]
                                     }
-         f t@(PIsc _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) t)
-                                          trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+         f x@(PIsc _ a b)      = do { let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
+                                          trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
                                     ; case (srcs, trgs) of
-                                           ([_], [_]) -> return (EIsc (case a' of {EIsc ts -> ts; t'-> [t']} ++ case b' of {EIsc ts -> ts; t'-> [t']}))
-                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                            ; return (a' ./\. b')
+                                                            }
+                                           _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                             ,cxeLhs     = a
                                                                             ,cxeRhs     = b
                                                                             ,cxeSrcCpts = srcs
                                                                             ,cxeTrgCpts = trgs
                                                                             }]
                                     }
-         f t@(PUni _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; let srcs = (srcTypes.normalType) (TypLub (TypExpr        a  False) (TypExpr        b  False) t)
-                                          trgs = (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) t)
+         f x@(PUni _ a b)      = do { let srcs = (srcTypes.normalType) (TypLub (TypExpr        a  False) (TypExpr        b  False) x)
+                                          trgs = (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
                                     ; case (srcs, trgs) of
-                                           ([_], [_]) -> return (EUni (case a' of {EUni ts -> ts; t'-> [t']} ++ case b' of {EUni ts -> ts; t'-> [t']}))
-                                           _          -> Errors [CxeEquLike {cxeExpr    = t
+                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                            ; return (a' .\/. b')
+                                                            }
+                                           _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                             ,cxeLhs     = a
                                                                             ,cxeRhs     = b
                                                                             ,cxeSrcCpts = srcs
@@ -1593,72 +1633,83 @@ pCtx2aCtx p_context
                                                                             }]
                                     }
          f   (PDif _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; return (EDif (a', b'))
+                                    ; return (a' .-. b')
                                     }
-         f t@(PLrs _ a b)      = do { (a',b') <- (,) <$> f a <*> f b    -- a/b = a!-b~ = -(-a;b~)
-                                    ; case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) t) of
-                                       [_] -> return (ELrs (a', b'))
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+         f x@(PLrs _ a b)      = do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) x) of
+                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                 ; return (a' ./. b')
+                                                 }
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
                                                                   ,cxeCpts   = cs
                                                                   }
                                                      ]
                                     }
-         f t@(PRrs _ a b)      = do { (a',b') <- (,) <$> f a <*> f b    -- a\b = -a~!b = -(a~;-b)
-                                    ; case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) t) of
-                                       [_] -> return (ERrs (a', b'))
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+         f x@(PRrs _ a b)      = do { case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) x) of
+                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                 ; return (a' .\. b')
+                                                 }
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
                                                                   ,cxeCpts   = cs
                                                                   }
                                                      ]
                                     }
-         f t@(PCps _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) t) of
-                                       [_] -> return (ECps (case a' of {ECps ts -> ts; t'-> [t']} ++ case b' of {ECps ts -> ts; t'-> [t']}))
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+         f x@(PCps _ a b)      = do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) x) of
+                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                 ; return (a' .:. b')
+                                                 }
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
                                                                   ,cxeCpts   = cs
                                                                   }
                                                      ]
                                     }
-         f t@(PRad _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) t) of
-                                       [_] -> return (ERad (case a' of {ERad ts -> ts; t'-> [t']} ++ case b' of {ERad ts -> ts; t'-> [t']}))
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = t
+         f x@(PRad _ a b)      = do { case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) x) of
+                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                 ; return (a' .!. b')
+                                                 }
+                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
                                                                   ,cxeCpts   = cs
                                                                   }
                                                      ]
                                     }
-         f (PPrd _ a b)        = do { (fa, fb) <- (,) <$> f a <*> f b
-                                    ; return (EPrd [fa,fb]) }
+         f (PPrd _ a b)        = do { (a',b') <- (,) <$> f a <*> f b
+                                    ; return (a' .*. b') }
          f (PKl0 _ a)          = do { a' <- f a
-                                    ; return (EKl0 a')
+                                    ; return (EKl0 a' (sign a'))
                                     }
-         f (PKl1 _ a)          = EKl1 <$> f a
-         f (PFlp _ a)          = EFlp <$> f a
-         f (PCpl _ a)          = ECpl <$> f a
-         f (PBrk _ a)          = EBrk <$> f a
-         f t@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show t++" ("++show o++") to a term.")
-         f t@(PTyp _ r@(Prel o a) sgnCast)
-                               = do { (decl,_) <- getDecl
+         f (PKl1 _ a)          = do { a' <- f a
+                                    ; return (EKl1 a' (sign a'))
+                                    }
+         f (PFlp _ a)          = do { a' <- f a
+                                    ; return (flp a')
+                                    }
+         f (PCpl _ a)          = do { a' <- f a
+                                    ; return (notCpl (sign a') a')
+                                    }
+         f (PBrk _ a)          = do { a' <- f a
+                                    ; return (EBrk a')
+                                    }
+         f x@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
+         f x@(PTyp _ r@(Prel o a) sgnCast)
+                               = do { (decl, sgn) <- getDecl
                                     ; return (ETyp (ERel (Rel{ relnm=a
                                                              , relpos=o
-                                                             , relsgn=sign decl
                                                              , reldcl=decl
-                                                             }))
+                                                             }) sgn)
                                                    (pSign2aSign sgnCast))
                                     }
-                                 where -- getDecl is needed to obtain the full term (which is t) in the error message,
+                                 where -- getDecl is needed to obtain the full term (which is x) in the error message,
                                        -- rather than only the relation (which is r).
                                   getDecl = case getDeclarationAndSign r of
-                                             Errors errs -> Errors [CxeRel {cxeExpr = t
+                                             Errors errs -> Errors [CxeRel {cxeExpr = x
                                                                            ,cxeDecs = cxeDecs err  
                                                                            ,cxeSNDs = [ decl | decl<-p_declarations p_context, name decl==a ]
                                                                            } | err<-errs ]
                                              gDaS -> gDaS
-         f t@(PTyp _ a (P_Sign _))
+         f x@(PTyp _ a (P_Sign _))
                                = do { a' <- f a
-                                    ; case (srcTypes (TypExpr t False), srcTypes (TypExpr (p_flp t) True )) of
+                                    ; case (srcTypes (TypExpr x False), srcTypes (TypExpr (p_flp x) True )) of
                                         ([src],[trg]) -> return (ETyp a' (Sign (pCpt2aCpt src) (pCpt2aCpt trg)))
-                                        (srcs , trgs) -> Errors [CxeCast {cxeExpr    = t
+                                        (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
                                                                          ,cxeDomCast = srcs
                                                                          ,cxeCodCast = trgs
                                                                          }]
@@ -1672,18 +1723,16 @@ pCtx2aCtx p_context
          getConceptsFromTerm :: Term -> [P_Concept]
          getConceptsFromTerm x
           = srcTypes (TypExpr x False)
-         getSignFromTerm :: Term -> Guarded Sign
-         getSignFromTerm term
-          = getSign (\s t -> [ CxeV { cxeExpr = term
-                                    , cxeSrcs = s
-                                    , cxeTrgs = t}]) term
-         getSign :: ([P_Concept]->[P_Concept]->[CtxError]) -> Term -> Guarded Sign
-         getSign e term
-          = case (src,trg) of
+         getSign :: Term -> Guarded Sign
+         getSign term
+          = case (srcs,trgs) of
              ([s],[t]) -> Checked (Sign (pCpt2aCpt s) (pCpt2aCpt t))
-             (_  ,_  ) -> Errors (e src trg)
-             where src = getConceptsFromTerm term
-                   trg = getConceptsFromTerm (p_flp term)
+             (_  ,_  ) -> Errors [CxeSign { cxeExpr = term
+                                          , cxeSrcs = srcs
+                                          , cxeTrgs = trgs}]
+             where srcs = getConceptsFromTerm term
+                   trgs = getConceptsFromTerm (p_flp term)
+                   
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of
                          [c] -> c
@@ -1708,64 +1757,4 @@ pCtx2aCtx p_context
         Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])
     getDeclarationAndSign term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
 
---the type checker always returns a term with sufficient type casts, it should remove redundant ones.
---applying the type checker on an complete, explicitly typed term is equivalent to disambiguating the term
-
---   Disambiguation is needed for the purpose of printing a term.    parse (disambiguate expr) = expr
---   Produce type error messages if necessary and produce proof graphs to document the type checking process.
-disambiguate :: Fspc -> Expression -> Expression
-disambiguate _ x = x
-{- -- temporarily disabled (19 july 2012), in order to get the type checker correct first...
-disambiguate :: Fspc -> Expression -> Expression
-disambiguate fspec x = 
- | null errs = expr 
- | otherwise  = fatal 428 ("a term must be type correct, but this one is not:\n" ++ show errs)
- where
-   (expr,errs) = pExpr2aExpr fSpec{vrels=vrels fSpec++deltas} NoCast (f x)
-   -- f transforms x to a Term using full relation signatures
-   f (EEqu (l,r)) = Pequ OriginUnknown (f l) (f r)
-   f (EImp (l,r)) = Pimp OriginUnknown (f l) (f r)
-   f (EIsc [l])   = f l
-   f (EIsc [l,r]) = PIsc OriginUnknown (f l) (f r)
-   f (EIsc (l:rs))= PIsc OriginUnknown (f l) (f (EIsc rs))
-   f (EIsc _)     = PVee OriginUnknown
-   f (EUni [l])   = f l
-   f (EUni [l,r]) = PUni OriginUnknown (f l) (f r)
-   f (EUni (l:rs))= PUni OriginUnknown (f l) (f (EUni rs))
-   f (EUni _)     = Pnull
-   f (EDif (l,r)) = PDif OriginUnknown (f l) (f r)
-   f (ELrs (l,r)) = PLrs OriginUnknown (f l) (f r)
-   f (ERrs (l,r)) = PRrs OriginUnknown (f l) (f r)
-   f (ECps es)    = foldr1 (PCps OriginUnknown) (map f es)
-   f (ERad es)    = foldr1 (PRad OriginUnknown) (map f es)
-   f (EPrd es)    = foldr1 (PPrd OriginUnknown) (map f es)
-   f (EKl0 e)     = PKl0 OriginUnknown (f e)
-   f (EKl1 e)     = PKl1 OriginUnknown (f e)
-   f (EFlp e)     = PFlp OriginUnknown (f e)
-   f (ECpl e)     = PCpl OriginUnknown (f e)
-   f (EBrk e)     = PBrk OriginUnknown (f e)
-   f (ETyp e _)   = f e
-   f (ERel rel@(Rel{})) = PTyp OriginUnknown (Prel OriginUnknown (name rel))
-                               (P_Sign [g (source rel),g (target rel)])
-   f (ERel rel@(I{}))   = Pid (g (source rel))
-   f (ERel rel@(V{}))   = Pfull (g (source rel)) (g (target rel))
-   f (ERel rel@(Mp1{})) = Patm OriginUnknown (relval rel) [g (source rel)]
-   g c@(C{}) = PCpt (name c) 
-   g ONE     = P_Singleton
-   deltas    = [ makeDeclaration r | r<-mors x, name r=="Delta" ]
--}
-
--- | An InfExpression yields a list of alternatives that are type correct (type: [Expression]) and a list of error messages (type: [String]).
---type InfExpression  = AutoCast -> ([Expression],[String])
--- | internal type to push down the type as far as known on the ERel, thus possibly with wild cards on source or target
-data AutoCast = NoCast | SourceCast A_Concept | TargetCast A_Concept | Cast A_Concept A_Concept deriving (Show,Eq)
--- | AutoCast is not of class Association, but it should be flippable
-
-{-
-flpcast :: AutoCast -> AutoCast
-flpcast NoCast = NoCast
-flpcast (SourceCast x) = TargetCast x
-flpcast (TargetCast x) = SourceCast x
-flpcast (Cast x y) = Cast y x
--}
 

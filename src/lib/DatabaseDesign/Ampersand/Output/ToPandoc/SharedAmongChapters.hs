@@ -275,8 +275,8 @@ dpRule fSpec flags = dpR
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = map makeDeclaration (mors r)
-        nds = [d | d@(Sgn{})<-ds >- seenDeclarations]     -- newly seen declarations
-        rds = [d | d@(Sgn{})<-ds `isc` seenDeclarations]  -- previously seen declarations
+        nds = [d | d@Sgn{}<-ds >- seenDeclarations]     -- newly seen declarations
+        rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen declarations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)
 
 

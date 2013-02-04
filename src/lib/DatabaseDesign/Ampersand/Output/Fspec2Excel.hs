@@ -105,7 +105,7 @@ fspec2Workbook fSpec flags =
     totaal = case lang of
        Dutch   -> "Totaal:"
        English -> "Total:"
-    grandTotaal  :: String
+    grandTotaal :: String
     grandTotaal = case lang of
        Dutch   -> "Grandtotaal:"
        English -> "Grand total:"
@@ -125,7 +125,7 @@ fspec2Workbook fSpec flags =
        , string ( case (lang,plug) of
                    (English, ExternalPlug _)             -> "PHP plugs are not (yet) taken into account!"
                    (Dutch  , ExternalPlug _)             -> "PHP plugs worden (nog) niet meegerekend!"
-                   (English, InternalPlug p@TblSQL{})    ->"Table with "++(show.length.fields) p++" attributes."
+                   (English, InternalPlug p@TblSQL{})    -> "Table with "++(show.length.fields) p++" attributes."
                    (Dutch  , InternalPlug p@TblSQL{})    -> "Tabel met "++(show.length.fields) p++" attributen."
                    (English, InternalPlug   BinSQL{})    -> "Link table"
                    (Dutch  , InternalPlug   BinSQL{})    -> "Koppel tabel"
