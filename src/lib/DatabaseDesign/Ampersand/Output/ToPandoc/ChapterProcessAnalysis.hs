@@ -8,7 +8,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import Data.List
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
 

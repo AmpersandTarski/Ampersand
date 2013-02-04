@@ -1,8 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
-   import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Basics                       (fatalMsg,Identified(..))
    import DatabaseDesign.Ampersand.Fspec.ShowADL            (ShowADL(..))
    import Data.List (intercalate)
@@ -21,20 +19,20 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
                                                                  ++
                               indent++showECA fSpec indent (ecaAction er)
    instance ECA Event where
-    showECA fSpec _ (On Ins rel) = "ON INSERT Delta IN " ++ (showADL.disambiguate fSpec) (ERel rel)
-    showECA fSpec _ (On Del rel) = "ON DELETE Delta FROM " ++ (showADL.disambiguate fSpec) (ERel rel)
+    showECA _ _ (On Ins rel) = "ON INSERT Delta IN " ++ showADL rel
+    showECA _ _ (On Del rel) = "ON DELETE Delta FROM " ++ showADL rel
 
    instance ECA PAclause where
-    showECA fSpec = showPAclause
+    showECA _ = showPAclause
      where
       showPAclause :: String -> PAclause -> String
       showPAclause indent pa@Do{}
        = ( case paSrt pa of
             Ins -> "INSERT INTO "
             Del -> "DELETE FROM ")++
-         (showADL . disambiguate fSpec) (ERel $ paTo pa)++
+         showADL (paTo pa)++
          " SELECTFROM"++indent++"  "++
-         (showADL . disambiguate fSpec) (paDelta pa)++
+         showADL (paDelta pa)++
          motivate indent "TO MAINTAIN" (paMotiv pa)
       showPAclause indent (New c clause cj_ruls)
        = "CREATE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
@@ -43,13 +41,13 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
        = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
       showPAclause indent (Sel c e r cj_ruls)
-       = "SELECT x:"++show c++" FROM codomain("++ (showADL . disambiguate fSpec) e ++");"
+       = "SELECT x:"++show c++" FROM codomain("++ showADL e ++");"
                  ++indent'++showPAclause indent' (r "x")++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"  "
-      showPAclause indent (Chc ds cj_ruls)
+      showPAclause indent (CHC ds cj_ruls)
        = "ONE of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"       "
-      showPAclause indent (All ds cj_ruls)
+      showPAclause indent (ALL ds cj_ruls)
        = "ALL of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
          where indent'  = indent++"       "
       showPAclause indent (Nop cj_ruls)
@@ -60,4 +58,4 @@ module DatabaseDesign.Ampersand.Fspec.ShowECA (showECA) where
       showPAclause  _ (Ref _)      = fatal 56 "showPAclause is missing for `Ref`. Contact your dealer!"
                      
       motivate indent motive motives = concat [ indent++showConj cj_rul | cj_rul<-motives ]
-         where showConj (conj,rs) = "("++motive++" "++(showADL . disambiguate fSpec) conj++" FROM "++intercalate ", " (map name rs) ++")"
+         where showConj (conj,rs) = "("++motive++" "++showADL conj++" FROM "++intercalate ", " (map name rs) ++")"

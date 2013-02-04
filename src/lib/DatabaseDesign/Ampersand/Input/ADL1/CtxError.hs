@@ -29,20 +29,20 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
               | CxeILike      {cxeExpr :: Term
                               ,cxeCpts :: [P_Concept]
                               }       
-              | CxeUnsupRoles {cxeIfc  :: P_Interface
+              | CxeUnsupRoles {cxeIfc ::   P_Interface
                               ,cxeRoles :: [String]
                               }       
-              | CxeNoRoles    {cxeIfc  :: P_Interface
+              | CxeNoRoles    {cxeIfc ::  P_Interface
                               }       
-              | CxeNoRules    {cxePos  :: Origin
+              | CxeNoRules    {cxePos ::  Origin
                               ,cxeRules:: [String]
                               }       
               | CxeNoIfcs     {cxeName :: String
-                              ,cxePos  :: Origin
+                              ,cxePos ::  Origin
                               ,cxeIfcs :: [P_Interface]
                               }       
               | CxeObjMismatch{cxeExpr :: Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
-                              ,cxeEnv  :: [P_Concept]
+                              ,cxeEnv ::  [P_Concept]
                               ,cxeSrcs :: [P_Concept]
                               }       
               | CxeTyp        {cxeExpr :: Term
@@ -52,15 +52,15 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
                               ,cxeDecs :: [(P_Declaration,[P_Concept],[P_Concept])]  -- possibilities for bindings.
                               ,cxeSNDs :: [P_Declaration]                            -- Declarations with the same name
                               }       
-              | CxeV          {cxeExpr :: Term
+              | CxeSign       {cxeExpr :: Term
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
                               }       
-              | CxeCast       {cxeExpr    :: Term
+              | CxeCast       {cxeExpr ::    Term
                               ,cxeDomCast :: [P_Concept]
                               ,cxeCodCast :: [P_Concept]
                               }       
-              | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeV instead?
+              | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeSign instead?
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
                               }       
@@ -211,7 +211,7 @@ showErr err = case err of
                                   x:_ -> x)
   CxeCpl{}
     -> show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
-  CxeV{}
+  CxeSign{}
     -> show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
   CxeViol v a b
     -> case v of

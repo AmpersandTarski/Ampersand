@@ -6,9 +6,8 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
    import Data.GraphViz
    import Data.GraphViz.Attributes.Complete
    import Data.List
-   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Collection(..),Identified(..))
+   import DatabaseDesign.Ampersand.Basics        (fatalMsg,Identified(..),flp)
    import DatabaseDesign.Ampersand.ADL1
-   import DatabaseDesign.Ampersand.ADL1.P2A_Converters (disambiguate)
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..), LanguageDependent(..))
@@ -51,22 +50,25 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                          | (from,to,e,r) <- allEdges
                          ]
          allEdges  = nub[(from,to,e,r) | (e,r,from)<-eventsOut, (e',r',to)<-eventsIn, e==e', r==r']
-         eventsIn  = [(e,r,act) | act<-fpActivities fp, EUni rul<-[rrexp (actRule act)], let antec = EIsc [d |d<-rul,      isCpl d ], r<-mors antec, e<-evIn r antec]
-         eventsOut = [(e,r,act) | act<-fpActivities fp, EUni rul<-[rrexp (actRule act)], let consq = EUni [d |d<-rul, not (isCpl d)], r<-mors consq, e<-evIn r consq]
-         evIn r (EIsc es)  = foldr uni [] [evIn r e | e<-es]
-         evIn r (EUni es)  = foldr uni [] [evIn r e | e<-es]
-         evIn r (ECps es)  = foldr uni [] [evIn r e | e<-es]
-         evIn r (ERad es)  = foldr uni [] [evIn r e | e<-es]
-         evIn r (EPrd es)  = foldr uni [] [evIn r e | e<-es]
-         evIn r (EKl0 e)   = evIn r e
-         evIn r (EKl1 e)   = evIn r e
-         evIn r (EFlp e)   = evIn r e
-         evIn r (ECpl e)   = [case x of Ins->Del; Del->Ins | x<-evIn r e]
-         evIn r (EBrk e)   = evIn r e
-         evIn r (ETyp e _) = evIn r e
-         evIn r (ERel rel) = [Ins | r==rel]
-         evIn _ _        = fatal 66 "evIn can only be called on a disjunctive normal form."
-         
+{-
+data Activity = Act { actRule ::   Rule
+                    , actTrig ::   [Relation]
+                    , actAffect :: [Relation]
+                    , actQuads ::  [Quad]
+                    , actEcas ::   [ECArule]
+                    , actPurp ::   [Purpose]
+                    }
+data ECArule= ECA { ecaTriggr :: Event     -- The event on which this rule is activated
+                  , ecaDelta :: Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
+                  , ecaAction :: PAclause  -- The action to be taken when triggered.
+                  , ecaNum :: Int       -- A unique number that identifies the ECArule within its scope.
+                  }
+data Event = On { eSrt :: InsDel
+                  , eRel :: Relation
+                  } deriving (Show,Eq)
+-}
+         eventsIn  = [(e,r,act) | act<-fpActivities fp, eca<-actEcas act, let On e r = ecaTriggr eca]
+         eventsOut = [(e,r,act) | act<-fpActivities fp, eca<-actEcas act, (e,r)<-events (ecaAction eca)]
    colorRule :: Rule -> X11Color
    colorRule r  | isSignal r = Orange
                 | otherwise  = Green
@@ -90,7 +92,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
       where
         --DESCR -> The relations from which changes can come
         inEvNodes = [ DotNode { nodeID         = nameINode eventsIn ev
-                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++(showADL . disambiguate fSpec . ERel) (eRel ev))))]
+                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eRel ev))))]
                               }
                     | ev<-eventsIn
                     ]
@@ -110,7 +112,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
 
         --DESCR -> The relations to which changes are made
         outEvNods = [ DotNode { nodeID         = nameONode eventsOut ev
-                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++(showADL . disambiguate fSpec . ERel) (eRel ev))))]
+                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eRel ev))))]
                               }
                     | ev<-eventsOut
                     ]
@@ -139,11 +141,11 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                           isTm ERel{} = True
                           isTm _    = False
                     , if not (isTm expr) then fatal 138 ("not in \"ERel\" shape: "++showECA fSpec "\n  " doAct) else True
-                    , let ERel rel = expr
+                    , let ERel rel _ = expr
 Note:
 The expression 'isDo doAct' will become False if a property is being maintained
 (a property is a relation that are both Sym and Asy).   
-This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction eca)'.
+This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction eca)'.
 -}
                     ]
         nameINode = nmLkp fSpec "in_"
@@ -176,7 +178,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
                            | Quad _ ccrs<-actQuads act, (c,_)<-cl_conjNF ccrs]
         --DESCR -> The relations from which changes can come
         inMorNodes    = [ DotNode { nodeID         = nameINode fromRels r
-                                  , nodeAttributes = [Label (StrLabel (fromString ((showADL . disambiguate fSpec . ERel) r)))]
+                                  , nodeAttributes = [Label (StrLabel (fromString (showADL r)))]
                                   }
                         | r<-fromRels
                                                   --TODOHAN        , (not.null) [e |e<-edgesIn, (nodeID  (fromNode e))==nameINode fromRels r]
@@ -184,7 +186,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
 
         --DESCR -> The relations to which changes are made
         outMorNodes   = [ DotNode { nodeID         = nameONode toRels r
-                                  , nodeAttributes = [Label (StrLabel (fromString ((showADL . disambiguate fSpec . ERel) r)))]
+                                  , nodeAttributes = [Label (StrLabel (fromString (showADL r)))]
                                   }
                         | r<-toRels
                   --TODOHAN     , (not.null) [e |e<-edgesOut, (nodeID . toNode) e==nameONode toRels r ]
@@ -221,28 +223,28 @@ This situation is implicitly avoided by 'Do tOp (ERel rel) _ _<-dos (ecaAction e
 
 
    nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => Fspc -> String -> [a] -> a -> String
-   nmLkp fSpec prefix xs x
+   nmLkp _ prefix xs x
     = head ([prefix++show (i::Int) | (i,e)<-zip [1..] xs, e==x]++
-            fatal 216 ("illegal lookup in nmLkp: " ++showADL (mapexprs disambiguate fSpec x)++
-                       "\nin: ["++intercalate ", " (map (showADL.mapexprs disambiguate fSpec) xs)++"]")
+            fatal 216 ("illegal lookup in nmLkp: " ++showADL x++
+                       "\nin: ["++intercalate ", " (map showADL xs)++"]")
            )
    positiveIn :: Expression -> Relation -> [Bool]
    positiveIn expr rel = f expr   -- all are True, so an insert in rel means an insert in expr
     where
-     f (EEqu _)       = fatal 245 "Illegal call of positiveIn."
-     f (EImp (l,r))   = f (EUni [ECpl l,r])
-     f (EIsc es)      = concatMap f es
-     f (EUni es)      = concatMap f es
-     f (EDif (l,r))   = f (EIsc [l,ECpl r])
-     f (ELrs (l,r))   = f (ERad [l,ECpl (EFlp r)])
-     f (ERrs (l,r))   = f (ERad [ECpl (EFlp l),r])
-     f (ECps es)      = concatMap f es
-     f (ERad es)      = concatMap f es
-     f (EPrd es)      = concatMap f es
-     f (EKl0 e)       = f e
-     f (EKl1 e)       = f e
-     f (EFlp e)       = f e
-     f (ECpl e)       = [ not b | b<- f e]
-     f (EBrk e)       = f e
-     f (ETyp e _)     = f e
-     f (ERel r)       = [ True | r==rel ]
+     f (EEqu _ _)       = fatal 245 "Illegal call of positiveIn."
+     f (EImp (l,r) sgn) = f (notCpl sgn l .\/. r)
+     f (EIsc (l,r) _  ) = f l ++ f r
+     f (EUni (l,r) _  ) = f l ++ f r
+     f (EDif (l,r) sgn) = f (l ./\. notCpl sgn r)
+     f (ELrs (l,r) sgn) = f (l .!. notCpl sgn (flp r))
+     f (ERrs (l,r) sgn) = f (notCpl sgn (flp l) .!. r)
+     f (ECps (l,r) _  ) = f l ++ f r
+     f (ERad (l,r) _  ) = f l ++ f r
+     f (EPrd (l,r) _  ) = f l ++ f r
+     f (EKl0 e _)       = f e
+     f (EKl1 e _)       = f e
+     f (EFlp e _)       = f e
+     f (ECpl e _)       = [ not b | b<- f e]
+     f (EBrk e)         = f e
+     f (ETyp e _)       = f e
+     f (ERel r _)       = [ True | r==rel ]

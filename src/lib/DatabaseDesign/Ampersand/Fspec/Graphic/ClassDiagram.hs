@@ -58,7 +58,7 @@ where
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [ERel (makeRelation rel) | rel@Sgn{} <- declarations fSpec, decusr rel, not (isIdent rel)]
+       rels       = [ERel (makeRelation decl) (sign decl) | decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)]
        relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
        cpts       = nub [ c
                         | gs<-fsisa fSpec
@@ -77,7 +77,7 @@ where
        attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  name (target (fldexpr fld))) (fldnull fld)
                     | plug<-lookup' c, fld<-tail (tblfields plug), not (inKernel fld), source (fldexpr fld)==c]
                     where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
-       lookup' c = [p |InternalPlug p@(TblSQL{})<-plugInfos fSpec , (c',_)<-cLkpTbl p, c'==c]
+       lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
         
 {- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
@@ -106,13 +106,13 @@ where
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs'    = [ OOAssoc (nm source s) (mults $ EFlp rel) "" (nm target t) (mults rel) relname
-                    | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec
+       assocs'    = [ OOAssoc (nm source s) (mults $ flp rel) "" (nm target t) (mults rel) relname
+                    | InternalPlug plug@BinSQL{} <-plugInfos fSpec
                     , let rel=mLkp plug
        --           , not ((isSignal.head.mors) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
                     , let relname=case rel of
-                           ERel r -> name r
-                           EFlp (ERel r) -> name r
+                           ERel r _ -> name r
+                           EFlp (ERel r _) _ -> name r
                            _ -> fatal 109 (show rel ++ " has no name.")
                     , let (s,t)=columns plug
                     ]
@@ -150,7 +150,7 @@ where
                     else [ OOClass (name c) (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (name (source r)) (mults $ EFlp r) "" (name (target r)) (mults r) ((name.head.morlist) r)
+       assocs'    = [ OOAssoc (name (source r)) (mults $ flp r) "" (name (target r)) (mults r) ((name.head.morlist) r)
                     | r<-assRels]
                     where
                      mults r = let minVal = if isTot r then MinOne else MinZero
@@ -161,8 +161,8 @@ where
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [ERel (makeRelation decl) | decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)]
-       relsLim    = [ERel (makeRelation decl)           -- The set of relations that is defined in patterns to be printed.
+       rels       = [ERel (makeRelation decl) (sign decl)| decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)] -- TODO (SJ 26-01-2013): is this double code?
+       relsLim    = [ERel (makeRelation decl) (sign decl)           -- The set of relations that is defined in patterns to be printed.
                     | decl<- if null (themes fSpec)
                              then declarations fSpec
                              else [d | pat <- patterns   fSpec, name pat `elem` themes fSpec, d@Sgn{} <- declarations pat ]++
@@ -171,8 +171,8 @@ where
                     , decusr decl, not (isIdent decl)]
 -- In order to make classes, all relations that are univalent and injective are flipped
 -- attRels contains all relations that occur as attributes in classes.
-       attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[EFlp r |r<-rels, not (isUni r), isInj r] ++
-                    [r |r<-rels, isUni r,      isInj r, isSur r]++[EFlp r |r<-rels,      isUni r , isInj r, not (isSur r)]
+       attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[flp r |r<-rels, not (isUni r), isInj r] ++
+                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 -- assRels contains all relations that do not occur as attributes in classes
        assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
        attrs rs   = [ OOAttr ((name.head.morlist) r) (name (target r)) (not(isTot r))
@@ -341,14 +341,14 @@ where
       name cd = n
         where (n,_) = nameandcpts cd
         
-   data Class          = OOClass  { clNm        :: String        -- ^ name of the class
-                                  , clAtts      :: [CdAttribute] -- ^ Attributes of the class
-                                  , clMths      :: [Method]      -- ^ Methods of the class
+   data Class          = OOClass  { clNm :: String          -- ^ name of the class
+                                  , clAtts :: [CdAttribute] -- ^ Attributes of the class
+                                  , clMths :: [Method]      -- ^ Methods of the class
                                   } deriving Show
    instance Identified Class where
       name = clNm
-   data CdAttribute    = OOAttr   { attNm       :: String      -- ^ name of the attribute
-                                  , attTyp      :: String      -- ^ type of the attribute (Concept name or built-in type)
+   data CdAttribute    = OOAttr   { attNm :: String            -- ^ name of the attribute
+                                  , attTyp :: String           -- ^ type of the attribute (Concept name or built-in type)
                                   , attOptional :: Bool        -- ^ says whether the attribute is optional
                                   } deriving Show
    instance Identified CdAttribute where

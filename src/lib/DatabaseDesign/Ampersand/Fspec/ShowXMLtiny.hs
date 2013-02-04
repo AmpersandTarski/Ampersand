@@ -48,7 +48,7 @@ where
 
    instance XML Fspc where
      mkTag f = Tag "Fspec" [nameToAttr f] 
-     mkXmlTree f@(Fspc{})
+     mkXmlTree f@Fspc{}
         = Elem (mkTag f) ( 
              []
 --          ++ [ Elem (simpleTag "Plugs-In-Ampersand-Script")     (map mkXmlTree (vplugs f))]
@@ -138,7 +138,7 @@ where
    
    instance XML ObjectDef where
      mkTag x = Tag "ObjectDef" [ nameToAttr x]
-     mkXmlTree x@(Obj{}) 
+     mkXmlTree x@Obj{} 
            = Elem (mkTag x)
                       ( descriptionTree (objctx x)
                      ++ attributesTree (objatsLegacy x)
@@ -151,38 +151,28 @@ where
      mkTag _  = fatal 184 "mkTag should not be used for expressions."
      mkXmlTree expr 
          = case expr of
-               (EEqu (l,r))   -> Elem (simpleTag equi) (map mkXmlTree [l,r])
-               (EImp (l,r))   -> Elem (simpleTag impl) (map mkXmlTree [l,r])
-               (EIsc [])      -> Node (Tag rl [mkAttr "Name" "V"])
-               (EIsc [e])     -> mkXmlTree e
-               (EIsc es)      -> Elem (simpleTag inter) (map mkXmlTree es)
-               (EUni [])      -> Elem (simpleTag compl)  [ Node (Tag rl [mkAttr "Name" "V"])]
-               (EUni [e])     -> mkXmlTree e
-               (EUni es)      -> Elem (simpleTag union') (map mkXmlTree es)
-               (EDif (l,r))   -> Elem (simpleTag diff) (map mkXmlTree [l,r])
-               (ELrs (l,r))   -> Elem (simpleTag lres) (map mkXmlTree [l,r])
-               (ERrs (l,r))   -> Elem (simpleTag rres) (map mkXmlTree [l,r])
-               (ECps [])      -> Node (Tag rl [mkAttr "Name" "I"])
-               (ECps [e])     -> mkXmlTree e
-               (ECps es)      -> Elem (simpleTag rMul) (map mkXmlTree es)
-               (ERad [])      -> Elem (simpleTag compl) [ Node (Tag rl [mkAttr "Name" "I"])]
-               (ERad [e])     -> mkXmlTree e
-               (ERad es)      -> Elem (simpleTag rAdd) (map mkXmlTree es)
-               (EPrd [])      -> Elem (simpleTag compl) [ Node (Tag rl [mkAttr "Name" "I"])]
-               (EPrd [e])     -> mkXmlTree e
-               (EPrd es)      -> Elem (simpleTag rPrd) (map mkXmlTree es)
-               (EKl0 e)       -> Elem (simpleTag clos0) [mkXmlTree e]
-               (EKl1 e)       -> Elem (simpleTag clos1') [mkXmlTree e]
-               (EFlp e)       -> Elem (simpleTag flip') [mkXmlTree e]
-               (ECpl e)       -> Elem (simpleTag compl) [mkXmlTree e]
+               (EEqu (l,r) _) -> Elem (simpleTag equi)   (map mkXmlTree [l,r])
+               (EImp (l,r) _) -> Elem (simpleTag impl)   (map mkXmlTree [l,r])
+               (EIsc (l,r) _) -> Elem (simpleTag inter)  (map mkXmlTree [l,r])
+               (EUni (l,r) _) -> Elem (simpleTag union') (map mkXmlTree [l,r])
+               (EDif (l,r) _) -> Elem (simpleTag diff)   (map mkXmlTree [l,r])
+               (ELrs (l,r) _) -> Elem (simpleTag lres)   (map mkXmlTree [l,r])
+               (ERrs (l,r) _) -> Elem (simpleTag rres)   (map mkXmlTree [l,r])
+               (ECps (l,r) _) -> Elem (simpleTag rMul)   (map mkXmlTree [l,r])
+               (ERad (l,r) _) -> Elem (simpleTag rAdd)   (map mkXmlTree [l,r])
+               (EPrd (l,r) _) -> Elem (simpleTag rPrd)   (map mkXmlTree [l,r])
+               (EKl0 e _)     -> Elem (simpleTag clos0)  [mkXmlTree e]
+               (EKl1 e _)     -> Elem (simpleTag clos1') [mkXmlTree e]
+               (EFlp e _)     -> Elem (simpleTag flip')  [mkXmlTree e]
+               (ECpl e _)     -> Elem (simpleTag compl)  [mkXmlTree e]
                (EBrk e)       -> mkXmlTree e
-               (ETyp e sgn)   -> Elem (simpleTag cast) [mkXmlTree e,mkXmlTree (source sgn),mkXmlTree (target sgn)]
-               (ERel rel)     -> Elem (simpleTag flip') [mkXmlTree (EFlp (ERel rel))]
+               (ETyp e sgn)   -> Elem (simpleTag cast)   [mkXmlTree e,mkXmlTree (source sgn),mkXmlTree (target sgn)]
+               (ERel rel sgn) -> Elem (simpleTag flip')  [mkXmlTree (flp (ERel rel sgn))]
 
 
       where
-      (equi,impl,inter,union',diff,lres,rres,rMul,rAdd,rPrd,clos0,clos1',compl,flip',cast,rl)
-       = ("EQUI","IMPL","CONJ","DISJ","DIFF","LRES","RRES","RMUL","RADD","RPRD","CLS0","CLS1","CMPL","CONV","CAST","REL")
+      (equi,impl,inter,union',diff,lres,rres,rMul,rAdd,rPrd,clos0,clos1',compl,flip',cast)
+       = ("EQUI","IMPL","CONJ","DISJ","DIFF","LRES","RRES","RMUL","RADD","RPRD","CLS0","CLS1","CMPL","CONV","CAST")
 
 
 
@@ -209,7 +199,7 @@ where
          = Elem (mkTag expl) [PlainText (show (pexMarkup expl))]
 
    instance XML Purpose where
-     mkTag purp = Tag "Purp" [mkAttr "TODO" "TODO"] 
+     mkTag _ = Tag "Purp" [mkAttr "TODO" "Generate XML code for Purpose"] 
                            --  [mkAttr "Purpose" (show expl)
                            --  ,mkAttr "Markup" (show (explMarkup expl))
                            --  ,mkAttr "Ref" (explRefId expl)]

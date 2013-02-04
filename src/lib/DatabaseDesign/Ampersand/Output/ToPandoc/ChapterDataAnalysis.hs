@@ -6,8 +6,6 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
 import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.ADL1.Expression (isTypeable) -- TODO: This function is here as a doubleCheck of the typechecker. It should be removed if we are convident in the typechecker. 
-
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -211,7 +209,7 @@ chpDataAnalysis lev fSpec flags
                      , [Plain [Str "Description"]]
                      , [Plain [Str "Properties"]]]
               )
-              [[[Plain [Math InlineMath (showMath r)]] -- r is a relation, and therefore isTypeable r. So  showMath r  exists.
+              [[[Plain [Math InlineMath (showMath r)]] -- r is a relation. So  showMath r  exists.
                ,meaning2Blocks (language flags) r
                ,[Plain (intercalate [Str ", "] [[Str (showADL m)] | m<-multiplicities r])]
                ]
@@ -276,7 +274,7 @@ chpDataAnalysis lev fSpec flags
                                , [Plain [Str "total"]]
                                , [Plain [Str "surjective"]]]
                         )
-                        [[[Plain [Math InlineMath (showMath r)]] -- r is a relation, and therefore isTypeable r. So  showMath r  exists.
+                        [[[Plain [Math InlineMath (showMath r)]] -- r is a relation.
                          ,[Plain [Math InlineMath "\\surd" | isTot r]]
                          ,[Plain [Math InlineMath "\\surd" | isSur r]]]
                         | r<-rs', not (isAttribute r)
@@ -321,22 +319,13 @@ chpDataAnalysis lev fSpec flags
         hMults  = [r | r@Rel{}<- mors fSpec, isEndo r, d@Sgn{}<-[makeDeclaration r]
                      , null (themes fSpec) || decpat d `elem` themes fSpec]
     keyDocumentation
-     = if null (keyDefs fSpec)
-       then []
-       else [ case language flags of
-               Dutch   ->
-                 Para  [Str "Er is één key: ",Str (name k),Str "."]
-               English ->
-                 Para  [Str "There is but one key: ",Str (name k),Str "." ]
-            | length keyds==1, k<-keyds ]++
-            [ case language flags of
-               Dutch   ->
-                 Para $ Str "De volgende keys bestaan: ": commaNLPandoc (Str "en") [Str (name k) | k<-keyds]
-               English ->
-                 Para $ Str "The following keys exist: ": commaEngPandoc (Str "and") [Str (name k) | k<-keyds]
-            | length keyds>1 ]
-       where
-        keyds   = keyDefs fSpec -- all key definitions
+     = case (keyDefs fSpec, language flags) of
+        ([], _) -> []
+        ([k], Dutch)   -> [ Para  [Str "Er is één key: ",Str (name k),Str "."]]
+        ([k], English) -> [ Para  [Str "There is but one key: ",Str (name k),Str "." ]]
+        (keyds, Dutch) -> [ Para $ Str "De volgende keys bestaan: ": commaNLPandoc (Str "en") [Str (name k) | k<-keyds]]
+        (keyds, English)->[ Para $ Str "The following keys exist: ": commaEngPandoc (Str "and") [Str (name k) | k<-keyds]]
+
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally
@@ -384,7 +373,7 @@ chpDataAnalysis lev fSpec flags
 -- the endo-properties have already been reported in the general section of this chapter.
 {-     where
 --  voorgestelde multipliciteitenanalyse....
-      clauses = nub [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
+      clauses = nub [clause | Quad _ ccrs<-vquads fSpec, (_,hornClauses)<-cl_conjNF ccrs, clause<-hornClauses]
       is = nub [r | EUni fus<-clauses
                   , isIdent (EIsc [notCpl f | f<-fus, isPos f] sgn)
                   , f<-filter isNeg fus
@@ -429,33 +418,24 @@ chpDataAnalysis lev fSpec flags
                        [r] -> [ Para [ Str "Within this data set, the following integrity rule shall be true at all times. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
-                                else if isTypeable (rrexp r)
-                                     then Para [ Math DisplayMath $ showMath r]
-                                     else fatal 1635 ("Untypeable "++show r)
+                                else Para [ Math DisplayMath $ showMath r]
                               ]
                        rs  -> [ Para [ Str "Within this data set, the following integrity rules shall be true at all times. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
-                                else BulletList [ if isTypeable (rrexp r)
-                                                  then [Para [Math DisplayMath $ showMath r]]
-                                                  else fatal 1642 ("Untypeable "++show r)
-                                                | r<-rs ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath r]] | r<-rs ]
                               ]
            Dutch   -> case [r | r<-invariants fSpec, null (mors r >- mors p)] of
                        []  -> []
                        [r] -> [ Para [ Str "Binnen deze gegevensverzameling dient de volgende integriteitsregel te allen tijde waar te zijn. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
-                                else if isTypeable (rrexp r)
-                                     then Para [ Math DisplayMath $ showMath r]
-                                     else fatal 1652 ("Untypeable "++show r)
+                                else Para [ Math DisplayMath $ showMath r]
                               ]
                        rs  -> [ Para [ Str "Binnen deze gegevensverzameling dienen de volgende integriteitsregels te allen tijde waar te zijn. " ]
                               , if showPredExpr flags
                                 then BulletList [ [Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
-                                else BulletList [ if isTypeable (rrexp r)
-                                                  then [Para [Math DisplayMath $ showMath r]]
-                                                  else fatal 1659 ("Untypeable "++show r)
+                                else BulletList [ [Para [Math DisplayMath $ showMath r]]
                                                 | r<-rs ]
                               ]
        plugKeydefs
@@ -465,16 +445,12 @@ chpDataAnalysis lev fSpec flags
                        [s] -> [ Para [ Str "This data set contains one key. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMath s]
-                                     else fatal 1671 ("Untypeable "++show s)
+                                else Para [ Math DisplayMath $ showMath s]
                               ]
                        ss  -> [ Para [ Str "This data set contains the following keys. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
-                                else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMath s]]
-                                                  else fatal 1678 ("Untypeable "++show s)
+                                else BulletList [ [Para [Math DisplayMath $ showMath s]]
                                                 | s<-ss ]
                               ]
            Dutch   -> case [k | k<-keyrules fSpec, null (mors k >- mors p)] of
@@ -482,17 +458,12 @@ chpDataAnalysis lev fSpec flags
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ] 
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMath s]
-                                     else fatal 1688 ("Untypeable "++show s)
+                                else Para [ Math DisplayMath $ showMath s]
                               ]
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende keys. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
-                                else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMath s]]
-                                                  else fatal 1695 ("Untypeable "++show s)
-                                                | s<-ss ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
        plugSignals
         = case (language flags, [r | r<-vrules fSpec, isSignal r , null (mors r >- mors p)]) of
@@ -501,32 +472,22 @@ chpDataAnalysis lev fSpec flags
             (English, [s]) -> [ Para [ Str "This data set generates one process rule. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMath s]
-                                     else fatal 1707 ("Untypeable "++show s)
+                                else Para [ Math DisplayMath $ showMath s]
                               ] 
             (English, ss)  -> [  Para [ Str "This data set generates the following process rules. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
-                                else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMath s]]
-                                                  else fatal 1714 ("Untypeable "++show s)
-                                                | s<-ss ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
             (Dutch  ,  [s]) -> [ Para [ Str ("Deze gegevensverzameling genereert één procesregel. ") ] 
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else if isTypeable (rrexp s)
-                                     then Para [ Math DisplayMath $ showMath s]
-                                     else fatal 1724 ("Untypeable "++show s)
+                                else Para [ Math DisplayMath $ showMath s]
                               ]
             (Dutch  ,  ss ) -> [ Para [ Str "Deze gegevensverzameling genereert de volgende procesregels. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
-                                else BulletList [ if isTypeable (rrexp s)
-                                                  then [Para [Math DisplayMath $ showMath s]]
-                                                  else fatal 1731 ("Untypeable "++show s)
-                                                | s<-ss ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
        iRules
         = case language flags of
@@ -535,42 +496,32 @@ chpDataAnalysis lev fSpec flags
                        [e] -> [ Para [ Str "The following rule defines the integrity of data within this data set. It must remain true at all times. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
-                                else if isTypeable e
-                                     then Para [ Math DisplayMath $ showMath e]
-                                     else fatal 1743 ("Untypeable "++show e)
+                                else Para [ Math DisplayMath $ showMath e]
                               ]
                        es  -> [ Para [ Str "The following rules define the integrity of data within this data set. They must remain true at all times. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
-                                else BulletList [ if isTypeable e
-                                                  then [Para [Math DisplayMath $ showMath e]]
-                                                  else fatal 1750 ("Untypeable "++show e)
-                                                | e<-es ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
            Dutch   -> case irs of
                        []  -> []
                        [e] -> [ Para [ Str "De volgende regel definieert de integriteit van gegevens binnen deze gegevensverzameling. Hij moet te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
                                 then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
-                                else if isTypeable e
-                                     then Para [ Math DisplayMath $ showMath e]
-                                     else fatal 1760 ("Untypeable "++show e)
+                                else Para [ Math DisplayMath $ showMath e]
                               ]
                        es  -> [ Para [ Str "De volgende regels definiëren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
-                                else BulletList [ if isTypeable e
-                                                  then [Para [Math DisplayMath $ showMath e]]
-                                                  else fatal 1767 ("Untypeable "++show e)
-                                                | e<-es ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
-          where irs = [EUni fs | Quad r ccrs<-vquads fSpec
-                             , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
-                             , (_,shifts)<-cl_conjNF ccrs
-                             , EUni fs<-shifts
-                             , let ns=[t | ECpl t<-fs], length ns==1, ERel nega<-ns
-                             , r==nega
-                             ]
+          where irs = [ horn2expr hc
+                      | Quad r ccrs<-vquads fSpec
+                      , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
+                      , (_,hornClauses)<-cl_conjNF ccrs
+                      , hc@(Hc [ERel nega _] _)<-hornClauses
+                      , r==nega
+                      ]
                 pcpts = case p of
                   ScalarSQL{} -> [cLkp p]
                   _           -> map fst (cLkpTbl p)

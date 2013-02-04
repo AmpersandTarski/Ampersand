@@ -11,18 +11,20 @@ where
    import DatabaseDesign.Ampersand.Classes.Relational(multiplicities,makeRelation)
    import Prelude hiding (Ordering(..))
    fatal :: Int -> String -> a
-   fatal = fatalMsg "ConceptStructure"
+   fatal = fatalMsg "Classes.ConceptStructure"
 
    class ConceptStructure a where
-    concs    :: a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
-    mors     :: a -> [Relation]        -- ^ the set of all relations used within data structure a,
+    concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
+    mors ::     a -> [Relation]        -- ^ the set of all relations used within data structure a,
     mors = nub . morlist
-    morlist  :: a -> [Relation]        -- ^ the set of all relations used within data structure a
+    morlist ::  a -> [Relation]        -- ^ the set of all relations used within data structure a
                                        --   (the difference with mors is that morlist is not unique wrt name and signature)
-    mp1Rels  :: a -> [Relation]        -- ^ the set of all Mp1 relations within data structure a (needed to get the atoms of these relations into the populationtable)
-    genE     :: a -> GenR
-    genE cstruc = genE (head (concs cstruc))
-    
+    mp1Rels ::  a -> [(Relation,A_Concept)]        -- ^ the set of all Mp1 relations within data structure a (needed to get the atoms of these relations into the populationtable)
+    genE ::     a -> GenR
+    genE cstruc = case concs cstruc of
+                   [] -> fatal 25 "No concepts???"
+                   cs -> genE (head cs)
+
 -- class KleeneClos where
 --  closExprs :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
 
@@ -69,7 +71,24 @@ where
     concs          = foldrMapExpression uni concs []
     mors           = foldrMapExpression uni mors  []
     morlist        = foldrMapExpression (++) morlist []
-    mp1Rels        = foldrMapExpression uni mp1Rels  []
+    mp1Rels (EEqu (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (EImp (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (EIsc (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (EUni (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (EDif (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (ELrs (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (ERrs (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (ECps (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (ERad (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (EPrd (l,r) _) = mp1Rels l `uni` mp1Rels r
+    mp1Rels (EKl0 e _)     = mp1Rels e
+    mp1Rels (EKl1 e _)     = mp1Rels e
+    mp1Rels (EFlp e _)     = mp1Rels e
+    mp1Rels (ECpl e _)     = mp1Rels e
+    mp1Rels (EBrk e)       = mp1Rels e
+    mp1Rels (ETyp e _)     = mp1Rels e
+    mp1Rels e@(ERel rel@Mp1{} _) = [(rel,source e)]
+    mp1Rels (ERel{})       = []
 
 
    instance ConceptStructure A_Concept where
@@ -93,10 +112,10 @@ where
 
    -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
    instance ConceptStructure SubInterface where
-    concs (Box objs)       = concs objs 
-    concs (InterfaceRef _) = [] 
-    mors (Box objs)       = mors objs 
-    mors (InterfaceRef _) = [] 
+    concs (Box objs)         = concs objs 
+    concs (InterfaceRef _)   = [] 
+    mors (Box objs)          = mors objs 
+    mors (InterfaceRef _)    = [] 
     morlist (Box objs)       = morlist objs 
     morlist (InterfaceRef _) = [] 
     mp1Rels (Box objs)       = mp1Rels objs 
@@ -125,9 +144,7 @@ where
     concs rel   = nub [source rel,target rel]
     mors rel    = [rel]
     morlist rel = [rel]
-    mp1Rels rel = case rel of
-                    Mp1{} -> [rel]
-                    _     -> []
+    mp1Rels _   = fatal 146 "mp1Rels not allowed on Relation"
                     
    instance ConceptStructure Declaration where
     concs d   = concs (sign d)

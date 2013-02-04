@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
-  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute,isI)
+  (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,exprIsc2list, exprUni2list, exprCps2list, exprRad2list)
 where
-   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEng,eqCl,eqClass,Flippable(..))
+   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEng,eqCl,eqClass,Flippable(..), (>-))
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.ECArule
    import DatabaseDesign.Ampersand.ADL1.Expression 
+   import qualified DatabaseDesign.Ampersand.Core.Poset as Poset
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Data.List (nub)
@@ -32,8 +33,8 @@ where
     where
      (res,ss) = norm expr
      norm :: PAclause -> (PAclause,[String])
-     norm (Chc [] ms)  = (Blk ms, ["Run out of options"])
-     norm (Chc [r] ms) = (r', ["Flatten ONE"])
+     norm (CHC [] ms)  = (Blk ms, ["Run out of options"])
+     norm (CHC [r] ms) = (r', ["Flatten ONE"])
                        where r' = case r of
                                     Blk{} -> r
                                     _     -> r{paMotiv = ms} 
@@ -45,28 +46,28 @@ where
 -- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
 -- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
 -- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
-     norm (Chc ds ms)  | (not.null) msgs = (Chc ops ms, msgs)
-                       | (not.null) [d | d<-ds, isChc d] = (Chc (nub [ d' | d<-ds, d'<-if isChc d then let Chc ops' _ = d in ops' else [d] ]) ms, ["flatten Chc"])  -- flatten
+     norm (CHC ds ms)  | (not.null) msgs = (CHC ops ms, msgs)
+                       | (not.null) [d | d<-ds, isCHC d] = (CHC (nub [ d' | d<-ds, d'<-if isCHC d then let CHC ops' _ = d in ops' else [d] ]) ms, ["flatten CHC"])  -- flatten
                        | (not.null) [Nop | Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
-                       | (not.null) [Blk | Blk{}<-ops] = (Chc [op | op<-ops, not (isBlk op)] ms, ["Choose anything but block"])
-                       | otherwise = (Chc ds ms, [])
+                       | (not.null) [Blk | Blk{}<-ops] = (CHC [op | op<-ops, not (isBlk op)] ms, ["Choose anything but block"])
+                       | otherwise = (CHC ds ms, [])
                        where nds  = map norm ds
                              msgs = concatMap snd nds
                              ops  = map fst nds
-     norm (All [] ms)  = (Nop ms, ["All [] = No Operation"])
-     norm (All [d] ms) = (d', ["Flatten ONE"])
+     norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
+     norm (ALL [d] ms) = (d', ["Flatten ONE"])
                        where d' = case d of
                                     Blk{} -> d
                                     _     -> d{paMotiv = ms} 
-     norm (All ds ms)  | (not.null) msgs = (All ops ms, msgs)
-                       | (not.null) [d | d<-ds, isAll d] = (All (nub [ d' | d<-ds, d'<-if isAll d then let All ops' _ = d in ops' else [d] ]) ms, ["flatten All"])  -- flatten
+     norm (ALL ds ms)  | (not.null) msgs = (ALL ops ms, msgs)
+                       | (not.null) [d | d<-ds, isAll d] = (ALL (nub [ d' | d<-ds, d'<-if isAll d then let ALL ops' _ = d in ops' else [d] ]) ms, ["flatten ALL"])  -- flatten
                        | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
-                       | (not.null) [Nop | Nop{}<-ops] = (All [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.(morlist::Expression->[Relation]).ERel .paTo.head) cl |cl<-long]++"together"])
-                       | otherwise = (All ds ms, [])
+                       | (not.null) [Nop | Nop{}<-ops] = (ALL [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
+                       | (not.null) long              = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [name (paTo (head cl)) |cl<-long]++"together"])
+                       | otherwise = (ALL ds ms, [])
                        where ds' = [ let p=head cl in
-                                       if length cl==1 then p else p{paDelta=disjNF (EUni[paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
-                                   | cl<-dCls ]
+                                       if length cl==1 then p else p{paDelta=disjNF (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
+                                   | cl<-dCls {- not (null cl) is guaranteed by eqCl -} ]
                                    ++[d | d<-ds, not (isDo d)]
                              nds  = map norm ds
                              msgs = concatMap snd nds
@@ -75,7 +76,7 @@ where
                              dCls = eqCl to [d | d<-ds, isDo d]
                              long :: [[PAclause]]
                              long = [cl | cl<-dCls, length cl>1]
-                             to d@(Do{}) = (paSrt d,paTo d)
+                             to d@Do{} = (paSrt d,paTo d)
                              to _        = fatal 74 "illegal call of to(d)"
      norm (New c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
@@ -107,236 +108,261 @@ where
     = if expr==res
       then [(expr,[],"<=>")]
       else (expr,steps,equ):simpProof shw res
-    where (res,steps,equ) = normStep shw True True expr
+    where (res,steps,equ) = normStep shw True True True expr
+
+   data Cmp = Lte | Gte | Eq   -- | This type exists for the sake of normStep only.
+   cplCmp :: Cmp -> Cmp
+   cplCmp Lte = Gte
+   cplCmp Gte = Lte
+   cplCmp Eq  = Eq
 
 -- The purpose of "normStep" is to elaborate a single step in a rewrite process,
 -- in which the expression is normalized by means of rewrite rules.
--- The form of the expression decides which rewrite rule is applicable.
-   normStep :: (Expression -> String) -> Bool -> Bool ->
+-- This function can be used for simplification, which means that an Expression is standardized
+--  using associativity and other 'trivial' rules only.
+-- These 'trivial' rules do not produce a step in the proof.
+-- Use normstep shw eq True expr to do simplification only.
+-- Use normstep shw eq False expr to obtain a single proof step or none when no rule is applicable.
+-- This function returns a resulting expression that is closer to a normal form.
+-- The normal form is not unique. This function simply uses the first rewrite rule it encounters.
+   normStep :: (Expression -> String) -> Bool -> Bool -> Bool ->
                Expression -> (Expression,[String],String) -- This might be generalized to "Expression" if it weren't for the fact that flip is embedded in the Relation type.
-   normStep shw   -- a function to print an expression. Might be "showADL" or "(showADL . disambiguate fSpec)", or any other...
+   normStep shw   -- a function to print an expression. Might be "showADL"
             eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
+            dnf   -- If dnf==True, the result is in disjunctive normal form, otherwise in conjunctive normal form
             simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
             expr = (res,ss,equ)
     where
-     (res,ss,equ) = nM expr []
+     
+     (res,ss,equ) = nM (if eq then Eq else Lte) expr []
 --     nM :: Expression -> [Expression] -> (Expression,[String],String)
-     nM (EEqu (l,r))     _      = (EIsc [EImp (l,r), EImp (r,l)], ["remove ="],"<=>")
-     nM (EImp (x,ELrs (z,y))) _ = (EImp (ECps [x,y], z), ["remove left residual (/)"],"<=>")
-     nM (EImp (y,ERrs (x,z))) _ = (EImp (ECps [x,y], z), ["remove right  residual (\\)"],"<=>")
-     nM (EImp (l,r))     _      = (EUni [ECpl l, r], ["remove |-"],"<=>")
-     nM (EKl0 e')        _      = (EKl0 res', steps, equ')
-                                  where (res',steps,equ') = nM e' []
-     nM (EKl1 e')        _      = (EKl1 res', steps, equ')
-                                  where (res',steps,equ') = nM e' []
-     nM (ECpl (ECpl e')) _      = (e', ["complement of complement"],"<=>")
-     nM (ECpl (EIsc fs)) _      = if simpl then (notCpl res',steps,equ') else (EUni (map notCpl fs), ["De Morgan"], "<=>")
-                                  where (res',steps,equ') = nM (EIsc fs) []
-     nM (ECpl (EUni fs)) _      = if simpl then (notCpl res',steps,equ') else (EIsc (map notCpl fs), ["De Morgan"], "<=>")
-                                  where (res',steps,equ') = nM (EUni fs) []
-     nM (ECpl (ERad ts)) _ | not simpl && or [isNeg t | t<-ts] = (ECps (map notCpl ts), ["De Morgan"], "<=>")
-                           | otherwise                         = let (res',steps,equ') = nM (ERad ts) [] in (notCpl res',steps,equ')
-     nM (ECpl e')        _      = (notCpl res',steps,equ')
-                                  where (res',steps,equ') = nM e' []
-     nM (EBrk f)         _      = nM f []
-     nM (ECps [t])       _ = nM t []
-     nM (ECps (k:ks))   rs | or [isECps x |x<-k:ks]   = nM (ECps [y | x<-k:ks, y<-if isECps x then unE x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
-                           | or [isI  x |x<-k:ks]   = (ECps [x |x<-k:ks,not (isI x)], ["x;I = x"], "<=>")
-                   -- If only simplification is required, we are done now.
-                           | simpl                  = (if isECps f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
-                           | not eq && length ks>1 && isERad g && length gs>1
-                                                    = (ECps (ERad (ECps [k,head gs]:tail gs):ks'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
-                           | not eq && isERad k && length ue>1
-                                                    = (ERad (init ue++[ECps (last ue:ks)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
-                           | not eq && isEIsc k     = (distribute ECps EIsc isECps isEIsc (ECps (k:ks)), ["distribute /\\ over ;"], "==>")
-                           | isEUni k               = (distribute ECps EUni isECps isEUni (ECps (k:ks)), ["distribute \\/ over ;"], "<=>")
-                           | and [isNeg x |x<-k:ks] = (notCpl (ERad [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
-                           | isEUni (last (k:ks))   = (EUni [ECps (init (k:ks)++[t']) |EUni xs<-[last (k:ks)], t'<-xs], ["distr \\/ over ;"], "<=>")
-                           | otherwise              = (if isECps f then ECps (t:unE f) else ECps [t,f], steps++steps', fEqu [equ',equ''])
-                           where (t,steps, equ')    = nM k []
-                                 (f,steps',equ'')   = nM (ECps ks) (k:rs)
-                                 ue = unE k
-                                 g@(ERad gs):ks' = ks
+     nM posNeg (EEqu (l,r) _) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')  = nM posNeg l []
+                                                    (f,steps',equ'') = nM posNeg r []
+     nM posNeg (EImp (l,r) _) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')  = nM (cplCmp posNeg) l []
+                                                    (f,steps',equ'') = nM posNeg r []
+     nM posNeg (ELrs (l,r) _) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
+                                              where (t,steps, equ')  = nM posNeg l []
+                                                    (f,steps',equ'') = nM (cplCmp posNeg) r []
+     nM posNeg (ERrs (l,r) _) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')  = nM (cplCmp posNeg) l []
+                                                    (f,steps',equ'') = nM posNeg r []
+     nM posNeg (EUni (EUni (l,k) _,r) _) rs = nM posNeg (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
+     nM posNeg (EUni (l,r) _) rs    | simpl = (t .\/. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')  = nM posNeg l []
+                                                    (f,steps',equ'') = nM posNeg r (l:rs)
+     nM posNeg (EIsc (EIsc (l,k) _,r) _) rs = nM posNeg (l ./\. (k ./\. r)) rs  -- standardize, using associativity of ./\.
+     nM posNeg (EIsc (l,r) _) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')  = nM posNeg l []
+                                                    (f,steps',equ'') = nM posNeg r (l:rs)
+     nM posNeg (ECps (ECps (l,k) _,r) _) rs = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:.
+     nM posNeg (ECps (l,r) _) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
+                                               where (t,steps, equ')  = nM posNeg l []
+                                                     (f,steps',equ'') = nM posNeg r (l:rs)
+     nM posNeg (ERad (ERad (l,k) _,r) _) rs = nM posNeg (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
+     nM posNeg (ERad (l,r) _) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')    = nM posNeg l []
+                                                    (f,steps',equ'')   = nM posNeg r (l:rs)
+     nM posNeg (EPrd (EPrd (l,k) _,r) _) rs = nM posNeg (l .*. (k .*. r)) rs  -- standardize, using associativity of .*.
+     nM posNeg (EPrd (l,r) _) _     | simpl = (t .*. f, steps++steps', fEqu [equ',equ''])
+                                              where (t,steps, equ')  = nM posNeg l []
+                                                    (f,steps',equ'') = nM posNeg r []
+     nM posNeg (EKl0 e sgn)              _  = (EKl0 res' sgn, steps, equ')
+                                              where (res',steps,equ') = nM posNeg e []
+     nM posNeg (EKl1 e sgn)              _  = (EKl1 res' sgn, steps, equ')
+                                              where (res',steps,equ') = nM posNeg e []
+     nM posNeg (ECpl (ECpl e _) _)       rs = nM (cplCmp posNeg) e rs
+     nM posNeg (ECpl e sgn) _       | simpl = (notCpl sgn res',steps,equ')
+                                              where (res',steps,equ') = nM (cplCmp posNeg) e []
+     nM posNeg (EBrk e)                  _  = nM posNeg e []
+     nM posNeg (EFlp (ECpl e _) sgn)     rs = nM (cplCmp posNeg) (notCpl sgn (flp e)) rs
+     nM _      x _                  | simpl = (x,[],"<=>")
+-- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
+     nM _      (EEqu (l,r) _) _                                = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
+     nM _      (EImp (x,ELrs (z,y) _) _) _                     = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+     nM _      (EImp (y,ERrs (x,z) _) _) _                     = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+     nM _      (EImp (l,r) sgn) _                              = (notCpl sgn l .\/. r, ["remove |-"],"<=>")
+     nM _      (ELrs (l,r) sgn) _                              = (l .!. notCpl sgn (flp r), ["remove left residual (/)"],"<=>")
+     nM _      (ERrs (l,r) sgn) _                              = (notCpl sgn (flp l) .!. r, ["remove right residual (\\)"],"<=>")
+     nM _      (ECpl e@EIsc{} sgn) _                           = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@EUni{} sgn) _                           = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@(ERad (_,ECpl{}) _) sgn) _              = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@(ERad (ECpl{},_) _) sgn) _              = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@(ECps (ECpl{},ECpl{}) _) sgn) _         = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
+     nM posNeg (ECpl e sgn) _                                  = (notCpl sgn res',steps,equ')
+                                                                 where (res',steps,equ') = nM (cplCmp posNeg) e []
+     nM _      (ECps (l,r) sgn) _ | isIdent l && sign l Poset.>=sgn = (r, ["I;x = x"], "<=>")
+     nM _      (ECps (l,r) sgn) _ | isIdent r && sign r Poset.>=sgn = (l, ["x;I = x"], "<=>")
+     nM Lte    (ECps (r,ERad (s,q) _) _) _                     = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
+     nM Lte    (ECps (ERad (r,s) _,q) _) _                     = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
+     nM Lte    (ECps (EIsc (r,s) _,q) _) _                     = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
+     nM Lte    (ECps (r,EIsc (s,q) _) _) _                     = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
+     nM _      (ECps (EUni (q,s) _,r) _) _                     = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
+     nM _      (ECps (l,EUni (q,s) _) _) _                     = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
+     nM _      x@(ECps(ECpl{},ECpl{}) _) _                     = (deMorgan (sign x) x, ["De Morgan"], "<=>")
+     nM posNeg (ECps (l,r) _)           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
+                                                                 where (t,steps, equ')  = nM posNeg l []
+                                                                       (f,steps',equ'') = nM posNeg r (l:rs)
+     nM _      (ERad (l,r) sgn) _ | isImin l && sign l Poset.>=sgn = (r, ["-I;x = x"], "<=>")
+     nM _      (ERad (l,r) sgn) _ | isImin r && sign r Poset.>=sgn = (l, ["x;-I = x"], "<=>")
+     nM Gte    (ERad (ECps (r,s) _,q) _) _                     = (r.!.(s.:.q), ["Peirce: r;(s!q) -| (r;s)!q"],"==>")
+     nM Gte    (ERad (r,ECps (s,q) _) _) _                     = ((r.!.s).:.q, ["Peirce: r!(s;q) -| (r!s);q"],"==>")
+     nM Gte    (ERad (EUni (r,s) _,q) _) _                     = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
+     nM Gte    (ERad (r,EUni (s,q) _) _) _                     = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
+     nM _      (ERad (EIsc (q,s) _,r) _) _                     = ((q.!.r)./\.(s.!.r), ["distribute ! over /\\"],"<=>")
+     nM _      (ERad (l,EIsc (q,s) _) _) _                     = ((l.!.q)./\.(l.!.s), ["distribute ! over /\\"],"<=>")
+     nM _      x@(ERad(ECpl{},_) _)      _                     = (deMorgan (sign x) x, ["De Morgan"], "<=>")
+     nM _      x@(ERad(_,ECpl{}) _)      _                     = (deMorgan (sign x) x, ["De Morgan"], "<=>")
+     nM posNeg (ERad (l,r) _)           rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
+                                                                 where (t,steps, equ')  = nM posNeg l []
+                                                                       (f,steps',equ'') = nM posNeg r (l:rs)
+     nM _      (EPrd (l,EPrd (_,r) _) _) _                     = (l .*. r, ["eliminate middle in cartesian product"], "<=>")
+     nM posNeg (EPrd (l,r) _) _                                = (t .*. f, steps++steps', fEqu [equ',equ''])
+                                                                 where (t,steps, equ')  = nM posNeg l []
+                                                                       (f,steps',equ'') = nM posNeg r []
+     nM _      (EIsc (EUni (l,k) _,r) _) _ | dnf               = ((l./\.r) .\/. (k./\.r), ["distribute /\\ over \\/"],"<=>")
+     nM _      (EIsc (l,EUni (k,r) _) _) _ | dnf               = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
+     nM _      (EUni (EIsc (l,k) _,r) _) _ | not dnf           = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM _      (EUni (l,EIsc (k,r) _) _) _ | not dnf           = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
+     nM posNeg (EIsc (l,r) sgn) rs
+-- Absorb equals:    r/\r  -->  r
+         | or [length cl>1 |cl<-absorbClasses]
+              = ( foldr1 (./\.) [head cl | cl<-absorbClasses]
+                , [shw e++" /\\ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
+                , "<=>"
+                )
+-- Inconsistency:    r/\-r   -->  False
+         | not (null incons)
+              = let i = head incons in (notCpl sgn (vExpr sgn), [shw (notCpl (sign i) i)++" /\\ "++shw i++" = V-"], "<=>")
+-- Inconsistency:    x/\\V-  -->  False
+         | (not.null) [() |t'<-exprIsc2list l++exprIsc2list r, isFalse t']
+              = let sgn' = sign (foldr1 (./\.) (exprIsc2list l++exprIsc2list r)) in (notCpl sgn' (vExpr sgn'), ["x/\\V- = V-"], "<=>")
+-- Absorb if r is antisymmetric:    r/\r~ --> I
+         | not eq && or [length cl>1 |cl<-absorbAsy]
+              = ( foldr1 (./\.) [if length cl>1 then iExpr (source e) else e | cl<-absorbAsy, let e=head cl] 
+                , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=head cl]
+                , "==>"
+                )
+-- Absorb if r is antisymmetric and reflexive:    r/\r~ = I
+         | or [length cl>1 |cl<-absorbAsyRfx]
+              = ( foldr1 (./\.) [if length cl>1 then iExpr (source e) else e | cl<-absorbAsyRfx, let e=head cl] 
+                , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=head cl]
+                , "<=>"
+                )
+-- Absorb:    (x\\/y)/\\y  =  y
+         | isEUni l && not (null absor0)
+              = let t'=head absor0  in (r, ["absorb "++shw l++" because of "++shw t'++", using law  (x\\/y)/\\y = y"], "<=>")
+         | isEUni r && not (null absor0')
+              = let t'=head absor0' in (r, ["absorb "++shw r++" because of "++shw t'++", using law  (x\\/y)/\\x = x"], "<=>")
+-- Absorb:    (x\\/-y)/\\y  =  x/\\y
+         | isEUni l && not (null absor1)
+              = ( case head absor1 of
+                    (_,[]) -> r
+                    (_,ts) -> foldr1 (.\/.) ts ./\. r
+                , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
+                , "<=>"
+                )
+         | isEUni r && not (null absor1')
+              = ( case head absor1' of
+                    (_,[]) -> l
+                    (_,ts) -> l ./\. foldr1 (.\/.) ts
+                , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
+                , "<=>"
+                )
+         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
+         where (t,steps, equ')  = nM posNeg l []
+               (f,steps',equ'') = nM posNeg r (l:rs)
+               absorbClasses = eqClass (==) (rs++exprIsc2list l++exprIsc2list r)
+               incons = [x |x<-exprIsc2list r,x==notCpl (sign l) l]
+               absor0  = [t' | t'<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
+               absor0' = [t' | t'<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
+               absor1  = [(t', exprUni2list l>-[t']) | t'<-exprUni2list l, ECpl f' _<-rs++exprIsc2list r, t'==f']++[(x, exprUni2list l>-[x]) | x@(ECpl t' _)<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
+               absor1' = [(t', exprUni2list r>-[t']) | t'<-exprUni2list r, ECpl f' _<-rs++exprIsc2list l, t'==f']++[(x, exprUni2list r>-[x]) | x@(ECpl t' _)<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
+               absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
+               absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
+               eList  = rs++exprIsc2list l++exprIsc2list r
+     nM posNeg (EUni (l,r) sgn) rs
+-- Absorb equals:    r\/r  -->  r
+         | or [length cl>1 |cl<-absorbClasses]
+              = ( foldr1 (.\/.) [head cl | cl<-absorbClasses]
+                , [shw e++" \\/ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
+                , "<=>"
+                )
+-- Tautologies:
+         | (not.null) tauts               = (vExpr sgn, ["let e = "++ shw (head tauts)++". Since -e\\/e = V we get"], "<=>")   -- r\/-r  -->  V
+         | isTrue l                       = (vExpr sgn, ["V\\/x = V"], "<=>")                                                  -- r\/V   -->  V
+         | isTrue r                       = (vExpr sgn, ["x\\/V = V"], "<=>")
+-- Absorb -V:    r\/-V  --> r
+         | isFalse l                      = (r, ["-V\\/x = x"], "<=>")
+         | isFalse r                      = (l, ["x\\/-V = x"], "<=>")
+-- Absorb:    (x/\\y)\\/y  =  y
+         | isEIsc l && not (null absor0)  = let t'=head absor0  in (r, ["absorb "++shw l++" because of "++shw t'++", using law  (x/\\y)\\/y = y"], "<=>")
+         | isEIsc r && not (null absor0') = let t'=head absor0' in (r, ["absorb "++shw r++" because of "++shw t'++", using law  (x/\\y)\\/x = x"], "<=>")
+-- Absorb:    (x/\\-y)\\/y  =  x\\/y
+         | isEIsc l && not (null absor1)
+              = ( case head absor1 of
+                    (_,[]) -> r
+                    (_,ts) -> foldr1 (./\.) ts .\/. r
+                , ["absorb "++shw t'++", using law (x/\\-y)\\/y  =  x\\/y" | (t',_)<-absor1]
+                , "<=>"
+                )
+         | isEIsc r && not (null absor1')
+              = ( case head absor1' of
+                    (_,[]) -> l
+                    (_,ts) -> l .\/. foldr1 (./\.) ts
+                , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
+                , "<=>"
+                )
+         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
+         where (t,steps, equ')  = nM posNeg l []
+               (f,steps',equ'') = nM posNeg r (l:rs)
+               absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
+               tauts = [x' |x<-exprUni2list r,x==notCpl (sign l) l, ECpl x' _<-[x,l]]
+               absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
+               absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
+               absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f' _<-rs++exprUni2list r, t'==f']++[(x, exprIsc2list l>-[x]) | x@(ECpl t' _)<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
+               absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f' _<-rs++exprUni2list l, t'==f']++[(x, exprIsc2list r>-[x]) | x@(ECpl t' _)<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
+     nM _ (EFlp e _) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
+     nM _ x _               = (x,[],"<=>")
 
-     nM (ERad [k])    _    = nM k []
-     nM (ERad (k:ks)) rs   | or [isERad x |x<-k:ks] = nM (ERad [y | x<-k:ks, y<-if isERad x then unE x else [x]]) rs
-                           | or [isImin x |x<-k:ks] = (ECps [x |x<-k:ks,not (isImin x)], ["x!-I = x"], "<=>")
-                   -- If only simplification is required, we are done now.
-                           | simpl                  = (if isERad f then ERad (t:unE f) else ERad [t,f], steps++steps', fEqu [equ',equ''])
-                           | not eq && isEUni k     = (distribute ERad EUni isERad isEUni (ERad (k:ks)), ["distribute \\/ over !"], "==>")
-                           | isEIsc k               = (distribute ERad EIsc isERad isEIsc (ERad (k:ks)), ["distribute /\\ over !"], "<=>")
-                           | and [isNeg x |x<-k:ks] = (notCpl (ECps [notCpl x | x<-k:ks]), ["De Morgan"], "<=>")
-                           | length ks>1 && isNeg k && isPos g && isFunction k
-                                                    = (ECps [notCpl k,ERad ks], ["f-!g = f;g if f is a function"], "<=>")
-                           | length ks>1 && isPos k && isNeg g && isFunction (flp g)
-                                                    = (ERad ( ECps[k,notCpl g]:ks'), ["f!g- = f;g if g~ is a function"], "<=>")
-                           | otherwise              = (if isERad f then ERad (t:unE f) else ERad [t,f], steps++steps', fEqu [equ',equ''])
-                           where (t,steps, equ')  = nM k []
-                                 (f,steps',equ'') = nM (ERad ks) (k:rs)
-                                 g:ks' = ks
-     nM (EPrd [k])    _    = nM k []
-     nM (EPrd (k:ks)) rs   | or [isEPrd x |x<-k:ks]    = nM (EPrd [y | x<-k:ks, y<-if isEPrd x then unE x else [x]]) rs
-                           | length (k:ks)/=length ks' = (EPrd ks', ["eliminate cartesian product"], "<=>")
-                           | otherwise                 = (if isEPrd f then EPrd (t:unE f) else EPrd [t,f], steps++steps', fEqu [equ',equ''])
-                           where ks' = nub [k,last (k:ks)]
-                                 (t,steps, equ')  = nM k []
-                                 (f,steps',equ'') = nM (EPrd ks) (k:rs)
-     nM (EIsc [k]) _   = nM k []
-     nM (EUni [k]) _   = nM k []
-     nM (EIsc (k:ks)) rs
-                     -- Associativity of /\:    (r/\s)/\t  -->  r/\s/\t      (implicit step)
-                            | or [isEIsc x |x<-k:ks] = nM (EIsc [y | x<-k:ks, y<-if isEIsc x then unE x else [x]]) rs
-                     -- If only simplification is required, we are done now.
-                            | simpl                  = (if isEIsc f then EIsc (t:unE f) else EIsc [t,f], steps++steps', fEqu [equ',equ''])
-                     -- Absorb equals:    r/\r  -->  r
-                            | or [length cl>1 |cl<-absor3]
-                                                     = (EIsc [head cl | cl<-absor3], [shw e++" /\\ "++shw e++" = "++shw e | cl<-absor3, length cl>1, let e=head cl], "<=>")
-                     -- Inconsistency:    r/\-r   -->  False
-                            | not (null incons)      = (EUni [], [shw (notCpl (head incons))++" /\\ "++shw (head incons)++" = V-"], "<=>")
-                     -- Inconsistency:    EUni []   -->  False
-                            | k==EUni []             = (EUni [], ["inconsistency"], "<=>")
-  -- this is unreachable    | k==EIsc []             = (EIsc ks, ["x/\\V = x"], "<=>")
-                     -- Inconsistency:    x/\\V-  -->  False
-                            | or[x==EUni [] |x<-ks]  = (EUni [], ["x/\\V- = V-"], "<=>")
-                     -- Absorb if r is antisymmetric:    r/\r~  -->  I    (note that a reflexive r incurs r/\r~ = I)
-                            | or [length cl>1 |cl<-absor2]
-                                                     = ( EUni [if length cl>1 then ERel (I (source e))  else e | cl<-absor2, let e=head cl]
-                                                       , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric" | cl<-absor2, let e=head cl]
-                                                       , if and [isRfx (head cl) | cl<-absor2, length cl>1] then "<=>" else "==>"
-                                                       )
-                     -- Absorb:    (x\\/y)/\\y  -->  y
-                            | isEUni k && not (null absor0) = let f'=head absor0 in (EIsc ks, ["absorb "++shw k++" because of "++shw f'++" ((x\\/y)/\\y = y))"], "<=>")
-                     -- Absorb:    (x\\/-y)/\\y  -->  x/\\y
-                            | isEUni k && not (null absor1) = let (ts,f')=head absor1 in (EIsc (ts++ks), ["absorb "++shw f'], "<=>")
-                            | otherwise                   = (if isEIsc f then EIsc (t:unE f) else EIsc [t,f], steps++steps', fEqu [equ',equ''])
-                            where (t,steps, equ')  = nM k []
-                                  (f,steps',equ'') = nM (EIsc ks) (k:rs)
-                                  incons = [x |x<-ks,x==notCpl k]
-                                  absor0 = [t' | t'<-unE k, f'<-ks++rs, t'==f']
-                                  absor1 = [(if length rest<=1 then rest else [EUni rest] , t') | t'<-unE k, f'<-ks++rs, notCpl t'==f', let rest = [x |x<-unE k,x/=t']]
-                                  absor2 = eqClass same (rs++k:ks) where e `same` e' = (isRfx e && isAsy e && isRfx e' && isAsy e') && (e == flp e')
-                                  absor3 = eqClass (==) (rs++k:ks)
-     nM (EUni (k:ks)) rs
-                     -- Associativity of \/:    (r\/s)\/t  -->  r\/s\/t      (implicit step)
-                            | or [isEUni x |x<-k:ks]       = nM (EUni [y | x<-k:ks, y<-if isEUni x then unE x else [x]]) rs
-                     -- If only simplification is required, we are done now.
-                            | simpl                        = (if isEUni f then EUni (t:unE f) else EUni [t,f], steps++steps', fEqu [equ',equ''])
-                     -- Absorb equals:    r\/r  -->  r
-                            | or [length cl>1 |cl<-absor3] = (EUni [head cl | cl<-absor3], [shw e++"\\/"++shw e++" = "++shw e | cl<-absor3, length cl>1, let e=head cl], "<=>")
-                     -- Tautology:    r\/-r  -->  V
-                            | or [length cl>1 |cl<-absor2] = let ncp (ECpl e) = e; ncp e = e in
-                                                            (EIsc [], take 1 ["let "++ shw (ncp e)++" = e. Since -e\\/e = V we get"
-                                                                           | cl<-absor2, length cl>1, let e=head cl], "<=>")
-                     -- Absorb -V:    r\/-V  --> r
-                            | or[x==EUni [] |x<-k:ks]      = (EUni [x |x<-k:ks,x/=EUni []], ["x\\/-V = x"], "<=>")
-                     -- Tautology:    r\/V  -->  V
-                            | k==EIsc []                   = (EIsc [], ["tautology"],  "<=>")
-                            | or[x==EIsc [] |x<-ks]        = (EIsc [], ["x\\/V = V"], "<=>")
-                            | isEIsc k && not (null absor0)= let f'=head absor0 in (EUni ks, ["absorb "++shw k++" because of "++shw f'++" ((x/\\y)\\/y = y))"], "<=>")
-                            | isEIsc k && not (null absor1)= let (ts,f')=head absor1 in (EUni (ts++ks), ["absorb "++shw f'++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
-                            | otherwise                    = (if isEUni f then EUni (t:unE f) else EUni [t,f], steps++steps', fEqu [equ',equ''])
-                            where (t,steps, equ')  = nM k []
-                                  (f,steps',equ'') = nM (EUni ks) (k:rs)
-                                  absor0 = [t' | t'<-unE k, f'<-ks++rs, t'==f']
-                                  absor1 = [(if length rest<=1 then rest else [EIsc rest] , t') | t'<-unE k, f'<-ks++rs, notCpl t'==f', rest<-[[x |x<-unE k,x/=t']]]
-                                  absor2 = eqClass same (rs++k:ks) where e `same` e' = e==notCpl e'
-                                  absor3 = eqClass (==) (rs++k:ks)
-     nM (EFlp e) _          | isSym e =  (e,[shw e++" is symmetric"],"<=>")
-     -- disabled nm (ERel r) _ because it is buggy for Mp1 relations 
-     --nM (ERel r) _          | isEq && not (isIdent r)   = if isRfx r
-     --                                                   then (EIsc [ERel (I (source r))], [name r++" is an equivalence relation"], "<=>")
-     --                                                   else (EIsc [ERel (I (source r))], [name r++" is transitive and symmetric"], "==>")
-     --                                                   where isEq = isTrn r && isSym r
-     nM x _               = (x,[],"<=>")
+   exprIsc2list, exprUni2list, exprCps2list, exprRad2list :: Expression -> [Expression]
+   exprIsc2list (EIsc (l,r) _) = exprIsc2list l++exprIsc2list r
+   exprIsc2list r              = [r]
+   exprUni2list (EUni (l,r) _) = exprUni2list l++exprUni2list r
+   exprUni2list r              = [r]
+   exprCps2list (ECps (l,r) _) = exprCps2list l++exprCps2list r
+   exprCps2list r              = [r]
+   exprRad2list (ERad (l,r) _) = exprRad2list l++exprRad2list r
+   exprRad2list r              = [r]
 
 
    fEqu :: [String] -> String
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 
-   unE :: Expression -> [Expression]
-   unE (EIsc es')  = es'
-   unE (EUni es')  = es'
-   unE (ECps es')  = es'
-   unE (ERad es')  = es'
-   unE (EPrd es')  = es'
-   unE x           = [x]
-
-{- 
-Distribution
-To distribute one operator (g) over another (f) results in an expression 
-that has g as its root (in all cases).
-so  distribute EIsc EUni isEIsc isEUni (EIsc [r, EUni [s,t]]) = EUni [EIsc [r,s], EIsc[r,s]]
-and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], EUni [s,s]]
--}
-
-   distribute :: ([Expression] -> Expression)
-              -> ([Expression] -> Expression)
-              -> (Expression -> Bool)
-              -> (Expression -> Bool)
-              -> Expression
-              -> Expression
-   distribute f g isf isg = dis
-    where
-     dis x | isf x && null xs      = g [f []]
-           | isg x && null xs      = g []
-           | isf x && length xs==1 = dis k
-           | isg x && length xs==1 = dis k
-           | isg x && isg k        = dis (g (ys++ks))
-           | isf x && isf k        = dis (f (ys++ks))
-           | isf x && isg k        = g [f [p,q] | p<-unE k, q<-unE (dis (f ks))]
-           | isf x && isf k        = g [f [k,q] |           q<-unE (dis (f ks))]
-           | isg x                 = g (unE (dis k)++ks)
-           | otherwise             = g [x]             
-           where xs = unE x
-                 k:ks = xs
-                 ys = unE k
-   
-{- klad: De volgende tekst is bedoeld als "uitleg". Ik heb de f vervangen door plus en de g door maal, wat iets minder abstract leest dan f en g.
-     dis x | isPlus x && null xs      = maal [0]                                            -- correct want plus [] = maal [0]
-           | isMaal x && null xs      = maal []                                             -- correct want maal [] = maal []
-           | isPlus x && length xs==1 = dis k                                               -- correct want plus [x] = x
-           | isMaal x && length xs==1 = dis k                                               -- correct want maal [x] = x
-           | isMaal x && isMaal k     = dis (maal (ys++ks))                                 -- correct want maal is associatief
-           | isPlus x && isPlus k     = dis (plus (ys++ks))                                 -- correct want plus is associatief
-           | isPlus x && isMaal k     = maal [plus [p,q] | p<-ys , q<-unE (dis (plus ks))]   -- correct want plus distribueert over maal
-           | isPlus x                 = maal [plus [k,q] |         q<-unE (dis (plus ks))]   -- correct want plus distribueert over maal
-           | isMaal x                 = maal (unE (dis k)++ks)                              -- correct want transformatieloze recursie
-           | otherwise                = maal [x]                                            -- correct want x = maal [x]
-           where xs = unE x
-                 k:ks = xs
-                 ys = unE k
--}
-
    nfProof :: (Expression -> String) -> Expression -> Proof Expression
-   nfProof shw = nfPr shw True -- The boolean True means that clauses are derived using <=> derivations.
-   nfPr :: (Expression -> String) -> Bool-> Expression -> [(Expression, [String], String)]
-   nfPr shw eq expr
+   nfProof shw = nfPr shw True True -- The first boolean True means that clauses are derived using <=> derivations. The second True means that a disjunctive normal form is produced.
+   nfPr :: (Expression -> String) -> Bool -> Bool -> Expression -> [(Expression, [String], String)]
+   nfPr shw eq dnf expr
     = if expr==res
       then [(expr,[],"<=>")]
-      else (expr,steps,equ):nfPr shw eq (simplify res)
-    where (res,steps,equ) = normStep shw eq False expr
+      else (expr,steps,equ):nfPr shw eq dnf (simplify res)
+    where (res,steps,equ) = normStep shw eq dnf False expr
 
    cfProof :: (Expression -> String) -> Expression -> Proof Expression
    cfProof shw expr
     = [line | step, line<-init pr]++
       [line | step', line<-init pr']++
-      [line | step'', line<-init pr'']++
       [last ([(expr,[],"<=>")]++
              [line | step, line<-pr]++
-             [line | step', line<-pr']++
-             [line | step'', line<-pr'']
+             [line | step', line<-pr']
             )]
-      where pr            = nfPr shw True (simplify expr)
-            (expr',_,_)   = if null pr then fatal 328 "last: empty list" else last pr
-            step          = simplify expr/=expr' || and [null s | (_,ss,_)<-pr, s<-ss]
-            expr''        = simplify (distribute EUni EIsc isEUni isEIsc expr')   -- Distribute:    (x/\y)\/z  -->  x\/z /\ y\/z
-            pr'           = if or [isEIsc f |EUni fs<-[expr'], f<-fs] 
-                            then [(expr',["Distribute:    (x/\\y)\\/z  <=>  x\\/z /\\ y\\/z"],"<=>"),(expr'',[],"<=>")]
-                            else [(expr',[],"<=>")]
-            step'         = expr'/=expr'' || and [null s | (_,ss,_)<-pr', s<-ss]
-            pr''          = nfPr shw True expr''
-            step''        = expr''/=expr''' || and [null s | (_,ss,_)<-pr'', s<-ss]
-            (expr''',_,_) = if null pr'' then fatal 337 "last: empty list" else last pr''
+      where pr           = nfPr shw True False (simplify expr)
+            (expr',_,_)  = if null pr then fatal 328 "last: empty list" else last pr
+            step         = simplify expr/=expr' -- obsolete?    || and [null s | (_,ss,_)<-pr, s<-ss]
+            pr'          = nfPr shw True False (simplify expr')
+            step'        = simplify expr'/=simplify expr'' -- obsolete?    || and [null s | (_,ss,_)<-pr', s<-ss]
+            (expr'',_,_) = if null pr' then fatal 337 "last: empty list" else last pr'
 
    conjNF :: Expression -> Expression
    conjNF expr = e where (e,_,_) = if null (cfProof (\_->"") expr) then fatal 340 "last: empty list" else last (cfProof (\_->"") expr)
@@ -348,32 +374,13 @@ and distribute EUni EIsc isEUni isEIsc (EIsc [r, EUni [s,t]]) = EIsc [EUni [r], 
    dfProof shw expr
     = [line | step, line<-init pr]++
       [line | step', line<-init pr']++
-      [line | step'', line<-init pr'']++
       [last ([(expr,[],"<=>")]++
              [line | step, line<-pr]++
-             [line | step', line<-pr']++
-             [line | step'', line<-pr'']
+             [line | step', line<-pr']
             )]
-      where pr            = nfPr shw True expr
-            (expr',_,_)   = if null pr then fatal 356 "last: empty list" else last pr
-            step          = simplify expr/=simplify expr'
-            expr''        = distribute EIsc EUni isEIsc isEUni expr'   -- Distribute:    (x\/y)/\z  -->  x/\z \/ y/\z
-            pr'           = if or [isEUni f|EIsc fs<-[expr'], f<-fs] 
-                            then [(expr',["Distribute:    (x\\/y)/\\z  <=>  x/\\z \\/ y/\\z"],"<=>"),(expr'',[],"<=>")]
-                            else [(expr',[],"<=>")]
-            step'         = simplify expr'/=simplify expr''
-            pr''          = nfPr shw True expr''
-            step''        = simplify expr''/=simplify expr'''
-            (expr''',_,_) = if null pr'' then fatal 365 "last: empty list" else last pr''
-            
-   -- TODO: @Stef: Why is this needed? --Why not use isIdent ???  Deal with ticket #147
-   isI :: Expression -> Bool
-   isI (ERel r ) = isIdent r
-   isI (EBrk e ) = isI e
-   isI (ECps ts) = all isI ts
-   isI (EIsc fs) = all isI fs
-   isI (EUni fs) = all isI fs
-   isI (EKl0 e ) = isI e
-   isI (EKl1 e ) = isI e
-   isI (EFlp e ) = isI e
-   isI _ = False            
+      where pr           = nfPr shw True True expr
+            (expr',_,_)  = if null pr then fatal 356 "last: empty list" else last pr
+            step         = simplify expr/=simplify expr'
+            pr'          = nfPr shw True True expr'
+            step'        = simplify expr'/=simplify expr''
+            (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'

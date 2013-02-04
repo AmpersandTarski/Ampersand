@@ -85,9 +85,9 @@ fSpec2UML fSpec flags =
                , "</xmi:XMI>" ]
     }
  where classDiag = cdAnalysis fSpec flags
-       (contextName, allConcepts) = nameandcpts classDiag
+       (contextName, allConcs) = nameandcpts classDiag
        classNames    = [ nm | OOClass nm _ _ <-  classes classDiag]
-       datatypeNames = map name allConcepts >- classNames
+       datatypeNames = map name allConcs >- classNames
 
 genUMLRequirement :: Req -> UML
 genUMLRequirement req =

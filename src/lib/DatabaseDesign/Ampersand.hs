@@ -42,14 +42,13 @@ module DatabaseDesign.Ampersand
    , FPAble(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
-   , (<==>),meet,order,join,sortWith,atomsOf
+   , (<==>),meet,join,sortWith,atomsOf
    -- * Functions on declarations
    , makeRelation
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
    , notCpl, isCpl, isPos, isNeg
-   , isI
    -- * Functions with plugs:
    , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff
@@ -63,7 +62,7 @@ module DatabaseDesign.Ampersand
    , makeFspec
     -- * Generators of output
    , doGenADL
-   , prove
+   , doGenProofs
    , doGenHaskell
    , doGenXML
    , doGenDocument
@@ -99,6 +98,5 @@ import DatabaseDesign.Ampersand.Input
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components 
-import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (isI)
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.ADL1.Expression (isPos,isNeg)

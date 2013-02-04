@@ -54,24 +54,24 @@ where
    fatal = fatalMsg "ParseTree"
    
    data P_Context
-      = PCtx{ ctx_nm     :: String          -- ^ The name of this context
-            , ctx_pos    :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-            , ctx_lang   :: Maybe Lang      -- ^ The default language specified by this context, if specified at all.
+      = PCtx{ ctx_nm ::     String          -- ^ The name of this context
+            , ctx_pos ::    [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+            , ctx_lang ::   Maybe Lang      -- ^ The default language specified by this context, if specified at all.
             , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-            , ctx_thms   :: [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-            , ctx_pats   :: [P_Pattern]     -- ^ The patterns defined in this context
-            , ctx_PPrcs  :: [P_Process]     -- ^ The processes as defined by the parser
-            , ctx_rs     :: [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
-            , ctx_ds     :: [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-            , ctx_cs     :: [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks     :: [P_KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
-            , ctx_gs     :: [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
-            , ctx_ifcs   :: [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps     :: [PPurpose]      -- ^ The purposes defined in this context, outside the scope of patterns
-            , ctx_pops   :: [P_Population]  -- ^ The populations defined in this context
-            , ctx_sql    :: [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
-            , ctx_php    :: [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
-            , ctx_metas  :: [P_Meta]        -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+            , ctx_thms ::   [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+            , ctx_pats ::   [P_Pattern]     -- ^ The patterns defined in this context
+            , ctx_PPrcs ::  [P_Process]     -- ^ The processes as defined by the parser
+            , ctx_rs ::     [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
+            , ctx_ds ::     [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
+            , ctx_cs ::     [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
+            , ctx_ks ::     [P_KeyDef]      -- ^ The key definitions defined in this context, outside the scope of patterns
+            , ctx_gs ::     [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
+            , ctx_ifcs ::   [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
+            , ctx_ps ::     [PPurpose]      -- ^ The purposes defined in this context, outside the scope of patterns
+            , ctx_pops ::   [P_Population]  -- ^ The populations defined in this context
+            , ctx_sql ::    [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctx_php ::    [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_metas ::  [P_Meta]        -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
             } deriving Show
 
 --   instance Show P_Context where
@@ -96,7 +96,7 @@ where
       = P_RR { rr_Roles :: [String]         -- ^ name of a role
              , rr_Rels :: [Term]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
              , rr_Pos :: Origin           -- ^ position in the Ampersand script
-             } deriving (Show)       -- just for debugging
+             } deriving (Show)       -- deriving Show is just for debugging
    instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
    instance Traced P_RoleRelation where
     origin = rr_Pos
@@ -127,7 +127,7 @@ where
         { mRoles :: [String]    -- ^ name of a role
         , mRules :: [String]    -- ^ name of a Rule
         , mPos :: Origin      -- ^ position in the Ampersand script
-        } deriving (Eq, Show)   -- just for debugging
+        } deriving (Eq, Show)   -- deriving (Eq, Show) is just for debugging
 
    instance Traced RoleRule where
     origin = mPos
