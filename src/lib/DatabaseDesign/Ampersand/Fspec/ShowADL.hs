@@ -26,10 +26,11 @@ class ShowADL a where
 
 -- there are data types yielding language dependent data like an Expression
 -- the LanguageDependent class provides function(s) to map language dependent functions on those data if any.
--- for example to print all expressions in a data structure with a practical amount of type directives through application of 'disambiguate'
+-- for example to print all expressions in a data structure with a practical amount of type directives
 -- (instances have been created when needed)
 --
 -- LanguageDependent is part of ShowAdl because the only application at time of writing is to disambiguate expressions for the purpose of printing
+-- SJ 31-12-2012: Since 'disambiguate' has become obsolete, do we still need this?
 class LanguageDependent a where
   mapexprs :: (Language l, ConceptStructure l, Identified l) => (l -> Expression -> Expression) -> l -> a -> a
   mapexprs _ _ = id
@@ -221,7 +222,7 @@ instance ShowADL KeySegment where
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
 instance ShowADL Relation where
- showADL rel = showADL (ETyp (ERel rel) (sign rel))
+ showADL rel = showADL (ETyp (ERel rel (sign rel)) (sign rel))
 
 instance ShowADL Expression where
  showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
@@ -232,35 +233,32 @@ instance ShowADL Expression where
      showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
       = showchar
         where
-          showchar (EEqu (l,r)) = showchar l++equi++showchar r
-          showchar (EImp (l,r)) = showchar l++impl++showchar r
-          showchar (EIsc [])    = "V"
-          showchar (EIsc es)    = intercalate inter  [showchar e | e<-es]
-          showchar (EUni [])    = "-V"
-          showchar (EUni es)    = intercalate union' [showchar e | e<-es]
-          showchar (EDif (l,r)) = showchar l++diff ++showchar r
-          showchar (ELrs (l,r)) = showchar l++lresi++showchar r
-          showchar (ERrs (l,r)) = showchar l++rresi++showchar r
-          showchar (ECps [])    = "I"
-          showchar (ECps es)    = intercalate rMul [showchar e | e<-es]
-          showchar (ERad [])    = "-I"
-          showchar (ERad es)    = intercalate rAdd [showchar e | e<-es]
-          showchar (EPrd [])    = "ONE"
-          showchar (EPrd es)    = intercalate rPrd [showchar e | e<-es]
-          showchar (EKl0 e)     = showchar e++closK0
-          showchar (EKl1 e)     = showchar e++closK1
-          showchar (EFlp e)     = showchar e++flp'
-          showchar (ECpl e)     = compl (showchar e)
-          showchar (EBrk e)     = lpar++showchar e++rpar
+          showchar (EEqu (l,r) _) = showchar l++equi++showchar r
+          showchar (EImp (l,r) _) = showchar l++impl++showchar r
+          showchar (EIsc (l,r) _) = showchar l++inter++showchar r
+          showchar (EUni (l,r) _) = showchar l++union'++showchar r
+          showchar (EDif (l,r) _) = showchar l++diff ++showchar r
+          showchar (ELrs (l,r) _) = showchar l++lresi++showchar r
+          showchar (ERrs (l,r) _) = showchar l++rresi++showchar r
+          showchar (ECps (l,r) _) = showchar l++rMul++showchar r
+          showchar (ERad (l,r) _) = showchar l++rAdd++showchar r
+          showchar (EPrd (l,r) _) = showchar l++rPrd++showchar r
+          showchar (EKl0 e _)     = showchar e++closK0
+          showchar (EKl1 e _)     = showchar e++closK1
+          showchar (EFlp e _)     = showchar e++flp'
+          showchar (ECpl e _)     = compl (showchar e)
+          showchar (EBrk e)       = lpar++showchar e++rpar
           showchar (ETyp e sgn) 
            | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
            | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
           -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showchar (ERel rel@(Rel{})) = name rel
-          showchar (ERel      I{})    = "I"
-          showchar (ERel      V{})    = "V"
-          showchar (ERel rel@(Mp1{})) = "'"++relval rel++"'"
+          showchar (ERel rel@Rel{} _) = name rel
+          showchar (ERel     I{}   _) = "I"
+          showchar (ERel     V{}   _) = "V"
+          showchar (ERel rel@Mp1{} _) = "'"++relval rel++"'"
 
+instance ShowADL HornClause where
+ showADL hornClause = showADL (horn2expr hornClause)
 
 instance ShowADL Declaration where
  showADL decl = 
@@ -377,11 +375,11 @@ instance ShowADL P_Population where
                           P_CptPopu{} -> map showAtom  (p_popas pop)
 showPaire :: Paire -> String
 showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
---  @(P_RelPopu{})
+--  p@P_RelPopu{}
 --  = "POPULATION "++name pop++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps pop))++indent++"]"
 --    where indent = "   "; P_Sign pConcepts=p_type pop
--- showADL pop@(P_CptPopu{})
+-- showADL pop@P_CptPopu{}
 --  = "POPULATION "++p_popm pop++" CONTAINS\n"++
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,_)-> showatom x) (p_popps pop)) ++indent++"]"
 --    where indent = "   "
@@ -446,7 +444,7 @@ instance ShowADL Term where
        showchar (PFlp _ e)                               = showchar e++flp'
        showchar (PCpl _ e)                               = '-':showchar e
        showchar (PBrk _ e)                               = lpar++showchar e++rpar
-       showchar (PTyp _ e@(Prel{}) psgn)                 = showchar e++showsign psgn
+       showchar (PTyp _ e@Prel{} psgn)                   = showchar e++showsign psgn
        showchar (PTyp _ (Pflp _ rel) (P_Sign{psign=xs})) = rel++showsign (P_Sign{psign=reverse xs})++flp'
        showchar (PTyp _ e psgn)                          = lpar++showchar e++rpar++showsign psgn
        showsign (P_Sign{psign=[x]})                      = lbr++showADL x++rbr
@@ -492,9 +490,9 @@ instance ShowADL P_Concept where
 instance ShowADL PAclause where
     showADL = showPAclause "\n "
      where
-      showPAclause indent pa@Chc{}
+      showPAclause indent pa@CHC{}
        = let indent'=indent++"   " in "execute ONE from"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]
-      showPAclause indent pa@All{}
+      showPAclause indent pa@ALL{}
        = let indent'=indent++"   " in "execute ALL of"++indent'++intercalate indent' [showPAclause indent' p' | p'<-paCls pa]
       showPAclause indent pa@Do{}
        = ( case paSrt pa of
@@ -515,7 +513,7 @@ instance ShowADL PAclause where
         "REMOVE x:"++show (paCpt pa)++";"++indent'++showPAclause indent' (paCl pa "x")
       showPAclause _ Nop{} = "Nop"
       showPAclause _ Blk{} = "Blk"
-      showPAclause _ (Let _ _ _) = fatal 390 "showPAclasue not defined for `Let`. Consult your dealer!"
-      showPAclause _ (Ref _)     = fatal 391 "showPAclasue not defined for `Ref`. Consult your dealer!"
+      showPAclause _ (Let _ _ _) = fatal 390 "showPAclause not defined for `Let`. Consult your dealer!"
+      showPAclause _ (Ref _)     = fatal 391 "showPAclause not defined for `Ref`. Consult your dealer!"
       showConj rs
               = "(TO MAINTAIN"++intercalate ", " [name r | r<-rs]++")"

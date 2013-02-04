@@ -11,6 +11,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Data.Char (toLower)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms (exprUni2list, exprIsc2list, exprCps2list, exprRad2list)
    import DatabaseDesign.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
    fatal :: Int -> String -> a
@@ -252,53 +253,51 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       [s,t] = mkVar [] [source expr, target expr]
       rc = f [s,t] expr (s,t)
       f :: [Var] -> Expression -> (Var,Var) -> PredLogic
-      f exclVars (EEqu (l,r)) (a,b) = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
-      f exclVars (EImp (l,r)) (a,b) = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
-      f exclVars (EIsc es)    (a,b) = Conj [f exclVars e (a,b) | e<-es]
-      f exclVars (EUni es)    (a,b) = Disj [f exclVars e (a,b) | e<-es]
-      f exclVars (EDif (l,r)) (a,b) = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
-      f exclVars (ELrs (l,r)) (a,b) = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
-                                    where [c]   = mkVar exclVars [target r]
-                                          eVars = exclVars++[c]
-      f exclVars (ERrs (l,r)) (a,b) = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
-                                    where [c]   = mkVar exclVars [source l]
-                                          eVars = exclVars++[c]
-      f exclVars (ECps es)    (a,b) = fC exclVars es (a,b)  -- special treatment, see below
-      f exclVars (ERad es)    (a,b) = fD exclVars es (a,b)  -- special treatment, see below
-      f _        (EPrd es)    (a,b) = Conj [Dom (head es) a, Cod (last es) b]
-      f exclVars (EKl0 e)     (a,b) = PlK0 (f exclVars e (a,b))
-      f exclVars (EKl1 e)     (a,b) = PlK1 (f exclVars e (a,b))
-      f exclVars (ECpl e)     (a,b) = Not (f exclVars e (a,b))
-      f exclVars (EBrk e)     (a,b) = f exclVars e (a,b)
-      f exclVars (ETyp e _)   (a,b) = f exclVars e (a,b)
-      f _ e@(ERel rel) ((a,sv),(b,tv)) = res
+      f exclVars (EEqu (l,r) _) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
+      f exclVars (EImp (l,r) _) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
+      f exclVars e@EIsc{}       (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
+      f exclVars e@EUni{}       (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
+      f exclVars (EDif (l,r) _) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
+      f exclVars (ELrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
+                                         where [c]   = mkVar exclVars [target r]
+                                               eVars = exclVars++[c]
+      f exclVars (ERrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
+                                         where [c]   = mkVar exclVars [source l]
+                                               eVars = exclVars++[c]
+      f exclVars e@ECps{}       (a,b)  = fC exclVars e (a,b)  -- special treatment, see below
+      f exclVars e@ERad{}       (a,b)  = fD exclVars e (a,b)  -- special treatment, see below
+      f _        (EPrd (l,r) _) (a,b)  = Conj [Dom l a, Cod r b]
+      f exclVars (EKl0 e _)     (a,b)  = PlK0 (f exclVars e (a,b))
+      f exclVars (EKl1 e _)     (a,b)  = PlK1 (f exclVars e (a,b))
+      f exclVars (ECpl e _)     (a,b)  = Not (f exclVars e (a,b))
+      f exclVars (EBrk e)       (a,b)  = f exclVars e (a,b)
+      f exclVars (ETyp e _)     (a,b)  = f exclVars e (a,b)
+      f _ e@(ERel rel _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
                Flr  -> R (Funs a [rel]) (I tv) (Funs b [])
                Frl  -> R (Funs a []) (I sv) (Funs b [rel])
                Rn   -> R (Funs a []) rel (Funs b [])
                Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
-      f _ e@(EFlp (ERel rel)) ((a,sv),(b,tv)) = res
+      f _ e@(EFlp (ERel rel _) _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
                Flr  -> R (Funs a [rel]) (I tv) (Funs b [])
                Frl  -> R (Funs a []) (I sv) (Funs b [rel])
                Rn   -> R (Funs b []) rel (Funs a [])
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
-      f exclVars (EFlp e)     (a,b) = f exclVars e (b,a)
+      f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
 
 -- fC treats the case of a composition.  It works as follows:
---       An expression, e.g. ECps[r,s,t] , is translated to Exists (zip ivs ics) (Conj (frels s t)),
+--       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
 --       in which ivs is a list of variables that are used inside the resulting expression,
 --       ics contains their types, and frels s t the subexpressions that
 --       are used in the resulting conjuct (at the right of the quantifier).
-      fC exclVars []  (a,b) = if snd a <==> snd b then f exclVars (ERel (I (snd a `join` snd b))) (a,b) else
-                              fatal 297 ("function fC has illegal type for a="++show (snd a)++" and b="++show (snd b)++".")
-      fC exclVars [e] (a,b) = f exclVars e (a,b)
-      fC exclVars es  (a,b)
-        | and [isCpl e | e<-es] = f exclVars (ECpl (ERad [notCpl e | e<-es])) (a,b)
-        | otherwise             = Exists ivs (Conj (frels s t))
+      fC exclVars e (a,b)
+        | and [isCpl e' | e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)
+        | otherwise               = Exists ivs (Conj (frels s t))
         where
+         es   = exprCps2list e
         -- Step 1: split in fragments at those points where an exists-quantifier is needed.
         --         Each fragment represents a subexpression with variables
         --         at the outside only. Fragments will be reconstructed in a conjuct.
@@ -307,36 +306,34 @@ module DatabaseDesign.Ampersand.Output.PredLogic
          frels s' t' = [r v' w | ((r,_,_),v',w)<-zip3 res (s': ivs) (ivs++[t']) ]
         -- Step 3: compute the intermediate variables and their types
          ivs       = mkVar exclVars ics
-         ics       = [ if v' <==> w then v' `join` w else
+         ics       = [ if v' <==> w then v' `meet` w else
                        fatal 312 ("within ics there is an illegal type for v'="++show v'++" and w="++show w++".")
                      | (v',w)<-zip [s' |(_,s',_)<-tail res] [t' |(_,_,t')<-init res]]
 
-      fD exclVars []  (a,b) = if snd a <==> snd b then Not (f exclVars (ERel (I (snd a `join` snd b))) (a,b)) else
-                              fatal 316 ("function fD has illegal type for a="++show (snd a)++" and b="++show (snd b)++".")
-      fD exclVars [e] (a,b) = f exclVars e (a,b)
-      fD exclVars es (a,b) 
-        | and [isCpl e |e<-es] = f exclVars (ECpl (ECps (map notCpl es))) (a,b)   -- e.g.  -r!-s!-t
-        | isCpl (head es)      = f exclVars (ERrs (ECps antr,ERad conr)) (a,b)    -- e.g.  -r!-s! t
-        | isCpl (last es)      = f exclVars (ELrs (ERad conl,ECps antl)) (a,b)    -- e.g.   r!-s!-t
-        | or [isCpl e |e<-es]  = Forall ivs (Disj alls)                           -- e.g.   r!-s! t
-        | otherwise            = Forall ivs (Disj alls)                           -- e.g.   r! s! t
+      fD exclVars e (a,b) 
+        | and[isCpl e' |e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)                          -- e.g.  -r!-s!-t
+        | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b) -- e.g.  -r!-s! t
+        | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b) -- e.g.   r!-s!-t
+        | or [isCpl e' |e'<-es] = Forall ivs (Disj alls)                                     -- e.g.   r!-s! t
+        | otherwise             = Forall ivs (Disj alls)                                     -- e.g.   r! s! t
         where
+         es   = exprRad2list e
          conr = dropWhile isCpl es
          antr = (map flp.reverse.takeWhile isCpl) es
          conl = (reverse.dropWhile isCpl.reverse) es
          antl = (map flp.takeWhile isCpl.reverse) es
-         alls = [f (exclVars++ivs) e (sv,tv) | (e,(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
+         alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
          ivs  = mkVar exclVars ics
-         ics  = [ if target e <==> source e' then target e `join` source e' else
-                  fatal 332 ("within ics there is an illegal type for e="++show e++" and e'="++show e'++".")
-                | (e,e')<-zip (init es) (tail es)]
-
+         ics  = [ if target e'' <==> source e' then target e'' `join` source e' else
+                  fatal 332 ("within ics there is an illegal type for e''="++show e''++" and e'="++show e'++".")
+                | (e'',e')<-zip (init es) (tail es)]
+      
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
       relFun exclVars lhs e rhs
         = case e of
-            ERel rel        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-mors t']) rel (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t'])
-            EFlp (ERel rel) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t']) rel (Funs (fst sv) [r | t'<-        lhs, r<-mors t'])
-            _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
+            ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-mors t']) rel (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t'])
+            EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t']) rel (Funs (fst sv) [r | t'<-        lhs, r<-mors t'])
+            _                   -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
 
       pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)] 
       pars3 exclVars (lhs: [e]: rhs: ts)
@@ -350,17 +347,17 @@ module DatabaseDesign.Ampersand.Output.PredLogic
        | denotes lhs==Flr && denote e==Rn
                    = (relFun exclVars lhs e [], source (head lhs), target e): pars3 exclVars ts
        | denotes lhs==Flr && denote e==Frl
-                   = (relFun exclVars lhs (ERel (I (source e))) [e], source (head lhs), target e): pars3 exclVars ts
+                   = (relFun exclVars lhs (iExpr (source e)) [e], source (head lhs), target e): pars3 exclVars ts
        | otherwise = pars1 exclVars (lhs:[e]:ts)
       pars2 exclVars ([e]: rhs: ts)
        | denotes rhs==Frl && denote e==Rn
                    = (relFun exclVars [] e rhs, source e, target (last rhs)): pars3 exclVars ts
        | denote e==Flr && denotes rhs==Frl
-                   = (relFun exclVars [e] (ERel (I (source e))) rhs, source e, target (last rhs)): pars3 exclVars ts
+                   = (relFun exclVars [e] (iExpr (source e)) rhs, source e, target (last rhs)): pars3 exclVars ts
        | otherwise = pars1 exclVars ([e]:rhs:ts)
       pars2 exclVars (lhs: rhs: ts)
        | denotes lhs==Flr && denotes rhs==Frl
-                   = (relFun exclVars lhs (ERel (I (source (head rhs)))) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
+                   = (relFun exclVars lhs (iExpr (source (head rhs))) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
        | otherwise = pars1 exclVars (lhs:rhs:ts)
       pars2 exclVars ts = pars1 exclVars ts -- for lists shorter than 2
 
@@ -372,13 +369,13 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 
       pars0 :: [Var] -> [Expression] -> Var -> Var -> PredLogic
       pars0 exclVars lhs
-       | denotes lhs==Flr = relFun exclVars lhs (ERel (I (target (last lhs)))) []
-       | denotes lhs==Frl = relFun exclVars [] (ERel (I (target (last lhs)))) lhs
+       | denotes lhs==Flr = relFun exclVars lhs (iExpr (source (last lhs))) []
+       | denotes lhs==Frl = relFun exclVars []  (iExpr (target (last lhs))) lhs
        | otherwise        = relFun exclVars [] (let [r]=lhs in r) []
 
       denote :: Expression -> Notation
       denote e = case e of
-         (ERel r)
+         (ERel r _)
            | null([Uni,Inj,Tot,Sur] >- multiplicities r)  -> Rn
            | isUni r && isTot r                           -> Flr
            | isInj r && isSur r                           -> Frl

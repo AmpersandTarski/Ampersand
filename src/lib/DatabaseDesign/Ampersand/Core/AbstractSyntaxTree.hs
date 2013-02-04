@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , objatsLegacy -- for use in legacy code only
  , Purpose(..)
  , ExplObj(..)
- , Expression(..)
+ , Expression(..), iExpr, vExpr
  , Relation(..)
  , A_Concept(..)
  , A_Markup(..)
@@ -36,12 +36,13 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Association(..)
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
- , (<==>),join,order,meet,greatest,least,maxima,minima,sortWith 
+ , (<==>),join,meet,greatest,least,maxima,minima,sortWith 
  , makeDeclaration
  , showSign
  , aMarkup2String
  , insParentheses
  , module DatabaseDesign.Ampersand.Core.ParseTree  -- export all used contstructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
+ , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
 )where
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
@@ -302,12 +303,12 @@ instance Association A_Gen where
 
 
 data Interface = Ifc { ifcParams :: [Relation]
-                     , ifcViols :: [Rule]
-                     , ifcArgs  :: [[String]]
-                     , ifcRoles :: [String]
-                     , ifcObj   :: ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcPos   :: Origin
-                     , ifcPrp   :: String
+                     , ifcViols ::  [Rule]
+                     , ifcArgs ::   [[String]]
+                     , ifcRoles ::  [String]
+                     , ifcObj ::    ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
+                     , ifcPos ::    Origin
+                     , ifcPrp ::    String
                      } deriving Show
 instance Eq Interface where
   s==s' = name s==name s'
@@ -326,9 +327,9 @@ objatsLegacy Obj{ objmsub=Nothing } = []
 objatsLegacy Obj{ objmsub=Just (Box objs) } = objs
 objatsLegacy Obj{ objmsub=Just (InterfaceRef _) } = fatal 301 $ "Using functionality that has not been extended to InterfaceRefs"
 
-data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                     , objpos  :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+data ObjectDef = Obj { objnm ::   String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                     , objpos ::  Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+                     , objctx ::  Expression     -- ^ this expression describes the instances of this object, related to their context. 
                      , objmsub :: Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs :: [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)       -- just for debugging (zie ook instance Show ObjectDef)
@@ -355,10 +356,10 @@ instance Traced Purpose where
 
 data UserDefPop -- The user defined populations
   = PRelPopu { popdcl :: Declaration
-             , popps  :: Pairs     -- The user-defined pairs that populate the relation
+             , popps ::  Pairs     -- The user-defined pairs that populate the relation
              }
   | PCptPopu { popcpt :: A_Concept
-             , popas  :: [String]  -- The user-defined atoms that populate the concept
+             , popas ::  [String]  -- The user-defined atoms that populate the concept
              }
 
 data ExplObj = ExplConceptDef ConceptDef
@@ -373,45 +374,101 @@ data ExplObj = ExplConceptDef ConceptDef
           deriving (Show ,Eq)
 
 data Expression
-      = EEqu (Expression,Expression)       -- ^ equivalence             =
-      | EImp (Expression,Expression)       -- ^ implication             |-
-      | EIsc [Expression]                  -- ^ intersection            /\  -- EIsc [e] should not occur
-      | EUni [Expression]                  -- ^ union                   \/  -- EUni [e] should not occur
-      | EDif (Expression,Expression)       -- ^ difference              -
-      | ELrs (Expression,Expression)       -- ^ left residual           /
-      | ERrs (Expression,Expression)       -- ^ right residual          \
-      | ECps [Expression]                  -- ^ composition             ;   -- ECps [e] should not occur
-      | ERad [Expression]                  -- ^ relative addition       !   -- ERad [e] should not occur
-      | EPrd [Expression]                  -- ^ cartesian product       *   -- The argument is a list of Expressions rather than a tuple (l,r), only because * is associative.
-      | EKl0 Expression                    -- ^ Rfx.Trn closure         *  (Kleene star)
-      | EKl1 Expression                    -- ^ Transitive closure      +  (Kleene plus)
-      | EFlp Expression                    -- ^ conversion (flip, wok)  ~
-      | ECpl Expression                    -- ^ Complement
+      = EEqu (Expression,Expression) Sign  -- ^ equivalence             =
+      | EImp (Expression,Expression) Sign  -- ^ implication             |-
+      | EIsc (Expression,Expression) Sign  -- ^ intersection            /\
+      | EUni (Expression,Expression) Sign  -- ^ union                   \/
+      | EDif (Expression,Expression) Sign  -- ^ difference              -
+      | ELrs (Expression,Expression) Sign  -- ^ left residual           /
+      | ERrs (Expression,Expression) Sign  -- ^ right residual          \
+      | ECps (Expression,Expression) Sign  -- ^ composition             ; 
+      | ERad (Expression,Expression) Sign  -- ^ relative addition       ! 
+      | EPrd (Expression,Expression) Sign  -- ^ cartesian product       * 
+      | EKl0 Expression              Sign  -- ^ Rfx.Trn closure         *  (Kleene star)
+      | EKl1 Expression              Sign  -- ^ Transitive closure      +  (Kleene plus)
+      | EFlp Expression              Sign  -- ^ conversion (flip, wok)  ~
+      | ECpl Expression              Sign  -- ^ Complement
       | EBrk Expression                    -- ^ bracketed expression ( ... )
-      | ETyp Expression Sign               -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | ERel Relation                      -- ^ simple relation
+      | ETyp Expression              Sign  -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
+      | ERel Relation                Sign  -- ^ simple relation
       deriving (Eq, Show)
+
+iExpr :: A_Concept -> Expression
+iExpr  c = ERel (I c) (Sign c c)
+vExpr :: Sign -> Expression
+vExpr sgn = ERel (V sgn) sgn
+
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
+
+infixl 1 .==.   -- equivalence
+infixl 1 .|-.   -- implication
+infixl 2 ./\.   -- intersection
+infixl 2 .\/.   -- union
+infixl 4 .-.    -- difference
+infixl 6 ./.    -- left residual
+infixl 6 .\.    -- right residual
+infixl 8 .:.    -- composition    -- .;. was unavailable, because Haskells scanner does not recognize it as an operator.
+infixl 8 .!.    -- relative addition
+infixl 8 .*.    -- cartesian product
+
+l .==. r = EEqu (l,r)
+           (case sign l `compare` sign r of
+              EQ -> sign l
+              _  -> fatal 417 ("Equality between two terms of different types.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+           )
+l .|-. r = EImp (l,r)
+           (case sign l `compare` sign (r./\.l) of
+              EQ -> sign (l.==.r./\.l)
+              _  -> fatal 422 ("Implication between two terms is type incompatible.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+           )
+l ./\. r = EIsc (l,r)
+           (case sign l `compare` sign r of        -- meet yields the more specific of two concepts
+              NC -> fatal 426 ("Intersection of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              _  -> sign l `meet` sign r
+           )
+l .\/. r = EUni (l,r)
+           (case sign l `compare` sign r of        -- join yields the more generic of two concepts
+              NC -> fatal 432 ("Union of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              _  -> sign l `join` sign r
+           )
+l .-. r  = EDif (l,r) (sign l)
+l ./. r  = if (target l `compare` target r) `elem` [EQ,LT,GT]
+           then ELrs (l,r) (Sign (source l) (source r))
+           else fatal 449 ("Left residu (/) between two incompatible terms.\n  l: "++show l++"\t  target: "++show (target l)++"\n  r: "++show r++"\t  target: "++show (target r)++"\n  "++show (target l)++" `compare` "++show (target r)++": "++show (target l `compare` target r))
+l .\. r  = if (source l `compare` source r) `elem` [EQ,LT,GT]
+           then ERrs (l,r) (Sign (target l) (target r))
+           else fatal 452 ("Right residu (\\) between two incompatible terms.\n  l: "++show l++"\t  source: "++show (source l)++"\n  r: "++show r++"\t  source: "++show (source r)++"\n  "++show (source l)++" `compare` "++show (source r)++": "++show (source l `compare` source r))
+l .:. r  = ECps (l,r)
+           (case target l `compare` source r of
+              NC -> fatal 415 ("Composition (;) between two incompatible terms.\n  l: "++show l++"\t  target: "++show (target l)++"\n  r: "++show r++"\t  source: "++show (source r)++"\n  "++show (target l)++" `compare` "++show (source r)++": "++show (target l `compare` source r))
+              _  -> Sign (source l) (target r)
+           )
+l .!. r  = ERad (l,r)
+           (case target l `compare` source r of
+              NC -> fatal 415 ("Relative addition (!) between two incompatible terms.\n  l: "++show l++"\t  target: "++show (target l)++"\n  r: "++show r++"\t  source: "++show (source r)++"\n  "++show (target l)++" `compare` "++show (source r)++": "++show (target l `compare` source r))
+              _  -> Sign (source l) (target r)
+           )
+l .*. r  = EPrd (l,r) (Sign (source l) (target r))
 
 instance Flippable Expression where
   flp expr = case expr of
-               EEqu (l,r)        -> EEqu (flp l, flp r)
-               EImp (l,r)        -> EImp (flp l, flp r)
-               EIsc fs           -> EIsc (map flp fs)
-               EUni fs           -> EUni (map flp fs)
-               EDif (l,r)        -> EDif (flp l, flp r)
-               ELrs (l,r)        -> ERrs (flp r, flp l)
-               ERrs (l,r)        -> ELrs (flp r, flp l)
-               ECps ts           -> ECps (map flp (reverse ts))
-               ERad ts           -> ERad (map flp (reverse ts))
-               EPrd ts           -> EPrd (map flp (reverse ts))
-               EFlp e            -> e
-               ECpl e            -> ECpl (flp e)
-               EKl0 e            -> EKl0 (flp e)
-               EKl1 e            -> EKl1 (flp e)
-               EBrk f            -> EBrk (flp f)
-               ETyp e (Sign s t) -> ETyp (flp e) (Sign t s)
-               ERel rel          -> EFlp (ERel rel)
-
+               EEqu (l,r) sgn -> EEqu (flp l, flp r) (flp sgn)
+               EImp (l,r) sgn -> EImp (flp l, flp r) (flp sgn)
+               EIsc (l,r) sgn -> EIsc (flp l, flp r) (flp sgn)
+               EUni (l,r) sgn -> EUni (flp l, flp r) (flp sgn)
+               EDif (l,r) sgn -> EDif (flp l, flp r) (flp sgn)
+               ELrs (l,r) sgn -> ERrs (flp r, flp l) (flp sgn)
+               ERrs (l,r) sgn -> ELrs (flp r, flp l) (flp sgn)
+               ECps (l,r) sgn -> ECps (flp r, flp l) (flp sgn)
+               ERad (l,r) sgn -> ERad (flp r, flp l) (flp sgn)
+               EPrd (l,r) sgn -> EPrd (flp r, flp l) (flp sgn)
+               EFlp e     _   -> e
+               ECpl e     sgn -> ECpl (flp e) (flp sgn)
+               EKl0 e     sgn -> EKl0 (flp e) (flp sgn)
+               EKl1 e     sgn -> EKl1 (flp e) (flp sgn)
+               EBrk f         -> EBrk (flp f)
+               ETyp e     sgn -> ETyp (flp e) (flp sgn)
+               e@(ERel _ sgn) -> EFlp e (flp sgn)
 
 insParentheses :: Expression -> Expression
 insParentheses = insPar 0
@@ -419,105 +476,66 @@ insParentheses = insPar 0
        wrap :: Integer -> Integer -> Expression -> Expression
        wrap i j e' = if i<=j then e' else EBrk e'
        insPar :: Integer -> Expression -> Expression
-       insPar i (EEqu (l,r)) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r))
-       insPar i (EImp (l,r)) = wrap i     0 (EImp (insPar 1 l, insPar 1 r))
-       insPar i (EUni fs)    = wrap (i+1) 2 (EUni [insPar 2 f | f<-fs])
-       insPar i (EIsc fs)    = wrap (i+1) 2 (EIsc [insPar 2 f | f<-fs])
-       insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
-       insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
-       insPar i (ERrs (l,r)) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r))
-       insPar i (ECps ts)    = wrap (i+1) 8 (ECps [insPar 8 t | t<-ts])
-       insPar i (ERad ts)    = wrap (i+1) 8 (ERad [insPar 8 t | t<-ts])
-       insPar i (EPrd ts)    = wrap (i+1) 8 (EPrd [insPar 8 t | t<-ts])
-       insPar _ (EKl0 e)     = EKl0 (insPar 10 e)
-       insPar _ (EKl1 e)     = EKl1 (insPar 10 e)
-       insPar _ (EFlp e)     = EFlp (insPar 10 e)
-       insPar _ (ECpl e)     = ECpl (insPar 10 e)
-       insPar i (EBrk f)     = insPar i f
-       insPar _ (ETyp e t)   = ETyp (insPar 10 e) t
-       insPar _ (ERel rel)   = ERel rel
+       insPar i (EEqu (l,r) sgn) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r) sgn)
+       insPar i (EImp (l,r) sgn) = wrap i     0 (EImp (insPar 1 l, insPar 1 r) sgn)
+       insPar i (EUni (l,r) sgn) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r) sgn)
+       insPar i (EIsc (l,r) sgn) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r) sgn)
+       insPar i (EDif (l,r) sgn) = wrap i     4 (EDif (insPar 5 l, insPar 5 r) sgn)
+       insPar i (ELrs (l,r) sgn) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r) sgn)
+       insPar i (ERrs (l,r) sgn) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r) sgn)
+       insPar i (ECps (l,r) sgn) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r) sgn)
+       insPar i (ERad (l,r) sgn) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r) sgn)
+       insPar i (EPrd (l,r) sgn) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r) sgn)
+       insPar _ (EKl0 e     sgn) = EKl0 (insPar 10 e) sgn
+       insPar _ (EKl1 e     sgn) = EKl1 (insPar 10 e) sgn
+       insPar _ (EFlp e     sgn) = EFlp (insPar 10 e) sgn
+       insPar _ (ECpl e     sgn) = ECpl (insPar 10 e) sgn
+       insPar i (EBrk f)         = insPar i f
+       insPar _ (ETyp e sgn)     = ETyp (insPar 10 e) sgn
+       insPar _ e@ERel{}         = e
 
--- The following code has been reviewed by Gerard and Stef on nov 1st, 2011 (revision 290)
 instance Association Expression where
- sign (EEqu (l,r))   = if sign l <==> sign r
-                       then sign l `join` sign r
-                       else fatal 233 $ "type checker failed to verify "++show (EEqu (l,r))++"."
- sign (EImp (l,r))   = if sign l <==> sign r
-                       then sign l `join` sign r
-                       else fatal 236 $ "type checker failed to verify "++show (EImp (l,r))++"."
- sign (EIsc [])      = fatal 237 $ "Ampersand failed to eliminate "++show (EIsc [])++"."
- sign (EIsc [e])     = sign e
- sign (EIsc (l:es))  = let r = sign (EIsc es) in
-                       if sign l <==> sign r
-                       then sign l `meet` sign r
-                       else fatal 236 $ "type checker failed to verify "++show (EIsc (l:es))++"."
- sign (EUni [])      = fatal 242 $ "Ampersand failed to eliminate "++show (EUni [])++"."
- sign (EUni [e])     = sign e
- sign (EUni (l:es))  = let r = sign (EUni es) in
-                       if sign l <==> sign r
-                       then sign l `join` sign r
-                       else fatal 236 $ "type checker failed to verify "++show (EIsc (l:es))++"."
- sign (EDif (l,r))   = if sign l <==> sign r
-                       then sign l
-                       else sign l -- fatal 249 $ "type checker failed to verify "++show (EDif (l,r))++"."
- sign (ELrs (l,r))   = if target l <==> target r
-                       then Sign (source l) (source r)
-                       else fatal 252 $ "type checker failed to verify "++show (ELrs (l,r))++"."
- sign (ERrs (l,r))   = if source l <==> source r
-                       then Sign (target l) (target r)
-                       else fatal 255 $ "type checker failed to verify "++show (ERrs (l,r))++"."
- sign (ECps [])      = fatal 256 $ "Ampersand failed to eliminate "++show (ECps [])++"."
- sign (ECps es)      = let ss=map sign es in
-                       if and [r <==> l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
-                       then Sign (source (head ss)) (target (last ss))
-                       else fatal 260 $ "type checker failed to verify "++show (ECps es)++"."
- sign (ERad [])      = fatal 261 $ "Ampersand failed to eliminate "++show (ERad [])++"."
- sign (ERad es)      = let ss=map sign es in
-                       if and [r <==> l | (r,l)<-zip [target sgn |sgn<-init ss] [source sgn |sgn<-tail ss]]
-                       then Sign (source (head ss)) (target (last ss))
-                       else fatal 265 $ "type checker failed to verify "++show (ERad es)++"."
- sign (EPrd [])      = fatal 261 $ "Ampersand failed to eliminate "++show (EPrd [])++"."
- sign (EPrd es)      = Sign (source (head es)) (target (last es))
- sign (EKl0 e)       = --see #166 
-                       if source e <==> target e
-                       then Sign (source e `join` target e) (source e `join` target e)
-                       else fatal 409 $ "type checker failed to verify "++show (EKl0 e)++"."
- sign (EKl1 e)       = sign e
- sign (EFlp e)       = Sign t s where Sign s t=sign e
- sign (ECpl e)       = sign e
- sign (EBrk e)       = sign e
- sign (ETyp e sgn)   = if sign e <==> sgn
-                       then sgn
-                       else fatal 417 $ "type checker failed to verify "++show (ETyp e sgn)++"."
- sign (ERel rel)     = sign rel
-
+ sign (EEqu _ sgn) = sgn
+ sign (EImp _ sgn) = sgn
+ sign (EIsc _ sgn) = sgn
+ sign (EUni _ sgn) = sgn
+ sign (EDif _ sgn) = sgn
+ sign (ELrs _ sgn) = sgn
+ sign (ERrs _ sgn) = sgn
+ sign (ECps _ sgn) = sgn
+ sign (ERad _ sgn) = sgn
+ sign (EPrd _ sgn) = sgn
+ sign (EKl0 _ sgn) = sgn
+ sign (EKl1 _ sgn) = sgn
+ sign (EFlp _ sgn) = sgn
+ sign (ECpl _ sgn) = sgn
+ sign (EBrk e)     = sign e
+ sign (ETyp _ sgn) = sgn
+ sign (ERel _ sgn) = sgn
 
 
 data Relation = 
-  Rel { relnm :: String           -- ^ the name of the relation. This is the same name as the name of reldcl.
-                                    --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van de relation is immers altijd gelijk aan de naam van de Declaration reldcl ....
-                                    --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan de relation is gekoppeld, moet de naam van de relation bekend zijn. Nadat de relation gebonden is aan een declaration moet de naam van de relation gelijk zijn aan de naam van zijn reldcl.
-      , relpos :: Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
-      , relsgn :: Sign             -- ^ the allocated signature. May differ from the signature in the reldcl.
-      , reldcl :: Declaration      -- ^ the declaration bound to this relation.
+  Rel { relnm ::   String           -- ^ the name of the relation. This is the same name as the name of reldcl.
+                                    --    WHY: Why is relnm needed? After all, its name is always equal to the name of the Declaration reldcl ....
+                                    --    BECAUSE: When parsing, until the declaration has been assigned to the relation, the name must be known. Only after binding, the name is equal to the name of reldcl.
+      , relpos ::  Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
+      , reldcl ::  Declaration      -- ^ the declaration bound to this relation.
       } |
  I    { rel1typ :: A_Concept        -- ^ the allocated type.
       } |
- V    { reltyp :: Sign             -- ^ the allocated type.
+ V    { reltyp ::  Sign             -- ^ the allocated type.
       } |
  --   An Mp1 is a subset of I. Shouldn't we replace it by an I?
- Mp1  { relval :: String          -- ^ the value of the singleton relation
-      , rel1typ :: A_Concept               -- ^ the allocated type.
+ Mp1  { relval ::  String           -- ^ the value of the singleton relation
+--      , rel1typ :: A_Concept               -- ^ the allocated type.
       } 
 instance Eq Relation where
  rel == rel' 
    = case (rel,rel') of
-       (Rel{},Rel{}) -> relnm   rel==relnm   rel' 
-                     && relsgn  rel==relsgn  rel'
+       (Rel{},Rel{}) -> relnm   rel==relnm   rel'
        (I{}  ,I{}  ) -> rel1typ rel==rel1typ rel'
        (V{}  ,V{}  ) -> reltyp  rel==reltyp  rel'
-       (Mp1{},Mp1{}) -> relval  rel==relval  rel' 
-                     && rel1typ rel==rel1typ rel'
+       (Mp1{},Mp1{}) -> relval  rel==relval  rel'
        (_    ,_    ) -> False
        
 instance Show Relation where
@@ -525,22 +543,22 @@ instance Show Relation where
    Rel{} -> showString (name r++showSign [source r,target r])
    I{}   -> showString (name r++"["++show (rel1typ r)++"]")
    V{}   -> showString (name r++show (sign r))
-   Mp1{} -> showString ("'"++relval r++"'["++ show (rel1typ r)++"]")
+   Mp1{} -> showString ("'"++relval r++"'")
 instance Identified Relation where
   name r = name (makeDeclaration r)
 instance Association Relation where
   sign r =
     case r of 
-      Rel{}   -> relsgn r
+      Rel{}   -> sign (reldcl r)
       I{}     -> Sign (rel1typ r) (rel1typ r)
       V{}     -> reltyp r
-      Mp1{}   -> Sign (rel1typ r) (rel1typ r)
+      Mp1{}   -> fatal 556 "Mp1 has no signature..."
 makeDeclaration :: Relation -> Declaration
 makeDeclaration r = case r of
       Rel{} -> reldcl r
       I{}   -> Isn{ detyp = rel1typ r}
       V{}   -> Vs { decsgn = sign r}
-      Mp1{} -> Isn{ detyp = rel1typ r}
+      Mp1{} -> fatal 556 "Mp1 has no declaration..."
 showSign :: Identified a => [a] -> String
 showSign cs = "["++(intercalate "*".nub.map name) cs++"]"
 instance Traced Relation where
@@ -551,7 +569,7 @@ instance Traced Relation where
 
 data A_Concept
    = C   { cptnm :: String         -- ^The name of this Concept
-         , cptgE :: GenR           -- ^This is the generalization relation between concepts.
+         , cptgE :: GenR           -- ^This contains the generalization relation between concepts.
                                    --  It is included in every concept, for the purpose of comparing concepts in the Ord class.
                                    --  As a result, you may write  c<=d  in your Haskell code for any two A_Concepts c and d that are in the same context.
          , cpttp :: String         -- ^The type of this Concept
@@ -561,7 +579,7 @@ data A_Concept
 
 
 instance Eq A_Concept where
-   a@(C{}) == b@(C{}) = name a==name b
+   a@C{} == b@C{} = name a==name b
    ONE == ONE = True
    _ == _ = False
 
@@ -576,21 +594,36 @@ instance Show A_Concept where
 data Sign = Sign A_Concept A_Concept deriving Eq
   
 instance Poset Sign where
-  Sign s t `compare` Sign s' t' 
+  Sign s t `compare` Sign s' t'
+   = case (s `compare` s', t `compare` t') of
+      (EQ, EQ)  -> EQ
+      (LT, EQ)  -> LT
+      (GT, EQ)  -> GT
+      (EQ, LT)  -> LT
+      (EQ, GT)  -> GT
+      (LT, LT)  -> LT
+      (GT, GT)  -> GT
+      (NC, _ )  -> NC
+      (_ , NC)  -> NC
+      (CP, _ )  -> CP
+      (_ , CP)  -> CP
+      _         -> NC
+{- This has the following effect:
    | s==s' && t==t' = EQ
    | s<=s' && t<=t' = LT
    | s'<=s && t'<=t = GT
    | s<==>s' && t<==>t' = CP
    | otherwise = NC
+-}
 instance Sortable Sign where
   meet (Sign a b) (Sign a' b') = Sign (a `meet` a') (b `meet` b')
   join (Sign a b) (Sign a' b') = Sign (a `join` a') (b `join` b')
   sortBy f = Data.List.sortBy ((comparableClass .) . f)  -- is this implementation correct?
 
-   
 instance Show Sign where
   showsPrec _ (Sign s t) = 
      showString (   "[" ++ show s ++ "*" ++ show t ++ "]" )
+
 instance Association Sign where
   source (Sign s _) = s
   target (Sign _ t) = t
@@ -598,7 +631,6 @@ instance Association Sign where
 
 instance Flippable Sign where
  flp (Sign s t) = Sign t s
-
 
 class Association rel where
   source, target :: rel -> A_Concept      -- e.g. Declaration -> Concept
@@ -625,38 +657,35 @@ class Signaling a where
   --   + a compare function (A_Concept->A_Concept->Ordering) 
   --   + and a list of comparable classes [[A_Concept]]
 -}
-type GenR = (A_Concept -> A_Concept -> Ordering,[[A_Concept]])
-order :: A_Concept -> GenR
-order c@(C{}) = cptgE c
-order _ = (\x y -> if x==y then EQ else NC,[])
+type GenR = ( A_Concept -> A_Concept -> Ordering      -- ^ gE: the ordering relation, which yields EQ, LT, GT, CP, or NC
+            , [[A_Concept]]                           -- ^ join classes. Each class corresponds to a (scalar, binary or wide) entity later on in the database generator.
+            , [(A_Concept,A_Concept)]                 -- ^ the smallest set of pairs that produces the ordering relation gE
+            , A_Concept -> A_Concept -> [A_Concept]   -- ^ c `elem` (a `meets` b) means that c<=q and c<=b 
+            , A_Concept -> A_Concept -> [A_Concept]   -- ^ c `elem` (a `joins` b) means that c>=q and c>=b 
+            )
+
 instance Poset A_Concept where
   ONE `compare` ONE = EQ
   _ `compare` ONE   = NC
   ONE `compare` _   = NC
   a `compare` b     = a `comp` b
-                      where (comp,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
+                      where (comp,_,_,_,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
+
 instance Sortable A_Concept where
-  meet a b | b <= a = b        -- meet yields the more specific of two concepts
-           | a <= b = a
-           | a `compare` b == NC = fatal 650 ("meet may not be applied to " ++ show a ++ " and "++show b++"."++showOrder a)
-           | length glbs > 1 = fatal 651 ("multiple glb's in   meet " ++ show a ++ " "++show b++"."++showOrder a)
-           | null glbs = fatal 652 ("non-existent glb in   meet " ++ show a ++ " "++show b++"."++showOrder a)
-           | otherwise = head glbs
-             where (_,classes) = cptgE a -- get the comparability classes from (an arbitrary) A_Concept
-                   lowerbounds = [c | cl<-classes, c<-cl, c<=a, c<=b ]
-                   glbs = [ glb | glb <- lowerbounds, null [c | c<-lowerbounds, c>glb ] ]
-  join a b | b >= a = b        -- join yields the more generic of two concepts
-           | a >= b = a
-           | a `compare` b == NC = fatal 659 ("join may not be applied to " ++ show a ++ " and "++show b++"."++showOrder a)
-           | length lubs > 1 = fatal 660 ("multiple lub's in   join " ++ show a ++ " "++show b++"."++showOrder a)
-           | null lubs = fatal 661 ("non-existent lub in   join " ++ show a ++ " "++show b++"."++showOrder a)
-           | otherwise = head lubs
-             where (_,classes) = cptgE a -- get the comparability classes from (an arbitrary) A_Concept
-                   upperbounds = [c | cl<-classes, c<-cl, c>=a, c>=b ]
-                   lubs = [ lub | lub <- upperbounds, null [c | c<-upperbounds, c<lub ] ]
+  meet a b = case a `meets` b of        -- meet yields the more specific of two concepts
+              [z] -> z
+              []  -> fatal 671 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
+              cs  -> greatest cs
+             where (_,_,_,meets,_) = cptgE a
+  join a b = case a `joins` b of        -- join yields the more generic of two concepts
+              [z] -> z
+              []  -> fatal 675 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
+              cs  -> least cs
+             where (_,_,_,_,joins) = cptgE a
   sortBy f = Data.List.sortBy ((comparableClass .) . f)
 
+{- not used, but may be handy for debugging
 showOrder :: A_Concept -> String
 showOrder x = "\nComparability classes:"++ind++intercalate ind (map show classes)
- where (_,classes) = cptgE x; ind = "\n   "
- 
+ where (_,classes,_,_,_) = cptgE x; ind = "\n   "
+-}

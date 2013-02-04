@@ -9,7 +9,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.Plug
    import DatabaseDesign.Ampersand.Fspec.Fspec
 --   import DatabaseDesign.Ampersand.Fspec.ShowADL    (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
-   import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
+--   import DatabaseDesign.Ampersand.Fspec.FPA   (fpa)
    import Data.List
    import DatabaseDesign.Ampersand.Classes
    import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
@@ -134,9 +134,9 @@ where
    instance ShowHS PAclause where
     showHS flags indent p   
       = case p of
-           Chc{} -> wrap "Chc " (indent ++"    ") (showHS flags) (paCls p)++
+           CHC{} -> wrap "CHC " (indent ++"    ") (showHS flags) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-           All{} -> wrap "All " (indent ++"    ") (showHS flags) (paCls p)++
+           ALL{} -> wrap "ALL " (indent ++"    ") (showHS flags) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Do{}  ->  "Do "++show (paSrt p)++ " ("++showHS flags (indent++"        ") (paTo p)++indent++"       )"++
                             indent++"       ("++showHS flags (indent++"        ") (paDelta p)++indent++"       )"++
@@ -225,14 +225,20 @@ where
     showHS flags indent c
       = intercalate indent
           [ "Clauses{ cl_conjNF = [ "++intercalate (ind++", ") 
-                                       [ "( "++showHS flags (ind++"    ") a++ind++"  , "++showHS flags (ind++"   ") b++ind++"  )"
-                                       | (a,b)<-cl_conjNF c ]++ind++"]"
+                                       [ "( "++showHS flags (ind++"    ") e++ind++"  , "++showHS flags (ind++"   ") hornClauses++ind++"  )"
+                                       | (e,hornClauses)<-cl_conjNF c ]++ind++"]"
           , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
           ]
        where 
          ind = indent ++ "                     "
 
+   instance ShowHS HornClause where
+    showHS flags indent (Hc antcs conss)
+      = intercalate indent
+          [ wrap "Hc " (indent++"   ") (\_->showHS flags (indent++"   ")) antcs
+          , wrap "   " (indent++"   ") (\_->showHS flags (indent++"   ")) conss
+          ]
 
 
 -- \***********************************************************************
@@ -253,7 +259,7 @@ where
            ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
-           ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
+--         ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
            ,wrap ", fActivities   = " indentA (\_->showHS flags (indentA++"  ")) (fActivities fspec)
            ,     ", fRoleRels     = " ++
                  case fRoleRels fspec of
@@ -313,56 +319,61 @@ where
 --          Heb je eenmaal een goed werkend pakket interfaces, dan wil je wellicht alleen de door jezelf gespecificeerde interfaces
 --          gebruiken. Dat gebeurt in interfaceS.
 
-        "\n -- ***Interface definitions (both interfaceS and interfaceG, but each one exactly once. ***: "++  
-       (if null 
-            (uni (interfaceS fspec)  (interfaceG fspec)) then "" 
-        else concat [indent ++
-                       " " ++
-                         showHSName s ++
-                           indent ++ "  = " ++ showHS flags (indent ++ "    ") s
-                     | s <- uni (interfaceS fspec) (interfaceG fspec)]++"\n")++
+       (if null  (interfaceS fspec) then ""  else
+        "\n -- *** User defined interfaces (total: "++(show.length.interfaceS) fspec++" interfaces) ***: "++
+        concat [indent++" "++showHSName s++indent++"  = "++showHS flags (indent++"    ") s | s<-interfaceS fspec]++"\n"
+       )++
+       (if null (interfaceG fspec ) then "" else
+        "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fspec++" interfaces) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n"
+       )++        
        (if null (vrels fspec)     then "" else
-        "\n -- *** Declarations ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<- vrels fspec, decusr x]++"\n") ++
+        "\n -- *** Declarations (total: "++(show.length.vrels) fspec++" declarations) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrels fspec, decusr x]++"\n"
+       ) ++
        (if null (vkeys fspec)     then "" else
-        "\n -- *** Keys ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<- vkeys fspec]++"\n") ++
+        "\n -- *** Keys (total: "++(show.length.vkeys) fspec++" keys) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vkeys fspec]++"\n"
+       ) ++
        (if null (vprocesses fspec ) then "" else
-        "\n -- *** Processes ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fspec ]++"\n")++
+        "\n -- *** Processes (total: "++(show.length.vprocesses) fspec++" processes) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vprocesses fspec ]++"\n"
+       )++
        (if null (vrules   fspec ) then "" else
-        "\n -- *** User defined rules ***: "++
+        "\n -- *** User defined rules (total: "++(show.length.vrules) fspec++" rules) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrules     fspec ]++"\n"++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (vrules fspec)]++"\n"
-        )++        
+       )++
        (if null (grules   fspec ) then "" else
-        "\n -- *** Generated rules ***: "++
+        "\n -- *** Generated rules (total: "++(show.length.grules) fspec++" rules) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fspec ]++"\n"++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
-        )++        
-       (if null (interfaceG fspec ) then "" else
-        "\n -- *** Generated interfaces ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n")++        
+       )++
        (if null (vquads fspec ) then "" else
-        "\n -- *** Quads ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n")++
+        "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n"
+       )++
        (if null (vEcas fspec ) then "" else
-        "\n -- *** ECA rules ***: "++
+        "\n -- *** ECA rules (total: "++(show.length.vEcas) fspec++" ECA rules) ***: "++
         concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
         concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map (reldcl . ecaDelta) (vEcas fspec)) ]++"\n"
        )++
        (if null (plugInfos fspec ) then "" else
-        "\n -- *** PlugInfos ***: "++
-        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n")++
+        "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fspec++" plugInfos) ***: "++
+        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n"
+       )++
        (if null (vpatterns fspec) then "" else
-        "\n -- *** Patterns ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fspec]++"\n")++
+        "\n -- *** Patterns (total: "++(show.length.vpatterns) fspec++" patterns) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fspec]++"\n"
+       )++
        (if null (vConceptDefs fspec) then "" else
-        "\n -- *** ConceptDefs ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-vConceptDefs fspec]++"\n")++
+        "\n -- *** ConceptDefs (total: "++(show.length.vConceptDefs) fspec++" conceptDefs) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-vConceptDefs fspec]++"\n"
+       )++
        (if null (morlist fspec) then "" else
-        "\n -- *** Relations ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-mors fspec]++"\n")
+        "\n -- *** Relations (total: "++(show.length.morlist) fspec++" relations) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-mors fspec]++"\n"
+       )
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
@@ -370,16 +381,13 @@ where
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
                  showViolatedRule :: String -> (Rule,Pairs) -> String
-                 showViolatedRule indent (r,ps)
-                    = intercalate indent
+                 showViolatedRule indent' (r,ps)
+                    = intercalate indent'
                         [        " ( "++showHSName r++" -- This is "++(if r_sgl r then "a process rule." else "an invariant")++
-                         indent++" , "++ wrap "" (indent++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
+                         indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
                                                                       in showPair) ps++
-                         indent++" )"
+                         indent'++" )"
                         ] 
-
-
-
 
    instance ShowHS Meta where
     showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val 
@@ -491,11 +499,14 @@ where
     showHS flags indent prc
      = intercalate indent
         [ "FProc { fpProc       = "++showHS flags (indent++"                     ") (fpProc prc)
-        , "      , fpActivities = "++
+        , wrap "      , fpActivities = " "                       " (showHS flags) (fpActivities prc)
+{- was (SJ: 26 jan 2013)
+ , "      , fpActivities = "++
            if null (fpActivities prc) 
            then "[] -- no activities"
            else " ["++intercalate (indent++"                      , ") [showHS flags (indent++"     ") a | a<-fpActivities prc] ++indent++"    ]"
-        , "      }"
+-}
+      , "      }"
         ]
  
    instance ShowHSName Process where
@@ -767,34 +778,24 @@ where
 -- \***********************************************************************
 
    instance ShowHS Expression where
-    showHS flags indent (EEqu (l,r))   = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (EImp (l,r))   = "EImp ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS   _     _    (EIsc [])      = "EIsc [] {- True -}"
-    showHS flags indent (EIsc [e])     = "EIsc ["++showHS flags (indent++"      ") e++"]"
-    showHS flags indent (EIsc es)      = "EIsc [ "++intercalate (indent++"     , ") [showHS flags (indent++"       ") e | e<-es]++indent++"     ]"
-    showHS   _     _    (EUni [])      = "EUni [] {- False -}"
-    showHS flags indent (EUni [e])     = "EUni ["++showHS flags (indent++"      ") e++"]"
-    showHS flags indent (EUni es)      = "EUni [ "++intercalate (indent++"     , ") [showHS flags (indent++"       ") e | e<-es]++indent++"     ]"
-    showHS flags indent (EDif (l,r))   = "EDif ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ELrs (l,r))   = "ELrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS flags indent (ERrs (l,r))   = "ERrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
-    showHS   _     _    (ECps [])      = "ECps [] {- I -}"
-    showHS flags indent (ECps [e])     = "ECps ["++showHS flags (indent++"     ") e++"]"
-    showHS flags indent (ECps es)      = "ECps [ "++intercalate (indent++"     , ") [showHS flags (indent++"       ") e | e<-es]++indent++"     ]"
-    showHS   _     _    (ERad [])      = "ERad [] {- -I -}"
-    showHS flags indent (ERad [e])     = "ERad ["++showHS flags (indent++"     ") e++"]"
-    showHS flags indent (ERad es)      = "ERad [ "++intercalate (indent++"     , ") [showHS flags (indent++"       ") e | e<-es]++indent++"     ]"
-    showHS   _     _    (EPrd [])      = "EPrd [] {- ONE -}"
-    showHS flags indent (EPrd [e])     = "EPrd ["++showHS flags (indent++"     ") e++"]"
-    showHS flags indent (EPrd es)      = "EPrd [ "++intercalate (indent++"     , ") [showHS flags (indent++"       ") e | e<-es]++indent++"     ]"
-    showHS flags indent (EKl0 e)       = "EKl0 ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (EKl1 e)       = "EKl1 ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (EFlp e)       = "EFlp ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (ECpl e)       = "ECpl ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (EBrk e)       = "EBrk ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (ETyp e sgn)   = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags   _    (ERel rel)     = "ERel ("++showHS flags "" rel++") "
---    showHS flags   _    (ERel rel)     = "ERel "++showHSName rel++" "
+    showHS flags indent (EEqu (l,r) sgn) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (EImp (l,r) sgn) = "EImp ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (EIsc (l,r) sgn) = "EIsc ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (EUni (l,r) sgn) = "EUni ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (EDif (l,r) sgn) = "EDif ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (ELrs (l,r) sgn) = "ELrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (ERrs (l,r) sgn) = "ERrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (ECps (l,r) sgn) = "ECps ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (ERad (l,r) sgn) = "ERad ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (EPrd (l,r) sgn) = "EPrd ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
+    showHS flags indent (EKl0 e     sgn) = "EKl0 ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
+    showHS flags indent (EKl1 e     sgn) = "EKl1 ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
+    showHS flags indent (EFlp e     sgn) = "EFlp ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
+    showHS flags indent (ECpl e     sgn) = "ECpl ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
+    showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (ERel rel   sgn) = "ERel ("++showHS flags "" rel++") ("++showHS flags (indent++"    ") sgn++")"
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***
 -- \***********************************************************************
@@ -819,23 +820,19 @@ where
             Rel{} -> haskellIdentifier ("rrel_"++name rel++name (source rel)++name ( target rel))
             I{}   -> haskellIdentifier ("irel_"++          name (source rel)                    )
             V{}   -> haskellIdentifier ("vrel_"++          name (source rel)++name ( target rel))
-            Mp1{} -> haskellIdentifier ("mp1r_"++relval rel++"_"++showHSName (rel1typ rel))
+            Mp1{} -> haskellIdentifier ("mp1r_"++relval rel)
        
    instance  ShowHS Relation where
     showHS flags _ rel 
        = case rel of
-            Rel{} -> "Rel "++show (relnm rel)++" "++showPos
-                         ++" "++showSign'++" "++showHSName (reldcl rel)
-            I{}   -> "I "++show1Typ
-            V{}   -> "V "++showSgn
-            Mp1{} -> "Mp1 "++relval rel++" "++show1Typ
+            Rel{} -> "Rel "++show (relnm rel)++" ("++showHS flags "" (origin rel)++")"
+                         ++" "++showHSName (reldcl rel)
+            I{}   -> "I ("++showHS flags "" (rel1typ  rel)++")"
+            V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"
+            Mp1{} -> "Mp1 "++relval rel
   -- WHY wordt relval rel zonder quotes afgedrukt?
   -- BECAUSE: relval rel wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
-           where showPos  = "("++showHS flags "" (origin rel)++")"
-                 showSign' = "("++showHS flags "" (relsgn  rel)++")"
-                 show1Typ = "("++showHS flags "" (rel1typ rel)++")"
-                 showSgn  = "("++showHS flags "" (reltyp  rel)++")"
-   
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
 -- \***********************************************************************

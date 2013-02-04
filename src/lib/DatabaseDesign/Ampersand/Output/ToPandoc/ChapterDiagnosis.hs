@@ -182,11 +182,11 @@ chpDiagnosis fSpec flags
                          [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
                          [ Str " is not documented."
                        ] ]
-     where missing = [(Math InlineMath . showMath . ERel) r  -- ERel is always typeable, so showMathDamb may be used.
-                     | r@(Rel{}) <-if null (themes fSpec)
-                                   then mors fSpec
-                                   else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                                        mors [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+     where missing = [(Math InlineMath . showMath) (ERel r (sign r))  -- ERel is always typeable, so showMathDamb may be used.
+                     | r@Rel{} <-if null (themes fSpec)
+                                 then mors fSpec
+                                 else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                                      mors [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
                      , null (purposesDefinedIn fSpec (language flags) r)
                      ]
@@ -250,8 +250,8 @@ chpDiagnosis fSpec flags
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMath . ERel . makeRelation) d  -- makeRelation d is always typeable, so showMathDamb may be used.
-                         | d@(Sgn{}) <- declarations fSpec
+     where notUsed = nub [(Math InlineMath . showMath) (ERel (makeRelation d) (sign d))  -- makeRelation d is always typeable, so showMathDamb may be used.
+                         | d@Sgn{} <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d
                          , d `notElem` (nub . map makeDeclaration . mors . udefrules) fSpec

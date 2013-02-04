@@ -2,8 +2,9 @@
 module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..),atomsOf)
 where
    import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair,srcPaire,trgPaire)
+   import DatabaseDesign.Ampersand.ADL1.Expression                 (notCpl)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-   import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg)   
+   import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg, Identified(..))   
    import qualified DatabaseDesign.Ampersand.Core.Poset
    import Data.List (nub)
    
@@ -35,6 +36,7 @@ where
                PRelPopu{}  -> d == popdcl pop
                PCptPopu{}  -> False
 
+{-
    instance Populated Relation where
 {- The atoms in a relation are accessible as follows:
    Atoms in a Rel{} are found through the declaration (via decpopu.reldcl).
@@ -48,57 +50,62 @@ where
                                     , t <- atomsOf pt (target rel) ]
            (Mp1 _ (C {cptnm="SESSION"})) -> [] -- TODO: HACK to prevent populating SESSION
            (Mp1 x _) -> [mkPair x x]
-
+-}
 
    instance Populated Expression where
     fullContents pt = contents
      where
       contents expr
        = case expr of
-            EEqu (l,r) -> contents (EIsc [EImp (l,r),EImp (r,l)])
-            EImp (l,r) -> contents (EUni [ECpl l,r])
-            EUni es    -> foldr (uni . contents) [] es
-            EIsc []    -> fatal 47 "Cannot compute contents of EIsc []"
-            EIsc es    -> foldr1 isc (map (contents) es)
-            EDif (l,r) -> contents l >- contents r
-            -- The left residual lRel/rRel is defined by y(left/rRel)x if and only if for all z in X, x rRel z implies y lRel z.
-            ELrs (l,r) -> [(y,x) | x <- atomsOf pt (source l)
-                                 , y <- atomsOf pt (source r)
-                                 , null [z |z<- atomsOf pt (target r), (y,z) `elem` contents r, (x,z) `notElem` contents l]]   -- equals contents (ERrs (flp r, flp l))
-            -- The right residual lRel\rRel is defined by x(lRel\rRel)y if and only if for all z in X, z lRel x implies z rRel y.
-            ERrs (l,r) -> [(x,y) | x <- atomsOf pt (target l)
-                                 , y <- atomsOf pt (target r)
-                                 , null [z |z<- atomsOf pt (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]]   -- equals contents (ELrs (flp r, flp l))
---            ERad es     -> fatal 104 "Relative addition needs rework. Sorry. "
-            ERad es    -> if null es 
-                          then fatal 55 "Cannot compute contents of ERad []"
-                          else let (dx,_,_,_)
-                                    = foldr1' 59 dagg [ (ct,compl ct (atomsInSource t) (atomsInTarget t),atomsInSource t,atomsInTarget t)
-                                                      | t<-es, ct<-[contents t]]
-                                            where 
-                                              atomsInSource t = atomsOf pt (source t)
-                                              atomsInTarget t = atomsOf pt (target t) 
-                               in dx
-            EPrd es    -> if null es 
-                          then fatal 63 "Cannot compute contents of EPrd []"
-                          else [ (a,b)
-                               | a <- atomsOf pt (source (head es))
-                               , b <- atomsOf pt (target (last es)) ]
-            ECps es    -> if null es 
-                          then []
-                          else foldr1 kleenejoin (map (contents) es)
-            EKl0 e     -> if source e == target e --see #166
-                          then closPair (contents e `uni` contents (ERel (I (source e))))
-                          else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
-            EKl1 e     -> closPair (contents e)
-            EFlp e     -> [(b,a) | (a,b)<-contents e]
-            ECpl e     -> [apair | apair <-cartesianProduct (atomsOf pt (source e)) (atomsOf pt (target e))
+            EEqu (l,r) sgn -> contents ((l .|-. r) ./\. (r .|-. l))
+            EImp (l,r) sgn -> contents (notCpl sgn l .\/. r)
+            EUni (l,r) _ -> contents l `uni` contents r
+            EIsc (l,r) _ -> contents l `isc` contents r
+            EDif (l,r) _ -> contents l >- contents r
+            -- The left residual l/r is defined by: for all x,y:  y(l/r)x  <=>  for all z in X, x l z implies y r z.
+            ELrs (l,r) _ -> [(y,x) | x <- atomsOf pt (source l)
+                                   , y <- atomsOf pt (source r)
+                              --   Derivation:
+                              --   , and      [(x,z) `elem` contents l <- (y,z) `elem` contents r          |z<- atomsOf pt (target l `join` target r)]
+                              --   , and      [(x,z) `elem` contents l || (y,z) `notElem` contents r       |z<- atomsOf pt (target l `join` target r)]
+                              --   , (not.or) [not ((x,z) `elem` contents l || (y,z) `notElem` contents r) |z<- atomsOf pt (target l `join` target r)]
+                              --   , (not.or) [     (x,z) `notElem` contents l && (y,z) `elem` contents r  |z<- atomsOf pt (target l `join` target r)]
+                              --   , (not.null) [ () |z<- atomsOf pt (target l `join` target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
+                                   , (not.null) [ () |z<- atomsOf pt (target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
+                                   ]   -- equals contents (ERrs (flp r, flp l))
+            -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
+            ERrs (l,r) _ -> [(x,y) | x <- atomsOf pt (target l)
+                                   , y <- atomsOf pt (target r)
+                              --   Derivation:
+                              --     and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       |z<- atomsOf pt (source l `join` source r)]
+                              --     and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       |z<- atomsOf pt (source l `join` source r)]
+                              --     (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) |z<- atomsOf pt (source l `join` source r)]
+                              --     (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  |z<- atomsOf pt (source l `join` source r)]
+                              --     (not.null) [ () |z<- atomsOf pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
+                                   , (not.null) [ () |z<- atomsOf pt (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]
+                                   ]   -- equals contents (ELrs (flp r, flp l))
+            ERad (l,r) _ -> [(x,y) | x <- atomsOf pt (target l)
+                                   , y <- atomsOf pt (target r)
+                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf pt (target l `join` source r)]
+                                   ]
+            EPrd (l,r) _ -> [ (a,b) | a <- atomsOf pt (source l), b <- atomsOf pt (target r) ]
+            ECps (l,r) _ -> contents l `kleenejoin` contents r
+            EKl0 e     _ -> if source e == target e --see #166
+                            then closPair (contents e `uni` contents (iExpr (source e)))
+                            else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
+            EKl1 e     _ -> closPair (contents e)
+            EFlp e     _ -> [(b,a) | (a,b)<-contents e]
+            ECpl e     _ -> [apair | apair <-[ mkPair x y | x<-atomsOf pt (source e), y<-atomsOf pt (target e)]
                                    , apair `notElem` contents e  ]
-            EBrk e     -> contents e
-            ETyp e sgn -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
-                                                                     , a `elem` atomsOf pt (source sgn)
-                                                                     , b `elem` atomsOf pt (target sgn)]
-            ERel rel   -> fullContents pt rel
+            EBrk e       -> contents e
+            ETyp e sgn   -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
+                                                                       , a `elem` atomsOf pt (source sgn)
+                                                                       , b `elem` atomsOf pt (target sgn)]
+            ERel r@Rel{} _   -> fullContents pt (reldcl r)
+            ERel I{}     sgn -> [mkPair a a | a <- atomsOf pt (source sgn)]
+            ERel V{}     sgn -> [mkPair s t | s <- atomsOf pt (source sgn)
+                                            , t <- atomsOf pt (target sgn) ]
+            ERel (Mp1 x) sgn -> if name (source sgn)=="SESSION" then [] else [mkPair x x]
 
 {- Derivation of contents (ERrs (l,r)):
 Let cL = contents l
@@ -115,23 +122,3 @@ Let cL = contents l
 = [(x,y) | x<-contents (target l), y<-contents (target r)
          , null [ () | (z,x') <- cL, x==x', (z,y) `notElem` cR ]]
 -}
-
-
-         where
-          -- dagg is de tegenhanger van kleenejoin. Hij krijgt systematisch viertallen mee: een rij tupels (a),
-          -- het complement van a (ca), de source van a (sa), en de target van a (ta).
-          -- TODO: dagg is razend inefficient. Daar kunnen we nog last van krijgen....
-          -- Aanpak: op basis van redeneren de hele expressie optimaliseren, en vervolgens een aantal varianten van dagg maken
-          -- die gebuik maken van de efficientere implementatie van -r!s en r!-s.
-          -- dagg (a,ca,sa,ta) (b,cb,sb,tb)
-             dagg (_,ca,sa,_)  (_,cb,_ ,tb)
-               = ([mkPair x y | x<-sa, y<-tb, mkPair x y `notElem` jnab], [mkPair x y | x<-sa, y<-tb, mkPair x y `elem` jnab], sa, tb)
-                 where jnab = kleenejoin ca cb
-             compl (a) (sa) (ta) = [mkPair x y |x<-sa, y<-ta, mkPair x y `notElem` a]  -- complement van a
-             cartesianProduct :: [String] -> [String] -> Pairs
-             xs `cartesianProduct` ys = [ mkPair x y | x<-xs,y<-ys] 
-             foldr1' :: Int -> (a -> a -> a) -> [a] -> a
-             foldr1' rowNr _ [] = fatal rowNr "Call to foldr1 with empty list! (see Ticket #71 ) "
-             foldr1' _ f lst = foldr1 f lst
-
-  

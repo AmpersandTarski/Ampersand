@@ -21,21 +21,21 @@ module DatabaseDesign.Ampersand.ADL1
            , Declaration(..)
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
-           , P_Concept(..), A_Concept(..), (<==>),meet,order,join, P_Sign(..), Sign(..), GenR
+           , P_Concept(..), A_Concept(..), (<==>),meet,join, P_Sign(..), Sign(..), GenR
            , RuleType(..)
            , Prop(..)
            , isaRule
            , FilePos(..), Origin(..), Pos(..), Traced(..)
-           , makeDeclaration
-           , antecedent,hasantecedent,notCpl,isCpl
+           , makeDeclaration, iExpr, vExpr
+           , antecedent,hasantecedent,notCpl,isCpl,deMorgan
            , Signaling(..)
            , Association(..)
            , Label(..)
            , Paire, Pairs, mkPair , srcPaire, trgPaire
-           , isAll, isChc, isBlk, isNop, isDo, dos
+           , isAll, isCHC, isBlk, isNop, isDo, dos
            , PPurpose(..), PRef2Obj(..), ExplObj(..)
            , Purpose(..)
-           
+           , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
            )
 where
    import DatabaseDesign.Ampersand.Core.ParseTree
@@ -43,7 +43,7 @@ where
                                           A_Concept(..)
                                          ,Meta(..)
                                          ,Sign(..),GenR()
-                                         , (<==>),meet,order,join
+                                         , (<==>),meet,join
                                          ,Signaling(..)
                                          ,A_Context(..),Process(..)
                                          ,Association(..)
@@ -66,11 +66,12 @@ where
                                          ,RoleRelation(..)
                                          ,UserDefPop(..)
                                          ,Purpose(..), ExplObj(..)
-                                         ,makeDeclaration
+                                         ,makeDeclaration, iExpr, vExpr
+                                         , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
                                          )
    import DatabaseDesign.Ampersand.ADL1.Expression                 (
-                                          notCpl, isCpl)
-   import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, dos)
+                                          notCpl, isCpl, deMorgan)
+   import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isCHC, isBlk, isNop, isDo, dos)
    import DatabaseDesign.Ampersand.ADL1.Rule                       (
                                           rulefromProp, isaRule, ruleviolations, violationsexpr
                                          ,consequent,antecedent,hasantecedent)

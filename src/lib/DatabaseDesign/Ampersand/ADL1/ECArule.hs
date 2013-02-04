@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.ECArule ( isAll
-                                             , isChc
+                                             , isCHC
                                              , isBlk
                                              , isNop
                                              , isDo
@@ -30,12 +30,12 @@ fatal = fatalMsg "ADL1.ECArule.hs"
   
 
 isAll :: PAclause -> Bool
-isAll All{} = True
+isAll ALL{} = True
 isAll _     = False
   
-isChc :: PAclause -> Bool
-isChc Chc{} = True
-isChc _     = False
+isCHC :: PAclause -> Bool
+isCHC CHC{} = True
+isCHC _     = False
   
 isBlk :: PAclause -> Bool
 isBlk Blk{} = True
@@ -50,16 +50,16 @@ isDo Do{}   = True
 isDo _      = False
 
 dos :: PAclause -> [PAclause]   -- gather all Do's from a PAclause
-dos (p@Chc{}) = concatMap dos (paCls p)
-dos (p@All{}) = concatMap dos (paCls p)
-dos (p@Do{})  = [p]
-dos (p@Sel{}) = dos (paCl p "x")
-dos (p@New{}) = dos (paCl p "x")
-dos (p@Rmv{}) = dos (paCl p "x")
-dos (Nop{})   = []
-dos (Blk{})   = []
-dos (Let{})   = fatal 56 "dos not defined for `Let` constructor of PAclause"
-dos (Ref{})   = fatal 57 "dos not defined for `Ref` constructor of PAclause"
+dos p@CHC{} = concatMap dos (paCls p)
+dos p@ALL{} = concatMap dos (paCls p)
+dos p@Do{}  = [p]
+dos p@Sel{} = dos (paCl p "x")
+dos p@New{} = dos (paCl p "x")
+dos p@Rmv{} = dos (paCl p "x")
+dos Nop{}   = []
+dos Blk{}   = []
+dos Let{}   = fatal 56 "dos not defined for `Let` constructor of PAclause"
+dos Ref{}   = fatal 57 "dos not defined for `Ref` constructor of PAclause"
  
 
 

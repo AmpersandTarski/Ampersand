@@ -7,7 +7,7 @@ module DatabaseDesign.Ampersand.Components
    , makeFspec
     -- * Generators of output
    , doGenADL
-   , prove
+   , doGenProofs
    , doGenHaskell
    , doGenXML
    , doGenUML
@@ -18,6 +18,7 @@ module DatabaseDesign.Ampersand.Components
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
+import Data.List  (intercalate)
 import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,Guarded(..))
@@ -55,8 +56,8 @@ doGenADL    fSpec flags =
     }
  where outputFile = combine (dirOutput flags) (outputfile flags)
 
-prove :: Fspc -> Options -> IO()
-prove fSpec flags =
+doGenProofs :: Fspc -> Options -> IO()
+doGenProofs fSpec flags =
  do { verboseLn flags $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
     ; writeFile outputFile $ writeHtmlString def thePandoc
     ; verboseLn flags "Proof written."
