@@ -1040,7 +1040,7 @@ pCtx2aCtx p_context
         ["\nisas: "++show isas]
        )
 -}
-     = (gE, classes, isas,meets,joins)   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
+     = (gE, classes, isas, meets, joins)   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
        where 
           gE a b = pgE (aCpt2pCpt a) (aCpt2pCpt b)
           pgE a b | a==b                              = DatabaseDesign.Ampersand.Core.Poset.EQ
