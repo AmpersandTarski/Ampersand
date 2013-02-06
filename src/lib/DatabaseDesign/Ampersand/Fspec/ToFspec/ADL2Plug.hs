@@ -261,17 +261,17 @@ makeEntities allRels exclusions
                    where rs = rels>-(kernelSurRels++kernelTotRels)
     kernels :: [[Expression]]
     kernels
-     = kerns++[ [iExpr c] ++
-                [ rs | rs<-otherFields, source rs==c, target rs/=c]
-              | c<-concs rels, not (c `elem` (map target (concat kerns)))
-              ]
+     = case concs allRels of
+         []  -> [] -- an Ampersand script without declarations is conceivable. In that case cptgE is undefined for lack of concepts.
+         c:_ -> kerns++[ [iExpr c] ++
+                         [ rs | rs<-otherFields, source rs==c, target rs/=c]
+                       | c<-concs rels, not (c `elem` (map target (concat kerns)))
+                       ]
        where
        -- One kernel starts with a set of concepts, which were put into the same class by the type checker. Here, it is called an island of concepts.
        -- The first concept of that class is the most generic of the lot. The concepts of one island are placed in the kernel in the same order.
        -- That order reflects the size of the population. A subset (i.e. a more specific concept) is placed more to the right. This is for no reason in particular.  
-         (_,islands,_,_,_) = case concs rels of
-                              []  -> fatal 318 "No concepts in rels"
-                              c:_ -> cptgE c
+         (_,islands,_,_,_) = cptgE (head (concs allRels))
          kerns :: [[Expression]]
          kerns =  [ [iExpr c | c<-island ] ++
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
