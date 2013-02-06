@@ -432,23 +432,16 @@ l .\/. r = EUni (l,r)
               _  -> sign l `join` sign r
            )
 l .-. r  = EDif (l,r) (sign l)
-l ./. r  = if (target l `compare` target r) `elem` [EQ,LT,GT]
-           then ELrs (l,r) (Sign (source l) (source r))
-           else fatal 449 ("Left residu (/) between two incompatible terms.\n  l: "++show l++"\t  target: "++show (target l)++"\n  r: "++show r++"\t  target: "++show (target r)++"\n  "++show (target l)++" `compare` "++show (target r)++": "++show (target l `compare` target r))
-l .\. r  = if (source l `compare` source r) `elem` [EQ,LT,GT]
-           then ERrs (l,r) (Sign (target l) (target r))
-           else fatal 452 ("Right residu (\\) between two incompatible terms.\n  l: "++show l++"\t  source: "++show (source l)++"\n  r: "++show r++"\t  source: "++show (source r)++"\n  "++show (source l)++" `compare` "++show (source r)++": "++show (source l `compare` source r))
-l .:. r  = ECps (l,r)
-           (case target l `compare` source r of
-              NC -> fatal 415 ("Composition (;) between two incompatible terms.\n  l: "++show l++"\t  target: "++show (target l)++"\n  r: "++show r++"\t  source: "++show (source r)++"\n  "++show (target l)++" `compare` "++show (source r)++": "++show (target l `compare` source r))
-              _  -> Sign (source l) (target r)
-           )
-l .!. r  = ERad (l,r)
-           (case target l `compare` source r of
-              NC -> fatal 415 ("Relative addition (!) between two incompatible terms.\n  l: "++show l++"\t  target: "++show (target l)++"\n  r: "++show r++"\t  source: "++show (source r)++"\n  "++show (target l)++" `compare` "++show (source r)++": "++show (target l `compare` source r))
-              _  -> Sign (source l) (target r)
-           )
+l ./. r  = ELrs (l,r) (Sign (source l) (source r))
+l .\. r  = ERrs (l,r) (Sign (target l) (target r))
+l .:. r  = ECps (l,r) (Sign (source l) (target r))
+l .!. r  = ERad (l,r) (Sign (source l) (target r))
 l .*. r  = EPrd (l,r) (Sign (source l) (target r))
+{- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
+   Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
+   does not. In that case, -(r!s) (with target r=Student and source s=Employee) is defined, but -r;-s is not.
+   So in order to let -(r!s) be equal to -r;-s we must not check for the existence of these types, for the Rotterdam paper already shows that this is fine.
+-}
 
 instance Flippable Expression where
   flp expr = case expr of
