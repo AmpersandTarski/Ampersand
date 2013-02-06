@@ -279,13 +279,13 @@ nothing :: (Typemap,Typemap)
 nothing = (Map.empty,Map.empty)
 {-
 isFull (TypExpr (Pfull _ _) _) = True
-isFull (TypLub a b _) = isFull a && isFull b
+isFull (TypLub a b _) = isFull a || isFull b
 isFull (TypGlb a b _) = isFull a && isFull b
 isFull _ = False -}
 isNull :: Type -> Bool
 isNull (TypExpr Pnull _) = True
 isNull (TypLub a b _) = isNull a && isNull b
-isNull (TypGlb a b _) = isNull a && isNull b
+isNull (TypGlb a b _) = isNull a || isNull b
 isNull _ = False
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
