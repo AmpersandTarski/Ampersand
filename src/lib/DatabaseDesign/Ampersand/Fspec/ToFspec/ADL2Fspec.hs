@@ -16,7 +16,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
    import Data.List (nub,intercalate)
-   import DatabaseDesign.Ampersand.ADL1.Expression              (subst,foldrMapExpression)
+   import DatabaseDesign.Ampersand.ADL1.Expression              (subst)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
@@ -637,8 +637,6 @@ while maintaining all invariants.
    genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1 motive
     where
       genPAcl deltaX tOp exprX motiv =
-        let err i str = fatal i ("genPAcl ("++showADL deltaX++") "++show tOp++str++
-                                 "within function genPAclause "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").") in
         case (tOp, exprX) of
           (_ ,  EFlp x _)   -> genPAcl (flp deltaX) tOp x motiv
           (_ ,  EBrk x)     -> genPAcl deltaX tOp x motiv
@@ -895,7 +893,7 @@ CHC [ if isRel e
           (Del, e@EUni{}) -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, e@EIsc{}) -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
 -- Op basis van De Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , e@(ERad (l,r) sgn)) -> genPAcl deltaX tOp (deMorgan sgn e) motiv
+          (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorgan (sign e) e) motiv
           (_  , EPrd{})   -> fatal 896 "TODO"
           (_  , EKl0 x _)  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x _)  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv

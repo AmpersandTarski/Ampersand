@@ -141,7 +141,7 @@ where
     mp1Rels   ifc = mp1Rels (ifcObj ifc)
 
    instance ConceptStructure Relation where
-    concs rel   = nub [source rel,target rel]
+    concs rel   = let d=makeDeclaration rel in nub [source d,target d]
     mors rel    = [rel]
     morlist rel = [rel]
     mp1Rels _   = fatal 146 "mp1Rels not allowed on Relation"

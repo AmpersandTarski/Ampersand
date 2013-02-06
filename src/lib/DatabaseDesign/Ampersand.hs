@@ -3,6 +3,8 @@ module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
    , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
+   , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
+   , iExpr, vExpr, deMorgan, exprUni2list, exprIsc2list, exprCps2list, exprRad2list
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
    , A_Concept(..), A_Gen
    , Sign(..), ConceptDef(..), ConceptStructure(..)
@@ -100,3 +102,5 @@ import DatabaseDesign.Ampersand.Parsing
 import DatabaseDesign.Ampersand.Components 
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.ADL1.Expression (isPos,isNeg)
+import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
+
