@@ -317,18 +317,17 @@ makeSqlPlug _ obj
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
  | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
-   = error 
+   = {- error 
     ("\nc: "++show c++
      "\nrels:"++concat ["\n  "++show r | r<-rels]++
      "\nkernel:"++concat ["\n  "++show r | r<-kernel]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
      "\nplugFields:"++concat ["\n  "++show plugField | plugField<-plugFields]
-    ) 
-     {- TblSQL (name obj)     -- plname (table name)
+    ) -}
+     TblSQL (name obj)     -- plname (table name)
      plugFields             -- fields
      conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      attributeLookuptable   -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     -}
  | otherwise = fatal 279 "Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
