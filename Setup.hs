@@ -108,9 +108,9 @@ getStaticFilesModuleContents =
                "\n"++
                "import System.Time\n"++
                "\n"++
-               "data StaticFile = SF { filePath      :: FilePath -- relative path, including extension\n"++
-               "                     , timeStamp     :: ClockTime\n"++
-               "                     , isBinary      :: Bool\n"++
+               "data StaticFile = SF { filePath ::      FilePath -- relative path, including extension\n"++
+               "                     , timeStamp ::     ClockTime\n"++
+               "                     , isBinary ::      Bool\n"++
                "                     , contentString :: String\n"++
                "                     }\n"++
                "\n"++

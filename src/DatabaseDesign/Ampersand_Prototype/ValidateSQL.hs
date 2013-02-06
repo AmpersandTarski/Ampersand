@@ -72,7 +72,7 @@ getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: Fspc -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
- where getRuleExp rule = (ECpl . rrexp $ rule, "rule "++show (name rule))
+ where getRuleExp rule = let expr = rrexp rule; sgn = sign expr in (notCpl sgn expr, "rule "++show (name rule))
  
 getAllPairViewExps :: Fspc -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
@@ -94,7 +94,7 @@ showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
 
 -- validate a single expression and report the results
 validateExp :: Fspc -> Options -> ValidationExp -> IO (ValidationExp, Bool)
-validateExp _     _    vExp@(ERel _, _)   = -- skip all simple relations 
+validateExp _     _    vExp@(ERel{}, _)   = -- skip all simple relations 
  do { putStr "."
     ; return (vExp, True)
     }

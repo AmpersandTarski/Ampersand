@@ -79,7 +79,7 @@ installer fSpec flags = intercalate "\n  "
         ["  fwrite($dumpfile, dumprel(\""++showADL rel++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
         , let rel=makeRelation d
-        , let dbrel = sqlRelPlugNames fSpec (ERel rel)
+        , let dbrel = sqlRelPlugNames fSpec (ERel rel (sign rel))
         , not(null dbrel)
         , let (_,src,trg) = head dbrel
         , let qry = fromMaybe [] (selectExprRelation fSpec (-1) src trg rel)]

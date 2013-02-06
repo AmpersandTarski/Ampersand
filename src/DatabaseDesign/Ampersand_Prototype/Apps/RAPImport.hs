@@ -106,13 +106,13 @@ makeFailedPops imperr flags usrfiles
     where fid = fileid (srcfile flags)
 {-
 compilererror::File*CompilerError[UNI]
-parseerror   :: CompilerError * ParseError[UNI]
-pe_action    :: ParseError -> String
-pe_position  :: ParseError -> String
+parseerror ::   CompilerError * ParseError[UNI]
+pe_action ::    ParseError -> String
+pe_position ::  ParseError -> String
 pe_expecting :: ParseError -> String
-typeerror   :: CompilerError * TypeError
-te_message  :: TypeError * String [UNI]
-te_nested   :: TypeError * TypeError
+typeerror ::   CompilerError * TypeError
+te_message ::  TypeError * String [UNI]
+te_nested ::   TypeError * TypeError
 te_position :: TypeError * String [UNI]
 te_origtype :: TypeError * String [UNI]
 te_origname :: TypeError * String [UNI]
@@ -163,7 +163,7 @@ makeFilePops flags usrfiles savefiles
 
 --the fspec to import into RAP -> flags for file names and user name -> file names in the upload directory of the user -> pictures for the fspec
 makeRAPPops :: Fspc -> Options -> [(String,ClockTime)] -> [Picture] -> [P_Population]
-makeRAPPops fs flags usrfiles pics
+makeRAPPops fSpec flags usrfiles pics
  = let -- savepopfile is a SavePopFile (only POPULATIONS) which must be INCLUDEd to compile
        savepopfile = (tempdir, addExtension nextversion ".pop") 
        -- savectxfile is a SaveAdlFile in uploads/temp/ which should be renamed, moved, and loaded immediately to become an uploaded adl-file
@@ -185,50 +185,50 @@ makeRAPPops fs flags usrfiles pics
        nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) flags)
                                             , (mkversion i fn) `notElem` (map (dropExtension . fst) usrfiles)]
                      in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
-       inclfiles = [(fst (srcfile flags),fn) | pos'<-fspos fs, let fn=takeFileName(filenm pos'), fn /= snd (srcfile flags)]
+       inclfiles = [(fst (srcfile flags),fn) | pos'<-fspos fSpec, let fn=takeFileName(filenm pos'), fn /= snd (srcfile flags)]
        cns = ctxns (srcfile flags)
    in
      --see trunk/apps/Atlas/FSpec.adl
      makeFilePops flags usrfiles [savepopfile,savectxfile]
      ++      
-    [makepopu ("sourcefile","Context","AdlFile")         [(fsid (cns,fs), fileid (srcfile flags))]
-    ,makepopu ("includes","Context","File")              [(fsid (cns,fs), fileid f)  | f<-inclfiles] 
+    [makepopu ("sourcefile","Context","AdlFile")         [(fsid (cns,fSpec), fileid (srcfile flags))]
+    ,makepopu ("includes","Context","File")              [(fsid (cns,fSpec), fileid f)  | f<-inclfiles] 
     ,makepopu ("firstloadedwith","AdlFile","AdlVersion") [(fileid (srcfile flags), nonsid prototypeVersionStr)]
-    ,makepopu ("savepopulation","Context","SavePopFile") [(fsid (cns,fs), fileid savepopfile)]
-    ,makepopu ("savecontext","Context","SaveAdlFile")    [(fsid (cns,fs), fileid savectxfile)]
+    ,makepopu ("savepopulation","Context","SavePopFile") [(fsid (cns,fSpec), fileid savepopfile)]
+    ,makepopu ("savecontext","Context","SaveAdlFile")    [(fsid (cns,fSpec), fileid savectxfile)]
     ,makepopu ("imageurl","Image","URL")   [(imageid pic, nonsid[if c=='\\' then '/' else c | c<-addExtension (relPng pic) "png"])
                                                                        | pic<-pics]
-    ,makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fs, name p==origName pic]
-    ,makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-udefrules fs   , name r==origName pic]
-    ,makepopu ("cptpic","Concept","Image") [(cptid c    , imageid pic) | pic<-pics, pType pic==PTConcept, c<-concs fs   , name c==origName pic]
-    ,makepopu ("countrules","Context","Int")  [(fsid (cns,fs), nonsid (show (length (udefrules fs))))]
-    ,makepopu ("countdecls","Context","Int")  [(fsid (cns,fs), nonsid (show (length userdeclarations)))]
-    ,makepopu ("countcpts","Context","Int")   [(fsid (cns,fs), nonsid (show (length (concs fs))))]
-    ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | (r,vs) <- allViolations fs, r `elem` raprules, (x,y)<-vs]
+    ,makepopu ("ptpic","Pattern","Image")  [(patid p    , imageid pic) | pic<-pics, pType pic==PTPattern, p<-patterns fSpec, name p==origName pic]
+    ,makepopu ("rrpic","Rule","Image")     [(ruleid r   , imageid pic) | pic<-pics, pType pic==PTRule   , r<-udefrules fSpec   , name r==origName pic]
+    ,makepopu ("cptpic","Concept","Image") [(cptid c    , imageid pic) | pic<-pics, pType pic==PTConcept, c<-concs fSpec   , name c==origName pic]
+    ,makepopu ("countrules","Context","Int")  [(fsid (cns,fSpec), nonsid (show (length (udefrules fSpec))))]
+    ,makepopu ("countdecls","Context","Int")  [(fsid (cns,fSpec), nonsid (show (length userdeclarations)))]
+    ,makepopu ("countcpts","Context","Int")   [(fsid (cns,fSpec), nonsid (show (length (concs fSpec))))]
+    ,makepopu ("rrviols","Rule","Violation") [(ruleid r, pairidid (x,y) (rulens r,r)) | (r,vs) <- allViolations fSpec, r `elem` raprules, (x,y)<-vs]
     ,makepopu ("decexample","Declaration","PragmaSentence") [(decid d , nonsid (decprL d++x++decprM d++y++decprR d))
                                                             | d<-userdeclarations, not(null (decprM d)), let (x,y) = head(pairsOf d++[("...","...")])]
     --see trunk/apps/Atlas/AST.adl
-    ,makepopu ("ctxnm","Context","Conid")     [(fsid (cns,fs), nonsid (name fs))]
-    ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fs), cptid c)                | c<-concs fs] 
-    ,makepopu ("cptnm","Concept","Conid")     [(cptid c      , nonsid (name c))        | c<-concs fs]
-    ,makepopu ("cptos","Concept","AtomID")    [(cptid c      , atomidid x (isanm isa)) | c<-concs fs, (isa, c',x)<-atoms, c==c']
-    ,makepopu ("inios","Concept","AtomID")    [(cptid c      , atomidid x (isanm isa)) | c<-concs fs, (isa, c',x)<-atoms, c==c']
-    ,makepopu ("atomvalue","AtomID","Atom")   [(atomidid x (isanm isa) , nonsid x)                  | (isa, _ ,x)<-atoms]
+    ,makepopu ("ctxnm","Context","Conid")     [(fsid (cns,fSpec), nonsid (name fSpec))]
+    ,makepopu ("ctxcs","Context","Concept")   [(fsid (cns,fSpec), cptid c)                | c<-concs fSpec] 
+    ,makepopu ("cptnm","Concept","Conid")     [(cptid c      , nonsid (name c))        | c<-concs fSpec]
+    ,makepopu ("cptos","Concept","AtomID")    [(cptid c      , atomidid x (isanm island)) | c<-concs fSpec, (island, c',x)<-atoms, c==c']
+    ,makepopu ("inios","Concept","AtomID")    [(cptid c      , atomidid x (isanm island)) | c<-concs fSpec, (island, c',x)<-atoms, c==c']
+    ,makepopu ("atomvalue","AtomID","Atom")   [(atomidid x (isanm island) , nonsid x)                  | (island, _ ,x)<-atoms]
     ,makepopu ("cptpurpose","Concept","Blob") [(cptid c      , nonsid (aMarkup2String (explMarkup ex)))
-                                                                                       | c<-concs fs, ex<-explanations fs, explForObj c (explObj ex)]
-    ,makepopu ("cptdf","Concept","Blob")      [(cptid c      , nonsid(cddef cd))       | c<-concs fs, cd<-cptdf c]
-    ,makepopu ("ordername","Order","String")  [(nonsid (isanm isa) , nonsid (isanm isa)) | isa<-isas]
-    ,makepopu ("order","Concept","Order")     [(cptid c            , nonsid (isanm isa)) | isa<-isas, c<-isa]
-    ,makepopu ("gengen","Gen","Concept") [(genid g, cptid (target g)) | g<-gens fs]
-    ,makepopu ("genspc","Gen","Concept") [(genid g, cptid (source g)) | g<-gens fs]
-    ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fs), patid p)         | p<-patterns fs]
-    ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fs]
-    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, r<-udefrules p]
-    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fs, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp pr d]
-    ,makepopu ("ptgns","Pattern","Gen")         [(patid p      , genid g)         | p<-patterns fs, g<-gens p]
-    ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fs, d<-declarations p,decusr d]
+                                                                                       | c<-concs fSpec, ex<-explanations fSpec, explForObj c (explObj ex)]
+    ,makepopu ("cptdf","Concept","Blob")      [(cptid c      , nonsid(cddef cd))       | c<-concs fSpec, cd<-cptdf c]
+    ,makepopu ("ordername","Order","String")  [(nonsid (isanm island) , nonsid (isanm island)) | island<-islands]
+    ,makepopu ("order","Concept","Order")     [(cptid c            , nonsid (isanm island)) | island<-islands, c<-island]
+    ,makepopu ("gengen","Gen","Concept") [(genid g, cptid (target g)) | g<-gens fSpec]
+    ,makepopu ("genspc","Gen","Concept") [(genid g, cptid (source g)) | g<-gens fSpec]
+    ,makepopu ("ctxpats","Context","Pattern")   [(fsid (cns,fSpec), patid p)         | p<-patterns fSpec]
+    ,makepopu ("ptnm","Pattern","Conid")        [(patid p      , nonsid (name p)) | p<-patterns fSpec]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, r<-udefrules p]
+    ,makepopu ("ptrls","Pattern","Rule")        [(patid p      , ruleid r)        | p<-patterns fSpec, d<-declarations p,decusr d, pr<-multiplicities d, let r=rulefromProp pr d]
+    ,makepopu ("ptgns","Pattern","Gen")         [(patid p      , genid g)         | p<-patterns fSpec, g<-gens p]
+    ,makepopu ("ptdcs","Pattern","Declaration") [(patid p      , decid d)         | p<-patterns fSpec, d<-declarations p,decusr d]
     ,makepopu ("ptxps","Pattern","Blob")        [(patid p, nonsid (aMarkup2String (explMarkup ex)))
-                                                                                  | p<-patterns fs, ex<-explanations fs, explForObj p (explObj ex)]
+                                                                                  | p<-patterns fSpec, ex<-explanations fSpec, explForObj p (explObj ex)]
     ,makepopu ("decnm","Declaration","Varid")               [(decid d , nonsid(name d))   | d<-userdeclarations]
     ,makepopu ("decsgn","Declaration","Sign")               [(decid d , sgnid (sign d))   | d<-userdeclarations]
     ,makepopu ("decprps","Declaration","PropertyRule")      [(decid d , ruleid r)         | d<-userdeclarations, p<-multiplicities d, let r=rulefromProp p d]
@@ -239,7 +239,7 @@ makeRAPPops fs flags usrfiles pics
     ,makepopu ("decmean","Declaration","Blob")              [(decid d , nonsid (aMarkup2String rdf)) 
                                                                                           | d<-userdeclarations, Just rdf <- [meaning Dutch d, meaning English d]]
     ,makepopu ("decpurpose","Declaration","Blob")           [(decid d , nonsid (aMarkup2String (explMarkup ex)))
-                                                                                          | d<-userdeclarations, ex<-explanations fs, explForObj d (explObj ex)]
+                                                                                          | d<-userdeclarations, ex<-explanations fSpec, explForObj d (explObj ex)]
     ,makepopu ("decpopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
                                                                                           | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("inipopu","Declaration","PairID")            [(decid d , pairidid (x,y) (decns d,d)) 
@@ -250,7 +250,6 @@ makeRAPPops fs flags usrfiles pics
                                                                                           | d<-userdeclarations, (x,y)<-pairsOf d]
     ,makepopu ("reldcl","Relation","Declaration") [(relid (name d) (sign d), decid d)        | d<-userdeclarations]
     ,makepopu ("relnm","Relation","Varid")        [(relid (name d) (sign d), nonsid(name d)) | d<-userdeclarations]
-    ,makepopu ("relsgn","Relation","Sign")        [(relid (name d) (sign d), sgnid (sign d)) | d<-userdeclarations]
     ,relsrc                          userdeclarations
     ,reltrg                          userdeclarations
     ,relleft  [(decns d, d, pairsOf d)     | d<-userdeclarations]
@@ -258,23 +257,22 @@ makeRAPPops fs flags usrfiles pics
     ,makepopu ("rrnm","Rule","ADLid")         [(ruleid r, nonsid (name r))                           | r<-raprules]
     ,makepopu ("rrexp","Rule","ExpressionID") [(ruleid r, expridid (rulens r,rrexp r))               | r<-raprules]
     ,makepopu ("rrmean","Rule","Blob")        [(ruleid r, nonsid (aMarkup2String rdf))               | r<-raprules, Just rdf <- [meaning Dutch r, meaning English r]]
-    ,makepopu ("rrpurpose","Rule","Blob")     [(ruleid r, nonsid (aMarkup2String (explMarkup ex)))   | r<-raprules, ex<-explanations fs, explForObj r (explObj ex)]
+    ,makepopu ("rrpurpose","Rule","Blob")     [(ruleid r, nonsid (aMarkup2String (explMarkup ex)))   | r<-raprules, ex<-explanations fSpec, explForObj r (explObj ex)]
     ,makepopu ("exprvalue","ExpressionID","Expression") 
                                               [(expridid (rulens r,rrexp r), nonsid (show(rrexp r))) | r<-raprules]
      -- link an expression to its relation terms 
      -- and create those of user-defined rules (those of property rules have already been created above).
      -- multiple creations of the same relation terms is not harmfull, because p2aconverters nubs populations.
     ,relrels      [(rulens r,rrexp r)          | r<-raprules]    
-    ,relrelnm     (map       rrexp                 (udefrules fs))
-    ,relrelsgn    (map       rrexp                 (udefrules fs))
-    ,relreldcl    (map       rrexp                 (udefrules fs))
+    ,relrelnm     (map       rrexp                 (udefrules fSpec))
+    ,relreldcl    (map       rrexp                 (udefrules fSpec))
      --create pairs for violations (see rrviols above)
     ,relleft  [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
     ,relright [(rulens r,violationsexpr r,[ {-TODO: What should be in this list? -}]) | r<-raprules]
     ]
    where
    pairsOf :: Declaration -> [(String,String)]
-   pairsOf d = case filter theDecl (userDefPops fs) of
+   pairsOf d = case filter theDecl (userDefPops fSpec) of
                  []    -> []
                  [pop] -> popps pop
                  _     -> fatal 273 "Multiple entries found in populationTable"
@@ -283,18 +281,19 @@ makeRAPPops fs flags usrfiles pics
        theDecl p = popdcl p == d
    
    --SPEC PropertyRule ISA Rule
-   raprules = udefrules fs ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
+   raprules = udefrules fSpec ++ [rulefromProp p d | d<-userdeclarations, p<-multiplicities d]
    --userdeclarations is defined because of absence of a function for user-defined declarations like rules for user-defined rules
-   userdeclarations = filter decusr (declarations fs)
-   --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (isa,x)
-   atoms = [(isa , c , x) 
-           | isa<-isas, c<-isa, x<-atomsOf (userDefPops fs) c
-           , x `notElem` concat [atomsOf (userDefPops fs) s | s<-isa, s < c]]
+   userdeclarations = filter decusr (declarations fSpec)
+   --(order,specific qualification,value) => note: there may be more than one specific qualification for the same atom (island,x)
+   atoms = [(island , c , x) 
+           | island<-islands, c<-island, x<-atomsOf (userDefPops fSpec) c
+           , x `notElem` concat [atomsOf (userDefPops fSpec) s | s<-island, s < c]]
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
-   isanm isa = intercalate "/" (map name (maxima isa))
+   isanm island = intercalate "/" (map name (maxima island))
    --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
-   isas = let isas' = [[c' | not (null (concs fs)), c<-isa, c'<-concs fs, c==c'] | isa<-(snd . order . head . concs) fs] 
-          in [[c] | c<-concs fs, c `notElem` concat isas'] ++ isas'
+   (_,islands,_,_,_) = case concs fSpec of
+                           []  -> fatal 276 "No concepts in fSpec"
+                           c:_ -> cptgE c
    --populate relsrc and reltrg for typed data structures
    relsrc,reltrg :: Association r => [r] -> P_Population
    relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
@@ -307,11 +306,10 @@ makeRAPPops fs flags usrfiles pics
    --makeLeft  rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (x,y)<-ps]
    --makeRight rs = makepopu ("left","PairID","AtomID")                [(pairidid (x,y) (ns,r), atomidid x (getisa$source r)) | (x,y)<-ps]
    
-   getisa c = concat [isanm isa | isa<-isas, c `elem` isa]
-   --populate relrels, relrelnm, relreldcl and relrelsgn for expressions
+   getisa c = concat [isanm island | island<-islands, c `elem` island]
+   --populate relrels, relrelnm, and relreldcl for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
-   relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm sgn) | (ns,expr)<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]
-   relrelnm, relreldcl, relrelsgn :: [Expression] -> P_Population
-   relrelnm exprs = makepopu ("relnm","Relation","Varid")         [(relid nm sgn, nonsid nm)         |      expr<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]
-   relrelsgn exprs = makepopu ("relsgn","Relation","Sign")        [(relid nm sgn, sgnid sgn)         |      expr<-exprs, Rel{relnm=nm,relsgn=sgn}<-mors expr]
-   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm sgn, decid d)           |      expr<-exprs, Rel{relnm=nm,relsgn=sgn,reldcl=d}<-mors expr]
+   relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm (sign r)) | (ns,expr)<-exprs, r@(Rel{relnm=nm})<-mors expr]
+   relrelnm, relreldcl :: [Expression] -> P_Population
+   relrelnm exprs = makepopu ("relnm","Relation","Varid")         [(relid nm (sign r), nonsid nm)         |      expr<-exprs, r@(Rel{relnm=nm})<-mors expr]
+   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm (sign r), decid d)           |      expr<-exprs, r@(Rel{relnm=nm,reldcl=d})<-mors expr]

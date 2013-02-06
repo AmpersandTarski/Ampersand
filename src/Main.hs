@@ -134,7 +134,8 @@ ruleTest fSpec _ ruleName =
    [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found." 
    (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
                   ; putStrLn $ showContents rule
-                  ; let ruleComplement = rule { rrexp = ECpl $ EBrk $rrexp rule }
+                  ; let rExpr = rrexp rule
+                  ; let ruleComplement = rule { rrexp = notCpl (sign rExpr) (EBrk rExpr) }
                   ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
                   ; putStrLn $ showContents ruleComplement
                   } 

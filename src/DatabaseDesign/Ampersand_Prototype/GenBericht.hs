@@ -18,12 +18,12 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "GenBericht"
 
 -- an intermediate data type, so we can easily generate to several output formats
-data Entity = Entity { entName       :: String
-                     , depth         :: Int
-                     , cardinality   :: String
-                     , definition    :: String
-                     , refType :: String
-                     , properties    :: [Entity]
+data Entity = Entity { entName ::     String
+                     , depth ::       Int
+                     , cardinality :: String
+                     , definition ::  String
+                     , refType ::     String
+                     , properties ::  [Entity]
                      } deriving Show
  
 doGenBericht :: Fspc -> Options -> IO ()
@@ -71,8 +71,8 @@ doGenBericht fSpec flags =
                                      Cd {cddef=def'} : _ | def' /= "" -> def'
                                      _                                -> "** NO DEFINITION **"
                    where relTargetDef = case rel of -- target def of relation, or source def if relation is flipped
-                                          ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Tgt def')}})        -> def'
-                                          EFlp (ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Src def')}})) -> def'
+                                          ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Tgt def')}}) _          -> def'
+                                          EFlp (ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Src def')}}) _) _ -> def'
                                           _                                              -> ""       
        
                   objsForInterfaceNamed :: String -> [ObjectDef]

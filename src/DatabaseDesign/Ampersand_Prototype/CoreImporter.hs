@@ -52,7 +52,6 @@ import DatabaseDesign.Ampersand
 --   -- * Functions on expressions:
 --   , conjNF, disjNF, simplify
 --   , v, notCpl, isPos, isNeg
---   , isI
 --   -- * Functions with plugs:
 --   , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
 --   -- * Parser related stuff

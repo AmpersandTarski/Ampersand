@@ -169,9 +169,9 @@ generateRules fSpec flags =
            , "        , 'srcConcept' => "++(showPhpStr.name.source.rrexp) rule
            , "        , 'tgtConcept' => "++(showPhpStr.name.target.rrexp) rule
            ] ++
-           ( if (ECpl . rrexp) rule /= violationsExpr && verboseP flags
+           ( if violExpr /= violationsExpr && verboseP flags
              then   ["        // Normalization steps:"]
-                  ++["        // "++escapePhpStr ls | ls<-(showPrf showADL . cfProof showADL . ECpl . rrexp) rule]
+                  ++["        // "++escapePhpStr ls | ls<-(showPrf showADL . cfProof showADL) violExpr]
                   ++["        // "]
              else   []
            ) ++
@@ -181,14 +181,12 @@ generateRules fSpec flags =
                                              ++"'" 
            ] ++
            [ "        , 'contentsSQL' => '" ++
-             case (conjNF . rrexp) rule of
-                  EIsc [] -> "/* EIsc [], not handled by selectExpr */'"
-                  ECps [] -> "/* EIsc [], not handled by selectExpr */'"
-                  contentsExpr -> fromMaybe
-                                    ("/*ERROR: no sql generated for " ++
-                                       escapePhpStr (showHS flags "" contentsExpr) ++ "*/")
-                                    (selectExpr fSpec 26 "src" "tgt" contentsExpr)
-                                    ++ "'"
+             let contentsExpr = conjNF rExpr in
+             fromMaybe
+               ("/*ERROR: no sql generated for " ++
+                  escapePhpStr (showHS flags "" contentsExpr) ++ "*/")
+               (selectExpr fSpec 26 "src" "tgt" contentsExpr)
+               ++ "'"
            | development flags -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
                                       -- php/Database.php?testRule=RULENAME
            ] ++
@@ -200,7 +198,10 @@ generateRules fSpec flags =
                ((genMPairView.rrviol) rule
              ) ) ++  
            [ "        )" ]
-         | rule <- vrules fSpec ++ grules fSpec, let violationsExpr = (conjNF . ECpl . rrexp) rule 
+         | rule <- vrules fSpec ++ grules fSpec
+         , let rExpr=rrexp rule
+         , let violExpr = notCpl (sign rExpr) rExpr
+         , let violationsExpr = conjNF violExpr
          ]
     ) ) ++
   [ ""
@@ -260,7 +261,7 @@ generateKeys fSpec flags =
            ] ++
            indent 14 (blockParenthesize "(" ")" "," (map genKeySeg keySegs)) ++  
            [ "      )" ]           
-         | Kd _ label cpt keySegs <- sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec) --sort from spec to gen
+         | Kd _ label cpt keySegs <- [ k | c<-conceptsFromSpecificToGeneric, k <- vkeys fSpec, kdcpt k==c ] --sort from spec to gen
          ]
     ) )
  where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
@@ -271,7 +272,11 @@ generateKeys fSpec flags =
                                    , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" (objctx objDef))
                                                                 (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)
                                                    ++"' )"
-                                   ] 
+                                   ]
+       (_,islands,_,_,_) = case concs fSpec of
+                              []  -> fatal 276 "No concepts in fSpec"
+                              c:_ -> cptgE c
+       conceptsFromSpecificToGeneric = concat (map reverse islands)
                 
 generateInterfaces :: Fspc -> Options -> [String]
 generateInterfaces fSpec flags =
@@ -310,19 +315,19 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
   ++ case objctx object of
-         ERel r        | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
-                                         , "      , 'relationIsFlipped' => false" 
-                                         , "      , 'min' => "++ if isTot r then "'One'" else "'Zero'"
-                                         , "      , 'max' => "++ if isUni r then "'One'" else "'Many'"
-                                         ]
-         EFlp (ERel r) | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations. NOTE: same cases appear in getEditableConcepts
-                                         , "      , 'relationIsFlipped' => true" 
-                                         , "      , 'min' => "++ if isSur r then "'One'" else "'Zero'"
-                                         , "      , 'max' => "++ if isInj r then "'One'" else "'Many'"
-                                         ]          
-         _             -> [ "      , 'relation' => ''" 
-                          , "      , 'relationIsFlipped' => ''" 
-                          ]          
+         ERel r _          | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
+                                             , "      , 'relationIsFlipped' => false" 
+                                             , "      , 'min' => "++ if isTot r then "'One'" else "'Zero'"
+                                             , "      , 'max' => "++ if isUni r then "'One'" else "'Many'"
+                                             ]
+         EFlp (ERel r _) _ | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations. NOTE: same cases appear in getEditableConcepts
+                                             , "      , 'relationIsFlipped' => true" 
+                                             , "      , 'min' => "++ if isSur r then "'One'" else "'Zero'"
+                                             , "      , 'max' => "++ if isInj r then "'One'" else "'Many'"
+                                             ]          
+         _                                -> [ "      , 'relation' => ''" 
+                                             , "      , 'relationIsFlipped' => ''" 
+                                             ]          
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
@@ -335,10 +340,10 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ]
  where isEditable rel = rel `elem` editableRels
        normalizedInterfaceExp = conjNF $ objctx object
-       getEditableConcepts obj = case objctx obj of
-                                   ERel r        | isEditable r -> [target r]
-                                   EFlp (ERel r) | isEditable r -> [source r]
-                                   _                            -> []
+       getEditableConcepts obj = (case objctx obj of
+                                   ERel r _          | isEditable r -> [target r]
+                                   EFlp (ERel r _) _ | isEditable r -> [source r]
+                                   _                                -> [])
                                  ++ concatMap getEditableConcepts (objAts obj)
   
 generateMSubInterface :: Fspc -> Options -> [Relation] -> Int -> Maybe SubInterface -> [String] 
