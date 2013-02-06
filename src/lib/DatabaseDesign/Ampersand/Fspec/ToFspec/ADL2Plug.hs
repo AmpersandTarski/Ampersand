@@ -75,12 +75,6 @@ rel2plug  r totals surjectives
                 , flduniq = isInj trgExpr
                 } 
 
-kernelOptimize :: Expression -> Expression
-kernelOptimize e@(ERel I{} _)            = e
-kernelOptimize (EFlp (ERel i@I{} _) sgn) = ERel i sgn
-kernelOptimize (ECps _ sgn@(Sign c _))   = ERel (I c) sgn
-kernelOptimize _ = fatal 81 "Illegal call to kernelOptimize"
-
 -----------------------------------------
 --rel2fld
 -----------------------------------------
