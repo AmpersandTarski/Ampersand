@@ -57,7 +57,7 @@ where
      where
       contents expr
        = case expr of
-            EEqu (l,r) sgn -> contents ((l .|-. r) ./\. (r .|-. l))
+            EEqu (l,r) _ -> contents ((l .|-. r) ./\. (r .|-. l))
             EImp (l,r) sgn -> contents (notCpl sgn l .\/. r)
             EUni (l,r) _ -> contents l `uni` contents r
             EIsc (l,r) _ -> contents l `isc` contents r
