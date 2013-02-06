@@ -274,8 +274,9 @@ generateKeys fSpec flags =
                                                    ++"' )"
                                    ]
        (_,islands,_,_,_) = case concs fSpec of
-                              []  -> fatal 276 "No concepts in fSpec"
-                              c:_ -> cptgE c
+                               []  -> (undef,[],undef,undef,undef)
+                               c:_ -> cptgE c
+                           where undef=undef
        conceptsFromSpecificToGeneric = concat (map reverse islands)
                 
 generateInterfaces :: Fspc -> Options -> [String]
