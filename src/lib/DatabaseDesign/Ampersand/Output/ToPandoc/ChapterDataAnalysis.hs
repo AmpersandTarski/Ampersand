@@ -21,155 +21,242 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis.hs"
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
 chpDataAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
-chpDataAnalysis lev fSpec flags
- | theme flags == StudentTheme =
-   ( fromList $ header ++ daPicsOnly
-   , [ classificationPicture | Just _<-[classification]] ++[ classDiagramPicture] )
- | otherwise = 
-   ( fromList $ header ++ 
-     daIntro ++
-     (if null (themes fSpec)
-      then daBasics [d | d<-declarations fSpec, decusr d]
-      else daBasics [d | d<-declarations fSpec, decusr d
-                       , decpat d `elem` themes fSpec                                                                                            ||
-                         d `elem` [r | pat<-patterns fSpec  , name pat `elem` themes fSpec, r@Sgn{}<-[makeDeclaration rel|rel<-mors pat]]        ||
-                         d `elem` [r | prc<-vprocesses fSpec, name prc `elem` themes fSpec, r@Sgn{}<-[makeDeclaration rel|rel<-mors (fpProc prc)]]
-                       ]) ++
-     daAssociations remainingRels ++
-     [b | p<-entities, b<-daPlug p]
-   , [ classificationPicture | Just _<-[classification]] ++ [ classDiagramPicture  ] )
- where
- -- The declarations that are used in entities need not be drawn in pictures, because they are attributes.
+chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
+ where 
+  -- | In some cases, only a summary of the data analysis is required as output.
+  summaryOnly :: Bool
+  summaryOnly = theme flags `elem` [StudentTheme]
+  
+  -- | The user can specify that only specific themes should be taken into account 
+  -- in the output. However, when no themes are specified, all themes are relevant.
+  relevantThemes = if null (themes fSpec)
+                   then map name (patterns fSpec) ++ map name (vprocesses fSpec)
+                   else themes fSpec
+  
+  classificationModel :: Maybe ClassDiag
+  classificationModel = if summaryOnly
+                        then Nothing
+                        else clAnalysis fSpec flags
+
+  classificationPicture :: ClassDiag -> Picture
+  classificationPicture cl
+     = (makePicture flags fSpec Gen_CG cl)
+          {caption = case language flags of
+                       Dutch   ->"Classificatie van "++name fSpec
+                       English ->"Classification of "++name fSpec}
+
+  classificationBlocks :: ClassDiag -> Picture -> Blocks
+  classificationBlocks cl pict = 
+     para (case language flags of 
+            Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
+                     <> (if canXRefer flags 
+                         then text "Deze is in figuur " <> xRefReference flags pict <> text "weergegeven."
+                         else text "Deze is in onderstaand figuur weergegeven."
+                        )
+            English -> text "A number of concepts is organized in a classification structure. "
+                     <> (if canXRefer flags 
+                         then text "This is shown in figure " <> xRefReference flags pict <> text "."
+                         else text "This is shown in the figure below."
+                         )
+              )
+      <> para (text "HIER MOET HET PLAATJE") 
+
+  dataModel :: ClassDiag
+  dataModel = cdAnalysis fSpec flags
+  
+  dataModelPicture :: ClassDiag -> Picture
+  dataModelPicture cd
+                 = (makePicture flags fSpec Plain_CG cd)
+                        {caption = case language flags of
+                                    Dutch   ->"Datamodel van "++name fSpec
+                                    English ->"Data model of "++name fSpec}
+  
+  dataModelBlocks :: ClassDiag -> Picture -> Blocks
+  dataModelBlocks dm pict =
+     para (case language flags of
+             Dutch   -> (text "De functionele eisen zijn vertaald naar een gegevensmodel. "
+                       <> ( if canXRefer flags
+                            then text "Dit gegevensmodel is in figuur " <> xRefReference flags pict <> text " weergegeven."
+                            else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
+                        ) )
+             English -> (text "The functional requirements have been translated into a data model. "
+                       <> ( if canXRefer flags
+                            then text "This model is shown by figure " <> xRefReference flags pict <> text "."
+                            else text "This model is shown by the figure below. "
+                        ) )
+          )
+   <> if summaryOnly 
+      then noBlocks
+      else let nrOfClasses = length (classes dm)
+           in langSwitch flags
+                [Dutch    ===> para (text (case nrOfClasses of
+                                         0 -> "Er zijn geen gegevensverzamelingen."
+                                         1 -> "Er is één gegevensverzameling,"
+                                         _ -> "Er zijn "++count flags nrOfClasses "gegevensverzameling"++","
+                                    )     )
+                , English ===> para (text "onaf")
+                ]
+--                  [ Str (case length (classes classDiagram) of
+--                            0 -> "Er zijn"
+--                            1 -> "Er is één gegevensverzameling,"
+--                            _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
+--                        )
+--                  , Space, Str $ count flags (length (assocs classDiagram)) "associatie" ]++
+--                  ( case classification of
+--                     Nothing -> []
+--                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisatie" ] ) ++
+--                  [ Str $ " en "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
+--                  , Str $ " "++name fSpec++" kent in totaal "++count flags (length (concs fSpec)) "concept"++"."
+--                  ]]
+        
+  thePictures = case classificationModel of
+                 Nothing -> []
+                 Just cl -> [classificationPicture cl] 
+             ++ [dataModelPicture dataModel]
+
+  theBlocks 
+    =  chptHeader flags DataAnalysis  -- The header
+    <> (case classificationModel of --If there is a classification model, show it in the output
+          Nothing -> noBlocks
+          Just cl -> classificationBlocks cl (classificationPicture cl)
+       )
+    <> -- Fact type table containing the relevant relations:
+       daBasics [d | d<-declarations fSpec
+                   , decusr d
+                   , (  decpat d `elem` relevantThemes
+                     || d `elem` [r | pat<-patterns fSpec  , name pat `elem` relevantThemes, r@Sgn{}<-[makeDeclaration rel|rel<-mors pat]]
+                     || d `elem` [r | prc<-vprocesses fSpec, name prc `elem` relevantThemes, r@Sgn{}<-[makeDeclaration rel|rel<-mors (fpProc prc)]]
+                     )
+                ]
+    
+    <> dataModelBlocks dataModel (dataModelPicture dataModel) 
+
   remainingRels = if null (themes fSpec)
-                  then mors fSpec >- [r | p<-plugInfos fSpec, r<-mors p]
+                  then mors fSpec                                                                            >- [r | p<-plugInfos fSpec, r<-mors p]
                   else [rel | rel<-mors fSpec, d@Sgn{}<-[makeDeclaration rel], decpat d `elem` themes fSpec] >- [r | p<-plugInfos fSpec, r<-mors p]
+
+
+
+--  theRest :: [a]
+--  theRest
+--   = fromList (
+--       daAssociations remainingRels ++
+--       [b | p<-entities, b<-daPlug p]
+--              )
+ 
+ -- The declarations that are used in entities need not be drawn in pictures, because they are attributes.
   entities = if null (themes fSpec)
              then [p | InternalPlug p<-plugInfos fSpec]
              else nub [p | c<-concs remainingRels, (p,_)<-lookupCpt fSpec c ]
-  header :: [Block]
-  header = toList (chptHeader flags DataAnalysis)
+             
+        
+  
   -- | a short summary of the statistics. This text also serves as an introduction
-  daIntro :: [Block]
-  daIntro = 
-   (case language flags of
-     Dutch   -> [Para $
-                  ( if genGraphics flags 
-                    then 
-                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
-                       [ Str "Een aantal concepten uit hoofdstuk "
-                       , xrefReference FunctReqts
-                       , Str " zit in een classificatiestructuur. Deze is in figuur "
-                       , xrefReference classificationPicture
-                       , Str " weergegeven. " ] 
-                     ) ++
-                     [ Str "De eisen, die in hoofdstuk "
-                     , xrefReference FunctReqts
-                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
-                     , xrefReference classDiagramPicture
-                     , Str ". " ]
-                    else []
-                  )++
-                  [ Str (case length (classes classDiagram) of
-                            0 -> "Er zijn"
-                            1 -> "Er is één gegevensverzameling,"
-                            _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
-                        )
-                  , Space, Str $ count flags (length (assocs classDiagram)) "associatie" ]++
-                  ( case classification of
-                     Nothing -> []
-                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisatie" ] ) ++
-                  [ Str $ " en "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
-                  , Str $ " "++name fSpec++" kent in totaal "++count flags (length (concs fSpec)) "concept"++"."
-                  ]]
-     English -> [Para $
-                  ( if genGraphics flags 
-                    then 
-                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
-                       [ Str "A number of concepts from chapter "
-                       , xrefReference FunctReqts
-                       , Str " is organized in a classification structure. This is represented in figure "
-                       , xrefReference classificationPicture
-                       , Str ". " ] ) ++
-                     [ Str "The requirements, which are listed in chapter "
-                     , xrefReference FunctReqts
-                     , Str ", have been translated into the data model in figure "
-                     , xrefReference classDiagramPicture
-                     , Str ". " ]
-                    else []
-                  )++
-                  [ Str (case length (classes classDiagram) of
-                            0 -> "There are"
-                            1 -> "There is one data set,"
-                            _ -> "There are "++count flags (length (classes classDiagram)) "data set"++","
-                        )
-                  , Space, Str $ count flags (length (assocs classDiagram)) "association"]++
-                  ( case classification of
-                     Nothing -> []
-                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisation"++"," ] ) ++
-                  [ Str $ " and "++count flags (length (aggrs classDiagram)) "aggregation"++"."
-                  , Str $ " "++name fSpec++" has a total of "++count flags (length (concs fSpec)) "concept"++"."
-                  ]] --TODO
-   ) ++ [ Plain $ xrefFigure1 classificationPicture | Just _<-[classification]] ++[ Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
+--  daIntro :: Lang -> Blocks
+--  daIntro lang = fromList $ intro lang ++ classificationPictures ++ classDiagramPictureParagraph
+--    where 
+--     intro Dutch =
+--                [Para $
+--                  ( if genGraphics flags 
+--                    then 
+--                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
+--                       [ Str "Een aantal concepten uit hoofdstuk "
+--                       , xrefReference FunctReqts
+--                       , Str " zit in een classificatiestructuur. Deze is in figuur "
+--                       , xrefReference classificationPicture
+--                       , Str " weergegeven. " ] 
+--                     ) ++
+--                     [ Str "De eisen, die in hoofdstuk "
+--                     , xrefReference FunctReqts
+--                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
+--                     , xrefReference classDiagramPicture
+--                     , Str ". " ]
+--                    else []
+--                  )++
+--                  [ Str (case length (classes classDiagram) of
+--                            0 -> "Er zijn"
+--                            1 -> "Er is één gegevensverzameling,"
+--                            _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
+--                        )
+--                  , Space, Str $ count flags (length (assocs classDiagram)) "associatie" ]++
+--                  ( case classification of
+--                     Nothing -> []
+--                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisatie" ] ) ++
+--                  [ Str $ " en "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
+--                  , Str $ " "++name fSpec++" kent in totaal "++count flags (length (concs fSpec)) "concept"++"."
+--                  ]]
+--     intro English = [Para $
+--                  ( if genGraphics flags 
+--                    then 
+--                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
+--                       [ Str "A number of concepts from chapter "
+--                       , xrefReference FunctReqts
+--                       , Str " is organized in a classification structure. This is represented in figure "
+--                       , xrefReference classificationPicture
+--                       , Str ". " ] ) ++
+--                     [ Str "The requirements, which are listed in chapter "
+--                     , xrefReference FunctReqts
+--                     , Str ", have been translated into the data model in figure "
+--                     , xrefReference classDiagramPicture
+--                     , Str ". " ]
+--                    else []
+--                  )++
+--                  [ Str (case length (classes classDiagram) of
+--                            0 -> "There are"
+--                            1 -> "There is one data set,"
+--                            _ -> "There are "++count flags (length (classes classDiagram)) "data set"++","
+--                        )
+--                  , Space, Str $ count flags (length (assocs classDiagram)) "association"]++
+--                  ( case classification of
+--                     Nothing -> []
+--                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisation"++"," ] ) ++
+--                  [ Str $ " and "++count flags (length (aggrs classDiagram)) "aggregation"++"."
+--                  , Str $ " "++name fSpec++" has a total of "++count flags (length (concs fSpec)) "concept"++"."
+--                  ]] --TODO
+--  classificationPictures :: [Block]
+--  classificationPictures = [ Plain $ xrefFigure1 classificationPicture | Just _<-[classification]]
+--  
+--  classDiagramPictureParagraph :: [Block]
+--  classDiagramPictureParagraph = [ Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
+--
+--  daPicsOnly :: [Block]
+--  daPicsOnly = 
+--   (case language flags of
+--     Dutch   -> [Para
+--                  ( if genGraphics flags 
+--                    then 
+--                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
+--                       [ Str "Een aantal concepten uit hoofdstuk "
+--                       , xrefReference FunctReqts
+--                       , Str " zit in een classificatiestructuur. Deze is in figuur "
+--                       , xrefReference classificationPicture
+--                       , Str " weergegeven. " ] 
+--                     ) ++
+--                     [ Str "De eisen, die in hoofdstuk "
+--                     , xrefReference FunctReqts
+--                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
+--                     , xrefReference classDiagramPicture
+--                     , Str ". " ]
+--                    else []
+--                  )]
+--     English -> [Para
+--                  ( if genGraphics flags 
+--                    then 
+--                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
+--                       [ Str "A number of concepts from chapter "
+--                       , xrefReference FunctReqts
+--                       , Str " is organized in a classification structure. This is represented in figure "
+--                       , xrefReference classificationPicture
+--                       , Str ". " ] ) ++
+--                     [ Str "The requirements, which are listed in chapter "
+--                     , xrefReference FunctReqts
+--                     , Str ", have been translated into the data model in figure "
+--                     , xrefReference classDiagramPicture
+--                     , Str ". " ]
+--                    else []
+--                  )]
+--   ) ++ [ Plain $ xrefFigure1 classificationPicture | Just _<-[classification]] ++[ Plain $ xrefFigure1 classDiagramPicture ]
 
-  daPicsOnly :: [Block]
-  daPicsOnly = 
-   (case language flags of
-     Dutch   -> [Para
-                  ( if genGraphics flags 
-                    then 
-                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
-                       [ Str "Een aantal concepten uit hoofdstuk "
-                       , xrefReference FunctReqts
-                       , Str " zit in een classificatiestructuur. Deze is in figuur "
-                       , xrefReference classificationPicture
-                       , Str " weergegeven. " ] 
-                     ) ++
-                     [ Str "De eisen, die in hoofdstuk "
-                     , xrefReference FunctReqts
-                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
-                     , xrefReference classDiagramPicture
-                     , Str ". " ]
-                    else []
-                  )]
-     English -> [Para
-                  ( if genGraphics flags 
-                    then 
-                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
-                       [ Str "A number of concepts from chapter "
-                       , xrefReference FunctReqts
-                       , Str " is organized in a classification structure. This is represented in figure "
-                       , xrefReference classificationPicture
-                       , Str ". " ] ) ++
-                     [ Str "The requirements, which are listed in chapter "
-                     , xrefReference FunctReqts
-                     , Str ", have been translated into the data model in figure "
-                     , xrefReference classDiagramPicture
-                     , Str ". " ]
-                    else []
-                  )]
-   ) ++ [ Plain $ xrefFigure1 classificationPicture | Just _<-[classification]] ++[ Plain $ xrefFigure1 classDiagramPicture ]
-
-  classDiagram :: ClassDiag
-  classDiagram = cdAnalysis fSpec flags
-
-  classification :: Maybe ClassDiag
-  classification = clAnalysis fSpec flags
-
-  classificationPicture :: Picture
-  classificationPicture
-    = case classification of
-       Nothing -> fatal 163 "should not call classificationPicture without a drawable classification"
-       Just cl -> (makePicture flags fSpec Gen_CG cl)
-                        {caption = case language flags of
-                                    Dutch   ->"Classificatie van "++name fSpec
-                                    English ->"Classification of "++name fSpec}
-
-  classDiagramPicture :: Picture
-  classDiagramPicture
-   = (makePicture flags fSpec Plain_CG classDiagram)
-        {caption = case language flags of
-                    Dutch   ->"Datamodel van "++name fSpec
-                    English ->"Data model of "++name fSpec}
 
 {- The switchboard should probably not be in the chapter "Data analysis" 
   picSwitchboard :: Picture
@@ -196,26 +283,29 @@ chpDataAnalysis lev fSpec flags
 -}
 
   -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
-  daBasics :: [Declaration] -> [Block]
-  daBasics rs
-    = [ Table [] [AlignLeft,AlignCenter,AlignCenter] [0.4,0.4,0.2]
-              ( case language flags of
-                Dutch   ->
-                     [ [Plain [Str "Relatie"]]
-                     , [Plain [Str "Beschrijving"]]
-                     , [Plain [Str "Eigenschappen"]]]
-                English   ->
-                     [ [Plain [Str "Relation"]]
-                     , [Plain [Str "Description"]]
-                     , [Plain [Str "Properties"]]]
-              )
-              [[[Plain [Math InlineMath (showMath r)]] -- r is a relation. So  showMath r  exists.
-               ,meaning2Blocks (language flags) r
-               ,[Plain (intercalate [Str ", "] [[Str (showADL m)] | m<-multiplicities r])]
-               ]
-              | r<-rs
-              ]
-      ]
+  daBasics :: [Declaration] -> Blocks
+  daBasics ds
+   | summaryOnly = noBlocks
+   | otherwise   =
+      table 
+        (-- caption -- 
+         case language flags of
+           Dutch   -> text "Deze tabel bevat de basiszinnen, die gebruikt zijn om het gegevensmodel te genereren."
+           English -> text "This table contains the fact types, used to generate the datamodel."
+        )
+        [(AlignLeft,0.4)       , (AlignCenter, 0.4)         , (AlignCenter, 0.2)]
+        ( case language flags of
+           Dutch   -> [plain (text "Relatie") , plain (text "Beschrijving"), plain (text "Eigenschappen")]
+           English -> [plain (text "Relation"), plain (text "Description") , plain (text "Properties")   ]
+        ) 
+        (map toRow ds)
+    where
+      toRow :: Declaration -> [Blocks]
+      toRow d
+        = [ (plain.math.showMath) d
+          , fromList (meaning2Blocks (language flags) d)
+          ,  plain ( inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d])
+          ]
 
 -- The properties of various declarations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations

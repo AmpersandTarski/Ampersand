@@ -21,6 +21,9 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , dpRule
     , Counter(..),newCounter,incEis
     , noBlocks
+    ,langSwitch
+    ,(===>)
+    , inlineIntercalate
     )
 where
 import DatabaseDesign.Ampersand.Basics  
@@ -57,6 +60,7 @@ data Chapter = Intro
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]  
 chaptersInDoc flags
+ | test flags                  = [DataAnalysis]
  | diagnosisOnly flags         = [Diagnosis]
  | theme flags == StudentTheme = [ Intro
                                  , NatLangReqs
@@ -74,7 +78,7 @@ chaptersInDoc flags
                                  , ProcessAnalysis
                                  , DataAnalysis
                                  , SoftwareMetrics
-                                 , EcaRules
+                        --         , EcaRules
                                  , Interfaces
                                  , Glossary
                                  ]
@@ -106,7 +110,9 @@ chptTitle flags cpt =
         (EcaRules          , Dutch  ) -> text "ECA regels" 
         (EcaRules          , English) -> text "ECA rules (Flash points)" 
         (Interfaces        , Dutch  ) -> text "Koppelvlakken" 
-        (Interfaces        , English) -> text "Interfaces" 
+        (Interfaces        , English) -> text "Interfaces"
+        (Glossary          , Dutch  ) -> text "Inhoud"
+        (Glossary          , English) -> text "Glossary"
      )
 
 class Xreferencable a where
@@ -116,7 +122,7 @@ class Xreferencable a where
   xRefReference :: Options -> a -> Inlines
   xRefReference flags a 
     | canXRefer flags = rawInline "latex" ("\\label{"++xLabel a++"}")
-    | otherwise       = fatal 89 "xreferencing is not supported!"
+    | otherwise       = text "fatal 89 xreferencing is not supported!"
   xrefLabel :: a -> Inline
   xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")
 
@@ -342,5 +348,23 @@ lclForLang flags = defaultTimeLocale { months =
                       , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
            }
 
+noInlines :: Inlines
+noInlines = text ""
 noBlocks :: Blocks
 noBlocks = singleton Null
+
+inlineIntercalate :: Inlines -> [Inlines] -> Inlines
+inlineIntercalate _   [] = noInlines
+inlineIntercalate sep [x] = x
+inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
+
+
+
+langSwitch :: Options -> [(Lang, a)] -> a
+langSwitch flags selections
+  = case lookup (language flags) selections of
+      Nothing -> fatal 354 $ "language "++show (language flags)++" not found in `langSwitch`."
+      Just a  -> a
+(===>) :: Lang -> a -> (Lang, a)
+(===>) l a = (l, a)
+
