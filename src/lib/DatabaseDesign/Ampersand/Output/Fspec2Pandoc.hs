@@ -18,6 +18,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 import Data.Time.Format
+import Data.List
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -86,7 +87,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
                 [] -> case language flags of
                         Dutch   -> [text "Specificeer auteurs in ADL met: META \"authors\" \"<auteursnamen>\""]
                         English -> [text "Specify authors in ADL with: META \"authors\" \"<author names>\""]
-                xs -> map text xs)
+                xs -> map text (nub xs))  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
         )
       . (setDate (text (formatTime (lclForLang flags) "%-d %B %Y" (genTime flags))))
       ) 

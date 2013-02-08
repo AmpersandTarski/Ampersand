@@ -50,8 +50,8 @@ where
    instance CdNode Generalization where
     nodes (OOGener g ss) = g:ss
 
--- The following function, clAnalysis, makes a classification diagram.
--- It focuses on generalizations and specializations.
+   -- | This function makes a classification diagram.
+   -- It focuses on generalizations and specializations.
    clAnalysis :: Fspc -> Options -> Maybe ClassDiag
    clAnalysis fSpec _ = if null classes' then Nothing else Just (OOclassdiagram classes' [] [] geners' ("classification"++name fSpec, concs fSpec))
     where
@@ -80,15 +80,7 @@ where
        lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
         
-{- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
-   instance Signaling Declaration where
-     isSignal d = case d of
-                 Sgn {}    -> deciss d
-                 _         -> False
 
-   instance Signaling Relation where
-    isSignal r = isSignal (makeDeclaration r)
--}
 
 -- The following function, plugs2classdiagram, is useful to make a technical data model.
 -- It draws on the plugs, which are meant to implement database tables for OLTP purposes.
@@ -137,10 +129,10 @@ where
                    else head ps
                    where ps = [p |InternalPlug p<-plugInfos fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c' |(c',_)<-cLkpTbl p, c'==c]]
 
--- The following function, cdAnalysis, generates a conceptual data model.
--- It creates a class diagram in which generalizations and specializations remain distinct entities.
--- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
--- Properties and identities are not shown.
+   -- | This function, cdAnalysis, generates a conceptual data model.
+   -- It creates a class diagram in which generalizations and specializations remain distinct entities.
+   -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
+   -- Properties and identities are not shown.
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
     where
@@ -179,6 +171,7 @@ where
                     | r<-rs, not (isPropty r)]
        isPropty r = null([Sym,Asy]>-multiplicities r)
 
+   -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture. 
    classdiagram2dot :: Options -> ClassDiag -> DotGraph String
    classdiagram2dot flags cd
     = DotGraph { strictGraph   = False

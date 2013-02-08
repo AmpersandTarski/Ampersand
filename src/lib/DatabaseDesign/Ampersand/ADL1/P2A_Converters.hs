@@ -1346,7 +1346,24 @@ pCtx2aCtx p_context
         f prms obj
          = Ifc { ifcParams = [ case erel of
                                 ERel rel _ -> rel
-                                _   -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EEqu _ _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EImp _ _ -> fatal 1350 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EIsc _ _ -> fatal 1351 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EUni _ _ -> fatal 1352 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EDif _ _ -> fatal 1353 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ELrs _ _ -> fatal 1354 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ERrs _ _ -> fatal 1355 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ECps _ _ -> fatal 1356 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ERad _ _ -> fatal 1357 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EPrd _ _ -> fatal 1358 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EKl0 _ _ -> fatal 1359 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EKl1 _ _ -> fatal 1360 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EFlp _ _ -> fatal 1361 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ECpl _ _ -> fatal 1362 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                EBrk _ -> fatal 1363 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ETyp _ _ -> fatal 1364 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                
+                            --    _   -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
                , ifcViols  = fatal 206 "not implemented ifcViols"
                , ifcArgs   = ifc_Args pifc
