@@ -294,7 +294,7 @@ makeRAPPops fSpec flags usrfiles pics
    (_,islands,_,_,_) = case concs fSpec of
                            []  -> (undef,[],undef,undef,undef)
                            c:_ -> cptgE c
-                       where undef=undef
+                       where undef=fatal 297 "undef would cause a loop..."
    --populate relsrc and reltrg for typed data structures
    relsrc,reltrg :: Association r => [r] -> P_Population
    relsrc rs = makepopu ("src","Sign","Concept")      [(sgnid (sign r), cptid (source r)) | r<-rs]
