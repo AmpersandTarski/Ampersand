@@ -130,7 +130,7 @@ where
                    where ps = [p |InternalPlug p<-plugInfos fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c' |(c',_)<-cLkpTbl p, c'==c]]
 
    -- | This function, cdAnalysis, generates a conceptual data model.
-   -- It creates a class diagram in which generalizations and specializations remain distinct entities.
+   -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
    -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
    -- Properties and identities are not shown.
    cdAnalysis :: Fspc -> Options -> ClassDiag

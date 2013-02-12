@@ -7,14 +7,9 @@ import Data.List
 import Data.List.Split
 import GHC.Exts (sortWith)
 import Data.Maybe
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sortWith)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 

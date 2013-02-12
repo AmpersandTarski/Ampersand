@@ -3,12 +3,8 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Classes
 import Data.List
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 --DESCR -> the process analysis contains a section for each process in the fspec
@@ -21,7 +17,7 @@ noProcesses fSpec = null (fRoleRels fSpec) && null (fRoleRuls fSpec)
 chpProcessAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
 chpProcessAnalysis lev fSpec flags
  = if null procs
-   then (noBlocks,[])
+   then (mempty,[])
    else (fromList $ header ++ roleRuleBlocks ++ roleRelationBlocks ++ processSections , pictures)
  where
   pictures = [pict | (_,picts)<-procSections procs,pict<-picts]

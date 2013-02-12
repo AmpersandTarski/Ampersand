@@ -4,8 +4,6 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 chpECArules :: Fspc -> Options ->  Blocks
