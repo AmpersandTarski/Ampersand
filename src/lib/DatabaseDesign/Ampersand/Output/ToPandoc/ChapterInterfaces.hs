@@ -6,13 +6,9 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces
   )
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import Data.List
-import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.Switchboard      (switchboardAct)
 import DatabaseDesign.Ampersand.Output.PandocAux
 
@@ -21,7 +17,7 @@ chpInterfacesPics fSpec flags =
    concat [picKnowledgeGraph flags fSpec act : [picSwitchboard flags fSpec act | graphic flags] | act <- fActivities fSpec ]
 chpInterfacesBlocks :: Int -> Fspc -> Options -> Blocks
 chpInterfacesBlocks lev fSpec flags =
-   foldr (<>) noBlocks (map interfaceChap (fActivities fSpec))  
+   foldr (<>) mempty (map interfaceChap (fActivities fSpec))  
  where 
    interfaceChap :: Activity -> Blocks
    interfaceChap act

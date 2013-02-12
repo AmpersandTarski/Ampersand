@@ -3,9 +3,6 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
 import Data.Time.Format
 
 chpIntroduction :: Fspc -> Options -> Blocks
@@ -45,7 +42,7 @@ chpIntroduction fSpec flags =
                              <> (doubleQuoted.chptTitle flags) Diagnosis
                           ) <> text " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                          )
-               else noBlocks
+               else mempty
             <> if ConceptualAnalysis `elem` chaptersInDoc flags
                then para ( ( if canXRefer flags 
                              then text "De conceptuele analyse in hoofdstuk "
@@ -58,7 +55,7 @@ chpIntroduction fSpec flags =
                              <> text "De formalisatie in dit hoofdstuk maakt consistentie van de functionele specificatie bewijsbaar. "
                              <> text "Ook garandeert het een eenduidige interpretatie van de eisen."
                          )
-               else noBlocks
+               else mempty
             <> if DataAnalysis `elem` chaptersInDoc flags
                then para ( text "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van "
                         <> (singleQuoted.text.name) fSpec
@@ -80,7 +77,7 @@ chpIntroduction fSpec flags =
                         <> (singleQuoted.text.name) fSpec
                         <> text " compliance ten aanzien van alle gestelde eisen. "
                          )
-               else noBlocks
+               else mempty
 
 
           English
@@ -113,7 +110,7 @@ chpIntroduction fSpec flags =
                              <> (doubleQuoted.chptTitle flags) Diagnosis
                           ) <> text " is meant to help the authors identify shortcomings in their Ampersand script."
                          )
-               else noBlocks
+               else mempty
             <> if ConceptualAnalysis `elem` chaptersInDoc flags
                then para ( ( if canXRefer flags 
                              then text "The conceptual analysis in chapter "
@@ -125,7 +122,7 @@ chpIntroduction fSpec flags =
                              <> text "The formalization in this chapter makes consistency of the functional specification provable. "
                              <> text "It also yields an unambiguous interpretation of all requirements."
                          )
-               else noBlocks
+               else mempty
             <> if DataAnalysis `elem` chaptersInDoc flags
                then para ( text "Chapters that follow have the builders of "
                         <> (singleQuoted.text.name) fSpec
@@ -147,7 +144,7 @@ chpIntroduction fSpec flags =
                         <> (singleQuoted.text.name) fSpec
                         <> text " ensures compliance to all rules aggreed upon."
                          )
-               else noBlocks
+               else mempty
       
     date = formatTime (lclForLang flags) "%-d-%-m-%Y" (genTime flags)
     time = formatTime (lclForLang flags) "%H:%M:%S" (genTime flags)

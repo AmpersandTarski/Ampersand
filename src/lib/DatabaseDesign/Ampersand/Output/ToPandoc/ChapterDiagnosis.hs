@@ -3,16 +3,11 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis 
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import Data.List
-import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
-import Text.Pandoc.Builder hiding (header,str)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis.hs"

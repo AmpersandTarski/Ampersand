@@ -18,7 +18,6 @@ module DatabaseDesign.Ampersand.Components
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
-import Data.List  (intercalate)
 import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,Guarded(..))

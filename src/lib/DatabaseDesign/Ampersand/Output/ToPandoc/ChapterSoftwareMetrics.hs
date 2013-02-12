@@ -3,11 +3,6 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Fspec.FPA (fpa) 
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.Fspec
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.Statistics (Statistics(..))
 import DatabaseDesign.Ampersand.Output.PandocAux
 
@@ -17,7 +12,7 @@ import DatabaseDesign.Ampersand.Output.PandocAux
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
 fpAnalysis :: Fspc -> Options ->  Blocks
-fpAnalysis fSpec flags = noBlocks -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
+fpAnalysis fSpec flags = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where 
   header :: Blocks
   header = chptHeader flags SoftwareMetrics

@@ -3,16 +3,14 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis
 where 
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
-import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.PandocAux
-import Data.List (nub, intercalate)
+import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (Class(..))
+import Data.List (nub,sortBy)
+import Data.Function (on)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis.hs"
@@ -74,7 +72,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
   dataModelBlocks :: ClassDiag -> Picture -> Blocks
   dataModelBlocks dm pict =
      para (case language flags of
-             Dutch   -> (text "De functionele eisen zijn vertaald naar een gegevensmodel. "
+             Dutch   -> (text "De functionele eisen zijn vertaal naar een gegevensmodel. "
                        <> ( if canXRefer flags
                             then text "Dit gegevensmodel is in figuur " <> xRefReference flags pict <> text " weergegeven."
                             else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
@@ -86,28 +84,28 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                         ) )
           )
    <> if summaryOnly 
-      then noBlocks
+      then mempty
       else let nrOfClasses = length (classes dm)
-           in langSwitch flags
-                [Dutch    ===> para (text (case nrOfClasses of
-                                         0 -> "Er zijn geen gegevensverzamelingen."
-                                         1 -> "Er is één gegevensverzameling,"
-                                         _ -> "Er zijn "++count flags nrOfClasses "gegevensverzameling"++","
-                                    )     )
-                , English ===> para (text "onaf")
-                ]
---                  [ Str (case length (classes classDiagram) of
---                            0 -> "Er zijn"
---                            1 -> "Er is één gegevensverzameling,"
---                            _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
---                        )
---                  , Space, Str $ count flags (length (assocs classDiagram)) "associatie" ]++
---                  ( case classification of
---                     Nothing -> []
---                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisatie" ] ) ++
---                  [ Str $ " en "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
---                  , Str $ " "++name fSpec++" kent in totaal "++count flags (length (concs fSpec)) "concept"++"."
---                  ]]
+           in case language flags of
+                Dutch     -> para (case nrOfClasses of
+                                     0 -> text "Er zijn geen gegevensverzamelingen."
+                                     1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
+                                     _ -> text ("Er zijn "++count flags nrOfClasses "gegevensverzameling"++".") 
+                                       <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
+                                           
+                                  )
+                English   -> para (case nrOfClasses of
+                                     0 -> text "There are no entity types."
+                                     1 -> text "There is only one entity type:"
+                                     _ -> text ("There are "++count flags nrOfClasses "entity type" ++".")
+                                       <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
+                                  )
+        <> let detailsOfClass :: Class -> Blocks
+               detailsOfClass cl= para ((emph.strong.text) (name cl)) 
+               
+           in mconcat [detailsOfClass cd | cd <- sortBy (compare `on` name) (classes dm)]
+               
+                
         
   thePictures = case classificationModel of
                  Nothing -> []
@@ -117,7 +115,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
   theBlocks 
     =  chptHeader flags DataAnalysis  -- The header
     <> (case classificationModel of --If there is a classification model, show it in the output
-          Nothing -> noBlocks
+          Nothing -> mempty
           Just cl -> classificationBlocks cl (classificationPicture cl)
        )
     <> -- Fact type table containing the relevant relations:
@@ -285,7 +283,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
   -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
   daBasics :: [Declaration] -> Blocks
   daBasics ds
-   | summaryOnly = noBlocks
+   | summaryOnly = mempty
    | otherwise   =
       table 
         (-- caption -- 
