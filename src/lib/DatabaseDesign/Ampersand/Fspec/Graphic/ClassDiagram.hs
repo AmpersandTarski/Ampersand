@@ -5,7 +5,7 @@
 module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..), MinValue(..), MaxValue(..),
-          clAnalysis, plugs2classdiagram, cdAnalysis, classdiagram2dot)
+          clAnalysis, cdAnalysis, classdiagram2dot)
 where
    import Data.List
    import DatabaseDesign.Ampersand.Basics
@@ -31,7 +31,7 @@ where
     nodes (OOclassdiagram cs as rs gs _) = nub (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
 
    instance CdNode Class where
-    nodes (OOClass c _ _) = [c]
+    nodes (OOClass c _ _) = [name c]
    instance CdNode a => CdNode [a] where
     nodes = concatMap nodes
 
@@ -42,13 +42,13 @@ where
     nodes _ = []
 
    instance CdNode Association where
-    nodes (OOAssoc s _ _ t _ _) = [s,t]
+    nodes (OOAssoc s _ _ t _ _) = map name [s,t]
 
    instance CdNode Aggregation where
-    nodes (OOAggr _ s t) = [s,t]
+    nodes (OOAggr _ s t) = map name [s,t]
 
    instance CdNode Generalization where
-    nodes (OOGener g ss) = g:ss
+    nodes (OOGener g ss) = map name (g:ss)
 
    -- | This function makes a classification diagram.
    -- It focuses on generalizations and specializations.
@@ -68,11 +68,11 @@ where
                         , (not.null) [ r | r<-relsAtts, source r==c ] ||  -- c is either a concept that has attributes or
                                null  [ r | r<-relsAtts, target r==c ]     --      it does not occur as an attribute.
                         ]
-       geners'    = nub [ OOGener (name c) (map (name.snd) gs)
+       geners'    = nub [ OOGener c (map snd gs)
                         | gs<-eqCl fst (fsisa fSpec)
                         , let c=fst (head gs), c `elem` cpts -- select only those generalisations whose specific concept is part of the themes to be printed.
                         ]
-       classes'   = [ OOClass (name c) (attrs c) []
+       classes'   = [ OOClass c (attrs c) []
                     | c<-cpts]
        attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  name (target (fldexpr fld))) (fldnull fld)
                     | plug<-lookup' c, fld<-tail (tblfields plug), not (inKernel fld), source (fldexpr fld)==c]
@@ -82,52 +82,52 @@ where
         
 
 
--- The following function, plugs2classdiagram, is useful to make a technical data model.
--- It draws on the plugs, which are meant to implement database tables for OLTP purposes.
--- Plugs come in three flavours: TblSQL, which is an entity (class),
---                               BinSQL, which is a relation between entities, and
---                               ScalarSQL, which represents scalars.
-   plugs2classdiagram :: Fspc -> Options -> ClassDiag
-   plugs2classdiagram fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
-    where
--- The condition for becoming a class is in the function isClass. Does this correspond with the distinction TblSQL and BinSQL?
-       isClass :: PlugSQL -> Bool
-       isClass  p = (not.null) [fld |fld<-tblfields p, flduniq fld] &&      -- an assocciation does not have fields that are flduniq
-                    (not.null) [fld |fld<-tblfields p, not (flduniq fld)]   -- a scalar has only fields that are flduniq
-       classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull | (a,atype,fNull)<-attrs plug] [] -- drop the I field.
-                    | InternalPlug plug <- plugInfos fSpec, isClass plug
-                    , not (null (attrs plug))
-                    ]
-       assocs'    = [ OOAssoc (nm source s) (mults $ flp rel) "" (nm target t) (mults rel) relname
-                    | InternalPlug plug@BinSQL{} <-plugInfos fSpec
-                    , let rel=mLkp plug
-       --           , not ((isSignal.head.mors) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
-                    , let relname=case rel of
-                           ERel r _ -> name r
-                           EFlp (ERel r _) _ -> name r
-                           _ -> fatal 109 (show rel ++ " has no name.")
-                    , let (s,t)=columns plug
-                    ]
-                    where
-                     mults r = let minVal = if isTot r then MinOne else MinZero
-                                   maxVal = if isInj r then MaxOne else MaxMany
-                               in  Mult minVal maxVal 
-                     nm f = name.concept.lookup'.f.fldexpr
-       aggrs'     = []
-       geners'    = []
-       -- The attributes are shown without the key-attributes. Hence the first attribute (key of this concept) and
-       -- the keys of its subtypes (filtered by 'inKernel') are not shown.
-       attrs plug = [ if isPropty fld
-                      then (fldname fld, "Bool",                      False      )
-                      else (fldname fld, name (target (fldexpr fld)), fldnull fld)
-                    | fld<-tail (tblfields plug), not (inKernel fld)]
-                    where isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
-                    -- TODO: (SJ) I'm not sure if inKernel is correct. Check with Bas.
-                          inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
-       lookup' c = if null ps
-                   then fatal 112 $ "erroneous lookup for concept "++name c++" in plug list"
-                   else head ps
-                   where ps = [p |InternalPlug p<-plugInfos fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c' |(c',_)<-cLkpTbl p, c'==c]]
+---- The following function, plugs2classdiagram, is useful to make a technical data model.
+---- It draws on the plugs, which are meant to implement database tables for OLTP purposes.
+---- Plugs come in three flavours: TblSQL, which is an entity (class),
+----                               BinSQL, which is a relation between entities, and
+----                               ScalarSQL, which represents scalars.
+--   plugs2classdiagram :: Fspc -> Options -> ClassDiag
+--   plugs2classdiagram fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
+--    where
+---- The condition for becoming a class is in the function isClass. Does this correspond with the distinction TblSQL and BinSQL?
+--       isClass :: PlugSQL -> Bool
+--       isClass  p = (not.null) [fld |fld<-tblfields p, flduniq fld] &&      -- an assocciation does not have fields that are flduniq
+--                    (not.null) [fld |fld<-tblfields p, not (flduniq fld)]   -- a scalar has only fields that are flduniq
+--       classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull | (a,atype,fNull)<-attrs plug] [] -- drop the I field.
+--                    | InternalPlug plug <- plugInfos fSpec, isClass plug
+--                    , not (null (attrs plug))
+--                    ]
+--       assocs'    = [ OOAssoc (source s) (mults $ flp rel) "" (target t) (mults rel) relname
+--                    | InternalPlug plug@BinSQL{} <-plugInfos fSpec
+--                    , let rel=mLkp plug
+--       --           , not ((isSignal.head.mors) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
+--                    , let relname=case rel of
+--                           ERel r _ -> name r
+--                           EFlp (ERel r _) _ -> name r
+--                           _ -> fatal 109 (show rel ++ " has no name.")
+--                    , let (s,t)=columns plug
+--                    ]
+--                    where
+--                     mults r = let minVal = if isTot r then MinOne else MinZero
+--                                   maxVal = if isInj r then MaxOne else MaxMany
+--                               in  Mult minVal maxVal 
+--                     nm f = name.concept.lookup'.f.fldexpr
+--       aggrs'     = []
+--       geners'    = []
+--       -- The attributes are shown without the key-attributes. Hence the first attribute (key of this concept) and
+--       -- the keys of its subtypes (filtered by 'inKernel') are not shown.
+--       attrs plug = [ if isPropty fld
+--                      then (fldname fld, "Bool",                      False      )
+--                      else (fldname fld, name (target (fldexpr fld)), fldnull fld)
+--                    | fld<-tail (tblfields plug), not (inKernel fld)]
+--                    where isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
+--                    -- TODO: (SJ) I'm not sure if inKernel is correct. Check with Bas.
+--                          inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
+--       lookup' c = if null ps
+--                   then fatal 112 $ "erroneous lookup for concept "++name c++" in plug list"
+--                   else head ps
+--                   where ps = [p |InternalPlug p<-plugInfos fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c' |(c',_)<-cLkpTbl p, c'==c]]
 
    -- | This function, cdAnalysis, generates a conceptual data model.
    -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -139,10 +139,10 @@ where
        classes'   = let cls=eqClass (==) assRels in
                     if length cls /= length assRels
                     then fatal 125 (show [map show cl | cl<-cls, length cl>1])
-                    else [ OOClass (name c) (attrs cl) []
+                    else [ OOClass c (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (name (source r)) (mults $ flp r) "" (name (target r)) (mults r) ((name.head.morlist) r)
+       assocs'    = [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.morlist) r)
                     | r<-assRels]
                     where
                      mults r = let minVal = if isTot r then MinOne else MinZero
@@ -264,8 +264,8 @@ where
   -------------------------------
           association2edge :: Association -> DotEdge String
           association2edge ass = 
-             DotEdge { fromNode       = assSrc ass
-                     , toNode         = assTrg ass
+             DotEdge { fromNode       = name(assSrc ass)
+                     , toNode         = name(assTrg ass)
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
                                         , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
@@ -276,18 +276,18 @@ where
                      }
               where
                  mult2Lable = StrLabel . fromString . mult2Str
-                 mult2Str (Mult MinZero MaxOne)  = "[0..1]"
-                 mult2Str (Mult MinZero MaxMany) = "[0..n]"
-                 mult2Str (Mult MinOne  MaxOne)  = "[1..1]"
-                 mult2Str (Mult MinOne  MaxMany) = "[1..n]"
+                 mult2Str (Mult MinZero MaxOne)  = "0-1"
+                 mult2Str (Mult MinZero MaxMany) = "*"
+                 mult2Str (Mult MinOne  MaxOne)  = "1"
+                 mult2Str (Mult MinOne  MaxMany) = "1-*"
                   
   -------------------------------
   --        AGGREGATIONS:      --
   -------------------------------
           aggregation2edge :: Aggregation -> DotEdge String
           aggregation2edge agg =
-             DotEdge { fromNode       = aggSrc agg
-                     , toNode         = aggTrg agg
+             DotEdge { fromNode       = (name.aggSrc) agg
+                     , toNode         = (name.aggTrg) agg
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
                                         , ArrowTail (AType [(ArrMod (case aggDel agg of 
                                                                       Open -> OpenArrow
@@ -307,8 +307,8 @@ where
           generalization2edges ooGen = map (sub2edge (genGen ooGen)) (genSubs ooGen)
            where
              sub2edge g s = DotEdge
-                              { fromNode = g
-                              , toNode   = s
+                              { fromNode = name g
+                              , toNode   = name s
                               , edgeAttributes 
                                          = [ ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                            , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
@@ -334,12 +334,12 @@ where
       name cd = n
         where (n,_) = nameandcpts cd
         
-   data Class          = OOClass  { clNm :: String          -- ^ name of the class
+   data Class          = OOClass  { clcpt :: A_Concept      -- ^ Main concept of the class
                                   , clAtts :: [CdAttribute] -- ^ Attributes of the class
                                   , clMths :: [Method]      -- ^ Methods of the class
                                   } deriving Show
    instance Identified Class where
-      name = clNm
+      name = name.clcpt
    data CdAttribute    = OOAttr   { attNm :: String            -- ^ name of the attribute
                                   , attTyp :: String           -- ^ type of the attribute (Concept name or built-in type)
                                   , attOptional :: Bool        -- ^ says whether the attribute is optional
@@ -352,19 +352,19 @@ where
    
    data Multiplicities = Mult MinValue MaxValue deriving Show
    
-   data Association    = OOAssoc  { assSrc :: String           -- ^ source: the left hand side class
+   data Association    = OOAssoc  { assSrc :: A_Concept           -- ^ source: the left hand side class
                                   , asslhm :: Multiplicities   -- ^ left hand side multiplicities
                                   , asslhr :: String           -- ^ left hand side role
-                                  , assTrg :: String           -- ^ target: the right hand side class
+                                  , assTrg :: A_Concept           -- ^ target: the right hand side class
                                   , assrhm :: Multiplicities   -- ^ right hand side multiplicities
                                   , assrhr :: String           -- ^ right hand side role
                                   }  deriving Show
    data Aggregation    = OOAggr   { aggDel :: Deleting         -- 
-                                  , aggSrc :: String           --
-                                  , aggTrg :: String           --
+                                  , aggSrc :: A_Concept           --
+                                  , aggTrg :: A_Concept           --
                                   } deriving (Show, Eq)
-   data Generalization = OOGener  { genGen :: String             --
-                                  , genSubs:: [String]           --
+   data Generalization = OOGener  { genGen :: A_Concept             --
+                                  , genSubs:: [A_Concept]           --
                                   } deriving (Show, Eq)
 
 

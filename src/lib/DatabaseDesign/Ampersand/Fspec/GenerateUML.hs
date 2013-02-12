@@ -86,7 +86,7 @@ fSpec2UML fSpec flags =
     }
  where classDiag = cdAnalysis fSpec flags
        (contextName, allConcs) = nameandcpts classDiag
-       classNames    = [ nm | OOClass nm _ _ <-  classes classDiag]
+       classNames    = map name (classes classDiag)
        datatypeNames = map name allConcs >- classNames
 
 genUMLRequirement :: Req -> UML
@@ -104,11 +104,11 @@ genUMLDatatype nm =
     }
 
 genUMLClass :: Class -> UML
-genUMLClass (OOClass nm attrs _) =
- do { classId <- refLabeledId nm
+genUMLClass (OOClass main attrs _) =
+ do { classId <- refLabeledId (name main)
     ; addToDiagram classId
     ; attributesUML <- mapM genUMAttribute attrs
-    ; return $ [ "    <packagedElement xmi:type=\"uml:Class\" xmi:id=\""++classId++"\" name=\""++nm++"\" visibility=\"public\">"] ++
+    ; return $ [ "    <packagedElement xmi:type=\"uml:Class\" xmi:id=\""++classId++"\" name=\""++name main++"\" visibility=\"public\">"] ++
                concat attributesUML ++
                [ "    </packagedElement>"]
     }
@@ -141,9 +141,9 @@ genUMLAssociation (OOAssoc lType lMults _ rType rMults rRole) =
         [ "    </packagedElement>"
         ]
     }
- where genMemberAndOwnedEnd (Mult minVal maxVal) assocId typeName =
+ where genMemberAndOwnedEnd (Mult minVal maxVal) assocId type' =
         do { endId <- mkUnlabeledId "MemberEnd"
-           ; typeId <- refLabeledId typeName
+           ; typeId <- refLabeledId (name type')
            ; lIntId <- mkUnlabeledId "Int"
            ; uIntId <- mkUnlabeledId "Int"
            ; return 
