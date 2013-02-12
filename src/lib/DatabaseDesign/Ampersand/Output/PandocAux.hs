@@ -2,11 +2,9 @@
 module DatabaseDesign.Ampersand.Output.PandocAux
       ( writepandoc
       , labeledThing
-    --  , xrefReference
       , symDefLabel, symDefRef
       , symReqLabel, symReqRef, symReqPageRef
       , xrefSupported
-    --  , xrefFigure1
       , pandocEqnArray
       , pandocEquation
       , makeDefinition, uniquecds
