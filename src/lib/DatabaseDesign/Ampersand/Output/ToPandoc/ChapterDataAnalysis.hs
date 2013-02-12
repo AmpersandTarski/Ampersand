@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Output.PandocAux
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (Class(..))
+import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (Class(..),CdAttribute(..))
 import Data.List (nub,sortBy)
 import Data.Function (on)
 
@@ -45,19 +45,20 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 
   classificationBlocks :: ClassDiag -> Picture -> Blocks
   classificationBlocks cl pict = 
-     para (case language flags of 
-            Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
-                     <> (if canXRefer flags 
-                         then text "Deze is in figuur " <> xRefReference flags pict <> text "weergegeven."
-                         else text "Deze is in onderstaand figuur weergegeven."
-                        )
-            English -> text "A number of concepts is organized in a classification structure. "
-                     <> (if canXRefer flags 
-                         then text "This is shown in figure " <> xRefReference flags pict <> text "."
-                         else text "This is shown in the figure below."
-                         )
-              )
-      <> para (text "HIER MOET HET PLAATJE") 
+       para (case language flags of 
+              Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
+                       <> (if canXRefer flags 
+                           then text "Deze is in figuur " <> xRefReference flags pict <> text "weergegeven."
+                           else text "Deze is in onderstaand figuur weergegeven."
+                          )
+              English -> text "A number of concepts is organized in a classification structure. "
+                       <> (if canXRefer flags 
+                           then text "This is shown in figure " <> xRefReference flags pict <> text "."
+                           else text "This is shown in the figure below."
+                          )
+            )
+    <> para (showImage flags pict)
+    
 
   dataModel :: ClassDiag
   dataModel = cdAnalysis fSpec flags
@@ -72,7 +73,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
   dataModelBlocks :: ClassDiag -> Picture -> Blocks
   dataModelBlocks dm pict =
      para (case language flags of
-             Dutch   -> (text "De functionele eisen zijn vertaal naar een gegevensmodel. "
+             Dutch   -> (text "De functionele eisen zijn vertaald naar een gegevensmodel. "
                        <> ( if canXRefer flags
                             then text "Dit gegevensmodel is in figuur " <> xRefReference flags pict <> text " weergegeven."
                             else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
@@ -83,6 +84,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                             else text "This model is shown by the figure below. "
                         ) )
           )
+   <> para (showImage flags pict)
    <> if summaryOnly 
       then mempty
       else let nrOfClasses = length (classes dm)
@@ -90,7 +92,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                 Dutch     -> para (case nrOfClasses of
                                      0 -> text "Er zijn geen gegevensverzamelingen."
                                      1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
-                                     _ -> text ("Er zijn "++count flags nrOfClasses "gegevensverzameling"++".") 
+                                     _ -> text ("Er zijn "++count flags nrOfClasses "gegevensverzameling"++". ") 
                                        <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
                                            
                                   )
@@ -100,17 +102,66 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                      _ -> text ("There are "++count flags nrOfClasses "entity type" ++".")
                                        <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
                                   )
-        <> let detailsOfClass :: Class -> Blocks
-               detailsOfClass cl= para ((emph.strong.text) (name cl)) 
+        <> mconcat [detailsOfClass cd | cd <- sortBy (compare `on` name) (classes dm)]
+        
+        
+    where
+      detailsOfClass :: Class -> Blocks
+      detailsOfClass cl = 
+           header 2 ((case language flags of
+                       Dutch   -> text "Gegevensverzameling: "
+                       English -> text "Entity type: "
+                     )
+                     <> (emph.strong.text.name) cl)
+        <> case language flags of 
+             Dutch   -> para $ text "Deze gegevensverzameling bevat de volgende attributen: "
+             English -> para $ text "This entity type has the following attributes: "
+        <> simpleTable (case language flags of
+                          Dutch   -> [(plain.text) "Attribuut"
+                                     ,(plain.text) "Type"
+                                     ,mempty
+                                     ]
+                          English -> [(plain.text) "Attribute"
+                                     ,(plain.text) "Type"
+                                     ,mempty
+                                     ]
+                       )
+                       [ [ (plain.text.name) attr
+                         , (plain.text.attTyp) attr
+                         , (plain.text) $ case (language flags,attOptional attr) of
+                                            (Dutch  ,True ) -> "Optioneel"
+                                            (English,True ) -> "Optional"
+                                            (Dutch  ,False) -> "Verplicht"
+                                            (English,False) -> "Mandatory"
+                         ]
+                         | attr <- clAtts cl]  
+        <> case language flags of 
+             Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
+             English -> para ( text (name cl) <> text " has the following associations: ")
+        <> simpleTable (case language flags of
+                          Dutch   -> [(plain.text) "Associatie"
+                                     ,(plain.text) "Cardinaliteit"
+                                     ,mempty
+                                     ]
+                          English -> [(plain.text) "Associatie"
+                                     ,(plain.text) "Cardinality"
+                                     ,mempty
+                                     ]
+                       )
+                       [ [ (plain.text.show) assoc
+                         , (plain.text) ""
+                         , mempty
+                         ]
+                         | assoc <- assocs dm]  
                
-           in mconcat [detailsOfClass cd | cd <- sortBy (compare `on` name) (classes dm)]
                
                 
         
-  thePictures = case classificationModel of
-                 Nothing -> []
-                 Just cl -> [classificationPicture cl] 
-             ++ [dataModelPicture dataModel]
+  thePictures 
+    = dataModelPicture dataModel
+    : case classificationModel of
+         Nothing -> []
+         Just cl -> [classificationPicture cl] 
 
   theBlocks 
     =  chptHeader flags DataAnalysis  -- The header
