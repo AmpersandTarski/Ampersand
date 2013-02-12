@@ -4,11 +4,8 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Basics  
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Misc
 
 
 chpGlossary :: Int -> Fspc -> Options ->  Blocks

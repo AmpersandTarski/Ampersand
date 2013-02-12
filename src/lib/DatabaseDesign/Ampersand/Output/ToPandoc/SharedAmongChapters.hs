@@ -3,6 +3,11 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
+    , module Data.Monoid
+    , module DatabaseDesign.Ampersand.Basics  
+    , module DatabaseDesign.Ampersand.Fspec
+    , module DatabaseDesign.Ampersand.Misc
+    , module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -20,14 +25,11 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , lclForLang
     , dpRule
     , Counter(..),newCounter,incEis
-    , noBlocks
-    ,langSwitch
-    ,(===>)
     , inlineIntercalate
     )
 where
 import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
@@ -38,8 +40,8 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List             (intercalate,partition)
+import Data.Monoid
 import System.Locale
-import qualified Data.Sequence as Seq
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
@@ -348,23 +350,11 @@ lclForLang flags = defaultTimeLocale { months =
                       , ("September","Sep"),("October","Oct"),("November","Nov"),("December","Dec")]
            }
 
-noInlines :: Inlines
-noInlines = text ""
-noBlocks :: Blocks
-noBlocks = singleton Null
 
 inlineIntercalate :: Inlines -> [Inlines] -> Inlines
-inlineIntercalate _   [] = noInlines
-inlineIntercalate sep [x] = x
+inlineIntercalate _   [] = mempty
+inlineIntercalate _ [x] = x
 inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 
 
-
-langSwitch :: Options -> [(Lang, a)] -> a
-langSwitch flags selections
-  = case lookup (language flags) selections of
-      Nothing -> fatal 354 $ "language "++show (language flags)++" not found in `langSwitch`."
-      Just a  -> a
-(===>) :: Lang -> a -> (Lang, a)
-(===>) l a = (l, a)
 

@@ -8,8 +8,6 @@ module DatabaseDesign.Ampersand.ADL1.ECArule ( isAll
  
                                              )
 where
---import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree       
---import DatabaseDesign.Ampersand.Basics 
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Basics     (fatalMsg)
 

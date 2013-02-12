@@ -1,24 +1,20 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
+module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
 where
-import DatabaseDesign.Ampersand.Basics  
-import DatabaseDesign.Ampersand.Fspec
-import Text.Pandoc.Builder
-import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
-import Data.Time.Format
-import Data.List
+import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis (chpConceptualAnalysis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis       (chpDataAnalysis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis          (chpDiagnosis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules           (chpECArules)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces         (chpInterfacesBlocks, chpInterfacesPics)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction       (chpIntroduction)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs        (chpNatLangReqs)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis    (chpProcessAnalysis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAnalysis)
+import Data.Time.Format (formatTime)
+import Data.List (nub)
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -72,7 +68,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
   where 
     myDoc = 
       ( (setTitle  
-           (str
+           (text
              (case (language flags, diagnosisOnly flags) of
                (Dutch  , False) -> "Functionele Specificatie van "
                (English, False) -> "Functional Specification of "
@@ -80,7 +76,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
                (English,  True) -> "Diagnosis of "
              )
             <>
-            (singleQuoted.str.name) fSpec
+            (singleQuoted.text.name) fSpec
            )
         )
       . (setAuthors (case metaValues "authors" fSpec of
@@ -91,7 +87,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
         )
       . (setDate (text (formatTime (lclForLang flags) "%-d %B %Y" (genTime flags))))
       ) 
-      (doc (foldr (<>) noBlocks docContents))
+      (doc (foldr (<>) mempty docContents))
 
 
     docContents = map (\chp -> cpt2Blocks chp fSpec flags) (chaptersInDoc flags)
@@ -108,7 +104,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
     cpt2Blocks Interfaces          = chpInterfacesBlocks 0
     cpt2Blocks Glossary            = chpGlossary 0
     
-    fake x f o = let (bs,_) = x f o
+    fake x f o = let (bs,_) = x f o   --Temporary function to overcome the problem that blocks and pictures are still in the same function...
                  in bs 
     -- | The following code controls the structure of the document.
 --    docContents' :: Blocks
