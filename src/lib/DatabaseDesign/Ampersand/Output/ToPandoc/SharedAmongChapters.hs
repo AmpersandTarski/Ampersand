@@ -14,13 +14,13 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , chptTitle
     , Xreferencable(..)
     , xrefFigure1
+    , showImage
     , canXRefer
     , Purpose(..)
     , purposeOf
     , purposesDefinedIn
     , purposes2Blocks
     , meaning2Blocks
-    , amPandoc
     , isMissing
     , lclForLang
     , dpRule
@@ -139,8 +139,22 @@ instance Xreferencable Picture where
 
 --Image [Inline] Target
 --      alt.text (URL,title)
-xrefFigure1 :: Picture -> [Inline]
-xrefFigure1 pict = 
+showImage :: Options -> Picture -> Inlines
+showImage flags pict = 
+      case fspecFormat flags of
+         FLatex  -> rawInline "latex" "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
+         _       -> mempty
+   <> image (uniqueName pict) (xLabel pict) (text $ "Here, "++uniqueName pict++" should have been visible" )
+   <> case fspecFormat flags of
+         FLatex  -> rawInline "latex" "}\n"
+                  <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
+         _       -> mempty
+   <> singleton (xrefLabel pict)
+   <> case fspecFormat flags of
+         FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
+         _       -> mempty
+xrefFigure1 :: Picture -> [Inline]  --DEPRECIATED! Use showImage instead.
+xrefFigure1 pict =
    [ RawInline "latex" "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
    , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] (uniqueName pict, xLabel pict)
    , RawInline "latex" "}\n"
