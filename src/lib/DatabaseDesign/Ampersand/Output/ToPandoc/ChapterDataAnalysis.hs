@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Output.PandocAux
-import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram (Class(..),CdAttribute(..))
+import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Data.List (nub,sortBy)
 import Data.Function (on)
 
@@ -139,20 +139,41 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
              Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
              English -> para ( text (name cl) <> text " has the following associations: ")
         <> simpleTable (case language flags of
-                          Dutch   -> [(plain.text) "Associatie"
-                                     ,(plain.text) "Cardinaliteit"
-                                     ,mempty
+                          Dutch   -> [(para.text) "Associatie"
                                      ]
-                          English -> [(plain.text) "Associatie"
-                                     ,(plain.text) "Cardinality"
-                                     ,mempty
+                          English -> [(para.text) "Association"
                                      ]
                        )
-                       [ [ (plain.text.show) assoc
-                         , (plain.text) ""
-                         , mempty
-                         ]
-                         | assoc <- assocs dm]  
+                       [ [ if (not.null.assrhr) assoc && assSrc assoc == clcpt cl
+                           then case language flags of
+                                  Dutch   -> para (   text (case assrhm assoc of
+                                                              Mult MinZero _ -> "Sommige "
+                                                              Mult MinOne  _ -> "Elk(e) "
+                                                           ) 
+                                                   <> (emph.text.name.assSrc) assoc
+                                                   <> text " "
+                                                   <> (singleQuoted.text.     assrhr) assoc
+                                                   <> text (case assrhm assoc of
+                                                              Mult _ MaxOne  -> fatal 167 "Deze zou als attribuut opgenomen moeten zijn in de Class!"
+                                                              Mult _ MaxMany -> " één of meerdere "
+                                                           ) 
+                                                   <> (emph .text.name.assTrg) assoc
+                                                  )
+                           else 
+                           if (not.null.asslhr) assoc && assTrg assoc == clcpt cl
+                           then case language flags of
+                                  Dutch   -> para ( text "---TODO---")
+                           else (para.text) "Dit zou niet voor moeten komen!"
+                            --      English -> para ()
+--                         , (para.text.name.assSrc) assoc
+--                         , (para.text.show.asslhm) assoc
+--                         , (para.text.     asslhr) assoc
+--                         , (para.text.name.assTrg) assoc
+--                         , (para.text.show.assrhm) assoc
+--                         , (para.text.     assrhr) assoc
+                         ] 
+
+                         | assoc <- assocs dm, assSrc assoc == clcpt cl || assTrg assoc == clcpt cl]  
                
                
                 
