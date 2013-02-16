@@ -96,7 +96,8 @@ where
 --    mors    c = [I c]
     morlist c = [I c]
     mp1Rels _ = []
-    genE      = cptgE 
+    genE C{cptgE = a}  = a
+    
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]
