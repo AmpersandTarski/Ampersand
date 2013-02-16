@@ -45,7 +45,11 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 
   classificationBlocks :: ClassDiag -> Picture -> Blocks
   classificationBlocks cl pict = 
-       para (case language flags of 
+       header 2 (case language flags of
+                  Dutch   -> text "Classificaties"
+                  English -> text "Classifications"
+                )
+    <> para (case language flags of 
               Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
                        <> (if canXRefer flags 
                            then text "Deze is in figuur " <> xRefReference flags pict <> text "weergegeven."
@@ -60,55 +64,58 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
     <> para (showImage flags pict)
     
 
-  dataModel :: ClassDiag
-  dataModel = cdAnalysis fSpec flags
+  logicalDataModel :: ClassDiag
+  logicalDataModel = cdAnalysis fSpec flags
   
-  dataModelPicture :: ClassDiag -> Picture
-  dataModelPicture cd
+  logicalDataModelPicture :: ClassDiag -> Picture
+  logicalDataModelPicture cd
                  = (makePicture flags fSpec Plain_CG cd)
                         {caption = case language flags of
                                     Dutch   ->"Datamodel van "++name fSpec
                                     English ->"Data model of "++name fSpec}
   
-  dataModelBlocks :: ClassDiag -> Picture -> Blocks
-  dataModelBlocks dm pict =
-     para (case language flags of
-             Dutch   -> (text "De functionele eisen zijn vertaald naar een gegevensmodel. "
-                       <> ( if canXRefer flags
-                            then text "Dit gegevensmodel is in figuur " <> xRefReference flags pict <> text " weergegeven."
-                            else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
-                        ) )
-             English -> (text "The functional requirements have been translated into a data model. "
-                       <> ( if canXRefer flags
-                            then text "This model is shown by figure " <> xRefReference flags pict <> text "."
-                            else text "This model is shown by the figure below. "
-                        ) )
-          )
-   <> para (showImage flags pict)
-   <> if summaryOnly 
-      then mempty
-      else let nrOfClasses = length (classes dm)
-           in case language flags of
-                Dutch     -> para (case nrOfClasses of
+  logicalDataModelBlocks :: ClassDiag -> Picture -> Blocks
+  logicalDataModelBlocks dm pict =
+       header 2 (case language flags of
+                    Dutch   -> text "Logisch gegevensmodel"
+                    English -> text "Logical datamodel"
+                )
+    <> para (case language flags of
+               Dutch   -> (text "De functionele eisen zijn vertaald naar een gegevensmodel. "
+                         <> ( if canXRefer flags
+                              then text "Dit gegevensmodel is in figuur " <> xRefReference flags pict <> text " weergegeven."
+                              else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
+                          ) )
+               English -> (text "The functional requirements have been translated into a data model. "
+                         <> ( if canXRefer flags
+                              then text "This model is shown by figure " <> xRefReference flags pict <> text "."
+                              else text "This model is shown by the figure below. "
+                          ) )
+            )
+     <> para (showImage flags pict)
+     <> if summaryOnly 
+        then mempty
+        else let nrOfClasses = length (classes dm)
+             in case language flags of
+                  Dutch   -> para (case nrOfClasses of
                                      0 -> text "Er zijn geen gegevensverzamelingen."
                                      1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
                                      _ -> text ("Er zijn "++count flags nrOfClasses "gegevensverzameling"++". ") 
                                        <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
-                                           
                                   )
-                English   -> para (case nrOfClasses of
+                  English -> para (case nrOfClasses of
                                      0 -> text "There are no entity types."
                                      1 -> text "There is only one entity type:"
                                      _ -> text ("There are "++count flags nrOfClasses "entity type" ++".")
                                        <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
                                   )
-        <> mconcat [detailsOfClass cd | cd <- sortBy (compare `on` name) (classes dm)]
+          <> mconcat [detailsOfClass cd | cd <- sortBy (compare `on` name) (classes dm)]
         
         
     where
       detailsOfClass :: Class -> Blocks
       detailsOfClass cl = 
-           header 2 ((case language flags of
+           header 3 ((case language flags of
                        Dutch   -> text "Gegevensverzameling: "
                        English -> text "Entity type: "
                      )
@@ -177,9 +184,76 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                
                
                 
-        
+  technicalDataModelBlocks :: Blocks
+  technicalDataModelBlocks =
+       header 2 (case language flags of
+                    Dutch   -> text "Technisch datamodel"
+                    English -> text "Technical datamodel"
+                )
+    <> para (let nrOfTables = length (plugInfos fSpec) in
+             case language flags of
+        Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
+        English -> text ("The technical datamodel consists of the following "++show nrOfTables++"tables:")
+            )
+    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` name) (plugInfos fSpec)]
+    where
+      detailsOfplug :: PlugInfo -> Blocks
+      detailsOfplug p = 
+           header 3 (   case (language flags, p) of
+                          (Dutch  , InternalPlug{}) -> text "Tabel: "
+                          (Dutch  , ExternalPlug{}) -> text "Dataservice: "
+                          (English, InternalPlug{}) -> text "Table: "
+                          (English, ExternalPlug{}) -> text "Data service: "
+                     <> text (name p)
+                    ) 
+        <> case p of
+             InternalPlug tbl@TblSQL{} 
+               -> (case language flags of
+                Dutch 
+                   -> para (text $ "Deze tabel heeft "++(show.length.fields) tbl++" velden:")
+                English 
+                   -> para (text $ "This table has "++(show.length.fields) tbl++" fields:")
+                  )
+               <> let listItem fld =
+                        para (text (fldname fld))
+                  in bulletList (map listItem (fields tbl))
+--               <> (case language flags of
+--                Dutch 
+--                   -> para (text ""
+--                English 
+--                   -> para (text "")
+--                  )
+             InternalPlug bin@BinSQL{} 
+               -> (let rel = case mLkp bin of
+                               ERel r _ -> r
+                               _        -> fatal 220 "relation unknown. contact your dealer!"
+                   in case language flags of
+                Dutch
+                   -> para (text "Dit is een koppeltabel, die de relatie "
+                         <> (emph.text.name) rel
+                         <> text " implementeert. De tabel bestaat uit de volgende kolommen:"      
+                           )
+                English
+                   -> para ( text "This is a link-table, implementing the relation "
+                          <> (emph.text.name) rel
+                          <> text ". It contains the following columns:"  
+                           )
+                  )
+             InternalPlug sclr@ScalarSQL{} 
+               -> case language flags of
+                Dutch
+                   -> para (text $ "Dit is een enumeratie.")
+                English
+                   -> para (text $ "This table contains an enumeration.")
+                  
+             ExternalPlug _
+               -> case language flags of
+                    Dutch   -> para (text "De details van deze service zijn in dit document (nog) niet verder uitgewerkt.")
+                    English -> para (text "The details of this dataservcie are not available in this document.")
+                   
+             
   thePictures 
-    = dataModelPicture dataModel
+    = logicalDataModelPicture logicalDataModel
     : case classificationModel of
          Nothing -> []
          Just cl -> [classificationPicture cl] 
@@ -199,7 +273,10 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                      )
                 ]
     
-    <> dataModelBlocks dataModel (dataModelPicture dataModel) 
+    <> logicalDataModelBlocks logicalDataModel (logicalDataModelPicture logicalDataModel) 
+    <> horizontalRule 
+    <> technicalDataModelBlocks
+    <> horizontalRule 
 
   remainingRels = if null (themes fSpec)
                   then mors fSpec                                                                            >- [r | p<-plugInfos fSpec, r<-mors p]
