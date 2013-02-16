@@ -293,7 +293,9 @@ makeRAPPops fSpec flags usrfiles pics
    --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
    (_,islands,_,_,_) = case concs fSpec of
                            []  -> (undef,[],undef,undef,undef)
-                           c:_ -> cptgE c
+                           c:_ -> case c of 
+                                    C{}  -> cptgE c
+                                    ONE  -> fatal 299 "What to do with ONE???" --HJO, 20130216: Deze bug kwam aan het licht bij Roles.adl. Ik heb er de fatal message bij geplaatst, zodat diagnose eenvoudiger is.
                        where undef=fatal 297 "undef would cause a loop..."
    --populate relsrc and reltrg for typed data structures
    relsrc,reltrg :: Association r => [r] -> P_Population
