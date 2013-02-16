@@ -665,12 +665,14 @@ instance Poset A_Concept where
                       where (comp,_,_,_,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
 
 instance Sortable A_Concept where
-  meet a b = case a `meets` b of        -- meet yields the more specific of two concepts
+  meet ONE   b = b
+  meet a@C{} b = case a `meets` b of        -- meet yields the more specific of two concepts
               [z] -> z
               []  -> fatal 671 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> greatest cs
              where (_,_,_,meets,_) = cptgE a
-  join a b = case a `joins` b of        -- join yields the more generic of two concepts
+  join ONE  _ = ONE
+  join a@C{} b = case a `joins` b of        -- join yields the more generic of two concepts
               [z] -> z
               []  -> fatal 675 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> least cs
