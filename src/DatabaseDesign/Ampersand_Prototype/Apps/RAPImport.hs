@@ -291,7 +291,7 @@ makeRAPPops fSpec flags usrfiles pics
    --the name of an isa-order is the combination of all maxima, in most cases there will be only one maximum.
    isanm island = intercalate "/" (map name (maxima island))
    --get the concept from the fspec, not the isa-order, because the one in the isa-order is not populated
-   (_,islands,_,_,_) = case concs fSpec of
+   (_,islands,_,_,_) = case [c | c@C{} <- concs fSpec] of
                            []  -> (undef,[],undef,undef,undef)
                            c:_ -> case c of 
                                     C{}  -> cptgE c
