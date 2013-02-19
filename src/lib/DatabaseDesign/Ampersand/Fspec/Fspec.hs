@@ -303,7 +303,7 @@ events paClause = nub (evs paClause)
            Nop{} -> []
            Blk{} -> []
            Let{} -> fatal 305 "events for let undetermined"
-           Ref{} -> fatal 305 "events for let undetermined"
+           Ref{} -> fatal 306 "events for Ref undetermined"
 
    -- The data structure Clauses is meant for calculation purposes.
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hornClauses)<-cl_conjNF cl, disj<-[conj!!i]]
