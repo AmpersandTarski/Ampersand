@@ -82,8 +82,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                                `uni` [Sur |d'<-surjectives, d==d']}
                   | d<-declarations context]
      -- determine relations that are total (as many as possible, but not necessarily all)
-        totals      = [ makeDeclaration r |       ERel r _    <- totsurs ]
-        surjectives = [ makeDeclaration r | EFlp (ERel r _) _ <- totsurs ]
+        totals      = [ makeDeclaration r |       ERel r@Rel{} _    <- totsurs ]
+        surjectives = [ makeDeclaration r | EFlp (ERel r@Rel{} _) _ <- totsurs ]
         totsurs :: [Expression]
         totsurs
          = nub [rel | q<-quads flags visible (invariants fSpec), isIdent (qRel q)

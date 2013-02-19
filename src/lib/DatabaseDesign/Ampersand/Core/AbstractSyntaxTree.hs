@@ -538,7 +538,10 @@ instance Show Relation where
    V{}   -> showString (name r++show (sign r))
    Mp1{} -> showString ("'"++relval r++"'")
 instance Identified Relation where
-  name r = name (makeDeclaration r)
+  name Rel{} -> name (reldcl r)
+  name I{}   -> "I"
+  name V{}   -> "V"
+  name Mp1{} -> "Mp1"
 instance Association Relation where
   sign r =
     case r of 
