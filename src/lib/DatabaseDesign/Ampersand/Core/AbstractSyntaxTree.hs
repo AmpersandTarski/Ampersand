@@ -538,23 +538,21 @@ instance Show Relation where
    V{}   -> showString (name r++show (sign r))
    Mp1{} -> showString ("'"++relval r++"'")
 instance Identified Relation where
-  name Rel{} -> name (reldcl r)
-  name I{}   -> "I"
-  name V{}   -> "V"
-  name Mp1{} -> "Mp1"
+  name Rel{reldcl = dcl } = name dcl
+  name I{}   = "I"
+  name V{}   = "V"
+  name Mp1{} = "Mp1"
 instance Association Relation where
-  sign r =
-    case r of 
-      Rel{}   -> sign (reldcl r)
-      I{}     -> Sign (rel1typ r) (rel1typ r)
-      V{}     -> reltyp r
-      Mp1{}   -> fatal 556 "Mp1 has no signature..."
+  sign Rel{reldcl = dcl } = sign dcl
+  sign I{rel1typ  = c   } = Sign c c
+  sign V{reltyp   = t   } = t
+  sign Mp1{}      = fatal 549 "Mp1 has no signature."
 makeDeclaration :: Relation -> Declaration
 makeDeclaration r = case r of
       Rel{} -> reldcl r
       I{}   -> Isn{ detyp = rel1typ r}
       V{}   -> Vs { decsgn = sign r}
-      Mp1{} -> fatal 556 "Mp1 has no declaration..."
+      Mp1{} -> fatal 555 "Mp1 has no declaration."
 showSign :: Identified a => [a] -> String
 showSign cs = "["++(intercalate "*".nub.map name) cs++"]"
 instance Traced Relation where
