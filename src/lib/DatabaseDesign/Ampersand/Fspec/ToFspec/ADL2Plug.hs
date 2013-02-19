@@ -37,7 +37,7 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 
 -- | Make a binary sqlplug for a relation that is neither inj nor uni
 rel2plug :: Relation -> [Declaration] -> [Declaration] -> PlugSQL
-rel2plug  r totals surjectives
+rel2plug r@Rel{} totals surjectives
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
   | otherwise
@@ -48,32 +48,32 @@ rel2plug  r totals surjectives
           --   , sqlfpa  = NO
              }
    where
-   
-   r_is_Tot = Tot `elem` multiplicities r || makeDeclaration r `elem` totals
-   r_is_Sur = Sur `elem` multiplicities r || makeDeclaration r `elem` surjectives
-   srcNm = (if isEndo r then "s" else "")++name (source trgExpr)
-   trgNm = (if isEndo r then "t" else "")++name (target trgExpr)
-   --the expr for the source of r
-   srcExpr
-    | r_is_Tot = iExpr (source r)
-    | r_is_Sur = iExpr (target r)
-    | otherwise = let er=ERel r (sign r) in iExpr (source r) ./\. (er .:. flp er)
-   --the expr for the target of r
-   trgExpr 
-    | not r_is_Tot && r_is_Sur = flp (ERel r (sign r))
-    | otherwise                = ERel r (sign r)
-   srcFld = Fld { fldname = srcNm                       
-                , fldexpr = srcExpr
-                , fldtype = makeSqlType (target srcExpr)
-                , fldnull = isTot trgExpr
-                , flduniq = isUni trgExpr
-                } 
-   trgFld = Fld { fldname = trgNm                       
-                , fldexpr = trgExpr
-                , fldtype = makeSqlType (target trgExpr)
-                , fldnull = isSur trgExpr
-                , flduniq = isInj trgExpr
-                } 
+    r_is_Tot = Tot `elem` multiplicities r || makeDeclaration r `elem` totals
+    r_is_Sur = Sur `elem` multiplicities r || makeDeclaration r `elem` surjectives
+    srcNm = (if isEndo r then "s" else "")++name (source trgExpr)
+    trgNm = (if isEndo r then "t" else "")++name (target trgExpr)
+    --the expr for the source of r
+    srcExpr
+     | r_is_Tot = iExpr (source r)
+     | r_is_Sur = iExpr (target r)
+     | otherwise = let er=ERel r (sign r) in iExpr (source r) ./\. (er .:. flp er)
+    --the expr for the target of r
+    trgExpr 
+     | not r_is_Tot && r_is_Sur = flp (ERel r (sign r))
+     | otherwise                = ERel r (sign r)
+    srcFld = Fld { fldname = srcNm                       
+                 , fldexpr = srcExpr
+                 , fldtype = makeSqlType (target srcExpr)
+                 , fldnull = isTot trgExpr
+                 , flduniq = isUni trgExpr
+                 } 
+    trgFld = Fld { fldname = trgNm                       
+                 , fldexpr = trgExpr
+                 , fldtype = makeSqlType (target trgExpr)
+                 , fldnull = isSur trgExpr
+                 , flduniq = isInj trgExpr
+                 } 
+rel2plug r _ _ = fatal 77 "Do not call rel2plug on relations other than Rel{}"
 
 -----------------------------------------
 --rel2fld
@@ -255,7 +255,7 @@ makeEntities allRels exclusions
                    where rs = rels>-(kernelSurRels++kernelTotRels)
     kernels :: [[Expression]]
     kernels
-     = case concs allRels of
+     = case [c | c@C{} <- concs allRels] of
          []  -> [] -- an Ampersand script without declarations is conceivable. In that case cptgE is undefined for lack of concepts.
          c:_ -> kerns++[ [iExpr c] ++
                          [ rs | rs<-otherFields, source rs==c, target rs/=c]
@@ -265,7 +265,7 @@ makeEntities allRels exclusions
        -- One kernel starts with a set of concepts, which were put into the same class by the type checker. Here, it is called an island of concepts.
        -- The first concept of that class is the most generic of the lot. The concepts of one island are placed in the kernel in the same order.
        -- That order reflects the size of the population. A subset (i.e. a more specific concept) is placed more to the right. This is for no reason in particular.  
-         (_,islands,_,_,_) = cptgE (head (concs allRels))
+         (_,islands,_,_,_) = cptgE (head [c | c@C{} <- concs allRels])
          kerns :: [[Expression]]
          kerns =  [ [iExpr c | c<-island ] ++
                     [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
