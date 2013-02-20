@@ -169,8 +169,9 @@ where
           [ "Fld { fldname = " ++ show (fldname sqFd)
           , "    , fldexpr = " ++ showHS flags "" (fldexpr sqFd)
           , "    , fldtype = " ++ showHS flags "" (fldtype sqFd)
-          , "    , fldnull = " ++ show (fldnull sqFd) -- can there be empty field-values?
-          , "    , flduniq = " ++ show (flduniq sqFd) -- are all field-values unique?
+          , "    , flduse  = " ++ show (flduse sqFd)
+          , "    , fldnull = " ++ show (fldnull sqFd)
+          , "    , flduniq = " ++ show (flduniq sqFd)
           , "    }"
           ]
 
