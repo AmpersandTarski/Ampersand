@@ -93,8 +93,9 @@ fSpec2Pandoc fSpec flags = ( myDoc , pictures )
     docContents = map (\chp -> cpt2Blocks chp fSpec flags) (chaptersInDoc flags)
     cpt2Blocks :: Chapter -> Fspc -> Options -> Blocks
     cpt2Blocks Intro               = chpIntroduction 
-    cpt2Blocks NatLangReqs         = chpNatLangReqs 0
-    cpt2Blocks FunctReqts          = chpNatLangReqs 0
+    cpt2Blocks NatLangReqs         = chpNatLangReqs 0 -- Han, hier krijg ik hetzelfde hoofdstuk als FunctReqts. Dat vindt LaTeX trouwens helmaal niet leuk...
+    cpt2Blocks FunctReqts          = chpNatLangReqs 0 -- Han, hier krijg ik hetzelfde hoofdstuk als NatLangReqs. Dat vindt LaTeX trouwens helmaal niet leuk...
+                                                      -- Trouwens: Dat hoofdstuk zou ook "Taalanalyse" mogen heten...
     cpt2Blocks Diagnosis           = fake chpDiagnosis
     cpt2Blocks ConceptualAnalysis  = fake (chpConceptualAnalysis 0)
     cpt2Blocks ProcessAnalysis     = fake (chpProcessAnalysis    0)
