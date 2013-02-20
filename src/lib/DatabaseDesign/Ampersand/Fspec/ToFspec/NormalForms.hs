@@ -110,21 +110,23 @@ where
       else (expr,steps,equ):simpProof shw res
     where (res,steps,equ) = normStep shw True True True expr
 
-   data Cmp = Lte | Gte | Eq   -- | This type exists for the sake of normStep only.
+   -- | This type exists for the sake of normStep only.
+   data Cmp = Lte | Gte | Eql   
+
    cplCmp :: Cmp -> Cmp
    cplCmp Lte = Gte
    cplCmp Gte = Lte
-   cplCmp Eq  = Eq
+   cplCmp Eql  = Eql
 
--- The purpose of "normStep" is to elaborate a single step in a rewrite process,
--- in which the expression is normalized by means of rewrite rules.
--- This function can be used for simplification, which means that an Expression is standardized
---  using associativity and other 'trivial' rules only.
--- These 'trivial' rules do not produce a step in the proof.
--- Use normstep shw eq True expr to do simplification only.
--- Use normstep shw eq False expr to obtain a single proof step or none when no rule is applicable.
--- This function returns a resulting expression that is closer to a normal form.
--- The normal form is not unique. This function simply uses the first rewrite rule it encounters.
+   -- | The purpose of "normStep" is to elaborate a single step in a rewrite process,
+   -- in which the expression is normalized by means of rewrite rules.
+   -- This function can be used for simplification, which means that an Expression is standardized
+   -- using associativity and other 'trivial' rules only.
+   -- These 'trivial' rules do not produce a step in the proof.
+   -- Use normstep shw eq True expr to do simplification only.
+   -- Use normstep shw eq False expr to obtain a single proof step or none when no rule is applicable.
+   -- This function returns a resulting expression that is closer to a normal form.
+   -- The normal form is not unique. This function simply uses the first rewrite rule it encounters.
    normStep :: (Expression -> String) -> Bool -> Bool -> Bool ->
                Expression -> (Expression,[String],String) -- This might be generalized to "Expression" if it weren't for the fact that flip is embedded in the Relation type.
    normStep shw   -- a function to print an expression. Might be "showADL"
@@ -134,7 +136,7 @@ where
             expr = (res,ss,equ)
     where
      
-     (res,ss,equ) = nM (if eq then Eq else Lte) expr []
+     (res,ss,equ) = nM (if eq then Eql else Lte) expr []
 --     nM :: Expression -> [Expression] -> (Expression,[String],String)
      nM posNeg (EEqu (l,r) _) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM posNeg l []

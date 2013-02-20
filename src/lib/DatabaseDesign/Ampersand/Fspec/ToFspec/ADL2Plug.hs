@@ -42,7 +42,23 @@ rel2plug r@Rel{} totals surjectives
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
   | otherwise
     = BinSQL { sqlname = name r
-             , columns = (srcFld,trgFld)
+             , columns = ( -- The source field:
+                           Fld { fldname = srcNm                       
+                               , fldexpr = srcExpr
+                               , fldtype = makeSqlType (target srcExpr)
+                               , flduse  = ForeignKey (target srcExpr)
+                               , fldnull = isTot trgExpr
+                               , flduniq = isUni trgExpr
+                               } 
+                         , -- The target field:
+                           Fld { fldname = trgNm                       
+                               , fldexpr = trgExpr
+                               , fldtype = makeSqlType (target trgExpr)
+                               , flduse  = ForeignKey (target trgExpr)
+                               , fldnull = isSur trgExpr
+                               , flduniq = isInj trgExpr
+                               }
+                          ) 
              , cLkpTbl = [] --in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
              , mLkp    = trgExpr
           --   , sqlfpa  = NO
@@ -61,19 +77,7 @@ rel2plug r@Rel{} totals surjectives
     trgExpr 
      | not r_is_Tot && r_is_Sur = flp (ERel r (sign r))
      | otherwise                = ERel r (sign r)
-    srcFld = Fld { fldname = srcNm                       
-                 , fldexpr = srcExpr
-                 , fldtype = makeSqlType (target srcExpr)
-                 , fldnull = isTot trgExpr
-                 , flduniq = isUni trgExpr
-                 } 
-    trgFld = Fld { fldname = trgNm                       
-                 , fldexpr = trgExpr
-                 , fldtype = makeSqlType (target trgExpr)
-                 , fldnull = isSur trgExpr
-                 , flduniq = isInj trgExpr
-                 } 
-rel2plug r _ _ = fatal 77 "Do not call rel2plug on relations other than Rel{}"
+rel2plug _ _ _ = fatal 77 "Do not call rel2plug on relations other than Rel{}"
 
 -----------------------------------------
 --rel2fld
@@ -93,18 +97,22 @@ rel2plug r _ _ = fatal 77 "Do not call rel2plug on relations other than Rel{}"
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
 
 -- | Create field for TblSQL or ScalarSQL plugs 
-rel2fld :: [Expression] -> [Expression] -> Expression -> SqlField
-rel2fld kernel                  -- > all relations (in the form either ERel r or EFlp (ERel r) _) that may be represented as attributes of this entity.
-        plugAtts                -- > all relations (in the form either ERel r or EFlp (ERel r) _) that are defined as attributes by the user.
-        e                       -- > either ERel r or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
- = Fld fldName                  -- fldname : 
-       e                        -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-       (makeSqlType (target e)) -- fldtype :
-       (maybenull e)            -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
-       (isInj e)                -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
-                                -- all kernel fldexprs are inj
+rel2fld :: [Expression] -- ^ all relations (in the form either ERel r or EFlp (ERel r) _) that may be represented as attributes of this entity.
+        -> [Expression] -- ^ all relations (in the form either ERel r or EFlp (ERel r) _) that are defined as attributes by the user.
+        -> Expression   -- ^ either ERel r or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
+        -> SqlField
+rel2fld kernel
+        plugAtts
+        e
+ = Fld { fldname = fldName 
+       , fldexpr = e
+       , fldtype = makeSqlType (target e)
+       , flduse  = fatal 110 "Field usage should be determined"
+       , fldnull = maybenull e
+       , flduniq = isInj e      -- all kernel fldexprs are inj
                                 -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
                                 -- It is enough to check isInj e
+       }
    where 
    fldName = if null [nm | (r',nm)<-table, e==r'] 
              then fatal 117 $ "null names in table for e: " ++ show (e,table)
@@ -202,15 +210,20 @@ makeEntities allRels exclusions
      "\nkernels:"++concat ["\n  "++show kernel | kernel<-kernels]++
      "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]
     ) ++ -}
-   sortWith ((0-).length.tblfields)
+   sortWith ((0-).length.plugFields)
     [ if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
-           let r = iExpr c in ScalarSQL (name c) (rel2fld [r] [] r) c 
+           let r = iExpr c 
+           in ScalarSQL { sqlname   = name c
+                        , sqlColumn = rel2fld [r] [] r
+                        , cLkp      = c 
+                        }
       else
-      TblSQL (name c)               -- plname
-             plugFields             -- fields
-             conceptLookuptable     -- cLkpTbl
-             attributeLookuptable   -- mLkpTbl
+      TblSQL { sqlname = name c
+             , fields  = plugFields
+             , cLkpTbl = conceptLookuptable
+             , mLkpTbl = attributeLookuptable
+             }
              
     | kernel<-kernels
     , let mainkernel = [head cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
@@ -307,7 +320,10 @@ makeEntities allRels exclusions
 makeSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeSqlPlug _ obj
  | null(objatsLegacy obj) && isIdent(objctx obj)
-   = ScalarSQL (name obj) (rel2fld [iExpr c] [] (iExpr c)) c 
+    = ScalarSQL { sqlname   = name obj
+                , sqlColumn = rel2fld [iExpr c] [] (iExpr c)
+                , cLkp      = c
+                } 
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
  | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
@@ -318,10 +334,11 @@ makeSqlPlug _ obj
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
      "\nplugFields:"++concat ["\n  "++show plugField | plugField<-plugFields]
     ) -}
-     TblSQL (name obj)     -- plname (table name)
-     plugFields             -- fields
-     conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     attributeLookuptable   -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+     TblSQL { sqlname = name obj
+            , fields  = plugFields
+            , cLkpTbl = conceptLookuptable     
+            , mLkpTbl = attributeLookuptable
+            }   
  | otherwise = fatal 279 "Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.

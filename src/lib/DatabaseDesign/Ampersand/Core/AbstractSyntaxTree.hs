@@ -651,11 +651,11 @@ class Signaling a where
   --   + a compare function (A_Concept->A_Concept->Ordering) 
   --   + and a list of comparable classes [[A_Concept]]
 -}
-type GenR = ( A_Concept -> A_Concept -> Ordering      -- ^ gE: the ordering relation, which yields EQ, LT, GT, CP, or NC
-            , [[A_Concept]]                           -- ^ join classes. Each class corresponds to a (scalar, binary or wide) entity later on in the database generator.
-            , [(A_Concept,A_Concept)]                 -- ^ the smallest set of pairs that produces the ordering relation gE
-            , A_Concept -> A_Concept -> [A_Concept]   -- ^ c `elem` (a `meets` b) means that c<=q and c<=b 
-            , A_Concept -> A_Concept -> [A_Concept]   -- ^ c `elem` (a `joins` b) means that c>=q and c>=b 
+type GenR = ( A_Concept -> A_Concept -> Ordering      --  gE: the ordering relation, which yields EQ, LT, GT, CP, or NC
+            , [[A_Concept]]                           --  join classes. Each class corresponds to a (scalar, binary or wide) entity later on in the database generator.
+            , [(A_Concept,A_Concept)]                 --  the smallest set of pairs that produces the ordering relation gE
+            , A_Concept -> A_Concept -> [A_Concept]   --  c `elem` (a `meets` b) means that c<=q and c<=b 
+            , A_Concept -> A_Concept -> [A_Concept]   --  c `elem` (a `joins` b) means that c>=q and c>=b 
             )
 
 instance Poset A_Concept where
@@ -666,13 +666,13 @@ instance Poset A_Concept where
                       where (comp,_,_,_,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
 
 instance Sortable A_Concept where
-  meet ONE   b = b
+  meet ONE   _ = fatal 669 "meet must not be used with ONE!"
   meet a@C{} b = case a `meets` b of        -- meet yields the more specific of two concepts
               [z] -> z
               []  -> fatal 671 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> greatest cs
              where (_,_,_,meets,_) = cptgE a
-  join ONE  _ = ONE
+  join ONE  _ = fatal 675 "join must not be used with ONE!"
   join a@C{} b = case a `joins` b of        -- join yields the more generic of two concepts
               [z] -> z
               []  -> fatal 675 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")

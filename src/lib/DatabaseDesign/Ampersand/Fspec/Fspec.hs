@@ -24,6 +24,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , FPcompl(..)
           , PlugInfo(..)
           , SqlType(..)
+          , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations
           , HornClause(..), horn2expr, events
           )
@@ -203,7 +204,6 @@ data FSid = FS_id String     -- Identifiers in the Functional Specification Lang
         --  | NoName           -- some identified objects have no name...
 instance Identified Fspc where
   name = fsName
-  rename fspc nm = fspc{fsName=nm}
 
 instance Identified Finterface where
   name ifc | length prs==1  = name (head prs)
@@ -365,19 +365,36 @@ instance Identified PlugInfo where
   name (ExternalPlug obj)  = name obj
 
 data PlugSQL
+   -- | stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
+   --   i.e. a list of SqlField given some A -> [target r | r::A*B,isUni r,isTot r, isInj r] 
+   --                                        ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
+   --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ] 
+   --              (r=fldexpr of kernel field holding instances of B, in practice r is I or a makeRelation(flipped declaration))
+   --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
+   --              (r=fldexpr of attMor field, in practice r is a makeRelation(declaration))
  = TblSQL  { sqlname :: String
            , fields :: [SqlField]
-           , cLkpTbl :: [(A_Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
-           , mLkpTbl :: [(Expression,SqlField,SqlField)]   -- lookup table that links concepts to column names in the plug (kernel+attRels)
+           , cLkpTbl :: [(A_Concept,SqlField)]             -- ^ lookup table that links all kernel concepts to fields in the plug
+                                                           -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , mLkpTbl :: [(Expression,SqlField,SqlField)]   -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
+                                                           -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
            }
- | BinSQL  { --see rel2plug in ADL2Fspec.hs
-             sqlname :: String
+   -- | stores one relation r in two ordered columns
+   --   i.e. a tuple of SqlField -> (source r,target r) with (fldexpr=I/\r;r~, fldexpr=r) 
+   --   (note: if r TOT then (I/\r;r~ = I). Thus, the concept (source r) is stored in this plug too)
+   --   with tblcontents = [[x,y] |(x,y)<-contents r]. 
+   --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
+ | BinSQL  { sqlname :: String
            , columns :: (SqlField,SqlField)
            , cLkpTbl :: [(A_Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
                                                 --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                 --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
            , mLkp :: Expression -- the relation links concepts implemented by this plug
            }
+ -- |stores one concept c in one column
+ --  i.e. a SqlField -> c
+ --  with tblcontents = [[x] |(x,_)<-contents c].
+ --  Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. fldexpr=I[c]
  | ScalarSQL
            { sqlname :: String
            , sqlColumn :: SqlField
@@ -386,7 +403,6 @@ data PlugSQL
    deriving (Show) 
 instance Identified PlugSQL where
   name = sqlname
-  rename p x = p{sqlname=x}
 instance Eq PlugSQL where
   x==y = name x==name y
 instance Ord PlugSQL where
@@ -399,11 +415,17 @@ lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
                  [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
                  [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
 
+data SqlFieldUsage = PrimKey A_Concept     -- The field is the primary key of the table
+                   | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL
+                   | PlainValue            -- None of the above
+                   
+                   deriving (Eq, Show)
 data SqlField = Fld { fldname :: String
-                    , fldexpr :: Expression
+                    , fldexpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
                     , fldtype :: SqlType
-                    , fldnull :: Bool -- can there be empty field-values?
-                    , flduniq :: Bool -- are all field-values unique?
+                    , flduse  :: SqlFieldUsage
+                    , fldnull :: Bool           -- ^ can there be empty field-values? (intended for data dictionary of DB-implementation)
+                    , flduniq :: Bool           -- ^ are all field-values unique? (intended for data dictionary of DB-implementation)
                     } deriving (Eq, Show)
 
 instance Ord SqlField where

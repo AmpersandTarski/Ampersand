@@ -52,7 +52,7 @@ module DatabaseDesign.Ampersand
    , conjNF, disjNF, simplify
    , notCpl, isCpl, isPos, isNeg
    -- * Functions with plugs:
-   , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
+   , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff
    , CtxError, ParseError
    , parseContext

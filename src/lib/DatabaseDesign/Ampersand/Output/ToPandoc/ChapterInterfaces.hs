@@ -119,8 +119,13 @@ chpInterfacesBlocks lev fSpec flags =
        | isBlk (ecaAction eca)
             = Str "error: rule ":
               commaEngPandoc (Str "and")
-                       [ Quoted  SingleQuote [Str (name r)]
-                       | (_,r)<-paMotiv (ecaAction eca)
+                       [ Quoted  SingleQuote [Str (let nrRules = length rs
+                                                       s  | nrRules == 0  = ""
+                                                          | nrRules == 1  = name (head rs)
+                                                          | otherwise     = name (head rs)++" (and "++show(nrRules - 1)++" other rules)."
+                                                   in s
+                                                  )]
+                       | (_,rs)<-paMotiv (ecaAction eca)
                        ] 
        | isNop (ecaAction eca)
             = [ Str "no op"]

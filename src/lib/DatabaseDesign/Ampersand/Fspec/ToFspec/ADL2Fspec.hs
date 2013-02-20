@@ -17,6 +17,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import Text.Pandoc
    import Data.List (nub,intercalate)
    import DatabaseDesign.Ampersand.ADL1.Expression              (subst)
+   import Data.Char        (toLower)
+   
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
@@ -103,7 +105,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         vphpplugs = [ExternalPlug p | p<-ctxphp context]
         definedplugs = vsqlplugs ++ vphpplugs
         allplugs = definedplugs ++      -- all plugs defined by the user
-                   [InternalPlug (rename p (qlfname (name p)))
+                   genPlugs             -- all generated plugs
+        genPlugs = [InternalPlug (rename p (qlfname (name p)))
                    | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
                                       (gPlugs ++ relPlugs)
                    ]
@@ -124,13 +127,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                            , relpos = OriginUnknown 
                            , reldcl = Sgn { decnm = "ISA"
                                           , decsgn = Sign s g
-                                           --multiplicities returns decprps_calc so if you only need the user defined properties do not use multiplicities but decprps
-                                          , decprps = []     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-                                          , decprps_calc = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]-- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
+                                          , decprps = []
+                                          , decprps_calc = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
                                           , decprL = ""
                                           , decprM = "is a"
                                           , decprR = ""
-                                          , decMean = AMeaning [ A_Markup Dutch   ReST (string2Blocks ReST ("Each "++name s++" is a "++name g++"."))]
+                                          , decMean = AMeaning [ A_Markup Dutch ReST (string2Blocks ReST ("Each "++name s++" is a "++name g++"."))]
                                           , decConceptDef = Nothing
                                           , decfpos = OriginUnknown
                                           , deciss = False
@@ -156,7 +158,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     * t  [UNI]                             *
     **************************************
-    * Plug ECps                               *
+    * Plug ECps                            *
     * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
     **************************************
     * Plug B                               *
@@ -938,3 +940,19 @@ CHC [ if isRel e
    deltaK1 :: t -> InsDel -> t1 -> t
    deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x+)
    deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
+
+   
+   class Identified a => Rename a where
+    rename :: a->String->a
+    -- | the function uniqueNames ensures case-insensitive unique names like sql plug names
+    uniqueNames :: [String]->[a]->[a]
+    uniqueNames taken xs
+     = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+          , p <-if name (head cl) `elem` taken || length cl>1
+                then [rename p (name p++show i) | (p,i)<-zip cl [(1::Int)..]]
+                else cl
+       ]
+
+   instance Rename PlugSQL where
+    rename p x = p{sqlname=x}
+   

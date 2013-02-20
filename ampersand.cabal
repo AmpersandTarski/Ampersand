@@ -94,7 +94,6 @@ library
                     DatabaseDesign.Ampersand.ADL1.Rule,
                     DatabaseDesign.Ampersand.Basics,
                     DatabaseDesign.Ampersand.Basics.Auxiliaries,
-                    DatabaseDesign.Ampersand.Basics.Classification,
                     DatabaseDesign.Ampersand.Basics.Collection,
                     DatabaseDesign.Ampersand.Basics.String,
                     DatabaseDesign.Ampersand.Basics.UTF8,

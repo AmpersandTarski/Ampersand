@@ -3,7 +3,8 @@
 module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
-    , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder)
+    , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
+    , math -- 
     , module Data.Monoid
     , module DatabaseDesign.Ampersand.Basics  
     , module DatabaseDesign.Ampersand.Fspec
@@ -35,7 +36,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec
 import Text.Pandoc
-import Text.Pandoc.Builder hiding (bulletList)
+import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
@@ -376,3 +377,6 @@ inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 bulletList :: [Blocks] -> Blocks
 bulletList [] = mempty
 bulletList xs = BuggyBuilder.bulletList xs
+
+math :: String -> Inlines
+math s = BuggyBuilder.math ("{"++s++"}")

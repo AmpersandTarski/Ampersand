@@ -124,9 +124,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EFlp e'    _ -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
      _            -> []
 
--- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
---    isTrue e == False  does not mean anything.
---    the function isTrue is meant to produce a quick answer, without any form of theorem proving.
+ -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
+ --    isTrue e == False  does not mean anything.
+ --    the function isTrue is meant to produce a quick answer, without any form of theorem proving.
  isTrue expr
   = case expr of
      EEqu (l,r) _   -> l == r
@@ -152,9 +152,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk e         -> isTrue e
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
 
--- |  isFalse e == True   means that e is false, i.e. the population of e is empty.
---    isFalse e == False  does not mean anything.
---    the function isFalse is meant to produce a quick answer, without any form of theorem proving.
+ -- |  isFalse e == True   means that e is false, i.e. the population of e is empty.
+ --    isFalse e == False  does not mean anything.
+ --    the function isFalse is meant to produce a quick answer, without any form of theorem proving.
  isFalse expr
   = case expr of
      EEqu (l,r) sgn -> l == notCpl sgn r
@@ -175,9 +175,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
 
  isProp expr = null ([Asy,Sym]>-multiplicities expr)
 
--- |  The function isIdent tries to establish whether an expression is an identity relation.
---    It does a little bit more than just test on ERel I _.
---    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value. 
+ -- |  The function isIdent tries to establish whether an expression is an identity relation.
+ --    It does a little bit more than just test on ERel I _.
+ --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value. 
  isIdent expr = case expr of
      EEqu (l,r) sgn -> isIdent (EIsc (EImp (l,r) sgn, EImp (r,l) sgn) sgn)    -- TODO: maybe derive something better?
      EImp (l,r) sgn -> isIdent (EUni (ECpl l sgn, r) sgn)                     -- TODO: maybe derive something better?

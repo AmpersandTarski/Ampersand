@@ -1,11 +1,12 @@
-{-# OPTIONS_GHC -Wall #-}  
+{-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.Plug
      (Plugable(..), PlugInfo(..)
      ,SqlField(..)
+     ,SqlFieldUsage(..)
      ,SqlType(..)
      ,showSQL
      ,requiredFields,requires,plugpath,eLkpTbl
-     ,tblfields
+     ,plugFields
      ,tblcontents
      ,entityfield
      ,fldauto
@@ -69,24 +70,8 @@ instance ConceptStructure PlugInfo where
 ----------------------------------------------
 --PlugSQL
 ----------------------------------------------
---TblSQL, BinSQL, and ScalarSQL hold different entities.
---BinSQL -> (see the only constructor function rel2plug in ADL2Plug for detailed comments)
---          stores one relation r in two ordered columns
---          i.e. a tuple of SqlField -> (source r,target r) with (fldexpr=I/\r;r~, fldexpr=r) 
---            (note: if r TOT then (I/\r;r~ = I). Thus, the concept (source r) is stored in this plug too)
---          with tblcontents = [[x,y] |(x,y)<-contents r]. 
---          Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
---ScalarSQL -> stores one concept c in one column
---             i.e. a SqlField -> c
---             with tblcontents = [[x] |(x,_)<-contents c].
---             Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. fldexpr=I[c]
---TblSQL -> stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
---           i.e. a list of SqlField given some A -> [target r | r::A*B,isUni r,isTot r, isInj r] 
---                                                ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
---             kernel = A closure of concepts A,B for which there exists a r::A->B[INJ] 
---                      (r=fldexpr of kernel field holding instances of B, in practice r is I or a makeRelation(flipped declaration))
---             attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
---                      (r=fldexpr of attMor field, in practice r is a makeRelation(declaration))
+--TblSQL, BinSQL, and ScalarSQL hold different entities. See their definition Fspec.hs
+
 --           all kernel fields can be related to an imaginary concept ID for the plug (a SqlField with type=SQLID)
 --             i.e. For all kernel fields k1,k2, where concept k1=A, concept k2=B, fldexpr k1=r~, fldexpr k2=s~
 --                  You can imagine :
@@ -140,11 +125,13 @@ instance ConceptStructure PlugInfo where
 --                concept p and entityconcept p are related uni,tot,inj,sur.
 entityfield :: PlugSQL -> SqlField
 entityfield p
-  = Fld (name (entityconcept p)) --name of imaginary entity concept stored in plug
-        (iExpr (concept p)) --fldexpr
-        SQLId --fldtype
-        False --isnull
-        True --isuniq
+  = Fld { fldname = name (entityconcept p)
+        , fldexpr = iExpr (concept p)
+        , fldtype = SQLId
+     --   , flduse  = PrimKey
+        , fldnull = False
+        , flduniq = True
+        }
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 entityconcept :: PlugSQL -> A_Concept
@@ -446,18 +433,13 @@ instance ConceptStructure SqlField where
   mp1Rels = fatal 452 "mp1Rels is not meant to be for a plug."
 
 instance ConceptStructure PlugSQL where
-  concs     p = concs   (localfunction p)
-  mors      p = mors    (localfunction p)
-  morlist   p = morlist (localfunction p)
+  concs     p = concs   (plugFields p)
+  mors      p = mors    (plugFields p)
+  morlist   p = morlist (plugFields p)
   mp1Rels = fatal 458 "mp1Rels is not meant to be for a plug."
 
-localfunction::PlugSQL -> [SqlField]
-localfunction p@TblSQL{}    = fields p
-localfunction p@BinSQL{}    = [fst (columns p),snd (columns p)]
-localfunction p@ScalarSQL{} = [sqlColumn p]
-
-tblfields::PlugSQL->[SqlField]
-tblfields plug = case plug of
+plugFields::PlugSQL->[SqlField]
+plugFields plug = case plug of
     TblSQL{}    -> fields plug
     BinSQL{}    -> [fst(columns plug),snd(columns plug)]
     ScalarSQL{} -> [sqlColumn plug]
