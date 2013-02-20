@@ -46,12 +46,6 @@ where
     morlist   =       concatMap morlist
     mp1Rels   = nub . concatMap mp1Rels 
     
-   instance ConceptStructure (Classification A_Concept) where
-    concs     = nub . concatMap concs     . preCl
-    mors      = nub . concatMap mors      . preCl
-    morlist   =       concatMap morlist   . preCl
-    mp1Rels   = nub . concatMap mp1Rels   . preCl
-    
    instance ConceptStructure A_Context where
     concs     c =       concs ( ctxds c ++ concatMap ptdcs (ctxpats c)  ++ concatMap prcDcls (ctxprocs c) ) 
                   `uni` concs ( ctxgs c ++ concatMap ptgns (ctxpats c)  ++ concatMap prcGens (ctxprocs c) )

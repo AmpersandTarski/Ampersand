@@ -210,46 +210,93 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
              InternalPlug tbl@TblSQL{} 
                -> (case language flags of
                 Dutch 
-                   -> para (text $ "Deze tabel heeft "++(show.length.fields) tbl++" velden:")
+                   -> para (text $ "Deze tabel heeft de volgende "++(show.length.fields) tbl++" velden:")
                 English 
-                   -> para (text $ "This table has "++(show.length.fields) tbl++" fields:")
+                   -> para (text $ "This table has the following "++(show.length.fields) tbl++" fields:")
                   )
-               <> let listItem fld =
-                        para (text (fldname fld))
-                  in bulletList (map listItem (fields tbl))
---               <> (case language flags of
---                Dutch 
---                   -> para (text ""
---                English 
---                   -> para (text "")
---                  )
+               <> showFields (plugFields tbl)
              InternalPlug bin@BinSQL{} 
                -> (let rel = case mLkp bin of
                                ERel r _ -> r
-                               _        -> fatal 220 "relation unknown. contact your dealer!"
-                   in case language flags of
-                Dutch
-                   -> para (text "Dit is een koppeltabel, die de relatie "
-                         <> (emph.text.name) rel
-                         <> text " implementeert. De tabel bestaat uit de volgende kolommen:"      
-                           )
-                English
-                   -> para ( text "This is a link-table, implementing the relation "
-                          <> (emph.text.name) rel
-                          <> text ". It contains the following columns:"  
-                           )
-                  )
-             InternalPlug sclr@ScalarSQL{} 
-               -> case language flags of
-                Dutch
-                   -> para (text $ "Dit is een enumeratie.")
-                English
-                   -> para (text $ "This table contains an enumeration.")
+                               _        -> fatal 254 "relation unknown. contact your dealer!"
+                   in para 
+                       (case language flags of
+                         Dutch
+                           ->  text "Dit is een koppeltabel, die de relatie "
+                            <> mathRel (mLkp bin)
+                            <> text " implementeert. De tabel bestaat uit de volgende kolommen:"      
+                           
+                         English
+                           ->  text "This is a link-table, implementing the relation "
+                            <> (emph.text.name) rel
+                            <> text ". It contains the following columns:"  
+                       )
+                     <> showFields (plugFields bin)
+                   )
                   
+             InternalPlug sclr@ScalarSQL{} 
+               -> para (case language flags of
+                          Dutch   -> text "Dit is een enumeratie. Deze tabel heeft "
+                                   <>text "slechts één kolom:"
+                          English -> text "This table contains an enumeration. "
+                                   <>text "This table has a single column only:"
+                       )
+               <> showFields (plugFields sclr)
              ExternalPlug _
                -> case language flags of
                     Dutch   -> para (text "De details van deze service zijn in dit document (nog) niet verder uitgewerkt.")
                     English -> para (text "The details of this dataservcie are not available in this document.")
+      showFields :: [SqlField] -> Blocks
+      showFields flds = bulletList (map showField flds)
+        where 
+          eRelIs = [c | ERel (I c) _ <- map fldexpr flds]
+          showField fld =
+             let isPrimeryKey = case fldexpr fld of
+                                  ERel (I c) _ -> foldl1 join eRelIs == c 
+                                  _            -> False 
+                 mForeignKey  = case fldexpr fld of
+                                  EIsc (ERel (I c) _ ,_ ) _ -> Just c
+                                  _                         -> Nothing  
+             in para (  (strong.text.fldname) fld
+                      <> linebreak 
+    
+                      <>   (code.show.fldtype) fld
+                      <> text ", "
+                      <> (case language flags of
+                            Dutch 
+                              -> text (if fldnull fld then "Optioneel" else "Verplicht")
+                               <>text (if flduniq fld then ", Uniek" else "")
+                               <>text "."
+                            English 
+                              -> text (if fldnull fld then "Optional" else "Mandatory")
+                               <>text (if flduniq fld then ", Unique" else "")
+                               <>text "."
+                         )
+                      <> linebreak
+                      <> (strong.code.show.flduse) fld
+                      <> linebreak  
+                      <> (if isPrimeryKey 
+                          then case language flags of
+                                Dutch   -> text ("Dit attribuut is de primaire sleutel. ")
+                                English -> text ("This attribute is the primary key. ")
+                          else 
+                          case mForeignKey of 
+                           Just c ->  case language flags of
+                                         Dutch   -> text ("Dit attribuut verwijst naar een voorkomen in de tabel ")
+                                         English -> text ("This attribute is a foreign key to ")
+                                     <> (text.name) c
+                           Nothing -- (no foreign key...)
+                             -> --if isBool
+                                --then 
+                                --else
+                                  (case language flags of
+                                     Dutch   -> text ("Dit attribuut implementeert de relatie ")
+                                     English -> text ("This attribute implements the relation ")
+                                  <> mathRel (fldexpr fld)
+                                  <> text "."
+                                  )
+                         )
+                     )
                    
              
   thePictures 
@@ -260,6 +307,10 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 
   theBlocks 
     =  chptHeader flags DataAnalysis  -- The header
+    <> (case language flags of 
+             Dutch   -> para $ text "Dit hoofdstuk is nog niet uit-ontwikkeld!"
+             English -> para $ text "This chapter needs more work. It is work in progress!"
+       )
     <> (case classificationModel of --If there is a classification model, show it in the output
           Nothing -> mempty
           Just cl -> classificationBlocks cl (classificationPicture cl)
@@ -570,7 +621,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 
   daAttributes :: PlugSQL -> [Block]
   daAttributes p
-   = if length (tblfields p)<=1 then [] else
+   = if length (plugFields p)<=1 then [] else
      [ case language flags of
                Dutch   ->
                  Para [ Str $ "De attributen van "++name p++" hebben de volgende multipliciteitsrestricties. "
@@ -590,20 +641,20 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
              ,[Plain [Str "type"]]
              ,[Plain [Str "mandatory"]]
              ,[Plain [Str "unique"]]] )
-      [ if isProp (fldexpr fld) && fld/=head (tblfields p)
+      [ if isProp (fldexpr fld) && fld/=head (plugFields p)
         then [ [Plain [Str (fldname fld)]]
              , [Plain [ Str "Bool"]]
              , [Plain [Math InlineMath "\\surd"]]
              , []
              ]
-        else [ [Plain [if fld==head (tblfields p) || null ([Uni,Inj,Sur]>-multiplicities (fldexpr fld))
+        else [ [Plain [if fld==head (plugFields p) || null ([Uni,Inj,Sur]>-multiplicities (fldexpr fld))
                        then Str  "key "
                        else Str (fldname fld)]]
              , [Plain [ (Str . latexEscShw.name.target.fldexpr) fld]]
              , [Plain [Math InlineMath "\\surd" | not (fldnull fld)]]
              , [Plain [Math InlineMath "\\surd" | flduniq fld]]
              ]
-      | fld<-tblfields p  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
+      | fld<-plugFields p  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
       ]
       
      ]
@@ -763,3 +814,17 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                   ScalarSQL{} -> [cLkp p]
                   _           -> map fst (cLkpTbl p)
 
+  mathRel :: Expression -> Inlines
+  mathRel (ERel r           _) = math ((name.source) r++ " \\xrightarrow {"++name r++"} "++(name.target) r)
+  mathRel (EFlp (ERel r _ ) _) = math ((name.source) r++ " \\xleftarrow  {"++name r++"} "++(name.target) r)
+  mathRel (EIsc (r1,r2)     _) = let srcTable = case r1 of
+                                                   ERel (I c) _ -> c
+                                                   _          -> fatal 767 "What to do???"
+                                                   
+                                 in math ("a foureign key to "++name srcTable) 
+--  mathRel (ECps (r1,r2)     _) = mathRel r1 <> math " ; "     <> mathRel r2
+  mathRel expr                    = fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show expr) 
+  
+  
+                          
+  
