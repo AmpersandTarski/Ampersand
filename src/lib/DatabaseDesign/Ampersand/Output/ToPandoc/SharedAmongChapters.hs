@@ -68,7 +68,7 @@ chaptersInDoc flags
  | diagnosisOnly flags         = [Diagnosis]
  | theme flags == StudentTheme = [ Intro
                                  , NatLangReqs
-                                 , FunctReqts 
+                   --              , FunctReqts  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
                                  , Diagnosis 
                                  , ConceptualAnalysis
                                  , ProcessAnalysis
@@ -76,7 +76,7 @@ chaptersInDoc flags
                                  ]
  | otherwise                   = [ Intro 
                                  , NatLangReqs
-                                 , FunctReqts 
+                   --              , FunctReqts  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
                                  , Diagnosis 
                                  , ConceptualAnalysis
                                  , ProcessAnalysis
@@ -115,7 +115,7 @@ chptTitle flags cpt =
         (EcaRules          , English) -> text "ECA rules (Flash points)" 
         (Interfaces        , Dutch  ) -> text "Koppelvlakken" 
         (Interfaces        , English) -> text "Interfaces"
-        (Glossary          , Dutch  ) -> text "Inhoud"
+        (Glossary          , Dutch  ) -> text "Begrippen"
         (Glossary          , English) -> text "Glossary"
      )
 

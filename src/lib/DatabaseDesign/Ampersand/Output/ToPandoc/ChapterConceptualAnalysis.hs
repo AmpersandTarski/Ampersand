@@ -147,7 +147,7 @@ chpConceptualAnalysis lev fSpec flags = (header <> caIntro <> caBlocks, pictures
                          ,Str ": "]]
                ++ meaning2Blocks (language flags) r
                   -- then the formal rule
-               ++ [Plain$[Str "Dit is geformalizeerd - gebruikmakend van relaties " | language flags==Dutch]
+               ++ [Plain$[Str "Dit is geformaliseerd - gebruikmakend van relaties " | language flags==Dutch]
                       ++ [Str "This is formalized - using relations "     | language flags==English]
                       ++ intercalate [Str ", "] [[RawInline "latex" $ symDefRef d] | d@Sgn{}<-map makeDeclaration (mors r)]
                       ++ [Str " - als " | language flags==Dutch]

@@ -112,8 +112,7 @@ chpNatLangReqs lev fSpec flags =
                       else printThemes toBeProcessedStuff newCounter $ [ PatternTheme pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] ++
                                                                        [ ProcessTheme $ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ] 
       toBeProcessedStuff = ( conceptsWith
-                           , if length allRelsThatMustBeShown == length (nub allRelsThatMustBeShown) then allRelsThatMustBeShown
-                             else fatal 250 "Some relations occur multiply in allRelsThatMustBeShown"
+                           , allRelsThatMustBeShown
                            , [r | r<-vrules fSpec, r_usr r == UserDefined] )  -- All user declared rules
          where
            conceptsWith     -- All concepts that have at least one non-empty definition (must be the first)  

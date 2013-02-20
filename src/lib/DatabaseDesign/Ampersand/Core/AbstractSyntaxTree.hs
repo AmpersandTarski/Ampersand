@@ -525,7 +525,7 @@ data Relation =
 instance Eq Relation where
  rel == rel' 
    = case (rel,rel') of
-       (Rel{},Rel{}) -> relnm   rel==relnm   rel'
+       (Rel{},Rel{}) -> reldcl  rel==reldcl  rel'
        (I{}  ,I{}  ) -> rel1typ rel==rel1typ rel'
        (V{}  ,V{}  ) -> reltyp  rel==reltyp  rel'
        (Mp1{},Mp1{}) -> relval  rel==relval  rel'

@@ -97,7 +97,7 @@ where
     morlist c = [I c]
     mp1Rels _ = []
     genE C{cptgE = a}  = a
-    
+    genE _ = fatal 100 "A_Concept without cptgE"
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]
