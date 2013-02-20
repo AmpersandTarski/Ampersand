@@ -417,8 +417,8 @@ sqlPlugFields p e'
   = let e = disjNF e'
     in nub
         [(fld0,fld1)
-        | fld0<-[f |f<-tblfields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
-        , fld1<-[f |f<-tblfields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
+        | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
+        , fld1<-[f |f<-plugFields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
         , let plugexpr = plugpath p fld0 fld1 --the smallest expression from fld0 to fld1 (both in same plug)
         , let se = fldexpr fld0
               te = fldexpr fld1
@@ -506,5 +506,5 @@ sqlAttConcept fSpec c | c==ONE = "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL)" else
                head cs
-               where cs = [fldname f |f<-tblfields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where cs = [fldname f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                      appname =  name fSpec

@@ -144,7 +144,7 @@ generateTableInfos fSpec =
                                                            ", 'null' => "  ++ (showPhpBool.fldnull)            field++
                                                            ")"
                   ] 
-                | field <- getPlugFields plug]
+                | field <- plugFields plug]
               ) 
          | InternalPlug plug <- plugInfos fSpec
          ]
@@ -418,13 +418,8 @@ showPlug plug =
  ("Table: '"++sqlname plug++"'")
  : 
  indent 4 
-   (blockParenthesize "[" "]" "," (map showField (getPlugFields plug)))
+   (blockParenthesize "[" "]" "," (map showField (plugFields plug)))
 
--- TODO: maybe this one exists already
-getPlugFields :: PlugSQL -> [SqlField]
-getPlugFields (TblSQL  {fields = flds}) = flds
-getPlugFields BinSQL  { columns = (fld1,fld2)} = [fld1, fld2]
-getPlugFields ScalarSQL { sqlColumn = fld} = [fld]
 
 showField :: SqlField -> [String]
 showField fld = ["{" ++ (if fldnull fld then "+" else "-") ++ "NUL," ++ (if flduniq fld then "+" else "-") ++ "UNQ} " ++ 

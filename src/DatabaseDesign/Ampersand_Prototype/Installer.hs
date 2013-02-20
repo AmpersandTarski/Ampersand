@@ -145,12 +145,12 @@ createTablesPHP fSpec =
         ++ ["}"]
         ++ concatMap plugCode [p | InternalPlug p <- plugInfos fSpec]
   where plugCode plug
-         = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug))
+         = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
            ++ if null $ tblcontents (userDefPops fSpec) plug then [] else
                [ "else"
-                               , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
+                               , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
                                ]++ indentBlock 12
                                                  [ comma++ " (" ++valuechain md++ ")"
                                                  | (md,comma)<-zip (tblcontents (userDefPops fSpec) plug) ("VALUES":repeat "      ,")
@@ -181,7 +181,7 @@ plug2tbl :: PlugSQL -> CreateTable
 plug2tbl plug
  = ( "CREATE TABLE `"++name plug++"`"
    , [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL") 
-     | (f,comma)<-zip (tblfields plug) ('(':repeat ',') ]
+     | (f,comma)<-zip (plugFields plug) ('(':repeat ',') ]
    , ") ENGINE=InnoDB DEFAULT CHARACTER SET UTF8")
 
 dropplug :: PlugSQL -> String

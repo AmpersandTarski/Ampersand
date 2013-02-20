@@ -45,8 +45,8 @@ inserts :: (IConnection conn) => conn -> [UserDefPop] -> [PlugSQL] -> IO Integer
 inserts _ _ [] = return 1
 inserts conn udp (plug:plugs) = 
    do stmt<- prepare conn
-             ("INSERT INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-tblfields plug]++")"
-                                ++" VALUES ("++placeholders(tblfields plug)++")")
+             ("INSERT INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
+                                ++" VALUES ("++placeholders(plugFields plug)++")")
       executeMany stmt (map (map (toSql . mbnullstring)) (tblcontents udp plug))
       inserts conn udp plugs
    where 
