@@ -850,7 +850,9 @@ where
                         ["Sgn{ decnm   = " ++ show (decnm d)
                         ,"   , decsgn  = " ++ showHS flags "" (sign d)
                         ,"   , decprps = " ++ showL(map (showHS flags "") (decprps d))
-                        ,"   , decprps_calc = " ++ showL(map (showHS flags "") (decprps_calc d))
+                        ,"   , decprps_calc = " ++ case decprps_calc d of
+                                                    Nothing -> "Nothing"
+                                                    Just ps -> "Just "++showL(map (showHS flags "") ps)
                         ,"   , decprL  = " ++ show (decprL d)
                         ,"   , decprM  = " ++ show (decprM d)
                         ,"   , decprR  = " ++ show (decprR d)

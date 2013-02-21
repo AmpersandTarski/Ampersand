@@ -194,9 +194,9 @@ data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 data Declaration = 
   Sgn { decnm :: String     -- ^ the name of the declaration
       , decsgn :: Sign       -- ^ the source concept of the declaration
-       --multiplicities returns decprps_calc so if you only need the user defined properties do not use multiplicities but decprps
+       --multiplicities returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use multiplicities but decprps
       , decprps :: [Prop]     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-      , decprps_calc :: [Prop]-- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
+      , decprps_calc :: Maybe [Prop] -- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
       , decprL :: String     -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
       , decprM :: String     -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
       , decprR :: String
@@ -242,7 +242,9 @@ instance Flippable Declaration where
     = case d of
            Sgn {} -> d{ decsgn  = flp (decsgn d)
                       , decprps = map flp (decprps d)
-                      , decprps_calc = map flp (decprps_calc d)
+                      , decprps_calc = case decprps_calc d of
+                                         Nothing  -> Nothing 
+                                         Just ps  -> Just (map flp ps)
                       , decprL  = ""
                       , decprM  = ""
                       , decprR  = ""
