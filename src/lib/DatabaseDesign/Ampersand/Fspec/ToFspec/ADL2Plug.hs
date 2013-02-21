@@ -1,9 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}  
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug 
-  (rel2plug 
-  ,makeEntities 
-  ,makeSqlPlug 
---  ,rel2fld 
+  (makeGeneratedSqlPlugs
+  ,makeUserDefinedSqlPlug 
   )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
@@ -19,6 +17,29 @@ import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
+
+
+makeGeneratedSqlPlugs :: A_Context
+              -> [Expression]  
+              -> [Relation]    -- ^ declarations to be saved in generated database plugs. 
+              -> [PlugSQL]
+makeGeneratedSqlPlugs context totsurs entityRels = gTables
+  where
+        vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
+        gTables = gPlugs1 ++ relPlugs1
+        gPlugs1 :: [PlugSQL]
+        gPlugs1   = makeEntities entityRels vsqlplugs
+        -- all plugs for relations not touched by definedplugs and gPlugs
+        relPlugs1 :: [PlugSQL]
+        relPlugs1 = [ rel2plug rel totals surjectives --(see rel2plug in Plug.hs)
+                   | rel<-entityRels
+                   , Inj `notElem` multiplicities rel
+                   , Uni `notElem` multiplicities rel]
+          where
+            totals      = [ makeDeclaration r |       ERel r@Rel{} _    <- totsurs]
+            surjectives = [ makeDeclaration r | EFlp (ERel r@Rel{} _) _ <- totsurs]
+
+
 
 -----------------------------------------
 --rel2plug
@@ -107,7 +128,7 @@ rel2fld kernel
  = Fld { fldname = fldName 
        , fldexpr = e
        , fldtype = makeSqlType (target e)
-       , flduse  = fatal 110 "Field usage should be determined"
+       , flduse  = Undetermined
        , fldnull = maybenull e
        , flduniq = isInj e      -- all kernel fldexprs are inj
                                 -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
@@ -305,9 +326,9 @@ makeEntities allRels exclusions
 
 
 -----------------------------------------
---makeSqlPlug
+--makeUserDefinedSqlPlug
 -----------------------------------------
---makeSqlPlug is used to make user defined plugs. One advantage is that the field names and types can be controlled by the user. 
+--makeUserDefinedSqlPlug is used to make user defined plugs. One advantage is that the field names and types can be controlled by the user. 
 --
 --TODO151210 -> (see also Instance Object PlugSQL)
 --              cLkpTbl TblSQL{} can have more than one concept i.e. one for each kernel field
@@ -317,8 +338,8 @@ makeEntities allRels exclusions
 --rel2fld  (keyDefs context) kernel plugAtts r
 
 -- | Make a sqlplug from an ObjectDef (user-defined sql plug)
-makeSqlPlug :: A_Context -> ObjectDef -> PlugSQL
-makeSqlPlug _ obj
+makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
+makeUserDefinedSqlPlug _ obj
  | null(objatsLegacy obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = name obj
                 , sqlColumn = rel2fld [iExpr c] [] (iExpr c)
