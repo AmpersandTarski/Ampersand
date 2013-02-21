@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      ,requiredFields,requires,plugpath,eLkpTbl
      ,plugFields
      ,tblcontents
-     ,entityfield
+--     ,entityfield
      ,fldauto
      ,iskey,kernelrels,attrels,bijectivefields
      ,PlugSQL(..)
@@ -128,7 +128,6 @@ entityfield p
   = Fld { fldname = name (entityconcept p)
         , fldexpr = iExpr (concept p)
         , fldtype = SQLId
-     --   , flduse  = PrimKey
         , fldnull = False
         , flduniq = True
         }
@@ -150,7 +149,7 @@ entityconcept p --copy (concept p) to create the entityconcept of the plug, usin
 
 
 
---Maintain rule: Object ObjectDef = Object (makeSqlPlug :: ObjectDef -> PlugSQL)
+--Maintain rule: Object ObjectDef = Object (makeUserDefinedSqlPlug :: ObjectDef -> PlugSQL)
 --TODO151210 -> Build a check which checks this rule for userdefined/showADL generated plugs(::[ObjectDef]) 
 --TODO151210 -> The ObjectDef of a BinSQL plug for relation r is that:
 --           1) SQLPLUG mybinplug: r      , or
