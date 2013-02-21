@@ -53,7 +53,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vconjs       = nub [conj | Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
-                 , vrels        = allDecs -- contains all user defined plus all generated relations plus all defined and computed totals.
+                 , vrels        = calculatedDecls
                  , allRelations = mors context
                  , allConcepts  = concs context
                  , fsisa        = isas
@@ -80,9 +80,11 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                                , (not.null) (selRoles p act)]
                          selRoles p act = [r | (r,rul)<-maintains context, rul==actRule act, r `elem` roles p]
         -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
-        allDecs = [ d{decprps_calc = decprps d `uni` [Tot | d `elem` totals]
-                                               `uni` [Sur | d `elem` surjectives]
-                     }  | d<-declarations context]
+        calcProps :: Declaration -> Declaration
+        calcProps d = d{decprps_calc = Just calculated}
+            where calculated = decprps d `uni` [Tot | d `elem` totals]
+                                         `uni` [Sur | d `elem` surjectives]
+        calculatedDecls = map calcProps (declarations context)
      -- determine relations that are total (as many as possible, but not necessarily all)
         totals      = [ makeDeclaration r |       ERel r@Rel{} _    <- totsurs ]
         surjectives = [ makeDeclaration r | EFlp (ERel r@Rel{} _) _ <- totsurs ]
@@ -113,13 +115,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    ]
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
-        entityRels = [makeRelation d | d<-allDecs, not (decplug d)] -- The persistent relations
+        entityRels = [makeRelation d | d<-calculatedDecls, not (decplug d)] -- The persistent relations
                   ++ [ Rel { relnm  = name s
                            , relpos = OriginUnknown 
                            , reldcl = Sgn { decnm         = "ISA"
                                           , decsgn        = Sign s g
-                                          , decprps       = []
-                                          , decprps_calc  = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
+                                          , decprps       = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
+                                          , decprps_calc  = Just [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
                                           , decprL        = ""
                                           , decprM        = "is a"
                                           , decprR        = ""
@@ -604,7 +606,7 @@ while maintaining all invariants.
              Sgn { decnm   = "Delta"
                  , decsgn  = Sign s t
                  , decprps = []
-                 , decprps_calc = []
+                 , decprps_calc = Nothing
                  , decprL  = ""
                  , decprM  = ""
                  , decprR  = ""

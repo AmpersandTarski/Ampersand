@@ -26,12 +26,12 @@ makeGeneratedSqlPlugs :: A_Context
 makeGeneratedSqlPlugs context totsurs entityRels = gTables
   where
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
-        gTables = gPlugs1 ++ relPlugs1
-        gPlugs1 :: [PlugSQL]
-        gPlugs1   = makeEntities entityRels vsqlplugs
+        gTables = gPlugs ++ relPlugs
+        gPlugs :: [PlugSQL]
+        gPlugs   = makeEntities entityRels vsqlplugs
         -- all plugs for relations not touched by definedplugs and gPlugs
-        relPlugs1 :: [PlugSQL]
-        relPlugs1 = [ rel2plug rel totals surjectives --(see rel2plug in Plug.hs)
+        relPlugs :: [PlugSQL]
+        relPlugs = [ rel2plug rel totals surjectives --(see rel2plug in Plug.hs)
                    | rel<-entityRels
                    , Inj `notElem` multiplicities rel
                    , Uni `notElem` multiplicities rel]
@@ -58,7 +58,7 @@ makeGeneratedSqlPlugs context totsurs entityRels = gTables
 
 -- | Make a binary sqlplug for a relation that is neither inj nor uni
 rel2plug :: Relation -> [Declaration] -> [Declaration] -> PlugSQL
-rel2plug r@Rel{} totals surjectives
+rel2plug r@Rel{} totals surjectives 
   | Inj `elem` multiplicities r || Uni `elem` multiplicities r 
     = fatal 55 $ "unexpected call of rel2plug("++show r++"), because it is injective or univalent."
   | otherwise
