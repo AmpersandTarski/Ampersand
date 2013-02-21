@@ -76,7 +76,9 @@ instance Relational Relation where
 
 instance Relational Declaration where
     multiplicities d = case d of
-           Sgn {}       -> decprps_calc d --according to comment in data Declaration, decprps_calc also contains user defined prps
+           Sgn {}       -> case decprps_calc d of
+                             Nothing -> decprps d
+                             Just ps -> ps 
            Isn{}        -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            Iscompl{}    -> [Sym]
            Vs{}         -> [Tot,Sur]

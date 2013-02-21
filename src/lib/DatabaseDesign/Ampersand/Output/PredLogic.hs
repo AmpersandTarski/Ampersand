@@ -219,7 +219,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                   Sgn { decnm   = str
                       , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
                       , decprps = [Uni,Tot]
-                      , decprps_calc = []
+                      , decprps_calc = Nothing
                       , decprL  = ""
                       , decprM  = ""
                       , decprR  = ""

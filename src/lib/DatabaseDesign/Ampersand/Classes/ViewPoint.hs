@@ -45,7 +45,7 @@ makeDecl g
   = Sgn  { decnm   = name(source g) -- best result in the sql plug
          , decsgn  = sign g
          , decprps = [Uni,Tot,Inj]
-         , decprps_calc = [Uni,Tot,Inj]
+         , decprps_calc = Nothing -- [Uni,Tot,Inj]
          , decprL  = ""
          , decprM  = "is a"
          , decprR  = ""
@@ -113,7 +113,7 @@ rulesFromKey _ = [] --see #276 mkProductInjectivityRule keyExps :
                 , srrel       = Sgn  { decnm   = ruleName
                                      , decsgn  = sign expression
                                      , decprps = []
-                                     , decprps_calc = []
+                                     , decprps_calc = Nothing -- []
                                      , decprL  = ""
                                      , decprM  = ""
                                      , decprR  = ""
@@ -158,7 +158,7 @@ instance Language A_Context where
                          uniteRels :: [Declaration] -> [Declaration]
                          uniteRels ds = [ d | cl<-eqClass (==) ds
                                             , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
-                                                             , decprps_calc = (foldr1 uni.map decprps_calc) cl
+                                                             , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                                              }]
   udefrules    context = concatMap udefrules (ctxpats context) ++ concatMap udefrules (ctxprocs context) ++ ctxrs context  -- all user defined rules
 --  invariants   context = [r | r<-udefrules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules

@@ -1272,7 +1272,7 @@ pCtx2aCtx p_context
                        , srrel  = Sgn { decnm = rr_nm prul        -- the signal relation
                                       , decsgn = sign aexpr
                                       , decprps = []
-                                      , decprps_calc = []
+                                      , decprps_calc = Nothing --[]
                                       , decprL = ""
                                       , decprM = ""
                                       , decprR = ""
@@ -1536,7 +1536,7 @@ pCtx2aCtx p_context
                where d = Sgn { decnm   = dec_nm pd
                              , decsgn  = pSign2aSign (dec_sign pd)
                              , decprps = dec_prps pd
-                             , decprps_calc = dec_prps pd --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
+                             , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
                              , decprL  = dec_prL pd
                              , decprM  = dec_prM pd
                              , decprR  = dec_prR pd
