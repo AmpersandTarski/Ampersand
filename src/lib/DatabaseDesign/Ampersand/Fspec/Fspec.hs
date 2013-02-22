@@ -417,8 +417,10 @@ lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
 
 data SqlFieldUsage = PrimKey A_Concept     -- The field is the primary key of the table
                    | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL
-                   | PlainValue            -- None of the above
-                   | Undetermined          -- Must be filled in later....
+                   | PlainAttr             -- None of the above
+                   | NonMainKey            -- Key value of an Specialization of the Primary key. (field could be null)
+                   | UserDefinedUsage
+                   | FillInLater          -- Must be filled in later....
                    
                    deriving (Eq, Show)
 data SqlField = Fld { fldname :: String
