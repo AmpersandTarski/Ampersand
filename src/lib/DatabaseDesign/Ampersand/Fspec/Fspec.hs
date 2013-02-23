@@ -324,7 +324,7 @@ data HornClause = Hc [Expression] [Expression] deriving (Show, Eq) -- Show is fo
 horn2expr :: HornClause -> Expression
 horn2expr hc@(Hc antcs conss)
  = case (antcs, conss) of
-    ([],[]) -> fatal 308 "empty Horn clause"
+    ([],[]) -> fatal 327 "empty Horn clause"
     ([],_ ) -> cons
     (_ ,[]) -> notCpl sgna antc
     (_ ,_ ) -> notCpl sgna antc .\/. cons
@@ -333,7 +333,7 @@ horn2expr hc@(Hc antcs conss)
        cons = foldr1 (.\/.) conss
        sgna = case sign antc of
                sgn@(Sign C{} C{}) -> sgn
-               sgn -> fatal 335 ("\nThe signature of the antecedent of "++show hc++"\n is "++show sgn)
+               sgn -> fatal 336 ("\nThe signature of the antecedent of "++show hc++"\n is "++show sgn)
 
 data Clauses  = Clauses
                   { cl_conjNF :: [(Expression
