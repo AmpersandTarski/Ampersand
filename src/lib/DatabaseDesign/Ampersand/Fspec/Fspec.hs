@@ -320,16 +320,20 @@ instance Eq PAclause where
 
 data HornClause = Hc [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
 
+--
 horn2expr :: HornClause -> Expression
 horn2expr hc@(Hc antcs conss)
- = if null antcs && null conss then fatal 308 "empty Horn clause" else
-   let acs  = if null antcs then [ERel (I (source sgnc)) sgnc] else antcs
-       cns  = if null conss then [ERel (I (source sgna)) sgna] else conss
-       sgnc = if ONE `elem` concs (map sign cns) then fatal 328 ("There is a ONE in "++show hc) else
-              foldr1 join (map sign cns)
-       sgna = if ONE `elem` concs (map sign acs) then fatal 330 ("There is a ONE in "++show hc) else
-              foldr1 meet (map sign acs)
-   in foldr1 (.\/.) ((map (notCpl (sgna `join` sgnc)) acs) ++ cns)
+ = case (antcs, conss) of
+    ([],[]) -> fatal 308 "empty Horn clause"
+    ([],_ ) -> cons
+    (_ ,[]) -> notCpl sgna antc
+    (_ ,_ ) -> notCpl sgna antc .\/. cons
+   where
+       antc = foldr1 (./\.) antcs
+       cons = foldr1 (.\/.) conss
+       sgna = case sign antc of
+               sgn@(Sign C{} C{}) -> sgn
+               sgn -> fatal 335 ("\nThe signature of the antecedent of "++show hc++"\n is "++show sgn)
 
 data Clauses  = Clauses
                   { cl_conjNF :: [(Expression
