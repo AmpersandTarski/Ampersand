@@ -34,6 +34,7 @@ import Paths_ampersand
 import System.FilePath       -- (combine,addExtension,replaceExtension)
 import System.Directory
 import System.Info (os)
+import Data.Monoid
 import Data.List              (isInfixOf,intercalate)
 import Control.Monad
 import Data.Maybe
@@ -338,7 +339,7 @@ xrefLabel :: Options -> String -> Inlines        -- uitbreidbaar voor andere ren
 xrefLabel flags myLabel
    = if xrefSupported flags
      then rawInline "latex" ("\\label{"++escapeNonAlphaNum myLabel++"}")
-     else fatal 508 "Illegal use of xrefLabel."
+     else mempty -- fatal 508 "Illegal use of xrefLabel."
 xrefSupported :: Options -> Bool
 xrefSupported flags = fspecFormat flags `elem` [FLatex] 
 xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
