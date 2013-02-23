@@ -249,11 +249,11 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
       showFields :: [SqlField] -> Blocks
       showFields flds = bulletList (map showField flds)
         where 
-          eRelIs = [c | ERel (I c) _ <- map fldexpr flds]
+          eRelIs = [c | ERel (I c@C{}) _ <- map fldexpr flds]
           showField fld =
              let isPrimeryKey = case fldexpr fld of
-                                  ERel (I c) _ -> foldl1 join eRelIs == c 
-                                  _            -> False 
+                                  ERel (I c@C{}) _ -> foldl1 join eRelIs == c 
+                                  _                -> False 
                  mForeignKey  = case fldexpr fld of
                                   EIsc (ERel (I c) _ ,_ ) _ -> Just c
                                   _                         -> Nothing  
