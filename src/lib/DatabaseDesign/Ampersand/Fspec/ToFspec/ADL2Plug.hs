@@ -223,13 +223,10 @@ rel2fld kernel
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
 makeEntityTables allRels exclusions
- = {- The following may be useful for debugging:  -}
+ = {- The following may be useful for debugging: -}
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
-     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-rels]++
-     "\nunis:"++concat ["\n  "++show r | r<-unis]++
-     "\nkernelSurRels:"++concat ["\n  "++show e | e<-kernelSurRels]++
-     "\nkernelTotRels:"++concat ["\n  "++show e | e<-kernelTotRels]++
+     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allRels>-mors exclusions, not (isIdent rel)]]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
      "\nkernels:"++concat ["\n  "++show kernel | kernel<-kernels]++
      "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]
@@ -284,56 +281,18 @@ makeEntityTables allRels exclusions
               
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-    kernelExprs = [ iExpr a: [ ETyp (iExpr a) (Sign a c) | c<-tail island ]  | island<-islands, let a = head island ]
-    rels,unis :: [Relation]
-    rels = [rel | rel <- allRels>-mors exclusions, not (isIdent rel)]
-    unis = [r | r<-rels, isUni r, isInj r]
-    kernelSurRels :: [Relation]
-    kernelSurRels   = [ r | r<-unis, isSur r]
-    kernelTotRels :: [Relation]
-    kernelTotRels   =  [r | r<-unis, not (isSur r), isTot r]
+    kernels :: [[Expression]]
+    kernels = case [c | c@C{} <- concs allRels] of
+                [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
+                cs -> let (_,islands,_,_,_) = cptgE (head cs) in
+                      [ iExpr a: [ ETyp (iExpr a) (Sign a c) | c<-tail island ]  | island<-islands, let a = head island ]
+              
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
-    attRels      = [     ERel r (sign (makeDeclaration r))  | r<-rs,      isUni r] ++
-                   [flp (ERel r (sign (makeDeclaration r))) | r<-rs, not (isUni r), isInj r]
-                   where rs = rels>-(kernelSurRels++kernelTotRels)
-    kernels :: [[Expression]]
-    kernels
-     = case [c | c@C{} <- concs allRels] of
-         []  -> [] -- an Ampersand script without declarations is conceivable. In that case cptgE is undefined for lack of concepts.
-         c:_ -> kerns++[ [iExpr c] ++
-                         [ rs | rs<-otherFields, source rs==c, target rs/=c]
-                       | c<-concs rels, not (c `elem` (map target (concat kerns)))
-                       ]
-       where
-       -- One kernel starts with a set of concepts, which were put into the same class by the type checker. Here, it is called an island of concepts.
-       -- The first concept of that class is the most generic of the lot. The concepts of one island are placed in the kernel in the same order.
-       -- That order reflects the size of the population. A subset (i.e. a more specific concept) is placed more to the right. This is for no reason in particular.  
-         (_,islands,_,_,_) = cptgE (head [c | c@C{} <- concs allRels])
-         kerns :: [[Expression]]
-         kerns =  [ [iExpr c | c<-island ] ++
-                    [ rs | rs<-otherFields, source rs `elem` island, target rs `notElem` island]
-                  | island<-islands ]
-         otherFields :: [Expression]
-         otherFields = [case head (sortWith length cl) of [e] -> e; es -> foldr1 (.:.) es | cl<-eqCl (\rs->(src rs,trg rs)) closure ]
-         closure :: [[Expression]]
-       -- The kernel relations whose source and targets are already contained in an island, need not be taken into account.
--- In order to make kernels as large as possible,
--- all relations that are univalent and injective will be flipped if that makes them surjective.
-         closure = clos1 ([ [ERel r (sign r)] | r<-kernelSurRels]++[ [flp (ERel r (sign r))] | r<-kernelTotRels])
-         clos1 :: [[Expression]] -> [[Expression]]
-         clos1 xs
-            = foldl f xs (nub (map src xs) `isc` nub (map trg xs))
-              where
-               f q x = q `uni` [r++r' | r<-q, trg r==x, r'<-q, src r'== x]
-         src = source.head
-         trg = target.last
-    {- Kernels are built recursively. Kernels expand by adding (sur, uni and inj) relations until there are none left.
-       Step 1: compute the expansion of each kernel (code: ms++[r |r<-rs, source r `elem` concs ms])
-       Step 2: merge kernels if possible (code: recursion over oneRun)
-       Step 3: compute the remaining relations (code: [r | r<-rs, source r `notElem` concs [ms | (_,ms)<-kernels]] )
-       And call recursively until there are none left. -}
+    attRels = [     ERel r (sign (makeDeclaration r))  | r<-rs, isUni r, not (isInj r && isSur r)] ++
+              [flp (ERel r (sign (makeDeclaration r))) | r<-rs, isInj r, not (isUni r && isTot r)]
+              where rs = [rel | rel <- allRels>-mors exclusions, not (isIdent rel)]
 
 
 -----------------------------------------
