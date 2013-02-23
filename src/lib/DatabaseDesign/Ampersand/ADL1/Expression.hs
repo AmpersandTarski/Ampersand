@@ -131,8 +131,15 @@ isEPrd _       = False
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
 deMorgan :: Sign -> Expression -> Expression
-deMorgan sgn@(Sign s t) (ERad (l,r) _)    = let z = target l `meet` source r in notCpl sgn (notCpl (Sign s z) l .:. notCpl (Sign z t) r)
-deMorgan sgn@(Sign s t) (ECps (l,r) _)    = let z = target l `join` source r in notCpl sgn (notCpl (Sign s z) l .!. notCpl (Sign z t) r)
+deMorgan sgn@(Sign s t) (ERad (l,r) _)
+    = case (target l, source r) of
+       (tl@C{},sr@C{}) -> let z = tl `meet` sr in notCpl sgn (notCpl (Sign s z) l .:. notCpl (Sign z t) r)
+       _               -> fatal 137 "expression in wrong format (has never been signalled so far...)"
+deMorgan sgn@(Sign s t) (ECps (l,r) _)
+    = case (target l, source r) of
+       (tl@C{},sr@C{}) -> let z = tl `join` sr in notCpl sgn (notCpl (Sign s z) l .!. notCpl (Sign z t) r)
+       _               -> fatal 141 "expression in wrong format (has never been signalled so far...)"
+       
 deMorgan sgn (EUni (l,r) _)    = notCpl sgn (notCpl sgn l ./\. notCpl sgn r)
 deMorgan sgn (EIsc (l,r) _)    = notCpl sgn (notCpl sgn l .\/. notCpl sgn r)
 deMorgan _ e    = fatal 214 ("De Morgan is not applicable to "++show e)
