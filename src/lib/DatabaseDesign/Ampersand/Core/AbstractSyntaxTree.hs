@@ -668,16 +668,18 @@ instance Poset A_Concept where
                       where (comp,_,_,_,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
 
 instance Sortable A_Concept where
-  meet ONE   _ = fatal 669 "meet must not be used with ONE!"
+  meet ONE  _  = fatal 671 "meet must not be used with ONE!"
+  meet  _  ONE = fatal 672 "meet must not be used with ONE!"
   meet a@C{} b = case a `meets` b of        -- meet yields the more specific of two concepts
               [z] -> z
-              []  -> fatal 671 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
+              []  -> fatal 675 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> greatest cs
              where (_,_,_,meets,_) = cptgE a
-  join ONE  _ = fatal 675 "join must not be used with ONE!"
+  join ONE  _  = fatal 678 "join must not be used with ONE!"
+  join  _  ONE = fatal 679 "join must not be used with ONE!"
   join a@C{} b = case a `joins` b of        -- join yields the more generic of two concepts
               [z] -> z
-              []  -> fatal 675 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
+              []  -> fatal 682 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> least cs
              where (_,_,_,_,joins) = cptgE a
   sortBy f = Data.List.sortBy ((comparableClass .) . f)
