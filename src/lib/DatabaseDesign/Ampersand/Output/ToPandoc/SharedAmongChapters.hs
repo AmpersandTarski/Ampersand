@@ -127,7 +127,7 @@ class Xreferencable a where
   xRefReference :: Options -> a -> Inlines
   xRefReference flags a 
     | canXRefer flags = rawInline "latex" ("\\label{"++xLabel a++"}")
-    | otherwise       = text "fatal 89 xreferencing is not supported!"
+    | otherwise       = mempty -- "fatal 89 xreferencing is not supported!"
   xrefLabel :: a -> Inline
   xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")
 
@@ -369,7 +369,7 @@ lclForLang flags = defaultTimeLocale { months =
 
 
 inlineIntercalate :: Inlines -> [Inlines] -> Inlines
-inlineIntercalate _   [] = mempty
+inlineIntercalate _  [] = mempty
 inlineIntercalate _ [x] = x
 inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 
