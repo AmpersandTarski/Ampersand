@@ -45,7 +45,7 @@ makeDecl g
   = Sgn  { decnm   = name(source g) -- best result in the sql plug
          , decsgn  = sign g
          , decprps = [Uni,Tot,Inj]
-         , decprps_calc = Nothing -- [Uni,Tot,Inj]
+         , decprps_calc = Just [Uni,Tot,Inj]
          , decprL  = ""
          , decprM  = "is a"
          , decprR  = ""

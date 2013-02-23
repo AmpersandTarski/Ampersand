@@ -223,17 +223,17 @@ rel2fld kernel
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
 makeEntityTables allRels exclusions
- = {- The following may be useful for debugging: 
+ = {- The following may be useful for debugging:  -}
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
-     "\nrels:"++concat ["\n  "++show r | r<-rels]++
+     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-rels]++
      "\nunis:"++concat ["\n  "++show r | r<-unis]++
      "\nkernelSurRels:"++concat ["\n  "++show e | e<-kernelSurRels]++
      "\nkernelTotRels:"++concat ["\n  "++show e | e<-kernelTotRels]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
      "\nkernels:"++concat ["\n  "++show kernel | kernel<-kernels]++
      "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]
-    ) ++ -}
+    ) ++
    sortWith ((0-).length.plugFields)
     (map kernel2Plug kernels)
    where
@@ -284,6 +284,7 @@ makeEntityTables allRels exclusions
               
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
+    kernelExprs = [ iExpr a: [ ETyp (iExpr a) (Sign a c) | c<-tail island ]  | island<-islands, let a = head island ]
     rels,unis :: [Relation]
     rels = [rel | rel <- allRels>-mors exclusions, not (isIdent rel)]
     unis = [r | r<-rels, isUni r, isInj r]
