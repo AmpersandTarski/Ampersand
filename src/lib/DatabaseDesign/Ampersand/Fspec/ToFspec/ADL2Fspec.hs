@@ -111,32 +111,42 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    genPlugs             -- all generated plugs
         genPlugs = [InternalPlug (rename p (qlfname (name p)))
                    | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                      (makeGeneratedSqlPlugs context totsurs entityRels)
+                                      (makeGeneratedSqlPlugs flags context totsurs entityRels)
                    ]
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
-        entityRels = [makeRelation d | d<-calculatedDecls, not (decplug d)] -- The persistent relations
-                  ++ [ Rel { relnm  = name s
-                           , relpos = OriginUnknown 
-                           , reldcl = Sgn { decnm         = "ISA"
-                                          , decsgn        = Sign s g
-                                          , decprps       = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
-                                          , decprps_calc  = Just [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
-                                          , decprL        = ""
-                                          , decprM        = "is a"
-                                          , decprR        = ""
-                                          , decMean       = AMeaning [ A_Markup Dutch ReST (string2Blocks ReST 
-                                                                       ("Each "++name s++" is a "++name g++"."))
-                                                                     ]
-                                          , decConceptDef = Nothing
-                                          , decfpos       = OriginUnknown
-                                          , deciss        = False
-                                          , decusr        = False
-                                          , decpat        = ""
-                                          , decplug       = False
-                                          }
-                           }
-                     | (s,g)<-isas ]
+        entityRels = 
+           {- The following may be useful for debugging: 
+           error 
+             ("\ncalculatedDecls:"++concat ["\n  "++show r | r<-calculatedDecls]++
+              "\nIsas:"++concat ["\n  "++show i | i<-isas]
+              
+             ) ++  -}
+        
+        
+                     [makeRelation d | d<-calculatedDecls, not (decplug d)] -- The persistent relations
+-- Het volgende heb ik verwijderd, want de ISA relatie is al aanwezig in calculatedDecls. Zou anders dubbel zijn. 
+--                  ++ [ Rel { relnm  = name s
+--                           , relpos = OriginUnknown 
+--                           , reldcl = Sgn { decnm         = "ISA"
+--                                          , decsgn        = Sign s g
+--                                          , decprps       = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
+--                                          , decprps_calc  = Just [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
+--                                          , decprL        = ""
+--                                          , decprM        = "is a"
+--                                          , decprR        = ""
+--                                          , decMean       = AMeaning [ A_Markup Dutch ReST (string2Blocks ReST 
+--                                                                       ("Each "++name s++" is a "++name g++"."))
+--                                                                     ]
+--                                          , decConceptDef = Nothing
+--                                          , decfpos       = OriginUnknown
+--                                          , deciss        = False
+--                                          , decusr        = False
+--                                          , decpat        = ""
+--                                          , decplug       = False
+--                                          }
+--                           }
+--                     | (s,g)<-isas ]
 
         qlfname x = if null (namespace flags) then x else "ns"++namespace flags++x
 
