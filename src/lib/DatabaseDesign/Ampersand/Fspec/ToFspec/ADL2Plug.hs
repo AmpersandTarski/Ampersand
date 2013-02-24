@@ -11,24 +11,27 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
+import DatabaseDesign.Ampersand.Misc
+import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
 import Data.Char
-import Data.List (nub,intercalate)
+import Data.List (nub,intercalate,partition)
 import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 
 
-makeGeneratedSqlPlugs :: A_Context
+makeGeneratedSqlPlugs :: Options
+              -> A_Context
               -> [Expression]  
               -> [Relation]    -- ^ declarations to be saved in generated database plugs. 
               -> [PlugSQL]
-makeGeneratedSqlPlugs context totsurs entityRels = gTables
+makeGeneratedSqlPlugs flags context totsurs entityRels = gTables
   where
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = makeEntityTables entityRels vsqlplugs
+        gPlugs   = makeEntityTables flags entityRels vsqlplugs
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable rel totsurs
@@ -223,22 +226,33 @@ rel2fld kernel
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
-makeEntityTables :: ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
-makeEntityTables allRels exclusions
+makeEntityTables :: Options -> ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
+makeEntityTables flags allRels exclusions
  = {- The following may be useful for debugging: 
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
      "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allRels>-mors exclusions, not (isIdent rel)]]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
-     "\nkernels:"++concat ["\n  "++show kernel | kernel<-kernels]++
-     "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]
-    ) ++  -}
+     "\nkernels:"++concat ["\n  "++show kernel ++show (nub (map target kernel))| kernel<-kernels]++
+     "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]++
+  --   "\nplugs:"++concat ["\n   "++showHS flags "\n   " (kernel2Plug kernel) | kernel <-kernels]++
+
+     "\nDistribution of Attributes:"++ concat ["\n   "++show dist | dist <-distributionOfAtts]++
+     "") ++  -}
    sortWith ((0-).length.plugFields)
-    (map kernel2Plug kernels)
+    (map kernel2Plug distributionOfAtts)
    where
+    distributionOfAtts = dist attRels kernels []
+      where 
+   --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
+        dist []   []     result = result
+        dist _    []     _      = fatal 246 "No kernel found for atts"
+        dist atts (k:ks) result = dist rest ks (result ++ [(k,attsOfKernel)])
+           where (attsOfKernel,rest) = partition belongsInK atts
+                 belongsInK att = source att `elem` map target k
     -- | converts a kernel into a plug
-    kernel2Plug :: [Expression] -> PlugSQL
-    kernel2Plug kernel =
+    kernel2Plug :: ([Expression],[Expression]) -> PlugSQL
+    kernel2Plug (kernel, atts) =  --TODO: Use atts to build the table.
       if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
            let r = iExpr c 
@@ -287,7 +301,7 @@ makeEntityTables allRels exclusions
     kernels = case [c | c@C{} <- concs allRels] of
                 [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
                 cs -> let (_,islands,_,_,_) = cptgE (head cs) in
-                      [ iExpr a: [ ETyp (iExpr a) (Sign a c) | c<-tail island ]  | island<-islands, let a = head island ]
+                      [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
               
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
