@@ -169,6 +169,8 @@ rel2fld kernel
                             -> not $ 
                                  isSur rel &&
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
+                   ETyp (ERel i@I{} _) _
+                            -> True
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
                                    " ***kernel:*** \n   "++
                                    intercalate "\n   " (map show kernel)++"\n"++
@@ -223,7 +225,7 @@ rel2fld kernel
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
 makeEntityTables allRels exclusions
- = {- The following may be useful for debugging:
+ = {- The following may be useful for debugging: 
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
      "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allRels>-mors exclusions, not (isIdent rel)]]++
