@@ -222,13 +222,13 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                    in para 
                        (case language flags of
                          Dutch
-                           ->  text "Dit is een koppeltabel, die de relatie "
+                           ->  text "Dit is een koppeltabel, die "
                             <> mathRel (mLkp bin)
                             <> text " implementeert. De tabel bestaat uit de volgende kolommen:"      
                            
                          English
-                           ->  text "This is a link-table, implementing the relation "
-                            <> (emph.text.name) rel
+                           ->  text "This is a link-table, implementing "
+                            <> mathRel (mLkp bin)
                             <> text ". It contains the following columns:"  
                        )
                      <> showFields (plugFields bin)
@@ -290,8 +290,8 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 --then 
                                 --else
                                   (case language flags of
-                                     Dutch   -> text ("Dit attribuut implementeert de relatie ")
-                                     English -> text ("This attribute implements the relation ")
+                                     Dutch   -> text ("Dit attribuut implementeert ")
+                                     English -> text ("This attribute implements ")
                                   <> mathRel (fldexpr fld)
                                   <> text "."
                                   )
@@ -815,14 +815,30 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                   _           -> map fst (cLkpTbl p)
 
   mathRel :: Expression -> Inlines
-  mathRel (ERel r           _) = math ((name.source) r++ " \\xrightarrow {"++name r++"} "++(name.target) r)
-  mathRel (EFlp (ERel r _ ) _) = math ((name.source) r++ " \\xleftarrow  {"++name r++"} "++(name.target) r)
-  mathRel (EIsc (r1,r2)     _) = let srcTable = case r1 of
-                                                   ERel (I c) _ -> c
-                                                   _          -> fatal 767 "What to do???"
-                                                   
-                                 in math ("a foureign key to "++name srcTable) 
---  mathRel (ECps (r1,r2)     _) = mathRel r1 <> math " ; "     <> mathRel r2
+  mathRel (ERel r           _) = 
+      case language flags of
+        Dutch -> text "de relatie " 
+        English -> text "the relation "
+   <> math ((name.source) r++ " \\xrightarrow {"++name r++"} "++(name.target) r)
+  mathRel (EFlp (ERel r _ ) _) = 
+      case language flags of
+        Dutch -> text "de relatie " 
+        English -> text "the relation "
+   <> math ((name.source) r++ " \\xleftarrow  {"++name r++"} "++(name.target) r)
+  mathRel (EIsc (r1,_)     _) = 
+      let srcTable = case r1 of
+                       ERel (I c) _ -> c
+                       _          -> fatal 767 ("Unexpected expression: "++show r1)
+      in 
+      case language flags of
+        Dutch -> text "de identiteitsrelatie van " 
+        English -> text "the identityrelation of "
+   <> math (name srcTable) 
+  mathRel t@(ETyp (ERel (I _) _ ) _) =
+      case language flags of
+        Dutch   -> text "het feit of deze " <> (math.name.source) t <> text " een "  <> (math.name.target) t <> text " is." 
+        English -> text "weather this "     <> (math.name.source) t <> text " is a " <> (math.name.target) t <> text " or not." 
+  --  mathRel (ECps (r1,r2)     _) = mathRel r1 <> math " ; "     <> mathRel r2
   mathRel expr                    = fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show expr) 
   
   
