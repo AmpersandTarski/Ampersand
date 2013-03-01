@@ -186,11 +186,46 @@ mapIsOk m = Map.fold (&&) True (Map.map (isSortedAndDistinct . checkRfx) m)
 isSortedAndDistinct :: Ord a => [a] -> Bool
 isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
 isSortedAndDistinct _ = True
--- | The purpose of 'setClosure' is to compute the transitive closure of relations that are represented as a Map (Map a [a]).
+
+
+{-
+Since vertices of type v may be expensive to compare, we first create an isomorphic index map that
+has integer indices as its vertices. For this graph we compute the transitive closure, which we map
+back onto a graph with the original vertex type v.
+-}
+setClosure :: (Show v,Ord v) => Map v [v] -> String -> Map v [v]
+setClosure graph s =
+  let vertexIndexMap = makeVertexIndexMap $ Map.keys graph
+      indexGraph = vertexToIndexGraph vertexIndexMap graph
+      indexResult = setClosureSlow indexGraph s
+      vertexResult = indexGraphToVertexGraph vertexIndexMap indexResult
+  in  vertexResult
+
+-- a map function for graphs represented as (Map vertex [vertex])
+mapGraph :: (Ord a, Ord b) => (a->b) -> Map a [a] -> Map b [b]
+mapGraph f graph = Map.fromList [ (f v, map f vs) | (v,vs) <- Map.toList graph]
+
+makeVertexIndexMap :: (Show v,Ord v) => [v] -> Map v Int
+makeVertexIndexMap allVertices = Map.fromList $ zip allVertices [0..]
+
+vertexToIndexGraph :: (Show v,Ord v) => Map v Int -> Map v [v] -> Map Int [Int]
+vertexToIndexGraph vertexIndexMap vertexGraph = mapGraph vertexToIndex vertexGraph
+ where vertexToIndex v = case Map.lookup v vertexIndexMap of
+                         Nothing -> fatal 210 $ "vertexToIndexGraph: vertex "++show v++" not in vertexIndexMap"
+                         Just i  -> i
+  
+indexGraphToVertexGraph :: (Show a,Ord a) => Map a Int -> Map Int [Int] -> Map a [a]
+indexGraphToVertexGraph vertexIndexMap indexGraph = mapGraph indexToVertex indexGraph
+ where indexToVertex i = if i < length allVertices 
+                         then allVertices !! i 
+                         else fatal 217 $ "indexToVertexGraph: index "++show i++" too large (number of vertices is " ++show (length allVertices)++")"
+       allVertices = Map.keys vertexIndexMap
+
+-- | The purpose of 'setClosureSlow' is to compute the transitive closure of relations that are represented as a Map (Map a [a]).
 --   For that purpose we use a Warshall algorithm.
-setClosure :: (Show a,Ord a) => Map a [a] -> String -> Map a [a]
-setClosure xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
-setClosure xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
+setClosureSlow :: (Show a,Ord a) => Map a [a] -> String -> Map a [a]
+setClosureSlow xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
+setClosureSlow xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
   where
 --   f q x = Map.map (\bs->foldl mrgUnion bs [b' | b<-bs, b == x, (a', b') <- Map.toList q, a' == x]) q
    f q x = Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
