@@ -231,7 +231,7 @@ setClosureSlow xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure cont
    f q x = Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
    res   = foldl f xs (Map.keys xs `isc` nub (concat (Map.elems xs)))
 
-{- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
+-- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
                        | a==b      = b: mrgUnion as bs
@@ -243,8 +243,8 @@ mrgIntersect (a:as) (b:bs) | a<b       = mrgIntersect as (b:bs)
                            | a==b      = b: mrgIntersect as bs
                            | otherwise = mrgIntersect (a:as) bs
 mrgIntersect _ _ = [] -- since either a or b is the empty list
--}
--- The following mrgUnion and mrgIntersect are for debug purposes
+
+{- The following mrgUnion and mrgIntersect are for debug purposes
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct l then
@@ -271,7 +271,6 @@ mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge co
                             | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
         merge _ _ = [] -- since either a or b is the empty list
 
-
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
                            else if a==b then fatal 164 ("Eq is not transitive:\n "++show a++"=="++show b++"\n but `==` ("++show b'++") ("++show b++") is "++show (b' == b))
@@ -280,6 +279,7 @@ distinctCons a b' (b:bs) = if a<b then b':(b:bs)
                                                    ,"compare ("++show b'++") ("++show b++") == "++show (compare b' b)++"\n"
                                                    ,"compare ("++show a++") ("++show b++") == "++show (compare a b)++"\n"]))
 distinctCons a _ bs = a:bs
+-}
 
 checkRfx :: (Eq a, Show a) => [a] -> [a]
 checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show a) else a:checkRfx as
@@ -1157,20 +1157,16 @@ pCtx2aCtx p_context
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
        [ pop | prc<-ctx_PPrcs pc, pop<-procPop prc]
-    popsFromMp1Rels = [mp1Rel2Pop r c | (r,c)<-allMp1Rels]
+    popsFromMp1Rels = [PCptPopu { popcpt = source e
+                                , popas  = [str]
+                                }
+                      | e@(EMp1 str _)<-allMp1Rels]
       where 
-        allMp1Rels =    mp1Rels pats
-                  `uni` mp1Rels procs
-                  `uni` mp1Rels ctxrules
-                  `uni` mp1Rels keys
-                  `uni` mp1Rels ifcs 
-        mp1Rel2Pop :: Relation -> A_Concept -> UserDefPop
-        mp1Rel2Pop r c =
-           case r of 
-             Mp1{} -> PCptPopu { popcpt = c
-                               , popas  = [relval r]
-                               }
-             _     -> fatal 1088 "This function must not be called with just any relation"
+        allMp1Rels =    mp1Exprs pats
+                  `uni` mp1Exprs procs
+                  `uni` mp1Exprs ctxrules
+                  `uni` mp1Exprs keys
+                  `uni` mp1Exprs ifcs 
              
     themeschk = case orphans of
                  []   -> []
@@ -1381,24 +1377,7 @@ pCtx2aCtx p_context
         f prms obj
          = Ifc { ifcParams = [ case erel of
                                 ERel rel _ -> rel
-                                EEqu _ _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EImp _ _ -> fatal 1350 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EIsc _ _ -> fatal 1351 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EUni _ _ -> fatal 1352 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EDif _ _ -> fatal 1353 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                ELrs _ _ -> fatal 1354 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                ERrs _ _ -> fatal 1355 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                ECps _ _ -> fatal 1356 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                ERad _ _ -> fatal 1357 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EPrd _ _ -> fatal 1358 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EKl0 _ _ -> fatal 1359 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EKl1 _ _ -> fatal 1360 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EFlp _ _ -> fatal 1361 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                ECpl _ _ -> fatal 1362 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                EBrk _ -> fatal 1363 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                ETyp _ _ -> fatal 1364 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
-                                
-                            --    _   -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
                , ifcViols  = fatal 206 "not implemented ifcViols"
                , ifcArgs   = ifc_Args pifc
@@ -1506,8 +1485,8 @@ pCtx2aCtx p_context
     pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop pop
      = case pExpr2aExpr expr of
-        Checked (ERel aRel _,_,_)          -> Checked ( thePop aRel )
-        Checked (ETyp (ERel aRel _) _,_,_) -> Checked ( thePop aRel )
+        Checked (  ERel aRel _ ,_,_)       -> Checked (thePop aRel)
+        Checked (ETyp (ERel aRel _) _,_,_) -> Checked (thePop aRel)
         Checked _                          -> fatal 1223 "illegal call of pPop2aPop"
         Errors errs                        -> Errors errs
        where expr = case pop of
@@ -1526,7 +1505,6 @@ pCtx2aCtx p_context
                                                            P_CptPopu{} -> p_popas pop
                                               }
                             V{}   -> fatal 1444 "V has no population of it's own"
-                            Mp1{} -> fatal 1445 "Mp1 is not expected here."
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
        = Gen{genfp  = gen_fp  pg
@@ -1607,7 +1585,7 @@ pCtx2aCtx p_context
                                     ; return (ECpl (ERel (I (pCpt2aCpt c)) sgn) sgn)
                                     }
          f x@(Patm _ atom _)   = do { sgn<-getSign x
-                                    ; return (ERel (Mp1 atom) sgn)
+                                    ; return (EMp1 atom sgn)
                                     }
          f   Pnull             = fatal 1546 ("unsigned Pnull.")
          f x@(PVee _)          = do { sgn<-getSign x

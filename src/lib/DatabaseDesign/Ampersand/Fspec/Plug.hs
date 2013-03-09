@@ -62,8 +62,8 @@ instance ConceptStructure PlugInfo where
   mors    (ExternalPlug obj)  = mors    obj
   morlist (InternalPlug psql) = morlist psql
   morlist (ExternalPlug obj)  = morlist obj
-  mp1Rels (InternalPlug psql) = mp1Rels psql
-  mp1Rels (ExternalPlug obj)  = mp1Rels obj
+  mp1Exprs (InternalPlug psql) = mp1Exprs psql
+  mp1Exprs (ExternalPlug obj)  = mp1Exprs obj
    
 
 
@@ -429,13 +429,13 @@ clusterBy f cs xs
 instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
   morlist   f = morlist   (fldexpr f)
-  mp1Rels = fatal 452 "mp1Rels is not meant to be for a plug."
+  mp1Exprs = fatal 452 "mp1Exprs is not meant to be for a plug."
 
 instance ConceptStructure PlugSQL where
   concs     p = concs   (plugFields p)
   mors      p = mors    (plugFields p)
   morlist   p = morlist (plugFields p)
-  mp1Rels = fatal 458 "mp1Rels is not meant to be for a plug."
+  mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
 
 plugFields::PlugSQL->[SqlField]
 plugFields plug = case plug of

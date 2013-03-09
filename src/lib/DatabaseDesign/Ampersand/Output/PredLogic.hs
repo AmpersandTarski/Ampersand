@@ -30,9 +30,10 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       PlK0 PredLogic                 |
       PlK1 PredLogic                 |
       R PredLogic Relation PredLogic |
+      Atom String                    |
       Funs String [Relation]         |
       Dom Expression Var             |
-      Cod Expression Var
+      Cod Expression Var          deriving Eq
 
    data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
 
@@ -209,6 +210,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                                                                   else apply (makeDeclaration rel) l (funP f r))
 -}
                                             (lhs,rhs)                -> wrap i 5 (relP rel (charshow 5 lhs) (charshow 5 rhs))
+                  Atom atom           -> "'"++atom++"'"
                   PlK0 rs             -> wrap i 6 (charshow 6 rs++k0P)
                   PlK1 rs             -> wrap i 7 (charshow 7 rs++k1P)
                   Not rs              -> wrap i 8 (spaceP++notP++charshow 8 rs)
@@ -287,52 +289,108 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                Rn   -> R (Funs b []) rel (Funs a [])
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
       f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
+      f _ (EMp1 atom _) _             = Atom atom
 
 -- fC treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
 --       in which ivs is a list of variables that are used inside the resulting expression,
 --       ics contains their types, and frels s t the subexpressions that
 --       are used in the resulting conjuct (at the right of the quantifier).
-      fC exclVars e (a,b)
+      fC :: [Var] -> Expression -> (Var,Var) -> PredLogic
+      fC exclVars    e             (a,b)
+                               --   f :: [Var] -> Expression -> (Var,Var) -> PredLogic
         | and [isCpl e' | e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)
-        | otherwise               = Exists ivs (Conj (frels s t))
+        | otherwise               = Exists ivs (Conj (frels a b))
         where
+         es :: [Expression]
          es   = exprCps2list e
         -- Step 1: split in fragments at those points where an exists-quantifier is needed.
         --         Each fragment represents a subexpression with variables
-        --         at the outside only. Fragments will be reconstructed in a conjuct.
+        --         at the outside only. Fragments will be reconstructed in a conjunct.
+         res       :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
          res       = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
         -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
-         frels s' t' = [r v' w | ((r,_,_),v',w)<-zip3 res (s': ivs) (ivs++[t']) ]
+         frels :: Var -> Var -> [PredLogic]
+         frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
         -- Step 3: compute the intermediate variables and their types
-         ivs       = mkVar exclVars ics
-         ics       = [ if v' <==> w then v' `meet` w else
-                       fatal 312 ("within ics there is an illegal type for v'="++show v'++" and w="++show w++".")
-                     | (v',w)<-zip [s' |(_,s',_)<-tail res] [t' |(_,_,t')<-init res]]
+         res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
+         res' = [triple | triple<-res, not (atomic triple)]
+         ivs  :: [Var]
+         ivs  = mkvar exclVars ics
+         ics  :: [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
+         ics  = concat
+                [ case (v',w) of
+                    (Left _,    Left _   ) -> []
+                    (Left atom, Right  _ ) -> [ Left atom ]
+                    (Right  _ , Left atom) -> [ Left atom ]
+                    (Right trg, Right src) -> [ Right (trg `meet` src) ]
+                | (v',w)<-zip [ case l ("",src) ("",trg) of
+                                 atom@Atom{} -> Left atom
+                                 _           -> Right trg
+                              | (l,src,trg)<-init res]
+                              [ case r ("",src) ("",trg) of
+                                 atom@Atom{} -> Left atom
+                                 _           -> Right src
+                              | (r,src,trg)<-tail res]
+                ]
+      atomic    :: (Var -> Var -> PredLogic, A_Concept, A_Concept) -> Bool
+      atomic (r,a,b) = case r ("",a) ("",b) of
+                        Atom{} -> True
+                        _      -> False
+      mkvar :: [Var] -> [ Either PredLogic A_Concept ] -> [Var]
+      mkvar exclVars (Right z: ics) = let vz = head (mkVar exclVars [z]) in vz: mkvar (exclVars++[vz]) ics
+      mkvar exclVars (Left  _: ics) = mkvar exclVars ics
+      mkvar _ [] = []
 
       fD exclVars e (a,b) 
-        | and[isCpl e' |e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)                          -- e.g.  -r!-s!-t
-        | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b) -- e.g.  -r!-s! t
-        | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b) -- e.g.   r!-s!-t
-        | or [isCpl e' |e'<-es] = Forall ivs (Disj alls)                                     -- e.g.   r!-s! t
-        | otherwise             = Forall ivs (Disj alls)                                     -- e.g.   r! s! t
+        | and[isCpl e' |e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)                      -- e.g.  -r!-s!-t
+        | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b)  -- e.g.  -r!-s! t  antr cannot be empty, because isCpl (head es) is True; conr cannot be empty, because es has an element that is not isCpl.
+        | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b)  -- e.g.   r!-s!-t  antl cannot be empty, because isCpl (head es) is True; conl cannot be empty, because es has an element that is not isCpl.
+        | otherwise             = Forall ivs (Disj (frels a b))                               -- e.g.   r!-s! t  the condition or [isCpl e' |e'<-es] is true.
+{- was:
+        | otherwise             = Forall ivs (Disj alls)
+                                  where alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
+-}
         where
-         es   = exprRad2list e
-         conr = dropWhile isCpl es
-         antr = (map flp.reverse.takeWhile isCpl) es
+         es   = exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
+         res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
+         conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
+                                   -- So conr is not empty.
+         antr = (map (notCpl (sign e)).map flp.reverse.takeWhile isCpl) es
          conl = (reverse.dropWhile isCpl.reverse) es
-         antl = (map flp.takeWhile isCpl.reverse) es
-         alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
-         ivs  = mkVar exclVars ics
-         ics  = [ if target e'' <==> source e' then target e'' `join` source e' else
-                  fatal 332 ("within ics there is an illegal type for e''="++show e''++" and e'="++show e'++".")
-                | (e'',e')<-zip (init es) (tail es)]
-      
+         antl = (map (notCpl (sign e)).map flp.takeWhile isCpl.reverse) es
+        -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
+         frels :: Var -> Var -> [PredLogic]
+         frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
+        -- Step 3: compute the intermediate variables and their types
+         res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
+         res' = [triple | triple<-res, not (atomic triple)]
+         ivs  :: [Var]
+         ivs  = mkvar exclVars ics
+         ics  :: [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
+         ics  = concat
+                [ case (v',w) of
+                    (Left _,    Left _   ) -> []
+                    (Left atom, Right  _ ) -> [ Left atom ]
+                    (Right  _ , Left atom) -> [ Left atom ]
+                    (Right trg, Right src) -> [ Right (trg `meet` src) ]
+                | (v',w)<-zip [ case l ("",src) ("",trg) of
+                                 atom@Atom{} -> Left atom
+                                 _           -> Right trg
+                              | (l,src,trg)<-init res]
+                              [ case r ("",src) ("",trg) of
+                                 atom@Atom{} -> Left atom
+                                 _           -> Right src
+                              | (r,src,trg)<-tail res]
+                ]
+
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
       relFun exclVars lhs e rhs
         = case e of
             ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-mors t']) rel (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t'])
             EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t']) rel (Funs (fst sv) [r | t'<-        lhs, r<-mors t'])
+            EMp1 atom         _ -> \_ _->Atom atom
+            EFlp EMp1{}       _ -> relFun exclVars lhs e rhs
             _                   -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
 
       pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)] 

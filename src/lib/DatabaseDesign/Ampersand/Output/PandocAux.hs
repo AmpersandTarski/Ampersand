@@ -403,7 +403,7 @@ instance ShowMath Expression where
           showExpr (ERel rel@Rel{} _) = name rel
           showExpr (ERel     I{} _)   = "I"
           showExpr (ERel     V{} _)   = "V"
-          showExpr (ERel rel@Mp1{} _) = "'{\tt "++relval rel++"}'"
+          showExpr (EMp1 atom _)      = "'{\tt "++atom++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -420,8 +420,6 @@ instance ShowMath Relation where
   = "I"
  showMath V{}
   = "V"
- showMath r@Mp1{}
-  = "'{\tt "++relval r++"}'"
 
 instance ShowMath Declaration where
  showMath decl@(Sgn{})

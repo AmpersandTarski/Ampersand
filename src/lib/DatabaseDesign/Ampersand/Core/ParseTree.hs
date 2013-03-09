@@ -197,7 +197,6 @@ where
                 }
         | P_I
         | P_V
-        | P_Mp1 { rel_1val :: String }          -- ^ the value of the one relation
         deriving (Eq, Ord)
 
    instance Show P_Relation where
@@ -205,14 +204,12 @@ where
       P_Rel{} -> showString (rel_nm r)
       P_I{}   -> showString "I"
       P_V{}   -> showString "V"
-      P_Mp1{} -> showString ("'"++rel_1val r++"'")
 
    instance Identified P_Relation where
     name r = case r of
       P_Rel{} -> rel_nm r
       P_I{}   -> "I"
       P_V{}   -> "V"
-      P_Mp1{} -> "Mp1"
 
    instance Traced P_Relation where
     origin r = case r of

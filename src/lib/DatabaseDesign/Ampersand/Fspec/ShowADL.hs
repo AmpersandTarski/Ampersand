@@ -255,7 +255,7 @@ instance ShowADL Expression where
           showchar (ERel rel@Rel{} _) = name rel
           showchar (ERel     I{}   _) = "I"
           showchar (ERel     V{}   _) = "V"
-          showchar (ERel rel@Mp1{} _) = "'"++relval rel++"'"
+          showchar (EMp1 atom      _) = "'"++atom++"'"
 
 instance ShowADL HornClause where
  showADL hornClause = showADL (horn2expr hornClause)
@@ -481,7 +481,6 @@ instance ShowADL P_Relation where
       P_Rel{} -> rel_nm rel
       P_I{}   -> " I "
       P_V{}   -> " V "
-      P_Mp1{} -> rel_1val rel
 
 --used to compose error messages at p2a time
 instance ShowADL P_Concept where

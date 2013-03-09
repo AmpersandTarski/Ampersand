@@ -248,3 +248,4 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (EBrk e)         = f e
      f (ETyp e _)       = f e
      f (ERel r _)       = [ True | r==rel ]
+     f (EMp1 _ _)       = []

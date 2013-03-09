@@ -377,17 +377,11 @@ instance Motivated FProcess where
 -- The diagnosis report must make mention of this (so the user will notice if (s)he reads the diagnosis).
 -- Multiple purposes are simply concatenated, so the user sees them all.
 instance Motivated Activity where
+  explForObj _ _ = False
+  explanations activity = actPurp activity
   purposeOf _ l x = case [ e | e <- actPurp x, amLang (explMarkup e) == l ] of
                     []    -> Nothing
                     purps -> Just purps
---                    purps -> case concatMarkup (map explMarkup purps) of
---                              Nothing -> Nothing
---                              Just p  -> Just Expl { explPos      = explPos (head purps)        -- The position in the Ampersand script of this purpose definition
---                                                   , explObj      = ExplRule (name (actRule x)) -- The object that is explained.
---                                                   , explMarkup   = p                           -- This field contains the text of the explanation including language and markup info.
---                                                   , explUserdefd = False                       -- Is this purpose defined in the script?
---                                                   , explRefId    = intercalate ", " (map explRefId purps) -- The reference of the explaination
---                                                   }
 
 class Meaning a where 
   meaning :: Lang -> a -> Maybe A_Markup
