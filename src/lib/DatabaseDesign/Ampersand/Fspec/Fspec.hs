@@ -84,12 +84,12 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
   morlist   fSpec = morlist (interfaceS fSpec) ++ morlist (vrules fSpec)
-  mp1Rels   _ = fatal 77 "do not use mp1Rels from an Fspc"
+  mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an Fspc"
   
 instance Language Fspc where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language Fspc)"
-                           , objctx  = ERel (I ONE) (Sign ONE ONE)
+                           , objctx  = iExpr ONE
                            , objmsub = Just . Box $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
@@ -168,7 +168,7 @@ instance ConceptStructure Finterface where
   concs     ifc = concs (fsv_ifcdef ifc)
   mors      ifc = mors (fsv_ifcdef ifc)
   morlist   ifc = morlist (fsv_ifcdef ifc)
-  mp1Rels   _ = fatal 160 "do not use mp1Rels from an Finterface"
+  mp1Exprs  _ = fatal 160 "do not use mp1Exprs from an Finterface"
 
 
 --   instance Explainable Finterface where
@@ -231,7 +231,7 @@ instance ConceptStructure Activity where
  concs     act = concs (actRule act) `uni` concs (actAffect act)  -- The set of all concepts used in this Activity
  mors      act = mors (actRule act) `uni` actAffect act           -- The set of all relations used in this Activity
  morlist   act = morlist (actRule act) ++ actAffect act           -- The list of all relations in this Activity
- mp1Rels   _ = fatal 228 "do not use this mp1Rels from an activity"
+ mp1Exprs  act = mp1Exprs (actRule act)
 
 data Quad     = Quad
           { qRel :: Relation        -- The relation that, when affected, triggers a restore action.

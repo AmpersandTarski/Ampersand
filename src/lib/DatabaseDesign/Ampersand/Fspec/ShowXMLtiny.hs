@@ -151,30 +151,24 @@ where
      mkTag _  = fatal 184 "mkTag should not be used for expressions."
      mkXmlTree expr 
          = case expr of
-               (EEqu (l,r) _) -> Elem (simpleTag equi)   (map mkXmlTree [l,r])
-               (EImp (l,r) _) -> Elem (simpleTag impl)   (map mkXmlTree [l,r])
-               (EIsc (l,r) _) -> Elem (simpleTag inter)  (map mkXmlTree [l,r])
-               (EUni (l,r) _) -> Elem (simpleTag union') (map mkXmlTree [l,r])
-               (EDif (l,r) _) -> Elem (simpleTag diff)   (map mkXmlTree [l,r])
-               (ELrs (l,r) _) -> Elem (simpleTag lres)   (map mkXmlTree [l,r])
-               (ERrs (l,r) _) -> Elem (simpleTag rres)   (map mkXmlTree [l,r])
-               (ECps (l,r) _) -> Elem (simpleTag rMul)   (map mkXmlTree [l,r])
-               (ERad (l,r) _) -> Elem (simpleTag rAdd)   (map mkXmlTree [l,r])
-               (EPrd (l,r) _) -> Elem (simpleTag rPrd)   (map mkXmlTree [l,r])
-               (EKl0 e _)     -> Elem (simpleTag clos0)  [mkXmlTree e]
-               (EKl1 e _)     -> Elem (simpleTag clos1') [mkXmlTree e]
-               (EFlp e _)     -> Elem (simpleTag flip')  [mkXmlTree e]
-               (ECpl e _)     -> Elem (simpleTag compl)  [mkXmlTree e]
+               (EEqu (l,r) _) -> Elem (simpleTag "EQUI") (map mkXmlTree [l,r])
+               (EImp (l,r) _) -> Elem (simpleTag "IMPL") (map mkXmlTree [l,r])
+               (EIsc (l,r) _) -> Elem (simpleTag "CONJ") (map mkXmlTree [l,r])
+               (EUni (l,r) _) -> Elem (simpleTag "DISJ") (map mkXmlTree [l,r])
+               (EDif (l,r) _) -> Elem (simpleTag "DIFF") (map mkXmlTree [l,r])
+               (ELrs (l,r) _) -> Elem (simpleTag "LRES") (map mkXmlTree [l,r])
+               (ERrs (l,r) _) -> Elem (simpleTag "RRES") (map mkXmlTree [l,r])
+               (ECps (l,r) _) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
+               (ERad (l,r) _) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
+               (EPrd (l,r) _) -> Elem (simpleTag "RPRD") (map mkXmlTree [l,r])
+               (EKl0 e _)     -> Elem (simpleTag "CLS0") [mkXmlTree e]
+               (EKl1 e _)     -> Elem (simpleTag "CLS1") [mkXmlTree e]
+               (EFlp e _)     -> Elem (simpleTag "CONV") [mkXmlTree e]
+               (ECpl e _)     -> Elem (simpleTag "CMPL") [mkXmlTree e]
                (EBrk e)       -> mkXmlTree e
-               (ETyp e sgn)   -> Elem (simpleTag cast)   [mkXmlTree e,mkXmlTree (source sgn),mkXmlTree (target sgn)]
-               (ERel rel sgn) -> Elem (simpleTag flip')  [mkXmlTree (flp (ERel rel sgn))]
-
-
-      where
-      (equi,impl,inter,union',diff,lres,rres,rMul,rAdd,rPrd,clos0,clos1',compl,flip',cast)
-       = ("EQUI","IMPL","CONJ","DISJ","DIFF","LRES","RRES","RMUL","RADD","RPRD","CLS0","CLS1","CMPL","CONV","CAST")
-
-
+               (ETyp e sgn)   -> Elem (simpleTag "CAST") [mkXmlTree e,mkXmlTree (source sgn),mkXmlTree (target sgn)]
+               (ERel rel sgn) -> Elem (simpleTag "EREL") [mkXmlTree (flp (ERel rel sgn))]
+               (EMp1 atm sgn) -> Elem (simpleTag "ATOM") [mkXmlTree (flp (EMp1 atm sgn))]
 
    instance XML PPurpose where
      mkTag expl =
@@ -238,7 +232,6 @@ where
                     :[Elem (simpleTag "Target") [mkXmlTree (target rel)]]                  
           I{}   ->  [still2bdone "Relation_I"]
           V{}   ->  [still2bdone "Relation_V"]
-          Mp1{} ->  [still2bdone "Relation_ONE"]
            ) 
 
 

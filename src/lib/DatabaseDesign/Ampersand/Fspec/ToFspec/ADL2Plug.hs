@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
+-- import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
 import Data.Char
 import Data.List (nub,intercalate,partition)
 import GHC.Exts (sortWith)
@@ -172,7 +172,7 @@ rel2fld kernel
                             -> not $ 
                                  isSur rel &&
                                  (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
-                   ETyp (ERel i@I{} _) _
+                   ETyp (ERel I{} _) _
                             -> True
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
                                    " ***kernel:*** \n   "++
@@ -227,7 +227,7 @@ rel2fld kernel
 -}
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: Options -> ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
-makeEntityTables flags allRels exclusions
+makeEntityTables _ {-flags-} allRels exclusions
  = {- The following may be useful for debugging: 
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++

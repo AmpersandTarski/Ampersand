@@ -229,11 +229,11 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                   , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
-                                  , objctx  = ERel (I c) (Sign c c)
+                                  , objctx  = iExpr c
                                   , objmsub = Just . Box $
                                               Obj { objnm   = "I["++name c++"]"
                                                    , objpos  = Origin "generated object: step 4a - default theme"
-                                                   , objctx  = ERel (I c) (Sign c c)
+                                                   , objctx  = iExpr c
                                                    , objmsub = Nothing
                                                    , objstrs = [] }
                                               :[Obj { objnm   = name d ++ "::"++name(source d)++"*"++name(target d)
@@ -674,8 +674,8 @@ while maintaining all invariants.
                                    , let els=foldr1 (.:.) ls
                                    , let ers=foldr1 (.:.) rs
                                    , let c=if source ers<=target els then source ers else target els
-                                   , let fLft atom = genPAcl (disjNF ((ERel (Mp1 atom) (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
-                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. ERel (Mp1 atom) (sign els) ) .\/. notCpl (sign els) els)) Ins els []
+                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
+                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Ins els []
                                    ] motiv
 
 {- Problem: how to insert Delta into r;s
@@ -864,8 +864,8 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                    , let ers=foldr1 (.:.) rs
                                    , let els=foldr1 (.:.) ls
                                    , let c=if target ers<=source els then target ers else source els
-                                   , let fLft atom = genPAcl (disjNF ((ERel (Mp1 atom) (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
-                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. ERel (Mp1 atom) (sign els)) .\/. notCpl (sign els) els)) Del els []
+                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
+                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Del els []
                                    ] motiv
 {- Purpose: how to delete Delta from ECps es
 This corresponds with:  genPAclause editAble Del (ECps es) Delta motive

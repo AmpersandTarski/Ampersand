@@ -462,43 +462,43 @@ Rewrite rules:
                                                  | prf<-lam tOp e3 (inter' expr)
                                                  ]
                      | and [isNeg f |f<-exprIsc2list expr] -> [(expr, deMorgan sgn, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg]
-                     | or[null p |p<-fPrfs expr] -> []
-                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc expr)) expr],"<--") : lc expr]
+                     | or[null p |p<-fPrfs] -> []
+                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--") : lc]
              EUni{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | length (const' expr)>0 -> [(expr,\_->expr, [derivtext tOp "mono" (inter' expr) expr],"<--") :prf
                                                       | prf<-lam tOp e3 (inter' expr)
                                                       ]
                      | and [isNeg f |f<-exprUni2list expr] -> [(expr, deMorgan sgn, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg]
-                     | or[null p |p<-fPrfs expr] -> []
-                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc expr)) expr],"<--") : lc expr]
+                     | or[null p |p<-fPrfs] -> []
+                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--") : lc]
              ECps{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | and [isNeg f |f<-exprCps2list expr] -> [(expr, deMorgan sgn, [derivtext tOp "equal" deMrg expr],"==")
                                                :prf
                                                | prf<-lam tOp e3 deMrg
                                                ] -- isNeg is nog niet helemaal correct.
-                     | or[null p|p<-fPrfs expr] -> []
-                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc expr)) expr],"<--"): lc expr]        
+                     | or[null p|p<-fPrfs] -> []
+                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]        
              ERad{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | and [isNeg f |f<-exprRad2list expr] -> [(expr, deMorgan sgn, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg] -- isNeg is nog niet helemaal correct.
-                     | or[null p |p<-fPrfs expr] -> []
-                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first (lc expr)) expr],"<--"): lc expr]
+                     | or[null p |p<-fPrfs] -> []
+                     | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]
              EKl0 x _                         -> [(expr,\e->EKl0 e sgn,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
              EKl1 x _                         -> [(expr,\e->EKl1 e sgn,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
              ECpl x _                         -> [(expr,\e->ECpl e sgn,["invert"],"<--") :prf | prf<-lam (inv tOp) e3 x]
              EBrk x                           -> lam tOp e3 x
              _                                -> [[(e3,id,[],"")]]
            where
-               sgn = sign expr
+               sgn   = sign expr
                deMrg = deMorgan sgn expr
-               fPrfs expr = case expr of
-                              EUni{} -> [lam tOp e3 f |f<-exprUni2list expr, isVar f e3]
-                              EIsc{} -> [lam tOp e3 f |f<-exprIsc2list expr, isVar f e3]
-                              ECps{} -> [lam tOp e3 f |f<-exprCps2list expr, isVar f e3]
-                              ERad{} -> [lam tOp e3 f |f<-exprRad2list expr, isVar f e3]
-                              _      -> fatal 428 ("fPrfs "++showADL expr++" is not defined.Consult your dealer!")
-               lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sortWith length (rc expr'')))
-               rc expr'' = remainders (vars expr'') (vars expr'')
-               vars expr'' = map head (fPrfs expr'')
+               fPrfs = case expr of
+                        EUni{} -> [lam tOp e3 f |f<-exprUni2list expr, isVar f e3]
+                        EIsc{} -> [lam tOp e3 f |f<-exprIsc2list expr, isVar f e3]
+                        ECps{} -> [lam tOp e3 f |f<-exprCps2list expr, isVar f e3]
+                        ERad{} -> [lam tOp e3 f |f<-exprRad2list expr, isVar f e3]
+                        _      -> fatal 428 ("fPrfs  is not defined.Consult your dealer!")
+               lc = longstcomn vars++concat (drop (length rc-1) (sortWith length rc))
+               rc = remainders vars vars
+               vars = map head fPrfs
                const' e@EUni{} = [f |f<-exprUni2list e, isConst f e3]
                const' e@EIsc{} = [f |f<-exprIsc2list e, isConst f e3]
                const' expr'' = fatal 440 $ "'const'("++ show expr''++")' is not defined.Consult your dealer!"

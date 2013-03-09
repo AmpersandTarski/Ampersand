@@ -796,6 +796,7 @@ where
     showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
     showHS flags indent (ERel rel   sgn) = "ERel ("++showHS flags "" rel++") ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++atom++") ("++showHS flags (indent++"    ") sgn++")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***
@@ -821,7 +822,6 @@ where
             Rel{} -> haskellIdentifier ("rrel_"++name rel++name (source rel)++name ( target rel))
             I{}   -> haskellIdentifier ("irel_"++          name (source rel)                    )
             V{}   -> haskellIdentifier ("vrel_"++          name (source rel)++name ( target rel))
-            Mp1{} -> haskellIdentifier ("mp1r_"++relval rel)
        
    instance  ShowHS Relation where
     showHS flags _ rel 
@@ -830,9 +830,7 @@ where
                          ++" "++showHSName (reldcl rel)
             I{}   -> "I ("++showHS flags "" (rel1typ  rel)++")"
             V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"
-            Mp1{} -> "Mp1 "++relval rel
-  -- WHY wordt relval rel zonder quotes afgedrukt?
-  -- BECAUSE: relval rel wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
+
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
