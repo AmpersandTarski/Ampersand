@@ -79,7 +79,7 @@ selectExpr fSpec i src trg expr
                   trgC       = sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
                   trg'       = noCollideUnlessTm' fstm [src'] trgC
                   fstm       = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
-                  mp1Tm      = take 1 [t | t@(ERel Mp1{} _)<-lst']++[t | t<-lst', [ERel Mp1{} _,ERel (V _) _,ERel Mp1{} _] <- [exprCps2list t]]
+                  mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},ERel (V _) _,EMp1{}] <- [exprCps2list t]]
                   lst        = [t |t<-lst', t `notElem` mp1Tm]
                   posTms     = if null posTms' then map (notCpl sgn) (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
                   negTms     = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
@@ -101,12 +101,12 @@ selectExpr fSpec i src trg expr
                               , src''<-[sqlExprSrc fSpec l]
                               , trg''<-[noCollideUnlessTm' l [src''] (sqlExprTrg fSpec l)]
                               ]++
-                              [Just$ "isect0."++src'++" = \\'"++relval r++"\\'" -- source and target are equal because this is the case with Mp1
-                              | (ERel r@Mp1{} _) <- mp1Tm
+                              [Just$ "isect0."++src'++" = \\'"++atom++"\\'" -- source and target are equal because this is the case with EMp1{}
+                              | (EMp1 atom _) <- mp1Tm
                               ]++
-                              [Just$ "isect0."++src'++" = \\'"++relval m1++"\\'" -- source and target are unequal
-                                ++ " AND isect0."++trg'++" = \\'"++relval m2++"\\'" -- source and target are unequal
-                              | t@ECps{} <- mp1Tm, [ERel m1@Mp1{} _, ERel (V _) _, ERel m2@Mp1{} _]<-[exprCps2list t]
+                              [Just$ "isect0."++src'++" = \\'"++atom1++"\\'" -- source and target are unequal
+                                ++ " AND isect0."++trg'++" = \\'"++atom2++"\\'" -- source and target are unequal
+                              | t@ECps{} <- mp1Tm, [EMp1 atom1 _, ERel (V _) _, EMp1 atom2 _]<-[exprCps2list t]
                               ]++
                               [if isIdent l
                                then  Just ("isect0."++src'++" <> isect0."++trg') -- this code will calculate ../\-I
@@ -153,21 +153,21 @@ selectExpr fSpec i src trg expr
                    selectGeneric i ("1",src) ("fst."++trg',trg)
                       (selectExprBrac fSpec i src' trg' (foldr1 (.:.) fs) +++ " AS fst")
                       (Just$ "fst."++trg'++" IS NOT NULL")
-          (s1@(ERel Mp1{} _): s2@(ERel (V _) _): s3@(ERel Mp1{} _): fx@(_:_)) -- to make more use of the thing below
-             -> sqlcomment i ("case:  (s1@(ERel Mp1{} _): s2@(ERel (V _) _): s3@(ERel Mp1{} _): fx@(_:_))"
+          (s1@EMp1{}: s2@(ERel (V _) _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
+             -> sqlcomment i ("case:  (s1@EMp1{}: s2@(ERel (V _) _): s3@EMp1{}: fx@(_:_))"
                 ++
                 phpIndent (i+3)++showADL expr) (selectExpr fSpec i src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
-          [ERel sr@Mp1{} _, ERel (V _) _, ERel tr@Mp1{} _]-- this will occur quite often because of doSubsExpr
-             -> sqlcomment i ("case:  [ERel sr@Mp1{} _, ERel (V _) _, ERel tr@Mp1{} _]"++phpIndent (i+3)++showADL expr) $
-                 Just$ "SELECT \\'"++relval sr++"\\' AS "++src++", \\'"++relval tr++"\\' AS "++trg
+          [EMp1 atomSrc _, ERel (V _) _, EMp1 atomTrg _]-- this will occur quite often because of doSubsExpr
+             -> sqlcomment i ("case:  [EMp1 atomSrc _, ERel (V _) _, EMp1 atomTrg _]"++phpIndent (i+3)++showADL expr) $
+                 Just$ "SELECT \\'"++atomSrc++"\\' AS "++src++", \\'"++atomTrg++"\\' AS "++trg
 
-          (e@(ERel sr@Mp1{} _):f:fx)
+          (e@(EMp1 atom _):f:fx)
              -> let src' = sqlExprSrc fSpec e
                     trg' = noCollideUnlessTm' (foldr1 (.:.) (f:fx)) [src'] (sqlExprTrg fSpec (foldr1 (.:.) (f:fx)))
-                in sqlcomment i ("case:  (ERel Mp1{} _: f: fx)"++phpIndent (i+3)++showADL expr) $
+                in sqlcomment i ("case:  (EMp1{}: f: fx)"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                                    (selectExprBrac fSpec i src' trg' (foldr1 (.:.) (f:fx))+++" AS fst")
-                                   (Just$"fst."++src'++" = \\'"++relval sr++"\\'")
+                                   (Just$"fst."++src'++" = \\'"++atom++"\\'")
           (e:ERel (V _) _:f:fx) -- prevent calculating V in this case
              | src==trg && not (isProp e) -> fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
              | otherwise -> let src' = sqlExprSrc fSpec e
@@ -216,7 +216,7 @@ selectExpr fSpec i src trg expr
 
     (EFlp x _) -> sqlcomment i ("case: EFlp x.") $
                  selectExpr fSpec i trg src x
-
+--    (EMp1 atom _) -> fatal 219 "TODO: implement SQL code for EMp1"
     (ERel mrph _)  
       -> case mrph of
           (V (Sign s t)) -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (iExpr c)]
@@ -341,12 +341,6 @@ selectExprRelation fSpec i src trg rel@V{}
                    (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
  where src'="vfst."++sqlAttConcept fSpec (source rel)
        trg'="vsnd."++sqlAttConcept fSpec (target rel)
-selectExprRelation _ _ src trg rel@Mp1{}
- | src == ""&&trg=="" = fatal 394 "Source and target are \"\", use selectExists' for this purpose"
- | src == ""  = Just$ "SELECT \\'"++relval rel++"\\' AS "++trg
- | trg == ""  = Just$ "SELECT \\'"++relval rel++"\\' AS "++src
- | src == trg = Just$ "SELECT \\'"++relval rel++"\\' AS "++src
- | otherwise  = Just$ "SELECT \\'"++relval rel++"\\' AS "++src++", \\'"++relval rel++"\\' AS "++trg
 selectExprRelation fSpec i src trg rel -- made for both Rel and I
  = case sqlRelPlugNames fSpec (ERel rel (sign rel)) of
      []        -> fatal 344 $ "No plug for relation "++show rel
