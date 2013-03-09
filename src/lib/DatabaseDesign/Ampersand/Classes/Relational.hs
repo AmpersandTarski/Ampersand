@@ -53,26 +53,20 @@ instance Relational Relation where
                                 ++[Rfx | isEndo rel]
                                 ++[Trn | isEndo rel]
            I{}                 -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-           Mp1{}               -> [Uni,Inj,Sym,Asy,Trn]
     isProp rel = case rel of
            Rel{}               -> null ([Asy,Sym]>-multiplicities (reldcl rel))
            V{}                 -> isEndo rel && isSingleton (source rel)
            I{}                 -> True
-           Mp1{}               -> True
     isImin rel  = isImin (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
     isTrue rel = case rel of
            Rel{}               -> False
            V{}                 -> True
            I{}                 -> False
-           Mp1{}               -> False
     isFalse _   = False
     isIdent rel = case rel of       -- > tells whether the argument is equivalent to I
                    Rel{} -> False
                    V{}   -> isEndo rel && isSingleton (source rel)
                    I{}   -> True
-                   Mp1{} -> False
-   
-   
 
 instance Relational Declaration where
     multiplicities d = case d of
@@ -124,6 +118,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e'    _ -> [p |p<-multiplicities e', p==Sym]
      ETyp e'    _ -> multiplicities e'
      EFlp e'    _ -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EMp1{}       -> [Uni,Inj,Sym,Asy,Trn]
      _            -> []
 
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
@@ -152,7 +147,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ETyp e     sgn -> isTrue e && sgn <= sign e  -- The operator (<=) comes from Core.Poset
      ERel r@Rel{} s -> isTrue r && s <= sign r
      EBrk e         -> isTrue e
-     _              -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
+     _              -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
 
  -- |  isFalse e == True   means that e is false, i.e. the population of e is empty.
  --    isFalse e == False  does not mean anything.

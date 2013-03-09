@@ -393,6 +393,7 @@ data Expression
       | EBrk Expression                    -- ^ bracketed expression ( ... )
       | ETyp Expression              Sign  -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | ERel Relation                Sign  -- ^ simple relation
+      | EMp1 String                  Sign  -- ^ constant (string between single quotes)
       deriving (Eq, Show)
 
 iExpr :: A_Concept -> Expression
@@ -464,6 +465,7 @@ instance Flippable Expression where
                EBrk f         -> EBrk (flp f)
                ETyp e     sgn -> ETyp (flp e) (flp sgn)
                e@(ERel _ sgn) -> EFlp e (flp sgn)
+               e@EMp1{}       -> e
 
 insParentheses :: Expression -> Expression
 insParentheses = insPar 0
@@ -488,6 +490,7 @@ insParentheses = insPar 0
        insPar i (EBrk f)         = insPar i f
        insPar _ (ETyp e sgn)     = ETyp (insPar 10 e) sgn
        insPar _ e@ERel{}         = e
+       insPar _ e@EMp1{}         = e
 
 instance Association Expression where
  sign (EEqu _ sgn) = sgn
@@ -507,6 +510,7 @@ instance Association Expression where
  sign (EBrk e)     = sign e
  sign (ETyp _ sgn) = sgn
  sign (ERel _ sgn) = sgn
+ sign (EMp1 _ sgn) = sgn
 
 
 data Relation = 
@@ -516,21 +520,17 @@ data Relation =
       , relpos ::  Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
       , reldcl ::  Declaration      -- ^ the declaration bound to this relation.
       } |
- I    { rel1typ :: A_Concept        -- ^ the allocated type.
+  I   { rel1typ :: A_Concept        -- ^ the allocated type.
       } |
- V    { reltyp ::  Sign             -- ^ the allocated type.
-      } |
- --   An Mp1 is a subset of I. Shouldn't we replace it by an I?
- Mp1  { relval ::  String           -- ^ the value of the singleton relation
---      , rel1typ :: A_Concept               -- ^ the allocated type.
-      } 
+  V   { reltyp ::  Sign             -- ^ the allocated type.
+      }
+
 instance Eq Relation where
  rel == rel' 
    = case (rel,rel') of
        (Rel{},Rel{}) -> reldcl  rel==reldcl  rel'
        (I{}  ,I{}  ) -> rel1typ rel==rel1typ rel'
        (V{}  ,V{}  ) -> reltyp  rel==reltyp  rel'
-       (Mp1{},Mp1{}) -> relval  rel==relval  rel'
        (_    ,_    ) -> False
        
 instance Show Relation where
@@ -538,23 +538,19 @@ instance Show Relation where
    Rel{} -> showString (name r++showSign [source r,target r])
    I{}   -> showString (name r++"["++show (rel1typ r)++"]")
    V{}   -> showString (name r++show (sign r))
-   Mp1{} -> showString ("'"++relval r++"'")
 instance Identified Relation where
   name Rel{reldcl = dcl } = name dcl
   name I{}   = "I"
   name V{}   = "V"
-  name Mp1{} = "Mp1"
 instance Association Relation where
   sign Rel{reldcl = dcl } = sign dcl
   sign I{rel1typ  = c   } = Sign c c
   sign V{reltyp   = t   } = t
-  sign Mp1{}      = fatal 549 "Mp1 has no signature."
 makeDeclaration :: Relation -> Declaration
 makeDeclaration r = case r of
       Rel{} -> reldcl r
       I{}   -> Isn{ detyp = rel1typ r}
       V{}   -> Vs { decsgn = sign r}
-      Mp1{} -> fatal 555 "Mp1 has no declaration."
 showSign :: Identified a => [a] -> String
 showSign cs = "["++(intercalate "*".nub.map name) cs++"]"
 instance Traced Relation where

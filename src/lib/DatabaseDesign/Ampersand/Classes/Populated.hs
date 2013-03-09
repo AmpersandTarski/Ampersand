@@ -41,15 +41,12 @@ where
 {- The atoms in a relation are accessible as follows:
    Atoms in a Rel{} are found through the declaration (via decpopu.reldcl).
    Atoms in a I{} and V{} are found in the concept (via rel1typ and reltyp).
-   Mp1{} has precisely one atom, which must be an element of its type, i.e. relatom m `elem` atoms (rel1typ c)
 -}    fullContents pt rel
        = case rel of
            Rel{}     -> fullContents pt (reldcl rel)
            I  {}     -> [mkPair a a | a <- atomsOf pt (rel1typ rel)]
            V  {}     -> [mkPair s t | s <- atomsOf pt (source rel)
                                     , t <- atomsOf pt (target rel) ]
-           (Mp1 _ (C {cptnm="SESSION"})) -> [] -- TODO: HACK to prevent populating SESSION
-           (Mp1 x _) -> [mkPair x x]
 -}
 
    instance Populated Expression where
@@ -117,7 +114,7 @@ where
             ERel I{}     sgn -> [mkPair a a | a <- atomsOf pt (source sgn)]
             ERel V{}     sgn -> [mkPair s t | s <- atomsOf pt (source sgn)
                                             , t <- atomsOf pt (target sgn) ]
-            ERel (Mp1 x) sgn -> if name (source sgn)=="SESSION" then [] else [mkPair x x]
+            EMp1 atom       sgn -> if name (source sgn)=="SESSION" then [] else [mkPair atom atom] -- prevent populating SESSION
 
 {- Derivation of contents (ERrs (l,r)):
 Let cL = contents l

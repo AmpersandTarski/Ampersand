@@ -33,6 +33,7 @@ subst (rel,f) = subs
        subs (ETyp e     sgn) = ETyp (subs e)        sgn
        subs e@(ERel r   _  ) | rel==r    = f
                              | otherwise = e
+       subs e@EMp1{}         = e
 
 -- | This function is used to replace the n-th relation (counting from the left)
 --   with an expression. The parameter f will therefore be applied to an
@@ -80,6 +81,7 @@ subsi n f expr = expr'
          subs i (ETyp x sgn)     = (ETyp x' sgn, i') where (x',i') = subs i x
          subs i x@ERel{} | i==n      = (f x, i+1)
                          | otherwise = (x, i+1)
+         subs i x@EMp1{}         = (x,i)
 
 foldlMapExpression :: (a -> r -> a) -> (Relation->r) -> a -> Expression -> a
 foldlMapExpression f = foldrMapExpression f' where f' x y = f y x
@@ -102,6 +104,7 @@ foldrMapExpression f g a (ECpl e _)        = foldrMapExpression f g a           
 foldrMapExpression f g a (EBrk e)          = foldrMapExpression f g a                         e
 foldrMapExpression f g a (ETyp e _)        = foldrMapExpression f g a e
 foldrMapExpression f g a (ERel rel _)      = f (g rel) a
+foldrMapExpression _ _ a  EMp1{}           = a
 
 isEUni :: Expression -> Bool
 isEUni EUni{}  = True
