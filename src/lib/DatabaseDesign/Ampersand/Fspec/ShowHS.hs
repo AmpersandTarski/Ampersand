@@ -592,17 +592,19 @@ where
    instance ShowHS PRef2Obj where
     showHS _ _ peObj
      = case peObj of 
-            PRef2ConceptDef str                       -> "PRef2ConceptDef " ++show str
-            PRef2Declaration (PTyp _ (Prel _ nm) sgn) -> "PRef2Declaration "++show nm++if null (psign sgn) then "" else show sgn
-            PRef2Declaration (Prel _ nm)              -> "PRef2Declaration "++show nm
-            PRef2Declaration expr                     -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
-            PRef2Rule str                             -> "PRef2Rule "       ++show str
-            PRef2KeyDef str                           -> "PRef2KeyDef "     ++show str
-            PRef2Pattern str                          -> "PRef2Pattern "    ++show str
-            PRef2Process str                          -> "PRef2Process "    ++show str
-            PRef2Interface str                        -> "PRef2Interface "  ++show str
-            PRef2Context str                          -> "PRef2Context "    ++show str
-            PRef2Fspc str                             -> "PRef2Fspc "       ++show str
+            PRef2ConceptDef str               -> "PRef2ConceptDef " ++show str
+            PRef2Declaration (PTrel _ nm sgn) -> "PRef2Declaration "++show nm++if null (psign sgn) then "" else show sgn
+            PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
+            PRef2Declaration (PTflp _ nm sgn) -> "PRef2Declaration "++show nm++if null (psign sgn) then "" else show sgn
+            PRef2Declaration (Pflp _ nm)      -> "PRef2Declaration "++show nm
+            PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
+            PRef2Rule str                     -> "PRef2Rule "       ++show str
+            PRef2KeyDef str                   -> "PRef2KeyDef "     ++show str
+            PRef2Pattern str                  -> "PRef2Pattern "    ++show str
+            PRef2Process str                  -> "PRef2Process "    ++show str
+            PRef2Interface str                -> "PRef2Interface "  ++show str
+            PRef2Context str                  -> "PRef2Context "    ++show str
+            PRef2Fspc str                     -> "PRef2Fspc "       ++show str
                            
    instance ShowHS Purpose where
     showHS flags _ expla = 

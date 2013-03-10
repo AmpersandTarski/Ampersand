@@ -93,26 +93,26 @@ where
    
    -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
    data P_RoleRelation
-      = P_RR { rr_Roles :: [String]         -- ^ name of a role
-             , rr_Rels :: [Term]   -- ^ Typically: PTyp (Prel nm) sgn, with nm::String and sgn::P_Sign representing a Relation with type information
-             , rr_Pos :: Origin           -- ^ position in the Ampersand script
+      = P_RR { rr_Roles :: [String]  -- ^ name of a role
+             , rr_Rels :: [Term]     -- ^ Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+             , rr_Pos :: Origin      -- ^ position in the Ampersand script
              } deriving (Show)       -- deriving Show is just for debugging
    instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
    instance Traced P_RoleRelation where
     origin = rr_Pos
 
    data P_Process = P_Prc { procNm :: String
-                          , procPos :: Origin           -- ^ the start position in the file
-                          , procEnd :: Origin           -- ^ the end position in the file
+                          , procPos :: Origin             -- ^ the start position in the file
+                          , procEnd :: Origin             -- ^ the end position in the file
                           , procRules :: [P_Rule]
                           , procGens :: [P_Gen]
                           , procDcls :: [P_Declaration]
                           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-                          , procCds :: [ConceptDef]     -- ^ The concept definitions defined in this process
-                          , procKds :: [P_KeyDef]       -- ^ The key definitions defined in this process
-                          , procXps :: [PPurpose]       -- ^ The purposes of elements defined in this process
-                          , procPop :: [P_Population]   -- ^ The populations that are local to this process
+                          , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
+                          , procKds :: [P_KeyDef]         -- ^ The key definitions defined in this process
+                          , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
+                          , procPop :: [P_Population]     -- ^ The populations that are local to this process
                           } deriving Show
 
    instance Identified P_Process where
@@ -230,7 +230,9 @@ where
       | Pfull P_Concept P_Concept              -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
+      | PTrel Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | Pflp Origin String                     -- ^ flip / relational inverse
+      | PTflp Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | Pequ Origin Term Term  -- ^ equivalence             =
       | Pimp Origin Term Term  -- ^ implication             |-
       | PIsc Origin Term Term  -- ^ intersection            /\
@@ -246,7 +248,6 @@ where
       | PFlp Origin Term               -- ^ conversion (flip, wok)  ~
       | PCpl Origin Term               -- ^ Complement
       | PBrk Origin Term               -- ^ bracketed expression ( ... )
-      | PTyp Origin Term P_Sign        -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       deriving (Eq, Ord, Show) -- deriving Show for debugging purposes
 
    instance Traced Term where
@@ -259,7 +260,9 @@ where
       PVee orig      -> orig
       Pfull _ _      -> OriginUnknown
       Prel orig _    -> orig
+      PTrel orig _ _ -> orig
       Pflp orig _    -> orig
+      PTflp orig _ _ -> orig
       Pequ orig _ _  -> orig
       Pimp orig _ _  -> orig
       PIsc orig _ _  -> orig
@@ -275,7 +278,6 @@ where
       PFlp orig _    -> orig
       PCpl orig _    -> orig
       PBrk orig _    -> orig
-      PTyp orig _ _  -> orig
 
    data SrcOrTgt = Src | Tgt deriving (Show, Eq)
 
@@ -334,8 +336,8 @@ where
    data P_Interface = 
         P_Ifc { ifc_Name :: String                 -- ^ the name of the interface
               , ifc_Params :: [Term]         -- ^ a list of relations, which are editable within this interface.
-                                                     --   either  Prel nm
-                                                     --       or  PTyp (Prel nm) sgn
+                                                     --   either  Prel o nm
+                                                     --       or  PTrel o nm sgn
               , ifc_Args :: [[String]]             -- ^ a list of arguments for code generation.
               , ifc_Roles :: [String]               -- ^ a list of roles that may use this interface
               , ifc_Obj :: P_ObjectDef            -- ^ the context expression (mostly: I[c])
@@ -391,8 +393,8 @@ where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
    data PRef2Obj = PRef2ConceptDef String
-                 | PRef2Declaration Term -- typically PTyp (Prel nm) sgn,   with nm::String and sgn::P_Sign
-                                         -- or        Prel nm; Other terms become fatals
+                 | PRef2Declaration Term -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
+                                         -- or        Prel o nm; Other terms become fatals
                  | PRef2Rule String
                  | PRef2KeyDef String
                  | PRef2Pattern String
@@ -405,8 +407,10 @@ where
    instance Identified PRef2Obj where
      name pe = case pe of 
         PRef2ConceptDef str -> str
-        PRef2Declaration (PTyp _ (Prel _ nm) sgn) -> nm++if null (psign sgn) then "" else show sgn
+        PRef2Declaration (PTrel _ nm sgn) -> nm++if null (psign sgn) then "" else show sgn
         PRef2Declaration (Prel _ nm) -> nm
+        PRef2Declaration (PTflp _ nm sgn) -> nm++if null (psign sgn) then "" else show sgn
+        PRef2Declaration (Pflp _ nm) -> nm
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
         PRef2Rule str -> str
         PRef2KeyDef str -> str

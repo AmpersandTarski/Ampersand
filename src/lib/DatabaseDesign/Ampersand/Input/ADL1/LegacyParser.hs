@@ -129,12 +129,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pPopulation :: Parser Token P_Population
    pPopulation = ppop <$> pKey_pos "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
        where
-         ppop orig (PTyp _ (Prel _ nm) sgn) content = P_RelPopu { p_rnme   = nm
-                                                                , p_type   = sgn
-                                                                , p_orig   = orig
-                                                                , p_popps  = content
-                                                                }
-         ppop _ x _ = fatal 138 ("ppop must have an argument of the form PTyp _ (Prel _ nm) sgn, but has been called with\n"++show x)
+         ppop orig (PTrel _ nm sgn) content = P_RelPopu { p_rnme   = nm
+                                                        , p_type   = sgn
+                                                        , p_orig   = orig
+                                                        , p_popps  = content
+                                                        }
+         ppop _ x _ = fatal 138 ("ppop must have an argument of the form PTrel _ nm sgn, but has been called with\n"++show x)
 
    pPattern :: Parser Token P_Pattern
    pPattern  = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
@@ -253,13 +253,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                    f _ pe _          = pe
 
    pExp6 :: Parser Token Term
-   pExp6             =  f <$> pExp7 <*> optional pSign
-                        where f e Nothing = e
-                              f e (Just (sgn,orig)) = PTyp orig e sgn
--- Alternatively, this works too:    pExp6  =  pExp7 <??> (flip PTyp <$> pSign)
-
-   pExp7 :: Parser Token Term
-   pExp7             =  pRelationRef                                    <|>
+   pExp6             =  pRelationRef                                    <|>
                         PBrk <$>  pSpec_pos '('  <*>  pExpr  <*  pSpec ')'
 
    pRelationRef :: Parser Token Term
@@ -277,7 +271,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pRelSign :: Parser Token Term
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
                        where prel (nm,orig) Nothing = Prel orig nm
-                             prel (nm,pos') (Just (sgn,orig)) = PTyp orig (Prel pos' nm) sgn
+                             prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
 
    pSign :: Parser Token (P_Sign,Origin)
    pSign = rebuild <$> pSpec_pos '[' <*> pConceptRef <*> optional (pKey "*" *> pConceptRef) <* pSpec ']'
@@ -365,7 +359,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pService          = lbl <$> (pKey "SERVICE" *> pADLid_val_pos) <*>
                                (pParams `opt` [])                 <*>  -- a list of expressions, which say which relations are editable within this service.
                                                                        -- either  Prel _ nm
-                                                                       --       or  PTyp _ (Prel _ nm) sgn
+                                                                       --       or  PTrel _ nm sgn
                                (pArgs `opt` [])                   <*>  -- a list of arguments for code generation.
                                (pKey ":" *> pExpr)                <*>  -- the context expression (mostly: I[c])
                                (pAttrs `opt` [])                       -- the subobjects
