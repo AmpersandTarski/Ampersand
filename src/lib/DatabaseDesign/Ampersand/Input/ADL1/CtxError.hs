@@ -169,7 +169,9 @@ showErr err = case err of
                                "    but its source concept cannot be both "++commaEng "and" (map show ss)++", and"++
                                "    its target concept cannot be "++commaEng "and" (map show ts)++" all at the same time."
           ds                -> "    Relation  "++showADL expr++"  was not bound to precisely one of:"++
-                               concat ["\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d) | (d,_,_)<-ds ]++"."
+                               concat [ "\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d)
+-- for debugging, you might add:        ++ ", ss="++show ss ++ ", ts="++show ts | (d, ss, ts)<-ds ]++"."
+                                      | (d, _, _)<-ds ]++"."
                                where source d = head sgn where P_Sign sgn = dec_sign d
                                      target d = last sgn where P_Sign sgn = dec_sign d
          where expr=cxeExpr err
