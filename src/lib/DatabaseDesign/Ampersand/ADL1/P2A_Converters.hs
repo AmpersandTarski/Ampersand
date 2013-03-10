@@ -855,6 +855,16 @@ instance Expr Term where
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType ctxt e uRt uLft e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+.
                     uType ctxt x uLft uRt e                                                     -- (e) brackets
+     (PTrel _ nm sgn) ->
+       case sgn of
+         (P_Sign [])        -> fatal 196 "P_Sign is empty"
+         (P_Sign (_:_:_:_)) -> fatal 197 "P_Sign too large"  
+         (P_Sign cs)        -> let iSrc = thing (head cs)
+                                   iTrg = thing (last cs)
+                                   x'=complement x
+                               in case [term | decl<-p_declarations (fst ctxt), name decl==nm, dec_sign decl == sgn, term<-terms decl ] of
+                                    d:_ -> dom x.=.dom d .+. cod x.=.cod d .+. dom x'.<.iSrc .+. cod x'.<.iTrg
+                                    _   -> dom x.<.iSrc  .+. cod x.<.iTrg
      (Prel _ nm) -> let (p_context, compatible) = ctxt
                         y=complement x
                         
@@ -894,6 +904,8 @@ instance Expr Term where
                                      _   -> Map.empty
                                  )
      (Pflp o nm) -> let e = Prel o nm
+                    in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
+     (PTflp o nm (P_Sign cs)) -> let e = PTrel o nm (P_Sign (reverse cs))
                     in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
 {-     (PRad o a b) -> let e = complement (PCps o (complement a) (complement b))
@@ -1720,7 +1732,7 @@ pCtx2aCtx p_context
                             aTrg  = pCpt2aCpt trg
                             decls = [ decl | decl<-declarations contxt
                                            , name decl==relNm, source decl==aSrc, target decl==aTrg ]
-                   pRel2aRel _ _ _ = fatal 1743 "pRel2aRel is called erroneously"
+         f (PTflp o relNm (P_Sign cs)) = f (PTrel o relNm (P_Sign (reverse cs)))
          delimit :: P_Concept -> [P_Concept] -> [P_Concept]
          delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]
          returnIConcepts term
