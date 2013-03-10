@@ -428,7 +428,9 @@ instance ShowADL Term where
        showchar (PVee _)                                 = "V"
        showchar (Pfull s t)                              = "V["++show s++"*"++show t++"]"
        showchar (Prel _ rel)                             = rel
+       showchar (PTrel _ rel psgn)                       = rel++showsign psgn
        showchar (Pflp _ rel)                             = rel++flp'
+       showchar (PTflp _ rel (P_Sign{psign=xs}))         = rel++showsign (P_Sign{psign=reverse xs})++flp'
        showchar (Pequ _ l r)                             = showchar l++equi++showchar r
        showchar (Pimp _ l r)                             = showchar l++impl++showchar r
        showchar (PIsc _ l r)                             = showchar l++inter++showchar r
@@ -444,9 +446,6 @@ instance ShowADL Term where
        showchar (PFlp _ e)                               = showchar e++flp'
        showchar (PCpl _ e)                               = '-':showchar e
        showchar (PBrk _ e)                               = lpar++showchar e++rpar
-       showchar (PTyp _ e@Prel{} psgn)                   = showchar e++showsign psgn
-       showchar (PTyp _ (Pflp _ rel) (P_Sign{psign=xs})) = rel++showsign (P_Sign{psign=reverse xs})++flp'
-       showchar (PTyp _ e psgn)                          = lpar++showchar e++rpar++showsign psgn
        showsign (P_Sign{psign=[x]})                      = lbr++showADL x++rbr
        showsign (P_Sign{psign=xs })                      = lbr++showADL (head xs)++star++showADL (last xs)++rbr
 
@@ -471,7 +470,6 @@ insP_Parentheses = insPar 0
        insPar _ (PFlp o e)   = PFlp o (insPar 10 e)
        insPar _ (PCpl o e)   = PCpl o (insPar 10 e)
        insPar i (PBrk _ e)   = insPar i e
-       insPar _ (PTyp o e t) = PTyp o (insPar 10 e) t
        insPar _ x            = x
 
 

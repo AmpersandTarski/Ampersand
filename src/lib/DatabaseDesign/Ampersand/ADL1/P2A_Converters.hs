@@ -746,17 +746,17 @@ instance Expr P_Gen where
   = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType ctxt x uLft uRt x
 
 instance Expr P_Declaration where
- terms d = [PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d)]
+ terms d = [PTrel (origin d) (dec_nm d) (dec_sign d)]
  uType _ _ _ _ d
   = dom decl.<.thing src .+. cod decl.<.thing trg
     where [decl] = terms d
           P_Sign sgn = dec_sign d
           src = head sgn; trg = last sgn
-   -- let x=PTyp (origin d) (Prel (origin d) (dec_nm d)) (dec_sign d) in uType ctxt x uLft uRt x
+   -- let x=PTrel (origin d) (dec_nm d) (dec_sign d) in uType ctxt x uLft uRt x
 
 instance Expr P_Population where
  terms pop@(P_RelPopu{p_type=P_Sign []}) = [Prel (p_orig pop) (name pop)]
- terms pop@P_RelPopu{}                   = [PTyp (p_orig pop) (Prel (p_orig pop) (name pop)) (p_type pop)]
+ terms pop@P_RelPopu{}                   = [PTrel (p_orig pop) (name pop) (p_type pop)]
  terms pop@P_CptPopu{}                   = [Pid (PCpt (name pop))]
  uType ctxt _ uLft uRt pop
   = foldr (.+.) nothing [ uType ctxt x uLft uRt x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
@@ -791,7 +791,6 @@ instance Expr Term where
  subterms e@(PFlp _ a)   = [e]++subterms a
  subterms e@(PCpl _ a)   = [e]++subterms a
  subterms e@(PBrk _ a)   = [e]++subterms a
- subterms e@(PTyp _ a _) = [e]++subterms a
  subterms e              = [e]
  
  uType ctxt x uLft uRt expr 
@@ -856,28 +855,12 @@ instance Expr Term where
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType ctxt e uRt uLft e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+.
                     uType ctxt x uLft uRt e                                                     -- (e) brackets
-     (PTyp _ e sgn) ->
-       case sgn of
-         (P_Sign [])        -> fatal 196 "P_Sign is empty"
-         (P_Sign (_:_:_:_)) -> fatal 197 "P_Sign too large"  
-         (P_Sign cs)        -> let iSrc = thing (head cs)
-                                   iTrg = thing (last cs)
-                                   x'=complement x
-                                   decls nm = [term | decl<-p_declarations (fst ctxt), name decl==nm, dec_sign decl == sgn, term<-terms decl ] 
-                               in case e of
-                                 (Prel _ nm) -> case decls nm of
-                                                  d:_ -> dom x.=.dom e .+. cod x.=.cod e .+.
-                                                         dom x.=.dom d .+. cod x.=.cod d .+. dom x'.<.iSrc .+. cod x'.<.iTrg
-                                                  _   -> dom x.<.iSrc  .+. cod x.<.iTrg  .+. dom x.<.dom e .+. cod x.<.cod e
-                                 _           -> dom x.<.iSrc  .+. cod x.<.iTrg  .+.                                    -- e[A*B]  type-annotation
-                                                dom x.<.dom e .+. cod x.<.cod e .+.
-                                                uType ctxt e iSrc iTrg e
      (Prel _ nm) -> let (p_context, compatible) = ctxt
                         y=complement x
                         
                         decls' = [term | decl<-p_declarations p_context, name decl==nm, term<-terms decl ]
                         decls  = if length decls' == 1 then decls' else
-                                 [decl | decl@(PTyp _ (Prel _ _) (P_Sign cs@(_:_)))<-decls'
+                                 [decl | decl@(PTrel _ _ (P_Sign cs@(_:_)))<-decls'
                                        , uLft == thing (head cs)
                                        , uRt  == thing (last cs) ]
 
@@ -890,10 +873,10 @@ instance Expr Term where
                                       ( _   ,  _   ) -> dSrcs `isc` dTrgs
 
                         dSrcs, dTrgs ::  [Term]
-                        dSrcs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
+                        dSrcs  = [decl | decl@(PTrel _ _ (P_Sign (_:_)))<-decls'
                                        , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
                                        ]
-                        dTrgs  = [decl | decl@(PTyp _ (Prel _ _) (P_Sign (_:_)))<-decls'
+                        dTrgs  = [decl | decl@(PTrel _ _ (P_Sign (_:_)))<-decls'
                                        , compatible uRt  (cod decl)
                                        ]
                      in -- WHY is:
@@ -1450,7 +1433,7 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2ConceptDef str  ) = case [cd | cd<-acds, cdcpt cd==str ] of
                                            []   ->  Errors [newcxe (" No concept definition for '"++str++"'")]
                                            cd:_ ->  Checked (ExplConceptDef cd)
-    pExOb2aExOb (PRef2Declaration t@(PTyp o (Prel _ nm) sgn))
+    pExOb2aExOb (PRef2Declaration t@(PTrel o nm sgn))
                                         = case [pDecl2aDecl d | d<-p_declarations p_context, name d==nm, dec_sign d== sgn ] of
                                             Checked (decl,_):_ -> Checked (ExplDeclaration decl)
                                             Errors ers:_   -> Errors ers
@@ -1492,7 +1475,7 @@ pCtx2aCtx p_context
        where expr = case pop of
                       P_CptPopu{}                 -> Pid (PCpt (name pop))
                       P_RelPopu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
-                      P_RelPopu{}                 -> PTyp (origin pop) (Prel (origin pop) (name pop)) (p_type pop)
+                      P_RelPopu{}                 -> PTrel (origin pop) (name pop) (p_type pop)
              thePop rel = case rel of
                             Rel{} -> PRelPopu { popdcl = reldcl rel
                                               , popps  = case pop of
@@ -1718,21 +1701,16 @@ pCtx2aCtx p_context
          f (PBrk _ a)          = do { a' <- f a
                                     ; return (EBrk a')
                                     }
-         f x@(PTyp o _ (P_Sign [])) = fatal 1721 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
-         f x@(PTyp _ a (P_Sign cs))
+         f x@(PTrel o relNm (P_Sign cs))
            = case ( delimit (head cs) (srcTypes (TypExpr x False))
                   , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
                   ) of
-               ([src],[trg]) -> case a of
-                                 Prel{} -> return (pRel2aRel a src trg) -- f a may not be called, or else ambiguity messages can occur when they shouldn't. See ??\apps\Misc\Ampersand ArchiTest1.adl for an example.
-                                 _      -> do { a' <- f a
-                                              ; return (ETyp a' (Sign (pCpt2aCpt src) (pCpt2aCpt trg)))
-                                              }
+               ([src],[trg]) -> return (pRel2aRel relNm src trg)
                (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
                                                 ,cxeDomCast = srcs
                                                 ,cxeCodCast = trgs
                                                 }]
-             where pRel2aRel (Prel o relNm) src trg
+             where pRel2aRel relNm src trg
                     = ETyp aRel sgn
                       where aRel  = case decls of
                                      [decl] -> ERel (Rel relNm o decl) sgn

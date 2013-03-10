@@ -366,7 +366,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                         (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
                                                                        -- either  Prel _ nm
-                                                                       --       or  PTyp _ (Prel _ nm) sgn
+                                                                       --       or  PTrel _ nm sgn
                         (pArgs   `opt` [])                   <*>  
                         (pRoles  `opt` [])                   <*>  
                         (pKey ":" *> pTerm)                  <*>  
@@ -441,7 +441,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  pcptpop <$> pKey_pos "POPULATION" <*> (pConid <|> pString) <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
        where
          prelpop :: Origin -> Term -> Pairs -> P_Population
-         prelpop orig (PTyp _ (Prel _ nm) sgn) contents
+         prelpop orig (PTrel _ nm sgn) contents
           = P_RelPopu { p_rnme   = nm
                       , p_type   = sgn
                       , p_orig   = orig
@@ -605,7 +605,7 @@ In practice, we have it a little different.
    pRelSign :: Parser Token Term
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
                        where prel (nm,orig) Nothing = Prel orig nm
-                             prel (nm,pos') (Just (sgn,orig)) = PTyp orig (Prel pos' nm) sgn
+                             prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
                                                                  
    pSign :: Parser Token (P_Sign,Origin)
    pSign = rebuild <$> pSpec_pos '[' <*> pConceptRef <*> optional (pKey "*" *> pConceptRef) <* pSpec ']'
