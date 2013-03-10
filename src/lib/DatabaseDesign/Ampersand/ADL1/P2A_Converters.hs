@@ -964,7 +964,7 @@ toDotGraph showVtx idVtx vtx1 vtx2 edg1 edg2
 -- On Guarded: it is intended to return something, as long as there were no errors creating it.
 -- For instance, (Guarded P_Context) would return the P_Context, unless there are errors.
 
-data Guarded a = Errors [CtxError] | Checked a
+data Guarded a = Errors [CtxError] | Checked a deriving Show
 
 
 parallelList :: [Guarded a] -> Guarded [a] -- get all values or collect all error messages
@@ -1718,32 +1718,33 @@ pCtx2aCtx p_context
          f (PBrk _ a)          = do { a' <- f a
                                     ; return (EBrk a')
                                     }
-         f x@(PTyp o _        (P_Sign [])) = fatal 991 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
-         f x@(PTyp _ r@(Prel o a) sgnCast)
-                               = do { (decl, sgn) <- getDecl
-                                    ; return (ETyp (ERel (Rel{ relnm=a
-                                                             , relpos=o
-                                                             , reldcl=decl
-                                                             }) sgn)
-                                                   (pSign2aSign sgnCast))
-                                    }
-                                 where -- getDecl is needed to obtain the full term (which is x) in the error message,
-                                       -- rather than only the relation (which is r).
-                                  getDecl = case getDeclarationAndSign r of
-                                             Errors errs -> Errors [CxeRel {cxeExpr = x
-                                                                           ,cxeDecs = cxeDecs err  
-                                                                           ,cxeSNDs = [ decl | decl<-p_declarations p_context, name decl==a ]
-                                                                           } | err<-errs ]
-                                             gDaS -> gDaS
-         f x@(PTyp _ a (P_Sign _))
-                               = do { a' <- f a
-                                    ; case (srcTypes (TypExpr x False), srcTypes (TypExpr (p_flp x) True )) of
-                                        ([src],[trg]) -> return (ETyp a' (Sign (pCpt2aCpt src) (pCpt2aCpt trg)))
-                                        (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
-                                                                         ,cxeDomCast = srcs
-                                                                         ,cxeCodCast = trgs
-                                                                         }]
-                                    }
+         f x@(PTyp o _ (P_Sign [])) = fatal 1721 ("pExpr2aExpr cannot transform "++show x++" ("++show o++") to a term.")
+         f x@(PTyp _ a (P_Sign cs))
+           = case ( delimit (head cs) (srcTypes (TypExpr x False))
+                  , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
+                  ) of
+               ([src],[trg]) -> case a of
+                                 Prel{} -> return (pRel2aRel a src trg) -- f a may not be called, or else ambiguity messages can occur when they shouldn't. See ??\apps\Misc\Ampersand ArchiTest1.adl for an example.
+                                 _      -> do { a' <- f a
+                                              ; return (ETyp a' (Sign (pCpt2aCpt src) (pCpt2aCpt trg)))
+                                              }
+               (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
+                                                ,cxeDomCast = srcs
+                                                ,cxeCodCast = trgs
+                                                }]
+             where pRel2aRel (Prel o relNm) src trg
+                    = ETyp aRel sgn
+                      where aRel  = case decls of
+                                     [decl] -> ERel (Rel relNm o decl) sgn
+                                     _ -> fatal 1739 ("decls should contain one element only!")
+                            sgn   = Sign aSrc aTrg
+                            aSrc  = pCpt2aCpt src
+                            aTrg  = pCpt2aCpt trg
+                            decls = [ decl | decl<-declarations contxt
+                                           , name decl==relNm, source decl==aSrc, target decl==aTrg ]
+                   pRel2aRel _ _ _ = fatal 1743 "pRel2aRel is called erroneously"
+         delimit :: P_Concept -> [P_Concept] -> [P_Concept]
+         delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]
          returnIConcepts term
           = case getConceptsFromTerm term of
              [c] -> return c
