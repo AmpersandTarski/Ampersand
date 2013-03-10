@@ -255,7 +255,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
                     , (rid',rpurp)<-r_rrpurpose, rid==rid', not(null rpurp)
                     , let rnm = geta r_rrnm rid (error "while geta r_rrnm for rpurp.")]
                  ++ [PRef2 (DBLoc "Atlas(RelPurpose)") 
-                           (PRef2Declaration (PTyp OriginUnknown (Prel OriginUnknown rnm) (atlas2sign rid r_decsgn r_src r_trg r_cptnm)))
+                           (PRef2Declaration (PTrel OriginUnknown rnm (atlas2sign rid r_decsgn r_src r_trg r_cptnm)))
                            (P_Markup Nothing Nothing rpurp) []
                     | (pid',rid)<-r_ptdcs, pid==pid'
                     , (rid',rpurp)<-r_decpurpose, rid==rid', not(null rpurp)
