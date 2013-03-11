@@ -1571,170 +1571,174 @@ pCtx2aCtx p_context
           }
        where
          f :: Term -> Guarded Expression
-         f x@(PI _)            = do { c<-returnIConcepts x
-                                    ; sgn<-getSign x
-                                    ; return (ERel (I (pCpt2aCpt c)) sgn)
-                                    }
-         f   (Pid c)           = return (iExpr (pCpt2aCpt c))
-         f x@(Pnid c)          = do { sgn<-getSign x
-                                    ; return (ECpl (ERel (I (pCpt2aCpt c)) sgn) sgn)
-                                    }
-         f x@(Patm _ atom _)   = do { sgn<-getSign x
-                                    ; return (EMp1 atom sgn)
-                                    }
-         f   Pnull             = fatal 1546 ("unsigned Pnull.")
-         f x@(PVee _)          = do { sgn<-getSign x
+         f x = case x of
+           PI _            -> do { c<-returnIConcepts x
+                                 ; sgn<-getSign x
+                                 ; return (ERel (I (pCpt2aCpt c)) sgn)
+                                 }
+           Pid c           -> return (iExpr (pCpt2aCpt c))
+           Pnid c          -> do { sgn<-getSign x
+                                 ; return (ECpl (ERel (I (pCpt2aCpt c)) sgn) sgn)
+                                 }
+           Patm _ atom _   -> do { sgn<-getSign x
+                                 ; return (EMp1 atom sgn)
+                                 }
+           Pnull           -> fatal 1546 ("unsigned Pnull.")
+           PVee _          -> do { sgn<-getSign x
                                     ; return (vExpr sgn)
                                     }
-         f (Pfull s t)         = return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
-         f x@(Prel o a)        = do { (decl,sgn) <- getDeclarationAndSign x
-                                    ; return (ERel (Rel{ relnm=a
-                                                       , relpos=o
-                                                       , reldcl=decl
-                                                       }) sgn)
+           Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
+           Prel o a        -> do { (decl,sgn) <- getDeclarationAndSign x
+                                 ; return (ERel (Rel{ relnm=a
+                                                    , relpos=o
+                                                    , reldcl=decl
+                                                    }) sgn)
+                                 }
+           Pflp o a        -> do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
+                                 ; return (EFlp (ERel (Rel{ relnm=a
+                                                          , relpos=o
+                                                          , reldcl=decl
+                                                          }) sgn) (flp sgn))
                                     }
-         f (Pflp o a)          = do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
-                                    ; return (EFlp (ERel (Rel{ relnm=a
-                                                             , relpos=o
-                                                             , reldcl=decl
-                                                             }) sgn) (flp sgn))
+           Pequ _ a b      -> do { let srcAs = srcTypes (TypExpr        a  False)
+                                       trgAs = srcTypes (TypExpr (p_flp a) True )
+                                       srcBs = srcTypes (TypExpr        b  False)
+                                       trgBs = srcTypes (TypExpr (p_flp b) True )
+                                       srcTyps  = srcAs `uni` srcBs
+                                       trgTyps  = trgAs `uni` trgBs
+                                 ; case (srcTyps, trgTyps) of
+                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                         ; return (a' .==. b')
+                                                         }
+                                        _          -> Errors [CxeEquLike {cxeExpr    = x
+                                                                         ,cxeLhs     = a
+                                                                         ,cxeRhs     = b
+                                                                         ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                         ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                         }]
+                                 }
+           Pimp _ a b      -> do { let srcAs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
+                                       trgAs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
+                                       srcBs = srcTypes (TypExpr        b  False)
+                                       trgBs = srcTypes (TypExpr (p_flp b) True )
+                                 ; case (srcAs, trgBs) of
+                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                         ; return (a' .|-. b')
+                                                         }
+                                        _          -> Errors [CxeEquLike {cxeExpr    = x
+                                                                         ,cxeLhs     = a
+                                                                         ,cxeRhs     = b
+                                                                         ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                         ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                         }]
                                     }
-         f x@(Pequ _ a b)      = do { let srcAs = srcTypes (TypExpr        a  False)
-                                          trgAs = srcTypes (TypExpr (p_flp a) True )
-                                          srcBs = srcTypes (TypExpr        b  False)
-                                          trgBs = srcTypes (TypExpr (p_flp b) True )
-                                          srcTyps  = srcAs `uni` srcBs
-                                          trgTyps  = trgAs `uni` trgBs
-                                    ; case (srcTyps, trgTyps) of
-                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                            ; return (a' .==. b')
-                                                            }
-                                           _          -> Errors [CxeEquLike {cxeExpr    = x
-                                                                            ,cxeLhs     = a
-                                                                            ,cxeRhs     = b
-                                                                            ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
-                                                                            ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
-                                                                            }]
+           PIsc _ a b      -> do { let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
+                                       trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
+                                 ; case (srcs, trgs) of
+                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                         ; return (a' ./\. b')
+                                                         }
+                                        _          -> Errors [CxeEquLike {cxeExpr    = x
+                                                                         ,cxeLhs     = a
+                                                                         ,cxeRhs     = b
+                                                                         ,cxeSrcCpts = srcs
+                                                                         ,cxeTrgCpts = trgs
+                                                                         }]
+                                 }
+           PUni _ a b      -> do { let srcs = (srcTypes.normalType) (TypLub (TypExpr        a  False) (TypExpr        b  False) x)
+                                       trgs = (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
+                                 ; case (srcs, trgs) of
+                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
+                                                         ; return (a' .\/. b')
+                                                         }
+                                        _          -> Errors [CxeEquLike {cxeExpr    = x
+                                                                         ,cxeLhs     = a
+                                                                         ,cxeRhs     = b
+                                                                         ,cxeSrcCpts = srcs
+                                                                         ,cxeTrgCpts = trgs
+                                                                         }]
+                                 }
+           PDif _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; return (a' .-. b')
+                                 }
+           PLrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) x) of
+                                        [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                  ; return (a' ./. b')
+                                                  }
+                                        cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                                                   ,cxeCpts   = cs
+                                                                   }
+                                                      ]
+                                 }
+           PRrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) x) of
+                                        [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                  ; return (a' .\. b')
+                                                  }
+                                        cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                                                   ,cxeCpts   = cs
+                                                                   }
+                                                      ]
+                                  }
+           PCps _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) x) of
+                                         [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                   ; return (a' .:. b')
+                                                   }
+                                         cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                                                    ,cxeCpts   = cs
+                                                                   }
+                                                       ]
                                     }
-         f x@(Pimp _ a b)      = do { let srcAs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
-                                          trgAs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
-                                          srcBs = srcTypes (TypExpr        b  False)
-                                          trgBs = srcTypes (TypExpr (p_flp b) True )
-                                    ; case (srcAs, trgBs) of
-                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                            ; return (a' .|-. b')
-                                                            }
-                                           _          -> Errors [CxeEquLike {cxeExpr    = x
-                                                                            ,cxeLhs     = a
-                                                                            ,cxeRhs     = b
-                                                                            ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
-                                                                            ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
-                                                                            }]
-                                    }
-         f x@(PIsc _ a b)      = do { let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
-                                          trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
-                                    ; case (srcs, trgs) of
-                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                            ; return (a' ./\. b')
-                                                            }
-                                           _          -> Errors [CxeEquLike {cxeExpr    = x
-                                                                            ,cxeLhs     = a
-                                                                            ,cxeRhs     = b
-                                                                            ,cxeSrcCpts = srcs
-                                                                            ,cxeTrgCpts = trgs
-                                                                            }]
-                                    }
-         f x@(PUni _ a b)      = do { let srcs = (srcTypes.normalType) (TypLub (TypExpr        a  False) (TypExpr        b  False) x)
-                                          trgs = (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
-                                    ; case (srcs, trgs) of
-                                           ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                            ; return (a' .\/. b')
-                                                            }
-                                           _          -> Errors [CxeEquLike {cxeExpr    = x
-                                                                            ,cxeLhs     = a
-                                                                            ,cxeRhs     = b
-                                                                            ,cxeSrcCpts = srcs
-                                                                            ,cxeTrgCpts = trgs
-                                                                            }]
-                                    }
-         f   (PDif _ a b)      = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; return (a' .-. b')
-                                    }
-         f x@(PLrs _ a b)      = do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) x) of
-                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                 ; return (a' ./. b')
-                                                 }
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                  ,cxeCpts   = cs
-                                                                  }
-                                                     ]
-                                    }
-         f x@(PRrs _ a b)      = do { case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) x) of
-                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                 ; return (a' .\. b')
-                                                 }
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                  ,cxeCpts   = cs
-                                                                  }
-                                                     ]
-                                    }
-         f x@(PCps _ a b)      = do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) x) of
-                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                 ; return (a' .:. b')
-                                                 }
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                  ,cxeCpts   = cs
-                                                                  }
-                                                     ]
-                                    }
-         f x@(PRad _ a b)      = do { case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) x) of
-                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                 ; return (a' .!. b')
-                                                 }
-                                       cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                  ,cxeCpts   = cs
-                                                                  }
-                                                     ]
-                                    }
-         f (PPrd _ a b)        = do { (a',b') <- (,) <$> f a <*> f b
-                                    ; return (a' .*. b') }
-         f (PKl0 _ a)          = do { a' <- f a
-                                    ; return (EKl0 a' (sign a'))
-                                    }
-         f (PKl1 _ a)          = do { a' <- f a
-                                    ; return (EKl1 a' (sign a'))
-                                    }
-         f (PFlp _ a)          = do { a' <- f a
-                                    ; return (flp a')
-                                    }
-         f (PCpl _ a)          = do { a' <- f a
-                                    ; return (notCpl (sign a') a')
-                                    }
-         f (PBrk _ a)          = do { a' <- f a
-                                    ; return (EBrk a')
-                                    }
-         f x@(PTrel o relNm (P_Sign cs))
-           = case ( delimit (head cs) (srcTypes (TypExpr x False))
-                  , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
-                  ) of
-               ([src],[trg]) -> return (pRel2aRel relNm src trg)
-               (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
-                                                ,cxeDomCast = srcs
-                                                ,cxeCodCast = trgs
-                                                }]
-             where pRel2aRel relNm src trg
-                    = ETyp aRel sgn
-                      where aRel  = case decls of
-                                     [decl] -> ERel (Rel relNm o decl) sgn
-                                     _ -> fatal 1739 ("decls should contain one element only!")
-                            sgn   = Sign aSrc aTrg
-                            aSrc  = pCpt2aCpt src
-                            aTrg  = pCpt2aCpt trg
-                            decls = [ decl | decl<-declarations contxt
-                                           , name decl==relNm, source decl==aSrc, target decl==aTrg ]
-         f (PTflp o relNm (P_Sign cs)) = f (PTrel o relNm (P_Sign (reverse cs)))
-         delimit :: P_Concept -> [P_Concept] -> [P_Concept]
-         delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]
+           PRad _ a b      -> do { case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) x) of
+                                         [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                   ; return (a' .!. b')
+                                                   }
+                                         cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                                                    ,cxeCpts   = cs
+                                                                    }
+                                                       ]
+                                 }
+           PPrd _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; return (a' .*. b') }
+           PKl0 _ a        -> do { a' <- f a
+                                 ; return (EKl0 a' (sign a'))
+                                 }
+           PKl1 _ a        -> do { a' <- f a
+                                 ; return (EKl1 a' (sign a'))
+                                 }
+           PFlp _ a        -> do { a' <- f a
+                                 ; return (flp a')
+                                 }
+           PCpl _ a        -> do { a' <- f a
+                                 ; return (notCpl (sign a') a')
+                                 }
+           PBrk _ a        -> do { a' <- f a
+                                 ; return (EBrk a')
+                                 }
+           PTrel o relNm (P_Sign cs)
+                      -> let pRel2aRel src trg
+                               = ETyp aRel sgn
+                               where
+                                aRel  = case decls of
+                                         [decl] -> ERel (Rel relNm o decl) sgn
+                                         _ -> fatal 1739 ("decls should contain one element only!")
+                                sgn   = Sign aSrc aTrg
+                                aSrc  = pCpt2aCpt src
+                                aTrg  = pCpt2aCpt trg
+                                decls = [ decl | decl<-declarations contxt
+                                               , name decl==relNm, source decl==aSrc, target decl==aTrg ]
+                             delimit :: P_Concept -> [P_Concept] -> [P_Concept]
+                             delimit cpt concepts = concepts `isc` [c | Just cs' <- [Map.lookup cpt isaClos], c<-cs']
+                              
+                         in case ( delimit (head cs) (srcTypes (TypExpr x False))
+                                 , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
+                                 ) of
+                             ([src],[trg]) -> return (pRel2aRel src trg)
+                             (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
+                                                              ,cxeDomCast = srcs
+                                                              ,cxeCodCast = trgs
+                                                              }]
+           PTflp o relNm (P_Sign cs) -> f (PTrel o relNm (P_Sign (reverse cs)))
+
          returnIConcepts term
           = case getConceptsFromTerm term of
              [c] -> return c
