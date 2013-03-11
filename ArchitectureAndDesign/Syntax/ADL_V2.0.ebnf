@@ -39,7 +39,7 @@ ProcessDef      ::= 'PROCESS' Id LanguageRef?
                     Population
                   )* 'ENDPROCESS'
 RuleDef         ::= 'RULE' (ADLid ':')? Expr Meaning* 
-                    ('MESSAGE' LanguageRef? TextMarkup? String)* 
+                    ('MESSAGE' LanguageRef? TextMarkup? (String | Expl))* 
                     ('VIOLATION' (('TXT' | 'SRC' | 'TGT') String)(',' (('TXT' | 'SRC' | 'TGT') String))* )?
 RelationDef     ::= ((Id '::' ConceptRef ( '*'| '->' | '<-' | ('[' (('0'| '1') '..' ('1'|'*') | '1' | '*')? '-' (('0'| '1') '..' ('1'|'*') | '1' | '*')? ']'  ) ) ConceptRef) |
                      (RELATION Id Sign))
@@ -81,12 +81,13 @@ Purpose         ::= 'PURPOSE'
                     )
                     LanguageRef?
                     TextMarkup?
-                    ('REF' String)? String
+                    ('REF' String)? Expl
+Expl            ::= '{+' String '-}'
 Population      ::= 'POPULATION' RelSign 'CONTAINS' Content
 RoleRelation    ::= 'ROLE' Id (',' Id)* 'EDITS'     RelSign (',' RelSign)*
 RoleRule        ::= 'ROLE' Id (',' Id)* 'MAINTAINS' Id (',' Id)*
 Themes          ::= 'THEMES' Id (',' Id)*
-Meaning         ::= 'MEANING' LanguageRef? TextMarkup? String
+Meaning         ::= 'MEANING' LanguageRef? TextMarkup? Expl
 
 Expr            ::= Exp1 (( '=' | '|-') Exp1)?
 Exp1            ::= Exp2 (( '/\' | '\/') Exp2)*
