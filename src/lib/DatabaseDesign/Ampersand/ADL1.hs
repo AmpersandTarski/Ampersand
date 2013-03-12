@@ -21,7 +21,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Declaration(..)
            , P_Relation(..),P_Declaration(..)
            , ConceptDef(..)
-           , P_Concept(..), A_Concept(..), (<==>),meet,join, P_Sign(..), Sign(..), GenR
+           , P_Concept(..), A_Concept(..), (<==>),meet,join, P_Sign(..), Sign(..), showSign, GenR
            , RuleType(..)
            , Prop(..)
            , isaRule
@@ -42,7 +42,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree         (
                                           A_Concept(..)
                                          ,Meta(..)
-                                         ,Sign(..),GenR()
+                                         ,Sign(..),showSign,GenR()
                                          , (<==>),meet,join
                                          ,Signaling(..)
                                          ,A_Context(..),Process(..)
