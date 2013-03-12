@@ -1635,7 +1635,7 @@ pCtx2aCtx p_context
                                  }
            PIsc _ a b      -> do { let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
                                        trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
-                                 ; _ <- fatal 1638 ("Diagnostic of "++show x++" on "++show (origin x)++"\n  srcs = "++show srcs++"\n  trgs = "++show trgs)
+                         --      ; _ <- fatal 1638 ("Diagnostic of "++show x++" on "++show (origin x)++"\n  srcs = "++show srcs++"\n  trgs = "++show trgs)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
                                                          ; return (a' ./\. b')
