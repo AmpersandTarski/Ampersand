@@ -145,36 +145,36 @@ showErr err = case err of
                             where termString = show (origin term)
                                   maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
   CxeRel{}
-     -> show (origin expr)++":\n"++
+     -> show (origin term)++":\n"++
          case cxeDecs err of
-          []                -> "    Relation  "++showADL expr++"  is not declared."++
+          []                -> "    Relation  "++showADL term++"  is not declared."++
                                case cxeSNDs err of
                                 []  -> ""
                                 [d] -> "\n    One relation with the same name was found on "++show (origin d)++": "++name d++show (dec_sign d)
                                 ds  -> "\n    The following relations have the same name:"++
                                        concat [ "\n      "++name d++show (dec_sign d)++":\t "++show (origin d) | d<-ds ]
-          [(d, [], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+          [(d, [], [])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but it is ambiguous."
-          [(d, [],[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+          [(d, [],[_])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but it is ambiguous in its source concept."
-          [(d,[_], [])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+          [(d,[_], [])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but it is ambiguous in its target concept."
-          [(d, ss,[_])]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+          [(d, ss,[_])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but its source concept, "++showADL s++", is not compatible with "++commaEng "and" (map show conflicts)++"."
                                where conflicts = ss>-[s]; P_Sign sgn = dec_sign d; s=head sgn
-          [(d,[_], ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+          [(d,[_], ts)]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but its target concept, "++showADL t++", is not compatible with "++commaEng "and" (map show conflicts)++"."
                                where conflicts = ts>-[t]; P_Sign sgn = dec_sign d; t=last sgn
-          [(d, ss, ts)]     -> "    Relation  "++showADL expr++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
+          [(d, ss, ts)]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
                                "    but its source concept cannot be both "++commaEng "and" (map show ss)++", and"++
                                "    its target concept cannot be "++commaEng "and" (map show ts)++" all at the same time."
-          ds                -> "    Relation  "++showADL expr++"  was not bound to precisely one of:"++
+          ds                -> "    Relation  "++showADL term++"  was not bound to precisely one of:"++
                                concat [ "\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d)
 -- for debugging, you might add:        ++ ", ss="++show ss ++ ", ts="++show ts | (d, ss, ts)<-ds ]++"."
                                       | (d, _, _)<-ds ]++"."
                                where source d = head sgn where P_Sign sgn = dec_sign d
                                      target d = last sgn where P_Sign sgn = dec_sign d
-         where expr=cxeExpr err
+         where term=cxeExpr err
   CxeCast{}
      -> concat
           ( [show (origin (cxeExpr err))++":\n"]++

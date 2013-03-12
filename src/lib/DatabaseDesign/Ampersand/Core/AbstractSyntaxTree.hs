@@ -535,7 +535,7 @@ instance Eq Relation where
        
 instance Show Relation where
  showsPrec _ r = case r of
-   Rel{} -> showString (name r++showSign [source r,target r])
+   Rel{} -> showString (name r++showSign r)
    I{}   -> showString (name r++"["++show (rel1typ r)++"]")
    V{}   -> showString (name r++show (sign r))
 instance Identified Relation where
@@ -551,8 +551,8 @@ makeDeclaration r = case r of
       Rel{} -> reldcl r
       I{}   -> Isn{ detyp = rel1typ r}
       V{}   -> Vs { decsgn = sign r}
-showSign :: Identified a => [a] -> String
-showSign cs = "["++(intercalate "*".nub.map name) cs++"]"
+showSign :: Association a => a -> String
+showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 instance Traced Relation where
  origin = relpos
 

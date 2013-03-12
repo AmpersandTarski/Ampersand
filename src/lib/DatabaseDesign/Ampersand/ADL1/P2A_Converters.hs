@@ -442,8 +442,9 @@ typing p_context
                                               _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Map.lookup typ stConcepts of
+                     Just [] -> fatal 445 ("Types with empty codomain in stConcepts:"++concat["\n   "++show x | (x,[])<-Map.toAscList stConcepts ])
                      Just cs -> cs
-                     _ -> fatal 391 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
+                     _ -> fatal 447 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
      compatible a b = (not.null) (lkp a `isc` lkp b)
       where lkp c = case Map.lookup c isaClosReversed of
                      Just cs -> cs
@@ -1586,7 +1587,7 @@ pCtx2aCtx p_context
            Pnull           -> fatal 1546 ("unsigned Pnull.")
            PVee _          -> do { sgn<-getSign x
                                     ; return (vExpr sgn)
-                                    }
+                                 }
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
            Prel o a        -> do { (decl,sgn) <- getDeclarationAndSign x
                                  ; return (ERel (Rel{ relnm=a
@@ -1599,7 +1600,7 @@ pCtx2aCtx p_context
                                                           , relpos=o
                                                           , reldcl=decl
                                                           }) sgn) (flp sgn))
-                                    }
+                                 }
            Pequ _ a b      -> do { let srcAs = srcTypes (TypExpr        a  False)
                                        trgAs = srcTypes (TypExpr (p_flp a) True )
                                        srcBs = srcTypes (TypExpr        b  False)
@@ -1631,9 +1632,10 @@ pCtx2aCtx p_context
                                                                          ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
                                                                          ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                          }]
-                                    }
+                                 }
            PIsc _ a b      -> do { let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
                                        trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
+                                 ; _ <- fatal 1638 ("Diagnostic of "++show x++" on "++show (origin x)++"\n  srcs = "++show srcs++"\n  trgs = "++show trgs)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
                                                          ; return (a' ./\. b')
@@ -1678,27 +1680,28 @@ pCtx2aCtx p_context
                                                                    ,cxeCpts   = cs
                                                                    }
                                                       ]
-                                  }
+                                 }
            PCps _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) x) of
-                                         [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                   ; return (a' .:. b')
-                                                   }
-                                         cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                    ,cxeCpts   = cs
-                                                                   }
-                                                       ]
-                                    }
+                                      [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                                ; return (a' .:. b')
+                                                }
+                                      cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                                                 ,cxeCpts   = cs
+                                                                }
+                                                    ]
+                                 }
            PRad _ a b      -> do { case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) x) of
-                                         [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                   ; return (a' .!. b')
-                                                   }
-                                         cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                    ,cxeCpts   = cs
-                                                                    }
-                                                       ]
+                                    [_] -> do { (a',b') <- (,) <$> f a <*> f b
+                                              ; return (a' .!. b')
+                                              }
+                                    cs  -> Errors [ CxeCpsLike {cxeExpr   = x
+                                                               ,cxeCpts   = cs
+                                                               }
+                                                  ]
                                  }
            PPrd _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
-                                 ; return (a' .*. b') }
+                                 ; return (a' .*. b')
+                                 }
            PKl0 _ a        -> do { a' <- f a
                                  ; return (EKl0 a' (sign a'))
                                  }
@@ -1715,43 +1718,30 @@ pCtx2aCtx p_context
                                  ; return (EBrk a')
                                  }
            PTrel o relNm (P_Sign cs)
-                      -> let pRel2aRel src trg
-                               = ETyp aRel sgn
-                               where
-                                aRel  = case decls of
-                                         []     -> fatal 1722 ("@STEF: Zie commentaar in de haskell-code.\n"
-                                                             ++"No declaration found `"++relNm++show(P_Sign cs)++"`.\n"
-                                                             ++"However, the following relations(s) might do the job..."
-                                                             ++ intercalate "\n   " 
-                                                                [show (sign decl) | decl<-declarations contxt, name decl==relNm]
-                                                              ) 
-                                         [decl] -> ERel (Rel relNm o decl) sgn
-                                         ds -> fatal 1739 ("decls should contain one element only!\n"
-                                                         ++show (map name ds))
-                                        -- @STEF: (Van Han); Wanneer er (eventueel meerdere) relaties zijn met dezelfde relNm, dan zou ik
-                                        --                   verwachten dat de terug te geven relatie de relatie is met de opgegeven src en trg,
-                                        --                   indien tenminste één van de gevonden relaties een source heeft die gelijk of generieker is
-                                        --                   aan de opgegeven src, en een target heeft die gelijk of generieker is aan de
-                                        --                   opgegeven trg.
-                                         
-                                sgn   = Sign aSrc aTrg
-                                aSrc  = pCpt2aCpt src
-                                aTrg  = pCpt2aCpt trg
-                                decls = [ decl | decl<-declarations contxt
-                                               , name decl==relNm, source decl==aSrc, target decl==aTrg ]
-                             delimit :: P_Concept -> [P_Concept] -> [P_Concept]
-                             delimit cpt concepts = concepts `isc` [c | Just cs' <- [Map.lookup cpt isaClos], c<-cs']
-                              
-                         in case ( delimit (head cs) (srcTypes (TypExpr x False))
-                                 , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
-                                 ) of
-                             ([src],[trg]) -> return (pRel2aRel src trg)
-                             (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
-                                                              ,cxeDomCast = srcs
-                                                              ,cxeCodCast = trgs
-                                                              }]
+            -> case ( delimit (head cs) (srcTypes (TypExpr x False))
+                    , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
+                    ) of
+                 ([src],[trg]) -> return (pRel2aRel relNm src trg)
+                 (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
+                                                  ,cxeDomCast = srcs
+                                                  ,cxeCodCast = trgs
+                                                  }]
+               where pRel2aRel relName src trg
+                      = ETyp aRel sgn
+                        where aRel  = case decls of
+                                       [decl] -> ERel (Rel relName o decl) sgn
+                                       _ -> fatal 1739 ("decls should contain one element only!\n   x = "++show x++"\n   decls = "++show decls++"\n   decs = [ "++intercalate "\n          , " [show d | d<-decs]++"\n          ]")
+                              sgn   = Sign aSrc aTrg
+                              aSrc  = pCpt2aCpt src
+                              aTrg  = pCpt2aCpt trg
+                              decls = [ decl | decl<-declarations contxt
+                                             , name decl==relName, aSrc DatabaseDesign.Ampersand.Core.Poset.<= source decl, aTrg DatabaseDesign.Ampersand.Core.Poset.<= target decl ]
+                              decs  = [ decl | decl<-declarations contxt
+                                             , name decl==relName]
            PTflp o relNm (P_Sign cs) -> f (PTrel o relNm (P_Sign (reverse cs)))
-
+           
+         delimit :: P_Concept -> [P_Concept] -> [P_Concept]
+         delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]
          returnIConcepts term
           = case getConceptsFromTerm term of
              [c] -> return c
@@ -1774,8 +1764,8 @@ pCtx2aCtx p_context
          lookupType :: Term -> P_Concept
          lookupType t = case getConceptsFromTerm t of
                          [c] -> c
-                         []  -> fatal 1586 ("No type found for term "++show t)
-                         cs  -> fatal 1586 ("Multiple types found for term "++show t++": "++show cs)
+                         []  -> fatal 1586 ("No type found for term "++showADL t++" on "++show (origin t)++", even though that term is known in stConcepts.")
+                         cs  -> fatal 1586 ("Multiple types found for term "++showADL t++": "++show cs++" on "++show (origin t))
 
     getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
     getDeclarationAndSign term@(Prel _ a)
