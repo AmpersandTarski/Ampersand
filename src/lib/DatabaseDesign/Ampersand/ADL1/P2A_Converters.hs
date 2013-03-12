@@ -1098,7 +1098,7 @@ pCtx2aCtx p_context
                = tuples++ recur cs
                  where
                   tuples = [(specific,generic)
-                           | specific <- smallerCs>-(generic:[ x| (c',cs')<-cs, c' `elem` smallerCs, x<-cs', x/=c' ])
+                           | specific <- smallerCs>-(generic:[ x | (c',cs')<-cs, c' `elem` smallerCs, x<-cs', x/=c' ])
                            ]
               recur [] = []
     typeErrors :: [CtxError]
@@ -1719,8 +1719,21 @@ pCtx2aCtx p_context
                                = ETyp aRel sgn
                                where
                                 aRel  = case decls of
+                                         []     -> fatal 1722 ("@STEF: Zie commentaar in de haskell-code.\n"
+                                                             ++"No declaration found `"++relNm++show(P_Sign cs)++"`.\n"
+                                                             ++"However, the following relations(s) might do the job..."
+                                                             ++ intercalate "\n   " 
+                                                                [show (sign decl) | decl<-declarations contxt, name decl==relNm]
+                                                              ) 
                                          [decl] -> ERel (Rel relNm o decl) sgn
-                                         _ -> fatal 1739 ("decls should contain one element only!")
+                                         ds -> fatal 1739 ("decls should contain one element only!\n"
+                                                         ++show (map name ds))
+                                        -- @STEF: (Van Han); Wanneer er (eventueel meerdere) relaties zijn met dezelfde relNm, dan zou ik
+                                        --                   verwachten dat de terug te geven relatie de relatie is met de opgegeven src en trg,
+                                        --                   indien tenminste één van de gevonden relaties een source heeft die gelijk of generieker is
+                                        --                   aan de opgegeven src, en een target heeft die gelijk of generieker is aan de
+                                        --                   opgegeven trg.
+                                         
                                 sgn   = Sign aSrc aTrg
                                 aSrc  = pCpt2aCpt src
                                 aTrg  = pCpt2aCpt trg
