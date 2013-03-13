@@ -1,6 +1,6 @@
 CONTEXT RAP 
---INCLUDE "student_AST_interfaces.adl"
---INCLUDE "admin_interfaces.adl"
+--HJO INCLUDE "student_AST_interfaces.adl"
+--HJO INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
 --IN ENGLISH
 --LATEX
@@ -35,7 +35,7 @@ VIOLATION (TGT I, TXT ". Open ", SRC I,TXT " to fix error.")
 ENDPROCESS
 
 PROCESS Student
-ROLE Student MAINTAINS otherviolations, {-multviolations1,-}multviolations2,multviolations3, homoviolations
+ROLE Student MAINTAINS otherviolations, {-HJO multviolations1,-}multviolations2,multviolations3, homoviolations
 
 --RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
 --MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
@@ -45,25 +45,25 @@ ROLE Student MAINTAINS otherviolations, {-multviolations1,-}multviolations2,mult
 --MESSAGE "<span class='warnsignal'>Atom(s) of a concept that is a specialization have the same name(s) as atom(s) of a more general concept.</span> The integrity rules demand that no two atoms in the population of a concept have the same name. If you commit and validate on the <a href='index.php?interface=Validate&atom=1&role=0'>Validate-screen</a> then Ampersand records that the atoms with identical names refer to the same real-world object. If the atoms refer to different real-world objects, then you must change the name of at least one atom before validating."
 --VIOLATION (TXT "Atom ", TGT I, TXT "will become the most specific concept")
 
---RULE "multviolations1": -((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
---MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
---VIOLATION (TXT "RULE ", SRC I, TXT " is violated by the atom ", TGT left, TXT ".")
+--HJO RULE "multviolations1": -((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
+--HJO MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
+--HJO VIOLATION (TXT "RULE ", SRC I, TXT " is violated by the atom ", TGT left, TXT ".")
 
 RULE "multviolations2": -((I[PropertyRule] /\ declaredthrough;('UNI' \/ 'INJ');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or INJective multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
---VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+--HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 
 RULE "multviolations3": -((I[PropertyRule] /\ declaredthrough;'->';declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or TOTal multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
---VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+--HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 
 RULE "homoviolations": -((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A rule for homogeneous relation(s) is violated.</span> Add or delete tuple(s) in the relation(s) to correct the violation(s)."
---VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+--HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 
 RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A business rule that involves several relations is violated.</span> Add or delete tuple(s) in one or more of the relation(s) to correct the violation(s)."
---VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+--HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
 ENDPROCESS
 
 PROCESS Admin
@@ -141,14 +141,14 @@ functionname :: G->String
 MEANING IN ENGLISH "The description of the application of an Ampersand compiler function to a rule specification file."
 operation :: G->Int
 MEANING IN ENGLISH "The operation number of an Ampersand compiler function."
---HJO KEY G: G(PRIMHTML "<a href='../../index.php?operation=",operation
---HJO         ,PRIMHTML "&file=", applyto;filepath , applyto;filename
---HJO         ,PRIMHTML "&userrole=", applyto;uploaded{-HJO [User*AdlFile]-}~;userrole
---HJO         ,PRIMHTML "'>", functionname, PRIMHTML "</a>")
+KEY G: G(PRIMHTML "<a href='../../index.php?operation=",operation
+        ,PRIMHTML "&file=", applyto;filepath , applyto;filename
+        ,PRIMHTML "&userrole=", applyto;uploaded[User*AdlFile]~;userrole
+        ,PRIMHTML "'>", functionname, PRIMHTML "</a>")
 
 
 SPEC NewAdlFile ISA AdlFile
---HJO KEY NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename{-HJO [NewAdlFile*FileName]-},PRIMHTML"</a>")
+KEY NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename[NewAdlFile*FileName],PRIMHTML"</a>")
 newfile::User->NewAdlFile
 MEANING IN ENGLISH "The predefined rule specification file with an empty context, which is copied to create a new file requested by a student."
 
