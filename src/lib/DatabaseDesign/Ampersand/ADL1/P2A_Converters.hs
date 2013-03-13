@@ -13,7 +13,7 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Misc
 -- import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.ShowADL
-import qualified DatabaseDesign.Ampersand.Core.Poset hiding (sortWith)
+import qualified DatabaseDesign.Ampersand.Core.Poset as Poset hiding (sortWith)
 import GHC.Exts (sortWith)
 import Prelude -- hiding (Ord(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
@@ -442,8 +442,7 @@ typing p_context
                                               _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Map.lookup typ stConcepts of
-                     Just [] -> fatal 445 ("Types with empty codomain.\n"
-                                          ++"(looking for Type:  "++ show typ++")\n in stConcepts:"++concat["\n   "++show x | (x,[])<-Map.toAscList stConcepts ])
+                    -- A type may have an empty codomain in stConcepts, because that means it is type incorrect.
                      Just cs -> cs
                      _ -> fatal 447 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
      compatible a b = (not.null) (lkp a `isc` lkp b)
@@ -813,6 +812,7 @@ instance Expr Term where
                          (d2,interDom2) = mSpecific interDom uLft  x
                          (c2,interCod2) = mSpecific interCod uRt   x
                      in dom x.=.interDom .+. cod x.=.interCod    --  intersect ( /\ )
+                        .+. dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
                         .+. dm .+. cm .+. d2 .+. c2 -- d2 and c2 are needed for try15
                         .+. uType ctxt a interDom2 interCod2 a .+. uType ctxt b interDom2 interCod2 b
      (PUni _ a b) -> let (dm,interDom) = mGeneric (dom a) (dom b)  x
@@ -820,6 +820,7 @@ instance Expr Term where
                          (d2,interDom2) = mSpecific interDom uLft  x
                          (c2,interCod2) = mSpecific interCod uRt   x
                      in dom x.=.interDom .+. cod x.=.interCod    --  union     ( \/ )
+                        .+. dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
                         .+. dm .+. cm .+. d2 .+. c2
                         .+. uType ctxt a interDom2 interCod2 a .+. uType ctxt b interDom2 interCod2 b
      (PDif _ a b) -> let (dm,interDom) = mSpecific uLft (dom a) x
@@ -857,25 +858,30 @@ instance Expr Term where
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType ctxt e uRt uLft e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+.
                     uType ctxt x uLft uRt e                                                     -- (e) brackets
-     (PTrel _ nm sgn) ->
+     (PTrel _ _ sgn) ->
        case sgn of
          (P_Sign [])        -> fatal 196 "P_Sign is empty"
          (P_Sign (_:_:_:_)) -> fatal 197 "P_Sign too large"  
          (P_Sign cs)        -> let iSrc = thing (head cs)
                                    iTrg = thing (last cs)
                                    x'=complement x
-                               in case [term | decl<-p_declarations (fst ctxt), name decl==nm, dec_sign decl == sgn, term<-terms decl ] of
-                                    d:_ -> dom x.=.dom d .+. cod x.=.cod d .+. dom x'.<.iSrc .+. cod x'.<.iTrg
-                                    _   -> dom x.<.iSrc  .+. cod x.<.iTrg
-     (Prel _ nm) -> let (p_context, compatible) = ctxt
-                        y=complement x
-                        
+                               in dom x.<.iSrc .+. cod x.<.iTrg .+. dom x'.<.iSrc .+. cod x'.<.iTrg
+     (Prel _ nm) -> case decls of
+                          [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom x'.<.dom d .+. cod x'.<.cod d
+                          _   -> dom x.<.uLft .+. cod x.<.uRt .+. dom x'.<.uLft .+. cod x'.<.uRt
+                    where
+                        (p_context, _) = ctxt
+                        x'=complement x
                         decls' = [term | decl<-p_declarations p_context, name decl==nm, term<-terms decl ]
+                        -- decls looks whether a declaration gives an exact match. We cannot use `compatible`, because that has not been computed at this point.
                         decls  = if length decls' == 1 then decls' else
                                  [decl | decl@(PTrel _ _ (P_Sign cs@(_:_)))<-decls'
                                        , uLft == thing (head cs)
-                                       , uRt  == thing (last cs) ]
-
+                                       , uRt  == thing (last cs)
+                                       ]
+                    {-let (p_context, compatible) = ctxt
+                        y=complement x
+                        
                         spcls  = case (dSrcs, dTrgs) of
                                       ( []  ,  []  ) -> []
                                       ( [d] ,  []  ) -> [d]
@@ -897,14 +903,12 @@ instance Expr Term where
                         -- Explanation:
                         -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
                         -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                        case decls of
-                          [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom y.=.dom d .+. cod y.=.cod d
                           _   -> ( Map.empty -- produce first element outside of case to prevent loop
                                  , case spcls of
                                      [c] -> let (t1,t2) = dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c 
                                             in  t1 .++. t2
                                      _   -> Map.empty
-                                 )
+                                 ) -}
      (Pflp o nm) -> let e = Prel o nm
                     in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
      (PTflp o nm (P_Sign cs)) -> let e = PTrel o nm (P_Sign (reverse cs))
@@ -1075,13 +1079,13 @@ pCtx2aCtx p_context
      = (gE, classes, isas, meets, joins)   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
        where 
           gE a b = pgE (aCpt2pCpt a) (aCpt2pCpt b)
-          pgE a b | a==b                              = DatabaseDesign.Ampersand.Core.Poset.EQ
-                  | b `elem` isaClos Map.! a          = DatabaseDesign.Ampersand.Core.Poset.LT
-                  | b `elem` isaClosReversed Map.! a  = DatabaseDesign.Ampersand.Core.Poset.GT
+          pgE a b | a==b                              = Poset.EQ
+                  | b `elem` isaClos Map.! a          = Poset.LT
+                  | b `elem` isaClosReversed Map.! a  = Poset.GT
                   | null (((isaClosReversed Map.! a) `isc` (isaClosReversed Map.! b)) `uni`
                           ((isaClos         Map.! a) `isc` (isaClos         Map.! b)))
-                                                      = DatabaseDesign.Ampersand.Core.Poset.NC
-                  | otherwise                         = DatabaseDesign.Ampersand.Core.Poset.CP
+                                                      = Poset.NC
+                  | otherwise                         = Poset.CP
           meets a b = map pCpt2aCpt ((isaClosReversed Map.! aCpt2pCpt a) `isc` (isaClosReversed Map.! aCpt2pCpt b))
           joins a b = map pCpt2aCpt ((isaClos         Map.! aCpt2pCpt a) `isc` (isaClos         Map.! aCpt2pCpt b))
           sorted = (GHC.Exts.sortWith ((0-).length.snd) (Map.toList isaClosReversed))
@@ -1736,7 +1740,7 @@ pCtx2aCtx p_context
                               aSrc  = pCpt2aCpt src
                               aTrg  = pCpt2aCpt trg
                               decls = [ decl | decl<-declarations contxt
-                                             , name decl==relName, aSrc DatabaseDesign.Ampersand.Core.Poset.<= source decl, aTrg DatabaseDesign.Ampersand.Core.Poset.<= target decl ]
+                                             , name decl==relName, aSrc Poset.<= source decl, aTrg Poset.<= target decl ]
                               decs  = [ decl | decl<-declarations contxt
                                              , name decl==relName]
            PTflp o relNm (P_Sign cs) -> f (PTrel o relNm (P_Sign (reverse cs)))
