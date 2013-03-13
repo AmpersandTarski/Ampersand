@@ -442,7 +442,8 @@ typing p_context
                                               _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]
      srcTypes typ = case Map.lookup typ stConcepts of
-                     Just [] -> fatal 445 ("Types with empty codomain in stConcepts:"++concat["\n   "++show x | (x,[])<-Map.toAscList stConcepts ])
+                     Just [] -> fatal 445 ("Types with empty codomain.\n"
+                                          ++"(looking for Type:  "++ show typ++")\n in stConcepts:"++concat["\n   "++show x | (x,[])<-Map.toAscList stConcepts ])
                      Just cs -> cs
                      _ -> fatal 447 ("Type "++show typ++" was not found in stConcepts."++concat ["\n  "++show b | b<-Map.toAscList stConcepts, take 7 (show b)==take 7 (show typ) ])
      compatible a b = (not.null) (lkp a `isc` lkp b)
