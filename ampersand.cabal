@@ -14,21 +14,28 @@ license-file:   LICENSE
 copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
 tested-with:    GHC == 7.4.1
-data-files:     outputTemplates/default.context,
-                outputTemplates/default.docbook,
-                outputTemplates/default.html,
-                outputTemplates/default.latex,
-                outputTemplates/default.man,
-                outputTemplates/default.markdown,
-                outputTemplates/default.mediawiki,
-                outputTemplates/default.opendocument,
-                outputTemplates/default.org,
-                outputTemplates/default.plain,
-                outputTemplates/default.rst,
-                outputTemplates/default.rtf,
-                outputTemplates/default.s5,
-                outputTemplates/default.slidy,
-                outputTemplates/default.texinfo,
+data-files:     
+                AmpersandData/RepoRap/admin_interfaces.adl, 
+                AmpersandData/RepoRap/AST.adl, 
+                AmpersandData/RepoRap/Fspec.adl, 
+                AmpersandData/RepoRap/RAP.adl, 
+                AmpersandData/RepoRap/README.txt, 
+                AmpersandData/RepoRap/student_AST_interfaces.adl, 
+                outputTemplates/default.context, 
+                outputTemplates/default.docbook, 
+                outputTemplates/default.html, 
+                outputTemplates/default.latex, 
+                outputTemplates/default.man, 
+                outputTemplates/default.markdown, 
+                outputTemplates/default.mediawiki, 
+                outputTemplates/default.opendocument, 
+                outputTemplates/default.org, 
+                outputTemplates/default.plain, 
+                outputTemplates/default.rst, 
+                outputTemplates/default.rtf, 
+                outputTemplates/default.s5, 
+                outputTemplates/default.slidy, 
+                outputTemplates/default.texinfo, 
                 outputTemplates/default.textile
 
 source-repository head

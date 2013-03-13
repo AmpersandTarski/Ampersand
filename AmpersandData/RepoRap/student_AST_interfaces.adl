@@ -1,0 +1,200 @@
+CONTEXT RAP
+INTERFACE "Atlas (Play)" FOR Student: I[ONE]
+BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"number of relations":countdecls,"number of concepts":countcpts] 
+    ,"PATTERNs" : V[ONE*Context];ctxpats
+    ,"concepts" : V[ONE*Context];ctxcs
+    ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
+    ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
+    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule])
+    ]
+INTERFACE "Validate" FOR Student: I[ONE]
+BOX ["Click to commit and validate":V[ONE*Context];savecontext
+    ]
+--CSS refers to most names in this interface
+INTERFACE "CONTEXT files (Design / reload)" FOR Student: I[ONE]
+BOX ["loaded into Atlas" : V[ONE*Context] 
+    BOX ["CONTEXT":I,"source file (click to edit)":sourcefile \/ includes,"operations (click to perform)":sourcefile;applyto~]
+    ,"overview of files" : V[ONE*User]
+    BOX [ "open new source file" : newfile
+        , "source files" : uploaded[User*AdlFile];I[AdlFile] BOX ["file name (click to edit)":I,"created at":filetime,"operations (click to perform)":applyto~]
+        ]
+    ]
+
+--css refers to this interface
+INTERFACE "Diagnosis" FOR Student: I[ONE]
+BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- THIS IS A THIRD CHOICE expression!!
+--SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
+--FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
+    , "relations without MEANING": V[ONE*Declaration];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
+    , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I) -- -(V[ONE*Blob];rrmean~)
+    , "populated relations": V[ONE*PairID];decpopu~
+    , "unpopulated relations": V[ONE*Declaration];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*PairID];decpopu~)
+--INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;rels;reldcl)
+    ]
+
+INTERFACE "Syntax error" FOR Student: I[ParseError]
+BOX [ "expecting":pe_expecting
+    , "position" :pe_position
+    , "try"      :pe_action
+    ]
+INTERFACE "Type error" FOR Student: I[TypeError]
+BOX [ "error" : I
+    BOX [ "in" :te_origtype
+        , "at" :te_position
+        , "stating" :te_origname
+        ]
+    , "error message":te_message
+    , "declared relations": V[TypeError*Declaration]
+    ]
+
+{-
+PROCESS Test
+ROLE Student MAINTAINS test1
+,test2
+,test3
+,test4
+--,test5
+RULE test1: -(cptdf;cptdf~)
+RULE test2: cptdf;cptdf~
+RULE test3: cptdf
+RULE test4: -(-(cptdf;cptdf~) /\ I)
+ENDPROCESS
+-}
+{-
+CONTEXT Test
+PATTERN "Test"
+  SPEC "Medewerker" ISA "Persoon"
+  SPEC "Klant" ISA "Persoon"
+  helptzichzelf :: Medewerker * Klant
+  dummy :: A * B
+ENDPATTERN
+  CONCEPT "B" "een B" 
+POPULATION helptzichzelf[Medewerker*Klant] CONTAINS [ 'y' * 'x'   ]
+POPULATION dummy[A*B] CONTAINS [ 'x' * 'y'   , 'y' * 'x'   ]
+POPULATION Medewerker CONTAINS   [ 'y'   , 'x'   ]
+POPULATION Klant CONTAINS   [ 'x'   ]
+POPULATION A CONTAINS   [ 'x'   , 'y'   ]
+POPULATION B CONTAINS   [ 'y'   , 'x'   ]
+POPULATION Persoon CONTAINS   [ 'y'   , 'x'   ]
+ENDCONTEXT
+
+Signals for Student
+Rule 'test1' is broken:
+- B
+Rule 'test2' is broken:
+-
+- ('Medewerker', '')
+- ('Klant', '')
+- ('A', '')
+- ('B', '')
+- ('Persoon', '')
+- ('', 'Medewerker')
+- Medewerker
+- ('Klant', 'Medewerker')
+- ('A', 'Medewerker')
+- ('B', 'Medewerker')
+- ('Persoon', 'Medewerker')
+- ('', 'Klant')
+- ('Medewerker', 'Klant')
+- Klant
+- ('A', 'Klant')
+- ('B', 'Klant')
+- ('Persoon', 'Klant')
+- ('', 'A')
+- ('Medewerker', 'A')
+- ('Klant', 'A')
+- A
+- ('B', 'A')
+- ('Persoon', 'A')
+- ('', 'B')
+- ('Medewerker', 'B')
+- ('Klant', 'B')
+- ('A', 'B')
+- ('Persoon', 'B')
+- ('', 'Persoon')
+- ('Medewerker', 'Persoon')
+- ('Klant', 'Persoon')
+- ('A', 'Persoon')
+- ('B', 'Persoon')
+- Persoon
+Rule 'test3' is broken:
+- ('', 'een B')
+- ('Medewerker', 'een B')
+- ('Klant', 'een B')
+- ('A', 'een B')
+- ('Persoon', 'een B')
+Rule 'test4' is broken:
+- Medewerker
+- Klant
+- A
+- Persoon
+
+-}
+
+--CSS refers to all names in this interface
+INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
+BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
+    BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
+    ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
+    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I,"created at":filetime]
+    ]
+
+INTERFACE "CONTEXT" FOR Student: I[Context]
+BOX ["name" : ctxnm 
+    ,"PATTERNs" : ctxpats
+    ,"concepts" : ctxcs 
+    ,"ISA-relations" : ctxpats;ptgns 
+    ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": decprps;declaredthrough]
+    ,"RULEs" : ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule]) 
+    ]
+INTERFACE "PATTERN" FOR Student: I[Pattern]
+BOX ["PURPOSEs" :ptxps
+    ,"name" :ptnm
+    ,"RULEs" :ptrls;(I[Rule] /\ -I[PropertyRule])
+    ,"relations" :ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough]
+    ,"ISA-relations" :ptgns
+    ,"diagram" : ptpic
+    ]
+INTERFACE "ISA-relation" FOR Student: I[Gen]
+BOX ["SPEC" : genspc
+    ,"ISA" : gengen
+    ,"in PATTERN" : ptgns~
+    ]
+INTERFACE "Concept"(cptos,atomvalue) FOR Student: I[Concept]
+BOX ["PURPOSEs" :cptpurpose
+    ,"CONCEPT definition" :cptdf
+    ,"name" :cptnm
+    ,"POPULATION" :cptos BOX ["atom":atomvalue]
+    ,"POPULATION (through ISA)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
+    BOX ["more specific concept":I, "POPULATION":cptos;atomvalue]
+    ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
+--    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
+    ,"used in relations": (decsgn;(src \/ trg))~
+    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
+    ,"diagram" : cptpic
+    ]
+INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
+BOX ["in POPULATION of": cptos~]
+INTERFACE Relation(decpopu,left,right) FOR Student: I[Declaration]
+BOX ["PURPOSEs" :decpurpose
+    ,"MEANING" :decmean
+    ,"example of basic sentence" :decexample
+    ,"name" :decnm
+    ,"type" :decsgn BOX ["source":src , "target":trg]
+    ,"properties" :decprps;declaredthrough
+    ,"from PATTERN" :ptdcs~
+    ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
+    ,"used in RULEs": (rrexp;rels;reldcl)~;(I[Rule] /\ -I[PropertyRule])
+    ]
+INTERFACE "RULE" FOR Student: I[Rule]
+BOX ["PURPOSEs" :rrpurpose
+    ,"MEANING" :rrmean
+    ,"name" :rrnm
+    ,"assertion" :rrexp
+    ,"uses":rrexp;rels BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
+    ,"in PATTERN":ptrls~
+    ,"diagram" : rrpic
+    ]
+ENDCONTEXT
+
+
