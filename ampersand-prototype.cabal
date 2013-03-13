@@ -13,6 +13,13 @@ Cabal-Version: >= 1.14
 build-type:    Custom
 license:       OtherLicense
 copyright:     Stef Joosten
+data-files:    
+               ampersandPrototypeData/RepoRap/admin_interfaces.adl, 
+               ampersandPrototypeData/RepoRap/AST.adl, 
+               ampersandPrototypeData/RepoRap/Fspec.adl, 
+               ampersandPrototypeData/RepoRap/RAP.adl, 
+               ampersandPrototypeData/RepoRap/README.txt, 
+               ampersandPrototypeData/RepoRap/student_AST_interfaces.adl
 
 
 
