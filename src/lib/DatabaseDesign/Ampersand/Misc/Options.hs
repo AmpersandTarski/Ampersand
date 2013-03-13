@@ -46,7 +46,6 @@ data Options = Options { showVersion :: Bool
                        , dbName :: String
                        , genAtlas :: Bool
                        , namespace :: String
-                       , deprecated :: Bool
                        , autoRefresh :: Maybe Int
                        , testRule :: Maybe String                       
                        , customCssFile :: Maybe FilePath                       
@@ -83,6 +82,7 @@ data Options = Options { showVersion :: Bool
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , test :: Bool
+                       , includeRap :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
                        , pangoFont :: String  -- use specified font in PanDoc. May be used to avoid pango-warnings.
                        , sqlHost :: Maybe String  -- do database queries to the specified host
                        , sqlLogin :: Maybe String  -- pass login name to the database server
@@ -112,12 +112,11 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , allInterfaces = False
                       , genAtlas      = False   
                       , namespace     = []
-                      , deprecated    = False
                       , autoRefresh   = Nothing
                       , testRule      = Nothing
                       , customCssFile = Nothing
                       , importfile    = []
-                      , fileformat  = fatal 101 "--fileformat is required for --import."
+                      , fileformat    = fatal 101 "--fileformat is required for --import."
                       , genXML        = False
                       , genFspec      = False 
                       , diag          = False 
@@ -142,6 +141,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , baseName      = fatal 120 "no default value for baseName."
                       , export2adl    = False
                       , test          = False
+                      , includeRap    = False
                       , pangoFont     = "Sans"
                       , sqlHost       = Nothing
                       , sqlLogin      = Nothing
@@ -283,7 +283,6 @@ options = map pp
           , (Option "f"     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                          ("generate a functional specification document in specified format (format="
                                                                          ++allFspecFormats++")."), Public)
-          , (Option []        ["deprecated"]  (NoArg (\flags -> flags{deprecated = True})) "Force generation of old php prototype (strongly discouraged!)", Hidden)
           , (Option []        ["refresh"]     (OptArg autoRefreshOpt "interval") "Experimental auto-refresh feature", Hidden)
           , (Option []        ["testRule"]    (ReqArg (\ruleName flags -> flags{ testRule = Just ruleName }) "rule name")
                                                                           "Show contents and violations of specified rule.", Hidden)
@@ -310,7 +309,8 @@ options = map pp
                                                                           "Generate definitions for 'berichten' (specific to INDOORS project).", Hidden)
           , (Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'EN').", Public)
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
-
+          , (Option []        ["rap"]         (NoArg (\flags -> flags{includeRap = True}))
+                                                                          "Include RAP into the generated artifacts (experimental)", Hidden)
           , (Option []        ["pango"]       (OptArg pangoOpt "fontname") "specify font name for Pango in graphics.", Hidden)
           , (Option []        ["sqlHost"]     (OptArg sqlHostOpt "name")  "specify database host name.", Hidden)
           , (Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "name") "specify database login name.", Hidden)

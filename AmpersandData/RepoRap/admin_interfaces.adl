@@ -1,0 +1,20 @@
+CONTEXT Atlas
+INTERFACE "Files" FOR Admin: I[ONE]
+BOX ["loaded files": V[ONE*File];(sourcefile~;sourcefile \/ parseerror;parseerror~ \/ typeerror;typeerror~)
+    BOX ["name":filename
+        ,"dir":filepath
+        ,"created at":filetime
+        ,"first loaded with":firstloadedwith
+        ,"syntax error":parseerror BOX [act:pe_action,pos:pe_position,exp:pe_expecting]
+        ,"type error":typeerror BOX [msg:te_message]
+        ,"context" : sourcefile~ 
+        BOX ["name":ctxnm
+            ,"source files":(sourcefile \/ includes);filename
+            ,"number of rules":countrules
+            ,"number of declarations":countdecls
+            ,"number of concepts":countcpts] 
+    ]
+]
+ENDCONTEXT
+
+
