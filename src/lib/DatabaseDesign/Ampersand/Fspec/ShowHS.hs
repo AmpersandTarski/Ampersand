@@ -169,11 +169,18 @@ where
           [ "Fld { fldname = " ++ show (fldname sqFd)
           , "    , fldexpr = " ++ showHS flags "" (fldexpr sqFd)
           , "    , fldtype = " ++ showHS flags "" (fldtype sqFd)
-          , "    , flduse  = " ++ show (flduse sqFd)
+          , "    , flduse  = " ++ showHS flags "" (flduse sqFd)
           , "    , fldnull = " ++ show (fldnull sqFd)
           , "    , flduniq = " ++ show (flduniq sqFd)
           , "    }"
           ]
+   instance ShowHS SqlFieldUsage where
+    showHS _ _ (PrimKey aCpt)    = "PrimKey "   ++showHSName aCpt
+    showHS _ _ (ForeignKey aCpt) = "ForeignKey "++showHSName aCpt
+    showHS _ _ PlainAttr         = "PlainAttr "
+    showHS _ _ NonMainKey        = "NonMainKey "
+    showHS _ _ UserDefinedUsage  = "UserDefinedUsage "
+    showHS _ _ FillInLater       = "FillInLater "
 
    instance ShowHS SqlType where
     showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i
