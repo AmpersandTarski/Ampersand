@@ -87,7 +87,7 @@ data Options = Options { showVersion :: Bool
                        , sqlHost :: Maybe String  -- do database queries to the specified host
                        , sqlLogin :: Maybe String  -- pass login name to the database server
                        , sqlPwd :: Maybe String  -- pass password on to the database server
-                       , forcedParserVersion :: Maybe ParserVersion
+                       , parserVersion :: ParserVersion
                        } deriving Show
   
 defaultFlags :: Options 
@@ -146,7 +146,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , sqlHost       = Nothing
                       , sqlLogin      = Nothing
                       , sqlPwd        = Nothing
-                      , forcedParserVersion = Nothing
+                      , parserVersion = Current
                       }
                 
 getOptions :: IO Options
@@ -440,10 +440,10 @@ languageOpt l flags                  = flags{language = case map toUpper l of
                                                        "EN"  -> English
                                                        _     -> Dutch}
 forceSyntaxOpt :: String -> Options -> Options
-forceSyntaxOpt s flags               = flags{forcedParserVersion = case s of
-                                              "1" -> Just Legacy
-                                              "2" -> Just Current
-                                              "0" -> Just Current --indicates latest
+forceSyntaxOpt s flags               = flags{parserVersion = case s of
+                                              "1" -> Legacy
+                                              "2" -> Current
+                                              "0" -> Current --indicates latest
                                               _   -> error $ "Unknown value for syntax version: "++s++". Known values are 0, 1 or 2. 0 indicates latest."
                                           } 
 logOpt :: String -> Options -> Options
