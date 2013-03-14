@@ -371,9 +371,13 @@ where
         "\n -- *** ConceptDefs (total: "++(show.length.vConceptDefs) fspec++" conceptDefs) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-vConceptDefs fspec]++"\n"
        )++
-       (if null (morlist fspec) then "" else
-        "\n -- *** Relations (total: "++(show.length.morlist) fspec++" relations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-mors fspec]++"\n"
+       (if null (allConcepts fspec) then "" else
+        "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-allConcepts fspec]++"\n"
+       )++
+       (if null (allRelations fspec) then "" else
+        "\n -- *** Relations (total: "++(show.length.allRelations) fspec++" relations) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-allRelations fspec]++"\n"
        )
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
@@ -798,7 +802,7 @@ where
     showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
     showHS flags indent (ERel rel   sgn) = "ERel ("++showHS flags "" rel++") ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++atom++") ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++show atom++") ("++showHS flags (indent++"    ") sgn++")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***
