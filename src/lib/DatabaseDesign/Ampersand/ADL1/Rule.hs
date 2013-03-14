@@ -55,21 +55,12 @@ where
    rulefromProp :: Prop -> Declaration -> Rule
    rulefromProp prp d@Sgn{}
       = Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
-           , rrexp = case prp of
-                        Uni-> flp r .:. r .|-. iExpr (target r)
-                        Tot-> iExpr (source r)  .|-. r .:. flp r
-                        Inj-> r .:. flp r .|-. iExpr (source r)
-                        Sur-> iExpr (target r)  .|-. flp r .:. r
-                        Sym-> r .==. flp r
-                        Asy-> flp r ./\. r .|-. iExpr (source r)
-                        Trn-> r .:. r .|-. r
-                        Rfx-> iExpr (source r) .|-. r
-                        Irf-> iExpr (source r) ./\. (vExpr (sign r) .-. r)
+           , rrexp = rExpr
            , rrfps = origin d
            , rrmean = AMeaning $ explain True prp
            , rrmsg = explain False prp
            , rrviol = Nothing
-           , rrtyp = sign (rrexp (rulefromProp prp d))
+           , rrtyp = sign rExpr
            , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
            , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
            , r_usr = Multiplicity
@@ -81,6 +72,16 @@ where
            t = name (target d)
            r:: Expression
            r = ERel (makeRelation d) (sign d)
+           rExpr = case prp of
+                        Uni-> flp r .:. r .|-. iExpr (target r)
+                        Tot-> iExpr (source r)  .|-. r .:. flp r
+                        Inj-> r .:. flp r .|-. iExpr (source r)
+                        Sur-> iExpr (target r)  .|-. flp r .:. r
+                        Sym-> r .==. flp r
+                        Asy-> flp r ./\. r .|-. iExpr (source r)
+                        Trn-> r .:. r .|-. r
+                        Rfx-> iExpr (source r) .|-. r
+                        Irf-> iExpr (source r) ./\. (vExpr (sign r) .-. r)
            explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                                  case prop of
                                    Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
