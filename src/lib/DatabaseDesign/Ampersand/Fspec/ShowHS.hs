@@ -70,10 +70,12 @@ where
     showHS flags indent (Just x) = "Just (" ++ showHS flags indent x ++ ")"
 
 
+   instance (ShowHSName a , ShowHSName b) => ShowHSName (a,b) where 
+    showHSName (a,b) = "( "++showHSName a++" , "++showHSName b++" )"
    -- | The following is used to showHS flags for signs: (Concept, Concept)
    instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
     showHS flags indent (a,b) = "("++showHS flags (indent++" ") a++","++showHS flags (indent++" ") b++")"
-    
+  
    
 
 -- \***********************************************************************
@@ -90,7 +92,7 @@ where
                                              [showHSName f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields plug] ++indent++"in"
                       ,"TblSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
                       ,"       , fields  = ["++intercalate ", " (map showHSName (fields plug))++"]"
-                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
                   --    ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
                       ,"       }"
@@ -101,7 +103,7 @@ where
                               ++indent++"in"
                       ,"BinSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
                       ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
-                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkp = "++showHS flags "" (mLkp plug)
                   --    ,"       , sqlfpa  = " ++ showHS flags "" (fpa plug)
                       ,"       }"
@@ -109,7 +111,7 @@ where
           ScalarSQL{} -> intercalate indent 
                       ["ScalarSQL { sqlname   = "++ (show.haskellIdentifier.name) plug
                       ,"          , sqlColumn = "++ showHS flags (indent++"                     ") (sqlColumn plug)
-                      ,"          , cLkp      = "++ showHS flags "" (cLkp plug)
+                      ,"          , cLkp      = "++ showHSName (cLkp plug)
                   --    ,"          , sqlfpa    = "++ showHS flags "" (fpa plug)
                       ,"          }"
                       ]
@@ -126,10 +128,10 @@ where
         indent++"    }"
 
    instance ShowHS Event where
-    showHS flags indent e   
+    showHS _ indent e   
       = if "\n" `isPrefixOf` indent
-        then "On " ++ show (eSrt e)++indent++"   (" ++ showHS flags (indent++"    ") (eRel e)++indent++"   )"
-        else "On " ++ show (eSrt e)++" (" ++ showHS flags "" (eRel e)++")"
+        then "On " ++ show (eSrt e)++indent++"   (" ++ showHSName (eRel e)++indent++"   )"
+        else "On " ++ show (eSrt e)++          " (" ++ showHSName (eRel e)++           ")"
 
    instance ShowHS PAclause where
     showHS flags indent p   
@@ -205,7 +207,7 @@ where
    instance ShowHS Quad where
     showHS flags indent q 
       = intercalate indent
-          [ "Quad{ qRel     = " ++ showHS flags newindent (qRel q)
+          [ "Quad{ qRel     = " ++ showHSName (qRel q)
           , "    , qClauses = " ++ showHS flags newindent (qClauses q)
           , "    }"
           ]
@@ -303,7 +305,7 @@ where
            ] ++   
        indent++"where"++
        indent++" isa' :: [(A_Concept, A_Concept)]"++
-       indent++" isa'  = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
+       indent++" isa'  = "++    showHSName (fsisa fspec)++
        indent++" vctxenv'  = ("++showHS flags (indent ++ "         ") envExpr ++ ", bindings)"++
        indent++" bindings  = "++(if null bindings then "[]" else
                                  "[ "++intercalate (indentB++", ") (map showbinding bindings)++indentB++"]")++
@@ -683,7 +685,7 @@ where
    
    instance ShowHS KeyDef where
     showHS flags indent kd
-     = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdcpt kd)++")"
+     = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHSName (kdcpt kd)++")"
        ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ kdats kd)++indent++"  ]"
    
 -- \***********************************************************************
@@ -781,7 +783,7 @@ where
     showHS flags indent (ECpl e     sgn) = "ECpl ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
     showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (ERel rel   sgn) = "ERel ("++showHS flags "" rel++") ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (ERel rel   sgn) = "ERel ("++showHSName rel++") ("++showHS flags (indent++"    ") sgn++")"
     showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++show atom++") ("++showHS flags (indent++"    ") sgn++")"
 
 -- \***********************************************************************
@@ -789,14 +791,14 @@ where
 -- \***********************************************************************
 
    instance ShowHS Sign where
-    showHS flags _ sgn = "Sign ("++showHS flags "" (source sgn)++") ("++showHS flags "" (target sgn)++")"
+    showHS _ _ sgn = "Sign ("++showHSName (source sgn)++") ("++showHSName (target sgn)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
 
    instance ShowHS A_Gen where
-    showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHS flags "" (gengen gen)++") ("++showHS flags "" (genspc gen)++") "++show (genpat gen)
+    showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "++show (genpat gen)
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Relation Concept            ***
@@ -814,7 +816,7 @@ where
        = case rel of
             Rel{} -> "Rel "++show (name rel)++" ("++showHS flags "" (origin rel)++")"
                          ++" "++showHSName (reldcl rel)
-            I{}   -> "I ("++showHS flags "" (rel1typ  rel)++")"
+            I{}   -> "I ("++showHSName (rel1typ  rel)++")"
             V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"
 
 
