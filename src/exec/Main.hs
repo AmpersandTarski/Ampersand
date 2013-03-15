@@ -9,7 +9,7 @@ import Data.GraphViz --hiding (addExtension, C)
 import Data.List (intercalate)
 import DatabaseDesign.Ampersand.Misc 
 import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Parsing
+import DatabaseDesign.Ampersand.Input.Parsing
 import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC  -XScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Parsing ( parseContext
+module DatabaseDesign.Ampersand.Input.Parsing ( parseContext
                                         , parsePopulations
                                         , parseADL1pExpr
                                         , ParseError)

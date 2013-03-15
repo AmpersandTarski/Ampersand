@@ -7,7 +7,7 @@ import DatabaseDesign.Ampersand.ADL1 (Pos(..))
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
 import Data.List  (intercalate, sort)
-import DatabaseDesign.Ampersand.Parsing 
+import DatabaseDesign.Ampersand.Input.Parsing 
 import DatabaseDesign.Ampersand.Core.ParseTree
 
 fatal :: Int -> String -> a
