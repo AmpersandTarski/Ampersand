@@ -337,7 +337,7 @@ where
        )++        
        (if null (vrels fspec)     then "" else
         "\n -- *** Declarations (total: "++(show.length.vrels) fspec++" declarations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrels fspec, decusr x]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrels fspec]++"\n"
        ) ++
        (if null (vkeys fspec)     then "" else
         "\n -- *** Keys (total: "++(show.length.vkeys) fspec++" keys) ***: "++
@@ -493,11 +493,10 @@ where
         [ "A_Pat { ptnm  = "++show (name pat)
         , ", ptpos = "++showHS flags "" (ptpos pat)
         , ", ptend = "++showHS flags "" (ptend pat)
-        , if null (ptrls pat) then ", ptrls = [] -- no rules"
-                              else ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++"]"
+        , ", ptrls = [" ++intercalate ", " [showHSName r | r<-ptrls pat] ++ concat [" {- no rules -} "        | null (ptrls pat)] ++"]"
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
-        , if null (ptdcs pat) then ", ptdcs = [] -- no declarations"
-                              else ", ptdcs = [" ++intercalate          ", " [showHSName d | d<-ptdcs pat] ++"]"
+        , ", ptdcs = [" ++intercalate ", " [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++"]"
+        , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
         , wrap ", ptkds = " indentB (showHS flags) (ptkds pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         , "}"
@@ -509,9 +508,9 @@ where
    
    instance ShowHS FProcess where
     showHS flags indent prc
-     = intercalate indent
+     = intercalate indentA
         [ "FProc { fpProc       = "++showHS flags (indent++"                     ") (fpProc prc)
-        , wrap "      , fpActivities = " "                       " (showHS flags) (fpActivities prc)
+        , wrap ", fpActivities = " indentB (showHS flags) (fpActivities prc)
 {- was (SJ: 26 jan 2013)
  , "      , fpActivities = "++
            if null (fpActivities prc) 
@@ -519,47 +518,35 @@ where
            else " ["++intercalate (indent++"                      , ") [showHS flags (indent++"     ") a | a<-fpActivities prc] ++indent++"    ]"
 -}
       , "      }"
-        ]
+        ] where indentA = indent ++"      "     -- adding the width of "FProc "
+                indentB = indentA++"                 " -- adding the width of ", fpActivities = "
  
    instance ShowHSName Process where
- -- TODO: showHS flags should generate valid Haskell code for the entire pattern. Right now, it doesn't
     showHSName prc = haskellIdentifier ("prc_"++name prc)
 
    instance ShowHS Process where
     showHS flags indent prc
-     = intercalate indent
-        [ "Proc { prcNm    = "++show (name prc)
---        , case prcGns prc of
---           []          -> "     , prcGns   = [] {- no generalizations -}"
---           [g]         -> "     , prcGns   = [ "++showHSName g++" ]"
---           gs          -> "     , prcGns   = [ "++intercalate (indent'++", ") [showHSName g | g<-gs]++indent'++"]"
---        , case prcDcs prc of
---           []          -> "     , prcDcs   = [] {- no declarations -}"
---           [d]         -> "     , prcDcs   = [ "++showHSName d++" ]"
---           ds          -> "     , prcDcs   = [ "++intercalate (indent'++", ") [showHSName d | d<-ds]++indent'++"]"
-        , case prcRules prc of
-           []          -> "     , prcRules = [] {- no rules -}"
-           [r]         -> "     , prcRules = [ "++showHSName r++" ]"
-           rs          -> "     , prcRules = [ "++intercalate (indent'++", ") [showHSName r | r<-rs]++indent'++"]"
+     = intercalate indentA
+        [ "Proc { prcNm = "++show (name prc)
+        , ", prcPos = "++showHS flags "" (prcPos prc)
+        , ", prcEnd = "++showHS flags "" (prcEnd prc)
+        , ", prcRules = [" ++intercalate ", " [showHSName r | r<-prcRules prc] ++ concat [" {- no rules -} "                     | null (prcRules prc)] ++"]"
+        , wrap ", prcGens = " indentB (showHS flags) (prcGens prc)
+        , ", prcDcls = ["  ++intercalate ", " [showHSName d | d<-prcDcls  prc] ++ concat [" {- no declarations -} "              | null (prcDcls  prc)] ++"]"
+        , wrap ", prcUps = " indentB (showHS flags) (prcUps prc) 
         , case prcRRuls prc of
            []          -> "     , prcRRuls = [] {- no role-rule assignments -}"
            [(rol,rul)] -> "     , prcRRuls = [ ("++show rol++", "++showHSName rul++") ]"
-           rs          -> "     , prcRRuls = [ "++intercalate (indent'++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indent'++"]"
+           rs          -> "     , prcRRuls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
         , case prcRRels prc of
            []          -> "     , prcRRels = [] {- no role-relation assignments -}"
            [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
-           rs          -> "     , prcRRels = [ "++intercalate (indent'++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indent'++"]"
-        , case prcKds prc of
-           []          -> "     , prcKds   = [] {- no key definitions -}"
-           [k]         -> "     , prcKds   = [ "++showHS flags "" k++" ]"
-           ks          -> "     , prcKds   = [ "++intercalate (indent'++", ") [showHS flags "" k | k<-ks] ++indent'++"]"
-        , case prcXps prc of
-           []          -> "     , prcXps   = [] {- no explanations -}"
-           [e]         -> "     , prcXps   = [ "++showHS flags "" e++" ]"
-           es          -> "     , prcXps   = [ "++intercalate (indent'++", ") [showHS flags "" e | e<-es] ++indent'++"]"
-        , "     }"
-        ]
-       where indent'  = indent++"                  "
+           rs          -> "     , prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
+        , wrap ", prcKds = " indentB (showHS flags) (prcKds prc)
+        , wrap ", prcXps = " indentB (showHS flags) (prcXps prc)
+        , "}"
+        ] where indentA = indent ++"      "     -- adding the width of "FProc "
+                indentB = indentA++"             " -- adding the width of ", prcRules = "
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Activity                         ***
@@ -567,31 +554,17 @@ where
 
    instance ShowHS Activity where
     showHS flags indent act = 
-       intercalate indent
+       intercalate indentA
         [ "Act { actRule   = "++showHSName (actRule act)
-        , case actTrig act of
-           []  -> "      , actTrig   = [] {- no relations trigger this activity -}"
-           [r] -> "      , actTrig   = [ "++showHS flags "" r++" ]"
-           rs  -> "      , actTrig   = [ "++intercalate (indent'++", ") [showHS flags "" r | r<-rs] ++indent'++"]"
-        , case actAffect act of
-           []  -> "      , actAffect = [] {- no relations are affected by this activity -}"
-           [r] -> "      , actAffect = [ "++showHS flags "" r++" ]"
-           rs  -> "      , actAffect = [ "++intercalate (indent'++", ") [showHS flags "" r | r<-rs] ++indent'++"]"
-        , case actQuads act of
-           []  -> "      , actQuads  = [] {- no relations are affected by this activity -}"
-           [q] -> "      , actQuads  = [ "++showHSName q++" ]"
-           qs  -> "      , actQuads  = [ "++intercalate (indent'++", ") [showHSName q | q<-qs] ++indent'++"]"
-        , case actEcas act of
-           []  -> "      , actEcas   = [] {- no relations are affected by this activity -}"
-           [e] -> "      , actEcas   = [ "++showHSName e++" ]"
-           es  -> "      , actEcas   = [ "++intercalate (indent'++", ") [showHSName e | e<-es] ++indent'++"]"
-        , case actPurp act of
-           []  -> "      , actPurp   = [] {- no explanations in this activity -}"
-           [e] -> "      , actPurp   = [ "++showHS flags "" e++" ]"
-           es  -> "      , actPurp   = [ "++intercalate (indent'++", ") [showHS flags "" e | e<-es] ++indent'++"]"
+        , wrap ", actTrig   = " indentB (\_->showHSName) (actTrig   act)
+        , wrap ", actAffect = " indentB (\_->showHSName) (actAffect act)
+        , wrap ", actQuads  = " indentB (\_->showHSName) (actQuads  act)
+        , wrap ", actEcas   = " indentB (\_->showHSName) (actEcas   act)
+        , wrap ", actPurp   = " indentB (\_->(showHS flags indentB)) (actPurp act)
         , "      }"
         ]
-       where indent' = indent++"                    "
+       where indentA = indent ++replicate (length "Act "          ) ' ' 
+             indentB = indentA++replicate (length ", actAffect = ") ' '
 
    instance ShowHS PPurpose where
     showHS flags _ expla = 
@@ -839,7 +812,7 @@ where
    instance  ShowHS Relation where
     showHS flags _ rel 
        = case rel of
-            Rel{} -> "Rel "++show (relnm rel)++" ("++showHS flags "" (origin rel)++")"
+            Rel{} -> "Rel "++show (name rel)++" ("++showHS flags "" (origin rel)++")"
                          ++" "++showHSName (reldcl rel)
             I{}   -> "I ("++showHS flags "" (rel1typ  rel)++")"
             V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"
