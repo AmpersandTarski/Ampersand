@@ -143,8 +143,8 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    DatabaseDesign.Ampersand.Parsing,
-                    Paths_ampersand
+                    Paths_ampersand,
+                    DatabaseDesign.Ampersand.Input.Parsing
   other-modules:     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
   default-language:  Haskell2010
 
