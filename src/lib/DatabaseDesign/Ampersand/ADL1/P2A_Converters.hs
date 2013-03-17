@@ -143,9 +143,6 @@ complement a          = PCpl (origin a) a
 --cmpl Anything       = Nothng
 --cmpl Nothng         = Anything
 
-thing :: P_Concept -> Type
-thing c  = TypExpr (Pid c) False
-
 type Typemap = Map Type [Type]
 
 {- The type  Typemap  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
@@ -336,6 +333,8 @@ a .=. b  = (Map.fromList [(a, [b]),(b, [a])],snd nothing)
 m1 .++. m2  = Map.unionWith mrgUnion m1 m2
 (.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
 (a,b) .+. (c,d) = (c.++.a,d.++.b)
+thing :: P_Concept -> Type
+thing c  = TypExpr (Pid c) False
 dom, cod :: Term -> Type
 dom x    = TypExpr x         False -- the domain of x, and make sure to check subterms of x as well
 cod x    = TypExpr (p_flp x) True 
@@ -357,15 +356,15 @@ flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
 --   Specify 'Anything Anything' if there are no restrictions.
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
 
-typing :: P_Context -> ( Typemap                                   -- st          -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
-                       , Typemap                                   -- stClos      -- (st\/stAdded)*\/I  (reflexive and transitive)
-                       , Typemap                                   -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
-                       , Typemap                                   -- stClosAdded -- additional links added to stClos
-                       , Typemap                                   -- stClos1     -- st*  (transitive)
-                       , Map Type [(P_Declaration,[P_Concept],[P_Concept])] -- bindings    -- declarations that may be bound to relations
-                       , Type -> [P_Concept]                       -- srcTypes -- 
-                       , Map P_Concept [P_Concept]                 -- isaClos          -- 
-                       , Map P_Concept [P_Concept]                 -- isaClosReversed  -- 
+typing :: P_Context -> ( Typemap                    -- st          -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
+                       , Typemap                    -- stClos      -- (st\/stAdded)*\/I  (reflexive and transitive)
+                       , Typemap                    -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
+                       , Typemap                    -- stClosAdded -- additional links added to stClos
+                       , Typemap                    -- stClos1     -- st*  (transitive)
+                       , Map Type [P_Declaration]   -- bindings    -- declarations that may be bound to relations
+                       , Type -> [P_Concept]        -- srcTypes -- 
+                       , Map P_Concept [P_Concept]  -- isaClos          -- 
+                       , Map P_Concept [P_Concept]  -- isaClosReversed  -- 
                        )                                   
 typing p_context
   = ( st
@@ -449,51 +448,82 @@ typing p_context
       where lkp c = case Map.lookup c isaClosReversed of
                      Just cs -> cs
                      _ -> fatal 395 ("P_Concept "++show c++" was not found in isaClosReversed")
-     greatest :: [Type] -> [Type]
-     greatest ts = foldr isc ts [ lkp t | t<-ts]
-      where lkp t = case Map.lookup t stClos of
-                     Just cs -> cs
-                     _ -> fatal 405 ("P_Concept "++show t++" was not found in isaClosReversed")
 {- Bindings:
 Relations that are used in a term must be bound to declarations. When they have a type annotation, as in r[A*B], there is no  problem.
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
 -}
+     bindings :: Map Type [P_Declaration]
+     bindings
+      = Map.fromListWith union
+        ([ tuple
+         | nm<-Map.keys declsByName `isc` Map.keys domsByName `isc` Map.keys codsByName
+         , Just domTypes<-[Map.lookup nm domsByName], dType<-domTypes
+         , Just codTypes<-[Map.lookup nm codsByName], cType<-codTypes
+         , Just dcls<-[Map.lookup nm declsByName], decl<-dcls
+         , let P_Sign sgn = dec_sign decl
+         , tDecl<-terms decl
+         , match dType (dom tDecl) (head sgn), match cType (cod tDecl) (last sgn)
+         , tuple<-[(dType,[decl]), (cType,[decl])]
+         ] ++
+         [ (t,[]) | t@(TypExpr (Prel _ _) _)<-typeTerms] ++
+         [ (t,[]) | t@(TypExpr (Pflp _ _) _)<-typeTerms])
+       where
+        declsByName :: Map String [P_Declaration]
+        declsByName = Map.fromList [ (name (head cl), [ decl | decl<-cl]) | cl<-eqCl name (p_declarations p_context) ]
+        domsByName :: Map String [Type]
+        domsByName = Map.fromList [ (fst (head cl), map snd cl) | cl<-eqCl fst [ (nm,t) | t@(TypExpr (Prel _ nm) _)<-typeTerms] ]
+        codsByName :: Map String [Type]
+        codsByName = Map.fromList [ (fst (head cl), map snd cl) | cl<-eqCl fst [ (nm,t) | t@(TypExpr (Pflp _ nm) _)<-typeTerms] ]
+        {- Each relation must be bound to declarations. 
+        The predicate match checks whether a relation x (Prel or Pflp) can be bound to a declaration.
+        match x decl
+           = x (st* ; I[P_Concept] ; st*~ ; I[P_Concept] ; st* ; I[P_Concept] ; st*~ ) decl
+           = x (lookup ; isaClosReversed ; isaClos ; lookup~) decl
+        -}
+        match :: Type -> Type -> P_Concept -> Bool
+        match x decl dConc
+           = (not.null) 
+             [ () | intersectConcept<-nub [c | Just cs<-[Map.lookup dConc isaClosReversed]
+                                             , c<-cs]
+                  , Just termTypes<-[Map.lookup intersectConcept isaClos]
+                  , not (null (termTypes `isc` srcTypes decl))
+                  , not (null (termTypes `isc` srcTypes x))
+                  ]
+{- legacy code (most likely correct but this code is inefficient)
      bindings :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]
-     bindings    = ({- Map.map unDouble . -} Map.fromListWith union)
-                   ( [ tuple
-                     | decl<-p_declarations p_context
-                     , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                     , dTerm@(TypExpr (Prel _ dName) _) <- typeTerms, dName==dec_nm decl
-                     , cTerm@(TypExpr (Pflp _ cName) _) <- typeTerms, cName==dec_nm decl
-                     , Just dConcepts<-[Map.lookup dTerm stClos], dc<-dConcepts
-                     , Just cConcepts<-[Map.lookup cTerm stClos], cc<-cConcepts
-                     , let srcConcepts = thing srce `mayShareAtoms` dc, not (null srcConcepts)
-                     , let trgConcepts = thing targ `mayShareAtoms` cc, not (null trgConcepts)
-                     , let declSrcTrgs = (decl, srcConcepts, trgConcepts)
-                     , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
-                     ] ++
-                     [ (t,[]) | t<-typeTerms]
-                   )
-      where
+     bindings = (Map.map unDouble . Map.fromListWith union)
+                ( [ tuple
+                  | decl<-p_declarations p_context
+                  , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
+                  , dTerm@(TypExpr (Prel _ dName) _) <- typeTerms, dName==dec_nm decl
+                  , cTerm@(TypExpr (Pflp _ cName) _) <- typeTerms, cName==dec_nm decl
+                  , Just dConcepts<-[Map.lookup dTerm stClos], dc<-dConcepts
+                  , Just cConcepts<-[Map.lookup cTerm stClos], cc<-cConcepts
+                  , let srcConcepts = thing srce `mayShareAtoms` dc, not (null srcConcepts)
+                  , let trgConcepts = thing targ `mayShareAtoms` cc, not (null trgConcepts)
+                  , let declSrcTrgs = (decl, srcConcepts, trgConcepts)
+                  , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
+                  ] ++
+                  [ (t,[]) | t@(TypExpr (Prel _ _) _)<-typeTerms] ++
+                  [ (t,[]) | t@(TypExpr (Pflp _ _) _)<-typeTerms]
+                )
+       where
       -- Two concepts are compatible if they can share atoms. If there exists a concept that is greater than both, this is obvious.
       -- However, also if there exists a concept that is smaller than both, they can share atoms. So either a glb or a lub is sufficient.
         mayShareAtoms :: Type -> Type -> [P_Concept]
         mayShareAtoms a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
-         where lkp c = case Map.lookup c (Map.unionWith mrgUnion stClosReversed stClos) of
+         where lkp c = case Map.lookup c stClosReversed of
                         Just cs -> cs
                         _ -> fatal 400 ("P_Concept "++show c++" was not found in stClosReversed")
-      {-
         unDouble (tr@(d,_,_):triples) = tr : unDouble [tr' | tr'@(d',_,_)<-triples, d `neq` d']
         unDouble [] = []
         d `neq` d'
          = let P_Sign sgn  = dec_sign d
                P_Sign sgn' = dec_sign d'
            in dec_nm d/=dec_nm d || head sgn/=head sgn' || last sgn/=last sgn'
-      -}
-      
--- The TypGlb types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
+-}
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
@@ -1064,7 +1094,7 @@ pCtx2aCtx p_context
                      ++ mapMaybe snd adecsNPops      -- Populations from declarations directly in side the context
                       
     st, eqType :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    bindings ::   Map Type [(P_Declaration,[P_Concept],[P_Concept])]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    bindings ::   Map Type [P_Declaration]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindings, srcTypes, isaClos, isaClosReversed) = typing p_context
     gEandClasses :: GenR
@@ -1461,7 +1491,7 @@ pCtx2aCtx p_context
                                             Errors ers:_   -> Errors ers
                                             []             -> Errors [CxeOrig [newcxe ("No declaration for '"++showADL t++"'")] "relation" nm o ]
     pExOb2aExOb (PRef2Declaration t@Prel{})
-                                        = do { (decl,_) <- getDeclarationAndSign t
+                                        = do { decl <- getDeclaration t
                                              ; return (ExplDeclaration decl)
                                              }
     pExOb2aExOb (PRef2Declaration term) = fatal 1270 $ "Nothing defined for "++show term
@@ -1598,22 +1628,28 @@ pCtx2aCtx p_context
                                     ; return (vExpr sgn)
                                  }
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
-           Prel o a        -> do { (decl,sgn) <- getDeclarationAndSign x
+           Prel o a        -> do { decl <- getDeclaration x
+                                 ; let [s] = srcTypes (dom x)
+                                       [t] = srcTypes (cod x)
+                                       sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
                                  ; return (ERel (Rel{ relnm=a
                                                     , relpos=o
                                                     , reldcl=decl
                                                     }) sgn)
                                  }
-           Pflp o a        -> do { (decl,sgn) <- getDeclarationAndSign (Prel o a)
+           Pflp o a        -> do { decl <- getDeclaration x
+                                 ; let [s] = srcTypes (dom x)
+                                       [t] = srcTypes (cod x)
+                                       sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
                                  ; return (EFlp (ERel (Rel{ relnm=a
                                                           , relpos=o
                                                           , reldcl=decl
                                                           }) sgn) (flp sgn))
                                  }
-           Pequ _ a b      -> do { let srcAs = srcTypes (TypExpr        a  False)
-                                       trgAs = srcTypes (TypExpr (p_flp a) True )
-                                       srcBs = srcTypes (TypExpr        b  False)
-                                       trgBs = srcTypes (TypExpr (p_flp b) True )
+           Pequ _ a b      -> do { let srcAs = srcTypes (dom a)
+                                       trgAs = srcTypes (cod a)
+                                       srcBs = srcTypes (dom b)
+                                       trgBs = srcTypes (cod b)
                                        srcTyps  = srcAs `uni` srcBs
                                        trgTyps  = trgAs `uni` trgBs
                                  ; case (srcTyps, trgTyps) of
@@ -1627,10 +1663,10 @@ pCtx2aCtx p_context
                                                                          ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                          }]
                                  }
-           Pimp _ a b      -> do { let srcAs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
-                                       trgAs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
-                                       srcBs = srcTypes (TypExpr        b  False)
-                                       trgBs = srcTypes (TypExpr (p_flp b) True )
+           Pimp _ a b      -> do { let srcAs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
+                                       trgAs = (srcTypes.normalType) (TypGlb (cod a) (cod b) x)
+                                       srcBs = srcTypes (dom b)
+                                       trgBs = srcTypes (cod b)
                                  ; case (srcAs, trgBs) of
                                         ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
                                                          ; return (a' .|-. b')
@@ -1642,8 +1678,8 @@ pCtx2aCtx p_context
                                                                          ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                          }]
                                  }
-           PIsc _ a b      -> do { let srcs = (srcTypes.normalType) (TypGlb (TypExpr        a  False) (TypExpr        b  False) x)
-                                       trgs = (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
+           PIsc _ a b      -> do { let srcs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
+                                       trgs = (srcTypes.normalType) (TypGlb (cod a) (cod b) x)
                          --      ; _ <- fatal 1638 ("Diagnostic of "++show x++" on "++show (origin x)++"\n  srcs = "++show srcs++"\n  trgs = "++show trgs)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
@@ -1656,8 +1692,8 @@ pCtx2aCtx p_context
                                                                          ,cxeTrgCpts = trgs
                                                                          }]
                                  }
-           PUni _ a b      -> do { let srcs = (srcTypes.normalType) (TypLub (TypExpr        a  False) (TypExpr        b  False) x)
-                                       trgs = (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True ) (TypExpr (p_flp b) True ) x)
+           PUni _ a b      -> do { let srcs = (srcTypes.normalType) (TypLub (dom a) (dom b) x)
+                                       trgs = (srcTypes.normalType) (TypLub (cod a) (cod b) x)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
                                                          ; return (a' .\/. b')
@@ -1672,7 +1708,8 @@ pCtx2aCtx p_context
            PDif _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; return (a' .-. b')
                                  }
-           PLrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) x) of
+           PLrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (cod (complement a)) (dom (p_flp b)) x) of
+--         PLrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) x) of
                                         [_] -> do { (a',b') <- (,) <$> f a <*> f b
                                                   ; return (a' ./. b')
                                                   }
@@ -1681,7 +1718,8 @@ pCtx2aCtx p_context
                                                                    }
                                                       ]
                                  }
-           PRrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) x) of
+           PRrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (dom a) (dom (complement b)) x) of
+--         PRrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) x) of
                                         [_] -> do { (a',b') <- (,) <$> f a <*> f b
                                                   ; return (a' .\. b')
                                                   }
@@ -1690,7 +1728,7 @@ pCtx2aCtx p_context
                                                                    }
                                                       ]
                                  }
-           PCps _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp a) True) (TypExpr b False) x) of
+           PCps _ a b      -> do { case (srcTypes.normalType) (TypGlb (cod a) (dom b) x) of
                                       [_] -> do { (a',b') <- (,) <$> f a <*> f b
                                                 ; return (a' .:. b')
                                                 }
@@ -1699,7 +1737,7 @@ pCtx2aCtx p_context
                                                                 }
                                                     ]
                                  }
-           PRad _ a b      -> do { case (srcTypes.normalType) (TypLub (TypExpr (p_flp a) True) (TypExpr b False) x) of
+           PRad _ a b      -> do { case (srcTypes.normalType) (TypLub (cod a) (dom b) x) of
                                     [_] -> do { (a',b') <- (,) <$> f a <*> f b
                                               ; return (a' .!. b')
                                               }
@@ -1727,8 +1765,8 @@ pCtx2aCtx p_context
                                  ; return (EBrk a')
                                  }
            PTrel o relNm (P_Sign cs)
-            -> case ( delimit (head cs) (srcTypes (TypExpr x False))
-                    , delimit (last cs) (srcTypes (TypExpr (p_flp x) True))
+            -> case ( delimit (head cs) (srcTypes (dom x))
+                    , delimit (last cs) (srcTypes (cod x))
                     ) of
                  ([src],[trg]) -> return (pRel2aRel relNm src trg)
                  (srcs , trgs) -> Errors [CxeCast {cxeExpr    = x
@@ -1759,7 +1797,7 @@ pCtx2aCtx p_context
                                     }]
          getConceptsFromTerm :: Term -> [P_Concept]
          getConceptsFromTerm x
-          = srcTypes (TypExpr x False)
+          = srcTypes (dom x)
          getSign :: Term -> Guarded Sign
          getSign term
           = case (srcs,trgs) of
@@ -1776,22 +1814,16 @@ pCtx2aCtx p_context
                          []  -> fatal 1586 ("No type found for term "++showADL t++" on "++show (origin t)++", even though that term is known in stConcepts.")
                          cs  -> fatal 1586 ("Multiple types found for term "++showADL t++": "++show cs++" on "++show (origin t))
 
-    getDeclarationAndSign :: Term -> Guarded (Declaration, Sign)
-    getDeclarationAndSign term@(Prel _ a)
-     = case Map.lookup (TypExpr term False) bindings of
-        Just [(d, [s], [t])] -> do { (decl,_) <- pDecl2aDecl d ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t)) }
-        Just ds -> 
-          case nub [(name d, ss, ts) | (d, ss, ts)<-ds] of  -- multiple declarations of the same relation are allowed.
-             [(_, [s], [t])] -> do { let (d, _, _) = head ds
-                                   ; (decl,_) <- pDecl2aDecl d
-                                   ; return (decl, Sign (pCpt2aCpt s) (pCpt2aCpt t))
-                                   }
-             _   -> Errors [CxeRel {cxeExpr = term        -- the erroneous term
+    getDeclaration :: Term -> Guarded Declaration
+    getDeclaration term@(Prel _ a)
+     = case Map.lookup (dom term) bindings of
+        Just [d] -> do { (decl,_) <- pDecl2aDecl d ; return decl }
+        Just ds  -> Errors [CxeRel {cxeExpr = term        -- the erroneous term
                                    ,cxeDecs = ds          -- the declarations to which this term has been matched
                                    ,cxeSNDs = [ decl | decl<-p_declarations p_context, name decl==a ]
                                    }]
                                  
         Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])
-    getDeclarationAndSign term = fatal 1607 ("Illegal call to getDeclarationAndSign ("++show term++")")
+    getDeclaration term = fatal 1607 ("Illegal call to getDeclaration ("++show term++")")
 
 

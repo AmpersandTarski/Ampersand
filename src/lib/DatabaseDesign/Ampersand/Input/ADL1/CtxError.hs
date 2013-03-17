@@ -49,8 +49,8 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
                               ,cxeDcls :: [Term]
                               }       
               | CxeRel        {cxeExpr :: Term
-                              ,cxeDecs :: [(P_Declaration,[P_Concept],[P_Concept])]  -- possibilities for bindings.
-                              ,cxeSNDs :: [P_Declaration]                            -- Declarations with the same name
+                              ,cxeDecs :: [P_Declaration]  -- possibilities for bindings.
+                              ,cxeSNDs :: [P_Declaration]  -- Declarations with the same name
                               }       
               | CxeSign       {cxeExpr :: Term
                               ,cxeSrcs :: [P_Concept]
@@ -147,33 +147,20 @@ showErr err = case err of
   CxeRel{}
      -> show (origin term)++":\n"++
          case cxeDecs err of
-          []                -> "    Relation  "++showADL term++"  is not declared."++
-                               case cxeSNDs err of
-                                []  -> ""
-                                [d] -> "\n    One relation with the same name was found on "++show (origin d)++": "++name d++show (dec_sign d)
-                                ds  -> "\n    The following relations have the same name:"++
-                                       concat [ "\n      "++name d++show (dec_sign d)++":\t "++show (origin d) | d<-ds ]
-          [(d, [], [])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                               "    but it is ambiguous."
-          [(d, [],[_])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                               "    but it is ambiguous in its source concept."
-          [(d,[_], [])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                               "    but it is ambiguous in its target concept."
-          [(d, ss,[_])]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                               "    but its source concept, "++showADL s++", is not compatible with "++commaEng "and" (map show conflicts)++"."
-                               where conflicts = ss>-[s]; P_Sign sgn = dec_sign d; s=head sgn
-          [(d,[_], ts)]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                               "    but its target concept, "++showADL t++", is not compatible with "++commaEng "and" (map show conflicts)++"."
-                               where conflicts = ts>-[t]; P_Sign sgn = dec_sign d; t=last sgn
-          [(d, ss, ts)]     -> "    Relation  "++showADL term++"  is declared as "++name d++show (dec_sign d)++" on "++show (origin d)++",\n"++
-                               "    but its source concept cannot be both "++commaEng "and" (map show ss)++", and"++
-                               "    its target concept cannot be "++commaEng "and" (map show ts)++" all at the same time."
-          ds                -> "    Relation  "++showADL term++"  was not bound to precisely one of:"++
-                               concat [ "\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d)
+          []  -> "    Relation  "++showADL term++
+                 case cxeSNDs err of
+                  []  -> "  is undefined."
+                  [d] -> "  does not match the declaration on "++show (origin d)++": "++name d++show (dec_sign d)
+                  ds  -> "  cannot be matched to any of the following declarations:"++
+                         concat [ "\n      "++name d++show (dec_sign d)++":\t "++show (origin d) | d<-ds ]
+          [d] -> fatal 156 "Illegal error message. This should be correct."
+          ds  -> "    Relation  "++showADL term++"  must be bound to one declaration only,\n"++
+                 "    but it can be matched to each of the following declarations:"++
+                 concat [ "\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d)
 -- for debugging, you might add:        ++ ", ss="++show ss ++ ", ts="++show ts | (d, ss, ts)<-ds ]++"."
-                                      | (d, _, _)<-ds ]++"."
-                               where source d = head sgn where P_Sign sgn = dec_sign d
-                                     target d = last sgn where P_Sign sgn = dec_sign d
+                        | d<-ds ]++"."
+                 where source d = head sgn where P_Sign sgn = dec_sign d
+                       target d = last sgn where P_Sign sgn = dec_sign d
          where term=cxeExpr err
   CxeCast{}
      -> concat
