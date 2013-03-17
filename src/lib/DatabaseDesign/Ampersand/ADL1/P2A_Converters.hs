@@ -373,7 +373,7 @@ typing p_context
     , eqType
     , stClosAdded
     , stClos1
-    , bindings -- for debugging: (error.concat) ["\n  "++show b | b<-Map.toAscList bindings] -- 
+    , bindings -- for debugging use: (error.concat) ["\n  "++show b | b<-Map.toAscList bindings] -- 
     , srcTypes
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isaClos, isaClosReversed   -- a list containing all tuples of concepts that are in the subset relation with each other.
@@ -449,11 +449,6 @@ typing p_context
       where lkp c = case Map.lookup c isaClosReversed of
                      Just cs -> cs
                      _ -> fatal 395 ("P_Concept "++show c++" was not found in isaClosReversed")
-     tGlb :: Type -> Type -> [P_Concept]
-     tGlb a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
-      where lkp c = case Map.lookup c stClosReversed of
-                     Just cs -> cs
-                     _ -> fatal 400 ("P_Concept "++show c++" was not found in stClosReversed")
      greatest :: [Type] -> [Type]
      greatest ts = foldr isc ts [ lkp t | t<-ts]
       where lkp t = case Map.lookup t stClos of
@@ -470,23 +465,32 @@ In such cases, we want to give that candidate to the user by way of suggestion t
                    ( [ tuple
                      | decl<-p_declarations p_context
                      , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                     , dTerm@(TypExpr (Prel _ dnm) _) <- typeTerms, dnm==dec_nm decl
-                     , cTerm@(TypExpr (Pflp _ cnm) _) <- typeTerms, cnm==dec_nm decl
-                     , let srcConcepts = thing srce `tGlb` dTerm, not (null srcConcepts)
-                     , let trgConcepts = thing targ `tGlb` cTerm, not (null trgConcepts)
+                     , dTerm@(TypExpr (Prel _ dName) _) <- typeTerms, dName==dec_nm decl
+                     , cTerm@(TypExpr (Pflp _ cName) _) <- typeTerms, cName==dec_nm decl
+                     , Just dConcepts<-[Map.lookup dTerm stClos], dc<-dConcepts
+                     , Just cConcepts<-[Map.lookup cTerm stClos], cc<-cConcepts
+                     , let srcConcepts = thing srce `mayShareAtoms` dc, not (null srcConcepts)
+                     , let trgConcepts = thing targ `mayShareAtoms` cc, not (null trgConcepts)
                      , let declSrcTrgs = (decl, srcConcepts, trgConcepts)
                      , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
                      ] ++
                      [ (t,[]) | t<-typeTerms]
                    )
       where
+      -- Two concepts are compatible if they can share atoms. If there exists a concept that is greater than both, this is obvious.
+      -- However, also if there exists a concept that is smaller than both, they can share atoms. So either a glb or a lub is sufficient.
+        mayShareAtoms :: Type -> Type -> [P_Concept]
+        mayShareAtoms a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
+         where lkp c = case Map.lookup c (Map.unionWith mrgUnion stClosReversed stClos) of
+                        Just cs -> cs
+                        _ -> fatal 400 ("P_Concept "++show c++" was not found in stClosReversed")
       {-
-       unDouble (tr@(d,_,_):triples) = tr : unDouble [tr' | tr'@(d',_,_)<-triples, d `neq` d']
-       unDouble [] = []
-       d `neq` d'
-        = let P_Sign sgn  = dec_sign d
-              P_Sign sgn' = dec_sign d'
-          in dec_nm d/=dec_nm d || head sgn/=head sgn' || last sgn/=last sgn'
+        unDouble (tr@(d,_,_):triples) = tr : unDouble [tr' | tr'@(d',_,_)<-triples, d `neq` d']
+        unDouble [] = []
+        d `neq` d'
+         = let P_Sign sgn  = dec_sign d
+               P_Sign sgn' = dec_sign d'
+           in dec_nm d/=dec_nm d || head sgn/=head sgn' || last sgn/=last sgn'
       -}
       
 -- The TypGlb types are sorted to ensure that terms like ((a ./\. b) ./\. c) are handled from the inside out. In our example (a ./\. b) comes first.
