@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
-import DatabaseDesign.Ampersand.Fspec(showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+import DatabaseDesign.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
 import Prelude hiding (writeFile,readFile,getContents,catch,exp)
 import Data.Function
 import Data.List
@@ -99,11 +99,11 @@ generateTableInfos fSpec =
   , "  array" ] ++
   addToLastLine ";" 
     (indent 4 (blockParenthesize "(" ")" ","
-         [ [showPhpStr rnm++" => array ('srcConcept' => "++showPhpStr (name (source rel))++", 'tgtConcept' => "++showPhpStr (name (target rel))++
+         [ [showPhpStr (name decl)++" => array ('srcConcept' => "++showPhpStr (name (source decl))++", 'tgtConcept' => "++showPhpStr (name (target decl))++
                                           ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
-         | rel@(Rel {relnm = rnm}) <- mors fSpec
-         , let (table,srcCol,tgtCol) = fromMaybe (fatal 61 $ "No table info for relation " ++ show rel)
-                                         (getRelationTableInfo fSpec rel)
+         | decl <- mors fSpec
+         , let (table,srcCol,tgtCol) = fromMaybe (fatal 61 $ "No table info for declaration " ++ show decl)
+                                         (getDeclarationTableInfo fSpec decl)
          ])) ++
   [ ""
   , "$conceptTableInfo ="
@@ -341,7 +341,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable rel = rel `elem` editableRels
+ where isEditable rel = makeDeclaration rel `elem` map makeDeclaration editableRels
        normalizedInterfaceExp = conjNF $ objctx object
        getEditableConcepts obj = (case objctx obj of
                                    ERel r _          | isEditable r -> [target r]
