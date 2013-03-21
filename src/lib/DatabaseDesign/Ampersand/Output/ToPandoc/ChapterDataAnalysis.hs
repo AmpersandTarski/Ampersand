@@ -319,8 +319,8 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
        daBasics [d | d<-declarations fSpec
                    , decusr d
                    , (  decpat d `elem` relevantThemes
-                     || d `elem` [r | pat<-patterns fSpec  , name pat `elem` relevantThemes, r@Sgn{}<-[makeDeclaration rel|rel<-mors pat]]
-                     || d `elem` [r | prc<-vprocesses fSpec, name prc `elem` relevantThemes, r@Sgn{}<-[makeDeclaration rel|rel<-mors (fpProc prc)]]
+                     || d `elem` [r | pat<-patterns fSpec  , name pat `elem` relevantThemes, r@Sgn{}<-mors pat]
+                     || d `elem` [r | prc<-vprocesses fSpec, name prc `elem` relevantThemes, r@Sgn{}<-mors (fpProc prc)]
                      )
                 ]
     
@@ -331,7 +331,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 
   remainingRels = if null (themes fSpec)
                   then mors fSpec                                                                            >- [r | p<-plugInfos fSpec, r<-mors p]
-                  else [rel | rel<-mors fSpec, d@Sgn{}<-[makeDeclaration rel], decpat d `elem` themes fSpec] >- [r | p<-plugInfos fSpec, r<-mors p]
+                  else [decl | decl<-mors fSpec, d@Sgn{}<-[decl], decpat d `elem` themes fSpec] >- [r | p<-plugInfos fSpec, r<-mors p]
 
 
 
@@ -604,8 +604,9 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
              | d<-hMults]
             | length hMults>0 ]
        where
-        hMults  = [r | r@Rel{}<- mors fSpec, isEndo r, d@Sgn{}<-[makeDeclaration r]
-                     , null (themes fSpec) || decpat d `elem` themes fSpec]
+        hMults :: [Declaration]
+        hMults  = [decl | decl@Sgn{}<- mors fSpec, isEndo decl
+                        , null (themes fSpec) || decpat decl `elem` themes fSpec]
     keyDocumentation
      = case (keyDefs fSpec, language flags) of
         ([], _) -> []
@@ -808,7 +809,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                       , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
                       , (_,hornClauses)<-cl_conjNF ccrs
                       , hc@(Hc [ERel nega _] _)<-hornClauses
-                      , r==nega
+                      , sameDecl r nega
                       ]
                 pcpts = case p of
                   ScalarSQL{} -> [cLkp p]

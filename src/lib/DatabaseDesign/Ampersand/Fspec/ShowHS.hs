@@ -14,6 +14,8 @@ where
    import DatabaseDesign.Ampersand.Classes
    import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
    import DatabaseDesign.Ampersand.Misc
+   import Data.Hashable
+   import Data.Ord
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowHS"
@@ -130,8 +132,8 @@ where
    instance ShowHS Event where
     showHS _ indent e   
       = if "\n" `isPrefixOf` indent
-        then "On " ++ show (eSrt e)++indent++"   (" ++ showHSName (eRel e)++indent++"   )"
-        else "On " ++ show (eSrt e)++          " (" ++ showHSName (eRel e)++           ")"
+        then "On " ++ show (eSrt e)++indent++"   " ++ showHSName (eRel e)++indent++"   "
+        else "On " ++ show (eSrt e)++          " " ++ showHSName (eRel e)++           ""
 
    instance ShowHS PAclause where
     showHS flags indent p   
@@ -285,6 +287,7 @@ where
            ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
            ,wrap ", invars        = " indentA (\_->showHSName) (invars fspec)
            ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
+           ,wrap ", allDeclarations= " indentA (\_->showHSName) (allDeclarations fspec)
            ,wrap ", allRelations  = " indentA (\_->showHSName) (allRelations fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
            ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
@@ -378,15 +381,19 @@ where
        )++
        (if null (vConceptDefs fspec) then "" else
         "\n -- *** ConceptDefs (total: "++(show.length.vConceptDefs) fspec++" conceptDefs) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-vConceptDefs fspec]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-sortBy (comparing showHSName) (vConceptDefs fspec)]++"\n"
        )++
        (if null (allConcepts fspec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-allConcepts fspec]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
        )++
-       (if null (allRelations fspec) then "" else
+       (if null (allDeclarations fspec) then "" else
         "\n -- *** Relations (total: "++(show.length.allRelations) fspec++" relations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-allRelations fspec]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing origin) (allRelations fspec)]++"\n"
+--       )++
+--       (if null (allConcepts fspec) then "" else
+--        "\n -- *** I[Concept] for each concept not in allrelations  ***: "++
+--        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-map I (allConcepts fspec), x `notElem` (allDeclarations fspec)]++"\n"
        )
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
@@ -783,7 +790,7 @@ where
     showHS flags indent (ECpl e     sgn) = "ECpl ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
     showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (ERel rel   sgn) = "ERel ("++showHSName rel++") ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (ERel rel   sgn) = "ERel "++showHSName rel++" ("++showHS flags (indent++"    ") sgn++")"
     showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++show atom++") ("++showHS flags (indent++"    ") sgn++")"
 
 -- \***********************************************************************
@@ -791,7 +798,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Sign where
-    showHS _ _ sgn = "Sign ("++showHSName (source sgn)++") ("++showHSName (target sgn)++")"
+    showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
@@ -807,7 +814,7 @@ where
    instance ShowHSName Relation where
     showHSName rel
        = case rel of
-            Rel{} -> haskellIdentifier ("rrel_"++name rel++name (source rel)++name ( target rel))
+            Rel{} -> haskellIdentifier ("rrel_"++name rel++name (source rel)++name ( target rel)++showHSName (origin rel))
             I{}   -> haskellIdentifier ("irel_"++          name (source rel)                    )
             V{}   -> haskellIdentifier ("vrel_"++          name (source rel)++name ( target rel))
        
@@ -845,8 +852,8 @@ where
                         ,"   , decMean = " ++ show (decMean d)
                         ,"   , decConceptDef = " ++ show (decConceptDef d)
                         ,"   , decfpos = " ++ showHS flags "" (decfpos d)
-                        ,"   , deciss  = " ++ show (deciss d)
-                        ,"   , decusr  = " ++ show (decusr d)
+                        ,"   , decissX  = " ++ show (deciss d)
+                        ,"   , decusrX  = " ++ show (decusr d)
                         ,"   , decpat  = " ++ show (decpat d)
                         ,"   , decplug = " ++ show (decplug d)
                         ]++"}"
@@ -901,6 +908,14 @@ where
     showHS _ _ (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
 
+   instance ShowHSName Origin where
+    showHSName ori = "Orig"++show x++show (hash x)
+      where x = case ori of
+                 FileLoc l -> "FileLoc (" ++ show l++")"
+                 DBLoc l   -> "DBLoc " ++ show l
+                 Origin s  -> "Origin " ++ show s
+                 OriginUnknown -> "OriginUnknown"
+   
    instance ShowHS Origin where
     showHS flags indent (FileLoc l) = "FileLoc (" ++ showHS flags indent l++")"
     showHS _ _ (DBLoc l) = "DBLoc " ++ show l
