@@ -3,8 +3,6 @@ module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
    , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
-   , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
-   , iExpr, vExpr, deMorgan, exprUni2list, exprIsc2list, exprCps2list, exprRad2list
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
    , A_Concept(..), A_Gen
    , Sign(..), ConceptDef(..), ConceptStructure(..)
@@ -46,11 +44,14 @@ module DatabaseDesign.Ampersand
    -- * Functions on concepts
    , (<==>),meet,join,sortWith,atomsOf
    -- * Functions on declarations
-   , makeRelation
+   , makeRelation ,makeDeclaration
+   , decusr
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
    , notCpl, isCpl, isPos, isNeg
+      , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
+   , iExpr, vExpr, deMorgan, exprUni2list, exprIsc2list, exprCps2list, exprRad2list
    -- * Functions with plugs:
    , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
    -- * Parser related stuff

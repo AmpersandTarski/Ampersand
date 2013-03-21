@@ -4,7 +4,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
             , lambda
             , checkMono
             , showProof, showPrf
-            , testInterface )
+          --  , testInterface
+            )
 where
 
    import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl)
@@ -36,47 +37,47 @@ where
 -- testInterface :: Fspc -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
-   testInterface :: Options -> Fspc -> Interface -> String
-   testInterface flags fSpec ifc
-    = "\nInterface "++ name ifc++"("++intercalate ", " [showADL r++":"++name (target r) | r<-rels]++")\n"++
-      " - The parameters correspond to editable fields in a user interface.\n   "++
-      showADL ifc++"\n"++
-      " - Invariants:\n   "++intercalate "\n   " [showADL rule    | rule<-invs]++"\n"++
-      " - Derivation of clauses for ECA-rules:"   ++
-      concat [showClause fSpec (allClauses flags rule) | rule<-invs]++"\n"++
-{-
-      " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
-                                 ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
-                               | eca<-ecaRs]++"\n\n"++
--}
-      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADL r  | r<-vis])++"\n"
-    where
---        showQ i (rel, shs,conj,r)
---         = "\nQuad "++show i++":\nrelation: "++showADL rel++":\nshifts: "++concat ["\n"++showADLe s |s<-shs]++"\nconjunct: "++showADL conj++"\nrule: "++showADL r++""
---TODO: Deze code komt ook voor in ADL2Fspec.hs. Dat lijkt dubbelop, en derhalve niet goed.
-        rels = nub (recur (ifcObj ifc))
-         where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]
-        vis        = nub (rels++map (I . target) rels)
-   --     visible r  = r `elem` vis
-        invs       = [rule | rule<-invariants fSpec, (not.null) (mors rule `isc` vis)]
-   --     qs         = vquads fSpec
-   --     ecaRs      = assembleECAs qs
---        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
---        editable _               = False
---        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
---        editMph e                = fatal 64 $ "cannot determine an editable declaration in a composite expression: "++show e
-        -- De functie spread verspreidt strings over kolommen met een breedte van n.
-        -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.
-        -- Hij probeert daarbij zo weinig mogelijk regels te gebruiken,
-        -- en alleen de grens van n te overschrijden als een string zelf langer is dan n.
-        spread :: Int -> String -> [String] -> [String]
-        spread n str = f ""
-         where f stored []       = [stored | not (null stored)]
-               f [] (cs:css)     = f cs css
-               f stored (cs:css) | length stored > n = stored: f cs css
-                                 | length new   <= n = f new css 
-                                 | otherwise         = stored: f cs css
-                                   where new = stored++str++cs
+--   testInterface :: Options -> Fspc -> Interface -> String
+--   testInterface flags fSpec ifc
+--    = "\nInterface "++ name ifc++"("++intercalate ", " [showADL r++":"++name (target r) | r<-rels]++")\n"++
+--      " - The parameters correspond to editable fields in a user interface.\n   "++
+--      showADL ifc++"\n"++
+--      " - Invariants:\n   "++intercalate "\n   " [showADL rule    | rule<-invs]++"\n"++
+--      " - Derivation of clauses for ECA-rules:"   ++
+--      concat [showClause fSpec (allClauses flags rule) | rule<-invs]++"\n"++
+--{-
+--      " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
+--                                 ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+--                               | eca<-ecaRs]++"\n\n"++
+---}
+--      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADL r  | r<-vis])++"\n"
+--    where
+----        showQ i (rel, shs,conj,r)
+----         = "\nQuad "++show i++":\nrelation: "++showADL rel++":\nshifts: "++concat ["\n"++showADLe s |s<-shs]++"\nconjunct: "++showADL conj++"\nrule: "++showADL r++""
+----TODO: Deze code komt ook voor in ADL2Fspec.hs. Dat lijkt dubbelop, en derhalve niet goed.
+--        rels = nub (recur (ifcObj ifc))
+--         where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]
+--        vis        = nub (rels++map (I . target) rels)
+--   --     visible r  = r `elem` vis
+--        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (mors rule) `isc` vis)]
+--   --     qs         = vquads fSpec
+--   --     ecaRs      = assembleECAs qs
+----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+----        editable _               = False
+----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+----        editMph e                = fatal 64 $ "cannot determine an editable declaration in a composite expression: "++show e
+--        -- De functie spread verspreidt strings over kolommen met een breedte van n.
+--        -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.
+--        -- Hij probeert daarbij zo weinig mogelijk regels te gebruiken,
+--        -- en alleen de grens van n te overschrijden als een string zelf langer is dan n.
+--        spread :: Int -> String -> [String] -> [String]
+--        spread n str = f ""
+--         where f stored []       = [stored | not (null stored)]
+--               f [] (cs:css)     = f cs css
+--               f stored (cs:css) | length stored > n = stored: f cs css
+--                                 | length new   <= n = f new css 
+--                                 | otherwise         = stored: f cs css
+--                                   where new = stored++str++cs
 
    deriveProofs :: Options -> Fspc -> [Inline]
    deriveProofs flags fSpec
@@ -114,7 +115,7 @@ where
                 )
           ]
           | (ms,hc,r)<-
-              [ (nub[ rel |(rel,_,_)<-cl],hc,r)
+              [ (nubBy sameDecl [ rel |(rel,_,_)<-cl],hc,r)
               | cl<-eqCl (\(_,_,hc)->hc) [(rel,hc,r) |Quad rel ccrs<-qs, let r=cl_rule ccrs, (_,hornClauses)<-cl_conjNF ccrs, hc<-hornClauses]
               , let (_,hc,r) = head cl
               ]
@@ -251,8 +252,9 @@ where
                                       [Str ("Computing the violations means to negate the conjunct: "++showADL (notClau)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notClau/=viols] ++
                                       [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (notClau .\/. clause')), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
-                                    | rel<-nub (mors r)
+                                    | decl <-nub (mors r)
                                     , ev<-[Ins,Del]
+                                    , let rel     = makeRelation decl
                                     , let ex'     = subst (rel, actSem ev rel (delta (sign rel))) expr
                                     , let clause' = conjNF ex'
                                     , let notClau = notCpl sgn clause'
@@ -263,7 +265,7 @@ where
                                     , let frExpr  = if ev==Ins
                                                     then conjNF negs
                                                     else conjNF poss
-                                    , rel `elem` mors frExpr
+                                    , decl `elem` mors frExpr
                         --            , let toExpr = if ev==Ins
                         --                           then conjNF poss
                         --                           else conjNF (notCpl negs)

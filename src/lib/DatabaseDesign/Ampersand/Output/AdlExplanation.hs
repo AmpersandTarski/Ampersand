@@ -7,7 +7,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Fspec.Fspec(Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
-import DatabaseDesign.Ampersand.Classes (makeRelation)
 import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc
 --import DatabaseDesign.Ampersand.Output.PredLogic
@@ -70,7 +69,7 @@ instance Motivated A_Concept where
 
 instance Motivated Relation where
 --  meaning l r = meaning l (makeDeclaration r)
-  explForObj r (ExplDeclaration d) =  r == makeRelation d
+  explForObj r (ExplDeclaration d) =  makeDeclaration r == d
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning l r = autoMeaning l (makeDeclaration r)

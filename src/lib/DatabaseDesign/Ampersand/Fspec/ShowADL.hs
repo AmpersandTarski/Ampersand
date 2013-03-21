@@ -52,6 +52,8 @@ instance LanguageDependent SubInterface where
   mapexprs f l (Box objs) = Box $ map (mapexprs f l) objs
 instance LanguageDependent Relation where
   mapexprs _ _ = id
+instance LanguageDependent Declaration where
+  mapexprs _ _ = id
 instance LanguageDependent ECArule where
   mapexprs _ _ = id
 instance LanguageDependent Event where
@@ -263,7 +265,7 @@ instance ShowADL HornClause where
 instance ShowADL Declaration where
  showADL decl = 
   case decl of
-     Sgn{decusr = False} -> fatal 323 "call to ShowADL for declarations can be done on user defined relations only." 
+     Sgn{decusrX = False} -> fatal 323 "call to ShowADL for declarations can be done on user defined relations only." 
      Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
               (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
                if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++

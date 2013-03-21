@@ -15,7 +15,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
-   import Data.List (nub,intercalate)
+   import Data.List (nub,nubBy,intercalate)
    import DatabaseDesign.Ampersand.ADL1.Expression              (subst)
    import Data.Char        (toLower)
    
@@ -54,7 +54,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
-                 , allRelations = mors context
+                 , allDeclarations = mors context
+                 , allRelations = nub (morlist context)
                  , allConcepts  = concs context
                  , fsisa        = isas
                  , vpatterns    = patterns context
@@ -198,12 +199,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-        cRels = [     ERel (makeRelation d) (sign d)  | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
-                [flp (ERel (makeRelation d) (sign d)) | d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+        cRels = [     ERel (makeRelation d) (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isTot d, not$decplug d]++
+                [flp (ERel (makeRelation d) (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-        dRels = [     ERel (makeRelation d) (sign d)  | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
-                [flp (ERel (makeRelation d) (sign d)) | d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+        dRels = [     ERel (makeRelation d) (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isInj d, not$decplug d]++
+                [flp (ERel (makeRelation d) (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
         maxTotPaths = clos cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
         maxInjPaths = clos dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
@@ -269,7 +270,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- Each interface gets all attributes that are required to create and delete the object.
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
-           [Ifc { ifcParams = [ rel | rel<-mors objattributes, not (isIdent rel)]
+           [Ifc { ifcParams = [ makeRelation d | d<-mors objattributes, not (isIdent d)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
@@ -337,10 +338,10 @@ while maintaining all invariants.
    makeActivity :: Fspc -> Rule -> Activity
    makeActivity fSpec rul
     = let s = Act{ actRule   = rul
-                 , actTrig   = rels
-                 , actAffect = nub [ r' | (r,_,r')<-clos affectPairs, r `elem` rels]
+                 , actTrig   = map makeRelation decls
+                 , actAffect = nubBy sameDecl [ r' | (r,_,r')<-clos affectPairs, makeDeclaration r `elem` decls]
                  , actQuads  = invQs
-                 , actEcas   = [eca | eca<-vEcas fSpec, eRel (ecaTriggr eca) `elem` rels]
+                 , actEcas   = [eca | eca<-vEcas fSpec, makeDeclaration (eRel (ecaTriggr eca)) `elem` decls]
                  , actPurp   = [Expl { explPos = OriginUnknown
                                      , explObj = ExplRule (name rul)
                                      , explMarkup = A_Markup { amLang   = Dutch
@@ -362,15 +363,15 @@ while maintaining all invariants.
                                ]
                  } in s
     where
--- relations that may be affected by an edit action within the transaction
-        rels        = mors rul
+-- declarations that may be affected by an edit action within the transaction
+        decls        = mors rul
 -- the quads that induce automated action on an editable relation.
 -- (A quad contains the conjunct(s) to be maintained.)
 -- Those are the quads that originate from invariants.
         invQs       = [q | q@(Quad _ ccrs)<-vquads fSpec, (not.isSignal.cl_rule.qClauses) q
-                         , (not.null) ((nub.mors.cl_rule) ccrs `isc` rels)]
+                         , (not.null) ((nub.mors.cl_rule) ccrs `isc` decls)]
 -- a relation affects another if there is a quad (i.e. an automated action) that links them
-        affectPairs = [(qRel q,[q],r) | q<-invQs, r<-(mors.cl_rule.qClauses) q]
+        affectPairs = [(qRel q,[q],makeRelation d) | q<-invQs, d<-(mors.cl_rule.qClauses) q]
 -- the relations affected by automated action
 --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
 ----------------------------------------------------
@@ -398,7 +399,7 @@ while maintaining all invariants.
    -- The rule is carried along for traceability.
    quads :: Options -> (Relation->Bool) -> [Rule] -> [Quad]
    quads _ visible rs
-    = [ Quad r (Clauses [ (horn2expr hornClause,allShifts hornClause)
+    = [ Quad (makeRelation d) (Clauses [ (horn2expr hornClause,allShifts hornClause)
                         | hornClause<-conjuncts rule
       --                , (not.null.lambda Ins (ERel r ??)) hornClause  -- causes infinite loop
       --                , not (checkMono hornClause Ins r)         -- causes infinite loop
@@ -406,7 +407,7 @@ while maintaining all invariants.
       --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
                         ]
                         rule)
-      | rule<-rs, r<-mors rule, visible r
+      | rule<-rs, d<-mors rule, visible (makeRelation d)
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
@@ -510,7 +511,7 @@ while maintaining all invariants.
        -- rul    is the rule from which the above have been derived (for traceability)
        -- these quadruples are organized per relation.
        -- This puts together all Horn clauses we need for each relation.
-       relEqCls = eqCl fst4 [(rel,hornClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
+       relEqCls = eqCl (makeDeclaration.fst4) [(rel,hornClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
         = [ ECA (On ev rel) delt act
@@ -534,7 +535,7 @@ while maintaining all invariants.
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
-                                , rel `elem` mors frExpr
+                                , makeDeclaration rel `elem` mors frExpr
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
                                                else conjNF (notCpl sgn negs)
@@ -578,8 +579,8 @@ while maintaining all invariants.
                          , Blk _<-[ecaAction er]
                          , let t = ecaTriggr er
                          , eSrt t == srt
-                         , eRel t == to
-                         , rel    /= to
+                         , sameDecl (eRel t) to
+                         , not (sameDecl rel to)
                          ]
      cascade  _  c@Do{}           = (False, c)
      cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
@@ -600,12 +601,12 @@ while maintaining all invariants.
 
    actSem :: InsDel -> Relation -> Expression -> Expression
    actSem Ins rel e@(ERel r sgn) | sign rel/=sgn = fatal 595 "Type error in actSem Ins"
-                                 | rel==r        = ERel rel sgn
+                                 | sameDecl rel r= ERel rel sgn
                                  | otherwise     = ERel rel sgn .\/. e
    actSem Ins rel delt     | sign rel/=sign delt = fatal 598 "Type error in actSem Ins"
                            | otherwise           = disjNF (ERel rel (sign rel) .\/. delt)
    actSem Del rel e@(ERel r sgn) | sign rel/=sgn = fatal 600 "Type error in actSem Del"
-                                 | rel==r        = notCpl sgn (vExpr sgn)
+                                 | sameDecl rel r= notCpl sgn (vExpr sgn)
                                  | otherwise     = ERel rel sgn ./\. notCpl sgn e
    actSem Del rel delt     | sign rel/=sign delt = fatal 603 "Type error in actSem Del"
                            | otherwise           = conjNF (ERel rel (sign rel) ./\. notCpl (sign rel) delt)
@@ -625,8 +626,8 @@ while maintaining all invariants.
                                       ]
                  , decConceptDef = Nothing
                  , decfpos = Origin "generated relation (Delta)"
-                 , deciss  = True
-                 , decusr  = False
+                 , decissX  = True
+                 , decusrX  = False
                  , decpat  = ""
                  , decplug = True
                  }) 

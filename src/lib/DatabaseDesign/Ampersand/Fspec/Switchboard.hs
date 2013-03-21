@@ -49,7 +49,7 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
                                    }
                          | (from,to,e,r) <- allEdges
                          ]
-         allEdges  = nub[(from,to,e,r) | (e,r,from)<-eventsOut, (e',r',to)<-eventsIn, e==e', r==r']
+         allEdges  = nub[(from,to,e,makeDeclaration r) | (e,r,from)<-eventsOut, (e',r',to)<-eventsIn, e==e', sameDecl r r']
 {-
 data Activity = Act { actRule ::   Rule
                     , actTrig ::   [Relation]
@@ -121,7 +121,7 @@ data Event = On { eSrt :: InsDel
                               , toNode   = nameCNode (fsbConjs fsb) (rul,c)
                               , edgeAttributes = [Dir Forward]
                               }
-                    | (rul,c)<-fsbConjs fsb, ev<-eventsIn, eRel ev `elem` mors c]
+                    | (rul,c)<-fsbConjs fsb, ev<-eventsIn, makeDeclaration (eRel ev) `elem` mors c]
         edgesCjEc = [ DotEdge { fromNode = nameCNode (fsbConjs fsb) (rul,c)
                               , toNode   = nameENode (fsbECAs fsb) eca
                               , edgeAttributes = [Dir Forward]
@@ -172,8 +172,9 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
                       }
         }
       where
-        fromRels     = nub (actTrig act)
-        toRels       = nub (actAffect act)
+        fromRels     = nub (map makeDeclaration (actTrig act))
+        toRels :: [Declaration]
+        toRels       = nub (map makeDeclaration (actAffect act))
         conjuncts    = nub [(cl_rule ccrs,c)
                            | Quad _ ccrs<-actQuads act, (c,_)<-cl_conjNF ccrs]
         --DESCR -> The relations from which changes can come
@@ -217,8 +218,10 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
                                                      ,Dir Forward]
                                   }
                         | (rul,c)<-conjuncts, r<-(nub.mors) c]
+        nameINode :: [Declaration] -> Declaration -> String
         nameINode = nmLkp fSpec "in_"
         nameCNode = nmLkp fSpec "cj_"
+        nameONode :: [Declaration] -> Declaration -> String
         nameONode = nmLkp fSpec "out_"
 
 
@@ -228,7 +231,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
             fatal 216 ("illegal lookup in nmLkp: " ++showADL x++
                        "\nin: ["++intercalate ", " (map showADL xs)++"]")
            )
-   positiveIn :: Expression -> Relation -> [Bool]
+   positiveIn :: Expression -> Declaration -> [Bool]
    positiveIn expr rel = f expr   -- all are True, so an insert in rel means an insert in expr
     where
      f (EEqu _ _)       = fatal 245 "Illegal call of positiveIn."
@@ -247,5 +250,5 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (ECpl e _)       = [ not b | b<- f e]
      f (EBrk e)         = f e
      f (ETyp e _)       = f e
-     f (ERel r _)       = [ True | r==rel ]
+     f (ERel r _)       = [ True | makeDeclaration r==rel ]
      f (EMp1 _ _)       = []

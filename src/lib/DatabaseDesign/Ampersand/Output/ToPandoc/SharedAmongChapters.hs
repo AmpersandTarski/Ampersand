@@ -170,12 +170,12 @@ xrefFigure1 pict =
 --   that isn't handled in a specific theme.
 orderingByTheme :: Fspc -> [( Maybe Theme   -- A theme is about either a pattern of a process. 
                             , [Rule]        -- The rules of that theme
-                            , [Relation]    -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
+                            , [Declaration] -- The relations that are used in a rule of this theme, but not in any rule of a previous theme.
                             , [A_Concept]   -- The concepts that are used in a rule of this theme, but not in any rule of a previous theme.
                             )
                            ]
 orderingByTheme fSpec 
- = f (allRules fSpec) (allRelations fSpec) (allConcepts fSpec) tms
+ = f (allRules fSpec) (mors fSpec) (allConcepts fSpec) tms
  where
   -- | The themes that should be taken into account for this ordering
   tms = if null (themes fSpec)
@@ -196,10 +196,10 @@ orderingByTheme fSpec
   --   to the theme, respectively 
   partitionByTheme :: Theme
                    -> [Rule]
-                   -> [Relation]
+                   -> [Declaration]
                    -> [A_Concept]
                    -> ( ([Rule],[Rule])
-                      , ([Relation],[Relation])
+                      , ([Declaration],[Declaration])
                       , ([A_Concept],[A_Concept])
                       )
   partitionByTheme thme ruls rels cpts
@@ -299,7 +299,7 @@ dpRule fSpec flags = dpR
                                 , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
-        ds  = map makeDeclaration (mors r)
+        ds  =  (mors r)
         nds = [d | d@Sgn{}<-ds >- seenDeclarations]     -- newly seen declarations
         rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen declarations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)

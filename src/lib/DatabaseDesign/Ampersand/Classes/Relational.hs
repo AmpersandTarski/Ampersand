@@ -98,8 +98,7 @@ isSingleton _   = False
 
 makeRelation :: Declaration -> Relation
 makeRelation d
-    = Rel { relnm  = name d
-          , relpos = origin d 
+    = Rel { relpos = origin d 
           , reldcl = d
           }
 

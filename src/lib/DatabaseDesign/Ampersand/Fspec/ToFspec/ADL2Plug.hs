@@ -242,6 +242,7 @@ makeEntityTables _ {-flags-} allRels exclusions
    sortWith ((0-).length.plugFields)
     (map kernel2Plug distributionOfAtts)
    where
+    allDcls = nub (map makeDeclaration allRels)
     distributionOfAtts = dist attRels kernels []
       where 
    --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
@@ -298,7 +299,7 @@ makeEntityTables _ {-flags-} allRels exclusions
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
     kernels :: [[Expression]]
-    kernels = case [c | c@C{} <- concs allRels] of
+    kernels = case [c | c@C{} <- concs allDcls] of
                 [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
                 cs -> let (_,islands,_,_,_) = cptgE (head cs) in
                       [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
@@ -308,7 +309,7 @@ makeEntityTables _ {-flags-} allRels exclusions
     attRels :: [Expression]
     attRels = [     ERel r (sign (makeDeclaration r))  | r<-rs, isUni r, not (isInj r && isSur r)] ++
               [flp (ERel r (sign (makeDeclaration r))) | r<-rs, isInj r, not (isUni r && isTot r)]
-              where rs = [rel | rel <- allRels>-mors exclusions, not (isIdent rel)]
+              where rs = [makeRelation decl | decl <- allDcls>-mors exclusions, not (isIdent decl)]
 
 
 -----------------------------------------

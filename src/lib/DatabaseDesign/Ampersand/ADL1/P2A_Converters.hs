@@ -1345,8 +1345,8 @@ pCtx2aCtx p_context
                                       , decMean = meanings
                                       , decConceptDef = Nothing
                                       , decfpos = rr_fps prul
-                                      , deciss = True
-                                      , decusr = False
+                                      , decissX = True
+                                      , decusrX = False
                                       , decpat = ""
                                       , decplug = True
                                       }
@@ -1591,8 +1591,8 @@ pCtx2aCtx p_context
                              , decMean = pMeanings2aMeaning (ctxlang contxt) (ctxmarkup contxt) (dec_Mean pd)
                              , decConceptDef = dec_conceptDef pd
                              , decfpos = dec_fpos pd 
-                             , deciss  = True
-                             , decusr  = True
+                             , decissX  = True
+                             , decusrX  = True
                              , decpat  = ""
                              , decplug = dec_plug pd
                              } 
@@ -1632,8 +1632,7 @@ pCtx2aCtx p_context
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
-                                 ; return (ERel (Rel{ relnm=a
-                                                    , relpos=o
+                                 ; return (ERel (Rel{ relpos=o
                                                     , reldcl=decl
                                                     }) sgn)
                                  }
@@ -1641,8 +1640,7 @@ pCtx2aCtx p_context
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
-                                 ; return (EFlp (ERel (Rel{ relnm=a
-                                                          , relpos=o
+                                 ; return (EFlp (ERel (Rel{ relpos=o
                                                           , reldcl=decl
                                                           }) sgn) (flp sgn))
                                  }
@@ -1776,7 +1774,7 @@ pCtx2aCtx p_context
                where pRel2aRel relName src trg
                       = ETyp aRel sgn
                         where aRel  = case decls of
-                                       [decl] -> ERel (Rel relName o decl) sgn
+                                       [decl] -> ERel (Rel o decl) sgn
                                        _ -> fatal 1739 ("decls should contain one element only!\n   x = "++show x++"\n   decls = "++show decls++"\n   decs = [ "++intercalate "\n          , " [show d | d<-decs]++"\n          ]")
                               sgn   = Sign aSrc aTrg
                               aSrc  = pCpt2aCpt src

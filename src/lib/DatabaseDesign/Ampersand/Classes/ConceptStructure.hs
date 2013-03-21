@@ -8,15 +8,15 @@ where
    import Data.List
    import Data.Maybe
    import DatabaseDesign.Ampersand.ADL1.Expression
-   import DatabaseDesign.Ampersand.Classes.Relational(multiplicities,makeRelation)
+   -- import DatabaseDesign.Ampersand.Classes.Relational(multiplicities,makeRelation)
    import Prelude hiding (Ordering(..))
    fatal :: Int -> String -> a
    fatal = fatalMsg "Classes.ConceptStructure"
 
    class ConceptStructure a where
     concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
-    mors ::     a -> [Relation]        -- ^ the set of all relations used within data structure a,
-    mors = nub . morlist
+    mors ::     a -> [Declaration]        -- ^ the set of all relations used within data structure a,
+    mors        a = nub (map makeDeclaration (morlist a))
     morlist ::  a -> [Relation]        -- ^ the set of all relations used within data structure a
                                        --   (the difference with mors is that morlist is not unique wrt name and signature)
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
@@ -30,7 +30,7 @@ where
 
    instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
     concs    (a,b) = concs a `uni` concs b
-    mors     (a,b) = mors a  `uni` mors b
+--    mors     (a,b) = mors a  `uni` mors b
     morlist  (a,b) = morlist a ++ morlist b
     mp1Exprs (a,b) = mp1Exprs a `uni` mp1Exprs b
 
@@ -42,7 +42,7 @@ where
  
    instance ConceptStructure a => ConceptStructure [a] where
     concs     = nub . concatMap concs
-    mors      = nub . concatMap mors
+--    mors      = nub . concatMap mors
     morlist   =       concatMap morlist
     mp1Exprs  = nub . concatMap mp1Exprs 
     
@@ -50,8 +50,18 @@ where
     concs     c =       concs ( ctxds c ++ concatMap ptdcs (ctxpats c)  ++ concatMap prcDcls (ctxprocs c) ) 
                   `uni` concs ( ctxgs c ++ concatMap ptgns (ctxpats c)  ++ concatMap prcGens (ctxprocs c) )
                   `uni` [ONE]
-    mors      c = mors (ctxpats c) `uni` mors (ctxprocs c) `uni` mors [ifcObj s | s<-ctxifcs c]
-    morlist   c = morlist (ctxpats c)++morlist (ctxprocs c)++morlist [ifcObj s | s<-ctxifcs c]
+--    mors      c = mors (ctxpats c) 
+--            `uni` mors (ctxprocs c)
+--            `uni` mors [ifcObj s | s<-ctxifcs c]
+--            `uni` mors (ctxrs c)
+--            `uni` mors (      
+    morlist   c = morlist (ctxpats c)
+                ++morlist (ctxprocs c)
+                ++morlist (map ifcObj (ctxifcs c))
+                ++morlist  (ctxrs c)
+                ++morlist (ctxks c)
+                ++morlist (ctxsql c)
+                ++morlist (ctxphp c)
     mp1Exprs  _ = fatal 64 "do not use this from a context"
     genE      c = ctxpo c
 
@@ -63,7 +73,7 @@ where
 
    instance ConceptStructure Expression where
     concs          = foldrMapExpression uni concs []
-    mors           = foldrMapExpression uni mors  []
+--    mors           = foldrMapExpression uni mors  []
     morlist        = foldrMapExpression (++) morlist []
     mp1Exprs (EEqu (l,r) _) = mp1Exprs l `uni` mp1Exprs r
     mp1Exprs (EImp (l,r) _) = mp1Exprs l `uni` mp1Exprs r
@@ -101,8 +111,8 @@ where
 
    instance ConceptStructure ObjectDef where
     concs     obj = [target (objctx obj)] `uni` concs (objmsub obj)
-    mors      obj = mors (objctx obj) `uni` mors (objmsub obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
-    morlist   obj = morlist (objctx obj)++morlist (objmsub obj)
+--    mors      obj = mors (objctx obj) `uni` mors (objmsub obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
+    morlist   obj = morlist (objctx obj)++morlist (objmsub obj)++morlist (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
     mp1Exprs  obj = mp1Exprs (objctx obj) `uni` mp1Exprs (objmsub obj)
 
    -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
@@ -118,14 +128,14 @@ where
           
    instance ConceptStructure Pattern where
     concs     p = concs (ptgns p)   `uni` concs (ptdcs p)   `uni` concs (ptrls p)    `uni` concs (ptkds p)
-    mors      p = mors  (ptrls p) `uni` mors (ptkds p) `uni` mors [makeRelation d | d<-ptdcs p, (not.null) (multiplicities d)]
+--    mors      p = mors  (ptrls p) `uni` mors (ptkds p) `uni` mors [makeRelation d | d<-ptdcs p, (not.null) (multiplicities d)]
     morlist   p = morlist (ptrls p)++morlist (ptkds p)
     mp1Exprs  p = mp1Exprs (ptrls p) `uni` mp1Exprs (ptkds p)
 
    instance ConceptStructure Process where
     concs     p = concs (prcGens p) `uni` concs (prcDcls p) `uni` concs (prcRules p) `uni` concs (prcKds p)
-    mors      p = mors  (prcRules p) `uni` mors (prcKds p) `uni` mors [makeRelation d | d<-prcDcls p, (not.null) (multiplicities d)]
-    morlist   p = morlist (prcRules p)++morlist (prcKds p)
+ --   mors      p = mors  (prcRules p) `uni` mors (prcKds p) `uni` mors [makeRelation d | d<-prcDcls p, (not.null) (multiplicities d)]
+    morlist   p = morlist (prcRules p)++morlist (prcKds p)++[r | (_,r) <- prcRRels p]
     mp1Exprs  p = mp1Exprs (prcRules p) `uni` mp1Exprs (prcKds p)
 
 
@@ -137,7 +147,7 @@ where
 
    instance ConceptStructure Relation where
     concs rel   = let d=makeDeclaration rel in nub [source d,target d]
-    mors rel    = [rel]
+--    mors rel    = [rel]
     morlist rel = [rel]
     mp1Exprs _   = fatal 142 "mp1Exprs not allowed on Relation"
                     

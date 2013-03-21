@@ -121,7 +121,8 @@ chpNatLangReqs lev fSpec flags =
                 , let pps = [p | p <- purposesDefinedIn fSpec (language flags) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ rel | d@Sgn{decusr=True} <- declarations fSpec
+              = [ rel | d <- declarations fSpec
+                , decusr d
                 , let rel = makeRelation d
                 , not . null $ purposesDefinedIn fSpec (language flags) rel
                 ]
@@ -145,8 +146,8 @@ chpNatLangReqs lev fSpec flags =
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ r | r@Rel{reldcl=d} <- still2doRelsPre
                                , decpat d == name thm ||         -- all relations declared in this theme, combined
-                                 r `eleM` mors thisThemeRules] -- all relations used in this theme's rules
-           rels2PrintLater   = still2doRelsPre >- thisThemeRels
+                                 makeDeclaration r `eleM` mors thisThemeRules] -- all relations used in this theme's rules
+           rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [sameDecl x y | y <- thisThemeRels ]] 
            thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
            stuff2PrintLater  = (concs2PrintLater, rels2PrintLater, rules2PrintLater)
@@ -388,7 +389,7 @@ showKeyAtom fSpec mRel cncpt atom =
     []    -> atom
     key:_ -> case mRel of
               Nothing -> concatMap showKeySegment (kdats key)
-              Just mr -> if (not.null) [() | KeyExp objDef <- kdats key, ERel r _<-[objctx objDef], r==mr]
+              Just mr -> if (not.null) [() | KeyExp objDef <- kdats key, ERel r _<-[objctx objDef], sameDecl r mr]
                          then atom
                          else concatMap showKeySegment (kdats key)
              -- if we are showing one of the key relations, don't expand the key
