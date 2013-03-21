@@ -29,9 +29,9 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       Pred String String             |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
       PlK0 PredLogic                 |
       PlK1 PredLogic                 |
-      R PredLogic Relation PredLogic |
+      R PredLogic Declaration PredLogic |
       Atom String                    |
-      Funs String [Relation]         |
+      Funs String [Declaration]         |
       Dom Expression Var             |
       Cod Expression Var          deriving Eq
 
@@ -98,7 +98,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                           String,
                                           String,
                                           String,
-                                          Relation -> String -> String -> String,
+                                          Declaration -> String -> String -> String,
                                           a -> String -> String,
                                           String -> [(String, A_Concept)] -> String,
                                           String,
@@ -111,12 +111,11 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                 English -> ("For each",  "There exists", implies, "is equivalent to",  "or", "and", "*", "+", "not",  rel, fun,  langVars , "\n  ", " ", apply, "is element of")
                 Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply, "is element van")
                where
-                  rel r = apply (makeDeclaration r)
+                  rel r = apply r
                   fun r x' = texOnly_Id(name r)++"("++x'++")"
                   implies antc cons = case l of 
                                         English  -> "If "++antc++", then "++cons
                                         Dutch    -> "Als "++antc++", dan "++cons
-                  apply :: Declaration -> String -> String -> String
                   apply decl d c =
                      case decl of
                        Sgn{}     -> if null (prL++prM++prR) 
@@ -169,8 +168,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                 , String                                    -- kleene *
                 , String                                    -- kleene +
                 , String                                    -- notP
-                , Relation -> String -> String -> String    -- relP
-                , Relation -> String -> String              -- funP
+                , Declaration -> String -> String -> String    -- relP
+                , Declaration -> String -> String              -- funP
                 , String -> [(String, A_Concept)] -> String -- showVarsP
                 , String                                    -- breakP
                 , String                                    -- spaceP
@@ -199,8 +198,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                             r:ms  -> if isIdent r then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
                   Dom expr (x,_)      -> x++el++funP (makeRel "dom") (showADL expr)
                   Cod expr (x,_)      -> x++el++funP (makeRel "cod") (showADL expr)
-                  R pexpr rel pexpr'  -> case (pexpr,pexpr') of
-                                            (Funs l [] , Funs r [])  -> wrap i 5 (apply (makeDeclaration rel) l r)
+                  R pexpr dec pexpr'  -> case (pexpr,pexpr') of
+                                            (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
 {-
                                             (Funs l [f], Funs r [])  -> wrap i 5 (if isIdent rel
                                                                                   then apply (makeDeclaration f) l r
@@ -209,16 +208,15 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                                                                   then apply (makeDeclaration f) l r
                                                                                   else apply (makeDeclaration rel) l (funP f r))
 -}
-                                            (lhs,rhs)                -> wrap i 5 (relP rel (charshow 5 lhs) (charshow 5 rhs))
+                                            (lhs,rhs)                -> wrap i 5 (relP dec (charshow 5 lhs) (charshow 5 rhs))
                   Atom atom           -> "'"++atom++"'"
                   PlK0 rs             -> wrap i 6 (charshow 6 rs++k0P)
                   PlK1 rs             -> wrap i 7 (charshow 7 rs++k1P)
                   Not rs              -> wrap i 8 (spaceP++notP++charshow 8 rs)
                   Pred nm v'          -> nm++"{"++v'++"}"
-         makeRel :: String -> Relation -- This function exists solely for the purpose of dom and cod
+         makeRel :: String -> Declaration -- This function exists solely for the purpose of dom and cod
          makeRel str
-             = makeRelation
-                  Sgn { decnm   = str
+             =    Sgn { decnm   = str
                       , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
                       , decprps = [Uni,Tot]
                       , decprps_calc = Nothing
@@ -228,8 +226,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                       , decMean = fatal 223 "Do not refer to decMean of this dummy relation"
                       , decConceptDef = Nothing
                       , decfpos = OriginUnknown
-                      , deciss  = fatal 226 "Do not refer to deciss of this dummy relation"
-                      , decusr  = False
+                      , decissX  = fatal 226 "Do not refer to deciss of this dummy relation"
+                      , decusrX  = False
                       , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
                       , decplug = fatal 229 "Do not refer to decplug of this dummy relation"
                       }
@@ -277,16 +275,16 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f _ e@(ERel rel _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
-               Flr  -> R (Funs a [rel]) (I tv) (Funs b [])
-               Frl  -> R (Funs a []) (I sv) (Funs b [rel])
-               Rn   -> R (Funs a []) rel (Funs b [])
+               Flr  -> R (Funs a [makeDeclaration rel]) (makeDeclaration(I tv)) (Funs b [])
+               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [makeDeclaration rel])
+               Rn   -> R (Funs a []) (makeDeclaration rel) (Funs b [])
                Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
       f _ e@(EFlp (ERel rel _) _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
-               Flr  -> R (Funs a [rel]) (I tv) (Funs b [])
-               Frl  -> R (Funs a []) (I sv) (Funs b [rel])
-               Rn   -> R (Funs b []) rel (Funs a [])
+               Flr  -> R (Funs a [makeDeclaration rel]) (makeDeclaration(I tv)) (Funs b [])
+               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [makeDeclaration rel])
+               Rn   -> R (Funs b []) (makeDeclaration rel) (Funs a [])
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
       f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
       f _ (EMp1 atom _) _             = Atom atom
@@ -387,8 +385,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
       relFun exclVars lhs e rhs
         = case e of
-            ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-mors t']) rel (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t'])
-            EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t']) rel (Funs (fst sv) [r | t'<-        lhs, r<-mors t'])
+            ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-mors t']) (makeDeclaration rel) (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t'])
+            EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t']) (makeDeclaration rel) (Funs (fst sv) [r | t'<-        lhs, r<-mors t'])
             EMp1 atom         _ -> \_ _->Atom atom
             EFlp EMp1{}       _ -> relFun exclVars lhs e rhs
             _                   -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       

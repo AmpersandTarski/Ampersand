@@ -76,7 +76,7 @@ where
                              dCls = eqCl to [d | d<-ds, isDo d]
                              long :: [[PAclause]]
                              long = [cl | cl<-dCls, length cl>1]
-                             to d@Do{} = (paSrt d,paTo d)
+                             to d@Do{} = (paSrt d,(makeDeclaration.paTo) d)
                              to _        = fatal 74 "illegal call of to(d)"
      norm (New c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}

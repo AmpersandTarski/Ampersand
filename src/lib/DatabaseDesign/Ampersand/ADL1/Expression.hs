@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE TypeSynonymInstances, OverlappingInstances #-}
+{-# LANGUAGE TypeSynonymInstances , OverlappingInstances #-}
 module DatabaseDesign.Ampersand.ADL1.Expression (
                        subst,subsi
                       ,foldlMapExpression,foldrMapExpression
@@ -31,7 +31,7 @@ subst (rel,f) = subs
        subs (ECpl e     sgn) = ECpl (subs e)        sgn
        subs (EBrk e)         = EBrk (subs e)
        subs (ETyp e     sgn) = ETyp (subs e)        sgn
-       subs e@(ERel r   _  ) | rel==r    = f
+       subs e@(ERel r   _  ) | sameDecl rel r    = f
                              | otherwise = e
        subs e@EMp1{}         = e
 

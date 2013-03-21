@@ -88,14 +88,18 @@ chpDiagnosis fSpec flags
               | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
               | otherwise                      = []
       maintained  -- (r,rul) `elem` maintained means that r can maintain rul without restrictions.
-       = [ (r,rul)
-         | (r,rul)<-fRoleRuls fSpec
-         , and [(r,rel) `elem` fRoleRels fSpec | rel<-mors rul]
-         ]
-      dead -- (r,rul) `elem` maintained means that r cannot maintain rul without restrictions.
-       = [ (r,rul)
-         | (r,rul)<-fRoleRuls fSpec
-         , (not.or) [(r,rel) `elem` fRoleRels fSpec | rel<-mors rul]
+        = [ (role,rul)
+          | (role,rul)<-fRoleRuls fSpec
+          , and (map (mayEdit role) (mors rul))
+          ]
+      mayEdit :: String -> Declaration -> Bool
+      mayEdit role decl = decl `elem` map makeDeclaration ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec))) 
+      roleFilter :: String -> (String,a) -> Bool
+      roleFilter role roleRel = role == fst roleRel
+      dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
+       = [ (role,rul)
+         | (role,rul)<-fRoleRuls fSpec
+         , (not.or) (map (mayEdit role) (mors rul))
          ]
 
   roleomissions :: [Block]
@@ -178,7 +182,9 @@ chpDiagnosis fSpec flags
                          [ Str " is not documented."
                        ] ]
      where missing = [(Math InlineMath . showMath) (ERel r (sign r))  -- ERel is always typeable, so showMathDamb may be used.
-                     | r@Rel{} <-if null (themes fSpec)
+                     | r@Rel{} <-
+                              map makeRelation $
+                                 if null (themes fSpec)
                                  then mors fSpec
                                  else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                                       mors [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
@@ -249,11 +255,11 @@ chpDiagnosis fSpec flags
                          | d@Sgn{} <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d
-                         , d `notElem` (nub . map makeDeclaration . mors . udefrules) fSpec
+                         , d `notElem` (mors . udefrules) fSpec
                          ]
            pats  = [ pat | pat<-patterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
-                         , (not.null) (declarations pat>-map makeDeclaration (mors pat)) ]
+                         , (not.null) (declarations pat>-mors pat) ]
            pictsWithUnusedRels = [makePicture flags fSpec Rel_CG pat | pat<-pats ]
 
   missingRules :: [Block]
