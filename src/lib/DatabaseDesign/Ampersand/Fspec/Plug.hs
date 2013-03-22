@@ -58,8 +58,8 @@ instance FPAble PlugInfo where
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
   concs   (ExternalPlug obj)  = concs   obj
-  mors    (InternalPlug psql) = mors    psql
-  mors    (ExternalPlug obj)  = mors    obj
+--  mors    (InternalPlug psql) = mors    psql
+--  mors    (ExternalPlug obj)  = mors    obj
   morlist (InternalPlug psql) = morlist psql
   morlist (ExternalPlug obj)  = morlist obj
   mp1Exprs (InternalPlug psql) = mp1Exprs psql
@@ -433,7 +433,7 @@ instance ConceptStructure SqlField where
 
 instance ConceptStructure PlugSQL where
   concs     p = concs   (plugFields p)
-  mors      p = mors    (plugFields p)
+--  mors      p = mors    (plugFields p)
   morlist   p = morlist (plugFields p)
   mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
 

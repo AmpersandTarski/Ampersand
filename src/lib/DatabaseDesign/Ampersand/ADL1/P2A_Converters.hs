@@ -733,7 +733,6 @@ instance Expr P_KeyDef where
                         | P_KeyExp obj <- kd_ats k
                         , let (dm,t) = mSpecific (dom x) (dom (obj_ctx obj)) (obj_ctx obj)
                         ]
-    where 
 
 instance Expr P_Interface where
  terms ifc = terms (ifc_Obj ifc)

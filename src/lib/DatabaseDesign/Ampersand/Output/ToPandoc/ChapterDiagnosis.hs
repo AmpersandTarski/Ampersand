@@ -90,7 +90,7 @@ chpDiagnosis fSpec flags
       maintained  -- (r,rul) `elem` maintained means that r can maintain rul without restrictions.
         = [ (role,rul)
           | (role,rul)<-fRoleRuls fSpec
-          , and (map (mayEdit role) (mors rul))
+          , and (map (mayEdit role) (declsUsedIn rul))
           ]
       mayEdit :: String -> Declaration -> Bool
       mayEdit role decl = decl `elem` map makeDeclaration ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec))) 
@@ -99,7 +99,7 @@ chpDiagnosis fSpec flags
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role,rul)
          | (role,rul)<-fRoleRuls fSpec
-         , (not.or) (map (mayEdit role) (mors rul))
+         , (not.or) (map (mayEdit role) (declsUsedIn rul))
          ]
 
   roleomissions :: [Block]
@@ -161,7 +161,7 @@ chpDiagnosis fSpec flags
    = case (language flags, missing) of
       (Dutch,[])  -> [Para 
                        [Str "Alle relaties in dit document zijn voorzien van een reden van bestaan (purpose)."]
-                     | (not.null.mors.udefrules) fSpec]
+                     | (not.null.declsUsedIn.udefrules) fSpec]
       (Dutch,[r]) -> [Para 
                        [ Str "De reden waarom relatie ", r
                        , Str " bestaat wordt niet uitgelegd."
@@ -172,7 +172,7 @@ chpDiagnosis fSpec flags
                      ] ]
       (English,[])  -> [Para 
                          [Str "All relations in this document have been provided with a purpose."]
-                       | (not.null.mors.udefrules) fSpec]
+                       | (not.null.declsUsedIn.udefrules) fSpec]
       (English,[r]) -> [Para 
                          [ Str "The purpose of relation ", r
                          , Str " remains unexplained."
@@ -185,9 +185,9 @@ chpDiagnosis fSpec flags
                      | r@Rel{} <-
                               map makeRelation $
                                  if null (themes fSpec)
-                                 then mors fSpec
-                                 else mors [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
-                                      mors [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+                                 then declsUsedIn fSpec
+                                 else declsUsedIn [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+                                      declsUsedIn [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
                      , not (isIdent r)
                      , null (purposesDefinedIn fSpec (language flags) r)
                      ]
@@ -198,7 +198,7 @@ chpDiagnosis fSpec flags
    = ( ( case (language flags, notUsed) of
           (Dutch,[])  -> [Para 
                            [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
-                         | (not.null.mors.udefrules) fSpec]
+                         | (not.null.declsUsedIn.udefrules) fSpec]
           (Dutch,[r]) -> [Para 
                            [ Str "De relatie ", r
                            , Str " wordt in geen enkele regel gebruikt. "
@@ -209,7 +209,7 @@ chpDiagnosis fSpec flags
                          ] ]
           (English,[])  -> [Para 
                              [Str "All relations in this document are being used in one or more rules."]
-                           | (not.null.mors.udefrules) fSpec]
+                           | (not.null.declsUsedIn.udefrules) fSpec]
           (English,[r]) -> [Para 
                              [ Str "Relation ", r
                              , Str " is not being used in any rule. "
@@ -255,11 +255,11 @@ chpDiagnosis fSpec flags
                          | d@Sgn{} <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d
-                         , d `notElem` (mors . udefrules) fSpec
+                         , d `notElem` (declsUsedIn . udefrules) fSpec
                          ]
            pats  = [ pat | pat<-patterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
-                         , (not.null) (declarations pat>-mors pat) ]
+                         , (not.null) (declarations pat>-declsUsedIn pat) ]
            pictsWithUnusedRels = [makePicture flags fSpec Rel_CG pat | pat<-pats ]
 
   missingRules :: [Block]

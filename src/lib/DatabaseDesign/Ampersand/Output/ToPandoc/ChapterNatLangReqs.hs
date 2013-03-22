@@ -146,7 +146,7 @@ chpNatLangReqs lev fSpec flags =
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
            thisThemeRels     = [ r | r@Rel{reldcl=d} <- still2doRelsPre
                                , decpat d == name thm ||         -- all relations declared in this theme, combined
-                                 makeDeclaration r `eleM` mors thisThemeRules] -- all relations used in this theme's rules
+                                 makeDeclaration r `eleM` declsUsedIn thisThemeRules] -- all relations used in this theme's rules
            rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [sameDecl x y | y <- thisThemeRels ]] 
            thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
