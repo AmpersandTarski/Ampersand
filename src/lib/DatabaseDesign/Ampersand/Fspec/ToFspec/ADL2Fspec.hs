@@ -54,7 +54,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
-                 , allDeclarations = mors context
+                 , allDeclarations = nub [dcl | Rel{reldcl=dcl} <- morlist context]
                  , allRelations = nub (morlist context)
                  , allConcepts  = concs context
                  , fsisa        = isas
@@ -270,7 +270,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- Each interface gets all attributes that are required to create and delete the object.
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
-           [Ifc { ifcParams = [ makeRelation d | d<-mors objattributes, not (isIdent d)]
+           [Ifc { ifcParams = nub [ r | r<-morlist objattributes, not (isIdent r)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
@@ -364,14 +364,14 @@ while maintaining all invariants.
                  } in s
     where
 -- declarations that may be affected by an edit action within the transaction
-        decls        = mors rul
+        decls        = declsUsedIn rul
 -- the quads that induce automated action on an editable relation.
 -- (A quad contains the conjunct(s) to be maintained.)
 -- Those are the quads that originate from invariants.
         invQs       = [q | q@(Quad _ ccrs)<-vquads fSpec, (not.isSignal.cl_rule.qClauses) q
-                         , (not.null) ((nub.mors.cl_rule) ccrs `isc` decls)]
+                         , (not.null) ((declsUsedIn.cl_rule) ccrs `isc` decls)]
 -- a relation affects another if there is a quad (i.e. an automated action) that links them
-        affectPairs = [(qRel q,[q],makeRelation d) | q<-invQs, d<-(mors.cl_rule.qClauses) q]
+        affectPairs = [(qRel q,[q],makeRelation d) | q<-invQs, d<-(declsUsedIn.cl_rule.qClauses) q]
 -- the relations affected by automated action
 --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
 ----------------------------------------------------
@@ -399,7 +399,7 @@ while maintaining all invariants.
    -- The rule is carried along for traceability.
    quads :: Options -> (Relation->Bool) -> [Rule] -> [Quad]
    quads _ visible rs
-    = [ Quad (makeRelation d) (Clauses [ (horn2expr hornClause,allShifts hornClause)
+    = [ Quad r (Clauses [ (horn2expr hornClause,allShifts hornClause)
                         | hornClause<-conjuncts rule
       --                , (not.null.lambda Ins (ERel r ??)) hornClause  -- causes infinite loop
       --                , not (checkMono hornClause Ins r)         -- causes infinite loop
@@ -407,7 +407,7 @@ while maintaining all invariants.
       --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
                         ]
                         rule)
-      | rule<-rs, d<-mors rule, visible (makeRelation d)
+      | rule<-rs, r<-nub (morlist rule), visible r
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
@@ -535,7 +535,7 @@ while maintaining all invariants.
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
-                                , makeDeclaration rel `elem` mors frExpr
+                                , makeDeclaration rel `elem` declsUsedIn frExpr
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
                                                else conjNF (notCpl sgn negs)

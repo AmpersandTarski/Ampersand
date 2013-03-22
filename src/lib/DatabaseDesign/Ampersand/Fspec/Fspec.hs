@@ -167,7 +167,7 @@ instance Show Finterface where
 
 instance ConceptStructure Finterface where
   concs     ifc = concs (fsv_ifcdef ifc)
-  mors      ifc = mors (fsv_ifcdef ifc)
+--  mors      ifc = mors (fsv_ifcdef ifc)
   morlist   ifc = morlist (fsv_ifcdef ifc)
   mp1Exprs  _ = fatal 160 "do not use mp1Exprs from an Finterface"
 

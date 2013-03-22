@@ -252,7 +252,7 @@ where
                                       [Str ("Computing the violations means to negate the conjunct: "++showADL (notClau)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notClau/=viols] ++
                                       [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (notClau .\/. clause')), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
-                                    | decl <-nub (mors r)
+                                    | decl <-declsUsedIn r
                                     , ev<-[Ins,Del]
                                     , let rel     = makeRelation decl
                                     , let ex'     = subst (rel, actSem ev rel (delta (sign rel))) expr
@@ -265,7 +265,7 @@ where
                                     , let frExpr  = if ev==Ins
                                                     then conjNF negs
                                                     else conjNF poss
-                                    , decl `elem` mors frExpr
+                                    , decl `elem` declsUsedIn frExpr
                         --            , let toExpr = if ev==Ins
                         --                           then conjNF poss
                         --                           else conjNF (notCpl negs)
@@ -520,7 +520,7 @@ Rewrite rules:
                       | length (eqCl first xss)==1 = remainders xss [tail prf | prf<-xss]
                       | otherwise                  = xss
      isConst :: (ConceptStructure a, ConceptStructure b) => a->b->Bool
-     isConst e f = null (mors e `isc` mors f)
+     isConst e f = null (declsUsedIn e `isc` declsUsedIn f)
      isVar :: (ConceptStructure a, ConceptStructure b) => a->b->Bool
      isVar e f   = not (isConst e f)
      derivtext :: InsDel -> String -> Expression -> Expression -> String

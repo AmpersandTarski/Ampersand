@@ -319,8 +319,8 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
        daBasics [d | d<-declarations fSpec
                    , decusr d
                    , (  decpat d `elem` relevantThemes
-                     || d `elem` [r | pat<-patterns fSpec  , name pat `elem` relevantThemes, r@Sgn{}<-mors pat]
-                     || d `elem` [r | prc<-vprocesses fSpec, name prc `elem` relevantThemes, r@Sgn{}<-mors (fpProc prc)]
+                     || d `elem` [r | pat<-patterns fSpec  , name pat `elem` relevantThemes, r@Sgn{}<-declsUsedIn pat]
+                     || d `elem` [r | prc<-vprocesses fSpec, name prc `elem` relevantThemes, r@Sgn{}<-declsUsedIn (fpProc prc)]
                      )
                 ]
     
@@ -329,9 +329,10 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
     <> technicalDataModelBlocks
     <> horizontalRule 
 
-  remainingRels = if null (themes fSpec)
-                  then mors fSpec                                                                            >- [r | p<-plugInfos fSpec, r<-mors p]
-                  else [decl | decl<-mors fSpec, d@Sgn{}<-[decl], decpat d `elem` themes fSpec] >- [r | p<-plugInfos fSpec, r<-mors p]
+  remainingRels = (if null (themes fSpec)
+                   then declsUsedIn fSpec
+                   else [d | d@Sgn{}<-declsUsedIn fSpec, decpat d `elem` themes fSpec]
+                  ) >- [r | p<-plugInfos fSpec, r<-declsUsedIn p]
 
 
 
@@ -605,7 +606,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
             | length hMults>0 ]
        where
         hMults :: [Declaration]
-        hMults  = [decl | decl@Sgn{}<- mors fSpec, isEndo decl
+        hMults  = [decl | decl@Sgn{}<- declsUsedIn fSpec, isEndo decl
                         , null (themes fSpec) || decpat decl `elem` themes fSpec]
     keyDocumentation
      = case (keyDefs fSpec, language flags) of
@@ -702,7 +703,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of
-           English -> case [r | r<-invariants fSpec, null (mors r >- mors p)] of
+           English -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
                        []  -> []
                        [r] -> [ Para [ Str "Within this data set, the following integrity rule shall be true at all times. " ]
                               , if showPredExpr flags
@@ -714,7 +715,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath r]] | r<-rs ]
                               ]
-           Dutch   -> case [r | r<-invariants fSpec, null (mors r >- mors p)] of
+           Dutch   -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
                        []  -> []
                        [r] -> [ Para [ Str "Binnen deze gegevensverzameling dient de volgende integriteitsregel te allen tijde waar te zijn. " ]
                               , if showPredExpr flags
@@ -729,7 +730,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                               ]
        plugKeydefs
         = case language flags of
-           English -> case [k | k<-keyrules fSpec, null (mors k >- mors p)] of
+           English -> case [k | k<-keyrules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set contains one key. " ]
                               , if showPredExpr flags
@@ -742,7 +743,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]]
                                                 | s<-ss ]
                               ]
-           Dutch   -> case [k | k<-keyrules fSpec, null (mors k >- mors p)] of
+           Dutch   -> case [k | k<-keyrules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ] 
                               , if showPredExpr flags
@@ -755,7 +756,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
        plugSignals
-        = case (language flags, [r | r<-vrules fSpec, isSignal r , null (mors r >- mors p)]) of
+        = case (language flags, [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)]) of
     --       English -> case [r | r<-vrules fSpec, isSignal r , null (mors r >- mors p)] of
             (_      , [])  -> []
             (English, [s]) -> [ Para [ Str "This data set generates one process rule. " ]
