@@ -152,7 +152,7 @@ rel2fld kernel
                  , entry<-if length cl==1
                           then [(rel,niceidname rel++name (source rel)) |rel<-cl]
                           else [(rel,niceidname rel++show i)|(rel,i)<-zip cl [(0::Int)..]]]
-       niceidname rel = if (name.head.mors) rel == "I" then name(target rel) else (name.head.mors) rel
+       niceidname rel = if (name.head.declsUsedIn) rel == "I" then name(target rel) else (name.head.declsUsedIn) rel
    --in a wide table, m can be total, but the field for its target may contain NULL values,
    --because (why? ...)
    --A kernel field may contain NULL values if
@@ -309,7 +309,7 @@ makeEntityTables _ {-flags-} allRels exclusions
     attRels :: [Expression]
     attRels = [     ERel r (sign (makeDeclaration r))  | r<-rs, isUni r, not (isInj r && isSur r)] ++
               [flp (ERel r (sign (makeDeclaration r))) | r<-rs, isInj r, not (isUni r && isTot r)]
-              where rs = [makeRelation decl | decl <- allDcls>-mors exclusions, not (isIdent decl)]
+              where rs = [makeRelation decl | decl <- allDcls>-declsUsedIn exclusions, not (isIdent decl)]
 
 
 -----------------------------------------

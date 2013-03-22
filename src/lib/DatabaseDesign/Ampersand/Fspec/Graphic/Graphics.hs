@@ -86,7 +86,7 @@ instance Dotable A_Concept where
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts  = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
           cpts' = concs rs
-          rels  = [r | r<-mors rs   -- the use of "mors" restricts relations to those actually used in rs
+          rels  = [r | r<-declsUsedIn rs   -- the use of "declsUsedIn" restricts relations to those actually used in rs
                      , not (isProp r)    -- r is not a property
                      ]
    makePicture flags fSpec variant x =
@@ -103,7 +103,7 @@ instance Dotable Pattern where
           gs   = fsisa fSpec 
           cpts = let cpts' = concs pat `uni` concs rels
                  in cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
-          rels = [r | r@Sgn{}<-mors pat
+          rels = [r | r@Sgn{}<-declsUsedIn pat
                     , not (isProp r)    -- r is not a property
                     ]
           -- extra rels to connect concepts without rels in this picture, but with rels in the fspec
@@ -146,7 +146,7 @@ instance Dotable FProcess where
           gs    = fsisa fSpec 
           cpts  = nub(cpts' ++ [g |(g,_)<-idgs] ++ [s |(_,s)<-idgs])
           cpts' = concs (fpProc fproc)
-          rels  = [r | r@Sgn{}<-mors (fpProc fproc), decusr r
+          rels  = [r | r@Sgn{}<-declsUsedIn (fpProc fproc), decusr r
                      , not (isProp r)    -- r is not a property
                      ]
    makePicture flags _ _ x =
@@ -160,14 +160,14 @@ instance Dotable Activity where
          where
          -- involve all rules from the specification that are affected by this interface
           rs         = [r | r<-udefrules fSpec, affected r]
-          affected r = not (null (mors r `isc` mors ifc))
+          affected r = not (null (declsUsedIn r `isc` declsUsedIn ifc))
          -- involve all isa links from concepts touched by one of the affected rules
           idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           gs   = fsisa fSpec
          -- involve all concepts involved either in the affected rules or in the isa-links
           cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
           cpts'  = concs rs
-          rels = [r | r@Sgn{}<-mors ifc, decusr r
+          rels = [r | r@Sgn{}<-declsUsedIn ifc, decusr r
                     , not (isProp r)    -- r is not a property
                     ]
    makePicture flags fSpec variant x =
@@ -184,7 +184,7 @@ instance Dotable Rule where
      idgs = [(s,g) | (s,g)<-fsisa fSpec
                    , g `elem` concs r || s `elem` concs r]  --  all isa edges
      cpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
-     rels = [d | d@Sgn{}<-mors r, decusr d
+     rels = [d | d@Sgn{}<-declsUsedIn r, decusr d
                , not (isProp d)    -- d is not a property
                ]
    makePicture flags fSpec variant x =

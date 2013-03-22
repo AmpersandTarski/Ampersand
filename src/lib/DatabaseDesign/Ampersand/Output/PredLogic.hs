@@ -385,8 +385,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
       relFun exclVars lhs e rhs
         = case e of
-            ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-mors t']) (makeDeclaration rel) (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t'])
-            EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-mors t']) (makeDeclaration rel) (Funs (fst sv) [r | t'<-        lhs, r<-mors t'])
+            ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t']) (makeDeclaration rel) (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t'])
+            EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t']) (makeDeclaration rel) (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t'])
             EMp1 atom         _ -> \_ _->Atom atom
             EFlp EMp1{}       _ -> relFun exclVars lhs e rhs
             _                   -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       

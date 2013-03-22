@@ -342,7 +342,7 @@ where
        )++        
        (if null (vrels fspec)     then "" else
         "\n -- *** Declarations (total: "++(show.length.vrels) fspec++" declarations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vrels fspec]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-allDeclarations fspec]++"\n"
        ) ++
        (if null (vkeys fspec)     then "" else
         "\n -- *** Keys (total: "++(show.length.vkeys) fspec++" keys) ***: "++
@@ -387,15 +387,19 @@ where
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
        )++
-       (if null (allDeclarations fspec) then "" else
+       (if null (allRelations fspec) then "" else
         "\n -- *** Relations (total: "++(show.length.allRelations) fspec++" relations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing origin) (allRelations fspec)]++"\n"
---       )++
---       (if null (allConcepts fspec) then "" else
---        "\n -- *** I[Concept] for each concept not in allrelations  ***: "++
---        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-map I (allConcepts fspec), x `notElem` (allDeclarations fspec)]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing originOF) (allRelations fspec)]++"\n"
+       )++
+       (if null (allConcepts fspec) then "" else
+        "\n -- *** I[Concept] for each concept ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-map I (allConcepts fspec)]++"\n"
        )
-           where indentA = indent ++"                      "
+           where originOF rel =
+                   case rel of
+                     Rel{} -> Just $ relpos rel
+                     _     -> Nothing
+                 indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
                  showbinding :: (Declaration,String) -> String
@@ -823,7 +827,7 @@ where
        = case rel of
             Rel{} -> "Rel "++show (name rel)++" ("++showHS flags "" (origin rel)++")"
                          ++" "++showHSName (reldcl rel)
-            I{}   -> "I ("++showHSName (rel1typ  rel)++")"
+            I{}   -> "I "++showHSName (rel1typ  rel)
             V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"
 
 

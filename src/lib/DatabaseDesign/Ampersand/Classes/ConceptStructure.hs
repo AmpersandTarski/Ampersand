@@ -15,8 +15,8 @@ where
 
    class ConceptStructure a where
     concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
-    mors ::     a -> [Declaration]        -- ^ the set of all relations used within data structure a,
-    mors        a = nub (map makeDeclaration (morlist a))
+    declsUsedIn ::     a -> [Declaration]        -- ^ the set of all relations used within data structure a,
+    declsUsedIn        a = nub (map makeDeclaration (morlist a))
     morlist ::  a -> [Relation]        -- ^ the set of all relations used within data structure a
                                        --   (the difference with mors is that morlist is not unique wrt name and signature)
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
@@ -36,7 +36,7 @@ where
 
    instance ConceptStructure a => ConceptStructure (Maybe a) where
     concs    ma = maybe [] concs ma
-    mors     ma = maybe [] mors ma
+--    mors     ma = maybe [] mors ma
     morlist  ma = maybe [] morlist ma
     mp1Exprs ma = maybe [] mp1Exprs ma
  
@@ -67,7 +67,7 @@ where
 
    instance ConceptStructure KeyDef where
     concs     kd = [kdcpt kd] `uni` concs [objDef | KeyExp objDef <- kdats kd]
-    mors      kd = mors                   [objDef | KeyExp objDef <- kdats kd]
+--    mors      kd = mors                   [objDef | KeyExp objDef <- kdats kd]
     morlist   kd = morlist                [objDef | KeyExp objDef <- kdats kd]
     mp1Exprs  kd = mp1Exprs               [objDef | KeyExp objDef <- kdats kd]
 
@@ -105,7 +105,7 @@ where
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]
-    mors      _      = []
+--    mors      _      = []
     morlist   _      = []
     mp1Exprs  _      = []
 
@@ -119,8 +119,8 @@ where
    instance ConceptStructure SubInterface where
     concs (Box objs)         = concs objs 
     concs (InterfaceRef _)   = [] 
-    mors (Box objs)          = mors objs 
-    mors (InterfaceRef _)    = [] 
+--    mors (Box objs)          = mors objs 
+--    mors (InterfaceRef _)    = [] 
     morlist (Box objs)       = morlist objs 
     morlist (InterfaceRef _) = [] 
     mp1Exprs (Box objs)       = mp1Exprs objs 
@@ -141,7 +141,7 @@ where
 
    instance ConceptStructure Interface where
     concs     ifc = concs (ifcObj ifc)
-    mors      ifc = mors (ifcObj ifc)
+--    mors      ifc = mors (ifcObj ifc)
     morlist   ifc = morlist (ifcObj ifc)
     mp1Exprs  ifc = mp1Exprs (ifcObj ifc)
 
@@ -153,16 +153,29 @@ where
                     
    instance ConceptStructure Declaration where
     concs d   = concs (sign d)
-    mors _    = []
+--    mors _    = []
     morlist _ = []
     mp1Exprs _ = fatal 148 "mp1Exprs not allowed on Declaration"
 
    instance ConceptStructure Rule where
-    concs r   = concs (rrexp r)
-    mors r    = mors (rrexp r)
-    morlist r = morlist (rrexp r)
+    concs r   = concs (rrexp r) ++ concs (rrviol r)
+--    mors r    = mors (rrexp r) `uni` mors (rrviol r)
+    morlist r = morlist (rrexp r) ++ morlist (rrviol r)
     mp1Exprs r = mp1Exprs (rrexp r)
-    
+   
+   instance ConceptStructure PairView where
+    concs (PairView ps) = concs ps
+    morlist (PairView ps) = morlist ps
+    mp1Exprs (PairView ps) = mp1Exprs ps
+     
+   instance ConceptStructure PairViewSegment where
+    concs    (PairViewText _)  = []
+    concs    (PairViewExp _ x) = concs x
+    morlist  (PairViewText _)  = []
+    morlist  (PairViewExp _ x) = morlist x
+    mp1Exprs (PairViewText _)  = []
+    mp1Exprs (PairViewExp _ x) = mp1Exprs x
+     
    instance ConceptStructure A_Gen where
     concs g     = nub [gengen g,genspc g]  
 --    mors g      = []                         
