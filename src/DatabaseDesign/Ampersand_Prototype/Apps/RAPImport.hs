@@ -312,7 +312,7 @@ makeRAPPops fSpec flags usrfiles pics
    getisa c = concat [isanm island | island<-islands, c `elem` island]
    --populate relrels, relrelnm, and relreldcl for expressions
    relrels :: [(IdentifierNamespace, Expression)] -> P_Population
-   relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm (sign d)) | (ns,expr)<-exprs, d@(Sgn{decnm=nm})<-mors expr]
+   relrels exprs = makepopu ("rels","ExpressionID","Relation")   [(expridid (ns,expr), relid nm (sign d)) | (ns,expr)<-exprs, d@(Sgn{decnm=nm})<-declsUsedIn expr]
    relrelnm, relreldcl :: [Expression] -> P_Population
-   relrelnm exprs = makepopu ("relnm","Relation","Varid")         [(relid nm (sign d), nonsid nm)         |      expr<-exprs, d@(Sgn{decnm=nm})<-mors expr]
-   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm (sign d), decid d)           |      expr<-exprs, d@(Sgn{decnm=nm})<-mors expr]
+   relrelnm exprs = makepopu ("relnm","Relation","Varid")         [(relid nm (sign d), nonsid nm)         |      expr<-exprs, d@(Sgn{decnm=nm})<-declsUsedIn expr]
+   relreldcl exprs = makepopu ("reldcl","Relation","Declaration") [(relid nm (sign d), decid d)           |      expr<-exprs, d@(Sgn{decnm=nm})<-declsUsedIn expr]

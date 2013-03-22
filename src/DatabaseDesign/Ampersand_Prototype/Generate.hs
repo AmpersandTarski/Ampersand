@@ -101,7 +101,7 @@ generateTableInfos fSpec =
     (indent 4 (blockParenthesize "(" ")" ","
          [ [showPhpStr (name decl)++" => array ('srcConcept' => "++showPhpStr (name (source decl))++", 'tgtConcept' => "++showPhpStr (name (target decl))++
                                           ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
-         | decl <- mors fSpec
+         | decl <- declsUsedIn fSpec
          , let (table,srcCol,tgtCol) = fromMaybe (fatal 61 $ "No table info for declaration " ++ show decl)
                                          (getDeclarationTableInfo fSpec decl)
          ])) ++
