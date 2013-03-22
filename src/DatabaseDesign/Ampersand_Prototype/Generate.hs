@@ -102,8 +102,13 @@ generateTableInfos fSpec =
          [ [showPhpStr (name decl)++" => array ('srcConcept' => "++showPhpStr (name (source decl))++", 'tgtConcept' => "++showPhpStr (name (target decl))++
                                           ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
          | decl <- declsUsedIn fSpec
-         , let (table,srcCol,tgtCol) = fromMaybe (fatal 61 $ "No table info for declaration " ++ show decl)
-                                         (getDeclarationTableInfo fSpec decl)
+         , let (table,srcCol,tgtCol) = fromMaybe f (getDeclarationTableInfo fSpec decl)
+               f = case decl of
+                      Sgn{} -> fatal 109 $ "No table info for declaration " ++ show decl
+                      Isn{} -> fatal 110 $ "No table info for declaration " ++ show decl ++"\n @Stef: moet deze tabel wel apart worden gegenereerd?"
+                      Iscompl{} -> fatal 111 $ "No table info for declaration " ++ show decl ++"\n What universe to use??? "
+                      Vs{} -> fatal 112 $ "No table info for declaration " ++ show decl
+                                         
          ])) ++
   [ ""
   , "$conceptTableInfo ="
