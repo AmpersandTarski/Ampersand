@@ -101,7 +101,7 @@ where
 --       assocs'    = [ OOAssoc (source s) (mults $ flp rel) "" (target t) (mults rel) relname
 --                    | InternalPlug plug@BinSQL{} <-plugInfos fSpec
 --                    , let rel=mLkp plug
---       --           , not ((isSignal.head.mors) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
+--       --           , not ((isSignal.head.declsUsedIn) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
 --                    , let relname=case rel of
 --                           ERel r _ -> name r
 --                           EFlp (ERel r _) _ -> name r
@@ -142,7 +142,7 @@ where
                     else [ OOClass c (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.morlist) r)
+       assocs'    = [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.relationsIn) r)
                     | r<-assRels]
                     where
                      mults r = let minVal = if isTot r then MinOne else MinZero
@@ -167,7 +167,7 @@ where
                     [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 -- assRels contains all relations that do not occur as attributes in classes
        assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
-       attrs rs   = [ OOAttr ((name.head.morlist) r) (name (target r)) (not(isTot r))
+       attrs rs   = [ OOAttr ((name.head.relationsIn) r) (name (target r)) (not(isTot r))
                     | r<-rs, not (isPropty r)]
        isPropty r = null([Sym,Asy]>-multiplicities r)
 

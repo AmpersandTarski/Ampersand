@@ -669,21 +669,21 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                   , f<-filter isNeg fus
                   , s<-strands f
                   , e<-[head s, flp (last s)]
-                  , r<-mors e
+                  , r<-declsUsedIn e
                 ]
       ts = nub [r | EUni fus<-clauses
                   , isIdent (EIsc [notCpl f | f<-fus, isNeg f] sgn)
                   , f<-filter isPos fus
                   , s<-strands f
                   , e<-[head s, flp (last s)]
-                  , r<-mors e
+                  , r<-declsUsedIn e
                   ]
       strands (ECps fs _) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
-      tots = [d | t<-ts, inline t, d<-map makeDeclaration (mors t)]
-      unis = [d | t<-is, inline t, d<-map makeDeclaration (mors t)]
-      surs = [d | t<-ts, not (inline t), d<-map makeDeclaration (mors t)]
-      injs = [d | t<-is, not (inline t), d<-map makeDeclaration (mors t)]
+      tots = [d | t<-ts, inline t, d<-map makeDeclaration (declsUsedIn t)]
+      unis = [d | t<-is, inline t, d<-map makeDeclaration (declsUsedIn t)]
+      surs = [d | t<-ts, not (inline t), d<-map makeDeclaration (declsUsedIn t)]
+      injs = [d | t<-is, not (inline t), d<-map makeDeclaration (declsUsedIn t)]
 -}
 
   -- daPlugs describes data sets.
@@ -757,7 +757,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                               ]
        plugSignals
         = case (language flags, [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)]) of
-    --       English -> case [r | r<-vrules fSpec, isSignal r , null (mors r >- mors p)] of
+    --       English -> case [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)] of
             (_      , [])  -> []
             (English, [s]) -> [ Para [ Str "This data set generates one process rule. " ]
                               , if showPredExpr flags

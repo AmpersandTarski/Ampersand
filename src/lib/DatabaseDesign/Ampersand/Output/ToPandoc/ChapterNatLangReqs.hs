@@ -155,7 +155,7 @@ chpNatLangReqs lev fSpec flags =
 --           thisThemeStuff = (thisThemeCdefs, thisThemeRels, [r | r<-thisThemeRules, r_usr r])
 --           thisThemeRules = [r | r<-still2doRulesPre, r_env r == name x ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
 --           rules2PrintLater = still2doRulesPre >- thisThemeRules
---           thisThemeRels = [r | r<-still2doRelsPre, r `eleM` mors thisThemeRules] `uni`            -- all relations used in this theme's rules
+--           thisThemeRels = [r | r<-still2doRelsPre, r `eleM` declsUsedIn thisThemeRules] `uni`            -- all relations used in this theme's rules
 --                           [ makeRelation d | d<-declarations x, (not.null) (multiplicities d)] -- all relations used in multiplicity rules
 --           rels2PrintLater = still2doRelsPre >- thisThemeRels
 --           thisThemeCdefs = [(c,cd) |(c,cd)<- still2doCdefsPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)]

@@ -231,7 +231,7 @@ makeEntityTables _ {-flags-} allRels exclusions
  = {- The following may be useful for debugging: 
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
-     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allRels>-mors exclusions, not (isIdent rel)]]++
+     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allRels>-declsUsedIn exclusions, not (isIdent rel)]]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
      "\nkernels:"++concat ["\n  "++show kernel ++show (nub (map target kernel))| kernel<-kernels]++
      "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]++
