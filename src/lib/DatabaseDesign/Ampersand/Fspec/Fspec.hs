@@ -84,7 +84,10 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
-  morlist   fSpec = morlist (interfaceS fSpec) ++ morlist (vrules fSpec)
+  relationsIn fSpec = foldr (uni) []
+                        [ (relationsIn.interfaceS) fSpec
+                        , (relationsIn.vrules) fSpec
+                        ]
   mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an Fspc"
   
 instance Language Fspc where
@@ -167,8 +170,7 @@ instance Show Finterface where
 
 instance ConceptStructure Finterface where
   concs     ifc = concs (fsv_ifcdef ifc)
---  mors      ifc = mors (fsv_ifcdef ifc)
-  morlist   ifc = morlist (fsv_ifcdef ifc)
+  relationsIn   ifc = relationsIn (fsv_ifcdef ifc)
   mp1Exprs  _ = fatal 160 "do not use mp1Exprs from an Finterface"
 
 
@@ -229,17 +231,14 @@ instance Identified Activity where
 --   The rule is taken along for traceability.
        
 instance ConceptStructure Activity where
- concs     act = concs (actRule act) `uni` concs (actAffect act)  -- The set of all concepts used in this Activity
--- mors      act = mors (actRule act) `uni` actAffect act           -- The set of all relations used in this Activity
- morlist   act = morlist (actRule act) ++ actAffect act           -- The list of all relations in this Activity
+ concs     act = concs (actRule act) `uni` concs (actAffect act)
+ relationsIn   act = relationsIn (actRule act) `uni` actAffect act
  mp1Exprs  act = mp1Exprs (actRule act)
 
 data Quad     = Quad
           { qRel :: Relation        -- The relation that, when affected, triggers a restore action.
           , qClauses :: Clauses         -- The clauses
-          } -- deriving Eq
-instance Eq Quad where
- q == q' = fatal 241 "Eq moet worden teruggezet voor Quad"
+          } deriving Eq
  
 instance Eq Activity where
   a == a'  = actRule a == actRule a'

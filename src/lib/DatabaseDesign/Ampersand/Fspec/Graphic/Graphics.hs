@@ -93,7 +93,7 @@ instance Dotable A_Concept where
           (makePictureObj flags (name x) PTConcept . conceptualGraph fSpec flags variant) x
 
 instance Dotable Pattern where
-   -- | The Plain_CG of pat makes a picture of at least the mors within pat; 
+   -- | The Plain_CG of pat makes a picture of at least the declsUsedIn within pat; 
    --   extended with a limited number of more general concepts;
    --  and rels to prevent disconnected concepts, which can be connected given the entire context.
    conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) cpts (rels++xrels) idgs
