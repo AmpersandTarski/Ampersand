@@ -59,7 +59,7 @@ where
 --         where recur obj = [editMph (objctx o) | o<-objatsLegacy obj, editable (objctx o)]++[r | o<-objatsLegacy obj, r<-recur o]
 --        vis        = nub (rels++map (I . target) rels)
 --   --     visible r  = r `elem` vis
---        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (mors rule) `isc` vis)]
+--        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (declsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
 --   --     ecaRs      = assembleECAs qs
 ----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
@@ -214,7 +214,7 @@ where
 --                                , let frExpr  = if ev==Ins
 --                                                then conjNF negs
 --                                                else conjNF poss
---                                , rel `elem` mors frExpr
+--                                , rel `elem` declsUsedIn frExpr
 --                                , let toExpr = if ev==Ins
 --                                               then conjNF poss
 --                                               else conjNF (notCpl negs)
@@ -301,7 +301,7 @@ where
                                                 "An appropriate reaction on this event is required."
                                            --     showECA fSpec "\n  " (ECA (On ev rel) delt (genPAclause visible Ins r viols conj [rule]) 0)
                                      )
-                                   | rel<-nub [x |x<-mors r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
+                                   | rel<-nub [x |x<-declsUsedIn r, not (isIdent x)] -- TODO: include proofs that allow: isIdent rel'
                                    , ev<-[Ins,Del]
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]

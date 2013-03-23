@@ -23,7 +23,7 @@ class Language a where
   declarations :: a -> [Declaration] -- ^ all relations that exist in the scope of this viewpoint.
                                      --   These are user defined declarations and all generated declarations,
                                      --   i.e. one declaration for each GEN and one for each signal rule.
-                                     --   Don't confuse declarations with mors, which gives the relations that are
+                                     --   Don't confuse declarations with declsUsedIn, which gives the declarations that are
                                      --   used in a.)
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not key rules.

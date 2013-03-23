@@ -147,12 +147,6 @@ deMorgan sgn (EUni (l,r) _)    = notCpl sgn (notCpl sgn l ./\. notCpl sgn r)
 deMorgan sgn (EIsc (l,r) _)    = notCpl sgn (notCpl sgn l .\/. notCpl sgn r)
 deMorgan _ e    = fatal 214 ("De Morgan is not applicable to "++show e)
 
--- The origin of an expression is the origin of one of its relations.
--- Let us just take the first one... 
--- WHY? (SJ) Why does this instance exist? Can we not do without?
--- instance Traced Expression where
---  origin e = origin (head (mors e))
-
 notCpl :: Sign -> Expression -> Expression
 notCpl _ (ECpl e' _) = e'
 notCpl sgn e' = ECpl e' sgn

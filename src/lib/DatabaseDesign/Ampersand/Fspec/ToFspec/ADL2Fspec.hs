@@ -54,8 +54,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
-                 , allDeclarations = nub [dcl | Rel{reldcl=dcl} <- morlist context]
-                 , allRelations = nub (morlist context)
+                 , allDeclarations = declsUsedIn context
+                 , allRelations = relationsIn context
                  , allConcepts  = concs context
                  , fsisa        = isas
                  , vpatterns    = patterns context
@@ -270,7 +270,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- Each interface gets all attributes that are required to create and delete the object.
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
-           [Ifc { ifcParams = nub [ r | r<-morlist objattributes, not (isIdent r)]
+           [Ifc { ifcParams = nub [ r | r<-relationsIn objattributes, not (isIdent r)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
@@ -407,7 +407,7 @@ while maintaining all invariants.
       --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
                         ]
                         rule)
-      | rule<-rs, r<-nub (morlist rule), visible r
+      | rule<-rs, r<-nub (relationsIn rule), visible r
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
