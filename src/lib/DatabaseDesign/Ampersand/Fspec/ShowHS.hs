@@ -169,15 +169,17 @@ where
 
    instance ShowHS SqlField where
     showHS flags indent sqFd
-      = intercalate indent
-          [ "Fld { fldname = " ++ show (fldname sqFd)
-          , "    , fldexpr = " ++ showHS flags "" (fldexpr sqFd)
-          , "    , fldtype = " ++ showHS flags "" (fldtype sqFd)
-          , "    , flduse  = " ++ showHS flags "" (flduse sqFd)
-          , "    , fldnull = " ++ show (fldnull sqFd)
-          , "    , flduniq = " ++ show (flduniq sqFd)
-          , "    }"
-          ]
+      = intercalate indentA
+          [  "Fld { fldname = " ++ show (fldname sqFd)
+          ,      ", fldexpr = " ++ showHS flags indentB (fldexpr sqFd)
+          ,      ", fldtype = " ++ showHS flags "" (fldtype sqFd)
+          ,      ", flduse  = " ++ showHS flags "" (flduse sqFd)
+          ,      ", fldnull = " ++ show (fldnull sqFd)
+          ,      ", flduniq = " ++ show (flduniq sqFd)
+          ,      "}"
+          ] where indentA = indent ++"    "         -- adding the width of "Fld "
+                  indentB = indentA++"            " -- adding the width of ", fldexpr = " 
+
    instance ShowHS SqlFieldUsage where
     showHS _ _ (PrimKey aCpt)    = "PrimKey "   ++showHSName aCpt
     showHS _ _ (ForeignKey aCpt) = "ForeignKey "++showHSName aCpt
@@ -287,7 +289,8 @@ where
            ,wrap ", grules        = " indentA (\_->showHSName) (grules fspec)
            ,wrap ", invars        = " indentA (\_->showHSName) (invars fspec)
            ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
-           ,wrap ", allDeclarations= " indentA (\_->showHSName) (allDeclarations fspec)
+           ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fspec)
+           ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
            ,wrap ", allRelations  = " indentA (\_->showHSName) (allRelations fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
            ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
@@ -340,9 +343,10 @@ where
         "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fspec++" interfaces) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n"
        )++        
-       (if null (vrels fspec)     then "" else
-        "\n -- *** Declarations (total: "++(show.length.vrels) fspec++" declarations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-allDeclarations fspec]++"\n"
+       (let ds fs = allDecls fs `uni` allUsedDecls fs in
+        if null (ds fspec)     then "" else
+        "\n -- *** Declarations (total: "++(show.length.ds) fspec++" declarations) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fspec]++"\n"
        ) ++
        (if null (vkeys fspec)     then "" else
         "\n -- *** Keys (total: "++(show.length.vkeys) fspec++" keys) ***: "++
@@ -387,9 +391,10 @@ where
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
        )++
-       (if null (allRelations fspec) then "" else
-        "\n -- *** Relations (total: "++(show.length.allRelations) fspec++" relations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing originOF) (allRelations fspec)]++"\n"
+       (let rs fs = allRelations fs `uni` map makeRelation (allDecls fs) in
+        if null (rs fspec) then "" else
+        "\n -- *** Relations (total: "++(show.length.rs) fspec++" relations) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing originOF) (rs fspec)]++"\n"
        )++
        (if null (allConcepts fspec) then "" else
         "\n -- *** I[Concept] for each concept ***: "++
@@ -453,34 +458,24 @@ where
 
    instance ShowHS Field where
     showHS flags indent fld
-     = "Att "++       "{ fld_name     = "++                     show (fld_name     fld)
-       ++ ( if null (fld_sub fld)
-            then indent++"    , fld_sub      = []"
-            else indent++"    , fld_sub      = [ "++
-                 intercalate (indent++"                     , ")
-                       [showHS flags (indent++"                       ") att | att<-fld_sub  fld]
-                       ++indent++"                     ]" )
-       ++ indent++"    , fld_expr     = "++showHS flags (indent++"                       ") (fld_expr fld)
-       ++ indent++"    , fld_rel      = "++
-          ( if fld_editable fld
-            then showHS flags (indent++"      ") (fld_rel     fld)
-            else "error(\"!Fatal: reference to undefined editrelation in field "++fld_name fld++"\")" )
-       ++ indent++"    , fld_editable = "++show (fld_editable fld)
-       ++ indent++"    , fld_list     = "++show (fld_list     fld)
-       ++ indent++"    , fld_must     = "++show (fld_must     fld)
-       ++ indent++"    , fld_new      = "++show (fld_new      fld)
-       ++ indent++"    , fld_sLevel   = "++show (fld_sLevel   fld)
-       ++ indent++"    , fld_insAble  = "++show (fld_insAble  fld)
-       ++ indent++"    , fld_onIns    = "++
-          ( if fld_insAble fld
-            then showHSName (fld_onIns fld)
-            else "error(\"!Fatal: reference to undefined insert action in field "++fld_name fld++"\")" )
-       ++ indent++"    , fld_delAble  = "++                     show (fld_delAble  fld)
-       ++ indent++"    , fld_onDel    = "++
-          ( if fld_delAble fld
-            then showHSName (fld_onDel fld)
-            else "error(\"!Fatal: reference to undefined delete action in field "++fld_name fld++"\")" )
-       ++ indent++"    }"
+     = intercalate indentA
+         [  "Att { fld_name     = "++show (fld_name fld)
+         , wrap ", fld_sub      = " indentB (showHS flags) (fld_sub fld)
+         ,      ", fld_expr     = "++showHS flags "" (fld_expr fld)
+         ,      ", fld_rel      = "++showHSName  (fld_rel fld)
+         ,      ", fld_editable = "++show (fld_editable fld)
+         ,      ", fld_list     = "++show (fld_list     fld)
+         ,      ", fld_must     = "++show (fld_must     fld)
+         ,      ", fld_new      = "++show (fld_new      fld)
+         ,      ", fld_sLevel   = "++show (fld_sLevel   fld)
+         ,      ", fld_insAble  = "++show (fld_insAble  fld)
+         ,      ", fld_onIns    = "++showHS flags "" (fld_onIns fld)
+         ,      ", fld_delAble  = "++show (fld_delAble  fld)
+         ,      ", fld_onDel    = "++showHS flags "" (fld_onDel fld)
+        , "}"
+        ] where indentA = indent ++"    "     -- adding the width of "Att "
+                indentB = indentA++"                 " -- adding the width of ", fld_editable = "
+
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***

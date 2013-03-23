@@ -57,7 +57,8 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and key rules
                  , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
-                 , allDeclarations :: [Declaration]               -- ^ All declarations in the fspec
+                 , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fspec
+                 , allDecls     :: [Declaration]            -- ^ All declarations in the fspec
                  , allRelations    :: [Relation]            -- ^ All relations in the fspec
                  , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
                  , vkeys ::        [KeyDef]                 -- ^ All keys that apply in the entire Fspc
