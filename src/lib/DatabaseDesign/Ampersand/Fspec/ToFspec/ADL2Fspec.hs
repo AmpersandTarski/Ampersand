@@ -54,7 +54,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vquads       = allQuads
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
-                 , allDeclarations = declsUsedIn context
+                 , allUsedDecls = declsUsedIn context
+                 , allDecls     = declarations context
                  , allRelations = relationsIn context
                  , allConcepts  = concs context
                  , fsisa        = isas
