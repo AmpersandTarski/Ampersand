@@ -613,10 +613,10 @@ while maintaining all invariants.
                            | otherwise           = conjNF (ERel rel (sign rel) ./\. notCpl (sign rel) delt)
 
    delta :: Sign -> Expression
-   delta sgn@(Sign s t)
+   delta sgn
     = ERel (makeRelation
              Sgn { decnm   = "Delta"
-                 , decsgn  = Sign s t
+                 , decsgn  = sgn
                  , decprps = []
                  , decprps_calc = Nothing
                  , decprL  = ""
@@ -626,7 +626,7 @@ while maintaining all invariants.
                                       , A_Markup English ReST (string2Blocks ReST "TODO: Write down the purpose of this Delta relation.")
                                       ]
                  , decConceptDef = Nothing
-                 , decfpos = Origin "generated relation (Delta)"
+                 , decfpos = Origin ("generated relation (Delta "++show sgn++")")
                  , decissX  = True
                  , decusrX  = False
                  , decpat  = ""
