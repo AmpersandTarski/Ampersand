@@ -213,9 +213,6 @@ data Declaration =
  Isn 
       { detyp :: A_Concept       -- ^ The type
       } |
- Iscompl 
-      { detyp :: A_Concept
-      } |
  Vs 
       { decsgn :: Sign
       }
@@ -229,7 +226,6 @@ deciss _ = False
 instance Eq Declaration where
   d@Sgn{}     == d'@Sgn{}     = decnm d==decnm d' && decsgn d==decsgn d'
   d@Isn{}     == d'@Isn{}     = detyp d==detyp d'
-  d@Iscompl{} == d'@Iscompl{} = detyp d==detyp d'
   d@Vs{}      == d'@Vs{}      = decsgn d==decsgn d'
   _           == _            = False
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
@@ -245,7 +241,6 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
                             ++ ["{+",aMarkup2String m,"-}"]                
                             -- then [] else ["MEANING",show (decMean d)] ))
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
-  showsPrec _ d@Iscompl{} = showString $ "Iscompl{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
 instance Flippable Declaration where
   flp d
@@ -273,13 +268,11 @@ data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving Show
 instance Identified Declaration where
   name d@Sgn{}   = decnm d
   name Isn{}     = "I"
-  name Iscompl{} = "-I"
   name Vs{}      = "V"
 instance Association Declaration where
   sign d = case d of
               Sgn {}    -> decsgn d
               Isn {}    -> Sign (detyp d) (detyp d)
-              Iscompl{} -> Sign (detyp d) (detyp d)
               Vs {}     -> decsgn d
 instance Traced Declaration where
   origin d = case d of

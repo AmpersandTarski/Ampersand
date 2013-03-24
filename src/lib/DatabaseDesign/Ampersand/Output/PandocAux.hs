@@ -428,8 +428,6 @@ instance ShowMath Declaration where
   = "\\mathbb{I}"
  showMath Vs{}
   = "\\full"
- showMath Iscompl{}
-  = "\\cmpl{\\mathbb{I}}"
 
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
