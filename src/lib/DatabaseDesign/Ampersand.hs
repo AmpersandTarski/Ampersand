@@ -2,7 +2,7 @@
 module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
-   , P_Context(..), P_Relation(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
+   , P_Context(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
    , A_Concept(..), A_Gen
    , Sign(..), ConceptDef(..), ConceptStructure(..)

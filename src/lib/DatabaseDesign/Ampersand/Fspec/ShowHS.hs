@@ -202,11 +202,8 @@ where
     showHS _ indent SQLBool        = indent++"SQLBool   "
 
    instance ShowHSName Quad where
-   -- TODO: is showHSName injective? Make sure it is!
     showHSName q
-      = haskellIdentifier ("quad_"++(name.qRel) q++"_"++sgnt++"_"++(name.cl_rule.qClauses) q)
-        where sgnt = if source r==target r then name (source r) else name (source r)++"_"++name (target r)
-              r    = qRel q
+      = haskellIdentifier ("quad_"++(showHSName.qRel) q++"_"++(name.cl_rule.qClauses) q)
 
    instance ShowHS Quad where
     showHS flags indent q 
@@ -391,14 +388,10 @@ where
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
        )++
-       (let rs fs = allRelations fs `uni` map makeRelation (allDecls fs) in
+       (let rs fs = allRelations fs `uni` map makeRelation (allDecls fs) `uni` map I (allConcepts fspec) `uni` [ V (Sign ONE ONE) ]in
         if null (rs fspec) then "" else
         "\n -- *** Relations (total: "++(show.length.rs) fspec++" relations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing originOF) (rs fspec)]++"\n"
-       )++
-       (if null (allConcepts fspec) then "" else
-        "\n -- *** I[Concept] for each concept ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x | x<-map I (allConcepts fspec)]++"\n"
        )
            where originOF rel =
                    case rel of
@@ -710,7 +703,7 @@ where
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***
 -- \***********************************************************************
 
-   instance  ShowHS UserDefPop where
+   instance ShowHS UserDefPop where
     showHS _ indent pop
      = case pop of 
          PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
@@ -817,10 +810,10 @@ where
             I{}   -> haskellIdentifier ("irel_"++          name (source rel)                    )
             V{}   -> haskellIdentifier ("vrel_"++          name (source rel)++name ( target rel))
        
-   instance  ShowHS Relation where
+   instance ShowHS Relation where
     showHS flags _ rel 
        = case rel of
-            Rel{} -> "Rel "++show (name rel)++" ("++showHS flags "" (origin rel)++")"
+            Rel{} -> "Rel "++" ("++showHS flags "" (origin rel)++")"
                          ++" "++showHSName (reldcl rel)
             I{}   -> "I "++showHSName (rel1typ  rel)
             V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"

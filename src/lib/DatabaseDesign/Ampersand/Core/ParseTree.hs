@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Pattern(..)
    
-   , P_Relation(..), RelConceptDef(..), P_Declaration(..)
+   , RelConceptDef(..), P_Declaration(..)
    
    , Term(..)
    
@@ -190,31 +190,6 @@ where
     name = dec_nm
    instance Traced P_Declaration where
     origin = dec_fpos
-
-   data P_Relation = 
-        P_Rel   { rel_nm :: String            -- ^ the name of the relation.
-                , rel_pos :: Origin            -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable.
-                }
-        | P_I
-        | P_V
-        deriving (Eq, Ord)
-
-   instance Show P_Relation where
-    showsPrec _ r = case r of
-      P_Rel{} -> showString (rel_nm r)
-      P_I{}   -> showString "I"
-      P_V{}   -> showString "V"
-
-   instance Identified P_Relation where
-    name r = case r of
-      P_Rel{} -> rel_nm r
-      P_I{}   -> "I"
-      P_V{}   -> "V"
-
-   instance Traced P_Relation where
-    origin r = case r of
-      P_Rel{} -> rel_pos r
-      _       -> OriginUnknown
 
    data Term 
       = PI Origin                              -- ^ identity element without a type
