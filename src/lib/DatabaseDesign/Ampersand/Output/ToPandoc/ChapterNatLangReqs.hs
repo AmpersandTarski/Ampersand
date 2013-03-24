@@ -374,7 +374,6 @@ chpNatLangReqs lev fSpec flags =
                           rightHalf = [str srcAtom,Space,str prM, Space] ++ devShow (target decl) ++ [str tgtAtom]++(if null prR then [] else [Space,str prR]) ++ [Str "."]
 
        Isn{}     -> devShow (source decl) ++ [str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
-       Iscompl{} -> devShow (source decl) ++ [str (upCap srcAtom),Space,Str "differs",Space,Str "from",Space,str tgtAtom,Str "."]
        Vs{}      -> [Str "True"]
    where str = if fspecFormat flags==FLatex then RawInline "latex" . latexEscShw else Str
          devShow c | isDev     = [Str "(", str $ name c, Str ") "] -- only show the concept when --dev option is given

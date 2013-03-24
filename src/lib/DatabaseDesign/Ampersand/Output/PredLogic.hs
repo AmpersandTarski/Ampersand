@@ -78,7 +78,6 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                case decl of
                  Sgn{}     -> d++"\\ \\id{"++latexEscShw (name decl)++"}\\ "++c
                  Isn{}     -> d++"\\ =\\ "++c
-                 Iscompl{} -> d++"\\ \not =\\ "++c
                  Vs{}      -> "V"
             mathVars :: String -> [Var] -> String
             mathVars q vs
@@ -127,9 +126,6 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                        Isn{}     -> case l of 
                                         English  -> "$"++d++"$ equals $"++c++"$"
                                         Dutch    -> "$"++d++"$ is gelijk aan $"++c++"$"
-                       Iscompl{} -> case l of 
-                                        English  -> "$"++d++"$ differs from $"++c++"$"
-                                        Dutch    -> "$"++d++"$ verschilt van $"++c++"$"
                        Vs{}      -> case l of 
                                         English  -> show True
                                         Dutch    -> "Waar"

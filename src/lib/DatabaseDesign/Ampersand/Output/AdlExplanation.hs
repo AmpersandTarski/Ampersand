@@ -310,7 +310,6 @@ instance Motivated Declaration where
 --                                    prM = decprM decl
 --                                    prR = decprR decl
 --                 Isn{}     -> a++[Space,Str "equals",Space]++b
---                 Iscompl{} -> a++[Space,Str "differs",Space,Str "from",Space]++b
 --                 Vs{}      -> [Str (show True)]
 --            
 --      var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs

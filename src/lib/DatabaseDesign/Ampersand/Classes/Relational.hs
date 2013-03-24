@@ -74,16 +74,11 @@ instance Relational Declaration where
                              Nothing -> decprps d
                              Just ps -> ps 
            Isn{}        -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-           Iscompl{}    -> [Sym]
            Vs{}         -> [Tot,Sur]
     isProp d = case d of         -- > tells whether the argument is a property.
            Sgn {}       -> null ([Asy,Sym]>-multiplicities d)
            Isn{}        -> True
-           Iscompl{}    -> False
            Vs{}         -> isEndo (sign d) && isSingleton (source d)
-    isImin d = case d of          -- > tells whether the argument is equivalent to I-
-           Iscompl{}    -> True   
-           _            -> False
     isTrue d = case d of 
            Vs{}         -> True
            _            -> False

@@ -242,7 +242,6 @@ where
             where t = case d of
                         Sgn{} -> "Sgn"
                         Isn{} -> "Isn"
-                        Iscompl{} -> "Iscompl"
                         Vs{} -> "Vs"
                   extraAtts = case d of
                                 Sgn{} -> [mkAttr "IsSignal" (show (decissX d))]
@@ -265,8 +264,6 @@ where
 --                             (map mkXmlTree (decpopu d)) 
 --                                | not (null (decpopu d))]                 
           Isn{}
-                ->  [Elem (simpleTag "Type") [mkXmlTree (source d)]]
-          Iscompl{}
                 ->  [Elem (simpleTag "Type") [mkXmlTree (source d)]]
           Vs{}
                 ->  Elem (simpleTag "Generic") [mkXmlTree (source d)]

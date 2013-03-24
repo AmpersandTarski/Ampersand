@@ -274,7 +274,6 @@ instance ShowADL Declaration where
                ++ concatMap meaning (ameaMrk (decMean decl))
                ++ maybe "" (\(RelConceptDef srcOrTgt def) -> " DEFINE "++showADL srcOrTgt ++ " " ++ def) (decConceptDef decl)
      Isn{}     -> fatal 330 "Illegal call to ShowADL (Isn{}). Isn{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
-     Iscompl{} -> fatal 331 "Illegal call to ShowADL (Iscompl{}). Iscompl{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
      Vs{}      -> fatal 332 "Illegal call to ShowADL (Vs{}). Vs{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
    where
      meaning :: A_Markup -> String
