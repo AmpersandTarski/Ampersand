@@ -19,7 +19,7 @@ module DatabaseDesign.Ampersand.ADL1
            , A_Gen(..),P_Gen(..)
            , Relation(..)
            , Declaration(..),decusr
-           , P_Relation(..),P_Declaration(..)
+           , P_Declaration(..)
            , ConceptDef(..)
            , P_Concept(..), A_Concept(..), (<==>),meet,join, P_Sign(..), Sign(..), showSign, GenR
            , RuleType(..)

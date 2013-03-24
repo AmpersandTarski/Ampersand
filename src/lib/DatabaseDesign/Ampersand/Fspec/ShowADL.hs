@@ -476,13 +476,6 @@ insP_Parentheses = insPar 0
 
 
 --used to compose error messages at p2a time
-instance ShowADL P_Relation where
- showADL rel = case rel of
-      P_Rel{} -> rel_nm rel
-      P_I{}   -> " I "
-      P_V{}   -> " V "
-
---used to compose error messages at p2a time
 instance ShowADL P_Concept where
  showADL = name
 
