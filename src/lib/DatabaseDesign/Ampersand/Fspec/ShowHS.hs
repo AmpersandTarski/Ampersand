@@ -850,7 +850,6 @@ where
                         ,"   , decplug = " ++ show (decplug d)
                         ]++"}"
           Isn{}     -> "Isn{ detyp   = " ++ showHS flags "" (detyp d)++"}"
-          Iscompl{} -> "Iscompl{ detyp   = " ++ showHS flags "" (detyp d)++"}"
           Vs{}      -> "Vs { decsgn  = " ++ showHS flags "" (sign d)++"}"
 
 -- \***********************************************************************
