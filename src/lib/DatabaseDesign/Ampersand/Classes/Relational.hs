@@ -79,6 +79,7 @@ instance Relational Declaration where
            Sgn {}       -> null ([Asy,Sym]>-multiplicities d)
            Isn{}        -> True
            Vs{}         -> isEndo (sign d) && isSingleton (source d)
+    isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
     isTrue d = case d of 
            Vs{}         -> True
            _            -> False
