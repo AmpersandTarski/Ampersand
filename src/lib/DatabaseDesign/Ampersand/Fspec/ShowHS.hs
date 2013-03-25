@@ -388,7 +388,7 @@ where
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
        )++
-       (let rs fs = allRelations fs `uni` map makeRelation (allDecls fs) `uni` map I (allConcepts fspec) `uni` [ V (Sign ONE ONE) ]in
+       (let rs fs = allRelations fs `uni` map makeRelation (allDecls fs) `uni` map I (allConcepts fspec) `uni` [ V (Sign s t) | s <- allConcepts fspec,t <- allConcepts fspec ]in
         if null (rs fspec) then "" else
         "\n -- *** Relations (total: "++(show.length.rs) fspec++" relations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing originOF) (rs fspec)]++"\n"
@@ -511,14 +511,8 @@ where
     showHS flags indent prc
      = intercalate indentA
         [ "FProc { fpProc       = "++showHS flags (indent++"                     ") (fpProc prc)
-        , wrap ", fpActivities = " indentB (showHS flags) (fpActivities prc)
-{- was (SJ: 26 jan 2013)
- , "      , fpActivities = "++
-           if null (fpActivities prc) 
-           then "[] -- no activities"
-           else " ["++intercalate (indent++"                      , ") [showHS flags (indent++"     ") a | a<-fpActivities prc] ++indent++"    ]"
--}
-      , "      }"
+        , wrap  ", fpActivities = " indentB (showHS flags) (fpActivities prc)
+        , "      }"
         ] where indentA = indent ++"      "     -- adding the width of "FProc "
                 indentB = indentA++"                 " -- adding the width of ", fpActivities = "
  
@@ -557,6 +551,8 @@ where
     showHS flags indent act = 
        intercalate indentA
         [ "Act { actRule   = "++showHSName (actRule act)
+--        , wrap ", actTrig   = " indentB (showHS flags) (actTrig   act)
+--        , wrap ", actAffect = " indentB (showHS flags) (actAffect act)
         , wrap ", actTrig   = " indentB (\_->showHSName) (actTrig   act)
         , wrap ", actAffect = " indentB (\_->showHSName) (actAffect act)
         , wrap ", actQuads  = " indentB (\_->showHSName) (actQuads  act)
