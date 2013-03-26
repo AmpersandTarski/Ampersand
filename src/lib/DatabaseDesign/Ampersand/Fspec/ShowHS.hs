@@ -551,10 +551,8 @@ where
     showHS flags indent act = 
        intercalate indentA
         [ "Act { actRule   = "++showHSName (actRule act)
---        , wrap ", actTrig   = " indentB (showHS flags) (actTrig   act)
---        , wrap ", actAffect = " indentB (showHS flags) (actAffect act)
-        , wrap ", actTrig   = " indentB (\_->showHSName) (actTrig   act)
-        , wrap ", actAffect = " indentB (\_->showHSName) (actAffect act)
+        , wrap ", actTrig   = " indentB (showHS flags) (actTrig   act)
+        , wrap ", actAffect = " indentB (showHS flags) (actAffect act)
         , wrap ", actQuads  = " indentB (\_->showHSName) (actQuads  act)
         , wrap ", actEcas   = " indentB (\_->showHSName) (actEcas   act)
         , wrap ", actPurp   = " indentB (\_->(showHS flags indentB)) (actPurp act)
