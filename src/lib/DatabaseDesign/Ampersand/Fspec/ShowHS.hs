@@ -340,7 +340,7 @@ where
         "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fspec++" interfaces) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n"
        )++        
-       (let ds fs = allDecls fs `uni` allUsedDecls fs in
+       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fspec in
         if null (ds fspec)     then "" else
         "\n -- *** Declarations (total: "++(show.length.ds) fspec++" declarations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fspec]++"\n"
