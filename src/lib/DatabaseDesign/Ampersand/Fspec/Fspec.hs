@@ -102,7 +102,7 @@ instance Language Fspc where
    --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
   declarations = vrels
   udefrules    = vrules -- only user defined rules
-  invariants    = invars
+  invariants   = invars
   keyDefs      = vkeys
   gens         = vgens
   patterns     = vpatterns
