@@ -58,14 +58,6 @@ therel fSpec relname relsource reltarget
 geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
 
-{- obsolete?
-makerel :: String -> P_Relation
-makerel relstr
- = P_Rel  { rel_nm = relstr
-          , rel_pos = DBLoc "Atlas(Relation)"
-          }
--}
-
 atlas2populations :: Fspc -> Options -> IO String
 atlas2populations fSpec flags =
    do verboseLn flags "Connecting to atlas..."
