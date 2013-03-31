@@ -336,7 +336,7 @@ m1 .++. m2  = Map.unionWith mrgUnion m1 m2
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False
 dom, cod :: Term -> Type
-dom x    = TypExpr x         False -- the domain of x, and make sure to check subterms of x as well
+dom x    = TypExpr x         False -- the domain of x
 cod x    = TypExpr (p_flp x) True 
 mSpecific, mGeneric :: Type -> Type -> Term -> ( (Typemap , Typemap) ,Type)
 mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = normalType (TypLub a b e)
@@ -361,7 +361,7 @@ typing :: P_Context -> ( Typemap                    -- st          -- the st rel
                        , Typemap                    -- eqType      -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
                        , Typemap                    -- stClosAdded -- additional links added to stClos
                        , Typemap                    -- stClos1     -- st*  (transitive)
-                       , Map Type [P_Declaration]   -- bindings    -- declarations that may be bound to relations
+                       , Map Term [P_Declaration]   -- bindings    -- declarations that may be bound to relations
                        , Type -> [P_Concept]        -- srcTypes -- 
                        , Map P_Concept [P_Concept]  -- isaClos          -- 
                        , Map P_Concept [P_Concept]  -- isaClosReversed  -- 
@@ -429,11 +429,14 @@ typing p_context
                  stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
      eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
+     isaClos :: Map P_Concept [P_Concept]
      isaClos = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
+     isaClosReversed :: Map P_Concept [P_Concept]
      isaClosReversed = reverseMap isaClos
      stConcepts :: Map Type [P_Concept]
      stConcepts = Map.map f stClos
-                  where f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
+                  where f :: [Type] -> [P_Concept]
+                        f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
                                | cl<-eqClass compatible cs]
                                where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
                                      lkp c = case Map.lookup c isaClosReversed of
@@ -453,77 +456,41 @@ Relations that are used in a term must be bound to declarations. When they have 
 When it is just 'r', and there are multiple declarations to which it can be bound, the type checker must choose between candidates.
 Sometimes, there is only one candidate, even though the type checker cannot prove it correct (i.e. the domain of the term is a subset of the candidate type).
 In such cases, we want to give that candidate to the user by way of suggestion to resolve the type conflict.
+The algorithm is tuned for efficiency by treating the binding process one name at a time.
+For each name, the relations with that name (relsByName) are matched to the declarations with that name.
 -}
-     bindings :: Map Type [P_Declaration]
+     bindings :: Map Term [P_Declaration]
      bindings
       = Map.fromListWith union
         ([ tuple
-         | nm<-Map.keys declsByName `isc` Map.keys domsByName `isc` Map.keys codsByName
-         , Just domTypes<-[Map.lookup nm domsByName], dType<-domTypes
-         , Just codTypes<-[Map.lookup nm codsByName], cType<-codTypes
-         , Just dcls<-[Map.lookup nm declsByName], decl<-dcls
-         , let P_Sign sgn = dec_sign decl
-         , tDecl<-terms decl
-         , match dType (dom tDecl) (head sgn), match cType (cod tDecl) (last sgn)
-         , tuple<-[(dType,[decl]), (cType,[decl])]
+         | (nm, decls)<-[ (name (head cl), [ decl | decl<-cl]) | cl<-eqCl name (p_declarations p_context) ]
+         , decl<-decls, declTerm<-terms decl -- declTerm::Term
+         , Just rels<-[Map.lookup nm relsByName]
+         , x<-rels     -- x::Term
+{-       , fatal 467 ("Diagnostic:\n   rels = "++show rels++
+                      "\n   relsByName = "++concat ["\n  "++show b | b<-Map.toAscList relsByName]++
+                      "\n   subterms p_context: "++concat ["\n  "++show term | term<-subterms p_context]++
+                      "\n   x = "++show x++
+                      "\n   decl = "++show decl++
+                      "\n   decls = "++show decls++
+                      "\n   p_declarations = "++show (p_declarations p_context)) -}
+         -- first check if the domains of x and decl can share atoms
+         , domx<-srcTypes (dom x), domDecl<-srcTypes (dom declTerm)
+         , Just xDomMatches   <-[Map.lookup domx    isaClosReversed]
+         , Just declDomMatches<-[Map.lookup domDecl isaClosReversed]
+         , (not.null) (xDomMatches `isc` declDomMatches)
+         -- then check if the codomains of x and decl can share atoms
+         , codx<-srcTypes (cod x), codDecl<-srcTypes (cod declTerm)
+         , Just xCodMatches   <-[Map.lookup codx    isaClosReversed]
+         , Just declCodMatches<-[Map.lookup codDecl isaClosReversed]
+         , (not.null) (xCodMatches `isc` declCodMatches)
+         -- now we know that both the domains and codomains of x and decl can share atoms
+         , tuple<-[(x,[decl])]
          ] ++
-         [ (t,[]) | t@(TypExpr (Prel _ _) _)<-typeTerms] ++
-         [ (t,[]) | t@(TypExpr (Pflp _ _) _)<-typeTerms])
+         [ (term,[]) | term@(Prel _ _)<-subterms p_context])
        where
-        declsByName :: Map String [P_Declaration]
-        declsByName = Map.fromList [ (name (head cl), [ decl | decl<-cl]) | cl<-eqCl name (p_declarations p_context) ]
-        domsByName :: Map String [Type]
-        domsByName = Map.fromList [ (fst (head cl), map snd cl) | cl<-eqCl fst [ (nm,t) | t@(TypExpr (Prel _ nm) _)<-typeTerms] ]
-        codsByName :: Map String [Type]
-        codsByName = Map.fromList [ (fst (head cl), map snd cl) | cl<-eqCl fst [ (nm,t) | t@(TypExpr (Pflp _ nm) _)<-typeTerms] ]
-        {- Each relation must be bound to declarations. 
-        The predicate match checks whether a relation x (Prel or Pflp) can be bound to a declaration.
-        match x decl
-           = x (st* ; I[P_Concept] ; st*~ ; I[P_Concept] ; st* ; I[P_Concept] ; st*~ ) decl
-           = x (lookup ; isaClosReversed ; isaClos ; lookup~) decl
-        -}
-        match :: Type -> Type -> P_Concept -> Bool
-        match x decl dConc
-           = (not.null) 
-             [ () | intersectConcept<-nub [c | Just cs<-[Map.lookup dConc isaClosReversed]
-                                             , c<-cs]
-                  , Just termTypes<-[Map.lookup intersectConcept isaClos]
-                  , not (null (termTypes `isc` srcTypes decl))
-                  , not (null (termTypes `isc` srcTypes x))
-                  ]
-{- legacy code (most likely correct but this code is inefficient)
-     bindings :: Map Type [(P_Declaration,[P_Concept],[P_Concept])]
-     bindings = (Map.map unDouble . Map.fromListWith union)
-                ( [ tuple
-                  | decl<-p_declarations p_context
-                  , let P_Sign sgn = dec_sign decl; srce=head sgn; targ=last sgn
-                  , dTerm@(TypExpr (Prel _ dName) _) <- typeTerms, dName==dec_nm decl
-                  , cTerm@(TypExpr (Pflp _ cName) _) <- typeTerms, cName==dec_nm decl
-                  , Just dConcepts<-[Map.lookup dTerm stClos], dc<-dConcepts
-                  , Just cConcepts<-[Map.lookup cTerm stClos], cc<-cConcepts
-                  , let srcConcepts = thing srce `mayShareAtoms` dc, not (null srcConcepts)
-                  , let trgConcepts = thing targ `mayShareAtoms` cc, not (null trgConcepts)
-                  , let declSrcTrgs = (decl, srcConcepts, trgConcepts)
-                  , tuple<-[(dTerm,[declSrcTrgs]),(cTerm,[declSrcTrgs])]
-                  ] ++
-                  [ (t,[]) | t@(TypExpr (Prel _ _) _)<-typeTerms] ++
-                  [ (t,[]) | t@(TypExpr (Pflp _ _) _)<-typeTerms]
-                )
-       where
-      -- Two concepts are compatible if they can share atoms. If there exists a concept that is greater than both, this is obvious.
-      -- However, also if there exists a concept that is smaller than both, they can share atoms. So either a glb or a lub is sufficient.
-        mayShareAtoms :: Type -> Type -> [P_Concept]
-        mayShareAtoms a b = nub [c | t<-greatest (lkp a `isc` lkp b), c<-srcTypes t]
-         where lkp c = case Map.lookup c stClosReversed of
-                        Just cs -> cs
-                        _ -> fatal 400 ("P_Concept "++show c++" was not found in stClosReversed")
-        unDouble (tr@(d,_,_):triples) = tr : unDouble [tr' | tr'@(d',_,_)<-triples, d `neq` d']
-        unDouble [] = []
-        d `neq` d'
-         = let P_Sign sgn  = dec_sign d
-               P_Sign sgn' = dec_sign d'
-           in dec_nm d/=dec_nm d || head sgn/=head sgn' || last sgn/=last sgn'
--}
+        relsByName :: Map String [Term]
+        relsByName = Map.fromList [ (fst (head cl), [ t | (_,t)<-cl]) | cl<-eqCl fst [ (nm,t) | t@(Prel _ nm)<-subterms p_context] ]
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.
 -}
@@ -596,7 +563,7 @@ class Expr a where
   p_keys _ = []
   terms :: a -> [Term]
   subterms :: a -> [Term]
-  subterms x = subterms (terms x)
+  subterms = concat . map subterms . terms
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
   --   the tuples of a relation st :: Type * Type. Each tuple (TypExpr t, TypExpr t') means that the domain of t is a subset of the domain of t'.
   --   These tuples are produced in two Typemaps. The second Typemap is kept separate, because it depends on the existence of the first Typemap.
@@ -1093,7 +1060,7 @@ pCtx2aCtx p_context
                      ++ mapMaybe snd adecsNPops      -- Populations from declarations directly in side the context
                       
     st, eqType :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    bindings ::   Map Type [P_Declaration]         -- declarations that may be bound to relations, intended as a suggestion to the programmer
+    bindings ::   Map Term [P_Declaration]         -- yields declarations that may be bound to relations, intended as a suggestion to the programmer
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindings, srcTypes, isaClos, isaClosReversed) = typing p_context
     gEandClasses :: GenR
@@ -1624,10 +1591,10 @@ pCtx2aCtx p_context
                                  }
            Pnull           -> fatal 1546 ("unsigned Pnull.")
            PVee _          -> do { sgn<-getSign x
-                                    ; return (vExpr sgn)
+                                 ; return (vExpr sgn)
                                  }
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
-           Prel o a        -> do { decl <- getDeclaration x
+           Prel o _        -> do { decl <- getDeclaration x
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
@@ -1635,7 +1602,7 @@ pCtx2aCtx p_context
                                                     , reldcl=decl
                                                     }) sgn)
                                  }
-           Pflp o a        -> do { decl <- getDeclaration x
+           Pflp o _        -> do { decl <- getDeclaration x
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
@@ -1787,14 +1754,11 @@ pCtx2aCtx p_context
          delimit :: P_Concept -> [P_Concept] -> [P_Concept]
          delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]
          returnIConcepts term
-          = case getConceptsFromTerm term of
+          = case srcTypes (dom term) of
              [c] -> return c
              cs  -> Errors[CxeILike { cxeExpr = term
                                     , cxeCpts = cs
                                     }]
-         getConceptsFromTerm :: Term -> [P_Concept]
-         getConceptsFromTerm x
-          = srcTypes (dom x)
          getSign :: Term -> Guarded Sign
          getSign term
           = case (srcs,trgs) of
@@ -1802,18 +1766,18 @@ pCtx2aCtx p_context
              (_  ,_  ) -> Errors [CxeSign { cxeExpr = term
                                           , cxeSrcs = srcs
                                           , cxeTrgs = trgs}]
-             where srcs = getConceptsFromTerm term
-                   trgs = getConceptsFromTerm (p_flp term)
+             where srcs = srcTypes (dom term)
+                   trgs = srcTypes (cod term)
                    
          lookupType :: Term -> P_Concept
-         lookupType t = case getConceptsFromTerm t of
+         lookupType t = case srcTypes (dom t) of
                          [c] -> c
-                         []  -> fatal 1586 ("No type found for term "++showADL t++" on "++show (origin t)++", even though that term is known in stConcepts.")
+                         []  -> fatal 1586 ("No type found for term "++showADL t++" on "++show (origin t)++", even though that term is known in stConcepts.\n   data structure: "++show t)
                          cs  -> fatal 1586 ("Multiple types found for term "++showADL t++": "++show cs++" on "++show (origin t))
 
     getDeclaration :: Term -> Guarded Declaration
     getDeclaration term@(Prel _ a)
-     = case Map.lookup (dom term) bindings of
+     = case Map.lookup term bindings of
         Just [d] -> do { (decl,_) <- pDecl2aDecl d ; return decl }
         Just ds  -> Errors [CxeRel {cxeExpr = term        -- the erroneous term
                                    ,cxeDecs = ds          -- the declarations to which this term has been matched
