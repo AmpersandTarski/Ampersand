@@ -735,7 +735,7 @@ instance Expr P_KeyDef where
                         ]
 
 instance Expr P_Interface where
- terms ifc = terms (ifc_Obj ifc)
+ terms ifc = terms (ifc_Obj ifc) ++ terms (ifc_Params ifc)
  uType ctxt _ uLft uRt ifc
   = let x=ifc_Obj ifc in
     uType ctxt x uLft uRt x .+.
@@ -1627,7 +1627,7 @@ pCtx2aCtx p_context
                                     ; return (vExpr sgn)
                                  }
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
-           Prel o a        -> do { decl <- getDeclaration x
+           Prel o _        -> do { decl <- getDeclaration x
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
@@ -1635,7 +1635,7 @@ pCtx2aCtx p_context
                                                     , reldcl=decl
                                                     }) sgn)
                                  }
-           Pflp o a        -> do { decl <- getDeclaration x
+           Pflp o _        -> do { decl <- getDeclaration x
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
@@ -1822,3 +1822,5 @@ pCtx2aCtx p_context
                                  
         Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])
     getDeclaration term = fatal 1607 ("Illegal call to getDeclaration ("++show term++")")
+
+
