@@ -422,7 +422,6 @@ instance ShowADL Term where
       where
        showchar (PI _)                                   = "I"
        showchar (Pid c)                                  = "I["++showADL c++"]"
-       showchar (Pnid c)                                 = "-I["++showADL c++"]"
        showchar (Patm _ a [])                            = "'"++a++"'"
        showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
        showchar Pnull                                    = "-V"
