@@ -733,10 +733,11 @@ instance Expr P_SubInterface where
  uType _    _ _    _   _              = nothing
 
 instance Expr PPurpose where
- terms _ = []
+ terms pp = terms (pexObj pp)
  uType ctxt _ uLft uRt purp = let x=pexObj purp in uType ctxt x uLft uRt x
 
 instance Expr PRef2Obj where
+ terms (PRef2Declaration t) = [t]
  terms _ = []
  uType ctxt _ uLft uRt (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType ctxt x uLft uRt x
  uType ctxt _ uLft uRt (PRef2Declaration t)  = uType ctxt t uLft uRt t
@@ -1419,7 +1420,7 @@ pCtx2aCtx p_context
                          -- , explCont  = string2Blocks (ctxmarkup contxt) (pexExpl  pexpl)
                           })
           }
-    
+
     pExOb2aExOb :: PRef2Obj -> Guarded ExplObj
     pExOb2aExOb (PRef2ConceptDef str  ) = case [cd | cd<-acds, cdcpt cd==str ] of
                                            []   ->  Errors [newcxe (" No concept definition for '"++str++"'")]
