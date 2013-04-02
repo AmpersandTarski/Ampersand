@@ -198,7 +198,6 @@ where
                                                --   to know whether an eqClass represents a concept, we only look at its witness
                                                --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
       | Pid P_Concept                          -- ^ identity element restricted to a type
-      | Pnid P_Concept                         -- ^ unidentity element restricted to a type; the dual of Pid
       | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
       | Pnull                                  -- ^ the empty relation
       | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
@@ -229,7 +228,6 @@ where
     origin e = case e of
       PI orig        -> orig
       Pid _          -> OriginUnknown
-      Pnid _         -> OriginUnknown
       Patm orig _ _  -> orig
       Pnull          -> OriginUnknown
       PVee orig      -> orig
