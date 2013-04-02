@@ -64,10 +64,12 @@ instance Show Type where
     showsPrec _ typTerm = showString (showType typTerm)
 
 showType :: Type -> String
-showType (TypExpr term@(Pid _) _)     = showADL term
+showType (TypExpr (Pid c) _)          = "pop ("++name c++") "
 showType (TypExpr term@(PVee o) _)    = showADL term     ++"("++ shOrig o++")"
 showType (TypExpr term@(Pfull _ _) _) = showADL term
-showType (TypExpr term _)             = showADL term     ++"("++ shOrig (origin term)++")"
+-- dom x    = TypExpr x         False
+showType (TypExpr term False)         = "dom ("++showADL term++") "++ shOrig (origin term)
+showType (TypExpr term True)          = "cod ("++showADL (p_flp term)++") "++ shOrig (origin term)
 showType (TypLub a b _)               = showType a++" .\\/. "++showType b  -- The Lub is the smallest set in which both a and b are contained.
 showType (TypGlb a b _)               = showType a++" ./\\. "++showType b  -- The Glb is the largest set that a and b have in common
 showType Anything                     = "Anything"
