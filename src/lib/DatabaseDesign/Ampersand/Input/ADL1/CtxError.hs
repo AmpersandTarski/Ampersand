@@ -240,7 +240,7 @@ showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
             ([],_,PVee _) -> ["    the type of  "++showADL b++"  must be defined to make this term unambiguous."]
             ([],PI _,_)   -> ["    the type of  "++showADL a++"  must be defined to make this term unambiguous."]
             ([],_,PI _)   -> ["    the type of  "++showADL b++"  must be defined to make this term unambiguous."]
-            ([],_,_)      -> ["    the type between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++"  is undefined."]
+            ([],_,_)      -> ["    the type between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++"  must be unambiguous."]
             (cs,_,_)      -> ["\n    between the "++lSrcTrgText++" of  "++showADL a++"  and the "++rSrcTrgText++" of  "++showADL b++",\n    concepts "++commaEng "and" (map showADL cs)++" are in conflict."]
      )
 
