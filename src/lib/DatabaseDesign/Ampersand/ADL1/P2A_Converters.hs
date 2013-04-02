@@ -89,9 +89,6 @@ instance Prelude.Ord Type where
   compare (TypExpr (Pid c)        _) (TypExpr (Pid c')         _) = Prelude.compare c c'
   compare (TypExpr (Pid _)        _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Pid _)          _) = Prelude.GT
-  compare (TypExpr (Pnid c)       _) (TypExpr (Pnid c')        _) = Prelude.compare c c'
-  compare (TypExpr (Pnid _)       _) (TypExpr _                _) = Prelude.LT
-  compare (TypExpr _              _) (TypExpr (Pnid _)         _) = Prelude.GT
   compare (TypExpr (Patm _ x [c]) _) (TypExpr (Patm _ x' [c']) _) = Prelude.compare (x,c) (x',c')
   compare (TypExpr (Patm _ _ [_]) _) (TypExpr (Patm _ _   _  ) _) = Prelude.LT
   compare (TypExpr (Patm _ _  _ ) _) (TypExpr (Patm _ _  [_ ]) _) = Prelude.GT
@@ -133,7 +130,6 @@ p_flp a            = PFlp (origin a) a
 
 complement :: Term -> Term
 complement (PCpl _ a) = a
-complement (Pnid c)   = Pid c
 complement a          = PCpl (origin a) a
 
 --cmpl :: Type -> Type
@@ -680,9 +676,9 @@ instance Expr P_Process where
 instance Expr P_Rule where
  terms r = terms (rr_exp r)++terms (rr_viol r)
  p_rules r = [r]
- uType ctxt _ uLft uRt r
+ uType ctxt _ _ _ r
   = let x=rr_exp r; v=rr_viol r in
-    uType ctxt x uLft uRt x .+. uType ctxt v (dom x) (cod x) v
+    uType ctxt x (dom x) (cod x) x .+. uType ctxt v (dom x) (cod x) v
 
 instance Expr P_PairView where
  terms (P_PairView segments) = terms segments
@@ -803,7 +799,6 @@ instance Expr Term where
  
  uType ctxt x uLft uRt expr 
   = case expr of
-     Pnid{}       -> fatal 136 "Pnid has no representation"
      PI{}         -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt             -- I
      Pid{}        -> dom x.=.cod x                                              -- I[C]
      (Patm _ _ []) -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt      -- 'Piet'   (an untyped singleton)
@@ -847,7 +842,6 @@ instance Expr Term where
      (PRad _ a b) -> let (bm,between) = mGeneric (cod a) (dom b) x
                          pnidTest (PCpl _ (PI{})) r = r
                          pnidTest (PCpl _ (Pid{})) r = r
-                         pnidTest (Pnid{}) r = r
                          pnidTest _ _ = nothing
                      in dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
                         bm .+. uType ctxt a uLft between a .+. uType ctxt b between uRt b
@@ -886,36 +880,6 @@ instance Expr Term where
                                        , uLft == thing (head cs)
                                        , uRt  == thing (last cs)
                                        ]
-                    {-let (p_context, compatible) = ctxt
-                        y=complement x
-                        
-                        spcls  = case (dSrcs, dTrgs) of
-                                      ( []  ,  []  ) -> []
-                                      ( [d] ,  []  ) -> [d]
-                                      ( []  ,  [d] ) -> [d]
-                                      ( [d] ,  _   ) -> [d]
-                                      ( _   ,  [d] ) -> [d]
-                                      ( _   ,  _   ) -> dSrcs `isc` dTrgs
-
-                        dSrcs, dTrgs ::  [Term]
-                        dSrcs  = [decl | decl@(PTrel _ _ (P_Sign (_:_)))<-decls'
-                                       , compatible uLft (dom decl)   -- this is compatibility wrt firstSetOfEdges, thus avoiding a computational loop
-                                       ]
-                        dTrgs  = [decl | decl@(PTrel _ _ (P_Sign (_:_)))<-decls'
-                                       , compatible uRt  (cod decl)
-                                       ]
-                     in -- WHY is:
-                        -- dom x.<.uLft .+. cod x.<.uRt 
-                        -- correct for PVee but not for Prel?
-                        -- Explanation:
-                        -- In the case of PVee, we decide to change the occurrence of PVee for a different one, and choose to pick the smallest such that the end-result will not change
-                        -- In the case of Prel, we cannot decide to change the occurrence, since sharing occurs. More specifically, the statement is simply not true.
-                          _   -> ( Map.empty -- produce first element outside of case to prevent loop
-                                 , case spcls of
-                                     [c] -> let (t1,t2) = dom x.=.dom c .+. cod x.=.cod c .+. dom y.=.dom c .+. cod y.=.cod c 
-                                            in  t1 .++. t2
-                                     _   -> Map.empty
-                                 ) -}
      (Pflp o nm) -> let e = Prel o nm
                     in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
      (PTflp o nm (P_Sign cs)) -> let e = PTrel o nm (P_Sign (reverse cs))
@@ -1590,9 +1554,6 @@ pCtx2aCtx p_context
                                  ; return (ERel (I (pCpt2aCpt c)) sgn)
                                  }
            Pid c           -> return (iExpr (pCpt2aCpt c))
-           Pnid c          -> do { sgn<-getSign x
-                                 ; return (ECpl (ERel (I (pCpt2aCpt c)) sgn) sgn)
-                                 }
            Patm _ atom _   -> do { sgn<-getSign x
                                  ; return (EMp1 atom sgn)
                                  }
