@@ -153,7 +153,7 @@ showErr err = case err of
                   [d] -> "  does not match the declaration on "++show (origin d)++": "++name d++show (dec_sign d)
                   ds  -> "  cannot be matched to any of the following declarations:"++
                          concat [ "\n      "++name d++show (dec_sign d)++":\t "++show (origin d) | d<-ds ]
-          [d] -> fatal 156 "Illegal error message. This should be correct."
+          [_] -> fatal 156 "Illegal error message. This should be correct."
           ds  -> "    Relation  "++showADL term++"  must be bound to one declaration only,\n"++
                  "    but it can be matched to each of the following declarations:"++
                  concat [ "\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d)
