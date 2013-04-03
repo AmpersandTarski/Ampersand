@@ -142,7 +142,7 @@ where
                     else [ OOClass c (attrs cl) []
                          | cl<-eqCl source attRels, let c=source (head cl)
                          , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.relationsIn) r)
+       assocs'    = [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.declsUsedIn) r)
                     | r<-assRels]
                     where
                      mults r = let minVal = if isTot r then MinOne else MinZero
@@ -167,7 +167,7 @@ where
                     [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
 -- assRels contains all relations that do not occur as attributes in classes
        assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
-       attrs rs   = [ OOAttr ((name.head.relationsIn) r) (name (target r)) (not(isTot r))
+       attrs rs   = [ OOAttr ((name.head.declsUsedIn) r) (name (target r)) (not(isTot r))
                     | r<-rs, not (isPropty r)]
        isPropty r = null([Sym,Asy]>-multiplicities r)
 

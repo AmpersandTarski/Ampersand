@@ -274,7 +274,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- Each interface gets all attributes that are required to create and delete the object.
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
-           [Ifc { ifcParams = nub [ makeDeclaration r | r<-relationsIn objattributes, not (isIdent r)]
+           [Ifc { ifcParams = [ d | d<-declsUsedIn objattributes, not (isIdent d)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
@@ -407,7 +407,7 @@ while maintaining all invariants.
       --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
                         ]
                         rule)
-      | rule<-rs, d<-nub (map makeDeclaration (relationsIn rule)), visible d
+      | rule<-rs, d<- declsUsedIn rule, visible d
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
