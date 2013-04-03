@@ -71,8 +71,8 @@ doGenBericht fSpec flags =
                                      Cd {cddef=def'} : _ | def' /= "" -> def'
                                      _                                -> "** NO DEFINITION **"
                    where relTargetDef = case rel of -- target def of relation, or source def if relation is flipped
-                                          ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Tgt def')}}) _          -> def'
-                                          EFlp (ERel (Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef Src def')}}) _) _ -> def'
+                                          EDcD (Sgn{decConceptDef=Just (RelConceptDef Tgt def')}) _          -> def'
+                                          EFlp (EDcD (Sgn{decConceptDef=Just (RelConceptDef Src def')}) _) _ -> def'
                                           _                                              -> ""       
        
                   objsForInterfaceNamed :: String -> [ObjectDef]

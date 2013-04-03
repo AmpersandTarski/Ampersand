@@ -302,7 +302,7 @@ generateInterface fSpec flags interface =
   genInterfaceObjects fSpec flags (ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface) 
   
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> Options -> [Relation] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects :: Fspc -> Options -> [Declaration] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if objctx object /= normalizedInterfaceExp && verboseP flags
@@ -318,15 +318,15 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
   ++ case objctx object of
-         ERel r _          | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- only support editing on user-specified relations (no expressions, and no I or V)
+         EDcD d _          | isEditable d -> [ "      , 'relation' => "++showPhpStr (name d) -- only support editing on user-specified relations (no expressions, and no I or V)
                                              , "      , 'relationIsFlipped' => false" 
-                                             , "      , 'min' => "++ if isTot r then "'One'" else "'Zero'"
-                                             , "      , 'max' => "++ if isUni r then "'One'" else "'Many'"
+                                             , "      , 'min' => "++ if isTot d then "'One'" else "'Zero'"
+                                             , "      , 'max' => "++ if isUni d then "'One'" else "'Many'"
                                              ]
-         EFlp (ERel r _) _ | isEditable r -> [ "      , 'relation' => "++showPhpStr (name r) -- and on flipped versions of those relations. NOTE: same cases appear in getEditableConcepts
+         EFlp (EDcD d _) _ | isEditable d -> [ "      , 'relation' => "++showPhpStr (name d) -- and on flipped versions of those relations. NOTE: same cases appear in getEditableConcepts
                                              , "      , 'relationIsFlipped' => true" 
-                                             , "      , 'min' => "++ if isSur r then "'One'" else "'Zero'"
-                                             , "      , 'max' => "++ if isInj r then "'One'" else "'Many'"
+                                             , "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
+                                             , "      , 'max' => "++ if isInj d then "'One'" else "'Many'"
                                              ]          
          _                                -> [ "      , 'relation' => ''" 
                                              , "      , 'relationIsFlipped' => ''" 
@@ -341,15 +341,15 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable rel = makeDeclaration rel `elem` map makeDeclaration editableRels
+ where isEditable dcl = dcl `elem` editableRels
        normalizedInterfaceExp = conjNF $ objctx object
        getEditableConcepts obj = (case objctx obj of
-                                   ERel r _          | isEditable r -> [target r]
-                                   EFlp (ERel r _) _ | isEditable r -> [source r]
+                                   EDcD d _          | isEditable d -> [target d]
+                                   EFlp (EDcD d _) _ | isEditable d -> [source d]
                                    _                                -> [])
                                  ++ concatMap getEditableConcepts (objAts obj)
   
-generateMSubInterface :: Fspc -> Options -> [Relation] -> Int -> Maybe SubInterface -> [String] 
+generateMSubInterface :: Fspc -> Options -> [Declaration] -> Int -> Maybe SubInterface -> [String] 
 generateMSubInterface fSpec flags editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ] 

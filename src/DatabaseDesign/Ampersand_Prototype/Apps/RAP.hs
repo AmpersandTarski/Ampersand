@@ -35,26 +35,29 @@ picturesForAtlas flags fSpec
 --REMARK quickQuery' is strict and needed to keep results for use after disconnecting
 type AtomVal = String
 type RelTbl = [(AtomVal,AtomVal)]
-selectdecl :: (IConnection conn) => conn -> Fspc -> Relation -> IO RelTbl
-selectdecl conn fSpec rel
+selectdecl :: (IConnection conn) => conn 
+      -> Fspc 
+      -> String   -- ^The name of the declaration  
+      -> IO RelTbl
+selectdecl conn fSpec dclName
  = do rows <- quickQuery' conn stmt []
       return [(fromSql x,fromSql y) |[x,y]<-rows]
-   where stmt = fromMaybe [] (selectExprRelation fSpec (-1) "fld1" "fld2" rel)
-
+   where stmt = fromMaybe [] (selectExprRelation fSpec (-1) "fld1" "fld2" dcl)
+         dcl = therel dclName "" ""
+         therel ::String -> String -> String -> Declaration 
+         therel relname relsource reltarget 
+          = theonly [ d |
+                       d<-declarations fSpec
+                      ,relname==name d
+                      ,null relsource || relsource==name(source d)
+                      ,null reltarget || reltarget==name(target d)]
+                    ("when searching for the relation x with searchpattern (name,source,target)" ++ show (relname,relsource,reltarget))
 
 theonly :: [t] -> String -> t
 theonly xs err
  | length xs==1 = head xs
  | null xs = error ("no x: " ++ err)
  | otherwise = error ("more than one x: " ++ err)
-therel :: Fspc -> String -> String -> String -> Relation
-therel fSpec relname relsource reltarget 
- = theonly [makeRelation d |
-              d<-declarations fSpec
-             ,relname==name d
-             ,null relsource || relsource==name(source d)
-             ,null reltarget || reltarget==name(target d)]
-           ("when searching for the relation x with searchpattern (name,source,target)" ++ show (relname,relsource,reltarget))
 geta :: [(String,b)] -> String -> b -> b
 geta f x notfound = (\xs-> if null xs then notfound else head xs) [y | (x',y)<-f,x==x']
 
@@ -66,20 +69,20 @@ atlas2populations fSpec flags =
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context with populations only
       --Context--
-      r_ctxnm           <- selectdecl conn fSpec (therel fSpec "ctxnm" [] []) --ctxnm ::Context->Conid
+      r_ctxnm           <- selectdecl conn fSpec "ctxnm" --ctxnm ::Context->Conid
       --Concept--
-      r_cptnm           <- selectdecl conn fSpec (therel fSpec "cptnm" [] []) --cptnm :: Concept->Conid
-      r_cptos           <- selectdecl conn fSpec (therel fSpec "cptos" [] []) --cptos :: Concept*AtomID
-      r_atomvalue       <- selectdecl conn fSpec (therel fSpec "atomvalue" [] []) --atomvalue::AtomID->Atom
+      r_cptnm           <- selectdecl conn fSpec "cptnm" --cptnm :: Concept->Conid
+      r_cptos           <- selectdecl conn fSpec "cptos" --cptos :: Concept*AtomID
+      r_atomvalue       <- selectdecl conn fSpec "atomvalue" --atomvalue::AtomID->Atom
       --Relation--
-      r_decnm           <- selectdecl conn fSpec (therel fSpec "decnm" [] []) --decnm ::Declaration->Varid
-      r_decsgn          <- selectdecl conn fSpec (therel fSpec "decsgn" [] []) --decsgn ::Declaration->Sign
-      r_src             <- selectdecl conn fSpec (therel fSpec "src" [] []) --src::Sign->Concept
-      r_trg             <- selectdecl conn fSpec (therel fSpec "trg" [] []) --trg::Sign->Concept
+      r_decnm           <- selectdecl conn fSpec "decnm" --decnm ::Declaration->Varid
+      r_decsgn          <- selectdecl conn fSpec "decsgn" --decsgn ::Declaration->Sign
+      r_src             <- selectdecl conn fSpec "src" --src::Sign->Concept
+      r_trg             <- selectdecl conn fSpec "trg" --trg::Sign->Concept
       --P_Population--
-      r_decpopu         <- selectdecl conn fSpec (therel fSpec "decpopu" [] []) --decpopu ::Declaration*PairID
-      r_left            <- selectdecl conn fSpec (therel fSpec "left" [] []) --left::Pair->AtomID
-      r_right           <- selectdecl conn fSpec (therel fSpec "right" [] []) --right::Pair->AtomID
+      r_decpopu         <- selectdecl conn fSpec "decpopu" --decpopu ::Declaration*PairID
+      r_left            <- selectdecl conn fSpec "left" --left::Pair->AtomID
+      r_right           <- selectdecl conn fSpec "right" --right::Pair->AtomID
       -----------
       disconnect conn
       verboseLn flags "Disconnected."
@@ -101,48 +104,48 @@ atlas2context fSpec flags =
       -----------
       --select (strict) everything you need, then disconnect, then assemble it into a context and patterns and stuff
       --Context--
-      r_ctxnm           <- selectdecl conn fSpec (therel fSpec "ctxnm" [] []) --ctxnm ::Context->Conid
+      r_ctxnm           <- selectdecl conn fSpec "ctxnm" --ctxnm ::Context->Conid
       --not needed because there is only one context
       --ctxpats :: Context*Pattern
       --ctxcs ::   Context*Concept
       --Pattern--
-      r_ptnm            <- selectdecl conn fSpec (therel fSpec "ptnm" [] []) --ptnm ::   Pattern->Conid
-      r_ptrls           <- selectdecl conn fSpec (therel fSpec "ptrls" [] []) --ptrls :: Pattern*Rule
-      r_ptdcs           <- selectdecl conn fSpec (therel fSpec "ptdcs" [] []) --ptdcs :: Pattern*Declaration
-      r_ptgns           <- selectdecl conn fSpec (therel fSpec "ptgns" [] []) --ptgns :: Pattern*Gen
-      r_ptxps           <- selectdecl conn fSpec (therel fSpec "ptxps" [] []) --ptxps :: Pattern*Blob
+      r_ptnm            <- selectdecl conn fSpec "ptnm" --ptnm ::   Pattern->Conid
+      r_ptrls           <- selectdecl conn fSpec "ptrls" --ptrls :: Pattern*Rule
+      r_ptdcs           <- selectdecl conn fSpec "ptdcs" --ptdcs :: Pattern*Declaration
+      r_ptgns           <- selectdecl conn fSpec "ptgns" --ptgns :: Pattern*Gen
+      r_ptxps           <- selectdecl conn fSpec "ptxps" --ptxps :: Pattern*Blob
       --Gen--
-      r_gengen          <- selectdecl conn fSpec (therel fSpec "gengen" [] []) --gengen :: Gen->Concept
-      r_genspc          <- selectdecl conn fSpec (therel fSpec "genspc" [] []) --genspc :: Gen->Concept
+      r_gengen          <- selectdecl conn fSpec "gengen" --gengen :: Gen->Concept
+      r_genspc          <- selectdecl conn fSpec "genspc" --genspc :: Gen->Concept
       --Concept--
-      r_cptnm           <- selectdecl conn fSpec (therel fSpec "cptnm" [] []) --cptnm :: Concept->Conid
-      r_cptpurpose      <- selectdecl conn fSpec (therel fSpec "cptpurpose" [] []) --cptpurpose:: Concept*Blob
-      r_cptdf           <- selectdecl conn fSpec (therel fSpec "cptdf" [] []) --cptdf :: Concept*Blob
-      r_cptos           <- selectdecl conn fSpec (therel fSpec "cptos" [] []) --cptos :: Concept*AtomID
-      r_atomvalue       <- selectdecl conn fSpec (therel fSpec "atomvalue" [] []) --atomvalue::AtomID->Atom
+      r_cptnm           <- selectdecl conn fSpec "cptnm" --cptnm :: Concept->Conid
+      r_cptpurpose      <- selectdecl conn fSpec "cptpurpose" --cptpurpose:: Concept*Blob
+      r_cptdf           <- selectdecl conn fSpec "cptdf" --cptdf :: Concept*Blob
+      r_cptos           <- selectdecl conn fSpec "cptos" --cptos :: Concept*AtomID
+      r_atomvalue       <- selectdecl conn fSpec "atomvalue" --atomvalue::AtomID->Atom
       --Relation--
-      r_decnm           <- selectdecl conn fSpec (therel fSpec "decnm" [] []) --decnm ::   Declaration->Varid
-      r_decsgn          <- selectdecl conn fSpec (therel fSpec "decsgn" [] []) --decsgn :: Declaration->Sign
-      r_src             <- selectdecl conn fSpec (therel fSpec "src" [] []) --src::Sign->Concept
-      r_trg             <- selectdecl conn fSpec (therel fSpec "trg" [] []) --trg::Sign->Concept
-      r_decprps         <- selectdecl conn fSpec (therel fSpec "decprps" [] [])    --decprps::Declaration*PropertyRule
-      r_declaredthrough <- selectdecl conn fSpec (therel fSpec "declaredthrough" [] []) --declaredthrough :: PropertyRule*Property
-      r_decprL          <- selectdecl conn fSpec (therel fSpec "decprL" [] [])     --decprL ::     Declaration*String
-      r_decprM          <- selectdecl conn fSpec (therel fSpec "decprM" [] [])     --decprM ::     Declaration*String
-      r_decprR          <- selectdecl conn fSpec (therel fSpec "decprR" [] [])     --decprR ::     Declaration*String
-      r_decmean         <- selectdecl conn fSpec (therel fSpec "decmean" [] [])    --decmean ::    Declaration * Blob
-      r_decpurpose      <- selectdecl conn fSpec (therel fSpec "decpurpose" [] []) --decpurpose :: Declaration * Blob
+      r_decnm           <- selectdecl conn fSpec "decnm" --decnm ::   Declaration->Varid
+      r_decsgn          <- selectdecl conn fSpec "decsgn" --decsgn :: Declaration->Sign
+      r_src             <- selectdecl conn fSpec "src" --src::Sign->Concept
+      r_trg             <- selectdecl conn fSpec "trg" --trg::Sign->Concept
+      r_decprps         <- selectdecl conn fSpec "decprps"    --decprps::Declaration*PropertyRule
+      r_declaredthrough <- selectdecl conn fSpec "declaredthrough" --declaredthrough :: PropertyRule*Property
+      r_decprL          <- selectdecl conn fSpec "decprL"     --decprL ::     Declaration*String
+      r_decprM          <- selectdecl conn fSpec "decprM"     --decprM ::     Declaration*String
+      r_decprR          <- selectdecl conn fSpec "decprR"     --decprR ::     Declaration*String
+      r_decmean         <- selectdecl conn fSpec "decmean"    --decmean ::    Declaration * Blob
+      r_decpurpose      <- selectdecl conn fSpec "decpurpose" --decpurpose :: Declaration * Blob
       --P_Population--
-      r_decpopu         <- selectdecl conn fSpec (therel fSpec "decpopu" [] [])    --decpopu ::    Declaration*PairID
-      r_left            <- selectdecl conn fSpec (therel fSpec "left" [] [])       --left ::       PairID->AtomID
-      r_right           <- selectdecl conn fSpec (therel fSpec "right" [] [])      --right ::      PairID->AtomID
+      r_decpopu         <- selectdecl conn fSpec "decpopu"    --decpopu ::    Declaration*PairID
+      r_left            <- selectdecl conn fSpec "left"       --left ::       PairID->AtomID
+      r_right           <- selectdecl conn fSpec "right"      --right ::      PairID->AtomID
       --Rule--
-      r_rrnm            <- selectdecl conn fSpec (therel fSpec "rrnm" [] [])       --rrnm ::       Rule -> ADLid
-      r_rrexp           <- selectdecl conn fSpec (therel fSpec "rrexp" [] [])      --rrexp ::      Rule -> ExpressionID
-      r_rrmean          <- selectdecl conn fSpec (therel fSpec "rrmean" [] [])     --rrmean ::     Rule * Blob
-      r_rrpurpose       <- selectdecl conn fSpec (therel fSpec "rrpurpose" [] [])  --rrpurpose ::  Rule * Blob
+      r_rrnm            <- selectdecl conn fSpec "rrnm"       --rrnm ::       Rule -> ADLid
+      r_rrexp           <- selectdecl conn fSpec "rrexp"      --rrexp ::      Rule -> ExpressionID
+      r_rrmean          <- selectdecl conn fSpec "rrmean"     --rrmean ::     Rule * Blob
+      r_rrpurpose       <- selectdecl conn fSpec "rrpurpose"  --rrpurpose ::  Rule * Blob
       --Expression--
-      r_exprvalue'      <- selectdecl conn fSpec (therel fSpec "exprvalue" [] [])  --exprvalue ::  ExpressionID->Expression
+      r_exprvalue'      <- selectdecl conn fSpec "exprvalue"  --exprvalue ::  ExpressionID->Expression
       --not needed
       --rels ::   ExpressionID*Relation
       --relnm ::  Relation -> Varid

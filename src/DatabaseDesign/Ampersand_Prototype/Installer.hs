@@ -76,13 +76,13 @@ installer fSpec flags = intercalate "\n  "
         ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
         ]
         ++
-        ["  fwrite($dumpfile, dumprel(\""++showADL rel++"\",\""++qry++"\"));" 
+        ["  fwrite($dumpfile, dumprel(\""++showADL d++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
-        , let rel=makeRelation d
-        , let dbrel = sqlRelPlugNames fSpec (ERel rel (sign rel))
+        , let relExpr = EDcD d (sign d)
+        , let dbrel = sqlRelPlugNames fSpec relExpr
         , not(null dbrel)
         , let (_,src,trg) = head dbrel
-        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) src trg rel)]
+        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) src trg d)]
         ++
         ["  fwrite($dumpfile, \"ENDCONTEXT\");"
         ,"  fclose($dumpfile);"

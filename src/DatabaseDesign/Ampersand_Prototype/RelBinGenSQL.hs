@@ -79,7 +79,7 @@ selectExpr fSpec i src trg expr
                   trgC       = sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
                   trg'       = noCollideUnlessTm' fstm [src'] trgC
                   fstm       = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
-                  mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},ERel (V _) _,EMp1{}] <- [exprCps2list t]]
+                  mp1Tm      = take 1 [t | t@EMp1{}<-lst']++[t | t<-lst', [EMp1{},EDcV _,EMp1{}] <- [exprCps2list t]]
                   lst        = [t |t<-lst', t `notElem` mp1Tm]
                   posTms     = if null posTms' then map (notCpl sgn) (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
                   negTms     = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
@@ -106,7 +106,7 @@ selectExpr fSpec i src trg expr
                               ]++
                               [Just$ "isect0."++src'++" = \\'"++atom1++"\\'" -- source and target are unequal
                                 ++ " AND isect0."++trg'++" = \\'"++atom2++"\\'" -- source and target are unequal
-                              | t@ECps{} <- mp1Tm, [EMp1 atom1 _, ERel (V _) _, EMp1 atom2 _]<-[exprCps2list t]
+                              | t@ECps{} <- mp1Tm, [EMp1 atom1 _, EDcV _, EMp1 atom2 _]<-[exprCps2list t]
                               ]++
                               [if isIdent l
                                then  Just ("isect0."++src'++" <> isect0."++trg') -- this code will calculate ../\-I
@@ -146,19 +146,19 @@ selectExpr fSpec i src trg expr
     ECps{}  ->
        let es = exprCps2list expr in
        case es of 
-          (ERel (V (Sign ONE _)) _:fs@(_:_))
+          (EDcV (Sign ONE _):fs@(_:_))
              -> let src' = noCollideUnlessTm' (foldr1 (.:.) fs) [trg'] (sqlExprSrc fSpec (foldr1 (.:.) fs))
                     trg' = sqlExprTrg fSpec (foldr1 (.:.) fs)
-                in sqlcomment i ("case:  (ERel (V (Sign ONE _) _): fs@(_:_))"++phpIndent (i+3)++showADL expr) $
+                in sqlcomment i ("case:  (EDcV (Sign ONE _): fs@(_:_))"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("1",src) ("fst."++trg',trg)
                       (selectExprBrac fSpec i src' trg' (foldr1 (.:.) fs) +++ " AS fst")
                       (Just$ "fst."++trg'++" IS NOT NULL")
-          (s1@EMp1{}: s2@(ERel (V _) _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
-             -> sqlcomment i ("case:  (s1@EMp1{}: s2@(ERel (V _) _): s3@EMp1{}: fx@(_:_))"
+          (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
+             -> sqlcomment i ("case:  (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_))"
                 ++
                 phpIndent (i+3)++showADL expr) (selectExpr fSpec i src trg (foldr1 (.:.) [s1,s2,s3] .:. foldr1 (.:.) fx))
-          [EMp1 atomSrc _, ERel (V _) _, EMp1 atomTrg _]-- this will occur quite often because of doSubsExpr
-             -> sqlcomment i ("case:  [EMp1 atomSrc _, ERel (V _) _, EMp1 atomTrg _]"++phpIndent (i+3)++showADL expr) $
+          [EMp1 atomSrc _, EDcV _, EMp1 atomTrg _]-- this will occur quite often because of doSubsExpr
+             -> sqlcomment i ("case:  [EMp1 atomSrc _, EDcV _, EMp1 atomTrg _]"++phpIndent (i+3)++showADL expr) $
                  Just$ "SELECT \\'"++atomSrc++"\\' AS "++src++", \\'"++atomTrg++"\\' AS "++trg
 
           (e@(EMp1 atom _):f:fx)
@@ -168,7 +168,7 @@ selectExpr fSpec i src trg expr
                    selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                                    (selectExprBrac fSpec i src' trg' (foldr1 (.:.) (f:fx))+++" AS fst")
                                    (Just$"fst."++src'++" = \\'"++atom++"\\'")
-          (e:ERel (V _) _:f:fx) -- prevent calculating V in this case
+          (e:EDcV _:f:fx) -- prevent calculating V in this case
              | src==trg && not (isProp e) -> fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
              | otherwise -> let src' = sqlExprSrc fSpec e
                                 mid' = sqlExprTrg fSpec e
@@ -214,12 +214,13 @@ selectExpr fSpec i src trg expr
                   whereClause 
           _  -> fatal 215 "impossible outcome of exprCps2list"
 
-    (EFlp x _) -> sqlcomment i ("case: EFlp x.") $
+    (EFlp x _) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
 --    (EMp1 atom _) -> fatal 219 "TODO: implement SQL code for EMp1"
-    (ERel mrph _)  
-      -> case mrph of
-          (V (Sign s t)) -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (iExpr c)]
+
+--    (ERel mrph _)  
+--      -> case mrph of
+    (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (iExpr c)]
                             in sqlcomment i ("case: (vExpr (Sign s t))"++phpIndent (i+3)++"ERel [ \""++showADL (V (Sign s t))++"\" ]") $
                                case [selectGeneric i (src',src) (trg',trg) tbls "1"
                                     | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
@@ -228,22 +229,22 @@ selectExpr fSpec i src trg expr
                                     ] of
                                  []    -> fatal 216 $ "Problem in selectExpr (vExpr (Sign \""++show s++"\" \""++show t++"\"))"
                                  sql:_ -> Just sql 
-          (I ONE)        -> sqlcomment i "I[ONE]"$ 
-                             selectExpr fSpec i src trg (vExpr (Sign ONE ONE))
-          _              -> selectExprRelation fSpec i src trg mrph
+    (EDcI     sgn)       -> sqlcomment i ("I["++(show.name.source) sgn++"]") 
+                                         (selectExpr fSpec i src trg (vExpr sgn))
+    (EDcD d   sgn)       -> selectExprRelation fSpec i ((name.source) sgn) ((name.target) sgn) d
 
     (EBrk e) -> selectExpr fSpec i src trg e
 
-    (ECpl (ERel (V _) _) sgn) -> sqlcomment i ("case: ECpl (ERel (V _) _)  with signature "++show sgn)$   -- yields empty
+    (ECpl (EDcV _) sgn)  -> sqlcomment i ("case: ECpl (EDcV _)  with signature "++show sgn)$   -- yields empty
                                  toM(selectGeneric i ("1",src) ("1",trg) "(SELECT 1) AS a" "0")
     (ECpl e sgn)
       -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" ) \""++show sgn++"\"") $
          selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                          (sqlConcept fSpec (source e) ++ " AS cfst,"++phpIndent (i+5)+++selectExprBrac fSpec (i+5) trg' trg' (iExpr (target e))+++" AS csnd")
                          ("NOT EXISTS"++phpIndent i++" ("+++
-                            (selectExists' (i+2) ((selectExprBrac fSpec (i+2) src2 trg2 e) +++ " AS cp")
+                             selectExists' (i+2) (selectExprBrac fSpec (i + 2) src2 trg2 e +++ " AS cp")
                                                  ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
-                            ) +++ ")"
+                              +++ ")"
                          )
                          where src' = quote $ sqlAttConcept fSpec (source e) 
                                trg' = quote $ noCollide [src'] (sqlAttConcept fSpec (target e))
@@ -251,7 +252,7 @@ selectExpr fSpec i src trg expr
                                trg2 = noCollideUnlessTm' e [src2] (sqlExprTrg fSpec e)
     (EKl0 _ _) -> fatal 249 "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
     (EKl1 _ _) -> fatal 249 "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
-    (EDif (ERel V{} _,x) sgn) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show sgn++"\"") $
+    (EDif (EDcV _,x) sgn) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show sgn++"\"") $
                                  selectExpr fSpec i src trg (notCpl sgn x) 
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
 -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
@@ -286,15 +287,22 @@ selectExprBrac :: Fspc
                -> String      -- ^ target name (preferably quoted)
                -> Expression  -- ^ Whatever expression to generate an SQL query for
                -> Maybe String
-selectExprBrac    f i s@(_:_)   t         e | head s /= '`' = selectExprBrac f i (quote s) t         e
-selectExprBrac    f i s         t@(_:_)   e | head t /= '`' = selectExprBrac f i s         (quote t) e
-selectExprBrac fSpec i src trg (EBrk  e )                   = selectExprBrac fSpec i src trg e
-selectExprBrac fSpec i src trg e@ERel{}
- = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames fSpec e,quote s==quote src,quote t==quote trg]
-             ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg e+++" )"))
 selectExprBrac fSpec i src trg expr
- = phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
-
+   | unquoted src = selectExprBrac fSpec i (quote src) trg         expr
+   | unquoted trg = selectExprBrac fSpec i src         (quote trg) expr
+   | otherwise = 
+      case expr of 
+        EBrk  e  -> selectExprBrac fSpec i src trg e
+        EDcD{}   -> leafCode
+        EDcI{}   -> leafCode
+        EDcV{}   -> leafCode
+        _        -> phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
+   where 
+     leafCode = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames fSpec expr,quote s==quote src,quote t==quote trg]
+             ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg expr+++" )"))
+     unquoted [] = False
+     unquoted (x:_) = x /= '`'
+     
 -- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
 noCollide' :: [String] -> String -> String
 noCollide' nms nm = quote$noCollide (map unquote nms) (unquote nm)
@@ -325,32 +333,38 @@ noCollideUnlessTm' :: Expression
                   -> String
                   -> String
 
-noCollideUnlessTm' (ERel{}) _ nm = quote nm
+noCollideUnlessTm' (EDcD{}) _ nm = quote nm
+noCollideUnlessTm' (EDcI{}) _ nm = quote nm
+noCollideUnlessTm' (EDcV{}) _ nm = quote nm
 noCollideUnlessTm' _  names nm = noCollide' names nm
 
 selectExprRelation :: Fspc
                    -> Int
                    -> String -- ^ source
                    -> String -- ^ target
-                   -> Relation
+                   -> Declaration
                    -> Maybe String
 
-selectExprRelation fSpec i src trg rel@V{}
- = selectGeneric i (src',src) (trg',trg)
-                   (sqlConcept fSpec (source rel) +++ " AS vfst, "++sqlConcept fSpec (target rel)++ " AS vsnd")
-                   (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
- where src'="vfst."++sqlAttConcept fSpec (source rel)
-       trg'="vsnd."++sqlAttConcept fSpec (target rel)
-selectExprRelation fSpec i src trg rel -- made for both Rel and I
- = case sqlRelPlugNames fSpec (ERel rel (sign rel)) of
-     []        -> fatal 344 $ "No plug for relation "++show rel
-     (p,s,t):_ -> Just $ selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
+selectExprRelation fSpec i src trg dcl =
+  case dcl of
+    Sgn{}  -> leafCode (EDcD dcl (sign dcl))
+    Isn{}  -> leafCode (EDcI     (sign dcl))
+    Vs sgn -> let src'="vfst."++sqlAttConcept fSpec (source sgn)
+                  trg'="vsnd."++sqlAttConcept fSpec (target sgn)
+              in selectGeneric i (src',src) (trg',trg)
+                  (sqlConcept fSpec (source sgn) +++ " AS vfst, "++sqlConcept fSpec (target sgn)++ " AS vsnd")
+                  (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
+   where
+     leafCode expr =  -- made for both Rel and I
+       case sqlRelPlugNames fSpec expr of
+         []        -> fatal 344 $ "No plug for expression "++show expr
+         (p,s,t):_ -> Just $ selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
                
-selectExists' :: (Concatable a,Concatable b) => Int -> a -> b -> (Maybe String)
+selectExists' :: (Concatable a,Concatable b) => Int -> a -> b -> Maybe String
 selectExists' i tbl whr
- = ("SELECT * FROM ") +++ tbl +++
+ = "SELECT * FROM " +++ tbl +++
    (phpIndent i ++ "WHERE ") +++ whr
 
 selectGeneric :: (Concatable a) =>
@@ -377,7 +391,7 @@ selectSelItem (att,alias)
  where myafterPoint ('.':xs) = xs
        myafterPoint ( _ :xs) = myafterPoint xs
        myafterPoint []       = []
-       afterPoint s = if (myafterPoint s == "") then s else myafterPoint s
+       afterPoint s = if myafterPoint s == "" then s else myafterPoint s
 
 --WHY bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
@@ -396,11 +410,10 @@ sqlRelPlugNames f e = [(name p,fldname s,fldname t) |(p,s,t)<-sqlRelPlugs f e]
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
 getDeclarationTableInfo :: Fspc -> Declaration -> Maybe (String,String,String)
 getDeclarationTableInfo fSpec decl 
-    = let rel = makeRelation decl in
-      case sqlRelPlugNames fSpec (ERel rel (sign rel)) of
+    = case sqlRelPlugNames fSpec (EDcD decl (sign decl)) of
             [plugInfo] -> Just plugInfo
             []         -> Nothing
-            plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show rel
+            plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show decl
                       -- TODO: currently this fatal is disabled because some relations return multiple plugs
                       --       (see ticket #217)
 

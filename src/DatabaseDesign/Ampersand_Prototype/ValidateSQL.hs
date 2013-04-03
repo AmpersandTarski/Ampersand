@@ -94,7 +94,7 @@ showVExp (exp, origin) = "Origin: "++origin++", expression: "++showADL exp
 
 -- validate a single expression and report the results
 validateExp :: Fspc -> Options -> ValidationExp -> IO (ValidationExp, Bool)
-validateExp _     _    vExp@(ERel{}, _)   = -- skip all simple relations 
+validateExp _     _    vExp@(EDcD{}, _)   = -- skip all simple relations 
  do { putStr "."
     ; return (vExp, True)
     }
