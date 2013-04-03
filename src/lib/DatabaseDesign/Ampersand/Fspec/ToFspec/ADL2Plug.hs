@@ -124,9 +124,9 @@ makeLinkTable dcl totsurs =
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
 
 -- | Create field for TblSQL or ScalarSQL plugs 
-rel2fld :: [Expression] -- ^ all relations (in the form either ERel r or EFlp (ERel r) _) that may be represented as attributes of this entity.
-        -> [Expression] -- ^ all relations (in the form either ERel r or EFlp (ERel r) _) that are defined as attributes by the user.
-        -> Expression   -- ^ either ERel r or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
+rel2fld :: [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r) _) that may be represented as attributes of this entity.
+        -> [Expression] -- ^ all relations (in the form either EDcD r or EFlp (EDcD r) _) that are defined as attributes by the user.
+        -> Expression   -- ^ either EDcD r, EDcI or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
         -> SqlFieldUsage
         -> SqlField
 rel2fld kernel
@@ -156,8 +156,11 @@ rel2fld kernel
                  , entry<-if length cl==1
                           then [(rel,niceidname rel++name (source rel)) |rel<-cl]
                           else [(rel,niceidname rel++show i)|(rel,i)<-zip cl [(0::Int)..]]]
-       niceidname rel = case declsUsedIn rel of
-                          []  -> error ( intercalate "\n  "
+       niceidname (EFlp e _ ) = niceidname e
+       niceidname (EDcD d _ ) = name d
+       niceidname (EDcI  sgn) = name (target sgn)
+       niceidname rel         = fatal 162 ( "Unexpected relation found:\n"++
+                                           intercalate "\n  "
                                            [ "***rel:"
                                            , show rel
                                            , "***kernel:"
@@ -166,9 +169,6 @@ rel2fld kernel
                                            , show plugAtts
                                            ]
                                        )
-                          x:_ -> case name x of
-                                  "I"   -> name(target rel) 
-                                  nm    -> nm
    --in a wide table, m can be total, but the field for its target may contain NULL values,
    --because (why? ...)
    --A kernel field may contain NULL values if
