@@ -16,7 +16,13 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Basics      (fatalMsg,eqCl,Collection(..),Identified(..))
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Fspec.Fspec
-import Data.List
+import Data.List hiding (head)
+import Prelude hiding (head)
+
+head :: [a] -> a
+head [] = fatal 30 "head must not be used on an empty list!"
+head (a:_) = a
+
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ShowADL"

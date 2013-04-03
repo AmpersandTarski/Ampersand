@@ -142,11 +142,11 @@ totalOrder CP = fatal 133 "Uncomparable elements in total order."
 
 -- | takes the greatest a of comparables
 greatest :: (Show a,Sortable a) => [a] -> a
-greatest xs 
- | null ms = fatal 138 "there is no greatest"
- | length ms==1 = head ms
- | otherwise = fatal 140 ("there is more than one greatest: "++ show (List.nub xs))
-   where ms = maxima (List.nub xs)
+greatest xs =
+  case maxima (List.nub xs) of
+    []  -> fatal 138 "there is no greatest"
+    [x] -> x
+    xs  -> fatal 140 ("there is more than one greatest: "++ show (List.nub xs))
 -- | takes all a without anything larger
 maxima :: Sortable a => [a] -> [a]
 maxima [] = fatal 144 "the empty list has no maximum"
@@ -154,11 +154,11 @@ maxima xs = [x | x<-List.nub xs,not (or [x < y | y<-List.nub xs])]
 
 -- | takes the least a of comparables if there is only one
 least :: Sortable a => [a] -> a
-least xs 
- | null ms = fatal 150 "there is no least"
- | length ms==1 = head ms
- | otherwise = fatal 152 "there is more than one least"
-   where ms = minima (List.nub xs)
+least xs =
+  case minima (List.nub xs) of
+    []  -> fatal 150 "there is no least"
+    [x] -> x
+    xs  -> fatal 150 "there is more than one least. "
 -- | takes all a without anything less
 minima :: Sortable a => [a] -> [a]
 minima [] = fatal 156 "the empty list has no minimum"
