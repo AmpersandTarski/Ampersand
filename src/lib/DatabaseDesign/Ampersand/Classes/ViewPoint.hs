@@ -156,6 +156,7 @@ instance Language A_Context where
                          -- declarations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
                          -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
                          uniteRels :: [Declaration] -> [Declaration]
+                         uniteRels [] = []
                          uniteRels ds = [ d | cl<-eqClass (==) ds
                                             , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                                              , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl

@@ -15,17 +15,21 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import qualified DatabaseDesign.Ampersand.Core.Poset as Poset hiding (sortWith)
 import GHC.Exts (sortWith)
-import Prelude -- hiding (Ord(..))
+import Prelude hiding (head)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.GraphViz hiding (addExtension, C)
 import Data.GraphViz.Attributes.Complete hiding (Box, Pos)
 import Data.Maybe
-import Data.List
+import Data.List hiding (head)
+
 import Data.Char
 import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map hiding (Map)
 
+head :: [a] -> a
+head [] = fatal 30 "head must not be used on an empty list!"
+head (a:_) = a
 -- TODO: this module should import Database.Ampersand.Core.ParseTree directly, and it should be one 
 --       of the very few modules that imports it. (might require some refactoring due to shared stuff)
 
@@ -282,7 +286,7 @@ checkRfx [] = []
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
 lookups :: (Show a,Ord a) => a -> Map a [a] -> [a]
-lookups o q = head ([mrgUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])
+lookups o q = head ([mrgUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])  
 -- To Stef: lookups was not designed in this way: once upon a time it returned findIn unless the element did not exist.
 -- This is a fundamental difference and wherever lookups was used, there might be bugs now.
 {- Trying to understand lookups:
@@ -434,10 +438,11 @@ typing p_context
      stConcepts :: Map Type [P_Concept]
      stConcepts = Map.map f stClos
                   where f :: [Type] -> [P_Concept]
-                        f ts = [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]
-                               | cl<-eqClass compatible cs]
-                               where cs = [c | TypExpr (Pid c) _<-ts] -- all concepts reachable from one type term
-                                     lkp c = case Map.lookup c isaClosReversed of
+                        f ts = case [c | TypExpr (Pid c) _<-ts]  of -- all concepts reachable from one type term
+                                 [] -> []
+                                 cs -> [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]  --head is allowed, for cl cannot be empty.
+                                       | cl<-eqClass compatible cs]
+                               where lkp c = case Map.lookup c isaClosReversed of
                                               Just cs' -> cs'
                                               _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
      srcTypes :: Type -> [P_Concept]

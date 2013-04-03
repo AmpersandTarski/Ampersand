@@ -22,7 +22,7 @@ where
     genE ::     a -> GenR
     genE cstruc = case concs cstruc of
                    [] -> fatal 25 "No concepts???"
-                   cs -> genE (head cs)
+                   x:_ -> genE x
 
 -- class KleeneClos where
 --  closExprs :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
