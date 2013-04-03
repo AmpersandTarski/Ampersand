@@ -396,3 +396,12 @@ where
             pr'          = nfPr shw True True expr'
             step'        = simplify expr'/=simplify expr''
             (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'
+
+   isEUni :: Expression -> Bool
+   isEUni EUni{}  = True
+   isEUni _       = False
+
+   isEIsc :: Expression -> Bool
+   isEIsc EIsc{}  = True
+   isEIsc _       = False
+
