@@ -82,7 +82,9 @@ where
     mp1Exprs (ECpl e _)     = mp1Exprs e
     mp1Exprs (EBrk e)       = mp1Exprs e
     mp1Exprs (ETyp e _)     = mp1Exprs e
-    mp1Exprs ERel{}         = []
+    mp1Exprs EDcD{}         = []
+    mp1Exprs EDcI{}         = []
+    mp1Exprs EDcV{}         = []
     mp1Exprs e@EMp1{}       = [e]
 
 

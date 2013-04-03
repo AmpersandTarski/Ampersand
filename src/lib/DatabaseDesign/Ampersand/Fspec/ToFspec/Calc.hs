@@ -115,8 +115,8 @@ where
                 )
           ]
           | (ms,hc,r)<-
-              [ (nubBy sameDecl [ rel |(rel,_,_)<-cl],hc,r)
-              | cl<-eqCl (\(_,_,hc)->hc) [(rel,hc,r) |Quad rel ccrs<-qs, let r=cl_rule ccrs, (_,hornClauses)<-cl_conjNF ccrs, hc<-hornClauses]
+              [ (nub [ dcl |(dcl,_,_)<-cl],hc,r)
+              | cl<-eqCl (\(_,_,hc)->hc) [(dcl,hc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, (_,hornClauses)<-cl_conjNF ccrs, hc<-hornClauses]
               , let (_,hc,r) = head cl
               ]
          ]
@@ -245,17 +245,16 @@ where
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-hornClauses]++[ LineBreak]++
                     concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length hornClauses>1 ]++
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause), Str " may be affected by the following events:",LineBreak]++
-                             concat [ [Str "event = ", Str (show ev), Space, Str (showADL rel), Str " means doing the following substitution", LineBreak ] ++
-                                      [Str (showADL clause++"["++showADL rel++":="++showADL (actSem ev rel (delta (sign rel)))++"] = clause'"), LineBreak ] ++
+                             concat [ [Str "event = ", Str (show ev), Space, Str (showADL dcl), Str " means doing the following substitution", LineBreak ] ++
+                                      [Str (showADL clause++"["++showADL dcl++":="++showADL (actSem ev dcl (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
                                       [Str ("clause' = "++showADL ex'), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL ex'), LineBreak] | clause'/=ex'] ++
                                       [Str ("Computing the violations means to negate the conjunct: "++showADL (notClau)), LineBreak ] ++
                                       concat [ [Str ("which has CNF: "++showADL viols), LineBreak] | notClau/=viols] ++
                                       [Str "Now try to derive whether clause |- clause' is true... ", LineBreak, Str (showADL (notClau .\/. clause')), LineBreak, Str "<=>", LineBreak, Str (showADL step), LineBreak ]
-                                    | decl <-declsUsedIn r
+                                    | dcl <-declsUsedIn r
                                     , ev<-[Ins,Del]
-                                    , let rel     = makeRelation decl
-                                    , let ex'     = subst (rel, actSem ev rel (delta (sign rel))) expr
+                                    , let ex'     = subst (dcl, actSem ev dcl (delta (sign dcl))) expr
                                     , let clause' = conjNF ex'
                                     , let notClau = notCpl sgn clause'
                                     , let step    = conjNF (notClau .\/. clause')
@@ -265,7 +264,7 @@ where
                                     , let frExpr  = if ev==Ins
                                                     then conjNF negs
                                                     else conjNF poss
-                                    , decl `elem` declsUsedIn frExpr
+                                    , dcl `elem` declsUsedIn frExpr
                         --            , let toExpr = if ev==Ins
                         --                           then conjNF poss
                         --                           else conjNF (notCpl negs)
@@ -329,15 +328,15 @@ where
 -- Als dat waar is, betekent dat dat invariant r waar blijft wanneer actie a wordt uitgevoerd.
    checkMono :: Expression
              -> InsDel
-             -> Relation
+             -> Declaration
              -> Bool
-   checkMono expr ev rel
+   checkMono expr ev dcl
      = case ruleType conclusion of
         Truth -> fatal 247 "derivMono came up with a Truth!"
         _     -> simplify expr == simplify (antecedent conclusion) &&
-                 simplify (subst (rel, actSem ev rel (delta (sign rel))) expr) ==
+                 simplify (subst (dcl, actSem ev dcl (delta (sign dcl))) expr) ==
                  simplify (consequent conclusion)
-     where (conclusion,_,_) = last (derivMono expr ev rel)
+     where (conclusion,_,_) = last (derivMono expr ev dcl)
 
 
    type Proof expr = [(expr,[String],String)]
@@ -374,27 +373,27 @@ where
 -- derivMono provides a derivation to prove that (precondition) r is a subset of (postcondition) r'.
 -- This is useful in proving that an action {expr} a {expr'} maintains its invariant, i.e. that  expr|-expr'  holds (proven by monotony properties)
 -- Derivmono gives a derivation only.
-   derivMono :: Expression -> InsDel -> Relation -> [(Rule, [String], String)]
+   derivMono :: Expression -> InsDel -> Declaration -> [(Rule, [String], String)]
    derivMono expr -- preconditie van actie a
              tOp  -- de actie (Ins of Del)
-             rel' -- re relatie, zodat de actie bestaat uit INSERT rel' INTO expr of DELETE rel' FROM expr
-    = f (head (lambda tOp (ERel rel' (sign expr)) expr++[[]])) (start tOp)
+             dcl' -- re relatie, zodat de actie bestaat uit INSERT rel' INTO expr of DELETE rel' FROM expr
+    = f (head (lambda tOp (EDcD dcl' (sign expr)) expr++[[]])) (start tOp)
     where
      f :: [(Expression, [String], whatever)] 
         -> (Expression, Expression) 
         -> [(Rule, [String], String)]
      f [] (_,_) = []
      f [(e',_,_)] (neg',pos')
-      = [(rule (subst (rel',neg') e') (subst (rel',pos') e'),[],"")]
+      = [(rule (subst (dcl',neg') e') (subst (dcl',pos') e'),[],"")]
      f ((e',["invert"],_): prf@((_,_,_):_)) (neg',pos')
-      = (rule (subst (rel',neg') e') (subst (rel',pos') e'),["r |- s  <=>  s- |- r-"],"<=>"):
+      = (rule (subst (dcl',neg') e') (subst (dcl',pos') e'),["r |- s  <=>  s- |- r-"],"<=>"):
          f prf (pos',neg')
      f ((e1,_,_): prf@((e2,_,_):_)) (neg',pos')
-      = (rule (subst (rel',neg') e1) (subst (rel',pos') e1),["Monotony of "++showOp e2],"==>"):
+      = (rule (subst (dcl',neg') e1) (subst (dcl',pos') e1),["Monotony of "++showOp e2],"==>"):
          f prf (neg',pos')
          
-     start Ins  = (ERel rel' (sign rel'),ERel rel' (sign rel') .\/. delta (sign rel'))
-     start Del  = (ERel rel' (sign rel') ./\. notCpl (sign rel') (delta (sign rel')),ERel rel' (sign rel'))
+     start Ins  = (EDcD dcl' (sign dcl'),EDcD dcl' (sign dcl') .\/. delta (sign dcl'))
+     start Del  = (EDcD dcl' (sign dcl') ./\. notCpl (sign dcl') (delta (sign dcl')),EDcD dcl' (sign dcl'))
 
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrnm  = ""

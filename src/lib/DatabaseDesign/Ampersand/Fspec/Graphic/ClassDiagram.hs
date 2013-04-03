@@ -58,7 +58,7 @@ where
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [ERel (makeRelation decl) (sign decl) | decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)]
+       rels       = [EDcD decl (sign decl) | decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)]
        relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
        cpts       = nub [ c
                         | gs<-fsisa fSpec
@@ -153,8 +153,8 @@ where
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [ERel (makeRelation decl) (sign decl)| decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)] -- TODO (SJ 26-01-2013): is this double code?
-       relsLim    = [ERel (makeRelation decl) (sign decl)           -- The set of relations that is defined in patterns to be printed.
+       rels       = [EDcD decl (sign decl)| decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)] -- TODO (SJ 26-01-2013): is this double code?
+       relsLim    = [EDcD decl (sign decl)           -- The set of relations that is defined in patterns to be printed.
                     | decl<- if null (themes fSpec)
                              then declarations fSpec
                              else [d | pat <- patterns   fSpec, name pat `elem` themes fSpec, d@Sgn{} <- declarations pat ]++

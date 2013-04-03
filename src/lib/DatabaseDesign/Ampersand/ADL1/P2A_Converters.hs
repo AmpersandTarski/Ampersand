@@ -1203,7 +1203,7 @@ pCtx2aCtx p_context
                 , prcDcls  = [d{decpat=name pproc} | (d,_)<-decsNpops]                         -- The declarations declared in this pattern
                 , prcUps   = catMaybes (map snd decsNpops)
                 , prcRRuls = [(rol,rul) |rul<-udefrules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr] -- The assignment of roles to rules.
-                , prcRRels = [(rol,rel) |rr<-rrels, rol<-rrRoles rr, rel<-rrRels rr]  -- The assignment of roles to Relations.
+                , prcRRels = [(rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                 , prcKds   = keys'                                                    -- The key definitions defined in this process
                 , prcXps   = expls                                                    -- The purposes of elements defined in this process
                 } 
@@ -1228,7 +1228,7 @@ pCtx2aCtx p_context
        where
         f erels = RR { rrRoles = rr_Roles prrel
                      , rrRels  = [ case erel of
-                                    ERel rel _ -> rel
+                                    EDcD dcl _ -> dcl
                                     _   -> fatal 1149 ("Erroneous expression "++showADL erel++" in pRRel2aRRel.")
                                  | (erel,_,_)<-erels ]
                      , rrPos   = rr_Pos prrel
@@ -1351,7 +1351,7 @@ pCtx2aCtx p_context
        where
         f prms obj
          = Ifc { ifcParams = [ case erel of
-                                ERel rel _ -> rel
+                                EDcD dcl _ -> dcl
                                 _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
                , ifcViols  = fatal 206 "not implemented ifcViols"
@@ -1460,26 +1460,29 @@ pCtx2aCtx p_context
     pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop pop
      = case pExpr2aExpr expr of
-        Checked (  ERel aRel _ ,_,_)       -> Checked (thePop aRel)
-        Checked (ETyp (ERel aRel _) _,_,_) -> Checked (thePop aRel)
-        Checked _                          -> fatal 1223 "illegal call of pPop2aPop"
-        Errors errs                        -> Errors errs
-       where expr = case pop of
+        Checked (e,s,t) -> popsOf e
+        Errors errs     -> Errors errs
+       where
+        expr = case pop of
                       P_CptPopu{}                 -> Pid (PCpt (name pop))
                       P_RelPopu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
                       P_RelPopu{}                 -> PTrel (origin pop) (name pop) (p_type pop)
-             thePop rel = case rel of
-                            Rel{} -> PRelPopu { popdcl = reldcl rel
-                                              , popps  = case pop of
-                                                           P_RelPopu{} -> p_popps pop
-                                                           P_CptPopu{} -> fatal 1438 ("Unexpected issue with population of "++name pop) 
-                                              }
-                            I{}   -> PCptPopu { popcpt = rel1typ rel
-                                              , popas  = case pop of
-                                                           P_RelPopu{} -> fatal 1441 ("Unexpected issue with population of "++name pop)
-                                                           P_CptPopu{} -> p_popas pop
-                                              }
-                            V{}   -> fatal 1444 "V has no population of it's own"
+        popsOf e =
+          case e of
+             EDcD d _   -> Checked (PRelPopu { popdcl = d
+                                   , popps  = case pop of
+                                                P_RelPopu{} -> p_popps pop
+                                                P_CptPopu{} -> fatal 1470 ("Unexpected issue with population of "++name pop) 
+                                             })
+             EDcI   sgn -> Checked (PCptPopu { popcpt = source sgn
+                                             , popas  = case pop of
+                                                P_RelPopu{} -> fatal 1474 ("Unexpected issue with population of "++name pop)
+                                                P_CptPopu{} -> p_popas pop
+                                             })
+             EDcV   _   -> fatal 1477 "V has no population of it's own"
+             ETyp e' _  -> popsOf e'
+             _          -> fatal 1223 "illegal call of pPop2aPop"
+
     pGen2aGen :: String -> P_Gen -> A_Gen
     pGen2aGen patNm pg
        = Gen{genfp  = gen_fp  pg
@@ -1552,9 +1555,8 @@ pCtx2aCtx p_context
        where
          f :: Term -> Guarded Expression
          f x = case x of
-           PI _            -> do { c<-returnIConcepts x
-                                 ; sgn<-getSign x
-                                 ; return (ERel (I (pCpt2aCpt c)) sgn)
+           PI _            -> do { sgn<-getSign x
+                                 ; return (EDcI sgn)
                                  }
            Pid c           -> return (iExpr (pCpt2aCpt c))
            Patm _ atom _   -> do { sgn<-getSign x
@@ -1569,17 +1571,13 @@ pCtx2aCtx p_context
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
-                                 ; return (ERel (Rel{ relpos=o
-                                                    , reldcl=decl
-                                                    }) sgn)
+                                 ; return (EDcD decl sgn)
                                  }
            Pflp o _        -> do { decl <- getDeclaration x
                                  ; let [s] = srcTypes (dom x)
                                        [t] = srcTypes (cod x)
                                        sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
-                                 ; return (EFlp (ERel (Rel{ relpos=o
-                                                          , reldcl=decl
-                                                          }) sgn) (flp sgn))
+                                 ; return (EFlp (EDcD decl sgn) (flp sgn))
                                  }
            Pequ _ a b      -> do { let srcAs = srcTypes (dom a)
                                        trgAs = srcTypes (cod a)
@@ -1711,7 +1709,7 @@ pCtx2aCtx p_context
                where pRel2aRel relName src trg
                       = ETyp aRel sgn
                         where aRel  = case decls of
-                                       [decl] -> ERel (Rel o decl) sgn
+                                       [decl] -> EDcD decl sgn
                                        _ -> fatal 1739 ("decls should contain one element only!\n   x = "++show x++"\n   decls = "++show decls++"\n   decs = [ "++intercalate "\n          , " [show d | d<-decs]++"\n          ]")
                               sgn   = Sign aSrc aTrg
                               aSrc  = pCpt2aCpt src

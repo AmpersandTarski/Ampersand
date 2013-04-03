@@ -70,7 +70,7 @@ class ProcessStructure a where
   processRules :: a -> [Rule]          -- ^ all process rules that are visible within this viewpoint
                                        -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
   maintains :: a -> [(String,Rule)] -- ^ the string represents a Role
-  mayEdit :: a -> [(String,Relation)] -- ^ the string represents a Role
+  mayEdit :: a -> [(String,Declaration)] -- ^ the string represents a Role
   workFromProcessRules :: [UserDefPop] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workFromProcessRules  udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations udp r]
    

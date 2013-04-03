@@ -400,9 +400,9 @@ instance ShowMath Expression where
            | source sgn==target sgn = showExpr e++"_{["++show (source sgn)++"]}"
            | otherwise              = showExpr e++"_{["++show (source sgn)++texOnly_rel++show (target sgn)++"]}"
           -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showExpr (ERel rel@Rel{} _) = name rel
-          showExpr (ERel     I{} _)   = "I"
-          showExpr (ERel     V{} _)   = "V"
+          showExpr (EDcD d _) = name d
+          showExpr (EDcI   _) = "I"
+          showExpr (EDcV   _) = "V"
           showExpr (EMp1 atom _)      = "'{\tt "++atom++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
