@@ -3,7 +3,6 @@
 module DatabaseDesign.Ampersand.ADL1.Expression (
                        subst,subsi
                       ,foldlMapExpression,foldrMapExpression
-                      ,isECps,isERad,isEPrd,isEIsc,isEUni
                       ,isPos,isNeg, deMorgan ,notCpl, isCpl)
 where
 import DatabaseDesign.Ampersand.Basics (fatalMsg)
@@ -114,25 +113,6 @@ foldrMapExpression _ _ a (EDcI     _)      = a
 foldrMapExpression _ _ a (EDcV     _)      = a
 foldrMapExpression _ _ a  EMp1{}           = a
 
-isEUni :: Expression -> Bool
-isEUni EUni{}  = True
-isEUni _       = False
-
-isEIsc :: Expression -> Bool
-isEIsc EIsc{}  = True
-isEIsc _       = False
-
-isECps :: Expression -> Bool
-isECps ECps{}  = True
-isECps _       = False
-
-isERad :: Expression -> Bool
-isERad ERad{}  = True
-isERad _       = False
-
-isEPrd :: Expression -> Bool
-isEPrd EPrd{}  = True
-isEPrd _       = False
 
 
 -- \***********************************************************************
