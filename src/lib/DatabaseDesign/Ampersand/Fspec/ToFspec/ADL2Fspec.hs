@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
-   import Prelude hiding (Ord(..))
+   import Prelude hiding (Ord(..),head)
    import DatabaseDesign.Ampersand.ADL1.Rule
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.Classes
@@ -19,7 +19,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1.Expression              (subst)
    import Data.Char        (toLower)
    
-   
+   head :: [a] -> a
+   head [] = fatal 30 "head must not be used on an empty list!"
+   head (a:_) = a
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.ADL2Fspec"
 

@@ -10,9 +10,15 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Data.List (nub)
-
+   import Prelude hiding (head)
+   
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.NormalForms"
+
+   head :: [a] -> a
+   head [] = fatal 30 "head must not be used on an empty list!"
+   head (a:_) = a
+
 
 {- Normalization of process algebra clauses -}
 

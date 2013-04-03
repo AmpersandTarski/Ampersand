@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import DatabaseDesign.Ampersand.Core.Poset as Poset hiding (sortWith)
-import Prelude hiding (Ord(..))
+import Prelude hiding (Ord(..),head)
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
@@ -19,6 +19,10 @@ import GHC.Exts (sortWith)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
+
+head :: Int -> [a] -> a
+head i [] = fatal i "head must not be used on an empty list!"
+head _ (a:_) = a
 
 
 makeGeneratedSqlPlugs :: Options
@@ -152,7 +156,19 @@ rel2fld kernel
                  , entry<-if length cl==1
                           then [(rel,niceidname rel++name (source rel)) |rel<-cl]
                           else [(rel,niceidname rel++show i)|(rel,i)<-zip cl [(0::Int)..]]]
-       niceidname rel = if (name.head.declsUsedIn) rel == "I" then name(target rel) else (name.head.declsUsedIn) rel
+       niceidname rel = case declsUsedIn rel of
+                          []  -> error ( intercalate "\n  "
+                                           [ "***rel:"
+                                           , show rel
+                                           , "***kernel:"
+                                           , show kernel
+                                           , "***plugAtts:"
+                                           , show plugAtts
+                                           ]
+                                       )
+                          x:_ -> case name x of
+                                  "I"   -> name(target rel) 
+                                  nm    -> nm
    --in a wide table, m can be total, but the field for its target may contain NULL values,
    --because (why? ...)
    --A kernel field may contain NULL values if
@@ -197,7 +213,7 @@ rel2fld kernel
          f :: [[Expression]] -> A_Concept -> [[Expression]]
          f q x = q ++
                  [ls ++ rs | ls <- q, x <= target (last ls)
-                           , rs <- q, x <= source (head rs), null (ls `isc` rs)]
+                           , rs <- q, x <= source ((head 206)rs), null (ls `isc` rs)]
                   
 -- ^ Explanation:  rel is a relation from some kernel field k to f
 -- ^ (fldexpr k) is the relation from the plug's ID to k
@@ -267,7 +283,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
              , mLkpTbl = attributeLookuptable
              }
         where
-          mainkernel = [head cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
+          mainkernel = [(head 276) cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
                                                          -- note that eqCl guarantees that cl is not empty.
     {- Examples of mainkernel:
             [ERel I[A] [A*A],EFlp (ERel ISA[D*A] [D*A]) [A*D]]
@@ -277,7 +293,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
           restkernel = kernel >- mainkernel --the complement of mainkernel
           c = if null mainkernel
               then fatal 198 "null mainkernel. Is this kernel empty???"
-              else target (head mainkernel)       -- one concept from the kernel is designated to "lead" this plug.
+              else target ((head 286) mainkernel)       -- one concept from the kernel is designated to "lead" this plug.
           plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
           -- | all relations for which the target is stored in the plug
           plugMors :: [(Expression, SqlFieldUsage)]
@@ -292,7 +308,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
                                   [(e,lookupC (source e),fld e u) | (e,u) <-plugMors] 
           lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                                   then fatal 209 "null cLkptable."
-                                  else head [f |(c',f)<-conceptLookuptable, cpt==c']
+                                  else (head 301) [f |(c',f)<-conceptLookuptable, cpt==c']
           fld a u                 = rel2fld mainkernel (restkernel++plugAtts) a u
               
 -- The first step is to determine which entities to generate.
@@ -300,7 +316,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
     kernels :: [[Expression]]
     kernels = case [c | c@C{} <- concs allDcls] of
                 [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
-                cs -> let (_,islands,_,_,_) = cptgE (head cs) in
+                cs -> let (_,islands,_,_,_) = cptgE ((head 309) cs) in
                       [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
               
 -- attRels contains all relations that will be attribute of a kernel.
@@ -368,9 +384,9 @@ makeUserDefinedSqlPlug _ obj
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                            then fatal 300 "null cLkptable."
-                           else head [f |(c',f)<-conceptLookuptable, cpt==c']
+                           else (head 377) [f |(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
-   sqltp att = head $ [makeSqltype' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
+   sqltp att = (head 379) $ [makeSqltype' sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                       ++[SQLVarchar 255]
 
 makeSqlType :: A_Concept -> SqlType

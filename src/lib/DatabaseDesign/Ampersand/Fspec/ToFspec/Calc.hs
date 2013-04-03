@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc
 where
 
    import DatabaseDesign.Ampersand.Basics         (fatalMsg,Collection (isc),Identified(..),eqCl)
-   import Data.List
+   import Data.List hiding (head)
    import GHC.Exts (sortWith)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
    import DatabaseDesign.Ampersand.ADL1
@@ -22,9 +22,15 @@ where
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms        (conjNF,disjNF,cfProof,dfProof,nfProof,simplify,normPA,exprIsc2list, exprUni2list, exprCps2list, exprRad2list) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import DatabaseDesign.Ampersand.Misc            (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
    import Text.Pandoc
+   import Prelude hiding (head)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ToFspec.Calc"
+
+   head :: [a] -> a
+   head [] = fatal 30 "head must not be used on an empty list!"
+   head (a:_) = a
+
 
    showClause :: Fspc -> Clauses -> String
    showClause _ cl
