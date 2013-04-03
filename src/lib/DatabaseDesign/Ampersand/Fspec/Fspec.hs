@@ -51,7 +51,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology
                  , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                  , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS 
-                 , fRoleRels ::    [(String,Relation)]   -- ^ the relation saying which roles may change the population of which relation.
+                 , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
                  , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
                  , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
                  , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and key rules
@@ -219,8 +219,8 @@ instance Identified FSid where
 
 
 data Activity = Act { actRule ::   Rule
-                    , actTrig ::   [Relation]
-                    , actAffect :: [Relation]
+                    , actTrig ::   [Declaration]
+                    , actAffect :: [Declaration]
                     , actQuads ::  [Quad]
                     , actEcas ::   [ECArule]
                     , actPurp ::   [Purpose]
@@ -233,11 +233,11 @@ instance Identified Activity where
        
 instance ConceptStructure Activity where
  concs     act = concs (actRule act) `uni` concs (actAffect act)
- relationsIn   act = relationsIn (actRule act) `uni` actAffect act
+ relationsIn   act = relationsIn (actRule act) `uni` nub (map makeRelation (actAffect act))
  mp1Exprs  act = mp1Exprs (actRule act)
 
 data Quad     = Quad
-          { qRel :: Relation        -- The relation that, when affected, triggers a restore action.
+          { qDcl :: Declaration        -- The relation that, when affected, triggers a restore action.
           , qClauses :: Clauses         -- The clauses
           } deriving Eq
  
@@ -247,7 +247,7 @@ instance Eq Activity where
 data InsDel   = Ins | Del
                  deriving (Show,Eq)
 data ECArule= ECA { ecaTriggr :: Event     -- The event on which this rule is activated
-                  , ecaDelta :: Relation  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
+                  , ecaDelta :: Declaration  -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
                   , ecaAction :: PAclause  -- The action to be taken when triggered.
                   , ecaNum :: Int       -- A unique number that identifies the ECArule within its scope.
                   }
@@ -255,8 +255,8 @@ instance Eq (ECArule) where
    e==e' = ecaNum e==ecaNum e'
    
 data Event = On { eSrt :: InsDel
-                  , eRel :: Relation
-                  } deriving (Show)
+                , eDcl :: Declaration
+                } deriving (Show)
 instance Eq Event where
  q == q' = fatal 260 "Eq moet worden teruggezet voor Event"
 
@@ -268,7 +268,7 @@ data PAclause
                     , paMotiv :: [(Expression,[Rule] )]
                     }
               | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Relation                    -- into toExpr    or from toExpr
+                    , paTo :: Declaration                    -- into toExpr    or from toExpr
                     , paDelta :: Expression               -- delta
                     , paMotiv :: [(Expression,[Rule] )]
                     }
@@ -296,7 +296,7 @@ data PAclause
               | Ref { paVar :: String
                     }
 
-events :: PAclause -> [(InsDel,Relation)]
+events :: PAclause -> [(InsDel,Declaration)]
 events paClause = fatal 299 $ "terugzetten" -- nub (evs paClause)
  where evs clause
         = case clause of
@@ -317,7 +317,7 @@ events paClause = fatal 299 $ "terugzetten" -- nub (evs paClause)
 instance Eq PAclause where
    CHC ds _ == CHC ds' _ = ds==ds'
    ALL ds _ == ALL ds' _ = ds==ds'
-   p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && sameDecl (paTo p) (paTo p') && paDelta p==paDelta p'
+   p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && paTo p==paTo p' && paDelta p==paDelta p'
    Nop _    ==     Nop _ = True
    p@New{}  ==  p'@New{} = paCpt p==paCpt p'
    p@Rmv{}  ==  p'@Rmv{} = paCpt p==paCpt p'

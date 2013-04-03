@@ -12,8 +12,8 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Expression"
 
-subst :: (Relation,Expression) -> Expression -> Expression
-subst (rel,f) = subs
+subst :: (Declaration,Expression) -> Expression -> Expression
+subst (decl,f) = subs
      where
        subs (EEqu (l,r) sgn) = EEqu (subs l,subs r) sgn
        subs (EImp (l,r) sgn) = EImp (subs l,subs r) sgn
@@ -31,8 +31,10 @@ subst (rel,f) = subs
        subs (ECpl e     sgn) = ECpl (subs e)        sgn
        subs (EBrk e)         = EBrk (subs e)
        subs (ETyp e     sgn) = ETyp (subs e)        sgn
-       subs e@(ERel r   _  ) | sameDecl rel r    = f
+       subs e@(EDcD d   _  ) | d ==decl    = f
                              | otherwise = e
+       subs e@EDcI{}         = e
+       subs e@EDcV{}         = e
        subs e@EMp1{}         = e
 
 -- | This function is used to replace the n-th relation (counting from the left)
@@ -79,14 +81,18 @@ subsi n f expr = expr'
          subs i (ECpl x sgn)     = (ECpl x' sgn, i') where (x',i') = subs i x 
          subs i (EBrk x)         = (EBrk x'    , i') where (x',i') = subs i x 
          subs i (ETyp x sgn)     = (ETyp x' sgn, i') where (x',i') = subs i x
-         subs i x@ERel{} | i==n      = (f x, i+1)
+         subs i x@EDcD{} | i==n      = (f x, i+1)
+                         | otherwise = (x, i+1)
+         subs i x@EDcI{} | i==n      = (f x, i+1)
+                         | otherwise = (x, i+1)
+         subs i x@EDcV{} | i==n      = (f x, i+1)
                          | otherwise = (x, i+1)
          subs i x@EMp1{}         = (x,i)
 
-foldlMapExpression :: (a -> r -> a) -> (Relation->r) -> a -> Expression -> a
+foldlMapExpression :: (a -> r -> a) -> (Declaration->r) -> a -> Expression -> a
 foldlMapExpression f = foldrMapExpression f' where f' x y = f y x
 
-foldrMapExpression :: (r -> a -> a) -> (Relation->r) -> a -> Expression -> a
+foldrMapExpression :: (r -> a -> a) -> (Declaration->r) -> a -> Expression -> a
 foldrMapExpression f g a (EEqu (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EImp (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EIsc (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
@@ -103,7 +109,9 @@ foldrMapExpression f g a (EFlp e _)        = foldrMapExpression f g a           
 foldrMapExpression f g a (ECpl e _)        = foldrMapExpression f g a                         e
 foldrMapExpression f g a (EBrk e)          = foldrMapExpression f g a                         e
 foldrMapExpression f g a (ETyp e _)        = foldrMapExpression f g a e
-foldrMapExpression f g a (ERel rel _)      = f (g rel) a
+foldrMapExpression f g a (EDcD rel _)      = f (g rel) a
+foldrMapExpression _ _ a (EDcI     _)      = a
+foldrMapExpression _ _ a (EDcV     _)      = a
 foldrMapExpression _ _ a  EMp1{}           = a
 
 isEUni :: Expression -> Bool

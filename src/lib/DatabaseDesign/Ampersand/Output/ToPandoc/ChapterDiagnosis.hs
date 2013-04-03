@@ -93,9 +93,7 @@ chpDiagnosis fSpec flags
           , and (map (mayEdit role) (declsUsedIn rul))
           ]
       mayEdit :: String -> Declaration -> Bool
-      mayEdit role decl = decl `elem` map makeDeclaration ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec))) 
-      roleFilter :: String -> (String,a) -> Bool
-      roleFilter role roleRel = role == fst roleRel
+      mayEdit role decl = decl `elem` ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec))) 
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role,rul)
          | (role,rul)<-fRoleRuls fSpec
@@ -181,15 +179,13 @@ chpDiagnosis fSpec flags
                          [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
                          [ Str " is not documented."
                        ] ]
-     where missing = [(Math InlineMath . showMath) (ERel r (sign r))  -- ERel is always typeable, so showMathDamb may be used.
-                     | r@Rel{} <-
-                              map makeRelation $
-                                 if null (themes fSpec)
+     where missing = [(Math InlineMath . showMath) (EDcD d (sign d)) 
+                     | d@Sgn{} <-if null (themes fSpec)
                                  then declsUsedIn fSpec
                                  else declsUsedIn [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
                                       declsUsedIn [fpProc prc | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
-                     , not (isIdent r)
-                     , null (purposesDefinedIn fSpec (language flags) r)
+                     , not (isIdent d)
+                     , null (purposesDefinedIn fSpec (language flags) d)
                      ]
 
   relsNotUsed :: [Block]
@@ -251,7 +247,7 @@ chpDiagnosis fSpec flags
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMath) (ERel (makeRelation d) (sign d))  -- makeRelation d is always typeable, so showMathDamb may be used.
+     where notUsed = nub [(Math InlineMath . showMath) (EDcD d (sign d))
                          | d@Sgn{} <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d

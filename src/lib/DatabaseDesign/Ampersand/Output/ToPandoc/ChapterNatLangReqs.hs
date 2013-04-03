@@ -121,15 +121,14 @@ chpNatLangReqs lev fSpec flags =
                 , let pps = [p | p <- purposesDefinedIn fSpec (language flags) c, explUserdefd p]
                 ]           
            allRelsThatMustBeShown -- All relations declared in this specification that have at least one user-defined purpose.
-              = [ rel | d <- declarations fSpec
+              = [ d | d <- declarations fSpec
                 , decusr d
-                , let rel = makeRelation d
-                , not . null $ purposesDefinedIn fSpec (language flags) rel
+                , not . null $ purposesDefinedIn fSpec (language flags) d
                 ]
                  
       printThemes :: ( [(A_Concept,[Purpose])]   -- all concepts that have one or more definitions or purposes. These are to be used into this section and the sections to come
-                       , [Relation]                                 -- all relations to be processed into this section and the sections to come
-                       , [Rule])                                    -- all rules to be processed into this section and the sections to come
+                       , [Declaration]           -- all relations to be processed into this section and the sections to come
+                       , [Rule])                 -- all rules to be processed into this section and the sections to come
                     -> Counter           -- unique definition counters
                     -> [Theme]         -- the patterns that must be processed into this specification
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
@@ -144,10 +143,10 @@ chpNatLangReqs lev fSpec flags =
            thisThemeStuff    = (thisThemeCs, thisThemeRels, [r | r<-thisThemeRules, r_usr r == UserDefined])
            thisThemeRules    = [r | r<-still2doRulesPre, r_env r == name thm ]      -- only user defined rules, because generated rules are documented in whatever caused the generation of that rule.
            rules2PrintLater  = still2doRulesPre >- thisThemeRules
-           thisThemeRels     = [ r | r@Rel{reldcl=d} <- still2doRelsPre
+           thisThemeRels     = [ d | d <- still2doRelsPre
                                , decpat d == name thm ||         -- all relations declared in this theme, combined
-                                 makeDeclaration r `eleM` declsUsedIn thisThemeRules] -- all relations used in this theme's rules
-           rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [sameDecl x y | y <- thisThemeRels ]] 
+                                 d `eleM` declsUsedIn thisThemeRules] -- all relations used in this theme's rules
+           rels2PrintLater   = [x | x <-still2doRelsPre, (not.or) [ x==y | y <- thisThemeRels ]] 
            thisThemeCs       = [(c,ps) |(c,ps)<- still2doCPre, c `eleM` (concs thisThemeRules ++ concs thisThemeRels)] -- relations are rules ('Eis') too
            concs2PrintLater  = still2doCPre >- thisThemeCs
            stuff2PrintLater  = (concs2PrintLater, rels2PrintLater, rules2PrintLater)
@@ -169,7 +168,7 @@ chpNatLangReqs lev fSpec flags =
       -- Each explanation should state the purpose (and nothing else).
       printOneTheme :: Maybe Theme -- name of the theme to process (if any)
                     -> ( [(A_Concept,[Purpose])]    -- all concepts that have one or more definitions, to be printed in this section
-                       , [Relation]          -- Relations to print in this section
+                       , [Declaration]          -- Relations to print in this section
                        , [Rule])             -- Rules to print in this section
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
@@ -182,8 +181,8 @@ chpNatLangReqs lev fSpec flags =
            where
               -- the concepts for which one of the relations of this theme contains a source or target definition
               -- (these will be printed, regardless whether the concept was printed before)
-              relConcepts = [ (upCap $ name r,def, origin r)
-                            | r@Rel{reldcl=Sgn{decConceptDef=Just (RelConceptDef _ def)}} <- rels2print 
+              relConcepts = [ (upCap $ name d,def, origin d)
+                            | d@Sgn{decConceptDef=Just (RelConceptDef _ def)} <- rels2print 
                             ]
               
               -- sort the requirements by file position
@@ -304,10 +303,10 @@ chpNatLangReqs lev fSpec flags =
                 )
 
               -- | sctds prints the requirements related to relations that are introduced in this theme.
-              printRels :: [Relation] -> [(Origin, Counter -> [Block])]
-              printRels = map (\rel -> (origin (makeDeclaration rel), printRel rel))
-              printRel :: Relation -> Counter -> [Block]
-              printRel rel cnt 
+              printRels :: [Declaration] -> [(Origin, Counter -> [Block])]
+              printRels = map (\dcl -> (origin dcl, printRel dcl))
+              printRel :: Declaration -> Counter -> [Block]
+              printRel dcl cnt 
                = Plain [RawInline "latex" "\\bigskip"] :
                  purposes2Blocks flags purps
                  ++ 
@@ -315,9 +314,9 @@ chpNatLangReqs lev fSpec flags =
                                                       Dutch   -> "Eis "
                                                       English -> "Requirement ")
                                      , Str (show(getEisnr cnt))
-                                     ,if development flags && name rel/="" then Str (" ("++name rel++"):") else Str ":"]
-                                   , [ Plain [RawInline "latex" $ symReqLabel (makeDeclaration rel)]:
-                                       meaning2Blocks (language flags) (makeDeclaration rel)
+                                     ,if development flags && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
+                                   , [ Plain [RawInline "latex" $ symReqLabel dcl]:
+                                       meaning2Blocks (language flags) dcl
                                      ]
                                    )] ]++
                  ( case (language flags, length samplePop) of
@@ -328,14 +327,13 @@ chpNatLangReqs lev fSpec flags =
                         (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
                  ) ++
                  sampleSentences
-                 where purps     = purposesDefinedIn fSpec (language flags) rel
-                       d         = makeDeclaration rel
-                       samplePop = take 3 (fullContents (userDefPops fSpec) d)
+                 where purps     = purposesDefinedIn fSpec (language flags) dcl
+                       samplePop = take 3 (fullContents (userDefPops fSpec) dcl)
                        sampleSentences =
-                         [ Para $ mkSentence (development flags) d srcKeyAtom tgtKeyAtom 
+                         [ Para $ mkSentence (development flags) dcl srcKeyAtom tgtKeyAtom 
                          | (srcAtom,tgtAtom)<-samplePop
-                         , let srcKeyAtom = showKeyAtom fSpec (Just rel) (source rel) srcAtom 
-                         , let tgtKeyAtom = showKeyAtom fSpec Nothing (target rel) tgtAtom
+                         , let srcKeyAtom = showKeyAtom fSpec (Just dcl) (source dcl) srcAtom 
+                         , let tgtKeyAtom = showKeyAtom fSpec Nothing (target dcl) tgtAtom
                          ] ++
                          (if null samplePop then [] else [Plain [RawInline "latex" "\\medskip"]])
                          
@@ -382,13 +380,13 @@ chpNatLangReqs lev fSpec flags =
 -- TODO: fix showing/not showing based on relation
 -- TODO: what about relations in the target key?
 -- TODO: move these to some auxiliaries or utils
-showKeyAtom :: Fspc -> Maybe Relation -> A_Concept -> String -> String
-showKeyAtom fSpec mRel cncpt atom =
+showKeyAtom :: Fspc -> Maybe Declaration -> A_Concept -> String -> String
+showKeyAtom fSpec mDec cncpt atom =
   case mapMaybe (getKey fSpec) (cncpt : getGeneralizations fSpec cncpt) of
     []    -> atom
-    key:_ -> case mRel of
+    key:_ -> case mDec of
               Nothing -> concatMap showKeySegment (kdats key)
-              Just mr -> if (not.null) [() | KeyExp objDef <- kdats key, ERel r _<-[objctx objDef], sameDecl r mr]
+              Just md -> if (not.null) [() | KeyExp objDef <- kdats key, EDcD d _<-[objctx objDef], d==md]
                          then atom
                          else concatMap showKeySegment (kdats key)
              -- if we are showing one of the key relations, don't expand the key

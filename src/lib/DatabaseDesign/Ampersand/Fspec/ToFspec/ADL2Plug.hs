@@ -24,20 +24,20 @@ fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 makeGeneratedSqlPlugs :: Options
               -> A_Context
               -> [Expression]  
-              -> [Relation]    -- ^ declarations to be saved in generated database plugs. 
+              -> [Declaration]    -- ^ declarations to be saved in generated database plugs. 
               -> [PlugSQL]
-makeGeneratedSqlPlugs flags context totsurs entityRels = gTables
+makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
   where
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = makeEntityTables flags entityRels vsqlplugs
+        gPlugs   = makeEntityTables flags entityDcls vsqlplugs
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
-        gLinkTables = [ makeLinkTable rel totsurs
-                      | rel<-entityRels
-                      , Inj `notElem` multiplicities rel
-                      , Uni `notElem` multiplicities rel]
+        gLinkTables = [ makeLinkTable dcl totsurs
+                      | dcl<-entityDcls
+                      , Inj `notElem` multiplicities dcl
+                      , Uni `notElem` multiplicities dcl]
 
 
 -----------------------------------------
@@ -56,15 +56,15 @@ makeGeneratedSqlPlugs flags context totsurs entityRels = gTables
 
 
 -- | Make a binary sqlplug for a relation that is neither inj nor uni
-makeLinkTable :: Relation -> [Expression] -> PlugSQL
-makeLinkTable rel totsurs = 
-  case rel of
-    Rel{} 
-     | Inj `elem` multiplicities rel || Uni `elem` multiplicities rel 
-        -> fatal 55 $ "unexpected call of makeLinkTable("++show rel++"), because it is injective or univalent."
+makeLinkTable :: Declaration -> [Expression] -> PlugSQL
+makeLinkTable dcl totsurs = 
+  case dcl of
+    Sgn{} 
+     | Inj `elem` multiplicities dcl || Uni `elem` multiplicities dcl 
+        -> fatal 55 $ "unexpected call of makeLinkTable("++show dcl++"), because it is injective or univalent."
      | otherwise 
         -> BinSQL
-             { sqlname = name rel
+             { sqlname = name dcl
              , columns = ( -- The source field:
                            Fld { fldname = srcNm                       
                                , fldexpr = srcExpr
@@ -88,19 +88,19 @@ makeLinkTable rel totsurs =
              }
     _  -> fatal 90 "Do not call makeLinkTable on relations other than Rel{}"
    where
-    r_is_Tot = Tot `elem` multiplicities rel || makeDeclaration rel `elem` [ makeDeclaration r' |       ERel r'@Rel{} _    <- totsurs]
-    r_is_Sur = Sur `elem` multiplicities rel || makeDeclaration rel `elem` [ makeDeclaration r' | EFlp (ERel r'@Rel{} _) _ <- totsurs]
-    srcNm = (if isEndo rel then "s" else "")++name (source trgExpr)
-    trgNm = (if isEndo rel then "t" else "")++name (target trgExpr)
+    r_is_Tot = Tot `elem` multiplicities dcl || dcl `elem` [ d |       EDcD d _    <- totsurs]
+    r_is_Sur = Sur `elem` multiplicities dcl || dcl `elem` [ d | EFlp (EDcD d _) _ <- totsurs]
+    srcNm = (if isEndo dcl then "s" else "")++name (source trgExpr)
+    trgNm = (if isEndo dcl then "t" else "")++name (target trgExpr)
     --the expr for the source of r
     srcExpr
-     | r_is_Tot = iExpr (source rel)
-     | r_is_Sur = iExpr (target rel)
-     | otherwise = let er=ERel rel (sign rel) in iExpr (source rel) ./\. (er .:. flp er)
+     | r_is_Tot = iExpr (source dcl)
+     | r_is_Sur = iExpr (target dcl)
+     | otherwise = let er=EDcD dcl (sign dcl) in iExpr (source dcl) ./\. (er .:. flp er)
     --the expr for the target of r
     trgExpr 
-     | not r_is_Tot && r_is_Sur = flp (ERel rel (sign rel))
-     | otherwise                = ERel rel (sign rel)
+     | not r_is_Tot && r_is_Sur = flp (EDcD dcl (sign dcl))
+     | otherwise                = EDcD dcl (sign dcl)
 
 -----------------------------------------
 --rel2fld
@@ -165,14 +165,14 @@ rel2fld kernel
     | length(map target kernel) > length(nub(map target kernel))
        = fatal 146 "more than one kernel field for the same concept"
     | otherwise = case expr of
-                   ERel rel _ -> not $
-                                 isTot rel && 
-                                 (not.null) [()|k<-kernelpaths, target k==source rel && isTot k || target k==target rel && isSur k ]
-                   EFlp (ERel rel _) _
+                   EDcD dcl _ -> not $
+                                 isTot dcl && 
+                                 (not.null) [()|k<-kernelpaths, target k==source dcl && isTot k || target k==target dcl && isSur k ]
+                   EFlp (EDcD dcl _) _
                             -> not $ 
-                                 isSur rel &&
-                                 (not.null) [()|k<-kernelpaths, target k==source rel && isSur k || target k==target rel && isTot k]
-                   ETyp (ERel I{} _) _
+                                 isSur dcl &&
+                                 (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
+                   ETyp (EDcI  _) _
                             -> True
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
                                    " ***kernel:*** \n   "++
@@ -226,8 +226,8 @@ rel2fld kernel
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
-makeEntityTables :: Options -> ConceptStructure a => [Relation] -> [a] -> [PlugSQL]
-makeEntityTables _ {-flags-} allRels exclusions
+makeEntityTables :: Options -> ConceptStructure a => [Declaration] -> [a] -> [PlugSQL]
+makeEntityTables _ {-flags-} allDcls exclusions
  = {- The following may be useful for debugging: 
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
@@ -242,7 +242,6 @@ makeEntityTables _ {-flags-} allRels exclusions
    sortWith ((0-).length.plugFields)
     (map kernel2Plug distributionOfAtts)
    where
-    allDcls = nub (map makeDeclaration allRels)
     distributionOfAtts = dist attRels kernels []
       where 
    --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
@@ -307,9 +306,9 @@ makeEntityTables _ {-flags-} allRels exclusions
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
-    attRels = [     ERel r (sign (makeDeclaration r))  | r<-rs, isUni r, not (isInj r && isSur r)] ++
-              [flp (ERel r (sign (makeDeclaration r))) | r<-rs, isInj r, not (isUni r && isTot r)]
-              where rs = [makeRelation decl | decl <- allDcls>-declsUsedIn exclusions, not (isIdent decl)]
+    attRels = [     EDcD d (sign d)  | d<-ds, isUni d, not (isInj d && isSur d)] ++
+              [flp (EDcD d (sign d)) | d<-ds, isInj d, not (isUni d && isTot d)]
+              where ds = [ decl | decl <- allDcls>-declsUsedIn exclusions, not (isIdent decl)]
 
 
 -----------------------------------------

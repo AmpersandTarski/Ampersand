@@ -108,7 +108,7 @@ chpInterfacesBlocks lev fSpec flags =
                ,[Plain [Str "relation"]]
                ,[Plain [Str "rule"]]] )
         [ [ [Plain [ (Str . show . eSrt.ecaTriggr) eca]]
-          , [Plain [ (Str . show . eRel.ecaTriggr) eca]]
+          , [Plain [ (Str . show . eDcl.ecaTriggr) eca]]
           , [Plain (shwEca eca)]
           ] 
         | eca<-actEcas act  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.

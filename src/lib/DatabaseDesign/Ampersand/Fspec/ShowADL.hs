@@ -224,7 +224,7 @@ instance ShowADL KeySegment where
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
 instance ShowADL Relation where
- showADL rel = showADL (ETyp (ERel rel (sign rel)) (sign rel))
+ showADL rel = show rel -- showADL (ETyp (ERel rel (sign rel)) (sign rel))
 
 instance ShowADL Expression where
  showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
@@ -254,10 +254,10 @@ instance ShowADL Expression where
            | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
            | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
           -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showchar (ERel rel@Rel{} _) = name rel
-          showchar (ERel     I{}   _) = "I"
-          showchar (ERel     V{}   _) = "V"
-          showchar (EMp1 atom      _) = "'"++atom++"'"
+          showchar (EDcD dcl   _) = name dcl
+          showchar (EDcI       _) = "I"
+          showchar (EDcV       _) = "V"
+          showchar (EMp1 atom  _) = "'"++atom++"'"
 
 instance ShowADL HornClause where
  showADL hornClause = showADL (horn2expr hornClause)

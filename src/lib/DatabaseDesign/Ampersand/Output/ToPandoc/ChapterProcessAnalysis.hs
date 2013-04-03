@@ -115,7 +115,7 @@ chpProcessAnalysis lev fSpec flags
                ]
      ]
      where
-      rolelessRels = [ d | d<-declarations fSpec, d `notElem` (nub.map (makeDeclaration.snd)) (fRoleRels fSpec) ]
+      rolelessRels = [ d | d<-declarations fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
   emptyProcess :: Process -> Bool
   emptyProcess p = null (udefrules p)

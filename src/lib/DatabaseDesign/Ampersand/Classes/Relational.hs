@@ -104,7 +104,16 @@ makeRelation d
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
 instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
  multiplicities expr = case expr of
-     ERel rel   _ -> multiplicities rel
+     EDcD dcl   _ -> multiplicities dcl
+     EDcI       _ -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+     EDcV     sgn -> [Tot]
+                   ++[Sur]
+                   ++[Inj | isSingleton (source sgn)]
+                   ++[Uni | isSingleton (target sgn)]
+                   ++[Asy | isEndo sgn, isSingleton (source sgn)]
+                   ++[Sym | isEndo sgn]
+                   ++[Rfx | isEndo sgn]
+                   ++[Trn | isEndo sgn]
      EBrk f       -> multiplicities f
      ECps (l,r) _ -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
      EPrd (l,r) _ -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
@@ -140,7 +149,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EFlp e     _   -> isTrue e
      ECpl e     _   -> isFalse e
      ETyp e     sgn -> isTrue e && sgn <= sign e  -- The operator (<=) comes from Core.Poset
-     ERel r@Rel{} s -> isTrue r && s <= sign r
+     EDcD d       _ -> False
+     EDcI         _ -> False
+     EDcV         _ -> True
      EBrk e         -> isTrue e
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
 
@@ -161,7 +172,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EFlp e     _   -> isFalse e
      ECpl e     _   -> isTrue e
      ETyp e     _   -> isFalse e
-     ERel rel   _   -> isFalse rel
+     EDcD _     _   -> False
+     EDcI       _   -> False
+     EDcV       _   -> False
      EBrk e         -> isFalse e
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
 
@@ -184,8 +197,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl1 e     _   -> isIdent e
      ECpl e     sgn -> isImin (ETyp e sgn)
      ETyp e     sgn -> source sgn==target sgn && sgn<=sign e && isIdent e
-     ERel r@Rel{} s -> isIdent r && s<=sign r
-     ERel I{} _     -> True
+     EDcD _     _   -> False
+     EDcI       _   -> True
+     EDcV       sgn -> isEndo sgn && isSingleton (source sgn)
      EBrk f         -> isIdent f
      EFlp f     _   -> isIdent f
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, EPrd, and ERad
@@ -198,7 +212,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EDif (l,r) sgn -> isImin (ETyp l sgn) && isFalse r
      ECpl e     sgn -> isIdent (ETyp e sgn)
      ETyp e sgn     -> source sgn==target sgn && sgn<=sign e && isImin e
-     ERel rel sgn   -> sgn<=sign rel && isImin rel
+     EDcD dcl sgn   -> sgn<=sign dcl && isImin dcl
+     EDcI       _   -> False
+     EDcV       _   -> False
      EBrk f         -> isImin f
      EFlp f     _   -> isImin f
      _              -> False  -- TODO: find richer answers for ERrs and ELrs

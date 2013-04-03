@@ -5,7 +5,6 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos
    import DatabaseDesign.Ampersand.Basics
-   import DatabaseDesign.Ampersand.Classes.Relational    ( makeRelation)
    import DatabaseDesign.Ampersand.Core.ParseTree        ( Prop(..))
    import DatabaseDesign.Ampersand.Classes.Populated              ( Populated(..))
    import DatabaseDesign.Ampersand.Misc
@@ -71,7 +70,7 @@ where
            s = name (source d)
            t = name (target d)
            r:: Expression
-           r = ERel (makeRelation d) (sign d)
+           r = EDcD d (sign d)
            rExpr = case prp of
                         Uni-> flp r .:. r .|-. iExpr (target r)
                         Tot-> iExpr (source r)  .|-. r .:. flp r

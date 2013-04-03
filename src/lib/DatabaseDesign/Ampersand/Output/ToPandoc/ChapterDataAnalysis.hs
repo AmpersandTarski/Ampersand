@@ -217,7 +217,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                <> showFields (plugFields tbl)
              InternalPlug bin@BinSQL{} 
                -> (let rel = case mLkp bin of
-                               ERel r _ -> r
+                               EDcD r _ -> r
                                _        -> fatal 254 "relation unknown. contact your dealer!"
                    in para 
                        (case language flags of
@@ -249,14 +249,14 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
       showFields :: [SqlField] -> Blocks
       showFields flds = bulletList (map showField flds)
         where 
-          eRelIs = [c | ERel (I c@C{}) _ <- map fldexpr flds]
+          eRelIs = [source sgn | EDcI sgn <- map fldexpr flds]
           showField fld =
              let isPrimeryKey = case fldexpr fld of
-                                  ERel (I c@C{}) _ -> foldl1 join eRelIs == c 
-                                  _                -> False 
+                                  EDcI sgn -> foldl1 join eRelIs == source sgn 
+                                  _        -> False 
                  mForeignKey  = case fldexpr fld of
-                                  EIsc (ERel (I c) _ ,_ ) _ -> Just c
-                                  _                         -> Nothing  
+                                  EIsc (EDcI sgn,_) _ -> Just (source sgn)
+                                  _                   -> Nothing  
              in para (  (strong.text.fldname) fld
                       <> linebreak 
     
@@ -809,34 +809,34 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                       | Quad r ccrs<-vquads fSpec
                       , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
                       , (_,hornClauses)<-cl_conjNF ccrs
-                      , hc@(Hc [ERel nega _] _)<-hornClauses
-                      , sameDecl r nega
+                      , hc@(Hc [EDcD nega _] _)<-hornClauses
+                      , r==nega
                       ]
                 pcpts = case p of
                   ScalarSQL{} -> [cLkp p]
                   _           -> map fst (cLkpTbl p)
 
   mathRel :: Expression -> Inlines
-  mathRel (ERel r           _) = 
+  mathRel (EDcD d           _) = 
       case language flags of
         Dutch -> text "de relatie " 
         English -> text "the relation "
-   <> math ((name.source) r++ " \\xrightarrow {"++name r++"} "++(name.target) r)
-  mathRel (EFlp (ERel r _ ) _) = 
+   <> math ((name.source) d++ " \\xrightarrow {"++name d++"} "++(name.target) d)
+  mathRel (EFlp (EDcD d _ ) _) = 
       case language flags of
         Dutch -> text "de relatie " 
         English -> text "the relation "
-   <> math ((name.source) r++ " \\xleftarrow  {"++name r++"} "++(name.target) r)
+   <> math ((name.source) d++ " \\xleftarrow  {"++name d++"} "++(name.target) d)
   mathRel (EIsc (r1,_)     _) = 
       let srcTable = case r1 of
-                       ERel (I c) _ -> c
-                       _          -> fatal 767 ("Unexpected expression: "++show r1)
+                       EDcI sgn -> source sgn
+                       _        -> fatal 767 ("Unexpected expression: "++show r1)
       in 
       case language flags of
         Dutch -> text "de identiteitsrelatie van " 
         English -> text "the identityrelation of "
    <> math (name srcTable) 
-  mathRel t@(ETyp (ERel (I _) _ ) _) =
+  mathRel t@(ETyp (EDcI _) _) =
       case language flags of
         Dutch   -> text "het feit of deze " <> (math.name.source) t <> text " een "  <> (math.name.target) t <> text " is." 
         English -> text "weather this "     <> (math.name.source) t <> text " is a " <> (math.name.target) t <> text " or not." 

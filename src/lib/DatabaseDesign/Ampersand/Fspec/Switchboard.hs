@@ -45,11 +45,11 @@ module DatabaseDesign.Ampersand.Fspec.Switchboard
          edges         = nub
                          [ DotEdge { fromNode = "act_"++name from
                                    , toNode   = "act_"++name to
-                                   , edgeAttributes = [Len 2, Label (StrLabel (fromString (show e++" "++name r))), Dir Forward]
+                                   , edgeAttributes = [Len 2, Label (StrLabel (fromString (show e++" "++name d))), Dir Forward]
                                    }
-                         | (from,to,e,r) <- allEdges
+                         | (from,to,e,d) <- allEdges
                          ]
-         allEdges  = nub[(from,to,e,makeDeclaration r) | (e,r,from)<-eventsOut, (e',r',to)<-eventsIn, e==e', sameDecl r r']
+         allEdges  = nub[(from,to,e,d) | (e,d,from)<-eventsOut, (e',d',to)<-eventsIn, e==e', d==d']
 {-
 data Activity = Act { actRule ::   Rule
                     , actTrig ::   [Relation]
@@ -67,8 +67,8 @@ data Event = On { eSrt :: InsDel
                   , eRel :: Relation
                   } deriving (Show,Eq)
 -}
-         eventsIn  = [(e,r,act) | act<-fpActivities fp, eca<-actEcas act, let On e r = ecaTriggr eca]
-         eventsOut = [(e,r,act) | act<-fpActivities fp, eca<-actEcas act, (e,r)<-events (ecaAction eca)]
+         eventsIn  = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, let On e d = ecaTriggr eca]
+         eventsOut = [(e,d,act) | act<-fpActivities fp, eca<-actEcas act, (e,d)<-events (ecaAction eca)]
    colorRule :: Rule -> X11Color
    colorRule r  | isSignal r = Orange
                 | otherwise  = Green
@@ -92,7 +92,7 @@ data Event = On { eSrt :: InsDel
       where
         --DESCR -> The relations from which changes can come
         inEvNodes = [ DotNode { nodeID         = nameINode eventsIn ev
-                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eRel ev))))]
+                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eDcl ev))))]
                               }
                     | ev<-eventsIn
                     ]
@@ -112,7 +112,7 @@ data Event = On { eSrt :: InsDel
 
         --DESCR -> The relations to which changes are made
         outEvNods = [ DotNode { nodeID         = nameONode eventsOut ev
-                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eRel ev))))]
+                              , nodeAttributes = [Label (StrLabel (fromString (show (eSrt ev)++" "++showADL (eDcl ev))))]
                               }
                     | ev<-eventsOut
                     ]
@@ -121,7 +121,7 @@ data Event = On { eSrt :: InsDel
                               , toNode   = nameCNode (fsbConjs fsb) (rul,c)
                               , edgeAttributes = [Dir Forward]
                               }
-                    | (rul,c)<-fsbConjs fsb, ev<-eventsIn, makeDeclaration (eRel ev) `elem` declsUsedIn c]
+                    | (rul,c)<-fsbConjs fsb, ev<-eventsIn, eDcl ev `elem` declsUsedIn c]
         edgesCjEc = [ DotEdge { fromNode = nameCNode (fsbConjs fsb) (rul,c)
                               , toNode   = nameENode (fsbECAs fsb) eca
                               , edgeAttributes = [Dir Forward]
@@ -172,9 +172,9 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
                       }
         }
       where
-        fromRels     = nub (map makeDeclaration (actTrig act))
+        fromRels     = nub (actTrig act)
         toRels :: [Declaration]
-        toRels       = nub (map makeDeclaration (actAffect act))
+        toRels       = nub (actAffect act)
         conjuncts    = nub [(cl_rule ccrs,c)
                            | Quad _ ccrs<-actQuads act, (c,_)<-cl_conjNF ccrs]
         --DESCR -> The relations from which changes can come
@@ -232,7 +232,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
                        "\nin: ["++intercalate ", " (map showADL xs)++"]")
            )
    positiveIn :: Expression -> Declaration -> [Bool]
-   positiveIn expr rel = f expr   -- all are True, so an insert in rel means an insert in expr
+   positiveIn expr decl = f expr   -- all are True, so an insert in rel means an insert in expr
     where
      f (EEqu _ _)       = fatal 245 "Illegal call of positiveIn."
      f (EImp (l,r) sgn) = f (notCpl sgn l .\/. r)
@@ -250,5 +250,6 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (ECpl e _)       = [ not b | b<- f e]
      f (EBrk e)         = f e
      f (ETyp e _)       = f e
-     f (ERel r _)       = [ True | makeDeclaration r==rel ]
+     f (EDcD d _)       = [ True | d==decl ]
+     
      f (EMp1 _ _)       = []

@@ -132,8 +132,8 @@ where
    instance ShowHS Event where
     showHS _ indent e   
       = if "\n" `isPrefixOf` indent
-        then "On " ++ show (eSrt e)++indent++"   " ++ showHSName (eRel e)++indent++"   "
-        else "On " ++ show (eSrt e)++          " " ++ showHSName (eRel e)++           ""
+        then "On " ++ show (eSrt e)++indent++"   " ++ showHSName (eDcl e)++indent++"   "
+        else "On " ++ show (eSrt e)++          " " ++ showHSName (eDcl e)++           ""
 
    instance ShowHS PAclause where
     showHS flags indent p   
@@ -203,12 +203,12 @@ where
 
    instance ShowHSName Quad where
     showHSName q
-      = haskellIdentifier ("quad_"++(showHSName.qRel) q++"_"++(name.cl_rule.qClauses) q)
+      = haskellIdentifier ("quad_"++(showHSName.qDcl) q++"_"++(name.cl_rule.qClauses) q)
 
    instance ShowHS Quad where
     showHS flags indent q 
       = intercalate indent
-          [ "Quad{ qRel     = " ++ showHSName (qRel q)
+          [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
           , "    , qClauses = " ++ showHS flags newindent (qClauses q)
           , "    }"
           ]
@@ -370,7 +370,7 @@ where
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules (total: "++(show.length.vEcas) fspec++" ECA rules) ***: "++
         concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
-        concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map (reldcl . ecaDelta) (vEcas fspec)) ]++"\n"
+        concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map ecaDelta (vEcas fspec)) ]++"\n"
        )++
        (if null (plugInfos fspec ) then "" else
         "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fspec++" plugInfos) ***: "++
@@ -776,7 +776,9 @@ where
     showHS flags indent (ECpl e     sgn) = "ECpl ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
     showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (ERel rel   sgn) = "ERel "++showHSName rel++" ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (EDcD dcl   sgn) = "EDcD "++showHSName dcl++" ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (EDcI       sgn) = "EDcI "                ++" ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (EDcV       sgn) = "EDcV "                ++" ("++showHS flags (indent++"    ") sgn++")"
     showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++show atom++") ("++showHS flags (indent++"    ") sgn++")"
 
 -- \***********************************************************************
