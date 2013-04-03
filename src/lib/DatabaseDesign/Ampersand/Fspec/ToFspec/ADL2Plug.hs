@@ -188,6 +188,7 @@ rel2fld kernel
                             -> not $ 
                                  isSur dcl &&
                                  (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
+                   EDcI   sgn -> source sgn == target sgn
                    ETyp (EDcI  _) _
                             -> True
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
