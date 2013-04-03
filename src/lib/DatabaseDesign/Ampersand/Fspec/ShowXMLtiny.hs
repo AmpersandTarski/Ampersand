@@ -167,7 +167,9 @@ where
                (ECpl e _)     -> Elem (simpleTag "CMPL") [mkXmlTree e]
                (EBrk e)       -> mkXmlTree e
                (ETyp e sgn)   -> Elem (simpleTag "CAST") [mkXmlTree e,mkXmlTree (source sgn),mkXmlTree (target sgn)]
-               (ERel rel sgn) -> Elem (simpleTag "EREL") [mkXmlTree (flp (ERel rel sgn))]
+               (EDcD rel sgn) -> Elem (simpleTag "EDcD") [mkXmlTree (flp (EDcD rel sgn))]
+               (EDcI     sgn) -> Elem (simpleTag "EDcI") [mkXmlTree (flp (EDcI     sgn))]
+               (EDcV     sgn) -> Elem (simpleTag "EDcV") [mkXmlTree (flp (EDcV     sgn))]
                (EMp1 atm sgn) -> Elem (simpleTag "ATOM") [mkXmlTree (flp (EMp1 atm sgn))]
 
    instance XML PPurpose where

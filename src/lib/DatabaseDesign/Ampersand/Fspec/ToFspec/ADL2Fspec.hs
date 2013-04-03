@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
-    (makeFspec,actSem, delta, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable, editMph)
+    (makeFspec,actSem, delta, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
@@ -88,11 +88,11 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                          `uni` [Sur | d `elem` surjectives]
         calculatedDecls = map calcProps (declarations context)
      -- determine relations that are total (as many as possible, but not necessarily all)
-        totals      = [ makeDeclaration r |       ERel r@Rel{} _    <- totsurs ]
-        surjectives = [ makeDeclaration r | EFlp (ERel r@Rel{} _) _ <- totsurs ]
+        totals      = [ d |       EDcD d _    <- totsurs ]
+        surjectives = [ d | EFlp (EDcD d _) _ <- totsurs ]
         totsurs :: [Expression]
         totsurs
-         = nub [rel | q<-quads flags visible (invariants context), isIdent (qRel q)
+         = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
                     , (conj,hornClauses)<-cl_conjNF (qClauses q), Hc antcs conss<-hornClauses
                     , let antc = conjNF (foldr (./\.) (vExpr (sign conj)) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this Horn clause.
@@ -126,7 +126,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
              ) ++  -}
         
         
-                     [makeRelation d | d<-calculatedDecls, not (decplug d)] -- The persistent relations
+                     [ d | d<-calculatedDecls, not (decplug d)] -- The persistent relations
 -- Het volgende heb ik verwijderd, want de ISA relatie is al aanwezig in calculatedDecls. Zou anders dubbel zijn. 
 --                  ++ [ Rel { relnm  = name s
 --                           , relpos = OriginUnknown 
@@ -200,12 +200,12 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-        cRels = [     ERel (makeRelation d) (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isTot d, not$decplug d]++
-                [flp (ERel (makeRelation d) (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+        cRels = [     EDcD d (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isTot d, not$decplug d]++
+                [flp (EDcD d (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-        dRels = [     ERel (makeRelation d) (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isInj d, not$decplug d]++
-                [flp (ERel (makeRelation d) (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+        dRels = [     EDcD d (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isInj d, not$decplug d]++
+                [flp (EDcD d (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
         maxTotPaths = clos cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
         maxInjPaths = clos dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
@@ -226,7 +226,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         interfaceGen = step4a ++ step4b
         step4a
          | theme flags == StudentTheme 
-         = [Ifc { ifcParams = map makeRelation directdecls
+         = [Ifc { ifcParams = directdecls
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
@@ -240,10 +240,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                                                    , objstrs = [] }
                                               :[Obj { objnm   = name d ++ "::"++name(source d)++"*"++name(target d)
                                                     , objpos  = Origin "generated object: step 4a - default theme"
-                                                    , objctx  = if source rel==c then rel else flp rel
+                                                    , objctx  = if source dcl==c then dcl else flp dcl
                                                     , objmsub = Nothing
                                                     , objstrs = [] }
-                                               | d <- directdecls, let rel=ERel (makeRelation d) (sign d)]
+                                               | d <- directdecls, let dcl=EDcD d (sign d)]
                                   , objstrs = [] }
                 , ifcPos    = Origin "generated interface for each concept in TblSQL or ScalarSQL"
                 , ifcPrp    = "Interface " ++name c++" has been generated by Ampersand."
@@ -271,7 +271,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- Each interface gets all attributes that are required to create and delete the object.
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
-           [Ifc { ifcParams = nub [ r | r<-relationsIn objattributes, not (isIdent r)]
+           [Ifc { ifcParams = nub [ makeDeclaration r | r<-relationsIn objattributes, not (isIdent r)]
                 , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
@@ -324,12 +324,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
-   editable (ERel Rel{} _) = True
+   editable (EDcD Sgn{} _) = True
    editable _              = False
-
-   editMph :: Expression -> Relation  --TODO deze functie staat ook in Calc.hs...
-   editMph (ERel r _) = r
-   editMph e          = fatal 361 $ "cannot determine an editable declaration in a composite expression: "++show e
 
 {- makeActivity turns a process rule into an activity definition.
 Each activity can be mapped to a single interface.
@@ -339,10 +335,10 @@ while maintaining all invariants.
    makeActivity :: Fspc -> Rule -> Activity
    makeActivity fSpec rul
     = let s = Act{ actRule   = rul
-                 , actTrig   = map makeRelation decls
-                 , actAffect = nubBy sameDecl [ r' | (r,_,r')<-clos affectPairs, makeDeclaration r `elem` decls]
+                 , actTrig   = decls
+                 , actAffect = nub [ d' | (d,_,d')<-clos affectPairs, d `elem` decls]
                  , actQuads  = invQs
-                 , actEcas   = [eca | eca<-vEcas fSpec, makeDeclaration (eRel (ecaTriggr eca)) `elem` decls]
+                 , actEcas   = [eca | eca<-vEcas fSpec, eDcl (ecaTriggr eca) `elem` decls]
                  , actPurp   = [Expl { explPos = OriginUnknown
                                      , explObj = ExplRule (name rul)
                                      , explMarkup = A_Markup { amLang   = Dutch
@@ -372,7 +368,7 @@ while maintaining all invariants.
         invQs       = [q | q@(Quad _ ccrs)<-vquads fSpec, (not.isSignal.cl_rule.qClauses) q
                          , (not.null) ((declsUsedIn.cl_rule) ccrs `isc` decls)]
 -- a relation affects another if there is a quad (i.e. an automated action) that links them
-        affectPairs = [(qRel q,[q],makeRelation d) | q<-invQs, d<-(declsUsedIn.cl_rule.qClauses) q]
+        affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(declsUsedIn.cl_rule.qClauses) q]
 -- the relations affected by automated action
 --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
 ----------------------------------------------------
@@ -398,9 +394,9 @@ while maintaining all invariants.
    -- whenever relation r is affected (i.e. tuples in r are inserted or deleted),
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is carried along for traceability.
-   quads :: Options -> (Relation->Bool) -> [Rule] -> [Quad]
+   quads :: Options -> (Declaration->Bool) -> [Rule] -> [Quad]
    quads _ visible rs
-    = [ Quad r (Clauses [ (horn2expr hornClause,allShifts hornClause)
+    = [ Quad d (Clauses [ (horn2expr hornClause,allShifts hornClause)
                         | hornClause<-conjuncts rule
       --                , (not.null.lambda Ins (ERel r ??)) hornClause  -- causes infinite loop
       --                , not (checkMono hornClause Ins r)         -- causes infinite loop
@@ -408,7 +404,7 @@ while maintaining all invariants.
       --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
                         ]
                         rule)
-      | rule<-rs, r<-nub (relationsIn rule), visible r
+      | rule<-rs, d<-nub (map makeDeclaration (relationsIn rule)), visible d
       ]
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
@@ -512,13 +508,13 @@ while maintaining all invariants.
        -- rul    is the rule from which the above have been derived (for traceability)
        -- these quadruples are organized per relation.
        -- This puts together all Horn clauses we need for each relation.
-       relEqCls = eqCl (makeDeclaration.fst4) [(rel,hornClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
+       relEqCls = eqCl fst4 [(dcl,hornClauses,conj,cl_rule ccrs) | Quad dcl ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
-        = [ ECA (On ev rel) delt act
+        = [ ECA (On ev dcl) delt act
           | relEq <- relEqCls                   -- The material required for one relation
-          , let (rel,_,_,_) = head relEq        -- This is the relation
-          , let ERel delt _ = delta (sign rel)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
+          , let (dcl,_,_,_) = head relEq        -- This is the relation
+          , let EDcD delt _ = delta (sign dcl)  -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
           , ev<-[Ins,Del]                       -- This determines the event: On ev rel
           , let act = ALL [ CHC [ (if isTrue  clause' || isTrue step then Nop else
                                    if isFalse clause'                then Blk else
@@ -528,7 +524,7 @@ while maintaining all invariants.
                                 | clause@(Hc antcs conss) <- hornClauses
                                 , let expr    = horn2expr clause
                                 , let sgn     = sign expr -- different horn clauses may have different signatures
-                                , let clause' = conjNF (subst (rel, actSem ev rel (delta (sign rel))) expr)
+                                , let clause' = conjNF (subst (dcl, actSem ev dcl (delta (sign dcl))) expr)
                                 , let step    = conjNF (notCpl sgn expr .\/. clause')
                                 , let viols   = conjNF (notCpl sgn clause')
                                 , let negs    = foldr (./\.) (vExpr sgn) antcs
@@ -536,7 +532,7 @@ while maintaining all invariants.
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
-                                , makeDeclaration rel `elem` declsUsedIn frExpr
+                                , dcl `elem` declsUsedIn frExpr
                                 , let toExpr = if ev==Ins
                                                then conjNF poss
                                                else conjNF (notCpl sgn negs)
@@ -571,17 +567,17 @@ while maintaining all invariants.
 -- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
 -- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
        new  = [er{ecaAction=normPA (ecaAction er)} | er<-ers]
-       cascaded = [er{ecaAction=action'} | er<-new, let (c,action') = cascade (eRel (ecaTriggr er)) (ecaAction er), c]
-       uncasced = [er |                    er<-new, let (c,_)       = cascade (eRel (ecaTriggr er)) (ecaAction er), not c]
+       cascaded = [er{ecaAction=action'} | er<-new, let (c,action') = cascade (eDcl (ecaTriggr er)) (ecaAction er), c]
+       uncasced = [er |                    er<-new, let (c,_)       = cascade (eDcl (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
 --     cascade :: Relation -> PAclause -> (Bool, PAclause)
-     cascade rel (Do srt to _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
+     cascade dcl (Do srt to _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
       where blkErs = [er | er<-ers
                          , Blk _<-[ecaAction er]
                          , let t = ecaTriggr er
                          , eSrt t == srt
-                         , sameDecl (eRel t) to
-                         , not (sameDecl rel to)
+                         , eDcl t == to
+                         , not (dcl ==to)
                          ]
      cascade  _  c@Do{}           = (False, c)
      cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (snd.cascade rel.clause) m)
@@ -600,22 +596,21 @@ while maintaining all invariants.
           split (antc, cons) []               = (antc, cons)
           f (antcs, conss) = Hc antcs conss
 
-   actSem :: InsDel -> Relation -> Expression -> Expression
-   actSem Ins rel e@(ERel r sgn) | sign rel/=sgn = fatal 595 "Type error in actSem Ins"
-                                 | sameDecl rel r= ERel rel sgn
-                                 | otherwise     = ERel rel sgn .\/. e
-   actSem Ins rel delt     | sign rel/=sign delt = fatal 598 "Type error in actSem Ins"
-                           | otherwise           = disjNF (ERel rel (sign rel) .\/. delt)
-   actSem Del rel e@(ERel r sgn) | sign rel/=sgn = fatal 600 "Type error in actSem Del"
-                                 | sameDecl rel r= notCpl sgn (vExpr sgn)
-                                 | otherwise     = ERel rel sgn ./\. notCpl sgn e
-   actSem Del rel delt     | sign rel/=sign delt = fatal 603 "Type error in actSem Del"
-                           | otherwise           = conjNF (ERel rel (sign rel) ./\. notCpl (sign rel) delt)
+   actSem :: InsDel -> Declaration -> Expression -> Expression
+   actSem Ins dcl e@(EDcD d sgn) | sign dcl/=sgn = fatal 595 "Type error in actSem Ins"
+                                 | dcl==d        = EDcD dcl sgn
+                                 | otherwise     = EDcD dcl sgn .\/. e
+   actSem Ins dcl delt     | sign dcl/=sign delt = fatal 598 "Type error in actSem Ins"
+                           | otherwise           = disjNF (EDcD dcl (sign dcl) .\/. delt)
+   actSem Del dcl e@(EDcD d sgn) | sign dcl/=sgn = fatal 600 "Type error in actSem Del"
+                                 | dcl==d        = notCpl sgn (vExpr sgn)
+                                 | otherwise     = EDcD dcl sgn ./\. notCpl sgn e
+   actSem Del dcl delt     | sign dcl/=sign delt = fatal 603 "Type error in actSem Del"
+                           | otherwise           = conjNF (EDcD dcl (sign dcl) ./\. notCpl (sign dcl) delt)
 
    delta :: Sign -> Expression
    delta sgn
-    = ERel (makeRelation
-             Sgn { decnm   = "Delta"
+    = EDcD   Sgn { decnm   = "Delta"
                  , decsgn  = sgn
                  , decprps = []
                  , decprps_calc = Nothing
@@ -631,13 +626,13 @@ while maintaining all invariants.
                  , decusrX  = False
                  , decpat  = ""
                  , decplug = True
-                 }) 
+                 } 
            sgn
 
    -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
-   genPAclause :: (Relation->Bool)           -- True if a relation may be changed (i.e. is editable)
+   genPAclause :: (Declaration->Bool)           -- True if a relation may be changed (i.e. is editable)
                   -> InsDel                  -- the type of action: Insert or Delete
                   -> Expression              -- the expression in which a delete or insert takes place
                   -> Expression              -- the delta to be inserted or deleted
@@ -906,7 +901,7 @@ CHC [ if isRel e
           (_  , EPrd{})   -> fatal 896 "TODO"
           (_  , EKl0 x _)  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x _)  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , e@(ERel m _)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
+          (_  , e@(EDcD m _)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                                  if editAble m then Do tOp m deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
           (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\ndoCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
@@ -932,7 +927,7 @@ CHC [ if isRel e
         ecas      = assembleECAs qs
         conjs     = nub [ (cl_rule ccrs,c) | Quad _ ccrs<-qs, (c,_)<-cl_conjNF ccrs]
         eventsIn  = nub [ecaTriggr eca | eca<-ecas ]
-        eventsOut = nub [On tOp rel | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, ERel rel _<-[ERel e (sign e), flp $ ERel e (sign e)]] -- TODO (SJ 26-01-2013) silly code: ERel rel _<-[ERel e (sign e), flp $ ERel e (sign e)] Why is this?
+        eventsOut = nub [On tOp dcl | eca<-ecas, doAct<-dos (ecaAction eca), let Do tOp e _ _=doAct, EDcD dcl _<-[EDcD e (sign e), flp $ EDcD e (sign e)]] -- TODO (SJ 26-01-2013) silly code: ERel rel _<-[ERel e (sign e), flp $ ERel e (sign e)] Why is this?
         visible _ = True
 
 -- Auxiliaries

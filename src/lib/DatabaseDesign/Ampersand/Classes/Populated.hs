@@ -107,12 +107,12 @@ where
             ECpl e     _ -> [apair | apair <-[ mkPair x y | x<-atomsOf pt (source e), y<-atomsOf pt (target e)]
                                    , apair `notElem` contents e  ]
             EBrk e       -> contents e
-            ETyp e sgn   -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
+            ETyp e   sgn -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
                                                                        , a `elem` atomsOf pt (source sgn)
                                                                        , b `elem` atomsOf pt (target sgn)]
-            ERel r@Rel{} _   -> fullContents pt (reldcl r)
-            ERel I{}     sgn -> [mkPair a a | a <- atomsOf pt (source sgn)]
-            ERel V{}     sgn -> [mkPair s t | s <- atomsOf pt (source sgn)
+            EDcD dcl   _ -> fullContents pt dcl
+            EDcI     sgn -> [mkPair a a | a <- atomsOf pt (source sgn)]
+            EDcV     sgn -> [mkPair s t | s <- atomsOf pt (source sgn)
                                             , t <- atomsOf pt (target sgn) ]
             EMp1 atom       sgn -> if name (source sgn)=="SESSION" then [] else [mkPair atom atom] -- prevent populating SESSION
 

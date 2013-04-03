@@ -268,19 +268,19 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f exclVars (ECpl e _)     (a,b)  = Not (f exclVars e (a,b))
       f exclVars (EBrk e)       (a,b)  = f exclVars e (a,b)
       f exclVars (ETyp e _)     (a,b)  = f exclVars e (a,b)
-      f _ e@(ERel rel _) ((a,sv),(b,tv)) = res
+      f _ e@(EDcD dcl _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
-               Flr  -> R (Funs a [makeDeclaration rel]) (makeDeclaration(I tv)) (Funs b [])
-               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [makeDeclaration rel])
-               Rn   -> R (Funs a []) (makeDeclaration rel) (Funs b [])
+               Flr  -> R (Funs a [dcl]) (makeDeclaration(I tv)) (Funs b [])
+               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [dcl])
+               Rn   -> R (Funs a []) (dcl) (Funs b [])
                Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
-      f _ e@(EFlp (ERel rel _) _) ((a,sv),(b,tv)) = res
+      f _ e@(EFlp (EDcD dcl _) _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
-               Flr  -> R (Funs a [makeDeclaration rel]) (makeDeclaration(I tv)) (Funs b [])
-               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [makeDeclaration rel])
-               Rn   -> R (Funs b []) (makeDeclaration rel) (Funs a [])
+               Flr  -> R (Funs a [dcl]) (makeDeclaration(I tv)) (Funs b [])
+               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [dcl])
+               Rn   -> R (Funs b []) (dcl) (Funs a [])
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
       f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
       f _ (EMp1 atom _) _             = Atom atom
@@ -381,8 +381,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
       relFun exclVars lhs e rhs
         = case e of
-            ERel rel          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t']) (makeDeclaration rel) (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t'])
-            EFlp (ERel rel _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t']) (makeDeclaration rel) (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t'])
+            EDcD dcl          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t'])
+            EFlp (EDcD dcl _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t'])
             EMp1 atom         _ -> \_ _->Atom atom
             EFlp EMp1{}       _ -> relFun exclVars lhs e rhs
             _                   -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
@@ -427,10 +427,10 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 
       denote :: Expression -> Notation
       denote e = case e of
-         (ERel r _)
-           | null([Uni,Inj,Tot,Sur] >- multiplicities r)  -> Rn
-           | isUni r && isTot r                           -> Flr
-           | isInj r && isSur r                           -> Frl
+         (EDcD d _)
+           | null([Uni,Inj,Tot,Sur] >- multiplicities d)  -> Rn
+           | isUni d && isTot d                           -> Flr
+           | isInj d && isSur d                           -> Frl
            | otherwise                                    -> Rn 
          _                                                -> Rn
       denotes :: [Expression] -> Notation

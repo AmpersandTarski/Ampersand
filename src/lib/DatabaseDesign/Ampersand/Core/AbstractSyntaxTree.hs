@@ -111,7 +111,7 @@ data Process = Proc { prcNm :: String
                     , prcDcls :: [Declaration]
                     , prcUps :: [UserDefPop]  -- ^ The user defined populations in this process
                     , prcRRuls :: [(String,Rule)]    -- ^ The assignment of roles to rules.
-                    , prcRRels :: [(String,Relation)] -- ^ The assignment of roles to Relations.
+                    , prcRRels :: [(String,Declaration)] -- ^ The assignment of roles to Relations.
                     , prcKds :: [KeyDef]            -- ^ The key definitions defined in this process
                     , prcXps :: [Purpose]           -- ^ The motivations of elements defined in this process
                     }
@@ -123,7 +123,7 @@ instance Traced Process where
 
 data RoleRelation
    = RR { rrRoles :: [String]     -- ^ name of a role
-        , rrRels :: [Relation]   -- ^ name of a Relation
+        , rrRels :: [Declaration]   -- ^ name of a Relation
         , rrPos :: Origin       -- ^ position in the Ampersand script
         } --deriving (Eq, Show)     -- just for debugging
 instance Traced RoleRelation where
@@ -307,7 +307,7 @@ instance Association A_Gen where
   sign r = Sign (genspc r) (gengen r)
 
 
-data Interface = Ifc { ifcParams :: [Relation]
+data Interface = Ifc { ifcParams :: [Declaration]
                      , ifcViols ::  [Rule]
                      , ifcArgs ::   [[String]]
                      , ifcRoles ::  [String]
@@ -395,14 +395,16 @@ data Expression
       | ECpl Expression              Sign  -- ^ Complement
       | EBrk Expression                    -- ^ bracketed expression ( ... )
       | ETyp Expression              Sign  -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | ERel Relation                Sign  -- ^ simple relation
+      | EDcD Declaration             Sign  -- ^ simple declaration
+      | EDcI                         Sign  -- ^ Identity relation
+      | EDcV                         Sign  -- ^ Cartesian product relation
       | EMp1 String                  Sign  -- ^ constant (string between single quotes)
       deriving (Eq,Show)
 
 iExpr :: A_Concept -> Expression
-iExpr  c = ERel (I c) (Sign c c)
+iExpr  c = EDcI (Sign c c)
 vExpr :: Sign -> Expression
-vExpr sgn = ERel (V sgn) sgn
+vExpr sgn = EDcV sgn
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
@@ -467,7 +469,9 @@ instance Flippable Expression where
                EKl1 e     sgn -> EKl1 (flp e) (flp sgn)
                EBrk f         -> EBrk (flp f)
                ETyp e     sgn -> ETyp (flp e) (flp sgn)
-               e@(ERel _ sgn) -> EFlp e (flp sgn)
+               EDcD d     sgn -> EDcD (flp d) (flp sgn)
+               EDcI       _   -> expr
+               EDcV       sgn -> EDcV         (flp sgn)
                e@EMp1{}       -> e
 
 insParentheses :: Expression -> Expression
@@ -492,7 +496,9 @@ insParentheses = insPar 0
        insPar _ (ECpl e     sgn) = ECpl (insPar 10 e) sgn
        insPar i (EBrk f)         = insPar i f
        insPar _ (ETyp e sgn)     = ETyp (insPar 10 e) sgn
-       insPar _ e@ERel{}         = e
+       insPar _ e@EDcD{}         = e
+       insPar _ e@EDcI{}         = e
+       insPar _ e@EDcV{}         = e
        insPar _ e@EMp1{}         = e
 
 instance Association Expression where
@@ -512,7 +518,9 @@ instance Association Expression where
  sign (ECpl _ sgn) = sgn
  sign (EBrk e)     = sign e
  sign (ETyp _ sgn) = sgn
- sign (ERel _ sgn) = sgn
+ sign (EDcD _ sgn) = sgn
+ sign (EDcI   sgn) = sgn
+ sign (EDcV   sgn) = sgn
  sign (EMp1 _ sgn) = sgn
 
 
