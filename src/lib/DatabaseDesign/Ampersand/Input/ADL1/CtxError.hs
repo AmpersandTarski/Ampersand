@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-       (newcxe,newcxeif,CtxError(..),shOrig) --constructors of CtxError are not exported, use constructor functions
+       (newcxe,newcxeif,CtxError(..),shOrig)
 where
 import DatabaseDesign.Ampersand.Input.ADL1.FilePos
 import DatabaseDesign.Ampersand.ADL1 (Pos(..))
@@ -217,8 +217,8 @@ showErrEquation err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
      ( [show (origin x)++"\n"]++
        case (cxeSrcCpts err, cxeTrgCpts err) of
             ([], [])  -> ["    Ambiguous equation  "++showADL x]
-            ([_], []) -> ["    The target of  "++showADL x++"  is ambiguous."]
-            ([], [_]) -> ["    The source of  "++showADL x++"  is ambiguous."]
+            ([_], []) -> ["    The target of  "++showADL x++"  is ambiguous"]
+            ([], [_]) -> ["    The source of  "++showADL x++"  is ambiguous"]
             (cs, [])  -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
                          ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
             (cs, [_]) -> ["    The source of  "++showADL a++"  and the source of  "++showADL b++"\n"]++
