@@ -382,15 +382,7 @@ typing p_context
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
      st
-      = uType (p_context, compat) p_context Anything Anything p_context
-     compat :: Type -> Type -> Bool
-     compat a b = null set1 -- approve compatibility for isolated types, such as "Nothng", "Anything" and singleton elements
-                      || null set2
-                      || (not.null) (set1 `isc` set2)
-      where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
-       included = addIdentity (setClosure (reverseMap st) "st~")
-       set1 = findIn a included
-       set2 = findIn b included
+      = uType p_context p_context Anything Anything p_context
    -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
      typeTerms :: [Type]          -- The list of all type terms in st.
      typeTerms = Map.keys st -- Because a Typemap is total, it is sufficient to compute  Map.keys st
@@ -579,7 +571,7 @@ class Expr a where
   --   The first element of the first argument is a P_Context that represents the parse tree of one context.
   --   This is provided to obtain a declaration table and a list of interfaces from the script.
   --   The second element of the first argument is a compatibility function, that determines whether two types are compatible.
-  uType :: (P_Context, Type -> Type -> Bool)
+  uType :: P_Context
         -> a         -- x:    the original term from the script, meant for representation in the graph.
         -> Type      -- uLft: the type of the universe for the domain of x 
         -> Type      -- uRt:  the type of the universe for the codomain of x
@@ -725,7 +717,7 @@ instance Expr P_ObjectDef where
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
-                                   P_InterfaceRef{} -> [ifc_Obj ifc | ifc<-ctx_ifcs (fst ctxt), name ifc==si_str subIfc]
+                                   P_InterfaceRef{} -> [ifc_Obj ifc | ifc<-ctx_ifcs (ctxt), name ifc==si_str subIfc]
                         , let (dm,t) = mSpecific (cod x) (dom (obj_ctx obj)) (obj_ctx obj)
                         ]
  
@@ -877,7 +869,7 @@ instance Expr Term where
                           [d] -> dom x.=.dom d .+. cod x.=.cod d .+. dom x'.<.dom d .+. cod x'.<.cod d
                           _   -> dom x.<.uLft .+. cod x.<.uRt .+. dom x'.<.uLft .+. cod x'.<.uRt
                     where
-                        (p_context, _) = ctxt
+                        p_context = ctxt
                         x'=complement x
                         decls' = [term | decl<-p_declarations p_context, name decl==nm, term<-terms decl ]
                         -- decls looks whether a declaration gives an exact match. We cannot use `compatible`, because that has not been computed at this point.
