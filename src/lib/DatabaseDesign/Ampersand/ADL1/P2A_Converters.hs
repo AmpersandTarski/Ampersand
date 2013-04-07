@@ -1567,16 +1567,15 @@ pCtx2aCtx p_context
            Prel _ _        -> EDcD <$> getDeclaration x <*> getSign x
            Pflp _ _        -> makeFlp <$> getDeclaration x <*> getSign x
                               where makeFlp decl sgn = EFlp (EDcD decl (flp sgn)) sgn
-           Pequ _ a b      -> do { let srcAs = srcTypes (dom a)
+           Pequ _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; let srcAs = srcTypes (dom a)
                                        trgAs = srcTypes (cod a)
                                        srcBs = srcTypes (dom b)
                                        trgBs = srcTypes (cod b)
                                        srcTyps  = srcAs `uni` srcBs
                                        trgTyps  = trgAs `uni` trgBs
                                  ; case (srcTyps, trgTyps) of
-                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                         ; return (a' .==. b')
-                                                         }
+                                        ([_], [_]) -> return (a' .==. b')
                                         _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                          ,cxeLhs     = a
                                                                          ,cxeRhs     = b
@@ -1584,14 +1583,13 @@ pCtx2aCtx p_context
                                                                          ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                          }]
                                  }
-           Pimp _ a b      -> do { let srcAs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
+           Pimp _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; let srcAs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
                                        trgAs = (srcTypes.normalType) (TypGlb (cod a) (cod b) x)
                                        srcBs = srcTypes (dom b)
                                        trgBs = srcTypes (cod b)
                                  ; case (srcAs, trgBs) of
-                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                         ; return (a' .|-. b')
-                                                         }
+                                        ([_], [_]) -> return (a' .|-. b')
                                         _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                          ,cxeLhs     = a
                                                                          ,cxeRhs     = b
@@ -1599,13 +1597,11 @@ pCtx2aCtx p_context
                                                                          ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
                                                                          }]
                                  }
-           PIsc _ a b      -> do { let srcs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
+           PIsc _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; let srcs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
                                        trgs = (srcTypes.normalType) (TypGlb (cod a) (cod b) x)
-                         --      ; _ <- fatal 1638 ("Diagnostic of "++show x++" on "++show (origin x)++"\n  srcs = "++show srcs++"\n  trgs = "++show trgs)
                                  ; case (srcs, trgs) of
-                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                         ; return (a' ./\. b')
-                                                         }
+                                        ([_], [_]) -> return (a' ./\. b')
                                         _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                          ,cxeLhs     = a
                                                                          ,cxeRhs     = b
@@ -1613,12 +1609,11 @@ pCtx2aCtx p_context
                                                                          ,cxeTrgCpts = trgs
                                                                          }]
                                  }
-           PUni _ a b      -> do { let srcs = (srcTypes.normalType) (TypLub (dom a) (dom b) x)
+           PUni _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; let srcs = (srcTypes.normalType) (TypLub (dom a) (dom b) x)
                                        trgs = (srcTypes.normalType) (TypLub (cod a) (cod b) x)
                                  ; case (srcs, trgs) of
-                                        ([_], [_]) -> do { (a',b') <- (,) <$> f a <*> f b
-                                                         ; return (a' .\/. b')
-                                                         }
+                                        ([_], [_]) -> return (a' .\/. b')
                                         _          -> Errors [CxeEquLike {cxeExpr    = x
                                                                          ,cxeLhs     = a
                                                                          ,cxeRhs     = b
@@ -1629,41 +1624,51 @@ pCtx2aCtx p_context
            PDif _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; return (a' .-. b')
                                  }
-           PLrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (cod (complement a)) (dom (p_flp b)) x) of
---         PLrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr (p_flp (complement a)) True) (TypExpr (p_flp b) True) x) of
-                                        [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                  ; return (a' ./. b')
-                                                  }
-                                        cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                   ,cxeCpts   = cs
+           PLrs _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; case (srcTypes.normalType) (TypGlb (cod (complement a)) (dom (p_flp b)) x) of
+                                         [_] -> return (a' ./. b')
+                                         cs  -> Errors [ CxeCpsLike {cxeExpr = x
+                                                                    ,cxeLhs  = a
+                                                                    ,cxeRhs  = b
+                                                                    ,cxeLT   = Tgt
+                                                                    ,cxeRT   = Tgt
+                                                                    ,cxeCpts = cs
+                                                                    }
+                                                       ]
+                                 }
+           PRrs _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; case (srcTypes.normalType) (TypGlb (dom a) (dom (complement b)) x) of
+                                        [_] -> return (a' .\. b')
+                                        cs  -> Errors [ CxeCpsLike {cxeExpr = x
+                                                                   ,cxeLhs  = a
+                                                                   ,cxeRhs  = b
+                                                                   ,cxeLT   = Src
+                                                                   ,cxeRT   = Src
+                                                                   ,cxeCpts = cs
                                                                    }
                                                       ]
                                  }
-           PRrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (dom a) (dom (complement b)) x) of
---         PRrs _ a b      -> do { case (srcTypes.normalType) (TypGlb (TypExpr a False) (TypExpr (complement b) False) x) of
-                                        [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                  ; return (a' .\. b')
-                                                  }
-                                        cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                   ,cxeCpts   = cs
-                                                                   }
-                                                      ]
-                                 }
-           PCps _ a b      -> do { case (srcTypes.normalType) (TypGlb (cod a) (dom b) x) of
-                                      [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                                ; return (a' .:. b')
-                                                }
-                                      cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                                 ,cxeCpts   = cs
-                                                                }
+           PCps _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; case (srcTypes.normalType) (TypGlb (cod a) (dom b) x) of
+                                      [_] -> return (a' .:. b')
+                                      cs  -> Errors [ CxeCpsLike {cxeExpr = x
+                                                                 ,cxeLhs  = a
+                                                                 ,cxeRhs  = b
+                                                                 ,cxeLT   = Tgt
+                                                                 ,cxeRT   = Src
+                                                                 ,cxeCpts = cs
+                                                                 }
                                                     ]
                                  }
-           PRad _ a b      -> do { case (srcTypes.normalType) (TypLub (cod a) (dom b) x) of
-                                    [_] -> do { (a',b') <- (,) <$> f a <*> f b
-                                              ; return (a' .!. b')
-                                              }
-                                    cs  -> Errors [ CxeCpsLike {cxeExpr   = x
-                                                               ,cxeCpts   = cs
+           PRad _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
+                                 ; case (srcTypes.normalType) (TypLub (cod a) (dom b) x) of
+                                    [_] -> return (a' .!. b')
+                                    cs  -> Errors [ CxeCpsLike {cxeExpr = x
+                                                               ,cxeLhs  = a
+                                                               ,cxeRhs  = b
+                                                               ,cxeLT   = Tgt
+                                                               ,cxeRT   = Src
+                                                               ,cxeCpts = cs
                                                                }
                                                   ]
                                  }
@@ -1723,7 +1728,7 @@ pCtx2aCtx p_context
          lookupType :: Term -> P_Concept
          lookupType t = case srcTypes (dom t) of
                          [c] -> c
-                         []  -> fatal 1586 ("No type found for term "++showADL t++" on "++show (origin t)++", even though that term is known in stConcepts.\n   data structure: "++show t)
+                         []  -> fatal 1586 ("No type found for term "++showADL t++" on "++show (origin t)++", even though that term is known in stConcepts.\n   CxeCpsLikeCxeCpsLikeCxeCpsLikeCxeCpsLikeCxeCpsLikestructure: "++show t)
                          cs  -> fatal 1586 ("Multiple types found for term "++showADL t++": "++show cs++" on "++show (origin t))
 
     getDeclaration :: Term -> Guarded Declaration

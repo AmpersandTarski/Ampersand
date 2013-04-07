@@ -71,6 +71,10 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
                               ,cxeTrgCpts :: [P_Concept]
                               }
               | CxeCpsLike    {cxeExpr :: Term
+                              ,cxeLhs :: Term
+                              ,cxeRhs :: Term
+                              ,cxeLT :: SrcOrTgt -- gets value  Src  or  Tgt
+                              ,cxeRT :: SrcOrTgt -- gets value  Src  or  Tgt
                               ,cxeCpts :: [P_Concept]
                               }       
               | CxeViol       {cxeViol :: P_PairViewSegment
@@ -181,13 +185,8 @@ showErr err = case err of
           PUni{}  -> showErrBoolTerm err
           PDif{}  -> showErrBoolTerm err
           _          -> fatal 144 "No match for this term!"
-  CxeCpsLike{}
-     -> case cxeExpr err of
-          PLrs _ a b -> showErrBetweenTerm err a b "target" "target"
-          PRrs _ a b -> showErrBetweenTerm err a b "source" "source"
-          PCps _ a b -> showErrBetweenTerm err a b "target" "source"
-          PRad _ a b -> showErrBetweenTerm err a b "target" "source"
-          _          -> fatal 151 "No match for this term!"
+  CxeCpsLike{cxeLhs=a,cxeRhs=b,cxeLT=lt,cxeRT=rt}
+     -> showErrBetweenTerm err a b (show lt) (show rt)
   CxeOrig typeErrors t nm o
     | null typeErrors                              -> ""
     | t `elem` ["pattern", "process", "interface"] -> "The " ++ t ++ " named \""++ nm ++ "\" in file "++ filenm o ++ " contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
