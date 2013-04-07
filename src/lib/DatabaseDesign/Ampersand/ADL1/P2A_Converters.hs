@@ -138,13 +138,6 @@ complement :: Term -> Term
 complement (PCpl _ a) = a
 complement a          = PCpl (origin a) a
 
---cmpl :: Type -> Type
---cmpl (TypExpr e b)  = TypExpr (complement e) b
---cmpl (TypLub a b e) = TypGlb (cmpl a) (cmpl b) (complement e)
---cmpl (TypGlb a b e) = TypLub (cmpl a) (cmpl b) (complement e)
---cmpl Anything       = Nothng
---cmpl Nothng         = Anything
-
 type Typemap = Map Type [Type]
 
 {- The type  Typemap  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
@@ -1594,7 +1587,7 @@ pCtx2aCtx p_context
                                        trgs = (srcTypes.normalType) (TypGlb (cod a) (cod b) x)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> return (a' ./\. b')
-                                        _          -> Errors [CxeEquLike {cxeExpr    = x
+                                        _          -> Errors [CxeUniLike {cxeExpr    = x
                                                                          ,cxeLhs     = a
                                                                          ,cxeRhs     = b
                                                                          ,cxeSrcCpts = srcs
@@ -1606,7 +1599,7 @@ pCtx2aCtx p_context
                                        trgs = (srcTypes.normalType) (TypLub (cod a) (cod b) x)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> return (a' .\/. b')
-                                        _          -> Errors [CxeEquLike {cxeExpr    = x
+                                        _          -> Errors [CxeUniLike {cxeExpr    = x
                                                                          ,cxeLhs     = a
                                                                          ,cxeRhs     = b
                                                                          ,cxeSrcCpts = srcs

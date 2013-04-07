@@ -64,7 +64,13 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
                               ,cxeSrcs :: [P_Concept]
                               ,cxeTrgs :: [P_Concept]
                               }       
-              | CxeEquLike    {cxeExpr :: Term   -- error in term cxeExpr, lefthandside not compatable to righthandside
+              | CxeEquLike    {cxeExpr :: Term   -- error in equation cxeExpr, lefthandside not compatable to righthandside
+                              ,cxeLhs :: Term
+                              ,cxeRhs :: Term
+                              ,cxeSrcCpts :: [P_Concept]
+                              ,cxeTrgCpts :: [P_Concept]
+                              }      
+              | CxeUniLike    {cxeExpr :: Term   -- error in term cxeExpr, lefthandside not compatable to righthandside
                               ,cxeLhs :: Term
                               ,cxeRhs :: Term
                               ,cxeSrcCpts :: [P_Concept]
@@ -177,14 +183,8 @@ showErr err = case err of
                  (    [_]       ,    trgs       ) -> [ "    Conflicts in the target of  "++showADL (cxeExpr err)++".\n    Concepts "++commaEng "and" (map show trgs)++" do not match." ]
                  (    srcs      ,    trgs       ) -> [ "    Conflicting concepts in  "++showADL (cxeExpr err)++":\n    concepts "++commaEng "and" (map show srcs)++" do not match, and\n    concepts "++commaEng "and" (map show trgs)++" do not match."]
           )
-  CxeEquLike{}
-     -> case cxeExpr err of
-          Pequ{}  -> showErrEquation err
-          Pimp{}  -> showErrEquation err
-          PIsc{}  -> showErrBoolTerm err
-          PUni{}  -> showErrBoolTerm err
-          PDif{}  -> showErrBoolTerm err
-          _          -> fatal 144 "No match for this term!"
+  CxeEquLike{} -> showErrEquation err
+  CxeUniLike{} -> showErrBoolTerm err
   CxeCpsLike{cxeLhs=a,cxeRhs=b,cxeLT=lt,cxeRT=rt}
      -> showErrBetweenTerm err a b (show lt) (show rt)
   CxeOrig typeErrors t nm o
