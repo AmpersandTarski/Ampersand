@@ -1561,12 +1561,12 @@ pCtx2aCtx p_context
                                        trgTyps  = trgAs `uni` trgBs
                                  ; case (srcTyps, trgTyps) of
                                         ([_], [_]) -> return (a' .==. b')
-                                        _          -> Errors [CxeEquLike {cxeExpr    = x
-                                                                         ,cxeLhs     = a
-                                                                         ,cxeRhs     = b
-                                                                         ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
-                                                                         ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
-                                                                         }]
+                                        _          -> Errors [CxeEquLike { cxeExpr    = x
+                                                                         , cxeLhs     = a
+                                                                         , cxeRhs     = b
+                                                                         , cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                         , cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                         } ]
                                  }
            Pimp _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; let srcAs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
@@ -1575,36 +1575,36 @@ pCtx2aCtx p_context
                                        trgBs = srcTypes (cod b)
                                  ; case (srcAs, trgBs) of
                                         ([_], [_]) -> return (a' .|-. b')
-                                        _          -> Errors [CxeEquLike {cxeExpr    = x
-                                                                         ,cxeLhs     = a
-                                                                         ,cxeRhs     = b
-                                                                         ,cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
-                                                                         ,cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
-                                                                         }]
+                                        _          -> Errors [CxeEquLike { cxeExpr    = x
+                                                                         , cxeLhs     = a
+                                                                         , cxeRhs     = b
+                                                                         , cxeSrcCpts = (srcAs `uni` srcBs) >- (srcAs `isc` srcBs)
+                                                                         , cxeTrgCpts = (trgAs `uni` trgBs) >- (trgAs `isc` trgBs)
+                                                                         } ]
                                  }
            PIsc _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; let srcs = (srcTypes.normalType) (TypGlb (dom a) (dom b) x)
                                        trgs = (srcTypes.normalType) (TypGlb (cod a) (cod b) x)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> return (a' ./\. b')
-                                        _          -> Errors [CxeUniLike {cxeExpr    = x
-                                                                         ,cxeLhs     = a
-                                                                         ,cxeRhs     = b
-                                                                         ,cxeSrcCpts = srcs
-                                                                         ,cxeTrgCpts = trgs
-                                                                         }]
+                                        _          -> Errors [CxeUniLike { cxeExpr    = x
+                                                                         , cxeLhs     = a
+                                                                         , cxeRhs     = b
+                                                                         , cxeSrcCpts = srcs
+                                                                         , cxeTrgCpts = trgs
+                                                                         } ]
                                  }
            PUni _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; let srcs = (srcTypes.normalType) (TypLub (dom a) (dom b) x)
                                        trgs = (srcTypes.normalType) (TypLub (cod a) (cod b) x)
                                  ; case (srcs, trgs) of
                                         ([_], [_]) -> return (a' .\/. b')
-                                        _          -> Errors [CxeUniLike {cxeExpr    = x
-                                                                         ,cxeLhs     = a
-                                                                         ,cxeRhs     = b
-                                                                         ,cxeSrcCpts = srcs
-                                                                         ,cxeTrgCpts = trgs
-                                                                         }]
+                                        _          -> Errors [ CxeUniLike { cxeExpr    = x
+                                                                          , cxeLhs     = a
+                                                                          , cxeRhs     = b
+                                                                          , cxeSrcCpts = srcs
+                                                                          , cxeTrgCpts = trgs
+                                                                          } ]
                                  }
            PDif _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; return (a' .-. b')
@@ -1612,12 +1612,12 @@ pCtx2aCtx p_context
            PLrs _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; case (srcTypes.normalType) (TypGlb (cod (complement a)) (dom (p_flp b)) x) of
                                          [_] -> return (a' ./. b')
-                                         cs  -> Errors [ CxeCpsLike {cxeExpr = x
-                                                                    ,cxeLhs  = a
-                                                                    ,cxeRhs  = b
-                                                                    ,cxeLT   = Tgt
-                                                                    ,cxeRT   = Tgt
-                                                                    ,cxeCpts = cs
+                                         cs  -> Errors [ CxeCpsLike { cxeExpr = x
+                                                                    , cxeLhs  = a
+                                                                    , cxeRhs  = b
+                                                                    , cxeLT   = Tgt
+                                                                    , cxeRT   = Tgt
+                                                                    , cxeCpts = cs
                                                                     }
                                                        ]
                                  }
@@ -1636,24 +1636,24 @@ pCtx2aCtx p_context
            PCps _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; case (srcTypes.normalType) (TypGlb (cod a) (dom b) x) of
                                       [_] -> return (a' .:. b')
-                                      cs  -> Errors [ CxeCpsLike {cxeExpr = x
-                                                                 ,cxeLhs  = a
-                                                                 ,cxeRhs  = b
-                                                                 ,cxeLT   = Tgt
-                                                                 ,cxeRT   = Src
-                                                                 ,cxeCpts = cs
+                                      cs  -> Errors [ CxeCpsLike { cxeExpr = x
+                                                                 , cxeLhs  = a
+                                                                 , cxeRhs  = b
+                                                                 , cxeLT   = Tgt
+                                                                 , cxeRT   = Src
+                                                                 , cxeCpts = cs
                                                                  }
                                                     ]
                                  }
            PRad _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; case (srcTypes.normalType) (TypLub (cod a) (dom b) x) of
                                     [_] -> return (a' .!. b')
-                                    cs  -> Errors [ CxeCpsLike {cxeExpr = x
-                                                               ,cxeLhs  = a
-                                                               ,cxeRhs  = b
-                                                               ,cxeLT   = Tgt
-                                                               ,cxeRT   = Src
-                                                               ,cxeCpts = cs
+                                    cs  -> Errors [ CxeCpsLike { cxeExpr = x
+                                                               , cxeLhs  = a
+                                                               , cxeRhs  = b
+                                                               , cxeLT   = Tgt
+                                                               , cxeRT   = Src
+                                                               , cxeCpts = cs
                                                                }
                                                   ]
                                  }
