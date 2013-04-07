@@ -194,7 +194,7 @@ data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
 
 data Declaration = 
   Sgn { decnm :: String     -- ^ the name of the declaration
-      , decsgn :: Sign       -- ^ the source concept of the declaration
+      , decsgn :: Sign       -- ^ the source and target concepts of the declaration
        --multiplicities returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use multiplicities but decprps
       , decprps :: [Prop]     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
       , decprps_calc :: Maybe [Prop] -- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
@@ -242,6 +242,7 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
                             -- then [] else ["MEANING",show (decMean d)] ))
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
+
 instance Flippable Declaration where
   flp d
     = case d of

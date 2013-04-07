@@ -31,7 +31,7 @@ subst (decl,f) = subs
        subs (EBrk e)         = EBrk (subs e)
        subs (ETyp e     sgn) = ETyp (subs e)        sgn
        subs e@(EDcD d   _  ) | d ==decl    = f
-                             | otherwise = e
+                             | otherwise   = e
        subs e@EDcI{}         = e
        subs e@EDcV{}         = e
        subs e@EMp1{}         = e
