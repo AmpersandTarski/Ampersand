@@ -309,8 +309,8 @@ findIn t cl = getList (Map.lookup t cl)
                        getList (Just a) = a
 
 
-nothing :: (Typemap,Typemap)
-nothing = (Map.empty,Map.empty)
+nothing :: Typemap
+nothing = Map.empty
 {-
 isFull (TypExpr (Pfull _ _) _) = True
 isFull (TypLub a b _) = isFull a || isFull b
@@ -324,23 +324,21 @@ isNull _ = False
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
 infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
-(.<.) :: Type -> Type -> (Typemap , Typemap)
+(.<.) :: Type -> Type -> Typemap
 _ .<. Anything = nothing
 Nothng .<. _   = nothing
 a .<. _ | isNull a = nothing
-a .<. b  = (Map.fromList [(a, [b]),(b, [])],snd nothing) -- a tuple meaning that a is a subset of b, and introducing b as a key.
-(.=.) :: Type -> Type -> (Typemap, Typemap)
-a .=. b  = (Map.fromList [(a, [b]),(b, [a])],snd nothing)
-(.++.) :: Typemap -> Typemap -> Typemap
-m1 .++. m2  = Map.unionWith mrgUnion m1 m2
-(.+.) :: (Typemap , Typemap) -> (Typemap , Typemap) -> (Typemap, Typemap)
-(a,b) .+. (c,d) = (c.++.a,d.++.b)
+a .<. b  = (Map.fromList [(a, [b]),(b, [])]) -- a tuple meaning that a is a subset of b, and introducing b as a key.
+(.=.) :: Type -> Type -> Typemap
+a .=. b  = (Map.fromList [(a, [b]),(b, [a])])
+(.+.) :: Typemap -> Typemap -> Typemap
+m1 .+. m2 = Map.unionWith mrgUnion m1 m2
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) False
 dom, cod :: Term -> Type
 dom x    = TypExpr x         False -- the domain of x
 cod x    = TypExpr (p_flp x) True 
-mSpecific, mGeneric :: Type -> Type -> Term -> ( (Typemap , Typemap) ,Type)
+mSpecific, mGeneric :: Type -> Type -> Term -> ( Typemap ,Type)
 mGeneric  a b e = (a .<. r .+. b .<. r , r) where r = normalType (TypLub a b e)
 mSpecific a b e = (r .<. a .+. r .<. b , r) where r = normalType (TypGlb a b e)
 
@@ -383,18 +381,17 @@ typing p_context
  where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
-     (firstSetOfEdges,secondSetOfEdges)
+     st
       = uType (p_context, compat) p_context Anything Anything p_context
      compat :: Type -> Type -> Bool
      compat a b = null set1 -- approve compatibility for isolated types, such as "Nothng", "Anything" and singleton elements
                       || null set2
                       || (not.null) (set1 `isc` set2)
       where -- TODO: we can calculate scc with a Dijkstra algorithm, which is much faster than the current closure used:
-       included = addIdentity (setClosure (reverseMap firstSetOfEdges) "firstSetOfEdges~")
+       included = addIdentity (setClosure (reverseMap st) "st~")
        set1 = findIn a included
        set2 = findIn b included
    -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
-     st = Map.unionWith mrgUnion firstSetOfEdges secondSetOfEdges
      typeTerms :: [Type]          -- The list of all type terms in st.
      typeTerms = Map.keys st -- Because a Typemap is total, it is sufficient to compute  Map.keys st
 -- In order to compute the condensed graph, we need the transitive closure of st:
@@ -418,6 +415,7 @@ typing p_context
         -- This explains why we did the sorting:
         --    after deducing x .<. (a ./\. b), we might deduce x .<. c, and then x .<. ((a ./\. b) ./\. c)
         --    should we do the deduction about ((a ./\. b) ./\. c) before that of (a ./\. b), we would miss this
+        -- (These arcs show up as dotted lines in the type graphs)
         -- We filter for TypLubs, since we do not wish to create a new TypExpr for (a ./\. b) if it was not already in the st-graph
         someWhatSortedLubs = sortBy compr [l | l@(TypLub _ _ _) <- typeTerms]
         someWhatSortedGlbs = sortBy compr [l | l@(TypGlb _ _ _) <- typeTerms]
@@ -427,6 +425,7 @@ typing p_context
                       else EQ -- and EQ means: don't care about the order (sortBy will preserve the original order as much as possible)
 
      -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
+     -- Check whether stClosAdded is transitive...
      stClos = if (stClosAdded == (addIdentity $ setClosure stClosAdded "stClosAdded")) then
                  stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
      stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
@@ -581,12 +580,11 @@ class Expr a where
   --   This is provided to obtain a declaration table and a list of interfaces from the script.
   --   The second element of the first argument is a compatibility function, that determines whether two types are compatible.
   uType :: (P_Context, Type -> Type -> Bool)
-        -> a               -- x:    the original term from the script, meant for representation in the graph.
-        -> Type            -- uLft: the type of the universe for the domain of x 
-        -> Type            -- uRt:  the type of the universe for the codomain of x
-        -> a               -- z:    the term to be analyzed, which must be logically equivalent to x
-        -> ( Typemap   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
-           , Typemap ) -- for some edges, we need to know the rest of the graph. These can be created in this second part.
+        -> a         -- x:    the original term from the script, meant for representation in the graph.
+        -> Type      -- uLft: the type of the universe for the domain of x 
+        -> Type      -- uRt:  the type of the universe for the codomain of x
+        -> a         -- z:    the term to be analyzed, which must be logically equivalent to x
+        -> Typemap   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
 
 instance Expr P_Context where
  p_gens pContext
@@ -1465,7 +1463,7 @@ pCtx2aCtx p_context
     pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop pop
      = case pExpr2aExpr expr of
-        Checked (e,s,t) -> popsOf e
+        Checked (e,_,_) -> popsOf e
         Errors errs     -> Errors errs
        where
         expr = case pop of
@@ -1560,30 +1558,15 @@ pCtx2aCtx p_context
        where
          f :: Term -> Guarded Expression
          f x = case x of
-           PI _            -> do { sgn<-getSign x
-                                 ; return (EDcI sgn)
-                                 }
+           PI _            -> EDcI <$> getSign x
            Pid c           -> return (iExpr (pCpt2aCpt c))
-           Patm _ atom _   -> do { sgn<-getSign x
-                                 ; return (EMp1 atom sgn)
-                                 }
+           Patm _ atom _   -> EMp1 atom <$> getSign x
            Pnull           -> fatal 1546 ("unsigned Pnull.")
-           PVee _          -> do { sgn<-getSign x
-                                 ; return (vExpr sgn)
-                                 }
+           PVee _          -> vExpr <$> getSign x
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
-           Prel o _        -> do { decl <- getDeclaration x
-                                 ; let [s] = srcTypes (dom x)
-                                       [t] = srcTypes (cod x)
-                                       sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
-                                 ; return (EDcD decl sgn)
-                                 }
-           Pflp o _        -> do { decl <- getDeclaration x
-                                 ; let [s] = srcTypes (dom x)
-                                       [t] = srcTypes (cod x)
-                                       sgn = Sign (pCpt2aCpt s) (pCpt2aCpt t)
-                                 ; return (EFlp (EDcD decl sgn) (flp sgn))
-                                 }
+           Prel _ _        -> EDcD <$> getDeclaration x <*> getSign x
+           Pflp _ _        -> makeFlp <$> getDeclaration x <*> getSign x
+                              where makeFlp decl sgn = EFlp (EDcD decl (flp sgn)) sgn
            Pequ _ a b      -> do { let srcAs = srcTypes (dom a)
                                        trgAs = srcTypes (cod a)
                                        srcBs = srcTypes (dom b)
@@ -1702,7 +1685,7 @@ pCtx2aCtx p_context
            PBrk _ a        -> do { a' <- f a
                                  ; return (EBrk a')
                                  }
-           PTrel o relNm (P_Sign cs)
+           PTrel _ relNm (P_Sign cs)
             -> case ( delimit (head cs) (srcTypes (dom x))
                     , delimit (last cs) (srcTypes (cod x))
                     ) of
@@ -1727,12 +1710,6 @@ pCtx2aCtx p_context
            
          delimit :: P_Concept -> [P_Concept] -> [P_Concept]
          delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]
-         returnIConcepts term
-          = case srcTypes (dom term) of
-             [c] -> return c
-             cs  -> Errors[CxeILike { cxeExpr = term
-                                    , cxeCpts = cs
-                                    }]
          getSign :: Term -> Guarded Sign
          getSign term
           = case (srcs,trgs) of

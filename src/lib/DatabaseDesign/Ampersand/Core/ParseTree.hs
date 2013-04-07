@@ -224,6 +224,9 @@ where
       | PBrk Origin Term               -- ^ bracketed expression ( ... )
       deriving (Eq, Ord, Show) -- deriving Show for debugging purposes
 
+-- TODO: write instance Eq and Ord Term that compares on the basis of origin,
+-- for performance reasons.
+
    instance Traced Term where
     origin e = case e of
       PI orig        -> orig
