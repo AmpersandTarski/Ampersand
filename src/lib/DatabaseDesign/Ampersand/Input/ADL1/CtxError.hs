@@ -25,10 +25,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
               | CxeEqAttribs  {cxeOrig :: Origin           -- ^ The location of the object/key definition in which different attributes have the same name.
                               ,cxeName :: String           -- ^ The name shared by different attributes.
                               ,cxeAtts :: [Term]           -- ^ The list of attributes with the same name.
-                              }
-              | CxeILike      {cxeExpr :: Term
-                              ,cxeCpts :: [P_Concept]
-                              }       
+                              }   
               | CxeUnsupRoles {cxeIfc ::   P_Interface
                               ,cxeRoles :: [String]
                               }       
@@ -44,10 +41,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
               | CxeObjMismatch{cxeExpr :: Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
                               ,cxeEnv ::  [P_Concept]
                               ,cxeSrcs :: [P_Concept]
-                              }       
-              | CxeTyp        {cxeExpr :: Term
-                              ,cxeDcls :: [Term]
-                              }       
+                              }             
               | CxeRel        {cxeExpr :: Term
                               ,cxeDecs :: [P_Declaration]  -- possibilities for bindings.
                               ,cxeSNDs :: [P_Declaration]  -- Declarations with the same name
@@ -59,11 +53,7 @@ data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of conc
               | CxeCast       {cxeExpr ::    Term
                               ,cxeDomCast :: [P_Concept]
                               ,cxeCodCast :: [P_Concept]
-                              }       
-              | CxeCpl        {cxeExpr :: Term        -- SJC: shouldn't this be an instance of CxeSign instead?
-                              ,cxeSrcs :: [P_Concept]
-                              ,cxeTrgs :: [P_Concept]
-                              }       
+                              }     
               | CxeEquLike    {cxeExpr :: Term   -- error in equation cxeExpr, lefthandside not compatable to righthandside
                               ,cxeLhs :: Term
                               ,cxeRhs :: Term
@@ -106,14 +96,6 @@ showErr err = case err of
   CxeEqAttribs{}
      -> show (cxeOrig err)++": Different attributes have the same name:"++
         concat [ "\n   ("++show (origin term)++")\t \""++cxeName err++"\" : "++showADL term | term<-cxeAtts err ]
-  CxeILike{}
-     -> concat
-          ( [show (origin (cxeExpr err))++":\n"]++
-              case cxeCpts err of
-                 []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
-                 cs  -> ["    The term  "++showADL (cxeExpr err)++",\n"]++
-                        ["    cannot be "++commaEng "and" (map showADL cs) ++" at the same time."]
-          )
   CxeNoRules{}
      -> show (cxePos err)++":\n"++
         case cxeRules err of
@@ -145,15 +127,6 @@ showErr err = case err of
                  cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
                         ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
-  CxeTyp{}
-     -> concat
-          ( [show (origin (cxeExpr err))++":\n"]++
-            ["    Relation  "++showADL (cxeExpr err)++"  is ambiguous." | null (cxeDcls err)]++
-            ["    Relation  "++showADL (cxeExpr err)++"  has conflicting bindings:\n    "++
-             intercalate "\n       " (map sh (cxeDcls err)) | (not.null) (cxeDcls err)]
-          ) where sh term = termString++[' ' | _<-[length termString..maxLen]]++showADL term
-                            where termString = show (origin term)
-                                  maxLen = maximum [length (show (origin term')) | term'<-cxeDcls err ]
   CxeRel{}
      -> show (origin term)++":\n"++
          case cxeDecs err of
@@ -197,22 +170,9 @@ showErr err = case err of
     -> "Parse error:\n"++ show (case msg of 
                                   []  -> fatal 35 "No messages??? The impossible happened!" 
                                   x:_ -> x)
-  CxeCpl{}
-    -> show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
-  CxeSign{}
-    -> show (origin (cxeExpr err))++":\n"++concat (showErrSrcsTrgs err)
-  CxeViol v a b
-    -> case v of
-         P_PairViewExp srcOrTgt pexp
-           -> show (origin pexp)++":\n"++
-              "    Couldn't match the "++showADL srcOrTgt++" of the violation ("++name b++")\n"++
-              "    with the source ("++name a++") of `"++showADL pexp++"`."
-         P_PairViewText{} 
-           -> fatal 172 "showErr is not defined for `P_PairViewTxt`."           
-showErrSrcsTrgs :: CtxError -> [String]
-showErrSrcsTrgs err 
- = let x = cxeExpr err in
-   case (cxeSrcs err, cxeTrgs err) of
+  CxeSign{cxeSrcs = srcs, cxeTrgs = trgs, cxeExpr = x }
+    -> show (origin (cxeExpr err))++":\n"++concat (
+    case (srcs, trgs) of
             ([], [])  -> ["    No type can be derived for  "++showADL x]
             (_, [])   -> ["    The target of  "++showADL x++"  is ambiguous."]
             ([], _)   -> ["    The source of  "++showADL x++"  is ambiguous."]
@@ -227,7 +187,15 @@ showErrSrcsTrgs err
                               ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
                               ["    and the target of  "++showADL x++"\n"]++
                               ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-
+    )
+  CxeViol v a b
+    -> case v of
+         P_PairViewExp srcOrTgt pexp
+           -> show (origin pexp)++":\n"++
+              "    Couldn't match the "++showADL srcOrTgt++" of the violation ("++name b++")\n"++
+              "    with the source ("++name a++") of `"++showADL pexp++"`."
+         P_PairViewText{} 
+           -> fatal 172 "showErr is not defined for `P_PairViewTxt`."
 
 showErrBetweenTerm :: CtxError -> Term -> Term -> [Char] -> [Char] -> [Char]
 showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
