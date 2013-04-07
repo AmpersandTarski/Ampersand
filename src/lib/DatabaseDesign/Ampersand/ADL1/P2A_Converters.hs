@@ -464,20 +464,6 @@ For each name, the relations with that name (relsByName) are matched to the decl
          , Just xCodMatches   <-[Map.lookup codx    isaClosReversed]
          , Just declCodMatches<-[Map.lookup codDecl isaClosReversed]
          , (not.null) (xCodMatches `isc` declCodMatches)
-{-       , fatal 480 ("Diagnostic:\n   decls = "++show decls++
-                      "\n   decl = "++show decl++
-                      "\n   declTerm = "++show declTerm++
-                      "\n   rels = "++show rels++
-                      "\n   domx = "++show domx++
-                      "\n   domDecl = "++show domDecl++
-                      "\n   xDomMatches    = "++show xDomMatches   ++
-                      "\n   declDomMatches = "++show declDomMatches++
-                      "\n   codx = "++show codx++
-                      "\n   codDecl = "++show codDecl++
-                      "\n   xCodMatches    = "++show xCodMatches   ++
-                      "\n   declCodMatches = "++show declCodMatches++
-                      "\n   subterms p_context: "++concat ["\n  "++show term | term<-subterms p_context]++
-                      "\n   p_declarations = "++show (p_declarations p_context)) -}
          -- now we know that both the domains and codomains of x and decl can share atoms
          , tuple<-[(x,[decl])]
          ] ++
@@ -786,7 +772,16 @@ instance Expr Term where
  subterms e@(PFlp _ a)   = [e]++subterms a
  subterms e@(PCpl _ a)   = [e]++subterms a
  subterms e@(PBrk _ a)   = [e]++subterms a
- subterms e              = [e]
+ subterms e@(PI _)       = [e]
+ subterms e@(Pid _)      = [e]
+ subterms e@(Patm _ _ _) = [e]
+ subterms e@(Pnull)      = [e]
+ subterms e@(PVee _)     = [e]
+ subterms e@(Pfull _ _)  = [e]
+ subterms e@(Prel _ _ )  = [e]
+ subterms e@(PTrel _ _ _)= [e]
+ subterms e@(Pflp _ _ )  = [e]
+ subterms e@(PTflp _ _ _)= [e]
  
  uType ctxt x uLft uRt expr 
   = case expr of
@@ -1549,9 +1544,12 @@ pCtx2aCtx p_context
            Pnull           -> fatal 1546 ("unsigned Pnull.")
            PVee _          -> vExpr <$> getSign x
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
-           Prel _ _        -> EDcD <$> getDeclaration x <*> getSign x
-           Pflp _ _        -> makeFlp <$> getDeclaration x <*> getSign x
-                              where makeFlp decl sgn = EFlp (EDcD decl (flp sgn)) sgn
+           Prel _ _        -> do { decl <- getDeclaration x
+                                 ; sgn <- getSign x
+                                 ; return$ EDcD decl sgn }
+           Pflp _ _        -> do { decl <- getDeclaration x
+                                 ; sgn <- getSign x
+                                 ; return$ EFlp (EDcD decl (flp sgn)) sgn }
            Pequ _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; let srcAs = srcTypes (dom a)
                                        trgAs = srcTypes (cod a)
@@ -1724,6 +1722,5 @@ pCtx2aCtx p_context
                                    ,cxeDecs = ds          -- the declarations to which this term has been matched
                                    ,cxeSNDs = [ decl | decl<-p_declarations p_context, name decl==a ]
                                    }]
-                                 
         Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])
     getDeclaration term = fatal 1607 ("Illegal call to getDeclaration ("++show term++")")
