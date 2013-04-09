@@ -258,7 +258,7 @@ data Event = On { eSrt :: InsDel
                 , eDcl :: Declaration
                 } deriving (Show)
 instance Eq Event where
- q == q' = fatal 260 "Eq moet worden teruggezet voor Event"
+ q == q' = fatal 260 "TODO Han: Eq moet worden teruggezet voor Event"
 
 data PAclause
               = CHC { paCls :: [PAclause]
@@ -297,7 +297,7 @@ data PAclause
                     }
 
 events :: PAclause -> [(InsDel,Declaration)]
-events paClause = fatal 299 $ "terugzetten" -- nub (evs paClause)
+events paClause = fatal 299 $ "TODO Han: terugzetten" -- nub (evs paClause)
  where evs clause
         = case clause of
            CHC{} -> (concat.map evs) (paCls clause)

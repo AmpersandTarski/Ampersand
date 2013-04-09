@@ -149,7 +149,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EFlp e     _   -> isTrue e
      ECpl e     _   -> isFalse e
      ETyp e     sgn -> isTrue e && sgn <= sign e  -- The operator (<=) comes from Core.Poset
-     EDcD d       _ -> False
+     EDcD _       _ -> False
      EDcI         _ -> False
      EDcV         _ -> True
      EBrk e         -> isTrue e

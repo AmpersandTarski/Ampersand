@@ -574,8 +574,6 @@ where
             PRef2ConceptDef str               -> "PRef2ConceptDef " ++show str
             PRef2Declaration (PTrel _ nm sgn) -> "PRef2Declaration "++show nm++if null (psign sgn) then "" else show sgn
             PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
-            PRef2Declaration (PTflp _ nm sgn) -> "PRef2Declaration "++show nm++if null (psign sgn) then "" else show sgn
-            PRef2Declaration (Pflp _ nm)      -> "PRef2Declaration "++show nm
             PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
             PRef2Rule str                     -> "PRef2Rule "       ++show str
             PRef2KeyDef str                   -> "PRef2KeyDef "     ++show str
