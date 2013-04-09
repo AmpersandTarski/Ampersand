@@ -243,23 +243,6 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
 
-instance Flippable Declaration where
-  flp d
-    = case d of
-           Sgn {} -> d{ decsgn  = flp (decsgn d)
-                      , decprps = map flp (decprps d)
-                      , decprps_calc = case decprps_calc d of
-                                         Nothing  -> Nothing 
-                                         Just ps  -> Just (map flp ps)
-                      , decprL  = ""
-                      , decprM  = ""
-                      , decprR  = ""
-                --      , decpopu = map swap (decpopu d)
-                      }
-           Vs {}  -> d{ decsgn  = flp (decsgn d) }
-           _      -> d
-
-
 
 aMarkup2String :: A_Markup -> String
 aMarkup2String a = blocks2String (amFormat a) False (amPandoc a)
@@ -470,7 +453,7 @@ instance Flippable Expression where
                EKl1 e     sgn -> EKl1 (flp e) (flp sgn)
                EBrk f         -> EBrk (flp f)
                ETyp e     sgn -> ETyp (flp e) (flp sgn)
-               EDcD d     sgn -> EDcD (flp d) (flp sgn)
+               EDcD _     sgn -> EFlp expr (flp sgn)
                EDcI       _   -> expr
                EDcV       sgn -> EDcV         (flp sgn)
                e@EMp1{}       -> e
