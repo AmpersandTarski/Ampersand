@@ -126,11 +126,8 @@ p_flp :: Term -> Term
 p_flp a@PI{}       = a
 p_flp a@Pid{}      = a
 p_flp a@Patm{}     = a
-p_flp Pnull        = Pnull
 -- p_flp a@(PVee _)   = PFlp a -- This was earlier: a, which is a mistake. (V[A*B])~ = V[B*A])
 p_flp (Pfull s t)  = Pfull t s
-p_flp (Prel o a)   = Pflp o a
-p_flp (Pflp o a)   = Prel o a
 p_flp (PFlp _ a)   = a
 p_flp a            = PFlp (origin a) a
 
@@ -304,23 +301,12 @@ findIn t cl = getList (Map.lookup t cl)
 
 nothing :: Typemap
 nothing = Map.empty
-{-
-isFull (TypExpr (Pfull _ _) _) = True
-isFull (TypLub a b _) = isFull a || isFull b
-isFull (TypGlb a b _) = isFull a && isFull b
-isFull _ = False -}
-isNull :: Type -> Bool
-isNull (TypExpr Pnull _) = True
-isNull (TypLub a b _) = isNull a && isNull b
-isNull (TypGlb a b _) = isNull a || isNull b
-isNull _ = False
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
 infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
 (.<.) :: Type -> Type -> Typemap
 _ .<. Anything = nothing
 Nothng .<. _   = nothing
-a .<. _ | isNull a = nothing
 a .<. b  = (Map.fromList [(a, [b]),(b, [])]) -- a tuple meaning that a is a subset of b, and introducing b as a key.
 (.=.) :: Type -> Type -> Typemap
 a .=. b  = (Map.fromList [(a, [b]),(b, [a])])
@@ -775,13 +761,10 @@ instance Expr Term where
  subterms e@(PI _)       = [e]
  subterms e@(Pid _)      = [e]
  subterms e@(Patm _ _ _) = [e]
- subterms e@(Pnull)      = [e]
  subterms e@(PVee _)     = [e]
  subterms e@(Pfull _ _)  = [e]
  subterms e@(Prel _ _ )  = [e]
  subterms e@(PTrel _ _ _)= [e]
- subterms e@(Pflp _ _ )  = [e]
- subterms e@(PTflp _ _ _)= [e]
  
  uType ctxt x uLft uRt expr 
   = case expr of
@@ -790,7 +773,6 @@ instance Expr Term where
      (Patm _ _ []) -> dom x.=.cod x .+. dom x.<.uLft .+. cod x.<.uRt      -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
-     Pnull        -> nothing                                                  -- -V     (the empty set)
      PVee{}       -> dom x.<.uLft .+. cod x.<.uRt
      (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)                          --  V[A*B] (the typed full set)
      (Pequ _ a b) -> dom a.=.dom x .+. cod a.=.cod x .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
@@ -866,10 +848,6 @@ instance Expr Term where
                                        , uLft == thing (head cs)
                                        , uRt  == thing (last cs)
                                        ]
-     (Pflp o nm) -> let e = Prel o nm
-                    in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
-     (PTflp o nm (P_Sign cs)) -> let e = PTrel o nm (P_Sign (reverse cs))
-                    in dom x.=.cod e .+. cod x.=.dom e .+. uType ctxt e uRt uLft e
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
 {-     (PRad o a b) -> let e = complement (PCps o (complement a) (complement b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
@@ -1541,15 +1519,11 @@ pCtx2aCtx p_context
            PI _            -> EDcI <$> getSign x
            Pid c           -> return (iExpr (pCpt2aCpt c))
            Patm _ atom _   -> EMp1 atom <$> getSign x
-           Pnull           -> fatal 1546 ("unsigned Pnull.")
            PVee _          -> vExpr <$> getSign x
            Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
            Prel _ _        -> do { decl <- getDeclaration x
                                  ; sgn <- getSign x
                                  ; return$ EDcD decl sgn }
-           Pflp _ _        -> do { decl <- getDeclaration x
-                                 ; sgn <- getSign x
-                                 ; return$ EFlp (EDcD decl (flp sgn)) sgn }
            Pequ _ a b      -> do { (a',b') <- (,) <$> f a <*> f b
                                  ; let srcAs = srcTypes (dom a)
                                        trgAs = srcTypes (cod a)
@@ -1694,7 +1668,6 @@ pCtx2aCtx p_context
                                              , name decl==relName, aSrc Poset.<= source decl, aTrg Poset.<= target decl ]
                               decs  = [ decl | decl<-declarations contxt
                                              , name decl==relName]
-           PTflp o relNm (P_Sign cs) -> f (PTrel o relNm (P_Sign (reverse cs)))
            
          delimit :: P_Concept -> [P_Concept] -> [P_Concept]
          delimit cpt concepts = concepts `isc` [c | Just cs <- [Map.lookup cpt isaClos], c<-cs]

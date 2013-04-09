@@ -430,13 +430,10 @@ instance ShowADL Term where
        showchar (Pid c)                                  = "I["++showADL c++"]"
        showchar (Patm _ a [])                            = "'"++a++"'"
        showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
-       showchar Pnull                                    = "-V"
        showchar (PVee _)                                 = "V"
        showchar (Pfull s t)                              = "V["++show s++"*"++show t++"]"
        showchar (Prel _ rel)                             = rel
        showchar (PTrel _ rel psgn)                       = rel++showsign psgn
-       showchar (Pflp _ rel)                             = rel++flp'
-       showchar (PTflp _ rel (P_Sign{psign=xs}))         = rel++showsign (P_Sign{psign=reverse xs})++flp'
        showchar (Pequ _ l r)                             = showchar l++equi++showchar r
        showchar (Pimp _ l r)                             = showchar l++impl++showchar r
        showchar (PIsc _ l r)                             = showchar l++inter++showchar r
