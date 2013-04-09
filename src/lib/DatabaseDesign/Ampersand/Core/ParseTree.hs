@@ -199,14 +199,11 @@ where
                                                --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
       | Pid P_Concept                          -- ^ identity element restricted to a type
       | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
-      | Pnull                                  -- ^ the empty relation
       | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
       | Pfull P_Concept P_Concept              -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | PTrel Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | Pflp Origin String                     -- ^ flip / relational inverse
-      | PTflp Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
       | Pequ Origin Term Term  -- ^ equivalence             =
       | Pimp Origin Term Term  -- ^ implication             |-
       | PIsc Origin Term Term  -- ^ intersection            /\
@@ -232,13 +229,10 @@ where
       PI orig        -> orig
       Pid _          -> OriginUnknown
       Patm orig _ _  -> orig
-      Pnull          -> OriginUnknown
       PVee orig      -> orig
       Pfull _ _      -> OriginUnknown
       Prel orig _    -> orig
       PTrel orig _ _ -> orig
-      Pflp orig _    -> orig
-      PTflp orig _ _ -> orig
       Pequ orig _ _  -> orig
       Pimp orig _ _  -> orig
       PIsc orig _ _  -> orig
@@ -385,8 +379,6 @@ where
         PRef2ConceptDef str -> str
         PRef2Declaration (PTrel _ nm sgn) -> nm++if null (psign sgn) then "" else show sgn
         PRef2Declaration (Prel _ nm) -> nm
-        PRef2Declaration (PTflp _ nm sgn) -> nm++if null (psign sgn) then "" else show sgn
-        PRef2Declaration (Pflp _ nm) -> nm
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
         PRef2Rule str -> str
         PRef2KeyDef str -> str
