@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-       (newcxe,newcxeif,CtxError(..),shOrig)
+       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),shOrig)
 where
 import DatabaseDesign.Ampersand.Input.ADL1.FilePos
 import DatabaseDesign.Ampersand.ADL1 (Pos(..))
@@ -20,70 +20,51 @@ shOrig (DBLoc str)   = "Database location: "++str
 shOrig (Origin str)  = str
 shOrig OriginUnknown = "Unknown origin"
 
-data CtxError = CxeEqConcepts {cxeConcepts :: [P_Concept]  -- ^ The list of concepts with different names, that have been proven equal.
-                              }
-              | CxeEqAttribs  {cxeOrig :: Origin           -- ^ The location of the object/key definition in which different attributes have the same name.
-                              ,cxeName :: String           -- ^ The name shared by different attributes.
-                              ,cxeAtts :: [Term]           -- ^ The list of attributes with the same name.
+data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term
+               | TETPairView P_PairViewSegment
+               | TETObj
+               | TETKey
+data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list of concepts with different names, that have been proven equal.
                               }   
-              | CxeUnsupRoles {cxeIfc ::   P_Interface
-                              ,cxeRoles :: [String]
-                              }       
-              | CxeNoRoles    {cxeIfc ::  P_Interface
-                              }       
-              | CxeNoRules    {cxePos ::  Origin
-                              ,cxeRules:: [String]
-                              }       
-              | CxeNoIfcs     {cxeName :: String
-                              ,cxePos ::  Origin
-                              ,cxeIfcs :: [P_Interface]
-                              }       
-              | CxeObjMismatch{cxeExpr :: Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
-                              ,cxeEnv ::  [P_Concept]
-                              ,cxeSrcs :: [P_Concept]
-                              }             
-              | CxeRel        {cxeExpr :: Term
-                              ,cxeDecs :: [P_Declaration]  -- possibilities for bindings.
-                              ,cxeSNDs :: [P_Declaration]  -- Declarations with the same name
-                              }       
-              | CxeSign       {cxeExpr :: Term
-                              ,cxeSrcs :: [P_Concept]
-                              ,cxeTrgs :: [P_Concept]
-                              }       
-              | CxeCast       {cxeExpr ::    Term
-                              ,cxeDomCast :: [P_Concept]
-                              ,cxeCodCast :: [P_Concept]
-                              }     
-              | CxeEquLike    {cxeExpr :: Term   -- error in equation cxeExpr, lefthandside not compatable to righthandside
-                              ,cxeLhs :: Term
-                              ,cxeRhs :: Term
-                              ,cxeSrcCpts :: [P_Concept]
-                              ,cxeTrgCpts :: [P_Concept]
-                              }      
-              | CxeUniLike    {cxeExpr :: Term   -- error in term cxeExpr, lefthandside not compatable to righthandside
-                              ,cxeLhs :: Term
-                              ,cxeRhs :: Term
-                              ,cxeSrcCpts :: [P_Concept]
-                              ,cxeTrgCpts :: [P_Concept]
+              | CxeEqAttribs  { cxeOrig      :: Origin           -- ^ The location of the object/key definition in which different attributes have the same name.
+                              , cxeName      :: String           -- ^ The name shared by different attributes.
+                              , cxeAtts      :: [Term]           -- ^ The list of attributes with the same name.
+                              }   
+              | CxeUnsupRoles { cxeIfc       :: P_Interface
+                              , cxeRoles     :: [String]
+                              }   
+              | CxeNoRoles    { cxeIfc       ::  P_Interface
+                              }   
+              | CxeNoRules    { cxePos       :: Origin
+                              , cxeRules     :: [String]
+                              }  
+              | CxeNoIfcs     { cxeName      :: String
+                              , cxePos       :: Origin
+                              , cxeIfcs      :: [P_Interface]
+                              }   
+              | CxeRel        { cxeExpr      :: Term
+                              , cxeDecs      :: [P_Declaration]  -- possibilities for bindings.
+                              , cxeSNDs      :: [P_Declaration]  -- Declarations with the same name
+                              }   
+              | CxeSign       { cxeExpr      :: Term
+                              , cxeSrcs      :: [P_Concept]
+                              , cxeTrgs      :: [P_Concept]
+                              }   
+              | CxeTyping     { cxeLhs       :: (Term,[P_Concept])
+                              , cxeRhs       :: (Term,[P_Concept])
+                              , cxeTyp       :: TypErrTyp
+                              }   
+              | CxeCast       { cxeExpr      :: Term
+                              , cxeDomCast   :: [P_Concept]
+                              , cxeCodCast   :: [P_Concept]
                               }
-              | CxeCpsLike    {cxeExpr :: Term
-                              ,cxeLhs :: Term
-                              ,cxeRhs :: Term
-                              ,cxeLT :: SrcOrTgt -- gets value  Src  or  Tgt
-                              ,cxeRT :: SrcOrTgt -- gets value  Src  or  Tgt
-                              ,cxeCpts :: [P_Concept]
-                              }       
-              | CxeViol       {cxeViol :: P_PairViewSegment
-                              ,cxeRcpt :: P_Concept
-                              ,cxeVcpt :: P_Concept
-                              }       
-              | CxeOrig       {cxeSubErrors :: [CtxError] -- ^ context information of an error   
-                              ,cxetype :: String         -- ^ the type of context e.g. a rule
-                              ,cxename :: String         -- ^ its name
-                              ,cxeorigin:: Origin}        -- ^ the origin of the context e.g. a file position
-              | Cxe           {cxeSubErrors :: [CtxError] -- ^ lower level errors
-                              ,cxemsg :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
-              | PE            {cxeMsgs :: [ParseError]}  -- ^ list of parse-time messages
+              | CxeOrig       { cxeSubErrors :: [CtxError] -- ^ context information of an error   
+                              , cxetype      :: String         -- ^ the type of context e.g. a rule
+                              , cxename      :: String         -- ^ its name
+                              , cxeorigin    :: Origin}        -- ^ the origin of the context e.g. a file position
+              | Cxe           { cxeSubErrors :: [CtxError] -- ^ lower level errors
+                              , cxemsg       :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
+              | PE            { cxeMsgs      :: [ParseError]}  -- ^ list of parse-time messages
 
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
@@ -119,14 +100,6 @@ showErr err = case err of
                  []   -> ["    There are no interfaces called \""++cxeName err++"\"."]
                  ifcs -> ["    There are multiple interfaces named " ++commaEng "and" (map (show.origin) ifcs) ++ "."]
           )
-  CxeObjMismatch{}
-     -> concat
-          ( [show (origin (cxeExpr err))++":\n"]++
-              case cxeSrcs err of
-                 []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
-                 cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
-                        ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
-          )
   CxeRel{}
      -> show (origin term)++":\n"++
          case cxeDecs err of
@@ -156,47 +129,36 @@ showErr err = case err of
                  (    [_]       ,    trgs       ) -> [ "    Conflicts in the target of  "++showADL (cxeExpr err)++".\n    Concepts "++commaEng "and" (map show trgs)++" do not match." ]
                  (    srcs      ,    trgs       ) -> [ "    Conflicting concepts in  "++showADL (cxeExpr err)++":\n    concepts "++commaEng "and" (map show srcs)++" do not match, and\n    concepts "++commaEng "and" (map show trgs)++" do not match."]
           )
-  CxeEquLike{} -> showErrEquation err
-  CxeUniLike{} -> showErrBoolTerm err
-  CxeCpsLike{cxeLhs=a,cxeRhs=b,cxeLT=lt,cxeRT=rt}
-     -> showErrBetweenTerm err a b (show lt) (show rt)
   CxeOrig typeErrors t nm o
     | null typeErrors                              -> ""
     | t `elem` ["pattern", "process", "interface"] -> "The " ++ t ++ " named \""++ nm ++ "\" in file "++ filenm o ++ " contains errors:\n" ++ intercalate "\n\n" (map showErr typeErrors)
     | otherwise                                    -> "in the " ++ t ++ " at "++ shOrig o ++ " in file "++ filenm o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
   Cxe typeErrors x
-    -> x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
+   -> x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
   PE msg
     -> "Parse error:\n"++ show (case msg of 
                                   []  -> fatal 35 "No messages??? The impossible happened!" 
                                   x:_ -> x)
   CxeSign{cxeSrcs = srcs, cxeTrgs = trgs, cxeExpr = x }
     -> show (origin (cxeExpr err))++":\n"++concat (
-    case (srcs, trgs) of
-            ([], [])  -> ["    No type can be derived for  "++showADL x]
-            (_, [])   -> ["    The target of  "++showADL x++"  is ambiguous."]
-            ([], _)   -> ["    The source of  "++showADL x++"  is ambiguous."]
-            (cs, [_]) -> ["    Cannot pick a concept for the source of  "++showADL x++"\n"]++
-                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
-            ([_], cs) -> ["    Cannot pick a concept for the target of  "++showADL x++"\n"]++
-                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
-            (cs, cs') -> if sort cs==sort cs'
-                         then ["    the source and target of  "++showADL x++"\n"]++
-                              ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
-                         else ["    the source of  "++showADL x++"\n"]++
-                              ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
-                              ["    and the target of  "++showADL x++"\n"]++
-                              ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
-    )
-  CxeViol v a b
-    -> case v of
-         P_PairViewExp srcOrTgt pexp
-           -> show (origin pexp)++":\n"++
-              "    Couldn't match the "++showADL srcOrTgt++" of the violation ("++name b++")\n"++
-              "    with the source ("++name a++") of `"++showADL pexp++"`."
-         P_PairViewText{} 
-           -> fatal 172 "showErr is not defined for `P_PairViewTxt`."
+       case (srcs, trgs) of
+               ([], [])  -> ["    No type can be derived for  "++showADL x]
+               (_, [])   -> ["    The target of  "++showADL x++"  is ambiguous."]
+               ([], _)   -> ["    The source of  "++showADL x++"  is ambiguous."]
+               (cs, [_]) -> ["    Cannot pick a concept for the source of  "++showADL x++"\n"]++
+                            ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
+               ([_], cs) -> ["    Cannot pick a concept for the target of  "++showADL x++"\n"]++
+                            ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
+               (cs, cs') -> if sort cs==sort cs'
+                            then ["    the source and target of  "++showADL x++"\n"]++
+                                 ["    are in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"."]
+                            else ["    the source of  "++showADL x++"\n"]++
+                                 ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs)++"\n"]++
+                                 ["    and the target of  "++showADL x++"\n"]++
+                                 ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
+       )
 
+{-
 showErrBetweenTerm :: CtxError -> Term -> Term -> [Char] -> [Char] -> [Char]
 showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
  = concat
@@ -268,16 +230,9 @@ showErrBoolTerm err@(CxeEquLike { cxeExpr=x, cxeLhs=a, cxeRhs=b})
                               ["    cannot be both "++commaEng "and" (map showADL cs)++"."]
      )
 showErrBoolTerm o = fatal 206 ("showErrBoolTerm does not match "++show o)
-
-{-
-instance Eq CtxError where
-  CxeOrig es t n o == CxeOrig es' t' n' o' = es == es' && t == t' && n == n' && o == o'
-  Cxe es s == Cxe es' s'   = es == es' && s == s'
-  _ == _ = False
 -}
 
 newcxe :: String -> CtxError
 newcxe str = Cxe [] str
 newcxeif :: Bool -> String -> [CtxError]
 newcxeif condition cxe = [newcxe cxe | condition]
-
