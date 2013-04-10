@@ -1,0 +1,445 @@
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
+module DatabaseDesign.Ampersand.ADL1.TypePropagation (
+ -- * Exported functions
+ typing, Type(..), Typemap, parallelList, findIn, showType, Guarded(..), p_flp
+ , mrgUnion, BetweenType(..)
+ )
+where
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.Basics (name, isc, eqClass,fatalMsg)
+import DatabaseDesign.Ampersand.Fspec.ShowADL
+import GHC.Exts (sortWith)
+import Prelude hiding (head)
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError
+import Data.List hiding (head)
+import Debug.Trace
+
+import Control.Applicative
+import Data.Map (Map)
+import qualified Data.Map as Map hiding (Map)
+
+head :: [a] -> a
+head [] = fatal 30 "head must not be used on an empty list!"
+head (a:_) = a
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ADL1.TypePropagation"
+
+type Typemap = Map Type [Type]
+
+data Type = TypExpr Term SrcOrTgt -- term is deriving Ord
+          | Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
+                    Type -- lhs type, e.g. cod(a)
+                    Type -- rhs type, e.g. dom(b)
+                    BetweenType -- whether for this term, the intersection or the union should be a valid type, or both
+type BetweenError = ([P_Concept] -> [P_Concept] -> CtxError)
+data BetweenType = BTUnion     -- there must be a union type: folowing the st-graph, a type must be encountered in the union
+                 | BTIntersect -- there must be a non-empty intersection, and it must have a name
+                 | BTEqual     -- both sides must have the same type. Note that this is different from adding .=.
+                               -- BTEqual requires both sides to be named and equal; this will be tested
+                               -- while adding .=. makes both sides equal
+                   deriving (Ord,Eq)
+
+instance Show Type where
+    showsPrec _ typTerm = showString (showType typTerm)
+
+showType :: Type -> String
+showType (TypExpr (Pid c) _)          = "pop ("++name c++") "
+showType (TypExpr term@(PVee o) _)    = showADL term     ++"("++ shOrig o++")"
+showType (TypExpr term@(Pfull _ _) _) = showADL term
+-- dom x    = TypExpr x         False
+showType (TypExpr term Src)           = "dom ("++showADL term++") "++ shOrig (origin term)
+showType (TypExpr term Tgt)           = "cod ("++showADL (p_flp term)++") "++ shOrig (origin term)
+showType (Between _ a b t)            = showType a++" "++show t++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
+
+instance Show BetweenType where
+  showsPrec _ BTUnion     = showString ".\\/."
+  showsPrec _ BTIntersect = showString "./\\."
+  showsPrec _ BTEqual     = showString ".==."
+
+-- | Equality of Type is needed for the purpose of making graphs of types.
+--   These are used in the type checking process.
+--   The main idea is that the equality distinguishes between occurrences.
+--   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
+--   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
+instance Prelude.Ord Type where
+  compare (TypExpr (Pid c)        _) (TypExpr (Pid c')         _) = Prelude.compare c c'
+  compare (TypExpr (Pid _)        _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr _              _) (TypExpr (Pid _)          _) = Prelude.GT
+  compare (TypExpr (Patm _ x [c]) _) (TypExpr (Patm _ x' [c']) _) = Prelude.compare (x,c) (x',c')
+  compare (TypExpr (Patm _ _ [_]) _) (TypExpr (Patm _ _   _  ) _) = Prelude.LT
+  compare (TypExpr (Patm _ _  _ ) _) (TypExpr (Patm _ _  [_ ]) _) = Prelude.GT
+  compare (TypExpr (Patm o x cs)  _) (TypExpr (Patm o' x' cs') _) = Prelude.compare (o,x,cs) (o',x',cs')
+  compare (TypExpr (Patm _ _ _)   _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr _              _) (TypExpr (Patm _ _ _)     _) = Prelude.GT
+  compare (TypExpr (PVee o)       _) (TypExpr (PVee o')        _) = Prelude.compare o o' -- This is a V of which the type must be determined (by the environment).
+  compare (TypExpr (PVee _)       _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr _              _) (TypExpr (PVee _)         _) = Prelude.GT
+  compare (TypExpr (Pfull s t)    _) (TypExpr (Pfull s' t')    _) = Prelude.compare (s,t) (s',t') -- This is a V of which the type is determined by the user
+  compare (TypExpr (Pfull _ _)    _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr _              _) (TypExpr (Pfull _ _)      _) = Prelude.GT
+  compare (TypExpr x              _) (TypExpr y                _) = Prelude.compare x y
+  compare (TypExpr _              _) _                            = Prelude.LT
+  compare _                          (TypExpr _                _) = Prelude.GT
+  compare (Between _ a b t) (Between _ a' b' t')                  = compare (t,a,b) (t',a',b')
+
+instance Eq Type where
+  t == t' = compare t t' == EQ
+
+-- On Guarded: it is intended to return something, as long as there were no errors creating it.
+-- For instance, (Guarded P_Context) would return the P_Context, unless there are errors.
+
+data Guarded a = Errors [CtxError] | Checked a deriving Show
+
+
+parallelList :: [Guarded a] -> Guarded [a] -- get all values or collect all error messages
+parallelList = foldr (parallel (:)) (Checked [])
+  where parallel :: (a->b->c) -> Guarded a -> Guarded b -> Guarded c -- get both values or collect all error messages
+        parallel f ga = (<*>) (fmap f ga)
+        {- the following definition is equivalent:
+        parallel f (Checked a) (Checked b) = Checked (f a b)
+        parallel f (Errors  a) (Checked b) = Errors a
+        parallel f (Checked a) (Errors  b) = Errors b
+        parallel f (Errors  a) (Errors  b) = Errors (a ++ b)
+        -- this function is used as a convenience to define parallelList
+        -}
+
+instance Functor Guarded where
+ fmap _ (Errors a) = (Errors a)
+ fmap f (Checked a) = Checked (f a)
+ 
+instance Applicative Guarded where
+ pure = Checked
+ (<*>) (Checked f) (Checked a) = Checked (f a)
+ (<*>) (Errors  a) (Checked _) = Errors a 
+ (<*>) (Checked _) (Errors  b) = Errors b
+ (<*>) (Errors  a) (Errors  b) = Errors (a ++ b)
+ 
+instance Monad Guarded where
+ (>>=) (Errors  a) _ = (Errors a)
+ (>>=) (Checked a) f = f a
+ return = Checked
+ fail s = fatal 926 ("Error generated by fail of a Guarded something (probably a pattern-match failure in a `do'), message: \n "++s)
+
+-- | p_flp computes the inverse of a Term.
+p_flp :: Term -> Term
+p_flp a@PI{}       = a
+p_flp a@Pid{}      = a
+p_flp a@Patm{}     = a
+-- p_flp a@(PVee _)   = PFlp a -- This was earlier: a, which is a mistake. (V[A*B])~ = V[B*A])
+p_flp (Pfull s t)  = Pfull t s
+p_flp (PFlp _ a)   = a
+p_flp a            = PFlp (origin a) a
+
+typing :: Typemap -> Map String [P_Declaration]
+          -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
+             , Typemap                    -- stClos           -- (st\/stAdded)*\/I  (reflexive and transitive)
+             , Typemap                    -- eqType           -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
+             , Typemap                    -- stClosAdded      -- additional links added to stClos
+             , Typemap                    -- stClos1          -- st*  (transitive)
+             , Guarded ( Map Term P_Declaration -- bindings   -- declarations that may be bound to relations
+                       , Type -> P_Concept)     -- srcTypes   -- types of terms and betweens
+             , Map P_Concept [P_Concept]  -- isaClos          -- concept lattice
+             , Map P_Concept [P_Concept]  -- isaClosReversed  -- same, but reversed
+             )                                   
+typing st declsByName
+  = ( st
+    , stClos
+    , eqType
+    , stClosAdded
+    , stClos1
+    , do _ <- checkBindings
+         _ <- checkIVBindings
+         _ <- checkBetweens
+         return ( bindings, srcTypes )
+  -- isas is produced for the sake of making a partial order of concepts in the A-structure.
+    , isaClos
+    , isaClosReversed   -- a list containing all tuples of concepts that are in the subset relation with each other.
+             -- it is used for the purpose of making a poset of concepts in the A-structure.
+    ) 
+ where
+   -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
+   --            These are converted into two maps (each of type Typemap) for efficiency reasons.
+    allIVs      = [o | o@(TypExpr e _)<-typeTerms, isIV e]
+    allIVs'     = nub' (sort [e | (TypExpr e _)<-typeTerms, isIV e])
+    nub' (x:y:xs) | x==y      = nub' (y:xs)
+                  | otherwise = x:(nub' (y:xs))
+    nub' [x] = [x]
+    nub' [] = []
+    isIV   (PI _)       = True
+    isIV   (PVee _)     = True
+    isIV   (Patm _ _ _) = True
+    isIV   _            = False
+    allTerms    = [e | TypExpr e _ <- typeTerms]
+    allConcs    = [c | (Pid c) <- allTerms]
+    
+    checkBindings = parallelList (map checkUnique (Map.toList bindings'))
+    checkUnique (_,[_]) = return ()
+    checkUnique (t,xs) = Errors [CxeRel { cxeExpr=t
+                                        , cxeDecs=xs
+                                        , cxeSNDs=Map.findWithDefault [] t declByTerm
+                                        }]
+    checkIVBindings = parallelList (map checkUnique2 allIVs')
+    checkUnique2 iv = case (Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts,Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
+                        ([_],[_]) -> return ()
+                        (xs,ys) -> Errors [CxeSign {cxeExpr=iv, cxeSrcs=xs, cxeTrgs=ys}]
+    
+    checkBetweens = parallelList (map checkBetween typeTerms)
+    checkBetween o@(Between e src trg _)
+     = case srcTypes' o of
+        [_] -> return ()
+        _ -> Errors [e (srcTypes' src) (srcTypes' trg)]
+    checkBetween _ = return ()
+    
+    stClosAdded :: Typemap
+    stClosAdded = fixPoint stClosAdd (addIdentity stClos1)
+    
+    stClosAdd :: Typemap -> Typemap
+    stClosAdd tm = reverseMap (foldl f' (reverseMap (foldl f tm glbs)) lubs)
+      where
+       f :: Typemap -> Type -> Typemap
+       f dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+       f  _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: " ++show o)
+       f' dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
+       f' _ o = fatal 407 ("Inexhaustive pattern in f' in stClosAdded in tableOfTypes: "++show o)
+       -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
+       -- (These arcs show up as dotted lines in the type graphs)
+       lubs = [l | l@(Between _ _ _ BTUnion    ) <- typeTerms]
+       glbs = [l | l@(Between _ _ _ BTIntersect) <- typeTerms]
+    
+    declByTerm :: Map Term [P_Declaration]
+    declByTerm = Map.fromAscList [ (o,Map.findWithDefault [] s declsByName) | o@(Prel _ s) <- allTerms]
+    
+    expandSingleBindingsToTyps :: Map Term [P_Declaration] -> Map Type [Type]
+    expandSingleBindingsToTyps x
+     = Map.fromListWith mrgUnion [ (tp,[decToTyp b d]) | tp@(TypExpr t b) <- typeTerms
+                                                       , Just [d] <- [Map.lookup t x]]
+    typByTyp :: Map Type [(Term,P_Declaration,Type)]
+    typByTyp = Map.fromListWith mrgUnion [ (tp,sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t declByTerm])
+                                         | tp@(TypExpr t b) <- typeTerms]
+    decToTyp b d = TypExpr (PTrel (origin d) (dec_nm d) (dec_sign d)) b
+    
+    ivTypByTyp :: Map Type [(Type,P_Concept,Type)]
+    ivTypByTyp = Map.fromListWith mrgUnion [ (tp,map (\(x,y) -> (tp,x,y)) ivConcPairs)
+                                           | tp <- allIVs ]
+    ivConcPairs = sort [(c,TypExpr (Pid c) Src) | c <- allConcs]
+    
+    stI = addIdentity st
+    stIC = setClosure stI "stI"
+    bindings' = Map.union (makeDecisions typByTyp stIC) declByTerm
+    bindings :: Map Term P_Declaration
+    bindings = Map.mapMaybe exactlyOne bindings'
+    st' = Map.unionWith mrgUnion st (symClosure (expandSingleBindingsToTyps bindings'))
+    stClos0 = setClosure st' "st'"
+    ivBindings',ivBindings :: Map Type [Type]
+    ivBindings' = Map.map (map (\x -> TypExpr (Pid x) Src)) (makeDecisions ivTypByTyp stClos0)
+    ivBindings = Map.map (\x->[x]) $ Map.mapMaybe exactlyOne ivBindings'
+    ivBoundConcepts :: Map Type [P_Concept]
+    ivBoundConcepts = composeMaps ivBindings' stConcepts
+    stClos1 = setClosure (Map.unionWith mrgUnion stClos0 (symClosure ivBindings)) "union of ivBindings and stClos0"
+    
+    exactlyOne [x] = Just x
+    exactlyOne _ = Nothing
+    
+    makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
+                        Map Type [(from,to,Type)] -- when binding "from" to "to", one knows that the first type equals the second
+                     -> Map Type [Type] -- reflexive transitive graph with inferred types
+                     -> ( Map from [to] ) -- resulting bindings
+    makeDecisions inp trnRel = (foldl (Map.unionWith mrgIntersect) Map.empty 
+                                      [ Map.filter (not . null) (getDecision t1 t2)
+                                      | (Between _ t1 t2 _) <- Map.keys trnRel ])
+     where inpTrnRel = (composeMaps trnRel inp)
+           typsOneDeep = Map.unionWith mrgUnion trnRel (symClosure (Map.map (map (\(_,_,x)->x)) inpTrnRel))
+           typsFull = Map.unionWith mrgUnion trnRel (composeMaps typsOneDeep trnRel)           
+           -- getDecision :: Type -> Type -> Map from [to]
+           f x = Map.findWithDefault [] x typsFull
+           bestUnion a b = if (null isct) then union' else isct
+            where isct = mrgIntersect a b
+                  union' = mrgUnion a b
+           getDecision src trg = Map.unionWith bestUnion lhsDecisions rhsDecisions
+            where lhsTyps = f src
+                  rhsTyps = f trg
+                  iscTyps = mrgIntersect lhsTyps rhsTyps
+                  lhsDecisions
+                   = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
+                                                         , t' <- Map.findWithDefault [] tp trnRel
+                                                         , t' `elem` iscTyps ]
+                  rhsDecisions
+                   = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] trg inpTrnRel
+                                                         , t' <- Map.findWithDefault [] tp trnRel
+                                                         , t' `elem` iscTyps ]
+    
+    
+    -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
+    typeTerms :: [Type]          -- The list of all type terms in st.
+    typeTerms = Map.keys st -- Because a Typemap is total, it is sufficient to compute  Map.keys st
+    
+    fixPoint :: Eq a => (a->a) -> a -> a
+    fixPoint f a = if a==b then a else fixPoint f b
+      where b = f a
+    
+    -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
+    -- Check whether stClosAdded is transitive...
+    stClos = if (stClosAdded == (addIdentity $ setClosure stClosAdded "stClosAdded")) then
+                stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
+    stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
+    eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
+    isaClos :: Map P_Concept [P_Concept]
+    isaClos = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
+    isaClosReversed :: Map P_Concept [P_Concept]
+    isaClosReversed = reverseMap isaClos
+    stConcepts :: Map Type [P_Concept]
+    stConcepts =  Map.map f stClos
+                  where f :: [Type] -> [P_Concept]
+                        f ts = case [c | TypExpr (Pid c) _<-ts]  of -- all concepts reachable from one type term
+                                 [] -> []
+                                 cs -> [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]  --head is allowed, for cl cannot be empty.
+                                       | cl<-eqClass compatible cs]
+                               where lkp c = case Map.lookup c isaClosReversed of
+                                              Just cs' -> cs'
+                                              _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
+    srcTypes' :: Type -> [P_Concept]
+    srcTypes' typ = case Map.lookup typ stConcepts of
+                      Just x -> x
+                      _ -> fatal 447 ("Type "++show typ++" was not found in stConcepts.")
+    srcTypes :: Type -> P_Concept
+    srcTypes typ = case (srcTypes' typ) of
+                   -- A type may have an empty codomain in stConcepts, because that means it is type incorrect.
+                    [cs] -> cs
+                    _ -> fatal 446 ("Type "++show typ++" was found in stConcepts, but not a singleton.")
+    compatible a b = (not.null) (lkp a `isc` lkp b)
+     where lkp c = case Map.lookup c isaClosReversed of
+                    Just cs -> cs
+                    _ -> fatal 395 ("P_Concept "++show c++" was not found in isaClosReversed")
+     
+-- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
+-- | note that the domain must be preserved!
+-- | reverseMap r = r~
+reverseMap :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
+reverseMap lst = (Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Map.toAscList lst]))
+-- note: reverseMap is relatively slow, but only needs to be calculated once
+
+-- | addIdentity r = r\/I
+addIdentity :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
+addIdentity mp = Map.mapWithKey (\k a->mrgUnion a [k]) mp
+
+mapIsOk :: (Show a,Ord a) => Map k [a] -> Bool
+mapIsOk m = Map.fold (&&) True (Map.map (isSortedAndDistinct . checkRfx) m)
+isSortedAndDistinct :: Ord a => [a] -> Bool
+isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
+isSortedAndDistinct _ = True
+
+{-
+Since vertices of type v may be expensive to compare, we first create an isomorphic index map that
+has integer indices as its vertices. For this graph we compute the transitive closure, which we map
+back onto a graph with the original vertex type v.
+-}
+setClosure :: (Show v,Ord v) => Map v [v] -> String -> Map v [v]
+setClosure graph s =
+  let vertexIndexMap = makeVertexIndexMap $ Map.keys graph
+      indexGraph = vertexToIndexGraph vertexIndexMap graph
+      indexResult = setClosureSlow indexGraph s
+      vertexResult = indexGraphToVertexGraph vertexIndexMap indexResult
+  in  vertexResult
+  
+  -- a map function for graphs represented as (Map vertex [vertex])
+mapGraph :: (Ord a, Ord b) => (a->b) -> Map a [a] -> Map b [b]
+mapGraph f graph = Map.fromList [ (f v, map f vs) | (v,vs) <- Map.toList graph]
+
+makeVertexIndexMap :: (Show v,Ord v) => [v] -> Map v Int
+makeVertexIndexMap allVertices = Map.fromList $ zip allVertices [0..]
+
+vertexToIndexGraph :: (Show v,Ord v) => Map v Int -> Map v [v] -> Map Int [Int]
+vertexToIndexGraph vertexIndexMap vertexGraph = mapGraph vertexToIndex vertexGraph
+ where vertexToIndex v = case Map.lookup v vertexIndexMap of
+                         Nothing -> fatal 210 $ "vertexToIndexGraph: vertex "++show v++" not in vertexIndexMap"
+                         Just i  -> i
+  
+indexGraphToVertexGraph :: (Show a,Ord a) => Map a Int -> Map Int [Int] -> Map a [a]
+indexGraphToVertexGraph vertexIndexMap indexGraph = mapGraph indexToVertex indexGraph
+ where indexToVertex i = if i < length allVertices 
+                         then allVertices !! i 
+                         else fatal 217 $ "indexToVertexGraph: index "++show i++" too large (number of vertices is " ++show (length allVertices)++")"
+       allVertices = Map.keys vertexIndexMap
+
+-- | The purpose of 'setClosureSlow' is to compute the transitive closure of relations that are represented as a Map (Map a [a]).
+--   For that purpose we use a Warshall algorithm.
+setClosureSlow :: (Show a,Ord a) => Map a [a] -> String -> Map a [a]
+setClosureSlow xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
+setClosureSlow xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
+  where
+--   f q x = Map.map (\bs->foldl mrgUnion bs [b' | b<-bs, b == x, (a', b') <- Map.toList q, a' == x]) q
+   f q x = Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
+   res   = foldl f xs (Map.keys xs `isc` nub (concat (Map.elems xs)))
+
+
+composeMaps :: (Ord k1, Ord a, Show a) => Map k [k1] -> Map k1 [a] -> Map k [a]
+composeMaps m1 m2 = Map.map (\x -> foldr mrgUnion [] [Map.findWithDefault [] s m2 | s <- x]) m1
+symClosure :: (Ord a, Show a) => Map a [a] -> Map a [a]
+symClosure m = Map.unionWith mrgUnion m (reverseMap m)
+{-
+-- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
+mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
+                       | a==b      = b: mrgUnion as bs
+                       | otherwise = b:mrgUnion (a:as) bs
+mrgUnion a b = a ++ b -- since either a or b is the empty list
+
+mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgIntersect (a:as) (b:bs) | a<b       = mrgIntersect as (b:bs)
+                           | a==b      = b: mrgIntersect as bs
+                           | otherwise = mrgIntersect (a:as) bs
+mrgIntersect _ _ = [] -- since either a or b is the empty list
+-}
+-- The following mrgUnion and mrgIntersect are for debug purposes
+mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
+  where res = if isSortedAndDistinct l then
+                (if isSortedAndDistinct r then merge l r
+                 else fatal 175 ("mrgUnion should be called on sorted distinct lists, but its second argument is:\n "++show r)
+                 )
+              else fatal 177 ("mrgUnion should be called on sorted distinct lists, but its first argument is:\n "++show l)
+        merge :: (Show a,Ord a) => [a] -> [a] -> [a]
+        merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then a:merge as (b:bs) else fatal 179 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+                            | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 180 ("Eq is not symmetric for: "++show a++" and "++show b)
+                            | b<a  = if not (a<b) && not (b==a) then b:merge (a:as) bs else fatal 181 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+        merge a b = a ++ b -- since either a or b is the empty list
+
+mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
+mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge contains an error")
+  where res = if isSortedAndDistinct l then
+                (if isSortedAndDistinct r then merge l r
+                 else fatal 188 ("mrgIntersect should be called on sorted distinct lists, but its second argument is:\n "++show r)
+                 )
+              else fatal 190 ("mrgIntersect should be called on sorted distinct lists, but its first argument is:\n "++show l)
+        merge :: (Show a,Ord a) => [a] -> [a] -> [a]
+        merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then merge as (b:bs) else fatal 192 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+                            | a==b = if b==a then distinctCons a b (merge as bs) else fatal 193 ("Eq is not symmetric for: "++show a++" and "++show b)
+                            | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
+        merge _ _ = [] -- since either a or b is the empty list
+
+distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
+distinctCons a b' (b:bs) = if a<b then b':(b:bs)
+                           else if a==b then fatal 164 ("Eq is not transitive:\n "++show a++"=="++show b++"\n but `==` ("++show b'++") ("++show b++") is "++show (b' == b))
+                           else fatal 167 (concat (["Ord is not transitive:\n "
+                                                   ,"compare ("++show a++") ("++show b'++") == "++show (compare a b')++"\n"
+                                                   ,"compare ("++show b'++") ("++show b++") == "++show (compare b' b)++"\n"
+                                                   ,"compare ("++show a++") ("++show b++") == "++show (compare a b)++"\n"]))
+distinctCons a _ bs = a:bs
+--
+
+checkRfx :: (Eq a, Show a) => [a] -> [a]
+checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show a) else a:checkRfx as
+checkRfx [] = []      
+
+
+
+-- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
+lookups :: (Show a,Ord a) => a -> Map a [a] -> [a]
+lookups o q = head ([mrgUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])  
+
+-- | findIn(k,R) yields all l such that: k R l.
+findIn :: Ord k => k -> Map k [a] -> [a]
+findIn = Map.findWithDefault []  
