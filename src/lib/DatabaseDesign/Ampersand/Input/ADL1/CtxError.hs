@@ -41,7 +41,11 @@ data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list o
               | CxeNoIfcs     { cxeName      :: String
                               , cxePos       :: Origin
                               , cxeIfcs      :: [P_Interface]
-                              }   
+                              }     
+              | CxeObjMismatch{ cxeExpr :: Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
+                              , cxeEnv ::  [P_Concept]
+                              , cxeSrcs :: [P_Concept]
+                              } 
               | CxeRel        { cxeExpr      :: Term
                               , cxeDecs      :: [P_Declaration]  -- possibilities for bindings.
                               , cxeSNDs      :: [P_Declaration]  -- Declarations with the same name
@@ -99,6 +103,14 @@ showErr err = case err of
               case cxeIfcs err of
                  []   -> ["    There are no interfaces called \""++cxeName err++"\"."]
                  ifcs -> ["    There are multiple interfaces named " ++commaEng "and" (map (show.origin) ifcs) ++ "."]
+          )
+  CxeObjMismatch{}
+     -> concat
+          ( [show (origin (cxeExpr err))++":\n"]++
+              case cxeSrcs err of
+                 []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
+                 cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
+                        ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
   CxeRel{}
      -> show (origin term)++":\n"++
