@@ -271,6 +271,8 @@ nothing = Map.empty
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
 infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
+typeToMap :: Type -> Typemap
+typeToMap x = Map.fromList [(x,[])]
 (.<.) :: Type -> Type -> Typemap
 a .<. b  = (Map.fromList [(a, [b]),(b, [])]) -- a tuple meaning that a is a subset of b, and introducing b as a key.
 (.=.) :: Type -> Type -> Typemap
@@ -282,12 +284,15 @@ thing c  = TypExpr (Pid c) False
 dom, cod :: Term -> Type
 dom x    = TypExpr x         False -- the domain of x
 cod x    = TypExpr (p_flp x) True 
-mSpecific', mGeneric' :: (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> (Typemap,Type)
-mGeneric'  ta a tb b e = ((ta a) .<. r .+. (tb b) .<. r,r ) where r = Between (tCxe a b TETUnion e) (ta a) (tb b) BTUnion
-mSpecific' ta a tb b e = (r .<. (ta a) .+. r .<. (tb b),r ) where r = Between (tCxe a b TETIsc   e) (ta a) (tb b) BTIntersect
+mSpecific', mGeneric' :: Type-> (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> Typemap
+mSpecific' s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mSpecific'' ta a tb b e
+mGeneric'  s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mGeneric''  ta a tb b e
+mSpecific'', mGeneric'' :: (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> (Typemap,Type)
+mGeneric''  ta a tb b e = ((ta a) .<. r .+. (tb b) .<. r,r ) where r = Between (tCxe a b TETUnion e) (ta a) (tb b) BTUnion
+mSpecific'' ta a tb b e = (r .<. (ta a) .+. r .<. (tb b),r ) where r = Between (tCxe a b TETIsc   e) (ta a) (tb b) BTIntersect
 mSpecific, mGeneric, mEqual :: (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> Typemap
-mSpecific ta a tb b e = fst (mSpecific' ta a tb b e)
-mGeneric  ta a tb b e = fst (mGeneric'  ta a tb b e)
+mSpecific ta a tb b e = fst (mSpecific'' ta a tb b e)
+mGeneric  ta a tb b e = fst (mGeneric''  ta a tb b e)
 mEqual    ta a tb b e = (r .=. (ta a) .+. r .=. (tb b) ) where r = Between (tCxe a b TETEq    e) (ta a) (tb b) BTEqual
 tCxe :: Term -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe a b msg e src trg = CxeTyping{cxeLhs=(a,src),cxeRhs=(b,trg),cxeTyp=msg e}
@@ -332,7 +337,8 @@ typing p_context
          _ <- checkBetweens
          return ( bindings, srcTypes )
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
-    , isaClos, isaClosReversed   -- a list containing all tuples of concepts that are in the subset relation with each other.
+    , isaClos
+    , isaClosReversed   -- a list containing all tuples of concepts that are in the subset relation with each other.
              -- it is used for the purpose of making a poset of concepts in the A-structure.
     ) 
  where
@@ -412,10 +418,11 @@ typing p_context
     bindings = Map.mapMaybe exactlyOne bindings'
     st' = Map.unionWith mrgUnion st (symClosure (expandSingleBindingsToTyps bindings'))
     stClos0 = setClosure st' "st'"
-    ivBindings :: Map Type [Type]
-    ivBindings = Map.map (map (\x -> TypExpr (Pid x) False)) (makeDecisions ivTypByTyp stClos0)
+    ivBindings',ivBindings :: Map Type [Type]
+    ivBindings' = Map.map (map (\x -> TypExpr (Pid x) False)) (makeDecisions ivTypByTyp stClos0)
+    ivBindings = Map.map (\x->[x]) $ Map.mapMaybe exactlyOne ivBindings'
     ivBoundConcepts :: Map Type [P_Concept]
-    ivBoundConcepts = composeMaps ivBindings stConcepts
+    ivBoundConcepts = composeMaps ivBindings' stConcepts
     stClos1 = setClosure (Map.unionWith mrgUnion stClos0 (symClosure ivBindings)) "union of ivBindings and stClos0"
     
     exactlyOne [x] = Just x
@@ -552,7 +559,8 @@ class Expr a where
         -> a           -- x:    the original term from the script, meant for representation in the graph.
         -> a           -- z:    the term to be analyzed, which must be logically equivalent to x
         -> Typemap   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
-
+  uType' :: P_Context -> a -> Typemap
+  uType' c x = uType c x x
 
 instance Expr P_Context where
  p_gens pContext
@@ -584,18 +592,18 @@ instance Expr P_Context where
          terms (ctx_pops  pContext)
         )
  uType ctxt _ pContext
-  = (let x=ctx_pats  pContext in uType ctxt x x) .+.
-    (let x=ctx_PPrcs pContext in uType ctxt x x) .+.
-    (let x=ctx_rs    pContext in uType ctxt x x) .+.
-    (let x=ctx_ds    pContext in uType ctxt x x) .+.
-    (let x=ctx_ks    pContext in uType ctxt x x) .+.
-    (let x=ctx_gs    pContext in uType ctxt x x) .+.
-    (let x=ctx_ifcs  pContext in uType ctxt x x) .+.
-    (let x=ctx_ps    pContext in uType ctxt x x) .+.
-    (let x=ctx_sql   pContext in uType ctxt x x) .+.
-    (let x=ctx_php   pContext in uType ctxt x x) .+.
-    (let x=ctx_pops  pContext in uType ctxt x x)
-         
+  = uType' ctxt (ctx_pats  pContext) .+.
+    uType' ctxt (ctx_PPrcs pContext) .+.
+    uType' ctxt (ctx_rs    pContext) .+.
+    uType' ctxt (ctx_ds    pContext) .+.
+    uType' ctxt (ctx_ks    pContext) .+.
+    uType' ctxt (ctx_gs    pContext) .+.
+    uType' ctxt (ctx_ifcs  pContext) .+.
+    uType' ctxt (ctx_ps    pContext) .+.
+    uType' ctxt (ctx_sql   pContext) .+.
+    uType' ctxt (ctx_php   pContext) .+.
+    uType' ctxt (ctx_pops  pContext)
+
 instance Expr P_Pattern where
  p_gens pPattern
   = pt_gns pPattern
@@ -614,12 +622,12 @@ instance Expr P_Pattern where
          terms (pt_pop pPattern)
         )
  uType ctxt _ pPattern
-  = (let x=pt_rls pPattern in uType ctxt x x) .+.
-    (let x=pt_gns pPattern in uType ctxt x x) .+.
-    (let x=pt_dcs pPattern in uType ctxt x x) .+.
-    (let x=pt_kds pPattern in uType ctxt x x) .+.
-    (let x=pt_xps pPattern in uType ctxt x x) .+.
-    (let x=pt_pop pPattern in uType ctxt x x)
+  = uType' ctxt (pt_rls pPattern) .+.
+    uType' ctxt (pt_gns pPattern) .+.
+    uType' ctxt (pt_dcs pPattern) .+.
+    uType' ctxt (pt_kds pPattern) .+.
+    uType' ctxt (pt_xps pPattern) .+.
+    uType' ctxt (pt_pop pPattern)
 
 instance Expr P_Process where
  p_gens pProcess
@@ -639,19 +647,25 @@ instance Expr P_Process where
          terms (procPop   pProcess)
         )
  uType ctxt _ pProcess
-  = (let x=procRules pProcess in uType ctxt x x) .+.
-    (let x=procGens  pProcess in uType ctxt x x) .+.
-    (let x=procDcls  pProcess in uType ctxt x x) .+.
-    (let x=procKds   pProcess in uType ctxt x x) .+.
-    (let x=procXps   pProcess in uType ctxt x x) .+.
-    (let x=procPop   pProcess in uType ctxt x x)
+  = uType' ctxt (procRules pProcess) .+.
+    uType' ctxt (procGens  pProcess) .+.
+    uType' ctxt (procDcls  pProcess) .+.
+    uType' ctxt (procKds   pProcess) .+.
+    uType' ctxt (procXps   pProcess) .+.
+    uType' ctxt (procPop   pProcess)
 
 instance Expr P_Rule where
- terms r = terms (rr_exp r)++terms (rr_viol r)
+ terms r = terms (rr_exp r) ++ terms (rr_viol r)
  p_rules r = [r]
  uType ctxt _ r
-  = let x=rr_exp r; v=rr_viol r in
-    uType ctxt x x .+. uType ctxt v v
+  = uType' ctxt (rr_exp r) .+. uType' ctxt (rr_viol r) .+.
+    foldr (.+.) nothing ( [ typeToMap$
+                            Between (\s t->CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
+                                    ((\x -> TypExpr x (case sOrT of {Src -> True;Tgt -> False})) (rr_exp r))
+                                    (TypExpr trm False) BTEqual
+                          | Just pv <- [rr_viol r]
+                          , (P_PairViewExp sOrT trm) <- ppv_segs pv ]
+                        )
 
 instance Expr P_PairView where
  terms ppv = terms (ppv_segs ppv)
@@ -670,11 +684,13 @@ instance Expr P_KeyDef where
  uType ctxt _ k
   = let x=Pid (kd_cpt k) in
     uType ctxt x x .+.
-    foldr (.+.) nothing [ uType ctxt obj obj .+. dm
+    foldr (.+.) nothing [ uType ctxt obj obj .+.
+                          mSpecific dom x dom (obj_ctx obj) (obj_ctx obj)
+                           -- TODO: improve mSpecific's error message here
                         | P_KeyExp obj <- kd_ats k
-                        , let dm = mSpecific dom x dom (obj_ctx obj) (obj_ctx obj)
                         ]
 
+-- TODO: continue adding errors until you reach instance Expr Term
 instance Expr P_Interface where
  terms ifc = terms (ifc_Obj ifc) ++ terms (ifc_Params ifc)
  uType ctxt _ ifc
@@ -787,21 +803,21 @@ instance Expr Term where
                      .+. mEqual dom a dom b x .+. mEqual cod a cod b x
                      .+. uType ctxt a a .+. uType ctxt b b
      (PIsc _ a b) -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
-                     .+. mSpecific dom a dom b x .+. mSpecific cod a cod b x
+                     .+. mSpecific' (dom x) dom a dom b x .+. mSpecific' (cod x) cod a cod b x
                      .+. uType ctxt a a .+. uType ctxt b b
      (PUni _ a b) -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
-                     .+. mGeneric dom a dom b x .+. mGeneric cod a cod b x
+                     .+. mGeneric' (dom x) dom a dom b x .+. mGeneric' (cod x) cod a cod b x
                      .+. uType ctxt a a .+. uType ctxt b b
      (PDif _ a b) -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                      .+. uType ctxt a a
-                     .+. uType ctxt b b
-     (PCps _ a b) -> let bm = mSpecific cod a dom b x
+                     .+. uType ctxt b b -- TODO: improve using mGeneric and mSpecific and such
+     (PCps _ a b) -> let (bm,s) = mSpecific'' cod a dom b x
                          pidTest (PI{}) r = r
                          pidTest (Pid{}) r = r
                          pidTest _ _ = nothing
                      in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
                         bm .+. uType ctxt a a .+. uType ctxt b b
-                        .+. pidTest a (dom x.<.dom b) .+. pidTest b (cod x.<.cod a)
+                        .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
                          pnidTest (PCpl _ (Pid{})) r = r
