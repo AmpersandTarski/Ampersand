@@ -169,7 +169,7 @@ where
    instance Identified ConceptDef where
     name = cdcpt
    
-   data RelConceptDef = RelConceptDef SrcOrTgt String deriving (Eq, Show)
+   data RelConceptDef = RelConceptDef SrcOrTgt String deriving (Eq, Prelude.Ord, Show)
    
    data P_Declaration = 
          P_Sgn { dec_nm :: String    -- ^ the name of the declaration
@@ -183,7 +183,7 @@ where
                , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
                , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file. 
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
-               } deriving Show -- for debugging and testing only
+               } deriving (Prelude.Ord, Show) -- for debugging and testing only
    instance Eq P_Declaration where
     decl==decl' = origin decl==origin decl'
    instance Identified P_Declaration where
@@ -249,7 +249,7 @@ where
       PCpl orig _    -> orig
       PBrk orig _    -> orig
 
-   data SrcOrTgt = Src | Tgt deriving (Show, Eq)
+   data SrcOrTgt = Src | Tgt deriving (Eq, Prelude.Ord, Show)
 
    isSrc :: SrcOrTgt -> Bool
    isSrc Src = True
@@ -276,13 +276,13 @@ where
     name = rr_nm
     
    data PMeaning = PMeaning P_Markup 
-            deriving Show
+            deriving (Eq, Prelude.Ord, Show)
             
    data P_Markup = 
        P_Markup  { mLang ::   Maybe Lang
                  , mFormat :: Maybe PandocFormat
                  , mString :: String
-                 } deriving Show -- for debugging only     
+                 } deriving (Eq, Prelude.Ord, Show) -- Show is for debugging only     
                
    data P_Population
      = P_RelPopu { p_rnme ::  String  -- the name of a relation
@@ -441,9 +441,9 @@ where
    instance Traced P_Gen where
     origin = gen_fp
 
-   data Lang = Dutch | English deriving (Show, Eq)
+   data Lang = Dutch | English deriving (Eq, Prelude.Ord, Show)
 
-   data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
+   data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Prelude.Ord, Show)
 
    type Props = [Prop]
 
