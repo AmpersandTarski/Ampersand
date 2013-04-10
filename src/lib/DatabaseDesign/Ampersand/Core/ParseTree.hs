@@ -257,7 +257,7 @@ where
    isSrc Src = True
    isSrc Tgt = False
    
-   data P_PairView = P_PairView [P_PairViewSegment] deriving Show
+   data P_PairView = P_PairView { ppv_segs :: [P_PairViewSegment] } deriving Show
 
    data P_PairViewSegment = P_PairViewText String
                           | P_PairViewExp SrcOrTgt Term
