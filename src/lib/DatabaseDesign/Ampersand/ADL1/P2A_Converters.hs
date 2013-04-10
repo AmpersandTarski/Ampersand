@@ -450,8 +450,6 @@ typing p_context
     fixPoint :: Eq a => (a->a) -> a -> a
     fixPoint f a = if a==b then a else fixPoint f b
       where b = f a
-    fixPoint2 :: (a->Maybe a) -> a -> a
-    fixPoint2 f a = case f a of {Nothing -> a; Just a2 -> fixPoint2 f a2}
     
     -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
     -- Check whether stClosAdded is transitive...
@@ -656,7 +654,7 @@ instance Expr P_Rule where
     uType ctxt x x .+. uType ctxt v v
 
 instance Expr P_PairView where
- terms (P_PairView segments) = terms segments
+ terms ppv = terms (ppv_segs ppv)
  uType ctxt _ (P_PairView segments) = uType ctxt segments segments
 
 instance Expr P_PairViewSegment where
@@ -1181,7 +1179,7 @@ pCtx2aCtx p_context
         parRels = parallelList . map pExpr2aExpr . rr_Rels
     
     p2aPairView :: P_Concept -> P_Concept -> P_PairView -> Guarded PairView
-    p2aPairView srcCpt trgCpt (P_PairView ppvs) = do { guardedPpvs <- (parallelList . map (p2aPairViewSegment srcCpt trgCpt)) ppvs ; return (PairView guardedPpvs) }
+    p2aPairView srcCpt trgCpt ppv = do { guardedPpvs <- (parallelList . map (p2aPairViewSegment srcCpt trgCpt) . ppv_segs) ppv ; return (PairView guardedPpvs) }
 
     p2aPairViewSegment :: P_Concept -> P_Concept -> P_PairViewSegment -> Guarded PairViewSegment
     p2aPairViewSegment _      _        (P_PairViewText str)          = Checked (PairViewText str)
