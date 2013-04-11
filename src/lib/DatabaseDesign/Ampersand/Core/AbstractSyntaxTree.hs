@@ -292,7 +292,6 @@ instance Association A_Gen where
 
 
 data Interface = Ifc { ifcParams :: [Declaration]
-                     , ifcViols ::  [Rule]
                      , ifcArgs ::   [[String]]
                      , ifcRoles ::  [String]
                      , ifcObj ::    ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
