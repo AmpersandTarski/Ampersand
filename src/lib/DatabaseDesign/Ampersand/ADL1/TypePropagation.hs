@@ -27,6 +27,8 @@ head (a:_) = a
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.TypePropagation"
 
+
+
 type Typemap = Map Type [Type]
 
 data Type = TypExpr Term SrcOrTgt -- term is deriving Ord
@@ -164,10 +166,6 @@ typing st declsByName
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
     allIVs      = [o | o@(TypExpr e _)<-typeTerms, isIV e]
     allIVs'     = nub' (sort [e | (TypExpr e _)<-typeTerms, isIV e])
-    nub' (x:y:xs) | x==y      = nub' (y:xs)
-                  | otherwise = x:(nub' (y:xs))
-    nub' [x] = [x]
-    nub' [] = []
     isIV   (PI _)       = True
     isIV   (PVee _)     = True
     isIV   (Patm _ _ _) = True
@@ -251,7 +249,7 @@ typing st declsByName
                                       [ Map.filter (not . null) (getDecision t1 t2)
                                       | (Between _ t1 t2 _) <- Map.keys trnRel ])
      where inpTrnRel = (composeMaps trnRel inp)
-           typsOneDeep = Map.unionWith mrgUnion trnRel (symClosure (Map.map (map (\(_,_,x)->x)) inpTrnRel))
+           typsOneDeep = Map.unionWith mrgUnion trnRel (symClosure (Map.map (nub'.sort.(map (\(_,_,x)->x))) inpTrnRel))
            typsFull = Map.unionWith mrgUnion trnRel (composeMaps typsOneDeep trnRel)           
            -- getDecision :: Type -> Type -> Map from [to]
            f x = Map.findWithDefault [] x typsFull
@@ -392,6 +390,12 @@ mrgIntersect (a:as) (b:bs) | a<b       = mrgIntersect as (b:bs)
                            | a==b      = b: mrgIntersect as bs
                            | otherwise = mrgIntersect (a:as) bs
 mrgIntersect _ _ = [] -- since either a or b is the empty list
+
+nub' :: (Show a,Ord a,Eq a) => [a] -> [a]
+nub' (x:y:xs) | x==y      = nub' (y:xs)
+              | otherwise = x:(nub' (y:xs))
+nub' [x] = [x]
+nub' [] = []
 -}
 -- The following mrgUnion and mrgIntersect are for debug purposes
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
@@ -420,6 +424,14 @@ mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge co
                             | b<a  = if not (a<b) && not (b==a) then merge (a:as) bs else fatal 194 ("Compare is not antisymmetric for: "++show a++" and "++show b)
         merge _ _ = [] -- since either a or b is the empty list
 
+nub' :: (Show a,Ord a,Eq a) => [a] -> [a]
+nub' xs = if isSortedAndDistinct xs then nub'' xs else fatal 428 ("nub' expects a sorted list, but the following is not:\n"++show xs)
+          where
+              nub'' (x:y:xs) | x==y      = nub' (y:xs)
+                            | otherwise = x:(nub' (y:xs))
+              nub'' [x] = [x]
+              nub'' [] = []
+              
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
                            else if a==b then fatal 164 ("Eq is not transitive:\n "++show a++"=="++show b++"\n but `==` ("++show b'++") ("++show b++") is "++show (b' == b))
