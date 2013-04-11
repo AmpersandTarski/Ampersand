@@ -251,7 +251,7 @@ where
       PCpl orig _    -> orig
       PBrk orig _    -> orig
 
-   data SrcOrTgt = Src | Tgt deriving (Show, Eq)
+   data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord)
 
    isSrc :: SrcOrTgt -> Bool
    isSrc Src = True
