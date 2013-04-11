@@ -103,7 +103,7 @@ mSpecific'' ta a tb b e = (r .<. (domOrCod ta a) .+. r .<. (domOrCod tb b),r ) w
 mSpecific, mGeneric, mEqual :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
 mSpecific ta a tb b e = fst (mSpecific'' ta a tb b e)
 mGeneric  ta a tb b e = fst (mGeneric''  ta a tb b e)
-mEqual    ta a tb b e = (r .=. (domOrCod ta a) .+. r .=. (domOrCod tb b) ) where r = Between (tCxe ta a tb b TETEq    e) (domOrCod ta a) (domOrCod tb b) BTEqual
+mEqual    ta a tb b e = typeToMap$ Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
@@ -122,17 +122,12 @@ flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
 
 class Expr a where
-  p_gens :: a -> [P_Gen]
-  p_gens _ = []
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
   p_rules :: a -> [P_Rule]
   p_rules _ = []
   p_keys :: a -> [P_KeyDef]
   p_keys _ = []
-  terms :: a -> [Term]
-  subterms :: a -> [Term]
-  subterms = concat . map subterms . terms
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
   --   the tuples of a relation st :: Type * Type. Each tuple (TypExpr t, TypExpr t') means that the domain of t is a subset of the domain of t'.
   --   These tuples are produced in two Typemaps. The second Typemap is kept separate, because it depends on the existence of the first Typemap.
@@ -146,10 +141,6 @@ class Expr a where
   uType' x = uType x x
 
 instance Expr P_Context where
- p_gens pContext
-  = concat [ p_gens pat | pat<-ctx_pats  pContext] ++
-    concat [ p_gens prc | prc<-ctx_PPrcs pContext] ++
-    ctx_gs pContext
  p_declarations pContext
   = concat [ p_declarations pat | pat<-ctx_pats  pContext] ++
     concat [ p_declarations prc | prc<-ctx_PPrcs pContext] ++
@@ -162,18 +153,6 @@ instance Expr P_Context where
   = concat [ p_keys pat | pat<-ctx_pats  pContext] ++
     concat [ p_keys prc | prc<-ctx_PPrcs pContext] ++
     ctx_ks pContext
- terms pContext
-  = nub (terms (ctx_pats  pContext) ++
-         terms (ctx_PPrcs pContext) ++
-         terms (ctx_rs    pContext) ++
-         terms (ctx_ds    pContext) ++
-         terms (ctx_ks    pContext) ++
-         terms (ctx_gs    pContext) ++
-         terms (ctx_ifcs  pContext) ++
-         terms (ctx_sql   pContext) ++
-         terms (ctx_php   pContext) ++
-         terms (ctx_pops  pContext)
-        )
  uType _ pContext
   = uType' (ctx_pats  pContext) .+.
     uType' (ctx_PPrcs pContext) .+.
@@ -188,22 +167,12 @@ instance Expr P_Context where
     uType' (ctx_pops  pContext)
 
 instance Expr P_Pattern where
- p_gens pPattern
-  = pt_gns pPattern
  p_declarations pPattern
   = pt_dcs pPattern
  p_rules pPattern
   = pt_rls pPattern
  p_keys pPattern
   = pt_kds pPattern
- terms pPattern
-  = nub (terms (pt_rls pPattern) ++
-         terms (pt_gns pPattern) ++
-         terms (pt_dcs pPattern) ++
-         terms (pt_kds pPattern) ++
-         terms (pt_xps pPattern) ++
-         terms (pt_pop pPattern)
-        )
  uType _ pPattern
   = uType' (pt_rls pPattern) .+.
     uType' (pt_gns pPattern) .+.
@@ -213,22 +182,12 @@ instance Expr P_Pattern where
     uType' (pt_pop pPattern)
 
 instance Expr P_Process where
- p_gens pProcess
-  = procGens pProcess
  p_declarations pProcess
   = procDcls pProcess
  p_rules pProcess
   = procRules pProcess
  p_keys pProcess
   = procKds pProcess
- terms pProcess
-  = nub (terms (procRules pProcess) ++
-         terms (procGens  pProcess) ++
-         terms (procDcls  pProcess) ++
-         terms (procKds   pProcess) ++
-         terms (procXps   pProcess) ++
-         terms (procPop   pProcess)
-        )
  uType _ pProcess
   = uType' (procRules pProcess) .+.
     uType' (procGens  pProcess) .+.
@@ -238,7 +197,6 @@ instance Expr P_Process where
     uType' (procPop   pProcess)
 
 instance Expr P_Rule where
- terms r = terms (rr_exp r) ++ terms (rr_viol r)
  p_rules r = [r]
  uType _ r
   = uType' (rr_exp r) .+. uType' (rr_viol r) .+.
@@ -251,18 +209,14 @@ instance Expr P_Rule where
                         )
 
 instance Expr P_PairView where
- terms ppv = terms (ppv_segs ppv)
  uType _ (P_PairView segments) = uType segments segments
 
 instance Expr P_PairViewSegment where
- terms (P_PairViewExp _ term) = [term]
- terms _                      = []
  uType _ (P_PairViewExp Src term) = uType term term
  uType _ (P_PairViewExp Tgt term) = uType term term
  uType _ _ = nothing
   
 instance Expr P_KeyDef where
- terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
  p_keys k = [k]
  uType _ k
   = let x=Pid (kd_cpt k) in
@@ -275,14 +229,12 @@ instance Expr P_KeyDef where
 
 -- TODO: continue adding errors until you reach instance Expr Term
 instance Expr P_Interface where
- terms ifc = terms (ifc_Obj ifc) ++ terms (ifc_Params ifc)
  uType _ ifc
   = let x=ifc_Obj ifc in
     foldr (.+.) nothing [ uType param param | param<-ifc_Params ifc ] .+.
     uType x x
 
 instance Expr P_ObjectDef where
- terms o = fatal 282 "Terms of a P_ObjectDef was called, don't know why" -- [obj_ctx o | null (terms (obj_msub o))] ++ terms (obj_msub o)
  uType _ o
   = let x=obj_ctx o in
     uType x x .+. 
@@ -295,84 +247,46 @@ instance Expr P_ObjectDef where
                         ]
  
 instance Expr P_SubInterface where
- terms x@P_Box{} = terms (si_box x)
- terms _           = []
  uType _  mIfc@P_Box{} = let x=si_box mIfc in uType x x
  uType _  _              = nothing
 
 instance Expr PPurpose where
- terms pp = terms (pexObj pp)
  uType _ purp = let x=pexObj purp in uType x x
 
 instance Expr PRef2Obj where
- terms (PRef2Declaration t) = [t]
- terms _ = []
  uType _ (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType x x
  uType _ (PRef2Declaration t)  = uType t t
  uType _ _                     = nothing
 
 instance Expr P_Sign where
- terms _ = []
  uType _ _ = nothing
 
 instance Expr P_Gen where
- terms g = [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
  uType _ g
   = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType x x
 
 instance Expr P_Declaration where
- terms d = [PTrel (origin d) (dec_nm d) (dec_sign d)]
  uType _ d
   = dom decl.<.thing src .+. cod decl.<.thing trg
-    where [decl] = terms d
+    where decl = PTrel (origin d) (dec_nm d) (dec_sign d)
           P_Sign sgn = dec_sign d
           src = head sgn; trg = last sgn
 
 instance Expr P_Population where
- terms pop@(P_RelPopu{p_type=P_Sign []}) = [Prel (p_orig pop) (name pop)]
- terms pop@P_RelPopu{}                   = [PTrel (p_orig pop) (name pop) (p_type pop)]
- terms pop@P_CptPopu{}                   = [Pid (PCpt (name pop))]
  uType _ pop
   = foldr (.+.) nothing [ uType x x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
-    -- the reason for inserting dom x.=.dom x .+. cod x.=.cod x on this location,
-    -- is possibility that a population without type signature might be overlooked by the type checker,
-    -- resulting in a fatal 1601, i.e. a term that is not in the TypeMap bindings.
+    where terms (P_RelPopu{p_type=P_Sign []}) = [Prel  (p_orig pop) (name pop)]
+          terms P_RelPopu{}                   = [PTrel (p_orig pop) (name pop) (p_type pop)]
+          terms P_CptPopu{}                   = [Pid   (PCpt (name pop))]
 
 instance Expr a => Expr (Maybe a) where
- terms Nothing  = []
- terms (Just x) = terms x
  uType _ Nothing  = nothing
  uType _ (Just x) = uType x x
 
 instance Expr a => Expr [a] where
- terms = concat.map terms
  uType _ xs = foldr (.+.) nothing [ uType x x | x <- xs]
 
-instance Expr Term where
- terms e = [e]
- subterms e@(Pequ _ a b) = [e]++subterms a++subterms b
- subterms e@(Pimp _ a b) = [e]++subterms a++subterms b
- subterms e@(PIsc _ a b) = [e]++subterms a++subterms b
- subterms e@(PUni _ a b) = [e]++subterms a++subterms b
- subterms e@(PDif _ a b) = [e]++subterms a++subterms b
- subterms e@(PLrs _ a b) = [e]++subterms a++subterms b
- subterms e@(PRrs _ a b) = [e]++subterms a++subterms b
- subterms e@(PCps _ a b) = [e]++subterms a++subterms b
- subterms e@(PRad _ a b) = [e]++subterms a++subterms b
- subterms e@(PPrd _ a b) = [e]++subterms a++subterms b
- subterms e@(PKl0 _ a)   = [e]++subterms a
- subterms e@(PKl1 _ a)   = [e]++subterms a
- subterms e@(PFlp _ a)   = [e]++subterms a
- subterms e@(PCpl _ a)   = [e]++subterms a
- subterms e@(PBrk _ a)   = [e]++subterms a
- subterms e@(PI _)       = [e]
- subterms e@(Pid _)      = [e]
- subterms e@(Patm _ _ _) = [e]
- subterms e@(PVee _)     = [e]
- subterms e@(Pfull _ _)  = [e]
- subterms e@(Prel _ _ )  = [e]
- subterms e@(PTrel _ _ _)= [e]
- 
+instance Expr Term where 
  uType x expr 
   = case expr of
      PI{}         -> dom x.=.cod x              -- I
@@ -392,8 +306,8 @@ instance Expr Term where
                      .+. mGeneric' (dom x) Src a Src b x .+. mGeneric' (cod x) Tgt a Tgt b x
                      .+. uType a a .+. uType b b
      (PDif _ a b) -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
-                     .+. uType a a
-                     .+. uType b b -- TODO: improve using mGeneric and mSpecific and such
+                     .+. uType' a
+                     .+. uType' b -- TODO: improve using mGeneric and mSpecific and such
      (PCps _ a b) -> let (bm,s) = mSpecific'' Tgt a Src b x
                          pidTest (PI{}) r = r
                          pidTest (Pid{}) r = r
