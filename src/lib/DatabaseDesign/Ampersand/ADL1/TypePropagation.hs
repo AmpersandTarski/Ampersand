@@ -212,7 +212,10 @@ typing st declsByName
        glbs = [l | l@(Between _ _ _ BTIntersect) <- typeTerms]
     
     declByTerm :: Map Term [P_Declaration]
-    declByTerm = Map.fromAscList [ (o,Map.findWithDefault [] s declsByName) | o@(Prel _ s) <- allTerms]
+    declByTerm
+      = Map.fromAscList ( [ (o,Map.findWithDefault [] s declsByName) | o@(Prel _ s) <- allTerms]
+                          ++ [ (o,filter ((==) sgn . dec_sign) $ Map.findWithDefault [] s declsByName) | o@(PTrel _ s sgn) <- allTerms]
+                        )
     
     expandSingleBindingsToTyps :: Map Term [P_Declaration] -> Map Type [Type]
     expandSingleBindingsToTyps x
