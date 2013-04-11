@@ -141,7 +141,6 @@ where
     relationsIn ifc = foldr (uni) []
                        [ (relationsIn.ifcObj) ifc
                        , (relationsIn.ifcParams) ifc
-                       , (relationsIn.ifcViols) ifc
                        ]
     mp1Exprs    ifc = mp1Exprs    (ifcObj ifc)
 

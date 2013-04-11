@@ -367,7 +367,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                              lbl (nm,p) params args expr ats
                               = P_Ifc { ifc_Name   = nm
                                       , ifc_Params = params
-                                  --  , ifcViols  = []
                                       , ifc_Args   = args
                                       , ifc_Roles  = []
                                       , ifc_Obj    = P_Obj { obj_nm    = nm    

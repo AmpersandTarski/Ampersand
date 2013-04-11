@@ -753,7 +753,6 @@ pCtx2aCtx p_context
                                                   ; return (KeyExp objDef)
                                                   }
     
-    -- TODO -> What is the intention of ifcViols?
     -- TODO -> What is the intention of ifcArgs?
     pIFC2aIFC :: P_Interface -> Guarded Interface
     pIFC2aIFC pifc 
@@ -764,7 +763,6 @@ pCtx2aCtx p_context
                                 EDcD dcl _ -> dcl
                                 _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
-               , ifcViols  = fatal 206 "not implemented ifcViols"
                , ifcArgs   = ifc_Args pifc
                , ifcRoles  = parentIfcRoles
                , ifcObj    = obj

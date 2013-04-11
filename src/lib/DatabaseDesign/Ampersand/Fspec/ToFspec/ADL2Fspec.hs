@@ -230,7 +230,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         step4a
          | theme flags == StudentTheme 
          = [Ifc { ifcParams = directdecls
-                , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c ++ " (instantie)"
                                   , objpos  = Origin "generated object for interface for each concept in TblSQL or ScalarSQL"
@@ -275,7 +274,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                -- All total attributes must be included, because the interface must allow an object to be deleted.
            in
            [Ifc { ifcParams = [ d | d<-declsUsedIn objattributes, not (isIdent d)]
-                , ifcViols  = []
                 , ifcArgs   = []
                 , ifcObj    = Obj { objnm   = name c
                                   , objpos  = Origin "generated object: step 4a - default theme"
@@ -298,7 +296,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         --end stap4a
         step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a 
          = [Ifc { ifcParams = ifcParams ifcc
-                , ifcViols  = ifcViols  ifcc
                 , ifcArgs   = ifcArgs   ifcc
                 , ifcObj    = Obj { objnm   = nm
                                   , objpos  = Origin "generated object: step 4b"
