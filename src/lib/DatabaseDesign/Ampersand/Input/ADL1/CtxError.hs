@@ -65,8 +65,8 @@ data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list o
                               , cxeSrcs      :: [P_Concept]
                               , cxeTrgs      :: [P_Concept]
                               }   
-              | CxeTyping     { cxeLhs       :: (Term,[P_Concept])
-                              , cxeRhs       :: (Term,[P_Concept])
+              | CxeTyping     { cxeLhs       :: (Term,SrcOrTgt,[P_Concept])
+                              , cxeRhs       :: (Term,SrcOrTgt,[P_Concept])
                               , cxeTyp       :: TypErrTyp
                               }   
               | CxeCast       { cxeExpr      :: Term
@@ -84,9 +84,9 @@ data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list o
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
 
-niceSource :: (ShowADL a1, ShowADL a) => (a, [a1]) -> String
-niceSource (t,[]) = "    There is no type for the source of  "++showADL t++"."
-niceSource (t,cs) = "    The source of  "++showADL t++"  is  "++ commaEng "or" (map showADL cs)++"."
+niceSource :: (ShowADL a1, ShowADL a) => (a, SrcOrTgt, [a1]) -> String
+niceSource (t,s,[]) = "    There is no type for the "++showADL s++" of  "++showADL t++"."
+niceSource (t,s,cs) = "    The "++showADL s++" of  "++showADL t++"  is  "++ commaEng "or" (map showADL cs)++"."
 
 showErr :: CtxError -> String
 showErr err = case err of
@@ -123,15 +123,15 @@ showErr err = case err of
      -> concat
           ( [show (origin (cxeExpr err))++":\n"]++
               case cxeSrcs err of
-                 []  -> ["    Cannot deduce a type for "++showADL (cxeExpr err)++"."]
+                 []  -> ["    Cannot deduce a type for  "++showADL (cxeExpr err)++"."]
                  cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
                         ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
   CxeTyping{}
-     ->   ( show (origin (fst (cxeLhs err)))++":\n"++
-            "    Cannot deduce a type for  "++showADL (cxeTyp err)++
+     ->   ( show (origin ((\(x,_,_)->x) (cxeLhs err)))++":\n"++
+            "    Cannot deduce a type for "++showADL (cxeTyp err)++
               case (cxeLhs err,cxeRhs err) of
-                 ((t1,[]),(t2,[])) -> "\n    matching the source of  "++showADL t1++"  and the source of  "++showADL t2
+                 ((t1,s1,[]),(t2,s2,[])) -> "\n    matching the "++show s1++" of  "++showADL t1++"  and the "++show s2++" of  "++showADL t2
                  (t1,t2) -> ".\n" ++ niceSource t1 ++"\n"++ niceSource t2
           )
   CxeRelUndefined{}
