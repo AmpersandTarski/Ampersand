@@ -14,7 +14,11 @@ import GHC.Exts (sortWith)
 import Prelude hiding (head)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.List hiding (head)
+{-
 import Debug.Trace
+traceMe :: (Show x) => x -> x
+traceMe x = trace (show x) x
+-}
 
 import Control.Applicative
 import Data.Map (Map)
@@ -27,8 +31,6 @@ head (a:_) = a
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.TypePropagation"
 
-traceMe :: (Show x) => x -> x
-traceMe x = trace (show x) x
 
 type Typemap = Map Type [Type]
 
@@ -192,7 +194,7 @@ typing st declsByName
                         (xs,ys) -> Errors [CxeSign {cxeExpr=iv, cxeSrcs=xs, cxeTrgs=ys}]
     
     checkBetweens = parallelList (map checkBetween typeTerms)
-    checkBetween o@(Between e src trg BTEqual)   -- since the BTEqual does not participate in stClosAdd, it may be isolated
+    checkBetween (Between e src trg BTEqual) -- since the BTEqual does not participate in stClosAdd, it will be isolated here
      = case (srcTypes' src,srcTypes' trg) of
               ([a],[b]) -> if a==b then
                              return ()
@@ -249,7 +251,7 @@ typing st declsByName
     bindings' = Map.union (makeDecisions typByTyp stIC) declByTerm
     bindings :: Map Term P_Declaration
     bindings = Map.mapMaybe exactlyOne bindings'
-    st' = Map.unionWith mrgUnion st (symClosure (expandSingleBindingsToTyps bindings'))
+    st' = Map.unionWith mrgUnion stIC (symClosure (expandSingleBindingsToTyps bindings'))
     stClos0 = setClosure st' "st'"
     ivBindings',ivBindings :: Map Type [Type]
     ivBindings' = Map.map (map (\x -> TypExpr (Pid x) Src)) (makeDecisions ivTypByTyp stClos0)
@@ -266,8 +268,9 @@ typing st declsByName
                      -> Map Type [Type] -- reflexive transitive graph with inferred types
                      -> ( Map from [to] ) -- resulting bindings
     makeDecisions inp trnRel = (foldl (Map.unionWith mrgIntersect) Map.empty 
-                                      [ Map.filter (not . null) (getDecision t1 t2)
+                                      [ Map.filter (not . null) d
                                       | (Between _ t1 t2 _) <- Map.keys trnRel
+                                      , let d = (getDecision t1 t2)
                                       ]
                                )
      where inpTrnRel = composeMaps trnRel inp
