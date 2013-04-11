@@ -192,6 +192,12 @@ typing st declsByName
                         (xs,ys) -> Errors [CxeSign {cxeExpr=iv, cxeSrcs=xs, cxeTrgs=ys}]
     
     checkBetweens = parallelList (map checkBetween typeTerms)
+    checkBetween o@(Between e src trg BTEqual)   -- since the BTEqual does not participate in stClosAdd, it may be isolated
+     = case (srcTypes' src,srcTypes' trg) of
+              ([a],[b]) -> if a==b then
+                             return ()
+                           else Errors [e [a] [b]]
+              (a,b) -> Errors [e a b]
     checkBetween o@(Between e src trg _)
      = case srcTypes' o of
         [_] -> return ()
