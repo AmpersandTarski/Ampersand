@@ -91,18 +91,21 @@ thing c  = TypExpr (Pid c) Src
 dom, cod :: Term -> Type
 dom x    = TypExpr x         Src -- the domain of x
 cod x    = TypExpr (p_flp x) Tgt 
-mSpecific', mGeneric' :: Type -> (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> Typemap
+domOrCod :: SrcOrTgt -> Term -> Type
+domOrCod Src = dom
+domOrCod Tgt = cod
+mSpecific', mGeneric' :: Type -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
 mSpecific' s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mSpecific'' ta a tb b e
 mGeneric'  s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mGeneric''  ta a tb b e
-mSpecific'', mGeneric'' :: (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> (Typemap,Type)
-mGeneric''  ta a tb b e = ((ta a) .<. r .+. (tb b) .<. r,r ) where r = Between (tCxe a b TETUnion e) (ta a) (tb b) BTUnion
-mSpecific'' ta a tb b e = (r .<. (ta a) .+. r .<. (tb b),r ) where r = Between (tCxe a b TETIsc   e) (ta a) (tb b) BTIntersect
-mSpecific, mGeneric, mEqual :: (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> Typemap
+mSpecific'', mGeneric'' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> (Typemap,Type)
+mGeneric''  ta a tb b e = ((domOrCod ta a) .<. r .+. (domOrCod tb b) .<. r,r ) where r = Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) BTUnion
+mSpecific'' ta a tb b e = (r .<. (domOrCod ta a) .+. r .<. (domOrCod tb b),r ) where r = Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) BTIntersect
+mSpecific, mGeneric, mEqual :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
 mSpecific ta a tb b e = fst (mSpecific'' ta a tb b e)
 mGeneric  ta a tb b e = fst (mGeneric''  ta a tb b e)
-mEqual    ta a tb b e = (r .=. (ta a) .+. r .=. (tb b) ) where r = Between (tCxe a b TETEq    e) (ta a) (tb b) BTEqual
-tCxe :: Term -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
-tCxe a b msg e src trg = CxeTyping{cxeLhs=(a,src),cxeRhs=(b,trg),cxeTyp=msg e}
+mEqual    ta a tb b e = (r .=. (domOrCod ta a) .+. r .=. (domOrCod tb b) ) where r = Between (tCxe ta a tb b TETEq    e) (domOrCod ta a) (domOrCod tb b) BTEqual
+tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
+tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
 flattenMap :: Map t [t1] -> [(t, t1)]
 flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
@@ -265,7 +268,7 @@ instance Expr P_KeyDef where
   = let x=Pid (kd_cpt k) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
-                          mSpecific dom x dom (obj_ctx obj) (obj_ctx obj)
+                          mSpecific Src x Src (obj_ctx obj) (obj_ctx obj)
                            -- TODO: improve mSpecific's error message here
                         | P_KeyExp obj <- kd_ats k
                         ]
@@ -288,7 +291,7 @@ instance Expr P_ObjectDef where
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
                                    P_InterfaceRef{} -> []
-                        , let dm = mSpecific cod x dom (obj_ctx obj) (obj_ctx obj)
+                        , let dm = mSpecific Tgt x Src (obj_ctx obj) (obj_ctx obj)
                         ]
  
 instance Expr P_SubInterface where
@@ -380,18 +383,18 @@ instance Expr Term where
      PVee{}       -> typeToMap (dom x)
      (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)              --  V[A*B] (the typed full set)
      (Pequ _ a b) -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                     .+. mEqual dom a dom b x .+. mEqual cod a cod b x
+                     .+. mEqual Src a Src b x .+. mEqual Tgt a Tgt b x
                      .+. uType a a .+. uType b b
      (PIsc _ a b) -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
-                     .+. mSpecific' (dom x) dom a dom b x .+. mSpecific' (cod x) cod a cod b x
+                     .+. mSpecific' (dom x) Src a Src b x .+. mSpecific' (cod x) Tgt a Tgt b x
                      .+. uType a a .+. uType b b
      (PUni _ a b) -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
-                     .+. mGeneric' (dom x) dom a dom b x .+. mGeneric' (cod x) cod a cod b x
+                     .+. mGeneric' (dom x) Src a Src b x .+. mGeneric' (cod x) Tgt a Tgt b x
                      .+. uType a a .+. uType b b
      (PDif _ a b) -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                      .+. uType a a
                      .+. uType b b -- TODO: improve using mGeneric and mSpecific and such
-     (PCps _ a b) -> let (bm,s) = mSpecific'' cod a dom b x
+     (PCps _ a b) -> let (bm,s) = mSpecific'' Tgt a Src b x
                          pidTest (PI{}) r = r
                          pidTest (Pid{}) r = r
                          pidTest _ _ = nothing
@@ -403,7 +406,7 @@ instance Expr Term where
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest _ _ = nothing
                      in dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
-                        mGeneric cod a dom b x .+. uType a a .+. uType b b
+                        mGeneric Tgt a Src b x .+. uType a a .+. uType b b
                         .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
      (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
                      .+. uType a a .+. uType b b
@@ -419,7 +422,7 @@ instance Expr Term where
          (P_Sign cs)        -> let iSrc = thing (head cs)
                                    iTrg = thing (last cs)
                                in dom x.<.iSrc .+. cod x.<.iTrg
-     (Prel _ nm) -> typeToMap (dom x) .+. typeToMap (cod x)
+     (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
                      in dom x.=.dom e .+. cod x.=.cod e .+.
