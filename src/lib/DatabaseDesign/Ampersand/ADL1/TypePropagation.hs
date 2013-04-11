@@ -27,7 +27,8 @@ head (a:_) = a
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.TypePropagation"
 
-
+traceMe :: (Show x) => x -> x
+traceMe x = trace (show x) x
 
 type Typemap = Map Type [Type]
 
@@ -153,10 +154,10 @@ typing st declsByName
     , eqType
     , stClosAdded
     , stClos1
-    , do _ <- checkUndefined
-         _ <- checkBindings
-         _ <- checkIVBindings
-         _ <- checkBetweens
+    , do _ <- checkUndefined  -- relation for which there is no declaration
+         _ <- checkBindings   -- unresolved bindings for relations
+         _ <- checkIVBindings -- unresolved bindings for I and V
+         _ <- checkBetweens   -- errors in matching operations such as ;
          return ( bindings, srcTypes )
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isaClos
@@ -225,7 +226,7 @@ typing st declsByName
                                   [ (tp,[decToTyp b d]) | tp@(TypExpr t b) <- typeTerms
                                                                    , Just [d] <- [Map.lookup t x]]
                                  )
-     -- where traceMe x = trace (show x) x
+    
     typByTyp :: Map Type [(Term,P_Declaration,Type)]
     typByTyp = Map.fromListWith mrgUnion [ (tp,sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t declByTerm])
                                          | tp@(TypExpr t b) <- typeTerms]
@@ -260,27 +261,31 @@ typing st declsByName
                      -> ( Map from [to] ) -- resulting bindings
     makeDecisions inp trnRel = (foldl (Map.unionWith mrgIntersect) Map.empty 
                                       [ Map.filter (not . null) (getDecision t1 t2)
-                                      | (Between _ t1 t2 _) <- Map.keys trnRel ])
-     where inpTrnRel = (composeMaps trnRel inp)
-           typsOneDeep = Map.unionWith mrgUnion trnRel (symClosure (Map.map (nub'.sort.(map (\(_,_,x)->x))) inpTrnRel))
-           typsFull = Map.unionWith mrgUnion trnRel (composeMaps typsOneDeep trnRel)           
+                                      | (Between _ t1 t2 _) <- Map.keys trnRel
+                                      ]
+                               )
+     where inpTrnRel = composeMaps trnRel inp
+           typsFull = Map.unionWith mrgUnion trnRel
+                        (composeMaps (Map.map (nub'.sort.(map (\(_,_,x)->x))) inpTrnRel) trnRel)
            -- getDecision :: Type -> Type -> Map from [to]
-           f x = Map.findWithDefault [] x typsFull
+           f x  = Map.findWithDefault [] x trnRel
+           f' x = Map.findWithDefault [] x typsFull
            bestUnion a b = if (null isct) then union' else isct
             where isct = mrgIntersect a b
                   union' = mrgUnion a b
-           getDecision src trg = Map.unionWith bestUnion lhsDecisions rhsDecisions
-            where lhsTyps = f src
-                  rhsTyps = f trg
-                  iscTyps = mrgIntersect lhsTyps rhsTyps
-                  lhsDecisions
-                   = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
-                                                         , t' <- Map.findWithDefault [] tp trnRel
-                                                         , t' `elem` iscTyps ]
-                  rhsDecisions
-                   = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] trg inpTrnRel
-                                                         , t' <- Map.findWithDefault [] tp trnRel
-                                                         , t' `elem` iscTyps ]
+           getDecision src trg
+            = Map.unionWith bestUnion lhsDecisions rhsDecisions
+              where iscTyps = mrgIntersect (f src) (f trg) `whenEmpty` mrgIntersect (f' src) (f' trg)
+                    whenEmpty [] a = a
+                    whenEmpty a _ = a
+                    lhsDecisions
+                     = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
+                                                           , t' <- Map.findWithDefault [] tp trnRel
+                                                           , t' `elem` iscTyps ]
+                    rhsDecisions
+                     = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] trg inpTrnRel
+                                                           , t' <- Map.findWithDefault [] tp trnRel
+                                                           , t' `elem` iscTyps ]
     
     
     -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
