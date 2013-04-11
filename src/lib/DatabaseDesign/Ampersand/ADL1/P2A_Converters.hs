@@ -89,8 +89,8 @@ m1 .+. m2 = Map.unionWith mrgUnion m1 m2
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid c) Src
 dom, cod :: Term -> Type
-dom x    = TypExpr x         Src -- the domain of x
-cod x    = TypExpr (p_flp x) Tgt 
+dom x    = TypExpr x Src -- the domain of x
+cod x    = TypExpr x Tgt 
 domOrCod :: SrcOrTgt -> Term -> Type
 domOrCod Src = dom
 domOrCod Tgt = cod

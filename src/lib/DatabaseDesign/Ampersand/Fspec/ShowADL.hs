@@ -182,8 +182,8 @@ instance ShowADL PairViewSegment where
  showADL (PairViewExp srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
 
 instance ShowADL SrcOrTgt where
- showADL Src = "SRC"
- showADL Tgt = "TGT"
+ showADL Src = "source"
+ showADL Tgt = "target"
  
 --showADLSrcOrTgt :: SrcOrTgt -> String
 --showADLSrcOrTgt Src = "SRC"

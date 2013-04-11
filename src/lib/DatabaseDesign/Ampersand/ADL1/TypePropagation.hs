@@ -53,7 +53,7 @@ showType (TypExpr term@(PVee o) _)    = showADL term     ++"("++ shOrig o++")"
 showType (TypExpr term@(Pfull _ _) _) = showADL term
 -- dom x    = TypExpr x         False
 showType (TypExpr term Src)           = "dom ("++showADL term++") "++ shOrig (origin term)
-showType (TypExpr term Tgt)           = "cod ("++showADL (p_flp term)++") "++ shOrig (origin term)
+showType (TypExpr term Tgt)           = "cod ("++showADL term++") "++ shOrig (origin term)
 showType (Between _ a b t)            = showType a++" "++show t++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
 
 instance Show BetweenType where
@@ -73,16 +73,17 @@ instance Prelude.Ord Type where
   compare (TypExpr (Patm _ x [c]) _) (TypExpr (Patm _ x' [c']) _) = Prelude.compare (x,c) (x',c')
   compare (TypExpr (Patm _ _ [_]) _) (TypExpr (Patm _ _   _  ) _) = Prelude.LT
   compare (TypExpr (Patm _ _  _ ) _) (TypExpr (Patm _ _  [_ ]) _) = Prelude.GT
-  compare (TypExpr (Patm o x cs)  _) (TypExpr (Patm o' x' cs') _) = Prelude.compare (o,x,cs) (o',x',cs')
-  compare (TypExpr (Patm _ _ _)   _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr (Patm o x [] ) _) (TypExpr (Patm o' x' [] ) _) = Prelude.compare (o,x) (o',x')
+  compare (TypExpr (Patm _ _ _  ) _) (TypExpr (Patm _  _  _  ) _) = fatal 76 "Patm should not have two types"
+  compare (TypExpr (Patm _ _ _  ) _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Patm _ _ _)     _) = Prelude.GT
   compare (TypExpr (PVee o)       _) (TypExpr (PVee o')        _) = Prelude.compare o o' -- This is a V of which the type must be determined (by the environment).
   compare (TypExpr (PVee _)       _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (PVee _)         _) = Prelude.GT
-  compare (TypExpr (Pfull s t)    _) (TypExpr (Pfull s' t')    _) = Prelude.compare (s,t) (s',t') -- This is a V of which the type is determined by the user
+  compare (TypExpr (Pfull s t)    x) (TypExpr (Pfull s' t')   x') = Prelude.compare (if x==Src then (s,t) else (t,s)) (if x'==Src then (s',t') else (t',s')) -- This is a V of which the type is determined by the user
   compare (TypExpr (Pfull _ _)    _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Pfull _ _)      _) = Prelude.GT
-  compare (TypExpr x              _) (TypExpr y                _) = Prelude.compare x y
+  compare (TypExpr x             x') (TypExpr y               y') = Prelude.compare (x,x') (y,y')
   compare (TypExpr _              _) _                            = Prelude.LT
   compare _                          (TypExpr _                _) = Prelude.GT
   compare (Between _ a b t) (Between _ a' b' t')                  = compare (t,a,b) (t',a',b')
@@ -184,7 +185,8 @@ typing st declsByName
                                         , cxeSNDs=Map.findWithDefault [] t declByTerm
                                         }]
     checkIVBindings = parallelList (map checkUnique2 allIVs')
-    checkUnique2 iv = case (Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts,Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
+    checkUnique2 iv = case ( Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts
+                           , Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
                         ([_],[_]) -> return ()
                         (xs,ys) -> Errors [CxeSign {cxeExpr=iv, cxeSrcs=xs, cxeTrgs=ys}]
     
@@ -219,8 +221,11 @@ typing st declsByName
     
     expandSingleBindingsToTyps :: Map Term [P_Declaration] -> Map Type [Type]
     expandSingleBindingsToTyps x
-     = Map.fromListWith mrgUnion [ (tp,[decToTyp b d]) | tp@(TypExpr t b) <- typeTerms
-                                                       , Just [d] <- [Map.lookup t x]]
+     = Map.fromListWith mrgUnion (
+                                  [ (tp,[decToTyp b d]) | tp@(TypExpr t b) <- typeTerms
+                                                                   , Just [d] <- [Map.lookup t x]]
+                                 )
+     -- where traceMe x = trace (show x) x
     typByTyp :: Map Type [(Term,P_Declaration,Type)]
     typByTyp = Map.fromListWith mrgUnion [ (tp,sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t declByTerm])
                                          | tp@(TypExpr t b) <- typeTerms]
@@ -233,6 +238,7 @@ typing st declsByName
     
     stI = addIdentity st
     stIC = setClosure stI "stI"
+    bindings' :: Map Term [P_Declaration]
     bindings' = Map.union (makeDecisions typByTyp stIC) declByTerm
     bindings :: Map Term P_Declaration
     bindings = Map.mapMaybe exactlyOne bindings'
