@@ -425,9 +425,9 @@ mrgIntersect l r = if isSortedAndDistinct res then res else fatal 185 ("merge co
         merge _ _ = [] -- since either a or b is the empty list
 
 nub' :: (Show a,Ord a,Eq a) => [a] -> [a]
-nub' xs = if isSortedAndDistinct res then res else fatal 428 ("nub' expects a sorted list, but the following is not:\n"++show xs)
+nub' xs' = if isSortedAndDistinct res then res else fatal 428 ("nub' expects a sorted list, but the following is not:\n"++show xs')
           where
-              res = nub'' xs
+              res = nub'' xs'
               nub'' (x:y:xs) | x==y      = nub' (y:xs)
                             | otherwise = x:(nub' (y:xs))
               nub'' [x] = [x]
