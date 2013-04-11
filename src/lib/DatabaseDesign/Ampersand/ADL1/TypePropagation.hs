@@ -152,7 +152,8 @@ typing st declsByName
     , eqType
     , stClosAdded
     , stClos1
-    , do _ <- checkBindings
+    , do _ <- checkUndefined
+         _ <- checkBindings
          _ <- checkIVBindings
          _ <- checkBetweens
          return ( bindings, srcTypes )
@@ -173,6 +174,9 @@ typing st declsByName
     allTerms    = [e | TypExpr e _ <- typeTerms]
     allConcs    = [c | (Pid c) <- allTerms]
     
+    checkUndefined = parallelList (map checkNonempty (Map.toList declByTerm))
+    checkNonempty (t,[]) = Errors [CxeRelUndefined { cxeExpr = t}]
+    checkNonempty _ = return ()
     checkBindings = parallelList (map checkUnique (Map.toList bindings'))
     checkUnique (_,[_]) = return ()
     checkUnique (t,xs) = Errors [CxeRel { cxeExpr=t

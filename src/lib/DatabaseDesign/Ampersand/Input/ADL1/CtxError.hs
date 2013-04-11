@@ -58,6 +58,8 @@ data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list o
               | CxeRel        { cxeExpr      :: Term
                               , cxeDecs      :: [P_Declaration]  -- possibilities for bindings.
                               , cxeSNDs      :: [P_Declaration]  -- Declarations with the same name
+                              }  
+              | CxeRelUndefined { cxeExpr      :: Term
                               }   
               | CxeSign       { cxeExpr      :: Term
                               , cxeSrcs      :: [P_Concept]
@@ -82,9 +84,9 @@ data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list o
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
 
-niceSource :: (ShowADL a1, ShowADL a) => (a, [a1]) -> [[Char]]
-niceSource (t,[]) = ["    There is no type for the source of  "++showADL t++".\n"]
-niceSource (t,cs) = ["    The source of  "++showADL t++"  is  "++ commaEng "or" (map showADL cs)++".\n"]
+niceSource :: (ShowADL a1, ShowADL a) => (a, [a1]) -> String
+niceSource (t,[]) = "    There is no type for the source of  "++showADL t++"."
+niceSource (t,cs) = "    The source of  "++showADL t++"  is  "++ commaEng "or" (map showADL cs)++"."
 
 showErr :: CtxError -> String
 showErr err = case err of
@@ -126,13 +128,14 @@ showErr err = case err of
                         ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
   CxeTyping{}
-     -> concat
-          ( [show (origin (fst (cxeLhs err)))++":\n"
-            ,"    Cannot deduce a type for  "++showADL (cxeTyp err)]++
+     ->   ( show (origin (fst (cxeLhs err)))++":\n"++
+            "    Cannot deduce a type for  "++showADL (cxeTyp err)++
               case (cxeLhs err,cxeRhs err) of
-                 ((t1,[]),(t2,[])) -> ["\n    matching the source of  "++showADL t1++"  and the source of  "++showADL t2]
-                 (t1,t2) -> [".\n"] ++ niceSource t1 ++ niceSource t2
+                 ((t1,[]),(t2,[])) -> "\n    matching the source of  "++showADL t1++"  and the source of  "++showADL t2
+                 (t1,t2) -> ".\n" ++ niceSource t1 ++"\n"++ niceSource t2
           )
+  CxeRelUndefined{}
+     -> show (origin (cxeExpr err))++":\n    Relation  "++showADL (cxeExpr err)++"  is undefined."
   CxeRel{}
      -> show (origin term)++":\n"++
          case cxeDecs err of

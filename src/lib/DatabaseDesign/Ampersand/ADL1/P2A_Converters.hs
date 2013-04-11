@@ -91,7 +91,7 @@ thing c  = TypExpr (Pid c) Src
 dom, cod :: Term -> Type
 dom x    = TypExpr x         Src -- the domain of x
 cod x    = TypExpr (p_flp x) Tgt 
-mSpecific', mGeneric' :: Type-> (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> Typemap
+mSpecific', mGeneric' :: Type -> (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> Typemap
 mSpecific' s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mSpecific'' ta a tb b e
 mGeneric'  s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mGeneric''  ta a tb b e
 mSpecific'', mGeneric'' :: (Term -> Type) -> Term -> (Term -> Type) -> Term -> Term -> (Typemap,Type)
@@ -136,12 +136,11 @@ class Expr a where
   --   The first element of the first argument is a P_Context that represents the parse tree of one context.
   --   This is provided to obtain a declaration table and a list of interfaces from the script.
   --   The second element of the first argument is a compatibility function, that determines whether two types are compatible.
-  uType :: P_Context
-        -> a           -- x:    the original term from the script, meant for representation in the graph.
+  uType :: a           -- x:    the original term from the script, meant for representation in the graph.
         -> a           -- z:    the term to be analyzed, which must be logically equivalent to x
         -> Typemap   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
-  uType' :: P_Context -> a -> Typemap
-  uType' c x = uType c x x
+  uType' :: a -> Typemap
+  uType' x = uType x x
 
 instance Expr P_Context where
  p_gens pContext
@@ -172,18 +171,18 @@ instance Expr P_Context where
          terms (ctx_php   pContext) ++
          terms (ctx_pops  pContext)
         )
- uType ctxt _ pContext
-  = uType' ctxt (ctx_pats  pContext) .+.
-    uType' ctxt (ctx_PPrcs pContext) .+.
-    uType' ctxt (ctx_rs    pContext) .+.
-    uType' ctxt (ctx_ds    pContext) .+.
-    uType' ctxt (ctx_ks    pContext) .+.
-    uType' ctxt (ctx_gs    pContext) .+.
-    uType' ctxt (ctx_ifcs  pContext) .+.
-    uType' ctxt (ctx_ps    pContext) .+.
-    uType' ctxt (ctx_sql   pContext) .+.
-    uType' ctxt (ctx_php   pContext) .+.
-    uType' ctxt (ctx_pops  pContext)
+ uType _ pContext
+  = uType' (ctx_pats  pContext) .+.
+    uType' (ctx_PPrcs pContext) .+.
+    uType' (ctx_rs    pContext) .+.
+    uType' (ctx_ds    pContext) .+.
+    uType' (ctx_ks    pContext) .+.
+    uType' (ctx_gs    pContext) .+.
+    uType' (ctx_ifcs  pContext) .+.
+    uType' (ctx_ps    pContext) .+.
+    uType' (ctx_sql   pContext) .+.
+    uType' (ctx_php   pContext) .+.
+    uType' (ctx_pops  pContext)
 
 instance Expr P_Pattern where
  p_gens pPattern
@@ -202,13 +201,13 @@ instance Expr P_Pattern where
          terms (pt_xps pPattern) ++
          terms (pt_pop pPattern)
         )
- uType ctxt _ pPattern
-  = uType' ctxt (pt_rls pPattern) .+.
-    uType' ctxt (pt_gns pPattern) .+.
-    uType' ctxt (pt_dcs pPattern) .+.
-    uType' ctxt (pt_kds pPattern) .+.
-    uType' ctxt (pt_xps pPattern) .+.
-    uType' ctxt (pt_pop pPattern)
+ uType _ pPattern
+  = uType' (pt_rls pPattern) .+.
+    uType' (pt_gns pPattern) .+.
+    uType' (pt_dcs pPattern) .+.
+    uType' (pt_kds pPattern) .+.
+    uType' (pt_xps pPattern) .+.
+    uType' (pt_pop pPattern)
 
 instance Expr P_Process where
  p_gens pProcess
@@ -227,19 +226,19 @@ instance Expr P_Process where
          terms (procXps   pProcess) ++
          terms (procPop   pProcess)
         )
- uType ctxt _ pProcess
-  = uType' ctxt (procRules pProcess) .+.
-    uType' ctxt (procGens  pProcess) .+.
-    uType' ctxt (procDcls  pProcess) .+.
-    uType' ctxt (procKds   pProcess) .+.
-    uType' ctxt (procXps   pProcess) .+.
-    uType' ctxt (procPop   pProcess)
+ uType _ pProcess
+  = uType' (procRules pProcess) .+.
+    uType' (procGens  pProcess) .+.
+    uType' (procDcls  pProcess) .+.
+    uType' (procKds   pProcess) .+.
+    uType' (procXps   pProcess) .+.
+    uType' (procPop   pProcess)
 
 instance Expr P_Rule where
  terms r = terms (rr_exp r) ++ terms (rr_viol r)
  p_rules r = [r]
- uType ctxt _ r
-  = uType' ctxt (rr_exp r) .+. uType' ctxt (rr_viol r) .+.
+ uType _ r
+  = uType' (rr_exp r) .+. uType' (rr_viol r) .+.
     foldr (.+.) nothing ( [ typeToMap$
                             Between (\s t->CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
                                     ((\x -> TypExpr x sOrT) (rr_exp r))
@@ -250,22 +249,22 @@ instance Expr P_Rule where
 
 instance Expr P_PairView where
  terms ppv = terms (ppv_segs ppv)
- uType ctxt _ (P_PairView segments) = uType ctxt segments segments
+ uType _ (P_PairView segments) = uType segments segments
 
 instance Expr P_PairViewSegment where
  terms (P_PairViewExp _ term) = [term]
  terms _                      = []
- uType ctxt _ (P_PairViewExp Src term) = uType ctxt term term
- uType ctxt _ (P_PairViewExp Tgt term) = uType ctxt term term
- uType _ _ _ = nothing
+ uType _ (P_PairViewExp Src term) = uType term term
+ uType _ (P_PairViewExp Tgt term) = uType term term
+ uType _ _ = nothing
   
 instance Expr P_KeyDef where
  terms k = terms [ks_obj keyExpr | keyExpr@P_KeyExp{} <- kd_ats k]
  p_keys k = [k]
- uType ctxt _ k
+ uType _ k
   = let x=Pid (kd_cpt k) in
-    uType ctxt x x .+.
-    foldr (.+.) nothing [ uType ctxt obj obj .+.
+    uType x x .+.
+    foldr (.+.) nothing [ uType obj obj .+.
                           mSpecific dom x dom (obj_ctx obj) (obj_ctx obj)
                            -- TODO: improve mSpecific's error message here
                         | P_KeyExp obj <- kd_ats k
@@ -274,53 +273,53 @@ instance Expr P_KeyDef where
 -- TODO: continue adding errors until you reach instance Expr Term
 instance Expr P_Interface where
  terms ifc = terms (ifc_Obj ifc) ++ terms (ifc_Params ifc)
- uType ctxt _ ifc
+ uType _ ifc
   = let x=ifc_Obj ifc in
-    foldr (.+.) nothing [ uType ctxt param param | param<-ifc_Params ifc ] .+.
-    uType ctxt x x
+    foldr (.+.) nothing [ uType param param | param<-ifc_Params ifc ] .+.
+    uType x x
 
 instance Expr P_ObjectDef where
- terms o = [obj_ctx o | null (terms (obj_msub o))]  ++ terms (obj_msub o)
- uType ctxt _ o
+ terms o = fatal 282 "Terms of a P_ObjectDef was called, don't know why" -- [obj_ctx o | null (terms (obj_msub o))] ++ terms (obj_msub o)
+ uType _ o
   = let x=obj_ctx o in
-    uType ctxt x x .+.
-    foldr (.+.) nothing [ uType ctxt obj obj .+. dm
+    uType x x .+. 
+    foldr (.+.) nothing [ uType obj obj .+. dm
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
-                                   P_InterfaceRef{} -> [ifc_Obj ifc | ifc<-ctx_ifcs (ctxt), name ifc==si_str subIfc]
+                                   P_InterfaceRef{} -> []
                         , let dm = mSpecific cod x dom (obj_ctx obj) (obj_ctx obj)
                         ]
  
 instance Expr P_SubInterface where
  terms x@P_Box{} = terms (si_box x)
  terms _           = []
- uType ctxt _  mIfc@P_Box{} = let x=si_box mIfc in uType ctxt x x
- uType _    _  _              = nothing
+ uType _  mIfc@P_Box{} = let x=si_box mIfc in uType x x
+ uType _  _              = nothing
 
 instance Expr PPurpose where
  terms pp = terms (pexObj pp)
- uType ctxt _ purp = let x=pexObj purp in uType ctxt x x
+ uType _ purp = let x=pexObj purp in uType x x
 
 instance Expr PRef2Obj where
  terms (PRef2Declaration t) = [t]
  terms _ = []
- uType ctxt _ (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType ctxt x x
- uType ctxt _ (PRef2Declaration t)  = uType ctxt t t
- uType _    _ _                     = nothing
+ uType _ (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType x x
+ uType _ (PRef2Declaration t)  = uType t t
+ uType _ _                     = nothing
 
 instance Expr P_Sign where
  terms _ = []
- uType _ _ _ = nothing
+ uType _ _ = nothing
 
 instance Expr P_Gen where
  terms g = [Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g))]
- uType ctxt _ g
-  = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType ctxt x x
+ uType _ g
+  = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType x x
 
 instance Expr P_Declaration where
  terms d = [PTrel (origin d) (dec_nm d) (dec_sign d)]
- uType _ _ d
+ uType _ d
   = dom decl.<.thing src .+. cod decl.<.thing trg
     where [decl] = terms d
           P_Sign sgn = dec_sign d
@@ -330,8 +329,8 @@ instance Expr P_Population where
  terms pop@(P_RelPopu{p_type=P_Sign []}) = [Prel (p_orig pop) (name pop)]
  terms pop@P_RelPopu{}                   = [PTrel (p_orig pop) (name pop) (p_type pop)]
  terms pop@P_CptPopu{}                   = [Pid (PCpt (name pop))]
- uType ctxt _ pop
-  = foldr (.+.) nothing [ uType ctxt x x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
+ uType _ pop
+  = foldr (.+.) nothing [ uType x x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
     -- the reason for inserting dom x.=.dom x .+. cod x.=.cod x on this location,
     -- is possibility that a population without type signature might be overlooked by the type checker,
     -- resulting in a fatal 1601, i.e. a term that is not in the TypeMap bindings.
@@ -339,12 +338,12 @@ instance Expr P_Population where
 instance Expr a => Expr (Maybe a) where
  terms Nothing  = []
  terms (Just x) = terms x
- uType _    _ Nothing  = nothing
- uType ctxt _ (Just x) = uType ctxt x x
+ uType _ Nothing  = nothing
+ uType _ (Just x) = uType x x
 
 instance Expr a => Expr [a] where
  terms = concat.map terms
- uType ctxt _ xs = foldr (.+.) nothing [ uType ctxt x x | x <- xs]
+ uType _ xs = foldr (.+.) nothing [ uType x x | x <- xs]
 
 instance Expr Term where
  terms e = [e]
@@ -371,48 +370,48 @@ instance Expr Term where
  subterms e@(Prel _ _ )  = [e]
  subterms e@(PTrel _ _ _)= [e]
  
- uType ctxt x expr 
+ uType x expr 
   = case expr of
      PI{}         -> dom x.=.cod x              -- I
      Pid{}        -> dom x.=.cod x              -- I[C]
      (Patm _ _ []) -> dom x.=.cod x             -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
-     PVee{}       -> nothing
+     PVee{}       -> typeToMap (dom x)
      (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)              --  V[A*B] (the typed full set)
      (Pequ _ a b) -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                      .+. mEqual dom a dom b x .+. mEqual cod a cod b x
-                     .+. uType ctxt a a .+. uType ctxt b b
+                     .+. uType a a .+. uType b b
      (PIsc _ a b) -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
                      .+. mSpecific' (dom x) dom a dom b x .+. mSpecific' (cod x) cod a cod b x
-                     .+. uType ctxt a a .+. uType ctxt b b
+                     .+. uType a a .+. uType b b
      (PUni _ a b) -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
                      .+. mGeneric' (dom x) dom a dom b x .+. mGeneric' (cod x) cod a cod b x
-                     .+. uType ctxt a a .+. uType ctxt b b
+                     .+. uType a a .+. uType b b
      (PDif _ a b) -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
-                     .+. uType ctxt a a
-                     .+. uType ctxt b b -- TODO: improve using mGeneric and mSpecific and such
+                     .+. uType a a
+                     .+. uType b b -- TODO: improve using mGeneric and mSpecific and such
      (PCps _ a b) -> let (bm,s) = mSpecific'' cod a dom b x
                          pidTest (PI{}) r = r
                          pidTest (Pid{}) r = r
                          pidTest _ _ = nothing
                      in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                        bm .+. uType ctxt a a .+. uType ctxt b b
+                        bm .+. uType a a .+. uType b b
                         .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest _ _ = nothing
                      in dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
-                        mGeneric cod a dom b x .+. uType ctxt a a .+. uType ctxt b b
+                        mGeneric cod a dom b x .+. uType a a .+. uType b b
                         .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
      (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
-                     .+. uType ctxt a a .+. uType ctxt b b
-     (PCpl o a)   -> uType ctxt x (PDif o (PVee o) a)
-     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType ctxt e e
-     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType ctxt e e
-     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType ctxt e e
-     (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+. uType ctxt x e  -- (e) brackets
+                     .+. uType a a .+. uType b b
+     (PCpl o a)   -> uType x (PDif o (PVee o) a)
+     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
+     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
+     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType e e
+     (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+. uType x e  -- (e) brackets
      (PTrel _ _ sgn) ->
        case sgn of
          (P_Sign [])        -> fatal 196 "P_Sign is empty"
@@ -420,24 +419,17 @@ instance Expr Term where
          (P_Sign cs)        -> let iSrc = thing (head cs)
                                    iTrg = thing (last cs)
                                in dom x.<.iSrc .+. cod x.<.iTrg
-     (Prel _ nm) -> case decls of
-                          [d] -> dom x.=.dom d .+. cod x.=.cod d -- .+. dom x'.<.dom d .+. cod x'.<.cod d
-                          _   -> nothing
-                    where
-                        p_context = ctxt
-                        -- x'=complement x
-                        decls = [term | decl<-p_declarations p_context, name decl==nm, term<-terms decl ]
-
+     (Prel _ nm) -> typeToMap (dom x) .+. typeToMap (cod x)
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType ctxt x e                 --  a|-b    implication (aka: subset)
+                        uType x e                 --  a|-b    implication (aka: subset)
      (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType ctxt x e                 --  a/b = a!-b~ = -(-a;b~)
+                        uType x e                 --  a/b = a!-b~ = -(-a;b~)
      (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType ctxt x e                 --  a\b = -a~!b = -(a~;-b)
+                        uType x e                 --  a\b = -a~!b = -(a~;-b)
 
 
 --  The following is for drawing graphs.
@@ -539,11 +531,13 @@ pCtx2aCtx p_context
     bindings :: Map Term P_Declaration         -- yields declarations that may be bound to relations, intended as a suggestion to the programmer
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindingsandsrcTypes, isaClos, isaClosReversed)
-     = typing (uType p_context p_context p_context)
+     = typing (uType p_context p_context)
               (Map.fromListWith mrgUnion [ (name (head cl), sort cl) | cl<-eqCl name (p_declarations p_context) ])
-
-    (bindings,srcTypes,srcTypErrs) = case bindingsandsrcTypes of{Checked (a,b) -> (a,b,[])
-                                      ; Errors t -> (fatal 930 "bindings undefined",fatal 931 "srcTypes undefined",t)}
+    
+    (bindings,srcTypes,srcTypErrs)
+     = case bindingsandsrcTypes of
+          Checked (a,b) -> (a,b,[])
+          Errors t -> (fatal 930 "bindings undefined",fatal 931 "srcTypes undefined",t)
     gEandClasses :: GenR
     gEandClasses
 {- The following may be useful for debugging:
