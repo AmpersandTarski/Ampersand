@@ -159,6 +159,7 @@ rel2fld kernel
        niceidname (EFlp e _ ) = niceidname e
        niceidname (EDcD d _ ) = name d
        niceidname (EDcI  sgn) = name (target sgn)
+       niceidname (ETyp (EDcI _) sgn) = name (target sgn) -- this occurs in the kernel of plugs, for concepts that are a specialization.
        niceidname rel         = fatal 162 ( "Unexpected relation found:\n"++
                                            intercalate "\n  "
                                            [ "***rel:"
