@@ -737,7 +737,6 @@ where
     showHS flags indent ifc
      = intercalate indent 
            [ wrap "Ifc { ifcParams = " (indent++"                  ") (showHS flags) (ifcParams ifc)
-           --, "    , ifcViols  = " ++ "["++intercalate ", " [showHSName rel | rel<-ifcViols ifc] ++ "]" -- TODO: uncomment when ifcViols is implemented
            , "    , ifcArgs   = " ++ show(ifcArgs ifc)
            , "    , ifcRoles  = " ++ show(ifcRoles ifc)
            , "    , ifcObj"++indent++"       = " ++ showHS flags (indent++"         ") (ifcObj ifc)

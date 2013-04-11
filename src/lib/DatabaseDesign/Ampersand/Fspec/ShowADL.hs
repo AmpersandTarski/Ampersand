@@ -50,7 +50,7 @@ instance LanguageDependent (a, Expression) where
 instance LanguageDependent Rule where
   mapexprs f l rul = rul{rrexp = f l (rrexp rul)}
 instance LanguageDependent Interface where
-  mapexprs f l ifc = ifc{ifcViols = map (mapexprs f l) (ifcViols ifc), ifcObj = mapexprs f l (ifcObj ifc)}
+  mapexprs f l ifc = ifc{ifcObj = mapexprs f l (ifcObj ifc)}
 instance LanguageDependent ObjectDef where
   mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
 instance LanguageDependent SubInterface where
