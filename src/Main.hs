@@ -15,6 +15,9 @@ import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.Version
 import DatabaseDesign.Ampersand_Prototype.GenBericht
 import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
+import DatabaseDesign.Ampersand.InputProcessing
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr)
+import qualified DatabaseDesign.Ampersand.Basics as Basics
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Main"
@@ -25,9 +28,12 @@ main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts prototypeVersionStr flags)
-       else do aCtx <- parseAndTypeCheck flags
-               let fspc = makeFspec flags aCtx
-               generateProtoStuff flags fspc
+       else do gFspec <- createFspec flags
+               case gFspec of
+                Errors err -> do Prelude.putStrLn $ "Error(s) found:"
+                                 mapM_ Basics.putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+                                 exitWith $ ExitFailure 10
+                Checked fspc -> generateProtoStuff flags fspc
   where
   parseAndTypeCheck :: Options -> IO A_Context 
   parseAndTypeCheck flags 

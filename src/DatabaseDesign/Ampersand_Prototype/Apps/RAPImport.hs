@@ -174,7 +174,7 @@ makeRAPPops fSpec flags usrfiles pics
        mkversion i fnext 
          = let fn = dropExtension fnext
                revchunks = reverse(splitOn "." fn) --reverse to get the last at the head
-               mkvchunk ('v':istr) = let ri = (reads istr)::[(Int,String)]
+               mkvchunk ('v':istr) = let ri = reads istr::[(Int,String)]
                                      in if null ri || (not . null . snd . head) ri --check whether ri is an integer or not
                                         then ('v':istr)++".v"++show i --add the version chunk to the non-version chunk which starts with a v
                                         else 'v':show i --replace the old version chunk with the new version chunk
@@ -183,7 +183,7 @@ makeRAPPops fSpec flags usrfiles pics
               else intercalate "."$reverse(mkvchunk (head revchunks) : tail revchunks) --the last (head of reverse) should be a v(ersion)chunk
        --nextversion drops extension because mkversion does
        nextversion = let vs=[mkversion i fn | (i,fn)<-zip [(1::Int)..] ((repeat . snd . srcfile) flags)
-                                            , (mkversion i fn) `notElem` (map (dropExtension . fst) usrfiles)]
+                                            , mkversion i fn `notElem` map (dropExtension . fst) usrfiles]
                      in if null vs then error "RAPImport.hs: run out of next versions?" else head vs
        inclfiles = [(fst (srcfile flags),fn) | pos'<-fspos fSpec, let fn=takeFileName(filenm pos'), fn /= snd (srcfile flags)]
        cns = ctxns (srcfile flags)
