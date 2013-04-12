@@ -444,7 +444,16 @@ pCtx2aCtx p_context
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindingsandsrcTypes, isaClos, isaClosReversed)
      = typing (uType p_context p_context)
-              (Map.fromListWith mrgUnion [ (name (head cl), sort cl) | cl<-eqCl name (p_declarations p_context) ])
+              (Map.fromListWith mrgUnion [ (name (head cl)
+                                           , uniqueCl cl)
+                                         | cl<-eqCl name (p_declarations p_context) ])
+    uniqueCl :: [P_Declaration] -> [P_Declaration]
+    uniqueCl cl = sort (removeDoubleDeclarations (sortBy (\x y -> compare (dec_sign x) (dec_sign y)) cl))
+    removeDoubleDeclarations [] = []
+    removeDoubleDeclarations [x] = [x]
+    removeDoubleDeclarations (x:y:ys) | dec_sign x == dec_sign y = removeDoubleDeclarations (y:ys)
+                                      | otherwise = x:removeDoubleDeclarations (y:ys)
+    
     
     (bindings,srcTypes,srcTypErrs)
      = case bindingsandsrcTypes of

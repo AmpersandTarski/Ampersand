@@ -427,7 +427,6 @@ composeMaps m1 m2 = Map.map (\x -> foldr mrgUnion [] [Map.findWithDefault [] s m
 symClosure :: (Ord a, Show a) => Map a [a] -> Map a [a]
 symClosure m = Map.unionWith mrgUnion m (reverseMap m)
 
-{-
 -- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
@@ -446,9 +445,9 @@ nub' (x:y:xs) | x==y      = nub' (y:xs)
               | otherwise = x:(nub' (y:xs))
 nub' [x] = [x]
 nub' [] = []
--}
+-- -}
 
--- The following mrgUnion and mrgIntersect are for debug purposes
+{- The following mrgUnion and mrgIntersect are for debug purposes
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct l then
@@ -492,7 +491,7 @@ distinctCons a b' (b:bs) = if a<b then b':(b:bs)
                                                    ,"compare ("++show b'++") ("++show b++") == "++show (compare b' b)++"\n"
                                                    ,"compare ("++show a++") ("++show b++") == "++show (compare a b)++"\n"]))
 distinctCons a _ bs = a:bs    
-
+-- -}
 
 
 -- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
