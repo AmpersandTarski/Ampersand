@@ -10,6 +10,7 @@ import DatabaseDesign.Ampersand.Fspec.ShowHS as X
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import DatabaseDesign.Ampersand.Fspec.ShowADL as X (ShowADL(..), LanguageDependent(..))
 import DatabaseDesign.Ampersand.Fspec.ShowECA as X (showECA)
+import DatabaseDesign.Ampersand.Fspec.ShowMeatGrinder as X (meatGrinder)
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram as X
        (clAnalysis, cdAnalysis, ClassDiag(..))
 import DatabaseDesign.Ampersand.Fspec.Graphic.Graphics as X
