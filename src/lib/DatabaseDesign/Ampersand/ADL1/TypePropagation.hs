@@ -14,11 +14,8 @@ import GHC.Exts (sortWith)
 import Prelude hiding (head)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.List hiding (head)
-{-
-import Debug.Trace
-traceMe :: (Show x) => x -> x
-traceMe x = trace (show x) x
--}
+
+-- import Debug.Trace
 
 import Control.Applicative
 import Data.Map (Map)
@@ -139,6 +136,60 @@ p_flp (Pfull s t)  = Pfull t s
 p_flp (PFlp _ a)   = a
 p_flp a            = PFlp (origin a) a
 
+decToTyp :: SrcOrTgt -> P_Declaration -> Type
+decToTyp b d = TypExpr (PTrel (origin d) (dec_nm d) (dec_sign d)) b
+
+improveBindings :: (Ord a,Show a,Ord b,Show b)
+                => (Map a [b] -> Map Type [(a,b,Type)])
+                -> (Map a [b], Map Type [Type])
+                -> (Map a [b], Map Type [Type])
+improveBindings typByTyp (oldMap,st')
+ = (bindings', stPlus)
+  where bindings' = Map.union decisions oldMap
+        bindings = Map.mapMaybe checkOne bindings' -- these are final: add them to st'
+        expanded = Map.fromListWith mrgUnion [(t1,[t2 | (_,_,t2)<-r]) | (t1,r)<-Map.toList (typByTyp bindings)]
+        decisions = Map.filter (not.null) $ makeDecisions typByTyp' st'
+        stPlus = setClosure (Map.unionWith mrgUnion st' (symClosure (expanded))) "(st' \\/ bindings')*"
+        typByTyp' = typByTyp oldMap
+        checkOne [c] = Just [c]
+        checkOne _ = Nothing
+        
+makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
+                    Map Type [(from,to,Type)] -- when binding "from" to "to", one knows that the first type equals the second
+                 -> Map Type [Type] -- reflexive transitive graph with inferred types
+                 -> Map from [to] -- resulting bindings
+makeDecisions inp trnRel
+ = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
+                                                | (Between _ t1 t2 _) <- Map.keys trnRel
+                                                , let d = (getDecision t1 t2)
+                                                ]
+ where inpTrnRel = composeMaps trnRel inp
+       typsFull = Map.unionWith mrgUnion trnRel
+                    (Map.map (foldl mrgUnion [].(map (\(_,_,x)->Map.findWithDefault [] x trnRel'))) inpTrnRel)
+       trnRel' = Map.map (filter isConc) trnRel
+       isConc (TypExpr (Pid _) _) = True
+       isConc _ = False
+       f x  = Map.findWithDefault [] x trnRel
+       f' x = Map.findWithDefault [] x typsFull
+       bestUnion a b = isct `orWhenEmpty` union'
+        where isct = mrgIntersect a b
+              union' = mrgUnion a b
+       getDecision src trg
+        = Map.unionWith bestUnion lhsDecisions rhsDecisions
+          where iscTyps = mrgIntersect (f src) (f trg) `orWhenEmpty` mrgIntersect (f' src) (f' trg)
+                lhsDecisions
+                 = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
+                                                       , t' <- Map.findWithDefault [] tp trnRel
+                                                       , t' `elem` iscTyps ]
+                rhsDecisions
+                 = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] trg inpTrnRel
+                                                       , t' <- Map.findWithDefault [] tp trnRel
+                                                       , t' `elem` iscTyps ]
+
+orWhenEmpty :: [a] -> [a] -> [a]
+orWhenEmpty [] n = n
+orWhenEmpty n  _ = n
+
 typing :: Typemap -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
              , Typemap                    -- stClos           -- (st\/stAdded)*\/I  (reflexive and transitive)
@@ -181,7 +232,7 @@ typing st declsByName
     checkUndefined = parallelList (map checkNonempty (Map.toList declByTerm))
     checkNonempty (t,[]) = Errors [CxeRelUndefined { cxeExpr = t}]
     checkNonempty _ = return ()
-    checkBindings = parallelList (map checkUnique (Map.toList bindings'))
+    checkBindings = parallelList (map checkUnique (Map.toList newBindings))
     checkUnique (_,[_]) = return ()
     checkUnique (t,xs) = Errors [CxeRel { cxeExpr=t
                                         , cxeDecs=xs
@@ -224,35 +275,29 @@ typing st declsByName
     
     declByTerm :: Map Term [P_Declaration]
     declByTerm
-      = Map.fromAscList ( [ (o,Map.findWithDefault [] s declsByName) | o@(Prel _ s) <- allTerms]
-                          ++ [ (o,filter ((==) sgn . dec_sign) $ Map.findWithDefault [] s declsByName) | o@(PTrel _ s sgn) <- allTerms]
-                        )
-    
-    expandSingleBindingsToTyps :: Map Term [P_Declaration] -> Map Type [Type]
-    expandSingleBindingsToTyps x
-     = Map.fromListWith mrgUnion (
-                                  [ (tp,[decToTyp b d]) | tp@(TypExpr t b) <- typeTerms
-                                                                   , Just [d] <- [Map.lookup t x]]
-                                 )
-    
-    typByTyp :: Map Type [(Term,P_Declaration,Type)]
-    typByTyp = Map.fromListWith mrgUnion [ (tp,sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t declByTerm])
-                                         | tp@(TypExpr t b) <- typeTerms]
-    decToTyp b d = TypExpr (PTrel (origin d) (dec_nm d) (dec_sign d)) b
+      = Map.fromList ( [ (o, dbn) 
+                       | o@(Prel _ s) <- allTerms
+                       , let dbn = Map.findWithDefault [] s declsByName
+                       ] ++
+                       [ (o,filter ((==) sgn . dec_sign) $ dbn)
+                       | o@(PTrel _ s sgn) <- allTerms
+                       , let dbn = Map.findWithDefault [] s declsByName
+                       ]
+                     )
     
     ivTypByTyp :: Map Type [(Type,P_Concept,Type)]
     ivTypByTyp = Map.fromListWith mrgUnion [ (tp,map (\(x,y) -> (tp,x,y)) ivConcPairs)
                                            | tp <- allIVs ]
     ivConcPairs = sort [(c,TypExpr (Pid c) Src) | c <- allConcs]
     
-    stI = addIdentity st
-    stIC = setClosure stI "stI"
-    bindings' :: Map Term [P_Declaration]
-    bindings' = Map.union (makeDecisions typByTyp stIC) declByTerm
+    typByTyp :: Map Term [P_Declaration] -> Map Type [(Term,P_Declaration,Type)]
+    typByTyp oldMap = Map.fromList [ (trm, triples b t) | trm@(TypExpr t b) <- typeTerms ]
+         where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
+    
+    (newBindings,stClos0) = fixPoint (improveBindings typByTyp)
+                                     (declByTerm,setClosure (addIdentity st) "(st \\/ I)*")
     bindings :: Map Term P_Declaration
-    bindings = Map.mapMaybe exactlyOne bindings'
-    st' = Map.unionWith mrgUnion stIC (symClosure (expandSingleBindingsToTyps bindings'))
-    stClos0 = setClosure st' "st'"
+    bindings = Map.mapMaybe exactlyOne newBindings
     ivBindings',ivBindings :: Map Type [Type]
     ivBindings' = Map.map (map (\x -> TypExpr (Pid x) Src)) (makeDecisions ivTypByTyp stClos0)
     ivBindings = Map.map (\x->[x]) $ Map.mapMaybe exactlyOne ivBindings'
@@ -262,40 +307,6 @@ typing st declsByName
     
     exactlyOne [x] = Just x
     exactlyOne _ = Nothing
-    
-    makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
-                        Map Type [(from,to,Type)] -- when binding "from" to "to", one knows that the first type equals the second
-                     -> Map Type [Type] -- reflexive transitive graph with inferred types
-                     -> ( Map from [to] ) -- resulting bindings
-    makeDecisions inp trnRel = (foldl (Map.unionWith mrgIntersect) Map.empty 
-                                      [ Map.filter (not . null) d
-                                      | (Between _ t1 t2 _) <- Map.keys trnRel
-                                      , let d = (getDecision t1 t2)
-                                      ]
-                               )
-     where inpTrnRel = composeMaps trnRel inp
-           typsFull = Map.unionWith mrgUnion trnRel
-                        (composeMaps (Map.map (nub'.sort.(map (\(_,_,x)->x))) inpTrnRel) trnRel)
-           -- getDecision :: Type -> Type -> Map from [to]
-           f x  = Map.findWithDefault [] x trnRel
-           f' x = Map.findWithDefault [] x typsFull
-           bestUnion a b = if (null isct) then union' else isct
-            where isct = mrgIntersect a b
-                  union' = mrgUnion a b
-           getDecision src trg
-            = Map.unionWith bestUnion lhsDecisions rhsDecisions
-              where iscTyps = mrgIntersect (f src) (f trg) `whenEmpty` mrgIntersect (f' src) (f' trg)
-                    whenEmpty [] a = a
-                    whenEmpty a _ = a
-                    lhsDecisions
-                     = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
-                                                           , t' <- Map.findWithDefault [] tp trnRel
-                                                           , t' `elem` iscTyps ]
-                    rhsDecisions
-                     = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] trg inpTrnRel
-                                                           , t' <- Map.findWithDefault [] tp trnRel
-                                                           , t' `elem` iscTyps ]
-    
     
     -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
     typeTerms :: [Type]          -- The list of all type terms in st.
@@ -355,6 +366,9 @@ mapIsOk m = Map.fold (&&) True (Map.map (isSortedAndDistinct . checkRfx) m)
 isSortedAndDistinct :: Ord a => [a] -> Bool
 isSortedAndDistinct (x:y:rest) = if (x<y) then isSortedAndDistinct (y:rest) else False
 isSortedAndDistinct _ = True
+checkRfx :: (Eq a, Show a) => [a] -> [a]
+checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show a) else a:checkRfx as
+checkRfx [] = []  
 
 {-
 Since vertices of type v may be expensive to compare, we first create an isomorphic index map that
@@ -467,12 +481,7 @@ distinctCons a b' (b:bs) = if a<b then b':(b:bs)
                                                    ,"compare ("++show a++") ("++show b'++") == "++show (compare a b')++"\n"
                                                    ,"compare ("++show b'++") ("++show b++") == "++show (compare b' b)++"\n"
                                                    ,"compare ("++show a++") ("++show b++") == "++show (compare a b)++"\n"]))
-distinctCons a _ bs = a:bs
---
-
-checkRfx :: (Eq a, Show a) => [a] -> [a]
-checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show a) else a:checkRfx as
-checkRfx [] = []      
+distinctCons a _ bs = a:bs    
 
 
 
