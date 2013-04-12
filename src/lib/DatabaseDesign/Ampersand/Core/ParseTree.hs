@@ -288,6 +288,10 @@ where
                
    data P_Population
      = P_RelPopu { p_rnme ::  String  -- the name of a relation
+                 , p_orig ::  Origin  -- the origin 
+                 , p_popps :: Pairs   -- the contents
+                 }
+     | P_TRelPop { p_rnme ::  String  -- the name of a relation
                  , p_type ::  P_Sign  -- the sign of the relation
                  , p_orig ::  Origin  -- the origin 
                  , p_popps :: Pairs   -- the contents
@@ -300,6 +304,7 @@ where
        
    instance Identified P_Population where
     name P_RelPopu{p_rnme = nm} = nm
+    name P_TRelPop{p_rnme = nm} = nm
     name P_CptPopu{p_cnme = nm} = nm
     
    instance Traced P_Population where
@@ -379,7 +384,7 @@ where
    instance Identified PRef2Obj where
      name pe = case pe of 
         PRef2ConceptDef str -> str
-        PRef2Declaration (PTrel _ nm sgn) -> nm++if null (psign sgn) then "" else show sgn
+        PRef2Declaration (PTrel _ nm sgn) -> nm++show sgn
         PRef2Declaration (Prel _ nm) -> nm
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
         PRef2Rule str -> str
@@ -416,17 +421,15 @@ where
     showsPrec _ c = showString (name c)
 
 
-   data P_Sign = P_Sign {psign :: [P_Concept] }  -- will contain no more than two elements
+   data P_Sign = P_Sign {pSrc :: P_Concept, pTrg :: P_Concept }
                  deriving Ord
 
    instance Eq P_Sign  where
-     P_Sign [] == P_Sign _  = fatal 122 "Equality on P_Sign requires defined types."
-     P_Sign _  == P_Sign [] = fatal 123 "Equality on P_Sign requires defined types."
-     P_Sign s  == P_Sign s' = head s==head s'  &&  last s==last s'
+     P_Sign src trg == P_Sign src' trg' = src==src'  &&  trg==trg'
 
    instance Show P_Sign where
-     showsPrec _ s = 
-         showString (   "[" ++ intercalate "*" (map show (psign s)) ++ "]" )
+     showsPrec _ sgn = 
+         showString (   "[" ++ show (pSrc sgn)++"*"++show (pTrg sgn) ++ "]" )
 
    data P_Gen = PGen{ gen_fp :: Origin         -- ^ the position of the GEN-rule
                     , gen_gen :: P_Concept      -- ^ generic concept

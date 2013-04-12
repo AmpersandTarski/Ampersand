@@ -367,11 +367,12 @@ instance ShowADL P_Population where
  showADL pop
   = "POPULATION "++name pop
   ++ case pop of
-        P_RelPopu{} -> "["++(name.head.psign.p_type) pop++"*"++(name.last.psign.p_type) pop++"]"
-        P_CptPopu{} -> ""
+        P_TRelPop{} -> "["++(name.pSrc.p_type) pop++"*"++(name.pTrg.p_type) pop++"]"
+        _ -> ""
   ++ " CONTAINS\n"
   ++ if (case pop of
             P_RelPopu{} -> null (p_popps pop)
+            P_TRelPop{} -> null (p_popps pop)
             P_CptPopu{} -> null (p_popas pop)
         ) 
      then "" 
@@ -379,17 +380,10 @@ instance ShowADL P_Population where
     where indent = "   "
           showContent = case pop of
                           P_RelPopu{} -> map showPaire (p_popps pop)
+                          P_TRelPop{} -> map showPaire (p_popps pop)
                           P_CptPopu{} -> map showAtom  (p_popas pop)
 showPaire :: Paire -> String
 showPaire p = showAtom (srcPaire p)++" * "++ showAtom (trgPaire p)
---  p@P_RelPopu{}
---  = "POPULATION "++name pop++(if null pConcepts then [] else "["++name(head pConcepts)++"*"++name(last pConcepts)++"]")++" CONTAINS\n"++
---    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) (p_popps pop))++indent++"]"
---    where indent = "   "; P_Sign pConcepts=p_type pop
--- showADL pop@P_CptPopu{}
---  = "POPULATION "++p_popm pop++" CONTAINS\n"++
---    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,_)-> showatom x) (p_popps pop)) ++indent++"]"
---    where indent = "   "
 
 instance ShowADL UserDefPop where
  showADL pop
@@ -449,8 +443,7 @@ instance ShowADL Term where
        showchar (PFlp _ e)                               = showchar e++flp'
        showchar (PCpl _ e)                               = '-':showchar e
        showchar (PBrk _ e)                               = lpar++showchar e++rpar
-       showsign (P_Sign{psign=[x]})                      = lbr++showADL x++rbr
-       showsign (P_Sign{psign=xs })                      = lbr++showADL (head xs)++star++showADL (last xs)++rbr
+       showsign (P_Sign src trg)                         = lbr++showADL src++star++showADL trg++rbr
 
 insP_Parentheses :: Term -> Term
 insP_Parentheses = insPar 0

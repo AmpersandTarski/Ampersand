@@ -269,15 +269,15 @@ instance Expr P_Declaration where
  uType _ d
   = dom decl.<.thing src .+. cod decl.<.thing trg
     where decl = PTrel (origin d) (dec_nm d) (dec_sign d)
-          P_Sign sgn = dec_sign d
-          src = head sgn; trg = last sgn
+          P_Sign src trg = dec_sign d
 
 instance Expr P_Population where
  uType _ pop
-  = foldr (.+.) nothing [ uType x x .+. dom x.=.dom x .+. cod x.=.cod x | x<-terms pop ]
-    where terms (P_RelPopu{p_type=P_Sign []}) = [Prel  (p_orig pop) (name pop)]
-          terms P_RelPopu{}                   = [PTrel (p_orig pop) (name pop) (p_type pop)]
-          terms P_CptPopu{}                   = [Pid   (PCpt (name pop))]
+  = uType x x .+. dom x.=.dom x .+. cod x.=.cod x
+    where x = case pop of
+                   P_RelPopu{} -> Prel  (p_orig pop) (name pop)
+                   P_TRelPop{} -> PTrel (p_orig pop) (name pop) (p_type pop)
+                   P_CptPopu{} -> Pid   (PCpt (name pop))
 
 instance Expr a => Expr (Maybe a) where
  uType _ Nothing  = nothing
@@ -287,35 +287,35 @@ instance Expr a => Expr [a] where
  uType _ xs = foldr (.+.) nothing [ uType x x | x <- xs]
 
 instance Expr Term where 
- uType x expr 
-  = case expr of
-     PI{}         -> dom x.=.cod x              -- I
-     Pid{}        -> dom x.=.cod x              -- I[C]
+ uType x term 
+  = case term of
+     PI{}          -> dom x.=.cod x              -- I
+     Pid{}         -> dom x.=.cod x              -- I[C]
      (Patm _ _ []) -> dom x.=.cod x             -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
-     PVee{}       -> typeToMap (dom x)
-     (Pfull s t)  -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)              --  V[A*B] (the typed full set)
-     (Pequ _ a b) -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                     .+. mEqual Src a Src b x .+. mEqual Tgt a Tgt b x
-                     .+. uType a a .+. uType b b
-     (PIsc _ a b) -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
-                     .+. mSpecific' (dom x) Src a Src b x .+. mSpecific' (cod x) Tgt a Tgt b x
-                     .+. uType a a .+. uType b b
-     (PUni _ a b) -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
-                     .+. mGeneric' (dom x) Src a Src b x .+. mGeneric' (cod x) Tgt a Tgt b x
-                     .+. uType a a .+. uType b b
-     (PDif _ a b) -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
-                     .+. uType' a .+. uType' b
-                     .+. mEqual Src x Src b x .+. mEqual Tgt x Tgt b x
-                     .+. mEqual Src x Src a x .+. mEqual Tgt x Tgt a x
-     (PCps _ a b) -> let (bm,s) = mSpecific'' Tgt a Src b x
-                         pidTest (PI{}) r = r
-                         pidTest (Pid{}) r = r
-                         pidTest _ _ = nothing
-                     in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                        bm .+. uType a a .+. uType b b
-                        .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
+     PVee{}        -> typeToMap (dom x)
+     (Pfull s t)   -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)              --  V[A*B] (the typed full set)
+     (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
+                      .+. mEqual Src a Src b x .+. mEqual Tgt a Tgt b x
+                      .+. uType a a .+. uType b b
+     (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
+                      .+. mSpecific' (dom x) Src a Src b x .+. mSpecific' (cod x) Tgt a Tgt b x
+                      .+. uType a a .+. uType b b
+     (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
+                      .+. mGeneric' (dom x) Src a Src b x .+. mGeneric' (cod x) Tgt a Tgt b x
+                      .+. uType a a .+. uType b b
+     (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
+                      .+. uType' a .+. uType' b
+                      .+. mEqual Src x Src b x .+. mEqual Tgt x Tgt b x
+                      .+. mEqual Src x Src a x .+. mEqual Tgt x Tgt a x
+     (PCps _ a b)  -> let (bm,s) = mSpecific'' Tgt a Src b x
+                          pidTest (PI{}) r = r
+                          pidTest (Pid{}) r = r
+                          pidTest _ _ = nothing
+                      in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
+                         bm .+. uType a a .+. uType b b
+                         .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
                          pnidTest (PCpl _ (Pid{})) r = r
@@ -330,13 +330,7 @@ instance Expr Term where
      (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType e e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+. uType x e  -- (e) brackets
-     (PTrel _ _ sgn) ->
-       case sgn of
-         (P_Sign [])        -> fatal 196 "P_Sign is empty"
-         (P_Sign (_:_:_:_)) -> fatal 197 "P_Sign too large"  
-         (P_Sign cs)        -> let iSrc = thing (head cs)
-                                   iTrg = thing (last cs)
-                               in dom x.<.iSrc .+. cod x.<.iTrg
+     (PTrel _ _ (P_Sign src trg)) -> dom x.<.thing src .+. cod x.<.thing trg
      (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
@@ -864,20 +858,21 @@ pCtx2aCtx p_context
         Errors errs     -> Errors errs
        where
         expr = case pop of
-                      P_CptPopu{}                 -> Pid (PCpt (name pop))
-                      P_RelPopu{p_type=P_Sign []} -> Prel (origin pop) (name pop)
-                      P_RelPopu{}                 -> PTrel (origin pop) (name pop) (p_type pop)
+                    P_CptPopu{} -> Pid (PCpt (name pop))
+                    P_RelPopu{} -> Prel (origin pop) (name pop)
+                    P_TRelPop{} -> PTrel (origin pop) (name pop) (p_type pop)
         popsOf e =
           case e of
              EDcD d _   -> Checked (PRelPopu { popdcl = d
                                    , popps  = case pop of
                                                 P_RelPopu{} -> p_popps pop
+                                                P_TRelPop{} -> p_popps pop
                                                 P_CptPopu{} -> fatal 1470 ("Unexpected issue with population of "++name pop) 
                                              })
              EDcI   sgn -> Checked (PCptPopu { popcpt = source sgn
                                              , popas  = case pop of
-                                                P_RelPopu{} -> fatal 1474 ("Unexpected issue with population of "++name pop)
                                                 P_CptPopu{} -> p_popas pop
+                                                _ -> fatal 1474 ("Unexpected issue with population of "++name pop)
                                              })
              EDcV   _   -> fatal 1477 "V has no population of it's own"
              ETyp e' _  -> popsOf e'
@@ -892,8 +887,7 @@ pCtx2aCtx p_context
             }
               
     pSign2aSign :: P_Sign -> Sign
-    pSign2aSign (P_Sign cs) = Sign (head ts) (last ts)
-      where ts = map pCpt2aCpt cs
+    pSign2aSign (P_Sign src trg) = Sign (pCpt2aCpt src) (pCpt2aCpt trg)
             
     pCpt2aCpt :: P_Concept -> A_Concept
     pCpt2aCpt pc

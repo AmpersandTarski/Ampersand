@@ -130,6 +130,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
    pPopulation = ppop <$> pKey_pos "POPULATION" <*> pRelSign <* pKey "CONTAINS" <*> pContent
        where
          ppop orig (PTrel _ nm sgn) content = P_RelPopu { p_rnme   = nm
+                                                        , p_orig   = orig
+                                                        , p_popps  = content
+                                                        }
+         ppop orig (PTrel _ nm sgn) content = P_TRelPop { p_rnme   = nm
                                                         , p_type   = sgn
                                                         , p_orig   = orig
                                                         , p_popps  = content
@@ -264,7 +268,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                        where pid orig Nothing = PI orig
                              pid  _  (Just c) = Pid c
                              pfull orig Nothing = PVee orig
-                             pfull _ (Just (P_Sign cs, _)) = if null cs then fatal 273 "null source and target in pRelationRef" else Pfull (head cs) (last cs)
+                             pfull _ (Just (P_Sign src trg, _)) = Pfull src trg
                              singl (nm,orig) Nothing  = Patm orig nm []
                              singl (nm,orig) (Just c) = Patm orig nm [c]
 
@@ -279,8 +283,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
         rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
         rebuild orig a mb
          = case mb of 
-             Just b  -> (P_Sign { psign = [a,b] }, orig)
-             Nothing -> (P_Sign { psign = [a] }  , orig)
+             Just b  -> (P_Sign a b, orig)
+             Nothing -> (P_Sign a a, orig)
 
 
    pConceptRef :: Parser Token P_Concept
@@ -431,9 +435,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.LegacyParser (pContext, keywordstxt, 
                                      -> String
                                      -> Pairs
                                      -> P_Declaration
-                             rebuild nm pos' s fun' t props pragma mean content
+                             rebuild nm pos' src fun' trg props pragma mean content
                                = P_Sgn { dec_nm = nm
-                                       , dec_sign = P_Sign [s,t]
+                                       , dec_sign = P_Sign src trg
                                        , dec_prps = props'
                                        , dec_prL = head pr
                                        , dec_prM = pr!!1
