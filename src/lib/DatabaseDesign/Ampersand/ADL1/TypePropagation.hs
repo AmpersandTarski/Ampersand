@@ -8,9 +8,8 @@ module DatabaseDesign.Ampersand.ADL1.TypePropagation (
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Basics (name, isc, eqClass,fatalMsg)
+import DatabaseDesign.Ampersand.Basics (name, isc, fatalMsg)
 import DatabaseDesign.Ampersand.Fspec.ShowADL
-import GHC.Exts (sortWith)
 import Prelude hiding (head)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.List hiding (head)
@@ -262,7 +261,7 @@ typing st declsByName
               (a,b) -> Errors [e a b]
     checkBetween o@(Between e src trg _)
      = case srcTypes' o of
-        [_] -> return ()
+        [c] -> return ()
         _ -> Errors [e (srcTypes' src) (srcTypes' trg)]
     checkBetween _ = return ()
     
@@ -331,19 +330,16 @@ typing st declsByName
     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
     eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
     isaClos :: Map P_Concept [P_Concept]
-    isaClos = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
+    isaClos' = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts,c'/=c]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
     isaClosReversed :: Map P_Concept [P_Concept]
     isaClosReversed = reverseMap isaClos
+    isaClos = addIdentity isaClos' 
     stConcepts :: Map Type [P_Concept]
     stConcepts =  Map.map f stClos
                   where f :: [Type] -> [P_Concept]
-                        f ts = case [c | TypExpr (Pid c) _<-ts]  of -- all concepts reachable from one type term
-                                 [] -> []
-                                 cs -> [ (fst.head.sortWith (length.snd)) [(c,lkp c) | c<-cl]  --head is allowed, for cl cannot be empty.
-                                       | cl<-eqClass compatible cs]
-                               where lkp c = case Map.lookup c isaClosReversed of
-                                              Just cs' -> cs'
-                                              _ -> fatal 387 ("P_Concept "++show c++" was not found in isaClosReversed")
+                        f ts = [t | t <- ownTypes ts, not (t `elem` derived ts)]
+                        ownTypes ts = [c | TypExpr (Pid c) _<-ts]
+                        derived ts = foldl mrgUnion [] [Map.findWithDefault [] t isaClos' | t<-ownTypes ts]
     srcTypes' :: Type -> [P_Concept]
     srcTypes' typ = case Map.lookup typ stConcepts of
                       Just x -> x
@@ -353,10 +349,6 @@ typing st declsByName
                    -- A type may have an empty codomain in stConcepts, because that means it is type incorrect.
                     [cs] -> cs
                     _ -> fatal 446 ("Type "++show typ++" was found in stConcepts, but not a singleton.")
-    compatible a b = (not.null) (lkp a `isc` lkp b)
-     where lkp c = case Map.lookup c isaClosReversed of
-                    Just cs -> cs
-                    _ -> fatal 395 ("P_Concept "++show c++" was not found in isaClosReversed")
      
 -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
 -- | note that the domain must be preserved!
