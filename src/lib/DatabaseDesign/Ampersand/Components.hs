@@ -6,13 +6,14 @@ module DatabaseDesign.Ampersand.Components
      typeCheck
    , makeFspec
     -- * Generators of output
-   , doGenADL
-   , doGenProofs
-   , doGenHaskell
-   , doGenXML
-   , doGenUML
-   , doGenDocument
-   , doGenFPAExcel
+   , generateAmpersandOutput
+--   , doGenADL
+--   , doGenProofs
+--   , doGenHaskell
+--   , doGenXML
+--   , doGenUML
+--   , doGenDocument
+--   , doGenFPAExcel
    , Guarded(..)
     -- * etc...
   )
@@ -34,6 +35,25 @@ import System.FilePath
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Components"
+
+--  | The Fspc is the datastructure that contains everything to generate the output. This monadic function
+--    takes the Fspc as its input, and spits out everything the user requested.
+generateAmpersandOutput :: Options -> Fspc -> IO ()
+generateAmpersandOutput flags fSpec = 
+ do { verboseLn flags "Generating..."
+    ; when (genXML flags)      $ doGenXML      fSpec flags
+    ; when (genUML flags)      $ doGenUML      fSpec flags 
+    ; when (haskell flags)     $ doGenHaskell  fSpec flags 
+    ; when (export2adl flags)  $ doGenADL      fSpec flags
+    ; when (genFspec flags)    $ doGenDocument fSpec flags 
+    ; when (genFPAExcel flags) $ doGenFPAExcel fSpec flags
+    ; when (proofs flags)      $ doGenProofs   fSpec flags
+    --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
+    --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
+    --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
+    ; verboseLn flags "Done."
+    }
+
 
 -- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
 --   If the list of populations is not empty, then it overwrites the one included in the parsed context

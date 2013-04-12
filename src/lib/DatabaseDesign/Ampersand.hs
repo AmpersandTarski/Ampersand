@@ -64,11 +64,7 @@ module DatabaseDesign.Ampersand
    , Guarded(..)
    , makeFspec
     -- * Generators of output
-   , doGenADL
-   , doGenProofs
-   , doGenHaskell
-   , doGenXML
-   , doGenDocument
+   , generateAmpersandOutput
    -- * Prettyprinters
    , ShowADL(..), showSQL
    -- * Functions with Options
