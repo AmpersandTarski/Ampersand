@@ -77,9 +77,9 @@ library
                     DatabaseDesign.Ampersand.ADL1.ECArule,
                     DatabaseDesign.Ampersand.ADL1.Expression,
                     DatabaseDesign.Ampersand.ADL1.P2A_Converters,
-                    DatabaseDesign.Ampersand.ADL1.TypePropagation,
                     DatabaseDesign.Ampersand.ADL1.Pair,
                     DatabaseDesign.Ampersand.ADL1.Rule,
+                    DatabaseDesign.Ampersand.ADL1.TypePropagation,
                     DatabaseDesign.Ampersand.Basics,
                     DatabaseDesign.Ampersand.Basics.Auxiliaries,
                     DatabaseDesign.Ampersand.Basics.Collection,
@@ -109,6 +109,7 @@ library
                     DatabaseDesign.Ampersand.Fspec.ShowADL,
                     DatabaseDesign.Ampersand.Fspec.ShowECA,
                     DatabaseDesign.Ampersand.Fspec.ShowHS,
+                    DatabaseDesign.Ampersand.Fspec.ShowMeatGrinder,
                     DatabaseDesign.Ampersand.Fspec.ShowXMLtiny,
                     DatabaseDesign.Ampersand.Fspec.Switchboard,
                     DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec,
@@ -123,6 +124,8 @@ library
                     DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees,
                     DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing,
                     DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner,
+                    DatabaseDesign.Ampersand.Input.Parsing,
+                    DatabaseDesign.Ampersand.InputProcessing,
                     DatabaseDesign.Ampersand.Misc,
                     DatabaseDesign.Ampersand.Misc.Explain,
                     DatabaseDesign.Ampersand.Misc.Languages,
@@ -145,10 +148,10 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
-                    DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                    Paths_ampersand,
-                    DatabaseDesign.Ampersand.Input.Parsing
-  other-modules:     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
+                    DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
+  other-modules:     
+                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
+                     Paths_ampersand
   default-language:  Haskell2010
 
   if flag(library)

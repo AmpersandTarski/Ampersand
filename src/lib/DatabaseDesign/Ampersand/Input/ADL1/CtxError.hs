@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),shOrig)
+       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),shOrig,showErr)
 where
 import DatabaseDesign.Ampersand.Input.ADL1.FilePos
 import DatabaseDesign.Ampersand.ADL1 (Pos(..))

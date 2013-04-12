@@ -20,7 +20,7 @@ where
 import Prelude hiding (putStr,readFile,writeFile)
 import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,Guarded(..))
+import DatabaseDesign.Ampersand.ADL1.P2A_Converters
 import DatabaseDesign.Ampersand.ADL1
 import Text.Pandoc 
 import Text.Pandoc.Builder

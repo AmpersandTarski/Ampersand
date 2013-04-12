@@ -3,7 +3,7 @@
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
      pCtx2aCtx,
-     Guarded(..)
+     Guarded(..),parallelList
      )
 where
 
