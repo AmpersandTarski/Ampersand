@@ -127,12 +127,12 @@ showErr err = case err of
                  cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
                         ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
-  CxeTyping{}
+  CxeTyping{} -- to get this error, create a "Between" data type in uType
      ->   ( show (origin ((\(x,_,_)->x) (cxeLhs err)))++":\n"++
-            "    Cannot deduce a type for "++showADL (cxeTyp err)++
+            "    Type mismatch for "++showADL (cxeTyp err)++
               case (cxeLhs err,cxeRhs err) of
                  ((t1,s1,[]),(t2,s2,[])) -> "\n    matching the "++show s1++" of  "++showADL t1++"  and the "++show s2++" of  "++showADL t2
-                 (t1,t2) -> ".\n" ++ niceSource t1 ++"\n"++ niceSource t2
+                 (t1,t2) -> ".\n" ++ niceSource t1 ++ (if (t1==t2) then "" else "\n" ++ niceSource t2)
           )
   CxeRelUndefined{}
      -> show (origin (cxeExpr err))++":\n    Relation  "++showADL (cxeExpr err)++"  is undefined."

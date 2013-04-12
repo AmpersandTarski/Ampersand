@@ -238,11 +238,16 @@ typing st declsByName
                                         , cxeDecs=xs
                                         , cxeSNDs=Map.findWithDefault [] t declByTerm
                                         }]
+                                        
+    -- check that all I's and V's have types. If not, throw an error where V's are replaced for Cpl if they occur in it
     checkIVBindings = parallelList (map checkUnique2 allIVs')
     checkUnique2 iv = case ( Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts
                            , Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
                         ([_],[_]) -> return ()
-                        (xs,ys) -> Errors [CxeSign {cxeExpr=iv, cxeSrcs=xs, cxeTrgs=ys}]
+                        (xs,ys) -> Errors [CxeSign {cxeExpr=fromVtoCpl iv, cxeSrcs=xs, cxeTrgs=ys}]
+    
+    fromVtoCpl v@(PVee o) = head ([t | t@(PCpl o' _) <- allTerms, o==o'] ++ [v])
+    fromVtoCpl x = x
     
     checkBetweens = parallelList (map checkBetween typeTerms)
     checkBetween (Between e src trg BTEqual) -- since the BTEqual does not participate in stClosAdd, it will be isolated here
