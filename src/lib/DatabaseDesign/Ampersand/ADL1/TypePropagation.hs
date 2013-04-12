@@ -66,7 +66,7 @@ instance Show BetweenType where
 --   The main idea is that the equality distinguishes between occurrences.
 --   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
-instance Prelude.Ord Type where
+instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy r = r~.
   compare (TypExpr (Pid c)        _) (TypExpr (Pid c')         _) = Prelude.compare c c'
   compare (TypExpr (Pid _)        _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Pid _)          _) = Prelude.GT
@@ -77,15 +77,20 @@ instance Prelude.Ord Type where
   compare (TypExpr (Patm _ _ _  ) _) (TypExpr (Patm _  _  _  ) _) = fatal 76 "Patm should not have two types"
   compare (TypExpr (Patm _ _ _  ) _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Patm _ _ _)     _) = Prelude.GT
-  compare (TypExpr (PVee o)       _) (TypExpr (PVee o')        _) = Prelude.compare o o' -- This is a V of which the type must be determined (by the environment).
+  -- note that V = V~ does not hold in general
+  compare (TypExpr (PVee o)       x) (TypExpr (PVee o')       x') = Prelude.compare (o,x) (o',x') -- This is a V of which the type must be determined (by the environment).
   compare (TypExpr (PVee _)       _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (PVee _)         _) = Prelude.GT
+  -- here we implement V[A*B] = V[B*A]~ directly in the TypExpr
   compare (TypExpr (Pfull s t)    x) (TypExpr (Pfull s' t')   x') = Prelude.compare (if x==Src then (s,t) else (t,s)) (if x'==Src then (s',t') else (t',s')) -- This is a V of which the type is determined by the user
   compare (TypExpr (Pfull _ _)    _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (Pfull _ _)      _) = Prelude.GT
+  -- as r = r~ does not hold in general, we need to compare x'==y'
   compare (TypExpr x             x') (TypExpr y               y') = Prelude.compare (x,x') (y,y')
   compare (TypExpr _              _) _                            = Prelude.LT
   compare _                          (TypExpr _                _) = Prelude.GT
+  -- since the first argument of Between is a function, we cannot compare it.
+  -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
   compare (Between _ a b t) (Between _ a' b' t')                  = compare (t,a,b) (t',a',b')
 
 instance Eq Type where
@@ -220,8 +225,7 @@ typing st declsByName
  where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
-    allIVs      = [o | o@(TypExpr e _)<-typeTerms, isIV e]
-    allIVs'     = nub' (sort [e | (TypExpr e _)<-typeTerms, isIV e])
+    allIVs     = nub' (sort [e | (TypExpr e _)<-typeTerms, isIV e])
     isIV   (PI _)       = True
     isIV   (PVee _)     = True
     isIV   (Patm _ _ _) = True
@@ -240,7 +244,7 @@ typing st declsByName
                                         }]
                                         
     -- check that all I's and V's have types. If not, throw an error where V's are replaced for Cpl if they occur in it
-    checkIVBindings = parallelList (map checkUnique2 allIVs')
+    checkIVBindings = parallelList (map checkUnique2 allIVs)
     checkUnique2 iv = case ( Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts
                            , Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
                         ([_],[_]) -> return ()
@@ -290,10 +294,9 @@ typing st declsByName
                        ]
                      )
     
-    ivTypByTyp :: Map Type [(Type,P_Concept,Type)]
-    ivTypByTyp = Map.fromListWith mrgUnion [ (tp,map (\(x,y) -> (tp,x,y)) ivConcPairs)
-                                           | tp <- allIVs ]
-    ivConcPairs = sort [(c,TypExpr (Pid c) Src) | c <- allConcs]
+    ivTypByTyp :: Map Type [P_Concept] -> Map Type [(Type,P_Concept,Type)]
+    ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid c) Src)) concs)
+                                                 | (tp,concs) <- Map.toList ivMap ]
     
     typByTyp :: Map Term [P_Declaration] -> Map Type [(Term,P_Declaration,Type)]
     typByTyp oldMap = Map.fromList [ (trm, triples b t) | trm@(TypExpr t b) <- typeTerms ]
@@ -303,12 +306,12 @@ typing st declsByName
                                      (declByTerm,setClosure (addIdentity st) "(st \\/ I)*")
     bindings :: Map Term P_Declaration
     bindings = Map.mapMaybe exactlyOne newBindings
-    ivBindings',ivBindings :: Map Type [Type]
-    ivBindings' = Map.map (map (\x -> TypExpr (Pid x) Src)) (makeDecisions ivTypByTyp stClos0)
-    ivBindings = Map.map (\x->[x]) $ Map.mapMaybe exactlyOne ivBindings'
     ivBoundConcepts :: Map Type [P_Concept]
-    ivBoundConcepts = composeMaps ivBindings' stConcepts
-    stClos1 = setClosure (Map.unionWith mrgUnion stClos0 (symClosure ivBindings)) "union of ivBindings and stClos0"
+    (ivBoundConcepts, stClos1)
+      = fixPoint (improveBindings ivTypByTyp) (Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv'],stClos0)
+    ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
+    -- ivToTyps x = [TypExpr x Src]
+    -- ivBoundConcepts = Map.fromList (concat . map doubleIs
     
     exactlyOne [x] = Just x
     exactlyOne _ = Nothing
@@ -424,6 +427,7 @@ composeMaps m1 m2 = Map.map (\x -> foldr mrgUnion [] [Map.findWithDefault [] s m
 symClosure :: (Ord a, Show a) => Map a [a] -> Map a [a]
 symClosure m = Map.unionWith mrgUnion m (reverseMap m)
 
+{-
 -- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
@@ -442,7 +446,7 @@ nub' (x:y:xs) | x==y      = nub' (y:xs)
               | otherwise = x:(nub' (y:xs))
 nub' [x] = [x]
 nub' [] = []
-{-
+-}
 
 -- The following mrgUnion and mrgIntersect are for debug purposes
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
@@ -479,7 +483,6 @@ nub' xs' = if isSortedAndDistinct res then res else fatal 428 ("nub' expects a s
                             | otherwise = x:(nub' (y:xs))
               nub'' [x] = [x]
               nub'' [] = []
--}
 
 distinctCons :: (Ord a, Eq a, Show a) => a -> a -> [a] -> [a]
 distinctCons a b' (b:bs) = if a<b then b':(b:bs)
