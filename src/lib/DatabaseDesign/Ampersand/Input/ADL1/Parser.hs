@@ -260,8 +260,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          <*> ((\st d -> Just $ RelConceptDef st d) <$ pKey "DEFINE" <*> pSrcOrTgt <*> pString `opt` Nothing)
                          <*> ((pKey "=" *> pContent) `opt` [])
                          <* (pKey "." `opt` "")         -- in the syntax before 2011, a dot was required. This optional dot is there to save user irritation during the transition to a dotless era  :-) .
-                       where rebuild nm pos' s fun' t bp1 props --bp2 pragma meanings conceptDef content
-                               = rbd pos' nm (P_Sign [s,t],pos') bp1 props' --bp2 pragma meanings conceptDef content
+                       where rebuild nm pos' src fun' trg bp1 props --bp2 pragma meanings conceptDef content
+                               = rbd pos' nm (P_Sign src trg,pos') bp1 props' --bp2 pragma meanings conceptDef content
                                  where props'= nub (props `uni` fun')
                              rbd pos' nm (sgn,_) bp1 props bp2 pragma meanings conceptDef content
                                = P_Sgn { dec_nm   = nm
@@ -441,15 +441,14 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  pcptpop <$> pKey_pos "POPULATION" <*> (pConid <|> pString) <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
        where
          prelpop :: Origin -> Term -> Pairs -> P_Population
-         prelpop orig (PTrel _ nm sgn) contents
+         prelpop orig (Prel _ nm) contents
           = P_RelPopu { p_rnme   = nm
-                      , p_type   = sgn
                       , p_orig   = orig
                       , p_popps  = contents
                       }
-         prelpop orig (Prel _ nm) contents
-          = P_RelPopu { p_rnme   = nm
-                      , p_type   = P_Sign []
+         prelpop orig (PTrel _ nm sgn) contents
+          = P_TRelPop { p_rnme   = nm
+                      , p_type   = sgn
                       , p_orig   = orig
                       , p_popps  = contents
                       }
@@ -598,7 +597,7 @@ In practice, we have it a little different.
                        where pid orig Nothing = PI orig
                              pid  _  (Just c) = Pid c
                              pfull orig Nothing = PVee orig
-                             pfull _ (Just (P_Sign cs, _)) = if null cs then fatal 596 "null source and target in pRelationRef" else Pfull (head cs) (last cs)
+                             pfull _ (Just (P_Sign src trg, _)) = Pfull src trg
                              singl (nm,orig) Nothing  = Patm orig nm []
                              singl (nm,orig) (Just c) = Patm orig nm [c]
 
@@ -613,8 +612,8 @@ In practice, we have it a little different.
         rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
         rebuild orig a mb
          = case mb of 
-             Just b  -> (P_Sign { psign = [a,b] }, orig)
-             Nothing -> (P_Sign { psign = [a] }  , orig)
+             Just b  -> (P_Sign a b, orig)
+             Nothing -> (P_Sign a a, orig)
    
    pConceptRef :: Parser Token P_Concept
    pConceptRef       = (P_Singleton <$ pKey "ONE") <|> (PCpt <$> (pConid <|> pString))

@@ -151,8 +151,8 @@ showErr err = case err of
                  concat [ "\n     "++name d++"["++show (source d)++"*"++show (target d)++"]"++" on "++show (origin d)
 -- for debugging, you might add:        ++ ", ss="++show ss ++ ", ts="++show ts | (d, ss, ts)<-ds ]++"."
                         | d<-ds ]++"."
-                 where source d = head sgn where P_Sign sgn = dec_sign d
-                       target d = last sgn where P_Sign sgn = dec_sign d
+                 where source d = pSrc (dec_sign d)
+                       target d = pTrg (dec_sign d)
          where term=cxeExpr err
   CxeCast{}
      -> concat
