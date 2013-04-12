@@ -294,8 +294,8 @@ instance Expr Term where
      (Patm _ _ []) -> dom x.=.cod x             -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
-     PVee{}        -> typeToMap (dom x)
-     (Pfull s t)   -> dom x.=.dom (Pid s) .+. cod x.=.cod (Pid t)              --  V[A*B] (the typed full set)
+     PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
+     (Pfull s t)   -> dom x.<.dom (Pid s) .+. cod x.<.cod (Pid t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                       .+. mEqual Src a Src b x .+. mEqual Tgt a Tgt b x
                       .+. uType a a .+. uType b b
