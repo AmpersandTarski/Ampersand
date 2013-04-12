@@ -79,10 +79,10 @@ rapfiles flags usrfiles
 type RAPRelation = (String,String,String)
 makepopu :: RAPRelation -> [(ConceptIdentifier,ConceptIdentifier)] -> P_Population
 makepopu (r,src,trg) xys
- = P_RelPopu
+ = P_TRelPop
          { p_rnme  = r
          , p_orig  = Origin "RAPImport.hs"
-         , p_type  = P_Sign [PCpt src, PCpt trg]
+         , p_type  = P_Sign (PCpt src) (PCpt trg)
          , p_popps = [mkPair (getid x) (getid y) |(x,y)<-xys, not(null (getid x)), not(null (getid y)) ]
          }
 

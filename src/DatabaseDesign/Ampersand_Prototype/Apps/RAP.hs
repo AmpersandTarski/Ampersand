@@ -271,7 +271,7 @@ atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
 
 atlas2sign :: AtomVal -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> P_Sign
 atlas2sign rid r_decsgn r_src r_trg r_cptnm
- = P_Sign [PCpt srcnm , PCpt trgnm]
+ = P_Sign (PCpt srcnm) (PCpt trgnm)
    where sid = geta r_decsgn rid (error "while geta r_decsgn.")
          srcid = geta r_src sid (error ("while geta r_src."++sid++show r_src))
          trgid = geta r_trg sid (error "while geta r_trg.")
@@ -280,7 +280,7 @@ atlas2sign rid r_decsgn r_src r_trg r_cptnm
 
 atlas2pops :: RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [P_Population]
 atlas2pops r_decnm r_decsgn r_src r_trg r_cptnm r_decpopu r_left r_right r_cptos r_atomvalue 
- = [ P_RelPopu { p_rnme  = rnm
+ = [ P_TRelPop { p_rnme  = rnm
                , p_orig  = OriginUnknown
                , p_type  = rsgn
                , p_popps = rpop
