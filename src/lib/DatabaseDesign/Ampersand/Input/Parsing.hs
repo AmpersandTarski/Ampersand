@@ -15,7 +15,7 @@ import qualified DatabaseDesign.Ampersand.Input.ADL1.LegacyParser as LegacyParse
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
-import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
+import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
 import Control.Exception
 import Prelude hiding (catch)
@@ -29,9 +29,9 @@ fatal = fatalMsg "Parsing"
 -- | The parser currently needs to be monadic, because there are multiple versions of the Ampersand language supported. Each parser
 --   currently throws errors on systemerror level. They can only be 'catch'ed in a monad.
 --   This parser is for parsing of a Context
-parseContext :: Options       -- ^ flags to be taken into account
-            -> FilePath      -- ^ the full path to the file to parse 
-            -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
+parseContext :: Options                          -- ^ flags to be taken into account
+             -> FilePath                         -- ^ the full path to the file to parse 
+             -> IO (Either ParseError P_Context) -- ^ The IO monad with the parse tree. 
 parseContext flags file 
              = do { verboseLn flags $ "Parsing with "++show (parserVersion flags)++"..."
                   ; rapRes <- if includeRap flags
@@ -112,8 +112,8 @@ readAndParseFile flags depth alreadyParsed mIncluderFilepath fileDir relativeFil
                                         fileContents newFileDir newFilename     
                     }
           }
-     myHandler :: IOException 
-               -> IO (Either ParseError P_Context, [String])
+     myHandler :: IOException ->
+                  IO (Either ParseError P_Context, [String])
      myHandler =   
              (\exc -> do { error $ case mIncluderFilepath of
                                  Nothing -> 
@@ -125,13 +125,13 @@ readAndParseFile flags depth alreadyParsed mIncluderFilepath fileDir relativeFil
      newFileDir = let dir = takeDirectory filepath in if dir == "." then "" else dir
      newFilename = takeFileName filepath
 
-parseFileContents :: Options -- ^ command-line options 
-         -> Int           -- ^ The include depth
-         -> [String]      -- ^ Already parsed files (canonicalized) 
-         -> String        -- ^ The string to be parsed
-         -> String        -- ^ The path to the .adl file 
-         -> String        -- ^ The name of the .adl file
-         -> IO (Either ParseError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
+parseFileContents :: Options  -- ^ command-line options 
+                  -> Int      -- ^ The include depth
+                  -> [String] -- ^ Already parsed files (canonicalized) 
+                  -> String   -- ^ The string to be parsed
+                  -> String   -- ^ The path to the .adl file 
+                  -> String   -- ^ The name of the .adl file
+                  -> IO (Either ParseError P_Context, [String]) -- ^ The result: The updated already-parsed contexts and Either some errors, or the parsetree.
 parseFileContents flags depth alreadyParsed fileContents fileDir filename =
   do { let filepath = combine fileDir filename
      ; case parseSingleADL (parserVersion flags) fileContents filepath of

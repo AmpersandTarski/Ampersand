@@ -63,24 +63,24 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
      where
        rebuild :: Origin -> String -> [String] -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
        rebuild pos' nm includeFileNames lang fmt ces = 
-          (PCtx{ ctx_nm    = nm
-               , ctx_pos   = [pos']
-               , ctx_lang  = lang
-               , ctx_markup= fmt
-               , ctx_thms  = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-               , ctx_pats  = [p | CPat p<-ces]       -- The patterns defined in this context
-               , ctx_PPrcs = [p | CPrc p<-ces]       -- The processes as defined by the parser
-               , ctx_rs    = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
-               , ctx_ds    = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
-               , ctx_cs    = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
-               , ctx_gs    = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
-               , ctx_ks    = [k | CKey k<-ces]       -- The key definitions defined in this context, outside the scope of patterns
-               , ctx_ifcs  = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns
-               , ctx_sql   = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
-               , ctx_php   = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
-               , ctx_ps    = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
-               , ctx_pops  = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
-               , ctx_metas = [m | CMeta m <-ces]
+          (PCtx{ ctx_nm     = nm
+               , ctx_pos    = [pos']
+               , ctx_lang   = lang
+               , ctx_markup = fmt
+               , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+               , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
+               , ctx_PPrcs  = [p | CPrc p<-ces]       -- The processes as defined by the parser
+               , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns and outside processes
+               , ctx_ds     = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
+               , ctx_cs     = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
+               , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
+               , ctx_ks     = [k | CKey k<-ces]       -- The key definitions defined in this context, outside the scope of patterns
+               , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
+               , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
+               , ctx_php    = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
+               , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
+               , ctx_pops   = [p | CPop p<-ces]       -- The populations defined in this contextplug<-ces]  
+               , ctx_metas  = [m | CMeta m <-ces]
                }
           , includeFileNames)
 
