@@ -73,6 +73,7 @@ data Options = Options { showVersion :: Bool
                        , genUML :: Bool   -- Generate a UML 2.0 data model
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analisys
                        , genBericht :: Bool
+                       , genMeat :: Bool  -- Generate the meta-population and output it to an .adl file
                        , language :: Lang
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
@@ -135,6 +136,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , genUML        = False
                       , genFPAExcel   = False
                       , genBericht    = False
+                      , genMeat       = False
                       , language      = Dutch
                       , progrName     = fatal 118 "No monadic options available."
                       , fileName      = fatal 119 "no default value for fileName."
@@ -311,6 +313,8 @@ options = map pp
           , (Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only.", Hidden)
           , (Option []        ["rap"]         (NoArg (\flags -> flags{includeRap = True}))
                                                                           "Include RAP into the generated artifacts (experimental)", Hidden)
+          , (Option []        ["meta"]        (NoArg (\flags -> flags{genMeat = True}))
+                                                                          "Generate meta-population in an .adl file (experimental)", Hidden)
           , (Option []        ["pango"]       (OptArg pangoOpt "fontname") "specify font name for Pango in graphics.", Hidden)
           , (Option []        ["sqlHost"]     (OptArg sqlHostOpt "name")  "specify database host name.", Hidden)
           , (Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "name") "specify database login name.", Hidden)
