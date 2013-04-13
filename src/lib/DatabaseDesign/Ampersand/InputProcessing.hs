@@ -45,8 +45,8 @@ createFspec flags =
                 else return userCtx
      case bothCtx of
         Errors err -> return (Errors err)
-        Checked pCtxt
-           -> do let (gaCtx, stTypeGraph, condensedGraph) = pCtx2aCtx pCtxt 
+        Checked pCtx
+           -> do let (gaCtx, stTypeGraph, condensedGraph) = pCtx2aCtx pCtx 
                  when  (typeGraphs flags) (showGraphs stTypeGraph condensedGraph)
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
@@ -70,7 +70,13 @@ createFspec flags =
               (Errors  err ,_,_) -> return (Errors err)
               (Checked aCtx,_,_)
                  -> do let fspc = makeFspec flags aCtx
-                       let popScript = meatGrinder flags fspc
+                           popScript = meatGrinder flags fspc
+                       when (genMeat flags) 
+                          (do let (nm,content) = popScript
+                                  outputFile = combine (dirOutput flags) $ replaceExtension nm ".adl"
+                              writeFile outputFile content
+                              verboseLn flags $ "Meta population written into " ++ outputFile ++ "."
+                          )
                        case parse1File2pContext popScript of
                          (Errors  err) -> fatal 64 ("MeatGrinder has errors!" 
                                                  ++ intercalate "\n"(map showErr err))
