@@ -540,7 +540,7 @@ pCtx2aCtx p_context
                             Checked ks   -> (ks, [])
                             Errors errs  -> (fatal 1045 ("Do not refer to undefined keys\n"++show errs), errs)
     (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                . ctx_ifcs ) p_context of
-                            Checked is -> (is, [])
+                            Checked is -> (is, []) -- (fatal 543 ("Diagnostic: "++concat ["\n\n   "++show ifc | ifc<-is])::[Interface], [])
                             Errors errs  -> (fatal 1048 ("Do not refer to undefined interfaces\n"++show errs), errs)
     (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef []) . ctx_sql  ) p_context of
                             Checked plugs -> (plugs, [])
@@ -572,11 +572,11 @@ pCtx2aCtx p_context
                  _    -> [newcxe ("The following themes are selected for output, but are not defined:\n   "++intercalate ", " orphans)]
                 where orphans = ctxthms contxt>-themenames
                       themenames=[name p |p<-pats]++[name p |p<-procs]
-    rulenmchk = [ newcxe ("Rules with identical names at positions "++show(map origin cl))
+    rulenmchk = [ newcxe ("Rules with identical names at positions "++show(map origin cl)++"\nrules:"++concat ["\n\n   "++show rul | rul<-cl])
                 | cl<-eqCl name (udefrules contxt),length cl>1]
-    ifcnmchk  = [newcxe ("Interfaces with identical names at positions "++show(map origin cl))
+    ifcnmchk  = [newcxe ("Interfaces with identical names at positions "++show(map origin cl)) -- ++"\ncl:"++concat ["\n\n   "++show ifc | ifc<-cl])
                 | cl<-eqCl name ifcs,length cl>1]
-    patnmchk  = [newcxe ("Patterns or processes with identical names at positions "++show(map fst cl))
+    patnmchk  = [newcxe ("Patterns or processes with identical names at positions "++show(map fst cl)) -- ++"\ncl:"++concat ["\n\n   "++show ifc | ifc<-cl])
                 | cl<-eqCl snd (zip (map origin pats++map origin procs)
                                     (map name   pats++map name   procs)),length cl>1]
     cyclicInterfaces = [ newcxe $ "These interfaces form a reference cycle:\n" ++
@@ -756,7 +756,7 @@ pCtx2aCtx p_context
                                                   ; return (KeyExp objDef)
                                                   }
     
-    -- TODO -> What is the intention of ifcArgs?
+    -- QUESTION -> What is the intention of ifcArgs? ANSWER: see the declaration of P_Interface
     pIFC2aIFC :: P_Interface -> Guarded Interface
     pIFC2aIFC pifc 
      = f <$> parParams pifc <*> (pODef2aODef parentIfcRoles . ifc_Obj) pifc
@@ -1012,11 +1012,6 @@ pCtx2aCtx p_context
         Just d  -> do { (decl,_) <- pDecl2aDecl d ; return decl }
         Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings."++concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])
     getDeclaration term = fatal 1607 ("Illegal call to getDeclaration ("++show term++")")
-
-
-
-
-
 
 
 {- The following function draws two graphs for educational or debugging purposes. If you want to see them, run Ampersand --typing.

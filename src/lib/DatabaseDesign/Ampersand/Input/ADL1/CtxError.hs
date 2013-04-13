@@ -117,7 +117,7 @@ showErr err = case err of
           ( [show (origin (cxePos err))++":\n"]++
               case cxeIfcs err of
                  []   -> ["    There are no interfaces called \""++cxeName err++"\"."]
-                 ifcs -> ["    There are multiple interfaces named " ++commaEng "and" (map (show.origin) ifcs) ++ "."]
+                 ifcs -> ["    There are multiple interfaces called \""++cxeName err++"\" on "++ commaEng "and" (map (show.origin) ifcs) ++ "."]
           )
   CxeObjMismatch{}
      -> concat
