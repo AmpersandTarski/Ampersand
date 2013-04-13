@@ -48,6 +48,8 @@ generateAmpersandOutput flags fSpec =
     ; when (genFspec flags)    $ doGenDocument fSpec flags 
     ; when (genFPAExcel flags) $ doGenFPAExcel fSpec flags
     ; when (proofs flags)      $ doGenProofs   fSpec flags
+    ; when (genMeat flags && not (includeRap flags))  -- When rap is included, the file is created there.
+        $ doGenMeatGrinder fSpec flags
     --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
     --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
@@ -94,6 +96,14 @@ doGenHaskell fSpec flags =
     ; verboseLn flags $ "Haskell written into " ++ outputFile ++ "."
     }
  where outputFile = combine (dirOutput flags) $ replaceExtension (baseName flags) ".hs"
+   
+doGenMeatGrinder :: Fspc -> Options -> IO()
+doGenMeatGrinder fSpec flags =
+ do verboseLn flags $ "Generating meta-population for "++name fSpec
+    let (nm,content) = meatGrinder flags fSpec
+        outputFile = combine (dirOutput flags) $ replaceExtension nm ".adl"
+    writeFile outputFile content
+    verboseLn flags $ "Meta population written into " ++ outputFile ++ "."
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags =
