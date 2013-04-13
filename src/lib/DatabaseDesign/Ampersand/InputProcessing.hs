@@ -99,15 +99,15 @@ parseWithIncluded flags f = tailRounds [] (emptyContext,[f])
                -> ParseResult   -- the result so far.  
                -> IO(Guarded P_Context) 
     tailRounds dones (pCtx, names) =
-     let filesToProcessThisRound = [f | f<-names, f `notElem` map fst dones]
-     in case filesToProcessThisRound of 
+     do let filesToProcessThisRound = [f | f<-names, f `notElem` map fst dones]
+        case filesToProcessThisRound of 
          []    -> do return (Checked pCtx)
          newNs -> do fs <- readFiles newNs
                      res <- oneRound fs dones pCtx
                      case res of
                              Errors err -> return (Errors err)
                              Checked (pCtx',included)
-                                -> tailRounds (nub ( dones++fs)) (mergeContexts pCtx pCtx', included)
+                                -> tailRounds (nub ( dones++fs)) (pCtx', included)
     readFiles :: [FilePath] -> IO [FileContent]
     readFiles fs = mapM readFile fs
      where
@@ -136,10 +136,13 @@ parse1File2pContext (fPath, fContent) =
        steps :: Steps (Pair ParseResult (Pair [Token] a)) Token
        steps = parse pContext (scanner fContent)
    in  case  getMsgs steps of
-         []  -> let Pair result _ = evalSteps steps 
-                in Checked result
+         []  -> let Pair (pCtx,includes) _ = evalSteps steps 
+                in Checked (pCtx,map normalize includes)
          msgs-> Errors [PE msgs]
-
+  where
+  normalize ::FilePath -> FilePath
+  normalize name = (takeDirectory fPath) </> name
+  
 emptyContext :: P_Context
 emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
