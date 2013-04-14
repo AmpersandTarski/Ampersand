@@ -261,7 +261,7 @@ typing st declsByName
               (a,b) -> Errors [e a b]
     checkBetween o@(Between e src trg _)
      = case srcTypes' o of
-        [c] -> return ()
+        [_] -> return ()
         _ -> Errors [e (srcTypes' src) (srcTypes' trg)]
     checkBetween _ = return ()
     

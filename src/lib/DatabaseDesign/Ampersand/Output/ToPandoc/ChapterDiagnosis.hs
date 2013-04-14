@@ -750,7 +750,7 @@ chpDiagnosis fSpec flags
 --     multviols = [(r,ps) | (r,ps) <- allViolations fSpec, partofThemes r, not (r_usr r == UserDefined)]
      
 
---     popviols = [(r,ps) | r<-invs++keyrs
+--     popviols = [(r,ps) | r<-invs++indexrs
 --                        , let ps=ruleviolations r, not (null ps)]
 --     multviols = [(r,ps) | r<-mults
 --                         , let ps=ruleviolations r, not (null ps)]
@@ -766,10 +766,10 @@ chpDiagnosis fSpec flags
 --             then multrules fSpec
 --             else concat [multrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
 --                  concat [multrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
---     keyrs = if null (themes fSpec)
---             then keyrules fSpec
---             else concat [keyrules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
---                  concat [keyrules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
+--     indexrs = if null (themes fSpec)
+--               then indexRules fSpec
+--               else concat [indexRules pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
+--                    concat [indexRules (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec]
 
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.

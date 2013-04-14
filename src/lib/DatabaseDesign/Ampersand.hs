@@ -8,8 +8,10 @@ module DatabaseDesign.Ampersand
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Pattern(..)
    , Declaration(..)
-   , KeyDef(..)
-   , KeySegment(..)
+   , IndexDef(..)
+   , ViewDef(..)
+   , IndexSegment(..)
+   , ViewSegment(..)
    , Expression(..)
    , UserDefPop(..)
    , Fspc(..)
@@ -53,7 +55,7 @@ module DatabaseDesign.Ampersand
       , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
    , iExpr, vExpr, deMorgan, exprUni2list, exprIsc2list, exprCps2list, exprRad2list
    -- * Functions with plugs:
-   , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
+   , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
    -- * Parser related stuff
    , CtxError 
    , createFspec

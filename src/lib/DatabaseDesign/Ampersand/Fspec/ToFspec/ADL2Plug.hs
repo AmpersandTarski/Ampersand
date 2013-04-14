@@ -156,7 +156,7 @@ rel2fld kernel
                  , entry<-if length cl==1
                           then [(rel,niceidname rel++name (source rel)) |rel<-cl]
                           else [(rel,niceidname rel++show i)|(rel,i)<-zip cl [(0::Int)..]]]
-       niceidname (EFlp e _ ) = niceidname e
+       niceidname (EFlp x _ ) = niceidname x
        niceidname (EDcD d _ ) = name d
        niceidname (EDcI  sgn) = name (target sgn)
        niceidname (ETyp (EDcI _) sgn) = name (target sgn) -- this occurs in the kernel of plugs, for concepts that are a specialization.
@@ -280,7 +280,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
                         }
       else
       TblSQL { sqlname = name c
-             , fields  = plugFields
+             , fields  = plugfields
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable
              }
@@ -302,7 +302,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
           plugMors              = zip mainkernel (PrimKey c : repeat NonMainKey)
                                 ++zip restkernel (repeat FillInLater)
                                 ++zip plugAtts   (repeat PlainAttr ) 
-          plugFields            = [fld a u | (a,u)<-plugMors]      -- Each field comes from a relation.
+          plugfields            = [fld a u | (a,u)<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r u) |(r,u) <-zip mainkernel (PrimKey c : repeat NonMainKey)]
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
@@ -339,7 +339,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
 --              a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug (i.e. fldnull=False)
 --              When is an ObjectDef a ScalarPlug or BinPlug?
 --              When do you want to define your own Scalar or BinPlug
---rel2fld  (keyDefs context) kernel plugAtts r
+--rel2fld  (indexes context) kernel plugAtts r
 
 -- | Make a sqlplug from an ObjectDef (user-defined sql plug)
 makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
@@ -357,10 +357,10 @@ makeUserDefinedSqlPlug _ obj
      "\nrels:"++concat ["\n  "++show r | r<-rels]++
      "\nkernel:"++concat ["\n  "++show r | r<-kernel]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
-     "\nplugFields:"++concat ["\n  "++show plugField | plugField<-plugFields]
+     "\nplugfields:"++concat ["\n  "++show plugField | plugField<-plugfields]
     ) -}
      TblSQL { sqlname = name obj
-            , fields  = plugFields
+            , fields  = plugfields
             , cLkpTbl = conceptLookuptable     
             , mLkpTbl = attributeLookuptable
             }   
@@ -380,7 +380,7 @@ makeUserDefinedSqlPlug _ obj
    attRels --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))
      = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
-   plugFields            = [fld r tp | (r,tp)<-plugMors] 
+   plugfields            = [fld r tp | (r,tp)<-plugMors] 
    fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r UserDefinedUsage){fldtype=tp}  --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]

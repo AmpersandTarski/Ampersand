@@ -111,7 +111,7 @@ where
           ++ [ Elem (simpleTag "Gens")         (map mkXmlTree (ptgns pat)) |not (null (ptgns pat))] 
           ++ [ Elem (simpleTag "Declarations") (map mkXmlTree (ptdcs pat)) |not (null (ptdcs pat))] 
           ++ [ Elem (simpleTag "Concepts")     (map mkXmlTree (conceptDefs pat)) |not (null (conceptDefs pat))] 
-          ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptkds pat)) |not (null (ptkds pat))] 
+          ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptixs pat)) |not (null (ptixs pat))] 
           ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (ptxps pat)) |not (null (ptxps pat))] 
            )
 
@@ -121,11 +121,11 @@ where
       = Elem (mkTag r)
              [Elem (simpleTag "Expression")   [PlainText (showADL (rrexp r))]]
    
-   instance XML KeyDef where
-     mkTag k = Tag "KeyDef" [nameToAttr k]
+   instance XML IndexDef where
+     mkTag k = Tag "IndexDef" [nameToAttr k]
      mkXmlTree k = Elem (mkTag k)
-                        ( Elem (simpleTag "Key on") [mkXmlTree (kdcpt k)] :
-                          attributesTree [e | KeyExp e <- kdats k] -- TODO: currently ignores KeyText and KeyHtml segments
+                        ( Elem (simpleTag "Index on") [mkXmlTree (ixCpt k)] :
+                          attributesTree [e | IndExp e <- indexAts k] -- TODO: currently ignores ViewText and ViewHtml segments
                         )
 
 
@@ -180,7 +180,7 @@ where
 --                PRef2ConceptDef{}  -> Tag "ExplConceptDef"  atts
 --                PRef2Declaration{} -> Tag "ExplDeclaration" atts
 --                PRef2Rule{}        -> Tag "ExplRule"        atts
---                PRef2KeyDef{}      -> Tag "ExplKeyDef"      atts
+--                PRef2IndexDef{}      -> Tag "ExplKeyDef"      atts
 --                PRef2Pattern{}     -> Tag "ExplPattern"     atts
 --                PRef2Process{}     -> Tag "ExplProcess"     atts
 --                PRef2Interface{}   -> Tag "ExplInterface"   atts

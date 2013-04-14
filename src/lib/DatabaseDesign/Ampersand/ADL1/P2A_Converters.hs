@@ -126,8 +126,10 @@ class Expr a where
   p_declarations _ = []
   p_rules :: a -> [P_Rule]
   p_rules _ = []
-  p_keys :: a -> [P_KeyDef]
+  p_keys :: a -> [P_IndDef]
   p_keys _ = []
+  p_views :: a -> [P_ViewDef]
+  p_views _ = []
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
   --   the tuples of a relation st :: Type * Type. Each tuple (TypExpr t, TypExpr t') means that the domain of t is a subset of the domain of t'.
   --   These tuples are produced in two Typemaps. The second Typemap is kept separate, because it depends on the existence of the first Typemap.
@@ -153,6 +155,10 @@ instance Expr P_Context where
   = concat [ p_keys pat | pat<-ctx_pats  pContext] ++
     concat [ p_keys prc | prc<-ctx_PPrcs pContext] ++
     ctx_ks pContext
+ p_views pContext
+  = concat [ p_views pat | pat<-ctx_pats  pContext] ++
+    concat [ p_views prc | prc<-ctx_PPrcs pContext] ++
+    ctx_vs pContext
  uType _ pContext
   = uType' (ctx_pats  pContext) .+.
     uType' (ctx_PPrcs pContext) .+.
@@ -172,12 +178,14 @@ instance Expr P_Pattern where
  p_rules pPattern
   = pt_rls pPattern
  p_keys pPattern
-  = pt_kds pPattern
+  = pt_ixs pPattern
+ p_views pPattern
+  = pt_vds pPattern
  uType _ pPattern
   = uType' (pt_rls pPattern) .+.
     uType' (pt_gns pPattern) .+.
     uType' (pt_dcs pPattern) .+.
-    uType' (pt_kds pPattern) .+.
+    uType' (pt_ixs pPattern) .+.
     uType' (pt_xps pPattern) .+.
     uType' (pt_pop pPattern)
 
@@ -187,12 +195,14 @@ instance Expr P_Process where
  p_rules pProcess
   = procRules pProcess
  p_keys pProcess
-  = procKds pProcess
+  = procIds pProcess
+ p_views pProcess
+  = procVds pProcess
  uType _ pProcess
   = uType' (procRules pProcess) .+.
     uType' (procGens  pProcess) .+.
     uType' (procDcls  pProcess) .+.
-    uType' (procKds   pProcess) .+.
+    uType' (procIds   pProcess) .+.
     uType' (procXps   pProcess) .+.
     uType' (procPop   pProcess)
 
@@ -216,15 +226,26 @@ instance Expr P_PairViewSegment where
  uType _ (P_PairViewExp Tgt term) = uType term term
  uType _ _ = nothing
   
-instance Expr P_KeyDef where
+instance Expr P_IndDef where
  p_keys k = [k]
  uType _ k
-  = let x=Pid (kd_cpt k) in
+  = let x=Pid (ix_cpt k) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
                           mSpecific Src x Src (obj_ctx obj) (obj_ctx obj)
                            -- TODO: improve mSpecific's error message here
-                        | P_KeyExp obj <- kd_ats k
+                        | P_IndExp obj <- ix_ats k
+                        ]
+
+instance Expr P_ViewDef where
+ p_views v = [v]
+ uType _ v
+  = let x=Pid (vd_cpt v) in
+    uType x x .+.
+    foldr (.+.) nothing [ uType obj obj .+.
+                          mSpecific Src x Src (obj_ctx obj) (obj_ctx obj)
+                           -- TODO: improve mSpecific's error message here
+                        | P_ViewExp obj <- vd_ats v
                         ]
 
 -- TODO: continue adding errors until you reach instance Expr Term
@@ -413,6 +434,7 @@ pCtx2aCtx p_context
              , ctxpopus  = populationTable
              , ctxcds    = acds
              , ctxks     = keys
+             , ctxvs     = views
              , ctxgs     = agens
              , ctxifcs   = ifcs
              , ctxps     = apurp
@@ -516,7 +538,7 @@ pCtx2aCtx p_context
        , let eqs=[c | TypExpr (Pid c) _<-equals ]
        , length eqs>1]
     (stTypeGraph,eqTypeGraph) = typeAnimate st stClos eqType stClosAdded stClos1
-    cxerrs = rulecxes++keycxes++interfacecxes++patcxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
+    cxerrs = rulecxes++keycxes++viewcxes++interfacecxes++patcxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
@@ -536,9 +558,12 @@ pCtx2aCtx p_context
     (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")   . ctx_rs   ) p_context of
                             Checked ruls -> (ruls, [])
                             Errors errs  -> (fatal 1042 ("Do not refer to undefined rules\n"++show errs), errs)
-    (keys,    keycxes)   = case (parallelList . map pKDef2aKDef               . ctx_ks   ) p_context of
+    (keys,    keycxes)   = case (parallelList . map pIndex2aIndex               . ctx_ks   ) p_context of
                             Checked ks   -> (ks, [])
                             Errors errs  -> (fatal 1045 ("Do not refer to undefined keys\n"++show errs), errs)
+    (views,   viewcxes)  = case (parallelList . map pVDef2aVDef               . ctx_vs   ) p_context of
+                            Checked vs   -> (vs, [])
+                            Errors errs  -> (fatal 566 ("Do not refer to undefined views\n"++show errs), errs)
     (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                . ctx_ifcs ) p_context of
                             Checked is -> (is, []) -- (fatal 543 ("Diagnostic: "++concat ["\n\n   "++show ifc | ifc<-is])::[Interface], [])
                             Errors errs  -> (fatal 1048 ("Do not refer to undefined interfaces\n"++show errs), errs)
@@ -564,6 +589,7 @@ pCtx2aCtx p_context
                   `uni` mp1Exprs procs
                   `uni` mp1Exprs ctxrules
                   `uni` mp1Exprs keys
+                  `uni` mp1Exprs views
                   `uni` mp1Exprs ifcs 
              
     themeschk = case orphans of
@@ -594,9 +620,9 @@ pCtx2aCtx p_context
 
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> parRuls ppat <*> parKeys ppat <*> parDcls ppat <*> parPrps ppat
+     = f <$> parRuls ppat <*> parKeys ppat <*> parViews ppat <*> parDcls ppat <*> parPrps ppat
        where
-        f prules keys' decsNpops xpls
+        f prules keys' views' decsNpops xpls
          = A_Pat { ptnm  = name ppat
                  , ptpos = pt_pos ppat
                  , ptend = pt_end ppat
@@ -604,20 +630,22 @@ pCtx2aCtx p_context
                  , ptgns = agens'
                  , ptdcs = [d{decpat=name ppat} | (d,_)<-decsNpops]
                  , ptups = catMaybes (map snd decsNpops)
-                 , ptkds = keys'
+                 , ptixs = keys'
+                 , ptvds = views'
                  , ptxps = xpls
                  }
-        agens'  = map (pGen2aGen (name ppat)) (pt_gns ppat)
-        parRuls = parallelList . map (pRul2aRul (name ppat)) . pt_rls
-        parKeys = parallelList . map pKDef2aKDef . pt_kds
-        parDcls = parallelList . map pDecl2aDecl . pt_dcs
-        parPrps = parallelList . map pPurp2aPurp . pt_xps
+        agens'   = map (pGen2aGen (name ppat)) (pt_gns ppat)
+        parRuls  = parallelList . map (pRul2aRul (name ppat)) . pt_rls
+        parKeys  = parallelList . map pIndex2aIndex . pt_ixs
+        parViews = parallelList . map pVDef2aVDef . pt_vds
+        parDcls  = parallelList . map pDecl2aDecl . pt_dcs
+        parPrps  = parallelList . map pPurp2aPurp . pt_xps
 
     pProc2aProc :: P_Process -> Guarded Process
     pProc2aProc pproc
-     = f <$> parRuls pproc <*> parKeys pproc <*> parDcls pproc <*> parRRels pproc <*> parRRuls pproc <*> parPrps pproc
+     = f <$> parRuls pproc <*> parKeys pproc <*> parViews pproc <*> parDcls pproc <*> parRRels pproc <*> parRRuls pproc <*> parPrps pproc
        where
-        f prules keys' decsNpops rrels rruls expls
+        f prules keys' views' decsNpops rrels rruls expls
          = Proc { prcNm    = procNm pproc
                 , prcPos   = procPos pproc
                 , prcEnd   = procEnd pproc
@@ -627,14 +655,16 @@ pCtx2aCtx p_context
                 , prcUps   = catMaybes (map snd decsNpops)
                 , prcRRuls = [(rol,rul) |rul<-udefrules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr] -- The assignment of roles to rules.
                 , prcRRels = [(rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
-                , prcKds   = keys'                                                    -- The key definitions defined in this process
+                , prcIxs   = keys'                                                    -- The index definitions defined in this process
+                , prcVds   = views'                                                   -- The view definitions defined in this process
                 , prcXps   = expls                                                    -- The purposes of elements defined in this process
                 } 
         parRuls  = parallelList . map (pRul2aRul (name pproc)) . procRules
         parDcls  = parallelList . map pDecl2aDecl . procDcls
         parRRels = parallelList . map pRRel2aRRel . procRRels
         parRRuls = parallelList . map pRRul2aRRul . procRRuls
-        parKeys  = parallelList . map pKDef2aKDef . procKds
+        parKeys  = parallelList . map pIndex2aIndex . procIds
+        parViews = parallelList . map pVDef2aVDef . procVds
         parPrps  = parallelList . map pPurp2aPurp . procXps
  
     pRRul2aRRul :: RoleRule -> Guarded RoleRule
@@ -726,36 +756,64 @@ pCtx2aCtx p_context
                   }
                where fmt = fromMaybe defFormat (mFormat pm)
 
-    -- | pKDef2aKDef checks compatibility of composition with key concept on equality
-    pKDef2aKDef :: P_KeyDef -> Guarded KeyDef
-    pKDef2aKDef pkdef
+    -- | pIndex2aIndex checks compatibility of composition with index concept on equality
+    pIndex2aIndex :: P_IndDef -> Guarded IndexDef
+    pIndex2aIndex index
      = case typeErrors' of
-        [] -> Checked (Kd { kdpos = kd_pos pkdef
-                          , kdlbl = kd_lbl pkdef
-                          , kdcpt = c
-                          , kdats = segs
+        [] -> Checked (Ix { ixPos = ix_pos index
+                          , ixLbl = ix_lbl index
+                          , ixCpt = c
+                          , indexAts = segs
                           })
-        _  -> Errors [CxeOrig typeErrors' "key definition" "" (origin pkdef) | (not.null) typeErrors']
+        _  -> Errors [CxeOrig typeErrors' "index definition" "" (origin index) | (not.null) typeErrors']
        where
-        typeErrors' = kdcxe++segscxes
-        (segs, segscxes) = case (parallelList . map (pKeySeg2aKeySeg (kd_cpt pkdef)) . kd_ats) pkdef of
+        typeErrors' = indexCxe++segscxes
+        (segs, segscxes) = case (parallelList . map (pKeySeg2aKeySeg (ix_cpt index)) . ix_ats) index of
                              Checked segments -> (segments, [])
                              Errors  errs     -> (fatal 1166 ("Do not refer to undefined segments\n"++show errs), errs)
-        c  = pCpt2aCpt (kd_cpt pkdef)
+        c  = pCpt2aCpt (ix_cpt index)
         -- check equality
-        ats = [ expr | KeyExp expr <- segs ]
-        kdcxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
+        ats = [ expr | IndExp expr <- segs ]
+        indexCxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
                          (intercalate "\n" ["The source of term " ++ showADL (objctx x) 
-                                            ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the key concept ("++ showADL c ++ ")."
+                                            ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the index concept ("++ showADL c ++ ")."
                                            |x<-ats,source (objctx x)/=c])
-    
-    pKeySeg2aKeySeg :: P_Concept -> P_KeySegment -> Guarded KeySegment
-    pKeySeg2aKeySeg _      (P_KeyText str)   = return (KeyText str)
-    pKeySeg2aKeySeg _      (P_KeyHtml str)   = return (KeyHtml str)
-    pKeySeg2aKeySeg _      (P_KeyExp keyExp) = do { objDef <- pODef2aODef [] keyExp
-                                                  ; return (KeyExp objDef)
-                                                  }
-    
+
+    pKeySeg2aKeySeg :: P_Concept -> P_IndSegment -> Guarded IndexSegment
+    pKeySeg2aKeySeg _ (P_IndExp pObj) = do { objDef <- pODef2aODef [] pObj
+                                           ; return (IndExp objDef)
+                                           }
+
+    -- | pVDef2aVDef checks compatibility of composition with view concept on equality
+    pVDef2aVDef :: P_ViewDef -> Guarded ViewDef
+    pVDef2aVDef pvdef
+     = case typeErrors' of
+        [] -> Checked (Vd { vdpos = vd_pos pvdef
+                          , vdlbl = vd_lbl pvdef
+                          , vdcpt = c
+                          , vdats = segs
+                          })
+        _  -> Errors [CxeOrig typeErrors' "view definition" "" (origin pvdef) | (not.null) typeErrors']
+       where
+        typeErrors' = vdcxe++segscxes
+        (segs, segscxes) = case (parallelList . map (pViewSeg2aViewSeg (vd_cpt pvdef)) . vd_ats) pvdef of
+                             Checked segments -> (segments, [])
+                             Errors  errs     -> (fatal 1166 ("Do not refer to undefined segments\n"++show errs), errs)
+        c  = pCpt2aCpt (vd_cpt pvdef)
+        -- check equality
+        ats = [ expr | ViewExp expr <- segs ]
+        vdcxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
+                         (intercalate "\n" ["The source of term " ++ showADL (objctx x) 
+                                            ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the view concept ("++ showADL c ++ ")."
+                                           |x<-ats,source (objctx x)/=c])
+
+    pViewSeg2aViewSeg :: P_Concept -> P_ViewSegment -> Guarded ViewSegment
+    pViewSeg2aViewSeg _ (P_ViewText str) = return (ViewText str)
+    pViewSeg2aViewSeg _ (P_ViewHtml str) = return (ViewHtml str)
+    pViewSeg2aViewSeg _ (P_ViewExp pObj) = do { objDef <- pODef2aODef [] pObj
+                                              ; return (ViewExp objDef)
+                                              }
+
     -- QUESTION -> What is the intention of ifcArgs? ANSWER: see the declaration of P_Interface
     pIFC2aIFC :: P_Interface -> Guarded Interface
     pIFC2aIFC pifc 
@@ -841,9 +899,12 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2Rule str        ) = case [rul | rul<-p_rules p_context, name rul==str ] of
                                            [] -> Errors [newcxe (" No rule named '"++str++"'")]
                                            _  -> Checked (ExplRule str)
-    pExOb2aExOb (PRef2KeyDef str      ) = case [kd | kd<-p_keys p_context, name kd==str] of
-                                           [] -> Errors [newcxe (" No key definition named '"++str++"'")]
+    pExOb2aExOb (PRef2IndexDef str      ) = case [index | index<-p_keys p_context, name index==str] of
+                                           [] -> Errors [newcxe (" No index definition named '"++str++"'")]
                                            _  -> Checked (ExplKeyDef str)
+    pExOb2aExOb (PRef2ViewDef str     ) = case [vd | vd<-p_views p_context, name vd==str] of
+                                           [] -> Errors [newcxe (" No view definition named '"++str++"'")]
+                                           _  -> Checked (ExplViewDef str)
     pExOb2aExOb (PRef2Pattern str     ) = case [pat |pat<-ctx_pats  p_context, name pat==str] of
                                            [] -> Errors [newcxe (" No pattern named '"++str++"'")]
                                            _  -> Checked (ExplPattern str)
