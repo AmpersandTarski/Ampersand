@@ -3,6 +3,8 @@
 -- This might include that RAP is included in the returned Fspec. 
 module DatabaseDesign.Ampersand.InputProcessing (
    createFspec
+  ,parseADL1pExpr
+  
 )
 where
 import qualified DatabaseDesign.Ampersand.Basics as Basics
@@ -24,7 +26,7 @@ import Data.GraphViz (runGraphvizCommand,GraphvizCommand(..),GraphvizOutput(..))
 fatal :: Int -> String -> a
 fatal = Basics.fatalMsg "InputProcessing"
 
--- | create an Fspec from a given input file 
+-- | create an Fspec, based on the user defined flags. 
 createFspec :: Options  -- ^The options derived from the command line 
             -> IO(Guarded Fspc) 
 createFspec flags = 
@@ -148,7 +150,9 @@ parse1File2pContext (fPath, fContent) =
   where
   normalize ::FilePath -> FilePath
   normalize name = (takeDirectory fPath) </> name
-  
+
+
+ 
 emptyContext :: P_Context
 emptyContext = PCtx "" [] Nothing Nothing [] [] [] [] [] [] [] [] [] [] [] [] [] []
 
@@ -175,4 +179,13 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 gs
       , ctx_metas = metas1 ++ metas2
       }
 
-        
+-- | Parse isolated ADL1 expression strings
+parseADL1pExpr :: String -> String -> Guarded Term
+parseADL1pExpr filename input = 
+  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
+      steps :: Steps (Pair Term (Pair [Token] a)) Token
+      steps = parse pTerm $ scanner input
+  in  case  getMsgs steps of
+        []   -> Checked $ let Pair result _ = evalSteps steps in result
+        msgs -> Errors [PE msgs]
+
