@@ -210,6 +210,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      | (cid,cdf)<-r_cptdf, not(null cdf) 
                      , let cnm = geta r_cptnm cid (error "while geta r_cptnm for cdf.")]
        , ctx_ks    = []
+       , ctx_vs    = []
        , ctx_gs    = []
        , ctx_ifcs  = []
        , ctx_ps    = [PRef2 (DBLoc "Atlas(PatPurpose)") (PRef2Pattern pnm) (P_Markup Nothing Nothing ppurp) []
@@ -247,7 +248,8 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_dcs = [atlas2decl rid i lang r_decnm r_decsgn r_src r_trg r_cptnm r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean
                     |(i,(pid',rid))<-zip [1..] r_ptdcs, pid==pid']
          , pt_cds = []
-         , pt_kds = []
+         , pt_ixs = []
+         , pt_vds = []
          , pt_xps = [PRef2 (DBLoc "Atlas(RulPurpose)") (PRef2Rule rnm) (P_Markup Nothing Nothing rpurp) []
                     | (pid',rid)<-r_ptrls, pid==pid'
                     , (rid',rpurp)<-r_rrpurpose, rid==rid', not(null rpurp)

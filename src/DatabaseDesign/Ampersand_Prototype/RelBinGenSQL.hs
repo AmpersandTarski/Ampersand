@@ -32,7 +32,7 @@ isOne' :: ObjectDef -> Bool
 isOne' = isOne     -- isOneExpr$contextOf o
                    --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.
                    --      isOneExpr (rev:771) kan in de problemen komen bij doSqlGet (error "line 578 Object.hs"). 
-                   --      in dat geval komt isOne (huidige rev) ook in de problemen (error iets met keygroup)
+                   --      in dat geval komt isOne (huidige rev) ook in de problemen (error iets met viewgroup)
                    --      Dit heeft te maken met ingewikkelde kernels.
                    --      case waarbij INJ cruciale rol speelt:
                    --  value1 :: Obj -> Datatype [INJ].

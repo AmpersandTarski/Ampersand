@@ -53,7 +53,7 @@ import DatabaseDesign.Ampersand
 --   , conjNF, disjNF, simplify
 --   , v, notCpl, isPos, isNeg
 --   -- * Functions with plugs:
---   , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, iskey
+--   , tblfields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
 --   -- * Parser related stuff
 --   , ParserVersion(..)
 --   , parseFile

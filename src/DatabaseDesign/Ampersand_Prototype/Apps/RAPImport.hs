@@ -125,7 +125,7 @@ makeCtxErrorPops flags usrfiles eid pctx
    where (cx,_,_) = typeCheck nc []
          nc = PCtx (ctx_nm pctx) (ctx_pos pctx) (ctx_lang pctx) (ctx_markup pctx) [] 
                    [P_Pat (pt_nm p) (pt_pos p) (pt_end p) [] (pt_gns p) (pt_dcs p) [] [] [] [] | p<-ctx_pats pctx]
-                   [] [] [] [] [] [] [] [] [] [] [] []
+                   [] [] [] [] [] [] [] [] [] [] [] [] []
 {-makeCtxErrorPops eid c (Cxes xs) = []
 makeCtxErrorPops eid c (CxeOrig cxe t nm o)
    | null cxe                                    = []

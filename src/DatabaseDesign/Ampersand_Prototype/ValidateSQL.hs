@@ -42,7 +42,8 @@ validateRuleSQL fSpec flags =
     ; let allExps = getAllInterfaceExps fSpec ++ 
                     getAllRuleExps fSpec ++
                     getAllPairViewExps fSpec ++
-                    getAllKeyExps fSpec
+                    getAllKeyExps fSpec ++
+                    getAllViewExps fSpec
                     
     ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
     ; results <- mapM (validateExp fSpec flags) allExps 
@@ -81,10 +82,14 @@ getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fS
        getPairViewExps _    = []              
 
 getAllKeyExps :: Fspc -> [ValidationExp]
-getAllKeyExps fSpec = concatMap getKeyExps $ vkeys fSpec
- where getKeyExps key = [ (objctx objDef, "key "++show (name key)) 
-                        | KeyExp objDef <- kdats key ]
+getAllKeyExps fSpec = concatMap getKeyExps $ vIndices fSpec
+ where getKeyExps index = [ (objctx objDef, "index "++show (name index)) 
+                            | IndExp objDef <- indexAts index ]
 
+getAllViewExps :: Fspc -> [ValidationExp]
+getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
+ where getViewExps view = [ (objctx objDef, "view "++show (name view)) 
+                          | ViewExp objDef <- vdats view ]
 
 type ValidationExp = (Expression, String) 
 -- a ValidationExp is an expression together with the place in the context where we 

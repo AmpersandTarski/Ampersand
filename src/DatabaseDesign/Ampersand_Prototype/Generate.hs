@@ -29,7 +29,7 @@ generateAll fSpec flags =
         , generateTableInfos fSpec
         , generateRules fSpec flags
         , generateRoles fSpec
-        , generateKeys fSpec flags
+        , generateViews fSpec flags
         , generateInterfaces fSpec flags ]
     
     ; case customCssFile flags of
@@ -245,10 +245,10 @@ generateRoles fSpec =
         
  where rulesPerRole = [ (role, [rule | (rl, rule) <- fRoleRuls fSpec, rl == role ]) | role <- nub $ map fst $ fRoleRuls fSpec ]
        
-generateKeys :: Fspc -> Options -> [String]
-generateKeys fSpec flags =
-  [ "//$allKeys is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getKey())."
-  , "$allKeys ="
+generateViews :: Fspc -> Options -> [String]
+generateViews fSpec flags =
+  [ "//$allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView())."
+  , "$allViews ="
   , "  array" 
   ] ++
   addToLastLine ";" 
@@ -256,18 +256,18 @@ generateKeys fSpec flags =
       (blockParenthesize  "(" ")" ","
          [ [ "  array ( 'label' => "++showPhpStr label
            , "        , 'concept' => "++showPhpStr (name cpt)
-           , "        , 'segments' =>" -- a labeled list of sql queries for the key expressions 
+           , "        , 'segments' =>" -- a labeled list of sql queries for the view expressions 
            , "            array" 
            ] ++
-           indent 14 (blockParenthesize "(" ")" "," (map genKeySeg keySegs)) ++  
+           indent 14 (blockParenthesize "(" ")" "," (map genViewSeg viewSegs)) ++  
            [ "      )" ]           
-         | Kd _ label cpt keySegs <- [ k | c<-conceptsFromSpecificToGeneric, k <- vkeys fSpec, kdcpt k==c ] --sort from spec to gen
+         | Vd _ label cpt viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
          ]
     ) )
- where genKeySeg (KeyText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
-       genKeySeg (KeyHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
-       genKeySeg (KeyExp objDef) = [ "array ( 'segmentType' => 'Exp'"
-                                   , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // key exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+ where genViewSeg (ViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
+       genViewSeg (ViewHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
+       genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
+                                   , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
                                    , "      , 'expSQL' =>"
                                    , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" (objctx objDef))
                                                                 (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)
@@ -280,7 +280,7 @@ generateKeys fSpec flags =
                                         ONE  -> fatal 280 "What to do with ONE???" --HJO, 20130216: Deze bug kwam aan het licht bij Roles.adl. Ik heb er de fatal message bij geplaatst, zodat diagnose eenvoudiger is.
                            where undef=fatal 281 "undef would cause a loop..."
        conceptsFromSpecificToGeneric = concat (map reverse islands)
-                
+
 generateInterfaces :: Fspc -> Options -> [String]
 generateInterfaces fSpec flags =
   [ "$allInterfaceObjects ="
