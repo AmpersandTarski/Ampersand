@@ -153,7 +153,7 @@ atlas2context fSpec flags =
       -----------
       disconnect conn
       verboseLn flags "Disconnected."
-      r_exprvalue <-parseexprs r_exprvalue' --parsing is the safest way to get the Term
+      let r_exprvalue = parseexprs r_exprvalue' --parsing is the safest way to get the Term
       --verboseLn flags (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
       actx <- makectx r_ctxnm (language flags)
                      r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
@@ -166,10 +166,13 @@ atlas2context fSpec flags =
        (Errors x)  -> error (show x)
        (Checked x) -> return x
       where
-      parseexprs :: RelTbl -> IO [(String,Term)]
-      parseexprs r_exprvalue
-       = do xs <- sequence [parseADL1pExpr x "Atlas(Rule)"|(_,x)<-r_exprvalue]
-            return (zip (map fst r_exprvalue) xs)
+      parseexprs :: RelTbl -> [(String,Term)]
+      parseexprs = map f 
+         where
+           f ( str,expr) = 
+              case parseADL1pExpr expr "Atlas(Rule)" of
+                Checked t -> (str,t)
+                Errors err -> error $show err
 
 makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl
