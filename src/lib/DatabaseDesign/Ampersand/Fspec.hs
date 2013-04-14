@@ -5,7 +5,7 @@ import DatabaseDesign.Ampersand.Fspec.Fspec as X
 import DatabaseDesign.Ampersand.Fspec.Plug as X
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
         plugFields, requiredFields, requires, plugpath, Plugable(..),
-        showSQL, fldauto, iskey)
+        showSQL, fldauto, isPlugIndex)
 import DatabaseDesign.Ampersand.Fspec.ShowHS as X
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import DatabaseDesign.Ampersand.Fspec.ShowADL as X (ShowADL(..), LanguageDependent(..))

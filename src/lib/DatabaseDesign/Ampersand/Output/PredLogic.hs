@@ -301,17 +301,17 @@ module DatabaseDesign.Ampersand.Output.PredLogic
         -- Step 1: split in fragments at those points where an exists-quantifier is needed.
         --         Each fragment represents a subexpression with variables
         --         at the outside only. Fragments will be reconstructed in a conjunct.
-         res       :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
-         res       = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
+         res :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
+         res = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
         -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
          frels :: Var -> Var -> [PredLogic]
          frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
         -- Step 3: compute the intermediate variables and their types
          res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
          res' = [triple | triple<-res, not (atomic triple)]
-         ivs  :: [Var]
+         ivs ::  [Var]
          ivs  = mkvar exclVars ics
-         ics  :: [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
+         ics ::  [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
          ics  = concat
                 [ case (v',w) of
                     (Left _,    Left _   ) -> []
@@ -327,7 +327,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                  _           -> Right src
                               | (r,src,trg)<-tail res]
                 ]
-      atomic    :: (Var -> Var -> PredLogic, A_Concept, A_Concept) -> Bool
+      atomic :: (Var -> Var -> PredLogic, A_Concept, A_Concept) -> Bool
       atomic (r,a,b) = case r ("",a) ("",b) of
                         Atom{} -> True
                         _      -> False
@@ -359,9 +359,9 @@ module DatabaseDesign.Ampersand.Output.PredLogic
         -- Step 3: compute the intermediate variables and their types
          res' :: [(Var -> Var -> PredLogic, A_Concept, A_Concept)]
          res' = [triple | triple<-res, not (atomic triple)]
-         ivs  :: [Var]
+         ivs ::  [Var]
          ivs  = mkvar exclVars ics
-         ics  :: [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
+         ics ::  [ Either PredLogic A_Concept ] -- each element is either an atom or a concept
          ics  = concat
                 [ case (v',w) of
                     (Left _,    Left _   ) -> []
