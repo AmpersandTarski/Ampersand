@@ -251,7 +251,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
         where 
           eRelIs = [source sgn | EDcI sgn <- map fldexpr flds]
           showField fld =
-             let isPrimeryKey = case fldexpr fld of
+             let isPrimaryKey = case fldexpr fld of
                                   EDcI sgn -> foldl1 join eRelIs == source sgn 
                                   _        -> False 
                  mForeignKey  = case fldexpr fld of
@@ -275,7 +275,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                       <> linebreak
                       <> (strong.code.show.flduse) fld
                       <> linebreak  
-                      <> (if isPrimeryKey 
+                      <> (if isPrimaryKey 
                           then case language flags of
                                 Dutch   -> text ("Dit attribuut is de primaire sleutel. ")
                                 English -> text ("This attribute is the primary key. ")
@@ -511,7 +511,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 -- Then, the endo-poperties are given, and finally
 -- the signals are documented.
   daAssociations :: [Relation] -> [Block]
-  daAssociations rs = heteroMultiplicities ++ endoProperties ++ keyDocumentation
+  daAssociations rs = heteroMultiplicities ++ endoProperties ++ keyDocumentation ++ viewDocumentation
    where
     heteroMultiplicities
      = case [r | r@Rel{}<-rs, not (isProp r), not (isAttribute r)] of
@@ -609,12 +609,20 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
         hMults  = [decl | decl@Sgn{}<- declsUsedIn fSpec, isEndo decl
                         , null (themes fSpec) || decpat decl `elem` themes fSpec]
     keyDocumentation
-     = case (keyDefs fSpec, language flags) of
+     = case (indexes fSpec, language flags) of
         ([], _) -> []
         ([k], Dutch)   -> [ Para  [Str "Er is één key: ",Str (name k),Str "."]]
         ([k], English) -> [ Para  [Str "There is but one key: ",Str (name k),Str "." ]]
         (keyds, Dutch) -> [ Para $ Str "De volgende keys bestaan: ": commaNLPandoc (Str "en") [Str (name k) | k<-keyds]]
         (keyds, English)->[ Para $ Str "The following keys exist: ": commaEngPandoc (Str "and") [Str (name k) | k<-keyds]]
+
+    viewDocumentation
+     = case (viewDefs fSpec, language flags) of
+        ([], _) -> []
+        ([v], Dutch)   -> [ Para  [Str "Er is één view: ",Str (name v),Str "."]]
+        ([v], English) -> [ Para  [Str "There is but one view: ",Str (name v),Str "." ]]
+        (viewds, Dutch) -> [ Para $ Str "De volgende views bestaan: ": commaNLPandoc (Str "en") [Str (name v) | v<-viewds]]
+        (viewds, English)->[ Para $ Str "The following views exist: ": commaEngPandoc (Str "and") [Str (name v) | v<-viewds]]
 
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
@@ -730,7 +738,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                               ]
        plugKeydefs
         = case language flags of
-           English -> case [k | k<-keyrules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
+           English -> case [k | k<-indexRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set contains one key. " ]
                               , if showPredExpr flags
@@ -743,7 +751,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]]
                                                 | s<-ss ]
                               ]
-           Dutch   -> case [k | k<-keyrules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
+           Dutch   -> case [k | k<-indexRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ] 
                               , if showPredExpr flags

@@ -32,56 +32,56 @@ instance ShowADL TypErrTyp where
   showADL (TETIsc t) = "the intersect arising at "++showADL t
   showADL (TETEq t) = "the equality arising at "++showADL t
   showADL (TETObj) = "the INTERFACE"
-  showADL (TETKey) = "the KEY"
+  showADL (TETKey) = "the INDEX"
   showADL (TETPairView t) = "the RULE View "++show t -- TODO: what to call this?
                
-data CtxError = CxeEqConcepts { cxeConcepts  :: [P_Concept]      -- ^ The list of concepts with different names, that have been proven equal.
+data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]      -- ^ The list of concepts with different names, that have been proven equal.
                               }   
-              | CxeEqAttribs  { cxeOrig      :: Origin           -- ^ The location of the object/key definition in which different attributes have the same name.
-                              , cxeName      :: String           -- ^ The name shared by different attributes.
-                              , cxeAtts      :: [Term]           -- ^ The list of attributes with the same name.
+              | CxeEqAttribs  { cxeOrig ::      Origin           -- ^ The location of the object/index definition in which different attributes have the same name.
+                              , cxeName ::      String           -- ^ The name shared by different attributes.
+                              , cxeAtts ::      [Term]           -- ^ The list of attributes with the same name.
                               }   
-              | CxeUnsupRoles { cxeIfc       :: P_Interface
-                              , cxeRoles     :: [String]
+              | CxeUnsupRoles { cxeIfc ::       P_Interface
+                              , cxeRoles ::     [String]
                               }   
-              | CxeNoRoles    { cxeIfc       ::  P_Interface
+              | CxeNoRoles    { cxeIfc ::        P_Interface
                               }   
-              | CxeNoRules    { cxePos       :: Origin
-                              , cxeRules     :: [String]
+              | CxeNoRules    { cxePos ::       Origin
+                              , cxeRules ::     [String]
                               }  
-              | CxeNoIfcs     { cxeName      :: String
-                              , cxePos       :: Origin
-                              , cxeIfcs      :: [P_Interface]
+              | CxeNoIfcs     { cxeName ::      String
+                              , cxePos ::       Origin
+                              , cxeIfcs ::      [P_Interface]
                               }     
-              | CxeObjMismatch{ cxeExpr :: Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
-                              , cxeEnv ::  [P_Concept]
-                              , cxeSrcs :: [P_Concept]
+              | CxeObjMismatch{ cxeExpr ::      Term            --called as:  CxeObjMismatch oTerm (srcTypes (cod env)) (srcTypes (dom oTerm))
+                              , cxeEnv ::       [P_Concept]
+                              , cxeSrcs ::      [P_Concept]
                               } 
-              | CxeRel        { cxeExpr      :: Term
-                              , cxeDecs      :: [P_Declaration]  -- possibilities for bindings.
-                              , cxeSNDs      :: [P_Declaration]  -- Declarations with the same name
+              | CxeRel        { cxeExpr ::      Term
+                              , cxeDecs ::      [P_Declaration]  -- possibilities for bindings.
+                              , cxeSNDs ::      [P_Declaration]  -- Declarations with the same name
                               }  
-              | CxeRelUndefined { cxeExpr      :: Term
+              | CxeRelUndefined { cxeExpr ::      Term
                               }   
-              | CxeSign       { cxeExpr      :: Term
-                              , cxeSrcs      :: [P_Concept]
-                              , cxeTrgs      :: [P_Concept]
+              | CxeSign       { cxeExpr ::      Term
+                              , cxeSrcs ::      [P_Concept]
+                              , cxeTrgs ::      [P_Concept]
                               }   
-              | CxeTyping     { cxeLhs       :: (Term,SrcOrTgt,[P_Concept])
-                              , cxeRhs       :: (Term,SrcOrTgt,[P_Concept])
-                              , cxeTyp       :: TypErrTyp
+              | CxeTyping     { cxeLhs ::       (Term,SrcOrTgt,[P_Concept])
+                              , cxeRhs ::       (Term,SrcOrTgt,[P_Concept])
+                              , cxeTyp ::       TypErrTyp
                               }   
-              | CxeCast       { cxeExpr      :: Term
-                              , cxeDomCast   :: [P_Concept]
-                              , cxeCodCast   :: [P_Concept]
+              | CxeCast       { cxeExpr ::      Term
+                              , cxeDomCast ::   [P_Concept]
+                              , cxeCodCast ::   [P_Concept]
                               }
               | CxeOrig       { cxeSubErrors :: [CtxError] -- ^ context information of an error   
-                              , cxetype      :: String         -- ^ the type of context e.g. a rule
-                              , cxename      :: String         -- ^ its name
-                              , cxeorigin    :: Origin}        -- ^ the origin of the context e.g. a file position
+                              , cxetype ::      String         -- ^ the type of context e.g. a rule
+                              , cxename ::      String         -- ^ its name
+                              , cxeorigin ::    Origin}        -- ^ the origin of the context e.g. a file position
               | Cxe           { cxeSubErrors :: [CtxError] -- ^ lower level errors
-                              , cxemsg       :: String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
-              | PE            { cxeMsgs      :: [ParseError]}  -- ^ list of parse-time messages
+                              , cxemsg ::       String}        -- ^ a description of the error, e.g. "in the relation at line line 5752, file \"Zaken.adl\":"
+              | PE            { cxeMsgs ::      [ParseError]}  -- ^ list of parse-time messages
 
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)

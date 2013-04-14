@@ -26,16 +26,17 @@ class Language a where
                                      --   Don't confuse declarations with declsUsedIn, which gives the declarations that are
                                      --   used in a.)
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
-                                     --   which are not multiplicity- and not key rules.
+                                     --   which are not multiplicity- and not index rules.
   invariants :: a -> [Rule]          -- ^ all rules that are not maintained by users will be maintained by the computer.
-                                     --   That includes multiplicity rules and key rules, but excludes rules that are assigned to a role.
+                                     --   That includes multiplicity rules and index rules, but excludes rules that are assigned to a role.
                                      -- ^ all relations used in rules must have a valid declaration in the same viewpoint.
-  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ keyrules x
+  invariants x  = [r |r<-udefrules x, not (isSignal r)] ++ multrules x ++ indexRules x
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
   multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
-  keyrules :: a -> [Rule]            -- all key rules that are maintained within this viewpoint.
-  keyrules x    = concatMap rulesFromKey $ keyDefs x
-  keyDefs :: a -> [KeyDef]           -- ^ all keys that are defined in a
+  indexRules :: a -> [Rule]            -- all index rules that are maintained within this viewpoint.
+  indexRules x    = concatMap rulesFromKey $ indexes x
+  indexes :: a -> [IndexDef]           -- ^ all keys that are defined in a
+  viewDefs :: a -> [ViewDef]         -- ^ all views that are defined in a
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
   
@@ -74,31 +75,31 @@ class ProcessStructure a where
   workFromProcessRules :: [UserDefPop] -> a -> [(Rule,Paire)]  --the violations of rules and multrules of this viewpoint
   workFromProcessRules  udp x = [(r,viol) |r<-processRules x, viol<-ruleviolations udp r]
    
-rulesFromKey :: KeyDef -> [Rule]
-rulesFromKey _ = [] --see #276 mkProductInjectivityRule keyExps : 
-                   --mkProductTotalityRule keyExps :
-                   --see #276 map mkUnivalenceRule keyExps  
+rulesFromKey :: IndexDef -> [Rule]
+rulesFromKey _ = [] --see #276 mkProductInjectivityRule ViewExps : 
+                   --mkProductTotalityRule ViewExps :
+                   --see #276 map mkUnivalenceRule ViewExps  
 {-
- where keyExps = [ (objnm att, objctx att) | KeyExp att <- kdats key ]
+ where ViewExps = [ (objnm att, objctx att) | ViewExp att <- indexAts index ]
  
        mkProductInjectivityRule exprs = mkKeyRule "Diamond" "Diamond rule" "Diamantregel" $ 
-         foldr (./\.) (vExpr sgn)  [  expr `diamond` flp expr | (_,expr) <- exprs ] .|-. iExpr (kdcpt key)
+         foldr (./\.) (vExpr sgn)  [  expr `diamond` flp expr | (_,expr) <- exprs ] .|-. iExpr (ixCpt index)
        
        diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)
        
        --mkProductTotalityRule exprs = mkKeyRule "PrTot" "Product totality" "Product-totaliteit" $
-       --  iExpr (kdcpt key) .|-. foldr (.\/.) (notCpl sgn (vExpr sgn)) [expr .:. flp expr | (_,expr) <- exprs ]) 
+       --  iExpr (ixCpt index) .|-. foldr (.\/.) (notCpl sgn (vExpr sgn)) [expr .:. flp expr | (_,expr) <- exprs ]) 
 
        mkUnivalenceRule (lbl, expr) = mkKeyRule ("Uni"++lbl) "Univalence" "Univalentie" $ flp expr .:. expr .|-. iExpr (target expr)
  
        -- This was taken from old rulefromKey. Even after cleaning up a bit, it's still quite messy.
        mkKeyRule abbr propertyEN propertyNL expression =
-         let ruleName = "key" ++ "_" ++ name key ++ "_" ++ abbr
-             meaningEN = propertyEN ++ ", following from key declaration "++name key
-             meaningNL = propertyNL ++ ", volgend uit key-declaratie "++name key
+         let ruleName = "index" ++ "_" ++ name index ++ "_" ++ abbr
+             meaningEN = propertyEN ++ ", following from index declaration "++name index
+             meaningNL = propertyNL ++ ", volgend uit index-declaratie "++name index
          in  Ru { rrnm        = ruleName
                 , rrexp       = expression
-                , rrfps       = origin key     -- position in source file
+                , rrfps       = origin index     -- position in source file
                 , rrmean      = AMeaning 
                                   [ A_Markup English ReST (string2Blocks ReST meaningEN)
                                   , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
@@ -108,7 +109,7 @@ rulesFromKey _ = [] --see #276 mkProductInjectivityRule keyExps :
                 , rrtyp       = sign expression
                 , rrdcl       = Nothing        -- This rule was not generated from a property of some declaration.
                 , r_env       = ""             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-                , r_usr       = Key            -- This rule was not specified as a rule in the Ampersand script, but has been generated by a computer
+                , r_usr       = Index            -- This rule was not specified as a rule in the Ampersand script, but has been generated by a computer
                 , r_sgl       = False          -- This is not a signal rule
                 , srrel       = Sgn  { decnm   = ruleName
                                      , decsgn  = sign expression
@@ -123,7 +124,7 @@ rulesFromKey _ = [] --see #276 mkProductInjectivityRule keyExps :
                                                    ]
                                      , decConceptDef = Nothing
                                      , decpopu = []
-                                     , decfpos = origin key
+                                     , decfpos = origin index
                                      , deciss  = False
                                      , decusr  = False
                                      , decpat  = ""
@@ -163,7 +164,8 @@ instance Language A_Context where
                                                              }]
   udefrules    context = concatMap udefrules (ctxpats context) ++ concatMap udefrules (ctxprocs context) ++ ctxrs context  -- all user defined rules
 --  invariants   context = [r | r<-udefrules context,  null  [role | (role, rul) <-maintains context, name r == name rul ]]   -- all user defined process rules
-  keyDefs      context = concatMap keyDefs (ctxpats context) ++ concatMap keyDefs (ctxprocs context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
+  indexes      context = concatMap indexes (ctxpats context) ++ concatMap indexes (ctxprocs context) ++ ctxks context
+  viewDefs     context = concatMap viewDefs (ctxpats context) ++ concatMap viewDefs (ctxprocs context) ++ ctxvs context
   gens         context = concatMap gens (ctxpats context) `uni` concatMap gens (ctxprocs context) `uni` ctxgs context
   patterns             = ctxpats
 
@@ -188,7 +190,8 @@ instance Language Process where
   declarations proc = prcDcls proc `uni` map makeDecl (gens proc)
   udefrules         = prcRules -- all user defined rules in this process
 --  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
-  keyDefs           = prcKds
+  indexes           = prcIxs
+  viewDefs          = prcVds
   gens              = prcGens
   patterns      _   = []
 
@@ -213,7 +216,8 @@ instance Language Pattern where
   declarations pat = ptdcs pat `uni` map makeDecl (gens pat)
   udefrules        = ptrls   -- all user defined rules in this pattern
 --  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
-  keyDefs          = ptkds 
+  indexes          = ptixs 
+  viewDefs         = ptvds 
   gens             = ptgns 
   patterns     pat = [pat]
 
@@ -237,7 +241,8 @@ instance Language Rule where
   declarations r = [srrel r | isSignal r] -- a process rule "declares" a new relation to store violations in. That relation is "stored" in that rule. Therefore it counts as a declaration.
   udefrules    r = [r | r_usr r == UserDefined ]
 --  invariants   r = [r | not (isSignal r)]
-  keyDefs      _ = []
+  indexes      _ = []
+  viewDefs     _ = []
   gens         _ = []
   patterns r     = [A_Pat{ ptnm  = ""
                        , ptpos = Origin "Nameless pattern generated by patterns (Language (Rule(Relation Concept))) "
@@ -247,7 +252,8 @@ instance Language Rule where
                                  | g<-concs r, s<-concs r, g<s, null [x | x<-concs r>-[g,s], g<x, x<s]]
                        , ptdcs = declsUsedIn r
                        , ptups = []
-                       , ptkds = []
+                       , ptixs = []
+                       , ptvds = []
                        , ptxps = []
                        }
                    ]

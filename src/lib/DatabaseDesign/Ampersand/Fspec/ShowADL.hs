@@ -128,7 +128,8 @@ instance ShowADL ExplObj where
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
       ExplDeclaration d  -> "RELATION "++showADL (makeRelation d)
       ExplRule str       -> "RULE "++showstr str
-      ExplKeyDef str     -> "KEY "++showstr str
+      ExplKeyDef str     -> "INDEX "++showstr str
+      ExplViewDef str    -> "VIEW "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
       ExplProcess str    -> "PROCESS "++str
       ExplInterface str  -> "INTERFACE "++showstr str
@@ -147,7 +148,7 @@ instance ShowADL Process where
     ++ (if null (maintains prc) then "" else "\n  " ++                        showRM prc               ++ "\n")
     ++ (if null (mayEdit prc)   then "" else "\n  " ++                        showRR prc               ++ "\n")
     ++ (if null (conceptDefs prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs prc))    ++ "\n")
-    ++ (if null (prcKds prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcKds prc))    ++ "\n")
+    ++ (if null (prcIxs prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcIxs prc))    ++ "\n")
     ++ (if null (prcXps prc)    then "" else "\n  " ++intercalate "\n  " (map showADL (prcXps prc))    ++ "\n")
     ++ "ENDPROCESS"
     where -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work... 
@@ -174,7 +175,7 @@ instance ShowADL Pattern where
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
     ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
     ++ (if null (conceptDefs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs pat)) ++ "\n")
-    ++ (if null (ptkds pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptkds pat)) ++ "\n")
+    ++ (if null (ptixs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptixs pat)) ++ "\n")
     ++ "ENDPATTERN"
 
 instance ShowADL PairViewSegment where
@@ -215,17 +216,25 @@ instance ShowADL Interface where
           ++(if null (ifcArgs ifc) then [] else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
           ++showADL (ifcObj ifc)
 
-instance ShowADL KeyDef where
- showADL kd 
-  = "KEY "++kdlbl kd
-          ++ ": " ++name (kdcpt kd)
-          ++ "(" ++intercalate ", " (map showADL $ kdats kd) ++ ")"
+instance ShowADL IndexDef where
+ showADL index 
+  = "INDEX "++ixLbl index
+          ++ ": " ++name (ixCpt index)
+          ++ "(" ++intercalate ", " (map showADL $ indexAts index) ++ ")"
 
-instance ShowADL KeySegment where
- showADL (KeyExp objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
- showADL (KeyText str) = "TXT " ++ show str
- showADL (KeyHtml str) = "PRIMHTML " ++ show str
-                             
+instance ShowADL IndexSegment where
+ showADL (IndExp objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
+
+instance ShowADL ViewDef where
+ showADL vd 
+  = "VIEW "++vdlbl vd
+          ++ ": " ++name (vdcpt vd)
+          ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
+
+instance ShowADL ViewSegment where
+ showADL (ViewExp objDef) = (if null (name objDef) then "" else "\""++name objDef++"\":") ++ showADL (objctx objDef)
+ showADL (ViewText str) = "TXT " ++ show str
+ showADL (ViewHtml str) = "PRIMHTML " ++ show str
 
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
@@ -337,7 +346,7 @@ instance ShowADL Fspc where
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
     ++ (if null cds then "" else "\n"++intercalate "\n"   (map showADL cds) ++ "\n")
     ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec >- concatMap gens (patterns fSpec))) ++ "\n")
-    ++ (if null (keyDefs fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (keyDefs fSpec >- concatMap keyDefs (patterns fSpec)))       ++ "\n")
+    ++ (if null (indexes fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (indexes fSpec >- concatMap indexes (patterns fSpec)))       ++ "\n")
     ++ (if null (declarations fSpec) then "" else "\n"++intercalate "\n"   (map showADL (declarations fSpec >- concatMap declarations (patterns fSpec))) ++ "\n")
     ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
     ++ (if null (fSexpls fSpec) then "" else "\n"++intercalate "\n"   (map showADL (fSexpls fSpec)) ++ "\n")

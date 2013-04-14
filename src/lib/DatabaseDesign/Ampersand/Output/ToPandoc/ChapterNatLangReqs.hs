@@ -330,13 +330,13 @@ chpNatLangReqs lev fSpec flags =
                  where purps     = purposesDefinedIn fSpec (language flags) dcl
                        samplePop = take 3 (fullContents (userDefPops fSpec) dcl)
                        sampleSentences =
-                         [ Para $ mkSentence (development flags) dcl srcKeyAtom tgtKeyAtom 
+                         [ Para $ mkSentence (development flags) dcl srcViewAtom tgtViewAtom 
                          | (srcAtom,tgtAtom)<-samplePop
-                         , let srcKeyAtom = showKeyAtom fSpec (Just dcl) (source dcl) srcAtom 
-                         , let tgtKeyAtom = showKeyAtom fSpec Nothing (target dcl) tgtAtom
+                         , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) srcAtom 
+                         , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) tgtAtom
                          ] ++
                          (if null samplePop then [] else [Plain [RawInline "latex" "\\medskip"]])
-                         
+
               printRules :: [Rule] -> [(Origin,Counter -> [Block])]
               printRules = map (\rul -> (origin rul, printRule rul))
               printRule :: Rule -> Counter -> [Block]
@@ -378,32 +378,34 @@ chpNatLangReqs lev fSpec flags =
                    | otherwise = []
 
 -- TODO: fix showing/not showing based on relation
--- TODO: what about relations in the target key?
+-- TODO: what about relations in the target view?
 -- TODO: move these to some auxiliaries or utils
-showKeyAtom :: Fspc -> Maybe Declaration -> A_Concept -> String -> String
-showKeyAtom fSpec mDec cncpt atom =
-  case mapMaybe (getKey fSpec) (cncpt : getGeneralizations fSpec cncpt) of
+showViewAtom :: Fspc -> Maybe Declaration -> A_Concept -> String -> String
+showViewAtom fSpec mDec cncpt atom =
+  case mapMaybe (getView fSpec) (cncpt : getGeneralizations fSpec cncpt) of
     []    -> atom
-    key:_ -> case mDec of
-              Nothing -> concatMap showKeySegment (kdats key)
-              Just md -> if (not.null) [() | KeyExp objDef <- kdats key, EDcD d _<-[objctx objDef], d==md]
+    view:_ -> case mDec of
+              Nothing -> concatMap showViewSegment (vdats view)
+              Just md -> if (not.null) [() | ViewExp objDef <- vdats view, EDcD d _<-[objctx objDef], d==md]
                          then atom
-                         else concatMap showKeySegment (kdats key)
-             -- if we are showing one of the key relations, don't expand the key
-     where showKeySegment (KeyText str) = str
-           showKeySegment (KeyHtml str) = str
-           showKeySegment (KeyExp objDef) = 
+                         else concatMap showViewSegment (vdats view)
+             -- if we are showing one of the view relations, don't expand the view
+     where showViewSegment (ViewText str) = str
+           showViewSegment (ViewHtml str) = str
+           showViewSegment (ViewExp objDef) = 
              case [ tgtAtom | (srcAtom, tgtAtom) <- fullContents (userDefPops fSpec)(objctx objDef), atom == srcAtom ] of
-               []        -> ""
-               keyAtom:_ -> keyAtom  
-               
-           justKeyRels = map (Just . objctx) [objDef | KeyExp objDef <- kdats key]
-      
-getKey :: Fspc -> A_Concept -> Maybe KeyDef
+               []         -> ""
+               viewAtom:_ -> viewAtom  
+        -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]
+
+getKey :: Fspc -> A_Concept -> Maybe IndexDef
 getKey fSpec cncpt = 
-  case filter ((== cncpt) .  kdcpt) $ vkeys fSpec of
+  case filter ((== cncpt) .  ixCpt) (vIndices fSpec) of
     []       -> Nothing 
     keyDef:_ -> Just keyDef 
 
-
- 
+getView :: Fspc -> A_Concept -> Maybe ViewDef
+getView fSpec cncpt = 
+  case filter ((== cncpt) .  vdcpt) (vviews fSpec) of
+    []       -> Nothing 
+    viewDef:_ -> Just viewDef 

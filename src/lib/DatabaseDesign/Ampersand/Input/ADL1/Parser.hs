@@ -34,7 +34,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                       , "RELATION", "MEANING", "DEFINE", "CONCEPT", "KEY", "TXT", "PRIMHTML"
+                       , "RELATION", "MEANING", "DEFINE", "CONCEPT", "INDEX"
+                       , "VIEW", "TXT", "PRIMHTML"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
@@ -74,7 +75,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_ds     = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
                , ctx_cs     = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
                , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
-               , ctx_ks     = [k | CKey k<-ces]       -- The key definitions defined in this context, outside the scope of patterns
+               , ctx_ks     = [k | CIndx k<-ces]       -- The index definitions defined in this context, outside the scope of patterns
+               , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
                , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
                , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
                , ctx_php    = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
@@ -92,7 +94,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          CRel     <$> pRelationDef  <|>
                          CCon     <$> pConceptDef   <|>
                          CGen     <$> pGenDef       <|>
-                         CKey     <$> pKeyDef       <|>
+                         CIndx    <$> pIndex       <|>
+                         CView    <$> pViewDef      <|>
                          Cifc     <$> pInterface    <|>
                          CSqlPlug <$> pSqlplug      <|>
                          CPhpPlug <$> pPhpplug      <|>
@@ -108,7 +111,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        | CRel P_Declaration
                        | CCon ConceptDef
                        | CGen P_Gen
-                       | CKey P_KeyDef
+                       | CIndx P_IndDef
+                       | CView P_ViewDef
                        | Cifc P_Interface
                        | CSqlPlug P_ObjectDef
                        | CPhpPlug P_ObjectDef
@@ -148,7 +152,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 , pt_gns = [g | Pg g<-pes]
                 , pt_dcs = [d | Pd d<-pes]
                 , pt_cds = [c | Pc c<-pes]
-                , pt_kds = [k | Pk k<-pes]
+                , pt_ixs = [k | Pk k<-pes]
+                , pt_vds = [v | Pv v<-pes]
                 , pt_xps = [e | Pe e<-pes]
                 , pt_pop = [p | Pp p<-pes]
                 } 
@@ -157,7 +162,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                   Pd <$> pRelationDef  <|>
                   Pc <$> pConceptDef   <|>
                   Pg <$> pGenDef       <|>
-                  Pk <$> pKeyDef       <|>
+                  Pk <$> pIndex       <|>
+                  Pv <$> pViewDef      <|>
                   Pe <$> pPurpose      <|>
                   Pp <$> pPopulation
 
@@ -165,7 +171,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 | Pd P_Declaration 
                 | Pc ConceptDef
                 | Pg P_Gen
-                | Pk P_KeyDef
+                | Pk P_IndDef
+                | Pv P_ViewDef
                 | Pe PPurpose
                 | Pp P_Population
                               
@@ -185,7 +192,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  , procRRuls = [rr | PrM rr<-pes]
                  , procRRels = [rr | PrL rr<-pes]
                  , procCds   = [cd | PrC cd<-pes]
-                 , procKds   = [kd | PrK kd<-pes]
+                 , procIds   = [ix | PrI ix<-pes]
+                 , procVds   = [vd | PrV vd<-pes]
                  , procXps   = [e  | PrE e <-pes]
                  , procPop   = [p  | PrP p <-pes]
                  }
@@ -196,7 +204,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                    PrL <$> pRoleRelation <|>
                    PrC <$> pConceptDef   <|>
                    PrG <$> pGenDef       <|>
-                   PrK <$> pKeyDef       <|>
+                   PrI <$> pIndex       <|>
+                   PrV <$> pViewDef      <|>
                    PrE <$> pPurpose      <|>
                    PrP <$> pPopulation
 
@@ -206,7 +215,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  | PrL P_RoleRelation
                  | PrC ConceptDef
                  | PrG P_Gen
-                 | PrK P_KeyDef
+                 | PrI P_IndDef
+                 | PrV P_ViewDef
                  | PrE PPurpose
                  | PrP P_Population
 
@@ -319,31 +329,66 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pGenDef           = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
-   -- | A key definition looks like:   KEY onNameAdress : Person(name, address),
+   -- | A index definition looks like:   INDEX onNameAdress : Person(name, address),
    -- which means that name<>name~ /\ address<>addres~ |- I[Person].
-   -- The label 'onNameAddress' is used to refer to this key.
-   -- You may also use an expression on each attribute place, for example: KEY onpassport: Person(nationality, passport;documentnr),
+   -- The label 'onNameAddress' is used to refer to this index.
+   -- You may also use an expression on each attribute place, for example: INDEX onpassport: Person(nationality, passport;documentnr),
    -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
-   -- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
-   -- KEY onSSN: Person("social security number":ssn)
-   pKeyDef :: Parser Token P_KeyDef
-   pKeyDef  = kd <$ pKey "KEY" <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pKeySegment <* pSpec ')'
-       where kd :: Label -> P_Concept -> [P_KeySegment] -> P_KeyDef 
-             kd (Lbl nm p _) c ats = P_Kd { kd_pos = p
-                                          , kd_lbl = nm
-                                          , kd_cpt = c
-                                          , kd_ats = [ case keySeg of
-                                                          P_KeyExp x       -> if null (obj_nm x) then P_KeyExp $ x{obj_nm=show i} else P_KeyExp x 
-                                                          P_KeyText _ -> keySeg 
-                                                          P_KeyHtml _ -> keySeg 
-                                                     | (i,keySeg)<-zip [(1::Integer)..] ats]
+   pIndex :: Parser Token P_IndDef
+   pIndex  = index <$ pKey "INDEX" <*> pLabel <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
+       where index :: Label -> P_Concept -> [P_IndSegment] -> P_IndDef 
+             index (Lbl nm p _) c ats = P_Ix { ix_pos = p
+                                             , ix_lbl = nm
+                                             , ix_cpt = c
+                                             , ix_ats = ats
+                                             }
+
+             pIndSegment :: Parser Token P_IndSegment
+             pIndSegment = P_IndExp <$> pIndAtt
+             
+             pIndAtt :: Parser Token P_ObjectDef
+             pIndAtt  = attL <$> pLabelProps <*> pTerm <|>
+                        att <$> pTerm
+                 where attL (Lbl nm p strs) attexpr =
+                          P_Obj { obj_nm   = nm
+                                , obj_pos  = p
+                                , obj_ctx  = attexpr 
+                                , obj_msub = Nothing
+                                , obj_strs = strs
+                                }
+                       att attexpr =
+                           P_Obj { obj_nm   = ""
+                                 , obj_pos  = Origin "pIndAtt CC664"
+                                 , obj_ctx  = attexpr 
+                                 , obj_msub = Nothing
+                                 , obj_strs = []
+                                 }
+
+   -- | A view definition looks like:
+   --      VIEW onSSN: Person("social security number":ssn)
+   -- or
+   --      VIEW SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath , filename
+   --      ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded~;userrole
+   --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
+   -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
+   pViewDef :: Parser Token P_ViewDef
+   pViewDef  = vd <$ pKey "VIEW" <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+       where vd :: Label -> P_Concept -> [P_ViewSegment] -> P_ViewDef 
+             vd (Lbl nm p _) c ats = P_Vd { vd_pos = p
+                                          , vd_lbl = nm
+                                          , vd_cpt = c
+                                          , vd_ats = [ case viewSeg of
+                                                          P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm=show i} else P_ViewExp x 
+                                                          P_ViewText _ -> viewSeg 
+                                                          P_ViewHtml _ -> viewSeg 
+                                                     | (i,viewSeg)<-zip [(1::Integer)..] ats]
                                           } -- nrs also count text segments but they're are not important anyway
-             pKeySegment :: Parser Token P_KeySegment
-             pKeySegment = P_KeyExp  <$> pKeyAtt <|> 
-                           P_KeyText <$ pKey "TXT" <*> pString <|>
-                           P_KeyHtml <$ pKey "PRIMHTML" <*> pString
-             pKeyAtt :: Parser Token P_ObjectDef
-             pKeyAtt = rebuild <$> optional pLabelProps <*> pTerm
+             pViewSegment :: Parser Token P_ViewSegment
+             pViewSegment = P_ViewExp  <$> pViewAtt <|> 
+                            P_ViewText <$ pKey "TXT" <*> pString <|>
+                            P_ViewHtml <$ pKey "PRIMHTML" <*> pString
+             pViewAtt :: Parser Token P_ObjectDef
+             pViewAtt = rebuild <$> optional pLabelProps <*> pTerm
                  where
                    rebuild mLbl attexpr =
                      case mLbl of
@@ -356,12 +401,12 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                      }
                        Nothing ->
                                P_Obj { obj_nm   = ""
-                                     , obj_pos  = Origin "pKeyAtt CCv221.hs"
+                                     , obj_pos  = Origin "pViewAtt CCv221.hs"
                                      , obj_ctx  = attexpr 
                                      , obj_msub = Nothing
                                      , obj_strs = []
                                      }
-                       
+
    pInterface :: Parser Token P_Interface
    pInterface = lbl <$> (pKey "INTERFACE" *> pADLid_val_pos) <*>
                         (pParams `opt` [])                   <*>       -- a list of expressions, which say which relations are editable within this service.
@@ -430,7 +475,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
           pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString) <|>
                      PRef2Declaration <$ pKey "RELATION"  <*> pRelSign             <|>
                      PRef2Rule        <$ pKey "RULE"      <*> pADLid               <|>
-                     PRef2KeyDef      <$ pKey "KEY"       <*> pADLid               <|>  
+                     PRef2IndexDef      <$ pKey "INDEX"       <*> pADLid               <|>  
+                     PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid               <|>  
                      PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid               <|>
                      PRef2Process     <$ pKey "PROCESS"   <*> pADLid               <|>
                      PRef2Interface   <$ pKey "INTERFACE" <*> pADLid               <|>
@@ -618,17 +664,21 @@ In practice, we have it a little different.
    pConceptRef :: Parser Token P_Concept
    pConceptRef       = (P_Singleton <$ pKey "ONE") <|> (PCpt <$> (pConid <|> pString))
 
--- BECAUSE:
---  (SJ) Waarom heeft een label (optioneel) strings?
---  (GM) Dit is bedoeld als binding mechanisme voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
---  (SJ) Met het invoeren van referenties (t.b.v losse Explanations) bestaat er een variant met props en eentje zonder.
+--  (SJ) Why does a label have (optional) strings?
+--  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
+--  (SJ April 15th, 2013) Since INDEX has been replaced by INDEX and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
    pLabelProps :: Parser Token Label
    pLabelProps       = lbl <$> pADLid_val_pos
                            <*> (pArgs `opt` [])
                            <*  pKey_pos ":"
                        where lbl :: (String, Origin) -> [[String]] -> Label
-                             lbl (nm,pos')  = Lbl nm pos' 
+                             lbl (nm,pos') strs = Lbl nm pos' strs
                              pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
+
+   pLabel :: Parser Token Label
+   pLabel       = lbl <$> pADLid_val_pos <*  pKey ":"
+                  where lbl :: (String, Origin) -> Label
+                        lbl (nm,pos') = Lbl nm pos' []
 
    pContent :: Parser Token Pairs
    pContent          = pSpec '[' *> pListSep pComma pRecord <* pSpec ']'

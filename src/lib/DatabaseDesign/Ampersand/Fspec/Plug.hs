@@ -10,7 +10,7 @@ module DatabaseDesign.Ampersand.Fspec.Plug
      ,tblcontents
 --     ,entityfield
      ,fldauto
-     ,iskey,kernelrels,attrels,bijectivefields
+     ,isPlugIndex,kernelrels,attrels,bijectivefields
      ,PlugSQL(..)
      )
 where
@@ -235,31 +235,30 @@ showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLBool     ) = "BOOLEAN"
           
 --every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL
---iskey refers to UNIQUE INDEX and not UNIQUE KEY!!!
---iskey may contain NULL, but their index (the entityfield of the plug) must be unique for a kernel field (iskey=True)
---the field that is isIdent and iskey (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE KEY
---KeyDefs define UNIQUE KEY (fld1,fld2,..,fldn)
---TODO151210->iskey is a bad name, 'key' is misused in more cases => CLEAN UP!
+--isPlugIndex refers to UNIQUE INDEX
+--isPlugIndex may contain NULL, but their index (the entityfield of the plug) must be unique for a kernel field (isPlugIndex=True)
+--the field that is isIdent and isPlugIndex (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE INDEX
+--KeyDefs define UNIQUE INDEX (fld1,fld2,..,fldn)
 --REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is 
 --          thus I must check whether fldexpr isUni && isInj && isSur
-iskey :: PlugSQL->SqlField->Bool
-iskey plug@ScalarSQL{} f = sqlColumn plug==f
-iskey plug@BinSQL{} _ --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\r;r~=I i.e. a key for this plug
+isPlugIndex :: PlugSQL->SqlField->Bool
+isPlugIndex plug@ScalarSQL{} f = sqlColumn plug==f
+isPlugIndex plug@BinSQL{} _ --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\r;r~=I i.e. a key for this plug
   | isUni(mLkp plug) || isInj(mLkp plug) = fatal 366 "BinSQL may not store a univalent or injective rel, use TblSQL instead."
   | otherwise                            = False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
-iskey plug@TblSQL{} f    = elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
+isPlugIndex plug@TblSQL{} f    = elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
 
 --mLkpTbl stores the relation of some target field with one source field
---an iskey target field is a kernel field related to some similar or larger kernel field
+--an isPlugIndex target field is a kernel field related to some similar or larger kernel field
 --any other target field is an attribute field related to its kernel field
 kernelrels::PlugSQL ->[(SqlField,SqlField)]
 kernelrels plug@ScalarSQL{} = [(sqlColumn plug,sqlColumn plug)]
 kernelrels (BinSQL{})       = fatal 375 "Binary plugs do not know the concept of kernel fields."
-kernelrels plug@TblSQL{}    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,iskey plug tfld] 
+kernelrels plug@TblSQL{}    = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,isPlugIndex plug tfld] 
 attrels::PlugSQL ->[(SqlField,SqlField)]
 attrels plug@ScalarSQL{}    = [(sqlColumn plug,sqlColumn plug)]
 attrels BinSQL{}            = fatal 379 "Binary plugs do not know the concept of attribute fields."
-attrels plug@TblSQL{}       = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(iskey plug tfld)] 
+attrels plug@TblSQL{}       = [(sfld,tfld) |(_,sfld,tfld)<-mLkpTbl plug,not(isPlugIndex plug tfld)] 
 
 
 
@@ -281,7 +280,7 @@ requiredFields plug@TblSQL{} fld
  = [f |f<-requiredkeys++requiredatts, not (fldauto f)] 
   where
   kfld | null findfld = fatal 401 $ "fld "++fldname fld++" must be in the plug "++name plug++"."
-       | iskey plug fld = fld
+       | isPlugIndex plug fld = fld
        | otherwise = fst(head findfld) --fld is an attribute field, take its kernel field
   findfld = [(k,maybek) |(_,k,maybek)<-mLkpTbl plug,fld==maybek]
   requiredkeys = similar++requiredup 
@@ -328,8 +327,8 @@ plugpath p@ScalarSQL{} srcfld trgfld
   | srcfld==trgfld = fldexpr trgfld
   | otherwise = fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
 plugpath p@TblSQL{} srcfld trgfld  
-  | srcfld==trgfld && iskey p trgfld = iExpr (target (fldexpr trgfld))
-  | srcfld==trgfld && not(iskey p trgfld) = flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
+  | srcfld==trgfld && isPlugIndex p trgfld = iExpr (target (fldexpr trgfld))
+  | srcfld==trgfld && not(isPlugIndex p trgfld) = flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
   | (not . null) (paths srcfld trgfld) = if length (head (paths srcfld trgfld)) == 1
                                          then head (head (paths srcfld trgfld))
                                          else foldr1 (.:.) (head (paths srcfld trgfld)) -- SJ Jan 4th 2013: WHY do we know that head (paths srcfld trgfld) is not empty?

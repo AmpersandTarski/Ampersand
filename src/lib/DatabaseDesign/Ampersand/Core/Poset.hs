@@ -109,7 +109,7 @@ sort = sortBy compare
 comparing :: Poset b => (a -> b) -> a -> a -> Ordering
 comparing = on compare
 
--- example where b=A_Concept: sortWith (snd . order , concs fSpec) kdcpt (vkeys fSpec)
+-- example where b=A_Concept: sortWith (snd . order , concs fSpec) ixCpt (vIndices fSpec)
 sortWith :: (Show b,Poset b) => (b -> [[b]], [b]) -> (a -> b) -> [a] -> [a]
 sortWith _   _  [] = [] 
 sortWith (tos,allb) f xs 

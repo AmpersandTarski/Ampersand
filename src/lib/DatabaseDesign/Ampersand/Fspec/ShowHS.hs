@@ -290,7 +290,7 @@ where
            ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
            ,wrap ", allRelations  = " indentA (\_->showHSName) (allRelations fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
-           ,wrap ", vkeys         = " indentA (\_->showHSName) (vkeys fspec)
+           ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
            ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
@@ -345,9 +345,9 @@ where
         "\n -- *** Declarations (total: "++(show.length.ds) fspec++" declarations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fspec]++"\n"
        ) ++
-       (if null (vkeys fspec)     then "" else
-        "\n -- *** Keys (total: "++(show.length.vkeys) fspec++" keys) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vkeys fspec]++"\n"
+       (if null (vIndices fspec)     then "" else
+        "\n -- *** Keys (total: "++(show.length.vIndices) fspec++" keys) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vIndices fspec]++"\n"
        ) ++
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes (total: "++(show.length.vprocesses) fspec++" processes) ***: "++
@@ -498,7 +498,7 @@ where
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
         , ", ptdcs = [" ++intercalate ", " [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++"]"
         , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
-        , wrap ", ptkds = " indentB (showHS flags) (ptkds pat)
+        , wrap ", ptixs = " indentB (showHS flags) (ptixs pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         , "}"
         ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
@@ -537,7 +537,7 @@ where
            []          -> "     , prcRRels = [] {- no role-relation assignments -}"
            [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
            rs          -> "     , prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
-        , wrap ", prcKds = " indentB (showHS flags) (prcKds prc)
+        , wrap ", prcIxs = " indentB (showHS flags) (prcIxs prc)
         , wrap ", prcXps = " indentB (showHS flags) (prcXps prc)
         , "}"
         ] where indentA = indent ++"      "     -- adding the width of "FProc "
@@ -576,7 +576,8 @@ where
             PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
             PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
             PRef2Rule str                     -> "PRef2Rule "       ++show str
-            PRef2KeyDef str                   -> "PRef2KeyDef "     ++show str
+            PRef2IndexDef str                   -> "PRef2IndexDef "     ++show str
+            PRef2ViewDef str                  -> "PRef2ViewDef "    ++show str
             PRef2Pattern str                  -> "PRef2Pattern "    ++show str
             PRef2Process str                  -> "PRef2Process "    ++show str
             PRef2Interface str                -> "PRef2Interface "  ++show str
@@ -597,6 +598,7 @@ where
              ExplDeclaration d  -> "ExplDeclaration "++showHSName d
              ExplRule str       -> "ExplRule "       ++show str
              ExplKeyDef str     -> "ExplKeyDef "     ++show str
+             ExplViewDef str    -> "ExplViewDef "    ++show str
              ExplPattern str    -> "ExplPattern "    ++show str
              ExplProcess str    -> "ExplProcess "    ++show str
              ExplInterface str  -> "ExplInterface "  ++show str
@@ -668,28 +670,50 @@ where
      showHS _ _ Implication    = "Implication"
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: KeyDef                        ***
+-- \*** Eigenschappen met betrekking tot: IndexDef                        ***
 -- \***********************************************************************
 
-   instance ShowHSName KeyDef where
-    showHSName kd = haskellIdentifier ("kDef_"++name kd)
+   instance ShowHSName IndexDef where
+    showHSName index = haskellIdentifier ("index_"++name index)
    
-   instance ShowHS KeyDef where
-    showHS flags indent kd
-     = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHSName (kdcpt kd)++")"
-       ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ kdats kd)++indent++"  ]"
+   instance ShowHS IndexDef where
+    showHS flags indent index
+     = "Ix ("++showHS flags "" (ixPos index)++") "++show (ixLbl index)++" ("++showHSName (ixCpt index)++")"
+       ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ indexAts index)++indent++"  ]"
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: KeySegment                        ***
+-- \*** Eigenschappen met betrekking tot: IndexSegment                        ***
 -- \***********************************************************************
 
-   --instance ShowHSName KeySegment where
-   -- showHSName kd = haskellIdentifier ("kDef_"++name kd)
+   --instance ShowHSName IndexSegment where
+   -- showHSName indexSeg = haskellIdentifier ("indexSegment_"++name indexSeg)
    
-   instance ShowHS KeySegment where
-    showHS _     _      (KeyText str) = "KeyText "++show str
-    showHS _     _      (KeyHtml str) = "KeyHtml "++show str
-    showHS flags indent (KeyExp objDef) = "KeyExp ("++ showHS flags indent objDef ++ ")"
+   instance ShowHS IndexSegment where
+    showHS flags indent (IndExp objDef) = "IndExp ("++ showHS flags indent objDef ++ ")"
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: ViewDef                        ***
+-- \***********************************************************************
+
+   instance ShowHSName ViewDef where
+    showHSName vd = haskellIdentifier ("vdef_"++name vd)
+   
+   instance ShowHS ViewDef where
+    showHS flags indent vd
+     = "Vd ("++showHS flags "" (vdpos vd)++") "++show (vdlbl vd)++" ("++showHSName (vdcpt vd)++")"
+       ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ vdats vd)++indent++"  ]"
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: ViewSegment                        ***
+-- \***********************************************************************
+
+   --instance ShowHSName ViewSegment where
+   -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
+   
+   instance ShowHS ViewSegment where
+    showHS _     _      (ViewText str) = "ViewText "++show str
+    showHS _     _      (ViewHtml str) = "ViewHtml "++show str
+    showHS flags indent (ViewExp objDef) = "ViewExp ("++ showHS flags indent objDef ++ ")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: P_Population                    ***

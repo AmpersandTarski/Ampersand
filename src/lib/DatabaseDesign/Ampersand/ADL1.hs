@@ -8,7 +8,8 @@ module DatabaseDesign.Ampersand.ADL1
            , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
            , SrcOrTgt(..)
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations, violationsexpr
-           , P_KeyDef(..), P_KeySegment(..), KeyDef(..), KeySegment(..)
+           , P_IndDef(..), P_IndSegment(..), IndexDef(..), IndexSegment(..)
+           , P_ViewDef(..), P_ViewSegment(..), ViewDef(..), ViewSegment(..)
            , P_Population(..), UserDefPop(..)
            , P_ObjectDef(..)
            , ObjectDef(..), P_Interface(..)
@@ -49,13 +50,15 @@ where
                                          ,Association(..)
                                          ,Expression(..)
                                          ,A_Gen(..)
-                                         ,KeyDef(..)
-                                         ,KeySegment(..)
+                                         ,IndexDef(..)
+                                         ,IndexSegment(..)
+                                         ,ViewDef(..)
+                                         ,ViewSegment(..)
                                          ,ObjectDef(..)
                                          ,objAts
                                          ,objatsLegacy
                                          ,SubInterface(..)
-                                         ,Declaration(..),decusr,deciss
+                                         ,Declaration(..),decusr
                                          ,Interface(..)
                                          ,Pattern(..)
                                          ,PairView(..)
