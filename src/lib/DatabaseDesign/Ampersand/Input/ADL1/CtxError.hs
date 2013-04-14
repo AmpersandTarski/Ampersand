@@ -1,13 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),shOrig,showErr)
+       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),shOrig,showErr, ParseError)
 where
-import DatabaseDesign.Ampersand.Input.ADL1.FilePos
+--import DatabaseDesign.Ampersand.Input.ADL1.FilePos()
 import DatabaseDesign.Ampersand.ADL1 (Pos(..))
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
 import Data.List  (intercalate, sort)
-import DatabaseDesign.Ampersand.Input.Parsing 
+import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
+import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
 import DatabaseDesign.Ampersand.Core.ParseTree
 
 fatal :: Int -> String -> a
@@ -20,6 +21,7 @@ shOrig (DBLoc str)   = "Database location: "++str
 shOrig (Origin str)  = str
 shOrig OriginUnknown = "Unknown origin"
 
+type ParseError = Message Token
 data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term
                | TETPairView P_PairViewSegment
                | TETObj

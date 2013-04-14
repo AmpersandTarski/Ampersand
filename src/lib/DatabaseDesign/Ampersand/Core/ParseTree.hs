@@ -48,8 +48,7 @@ where
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos           
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
-   import Data.List   (intercalate)
-   
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "ParseTree"
    
