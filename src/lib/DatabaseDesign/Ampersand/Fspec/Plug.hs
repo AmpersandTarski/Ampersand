@@ -137,14 +137,15 @@ entityfield p
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 entityconcept :: PlugSQL -> A_Concept
 entityconcept BinSQL{} --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
-  = C { cptnm = "ID"
+  = PlainConcept
+      { cptnm = "ID"
       , cptgE = fatal 157 "This is not the right place to define an ordering."
       , cpttp = []
       , cptdf = []
       }
 entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
   = case concept p of
-     C{} -> (concept p){cptnm=name(concept p)++ "ID"} 
+     PlainConcept{} -> (concept p){cptnm=name(concept p)++ "ID"} 
      _   ->  fatal 225 $ "entityconcept error in PlugSQL: "++name p++"."
 
 

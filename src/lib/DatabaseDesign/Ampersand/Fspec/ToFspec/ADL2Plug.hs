@@ -316,7 +316,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
     kernels :: [[Expression]]
-    kernels = case [c | c@C{} <- concs allDcls] of
+    kernels = case [c | c@PlainConcept{} <- concs allDcls] of
                 [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
                 cs -> let (_,islands,_,_,_) = cptgE ((head 309) cs) in
                       [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]

@@ -97,7 +97,7 @@ where
     concs   c     = [c]
     relationsIn c = [I c]
     mp1Exprs _    = []
-    genE C{cptgE = a}  = a
+    genE PlainConcept{cptgE = a}  = a
     genE _ = fatal 100 "A_Concept without cptgE"
 
    instance ConceptStructure Sign where

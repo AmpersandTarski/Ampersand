@@ -962,19 +962,19 @@ pCtx2aCtx p_context
     pCpt2aCpt :: P_Concept -> A_Concept
     pCpt2aCpt pc
         = case pc of
-            PCpt{} -> c 
-            P_Singleton -> ONE
-          where 
-          c = C {cptnm = p_cptnm pc
+            PCpt{} -> 
+              PlainConcept 
+                {cptnm = p_cptnm pc
                 ,cptgE = genE contxt
                 ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
-                }
+                } 
+            P_Singleton -> ONE
     
     aCpt2pCpt :: A_Concept -> P_Concept
     aCpt2pCpt c
         = case c of
-            C{} -> PCpt { p_cptnm = cptnm c }
+            PlainConcept{} -> PCpt { p_cptnm = cptnm c }
             ONE -> P_Singleton
     
     pDecl2aDecl :: P_Declaration -> Guarded (Declaration , Maybe UserDefPop)

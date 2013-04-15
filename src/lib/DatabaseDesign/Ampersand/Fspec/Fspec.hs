@@ -341,7 +341,7 @@ horn2expr hc@(Hc antcs conss)
        antc = foldr1 (./\.) antcs
        cons = foldr1 (.\/.) conss
        sgna = case sign antc of
-               sgn@(Sign C{} C{}) -> sgn
+               sgn@(Sign PlainConcept{} PlainConcept{}) -> sgn
                sgn -> fatal 336 ("\nThe signature of the antecedent of "++show hc++"\n is "++show sgn)
 
 data Clauses  = Clauses

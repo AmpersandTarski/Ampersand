@@ -586,23 +586,24 @@ instance Traced Relation where
 -- It is called Concept, meaning "type checking concept"
 
 data A_Concept
-   = C   { cptnm :: String         -- ^The name of this Concept
+   = PlainConcept   
+         { cptnm :: String         -- ^The name of this Concept
          , cptgE :: GenR           -- ^This contains the generalization relation between concepts.
                                    --  It is included in every concept, for the purpose of comparing concepts in the Ord class.
                                    --  As a result, you may write  c<=d  in your Haskell code for any two A_Concepts c and d that are in the same context.
          , cpttp :: String         -- ^The type of this Concept
          , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
-         }  -- ^C nm gE cs represents the set of instances cs by name nm.
+         }  -- ^PlainConcept nm gE cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
 
 
 instance Eq A_Concept where
-   a@C{} == b@C{} = name a==name b
+   PlainConcept{cptnm=a} == PlainConcept{cptnm=b} = a==b
    ONE == ONE = True
    _ == _ = False
 
 instance Identified A_Concept where
-  name (C {cptnm = nm}) = nm
+  name PlainConcept{cptnm = nm} = nm
   name ONE = "ONE"
 
 instance Show A_Concept where
@@ -692,14 +693,15 @@ instance Poset A_Concept where
 instance Sortable A_Concept where
   meet ONE  _  = fatal 671 "meet must not be used with ONE!"
   meet  _  ONE = fatal 672 "meet must not be used with ONE!"
-  meet a@C{} b = case a `meets` b of        -- meet yields the more specific of two concepts
+  meet a@PlainConcept{} b = case a `meets` b of        -- meet yields the more specific of two concepts
               [z] -> z
               []  -> fatal 675 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> greatest cs
              where (_,_,_,meets,_) = cptgE a
   join ONE  _  = fatal 678 "join must not be used with ONE!"
   join  _  ONE = fatal 679 "join must not be used with ONE!"
-  join a@C{} b = case a `joins` b of        -- join yields the more generic of two concepts
+  join a@PlainConcept{} b = 
+     case a `joins` b of        -- join yields the more generic of two concepts
               [z] -> z
               []  -> fatal 682 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
               cs  -> least cs
