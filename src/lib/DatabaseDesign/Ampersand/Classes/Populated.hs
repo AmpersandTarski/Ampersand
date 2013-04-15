@@ -20,7 +20,7 @@ where
    -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
    atomsOf :: [UserDefPop] -> A_Concept -> [String] 
    atomsOf _ ONE  = ["1(ONE)"] -- fatal 126 "Asking for the value of the universal singleton"
-   atomsOf pt c@C{}
+   atomsOf pt c@PlainConcept{}
      = nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
@@ -61,11 +61,11 @@ where
             EDif (l,r) _ -> contents l >- contents r
             -- The left residual l/r is defined by: for all x,y:  y(l/r)x  <=>  for all z in X, x l z implies y r z.
             ELrs (l,r) _ -> [(y,x) | x <- case source l of
-                                            sl@C{} -> atomsOf pt sl
-                                            sl     -> fatal 68 ("source l should be C instead of "++show sl++".")
+                                            sl@PlainConcept{} -> atomsOf pt sl
+                                            sl     -> fatal 68 ("source l should be PlainConcept instead of "++show sl++".")
                                    , y <- case source r of
-                                            sr@C{} -> atomsOf pt sr
-                                            sr     -> fatal 71 ("source r should be C instead of "++show sr++".")
+                                            sr@PlainConcept{} -> atomsOf pt sr
+                                            sr     -> fatal 71 ("source r should be PlainConcept instead of "++show sr++".")
                               --   Derivation:
                               --   , and      [(x,z) `elem` contents l <- (y,z) `elem` contents r          |z<- atomsOf pt (target l `join` target r)]
                               --   , and      [(x,z) `elem` contents l || (y,z) `notElem` contents r       |z<- atomsOf pt (target l `join` target r)]
@@ -76,11 +76,11 @@ where
                                    ]   -- equals contents (ERrs (flp r, flp l))
             -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
             ERrs (l,r) _ -> [(x,y) | x <- case target l of
-                                            tl@C{} -> atomsOf pt tl
-                                            tl     -> fatal 83 ("target l should be C instead of "++show tl++".")
+                                            tl@PlainConcept{} -> atomsOf pt tl
+                                            tl     -> fatal 83 ("target l should be PlainConcept instead of "++show tl++".")
                                    , y <- case target r of
-                                            tr@C{} -> atomsOf pt tr
-                                            tr     -> fatal 86 ("target r should be C instead of "++show tr++".")
+                                            tr@PlainConcept{} -> atomsOf pt tr
+                                            tr     -> fatal 86 ("target r should be PlainConcept instead of "++show tr++".")
                               --   Derivation:
                               --     and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       |z<- atomsOf pt (source l `join` source r)]
                               --     and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       |z<- atomsOf pt (source l `join` source r)]
@@ -90,11 +90,11 @@ where
                                    , (not.null) [ () |z<- atomsOf pt (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]
                                    ]   -- equals contents (ELrs (flp r, flp l))
             ERad (l,r) _ -> [(x,y) | x <- case target l of
-                                            tl@C{} -> atomsOf pt tl
-                                            tl     -> fatal 97 ("target l should be C instead of "++show tl++".")
+                                            tl@PlainConcept{} -> atomsOf pt tl
+                                            tl     -> fatal 97 ("target l should be PlainConcept instead of "++show tl++".")
                                    , y <- case source r of
-                                            sr@C{} -> atomsOf pt sr
-                                            sr     -> fatal 100 ("source r should be C instead of "++show sr++".")
+                                            sr@PlainConcept{} -> atomsOf pt sr
+                                            sr     -> fatal 100 ("source r should be PlainConcept instead of "++show sr++".")
                                    , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf pt (target l `join` source r)]
                                    ]
             EPrd (l,r) _ -> [ (a,b) | a <- atomsOf pt (source l), b <- atomsOf pt (target r) ]
