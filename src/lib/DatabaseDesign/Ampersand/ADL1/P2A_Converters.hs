@@ -341,8 +341,8 @@ instance Expr Term where
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest _ _ = nothing
-                     in dom a.<.dom x .+. cod b.<.cod x .+.                                    -- a!b      relative addition, dagger
-                        mGeneric Tgt a Src b x .+. uType a a .+. uType b b
+                     in dom x .<. dom a .+. cod x .<. cod b
+                        .+. mGeneric Tgt a Src b x .+. uType a a .+. uType b b
                         .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
      (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
                      .+. uType a a .+. uType b b
