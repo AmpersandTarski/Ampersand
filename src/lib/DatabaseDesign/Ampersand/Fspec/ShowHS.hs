@@ -498,7 +498,7 @@ where
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
         , ", ptdcs = [" ++intercalate ", " [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++"]"
         , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
-        , wrap ", ptixs = " indentB (showHS flags) (ptixs pat)
+        , wrap ", ptids = " indentB (showHS flags) (ptids pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         , "}"
         ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
@@ -537,7 +537,7 @@ where
            []          -> "     , prcRRels = [] {- no role-relation assignments -}"
            [(rol,rel)] -> "     , prcRRels = [ ("++show rol++", "++showHS flags "" rel++") ]"
            rs          -> "     , prcRRels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
-        , wrap ", prcIxs = " indentB (showHS flags) (prcIxs prc)
+        , wrap ", prcIds = " indentB (showHS flags) (prcIds prc)
         , wrap ", prcXps = " indentB (showHS flags) (prcXps prc)
         , "}"
         ] where indentA = indent ++"      "     -- adding the width of "FProc "
@@ -576,7 +576,7 @@ where
             PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
             PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
             PRef2Rule str                     -> "PRef2Rule "       ++show str
-            PRef2IndexDef str                   -> "PRef2IndexDef "     ++show str
+            PRef2IdentityDef str              -> "PRef2IdentityDef "++show str
             PRef2ViewDef str                  -> "PRef2ViewDef "    ++show str
             PRef2Pattern str                  -> "PRef2Pattern "    ++show str
             PRef2Process str                  -> "PRef2Process "    ++show str
@@ -597,7 +597,7 @@ where
              ExplConceptDef cd  -> "ExplConceptDef " ++showHSName cd
              ExplDeclaration d  -> "ExplDeclaration "++showHSName d
              ExplRule str       -> "ExplRule "       ++show str
-             ExplKeyDef str     -> "ExplKeyDef "     ++show str
+             ExplIdentityDef str-> "ExplIdentityDef "++show str
              ExplViewDef str    -> "ExplViewDef "    ++show str
              ExplPattern str    -> "ExplPattern "    ++show str
              ExplProcess str    -> "ExplProcess "    ++show str
@@ -670,26 +670,26 @@ where
      showHS _ _ Implication    = "Implication"
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: IndexDef                        ***
+-- \*** Eigenschappen met betrekking tot: IdentityDef                        ***
 -- \***********************************************************************
 
-   instance ShowHSName IndexDef where
-    showHSName index = haskellIdentifier ("index_"++name index)
+   instance ShowHSName IdentityDef where
+    showHSName identity = haskellIdentifier ("identity_"++name identity)
    
-   instance ShowHS IndexDef where
-    showHS flags indent index
-     = "Ix ("++showHS flags "" (ixPos index)++") "++show (ixLbl index)++" ("++showHSName (ixCpt index)++")"
-       ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ indexAts index)++indent++"  ]"
+   instance ShowHS IdentityDef where
+    showHS flags indent identity
+     = "Id ("++showHS flags "" (idPos identity)++") "++show (idLbl identity)++" ("++showHSName (idCpt identity)++")"
+       ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS flags indent) $ identityAts identity)++indent++"  ]"
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: IndexSegment                        ***
+-- \*** Eigenschappen met betrekking tot: IdentitySegment                        ***
 -- \***********************************************************************
 
-   --instance ShowHSName IndexSegment where
-   -- showHSName indexSeg = haskellIdentifier ("indexSegment_"++name indexSeg)
+   --instance ShowHSName IdentitySegment where
+   -- showHSName identitySeg = haskellIdentifier ("identitySegment_"++name identitySeg)
    
-   instance ShowHS IndexSegment where
-    showHS flags indent (IndExp objDef) = "IndExp ("++ showHS flags indent objDef ++ ")"
+   instance ShowHS IdentitySegment where
+    showHS flags indent (IdentityExp objDef) = "IdentityExp ("++ showHS flags indent objDef ++ ")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ViewDef                        ***
@@ -861,8 +861,8 @@ where
                         ,"   , decMean = " ++ show (decMean d)
                         ,"   , decConceptDef = " ++ show (decConceptDef d)
                         ,"   , decfpos = " ++ showHS flags "" (decfpos d)
-                        ,"   , decissX  = " ++ show (deciss d)
-                        ,"   , decusrX  = " ++ show (decusr d)
+                        ,"   , decissX = " ++ show (deciss d)
+                        ,"   , decusrX = " ++ show (decusr d)
                         ,"   , decpat  = " ++ show (decpat d)
                         ,"   , decplug = " ++ show (decplug d)
                         ]++"}"

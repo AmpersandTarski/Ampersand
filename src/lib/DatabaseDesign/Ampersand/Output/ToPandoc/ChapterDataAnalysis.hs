@@ -511,7 +511,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 -- Then, the endo-poperties are given, and finally
 -- the signals are documented.
   daAssociations :: [Relation] -> [Block]
-  daAssociations rs = heteroMultiplicities ++ endoProperties ++ keyDocumentation ++ viewDocumentation
+  daAssociations rs = heteroMultiplicities ++ endoProperties ++ identityDocumentation ++ viewDocumentation
    where
     heteroMultiplicities
      = case [r | r@Rel{}<-rs, not (isProp r), not (isAttribute r)] of
@@ -608,13 +608,13 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
         hMults :: [Declaration]
         hMults  = [decl | decl@Sgn{}<- declsUsedIn fSpec, isEndo decl
                         , null (themes fSpec) || decpat decl `elem` themes fSpec]
-    keyDocumentation
-     = case (indexes fSpec, language flags) of
-        ([], _) -> []
-        ([k], Dutch)   -> [ Para  [Str "Er is één key: ",Str (name k),Str "."]]
-        ([k], English) -> [ Para  [Str "There is but one key: ",Str (name k),Str "." ]]
-        (keyds, Dutch) -> [ Para $ Str "De volgende keys bestaan: ": commaNLPandoc (Str "en") [Str (name k) | k<-keyds]]
-        (keyds, English)->[ Para $ Str "The following keys exist: ": commaEngPandoc (Str "and") [Str (name k) | k<-keyds]]
+    identityDocumentation
+     = case (identities fSpec, language flags) of
+        ([], _)              -> []
+        ([k], Dutch)         -> [ Para  [Str "Er is één identiteit: ",Str (name k),Str "."]]
+        ([k], English)       -> [ Para  [Str "There is but one identity: ",Str (name k),Str "." ]]
+        (identities, Dutch)  -> [ Para $ Str "De volgende identiteiten bestaan: ": commaNLPandoc (Str "en") [Str (name i) | i<-identities]]
+        (identities, English)-> [ Para $ Str "The following identities exist: ": commaEngPandoc (Str "and") [Str (name i) | i<-identities]]
 
     viewDocumentation
      = case (viewDefs fSpec, language flags) of
@@ -708,7 +708,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
    = if null content then [] else plugHeader ++ content
      where
        plugHeader = toList $ labeledThing flags (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
-       content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
+       content = daAttributes p ++ plugRules ++ plugSignals ++ plugIdentities ++ iRules
        plugRules
         = case language flags of
            English -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
@@ -736,9 +736,9 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 else BulletList [ [Para [Math DisplayMath $ showMath r]]
                                                 | r<-rs ]
                               ]
-       plugKeydefs
+       plugIdentities
         = case language flags of
-           English -> case [k | k<-indexRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
+           English -> case [k | k<-identityRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set contains one key. " ]
                               , if showPredExpr flags
@@ -751,7 +751,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]]
                                                 | s<-ss ]
                               ]
-           Dutch   -> case [k | k<-indexRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
+           Dutch   -> case [k | k<-identityRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ] 
                               , if showPredExpr flags

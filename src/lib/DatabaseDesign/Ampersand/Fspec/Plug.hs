@@ -235,10 +235,10 @@ showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLBool     ) = "BOOLEAN"
           
 --every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL
---isPlugIndex refers to UNIQUE INDEX
---isPlugIndex may contain NULL, but their index (the entityfield of the plug) must be unique for a kernel field (isPlugIndex=True)
---the field that is isIdent and isPlugIndex (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE INDEX
---KeyDefs define UNIQUE INDEX (fld1,fld2,..,fldn)
+--isPlugIndex refers to UNIQUE key
+--isPlugIndex may contain NULL, but their key (the entityfield of the plug) must be unique for a kernel field (isPlugIndex=True)
+--the field that is isIdent and isPlugIndex (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE key
+--IdentityDefs define UNIQUE key (fld1,fld2,..,fldn)
 --REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is 
 --          thus I must check whether fldexpr isUni && isInj && isSur
 isPlugIndex :: PlugSQL->SqlField->Bool

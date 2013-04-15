@@ -50,7 +50,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fRoleRels    = mayEdit   context  -- fRoleRels says which roles may change the population of which relation.
                  , fRoleRuls    = maintains context  -- fRoleRuls says which roles maintain which rules.
                  , vrules       = udefrules context   -- all user defined rules
-                 , grules       = multrules context++indexRules context
+                 , grules       = multrules context++identityRules context
                  , invars       = invariants context
                  , allRules     = allrules
                  , vconjs       = nub [conj | Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
@@ -64,7 +64,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , fsisa        = isas
                  , vpatterns    = patterns context
                  , vgens        = gens context
-                 , vIndices     = indexes context
+                 , vIndices     = identities context
                  , vviews       = viewDefs context
                  , vConceptDefs = conceptDefs context
                  , fSexpls      = [ xpl { explObj = case explObj xpl of ExplContext str -> ExplFspc str; _ -> explObj xpl } -- All explanations are uses as-is. Only the context-explanations are relabeled to Fspc-explanations.
@@ -78,7 +78,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         (_,_,isas,_,_)=ctxpo context
         userdefpops = ctxpopus context
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
-        allrules = multrules context++indexRules context++udefrules context
+        allrules = multrules context++identityRules context++udefrules context
         allProcs = [ FProc {fpProc = p
                            ,fpActivities =selectActs p
                            } | p<-ctxprocs context ]
@@ -623,8 +623,8 @@ while maintaining all invariants.
                                       ]
                  , decConceptDef = Nothing
                  , decfpos = Origin ("generated relation (Delta "++show sgn++")")
-                 , decissX  = True
-                 , decusrX  = False
+                 , decissX = True
+                 , decusrX = False
                  , decpat  = ""
                  , decplug = True
                  } 

@@ -58,10 +58,10 @@ where
     mp1Exprs  _ = fatal 64 "do not use this from a context"
     genE      c = ctxpo c
 
-   instance ConceptStructure IndexDef where
-    concs       index = [ixCpt index] `uni` concs [objDef | IndExp objDef <- indexAts index]
-    relationsIn index = relationsIn               [objDef | IndExp objDef <- indexAts index]
-    mp1Exprs    index = mp1Exprs                  [objDef | IndExp objDef <- indexAts index]
+   instance ConceptStructure IdentityDef where
+    concs       identity = [idCpt identity] `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
+    relationsIn identity = relationsIn               [objDef | IdentityExp objDef <- identityAts identity]
+    mp1Exprs    identity = mp1Exprs                  [objDef | IdentityExp objDef <- identityAts identity]
 
    instance ConceptStructure ViewDef where
     concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp objDef <- vdats vd]
@@ -124,22 +124,22 @@ where
     mp1Exprs (InterfaceRef _) = [] 
           
    instance ConceptStructure Pattern where
-    concs       p = concs (ptgns p)   `uni` concs (ptdcs p)   `uni` concs (ptrls p)    `uni` concs (ptixs p)
+    concs       p = concs (ptgns p)   `uni` concs (ptdcs p)   `uni` concs (ptrls p)    `uni` concs (ptids p)
     relationsIn p = foldr (uni) []
                        [ (relationsIn.ptrls) p
-                       , (relationsIn.ptixs) p
+                       , (relationsIn.ptids) p
                        ]
-    mp1Exprs  p = mp1Exprs (ptrls p) `uni` mp1Exprs (ptixs p)
+    mp1Exprs  p = mp1Exprs (ptrls p) `uni` mp1Exprs (ptids p)
 
    instance ConceptStructure Process where
-    concs     p = concs (prcGens p) `uni` concs (prcDcls p) `uni` concs (prcRules p) `uni` concs (prcIxs p)
+    concs     p = concs (prcGens p) `uni` concs (prcDcls p) `uni` concs (prcRules p) `uni` concs (prcIds p)
     relationsIn p = foldr (uni) []
                        [ (relationsIn.prcRules) p
-                       , (relationsIn.prcIxs) p
+                       , (relationsIn.prcIds) p
                        , (relationsIn.prcrrels) p
                        ]
            where prcrrels x = map snd (prcRRels x)
-    mp1Exprs  p = mp1Exprs (prcRules p) `uni` mp1Exprs (prcIxs p)
+    mp1Exprs  p = mp1Exprs (prcRules p) `uni` mp1Exprs (prcIds p)
 
    instance ConceptStructure Interface where
     concs       ifc = concs       (ifcObj ifc)

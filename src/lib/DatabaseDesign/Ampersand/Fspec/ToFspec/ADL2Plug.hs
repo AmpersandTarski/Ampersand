@@ -339,7 +339,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
 --              a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug (i.e. fldnull=False)
 --              When is an ObjectDef a ScalarPlug or BinPlug?
 --              When do you want to define your own Scalar or BinPlug
---rel2fld  (indexes context) kernel plugAtts r
+--rel2fld  (identities context) kernel plugAtts r
 
 -- | Make a sqlplug from an ObjectDef (user-defined sql plug)
 makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
