@@ -4,7 +4,7 @@ INCLUDE "AST.adl"
 PATTERN Image
 imageurl :: Image*URL
 MEANING IN ENGLISH "The location of an image on the Internet."
-KEY Image: Image(PRIMHTML "<img src='", imageurl , PRIMHTML "'>")
+VIEW Image: Image(PRIMHTML "<img src='", imageurl , PRIMHTML "'>")
 ENDPATTERN
 
 PATTERN Conceptual
