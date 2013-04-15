@@ -372,37 +372,37 @@ checkRfx (a:as) = if not (a==a) then fatal 192 ("Eq is not reflexive on "++show 
 checkRfx [] = []  
 
 {-
-Since vertices of type v may be expensive to compare, we first create an isomorphic index map that
-has integer indices as its vertices. For this graph we compute the transitive closure, which we map
+Since vertices of type v may be expensive to compare, we first create an isomorphic key map that
+has integer keys as its vertices. For this graph we compute the transitive closure, which we map
 back onto a graph with the original vertex type v.
 -}
 setClosure :: (Show v,Ord v) => Map v [v] -> String -> Map v [v]
 setClosure graph s =
-  let vertexIndexMap = makeVertexIndexMap $ Map.keys graph
-      indexGraph = vertexToIndexGraph vertexIndexMap graph
-      indexResult = setClosureSlow indexGraph s
-      vertexResult = indexGraphToVertexGraph vertexIndexMap indexResult
+  let vertexKeyMap = makeVertexKeyMap $ Map.keys graph
+      keyGraph = vertexToKeyGraph vertexKeyMap graph
+      keyResult = setClosureSlow keyGraph s
+      vertexResult = keyGraphToVertexGraph vertexKeyMap keyResult
   in  vertexResult
   
   -- a map function for graphs represented as (Map vertex [vertex])
 mapGraph :: (Ord a, Ord b) => (a->b) -> Map a [a] -> Map b [b]
 mapGraph f graph = Map.fromList [ (f v, map f vs) | (v,vs) <- Map.toList graph]
 
-makeVertexIndexMap :: (Show v,Ord v) => [v] -> Map v Int
-makeVertexIndexMap allVertices = Map.fromList $ zip allVertices [0..]
+makeVertexKeyMap :: (Show v,Ord v) => [v] -> Map v Int
+makeVertexKeyMap allVertices = Map.fromList $ zip allVertices [0..]
 
-vertexToIndexGraph :: (Show v,Ord v) => Map v Int -> Map v [v] -> Map Int [Int]
-vertexToIndexGraph vertexIndexMap vertexGraph = mapGraph vertexToIndex vertexGraph
- where vertexToIndex v = case Map.lookup v vertexIndexMap of
-                         Nothing -> fatal 210 $ "vertexToIndexGraph: vertex "++show v++" not in vertexIndexMap"
+vertexToKeyGraph :: (Show v,Ord v) => Map v Int -> Map v [v] -> Map Int [Int]
+vertexToKeyGraph vertexKeyMap vertexGraph = mapGraph vertexToKey vertexGraph
+ where vertexToKey v = case Map.lookup v vertexKeyMap of
+                         Nothing -> fatal 210 $ "vertexToKeyGraph: vertex "++show v++" not in vertexKeyMap"
                          Just i  -> i
   
-indexGraphToVertexGraph :: (Show a,Ord a) => Map a Int -> Map Int [Int] -> Map a [a]
-indexGraphToVertexGraph vertexIndexMap indexGraph = mapGraph indexToVertex indexGraph
- where indexToVertex i = if i < length allVertices 
-                         then allVertices !! i 
-                         else fatal 217 $ "indexToVertexGraph: index "++show i++" too large (number of vertices is " ++show (length allVertices)++")"
-       allVertices = Map.keys vertexIndexMap
+keyGraphToVertexGraph :: (Show a,Ord a) => Map a Int -> Map Int [Int] -> Map a [a]
+keyGraphToVertexGraph vertexKeyMap keyGraph = mapGraph keyToVertex keyGraph
+ where keyToVertex i = if i < length allVertices 
+                       then allVertices !! i 
+                       else fatal 217 $ "keyToVertexGraph: key "++show i++" too large (number of vertices is " ++show (length allVertices)++")"
+       allVertices = Map.keys vertexKeyMap
 
 -- | The purpose of 'setClosureSlow' is to compute the transitive closure of relations that are represented as a Map (Map a [a]).
 --   For that purpose we use a Warshall algorithm.

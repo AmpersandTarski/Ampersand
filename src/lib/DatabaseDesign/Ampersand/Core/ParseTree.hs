@@ -63,7 +63,7 @@ where
             , ctx_rs ::     [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
             , ctx_ds ::     [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
             , ctx_cs ::     [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks ::     [P_IndDef]      -- ^ The index definitions defined in this context, outside the scope of patterns
+            , ctx_ks ::     [P_IndDef]      -- ^ The identity definitions defined in this context, outside the scope of patterns
             , ctx_vs ::     [P_ViewDef]     -- ^ The view definitions defined in this context, outside the scope of patterns
             , ctx_gs ::     [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
             , ctx_ifcs ::   [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
@@ -110,7 +110,7 @@ where
                           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
                           , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
-                          , procIds :: [P_IndDef]         -- ^ The index definitions defined in this process
+                          , procIds :: [P_IndDef]         -- ^ The identity definitions defined in this process
                           , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
                           , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
                           , procPop :: [P_Population]     -- ^ The populations that are local to this process
@@ -141,7 +141,7 @@ where
               , pt_gns :: [P_Gen]         -- ^ The generalizations defined in this pattern
               , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
               , pt_cds :: [ConceptDef]    -- ^ The concept definitions defined in this pattern
-              , pt_ixs :: [P_IndDef]      -- ^ The index definitions defined in this pattern
+              , pt_ids :: [P_IndDef]      -- ^ The identity definitions defined in this pattern
               , pt_vds :: [P_ViewDef]     -- ^ The view definitions defined in this pattern
               , pt_xps :: [PPurpose]      -- ^ The purposes of elements defined in this pattern
               , pt_pop :: [P_Population]  -- ^ The populations that are local to this pattern
@@ -350,14 +350,14 @@ where
     origin = obj_pos
 
    data P_IndDef =
-            P_Ix { ix_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
-                 , ix_lbl :: String         -- ^ the name (or label) of this Index. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
+            P_Id { ix_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
+                 , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                  , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-                 , ix_ats :: [P_IndSegment] -- ^ the constituent segments of this index. TODO: refactor to a list of terms
+                 , ix_ats :: [P_IndSegment] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
                  } deriving (Show)
    instance Identified P_IndDef where
     name = ix_lbl
-   instance Eq P_IndDef where index==index' = origin index==origin index'
+   instance Eq P_IndDef where identity==identity' = origin identity==origin identity'
 
    instance Traced P_IndDef where
     origin = ix_pos
@@ -392,7 +392,7 @@ where
                  | PRef2Declaration Term -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
                                          -- or        Prel o nm; Other terms become fatals
                  | PRef2Rule String
-                 | PRef2IndexDef String
+                 | PRef2IdentityDef String
                  | PRef2ViewDef String
                  | PRef2Pattern String
                  | PRef2Process String
@@ -408,7 +408,7 @@ where
         PRef2Declaration (Prel _ nm) -> nm
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
         PRef2Rule str -> str
-        PRef2IndexDef str -> str
+        PRef2IdentityDef str -> str
         PRef2ViewDef str -> str
         PRef2Pattern str -> str
         PRef2Process str -> str
