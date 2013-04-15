@@ -398,11 +398,13 @@ showViewAtom fSpec mDec cncpt atom =
                viewAtom:_ -> viewAtom  
         -- justViewRels = map (Just . objctx) [objDef | ViewExp objDef <- vdats view]
 
-getKey :: Fspc -> A_Concept -> Maybe IndexDef
-getKey fSpec cncpt = 
-  case filter ((== cncpt) .  ixCpt) (vIndices fSpec) of
-    []       -> Nothing 
-    keyDef:_ -> Just keyDef 
+{-
+getIdentity :: Fspc -> A_Concept -> Maybe IdentityDef
+getIdentity fSpec cncpt = 
+  case filter ((== cncpt) .  idCpt) (vIndices fSpec) of
+    []         -> Nothing 
+    identity:_ -> Just identity 
+-}
 
 getView :: Fspc -> A_Concept -> Maybe ViewDef
 getView fSpec cncpt = 

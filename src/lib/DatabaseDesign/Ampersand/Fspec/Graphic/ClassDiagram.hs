@@ -115,7 +115,7 @@ where
 --                     nm f = name.concept.lookup'.f.fldexpr
 --       aggrs'     = []
 --       geners'    = []
---       -- The attributes are shown without the key-attributes. Hence the first attribute (index of this concept) and
+--       -- The attributes are shown without the key-attributes. Hence the first attribute (key of this concept) and
 --       -- the keys of its subtypes (filtered by 'inKernel') are not shown.
 --       attrs plug = [ if isPropty fld
 --                      then (fldname fld, "Bool",                      False      )

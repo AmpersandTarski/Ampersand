@@ -32,12 +32,12 @@ instance ShowADL TypErrTyp where
   showADL (TETIsc t) = "the intersect arising at "++showADL t
   showADL (TETEq t) = "the equality arising at "++showADL t
   showADL (TETObj) = "the INTERFACE"
-  showADL (TETKey) = "the INDEX"
+  showADL (TETKey) = "the IDENTITY"
   showADL (TETPairView t) = "the RULE View "++show t -- TODO: what to call this?
                
 data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]      -- ^ The list of concepts with different names, that have been proven equal.
                               }   
-              | CxeEqAttribs  { cxeOrig ::      Origin           -- ^ The location of the object/index definition in which different attributes have the same name.
+              | CxeEqAttribs  { cxeOrig ::      Origin           -- ^ The location of the object/identity definition in which different attributes have the same name.
                               , cxeName ::      String           -- ^ The name shared by different attributes.
                               , cxeAtts ::      [Term]           -- ^ The list of attributes with the same name.
                               }   

@@ -178,14 +178,14 @@ instance Expr P_Pattern where
  p_rules pPattern
   = pt_rls pPattern
  p_keys pPattern
-  = pt_ixs pPattern
+  = pt_ids pPattern
  p_views pPattern
   = pt_vds pPattern
  uType _ pPattern
   = uType' (pt_rls pPattern) .+.
     uType' (pt_gns pPattern) .+.
     uType' (pt_dcs pPattern) .+.
-    uType' (pt_ixs pPattern) .+.
+    uType' (pt_ids pPattern) .+.
     uType' (pt_xps pPattern) .+.
     uType' (pt_pop pPattern)
 
@@ -543,39 +543,39 @@ pCtx2aCtx p_context
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
     acds = ctx_cs p_context++concatMap pt_cds (ctx_pats p_context)++concatMap procCds (ctx_PPrcs p_context)
     agens = map (pGen2aGen "NoPattern") (ctx_gs p_context)
-    (adecsNPops,deccxes)   = case (parallelList . map pDecl2aDecl               . ctx_ds   ) p_context of
-                            Checked decs -> ([(d{decpat="NoPattern"},mp) | (d,mp)<-decs], [])
-                            Errors  errs -> (fatal 1030 ("Do not refer to undefined declarations\n"++show errs), errs)
-    (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp              . ctx_ps   ) p_context of
+    (adecsNPops,deccxes)   = case (parallelList . map pDecl2aDecl           . ctx_ds   ) p_context of
+                              Checked decs -> ([(d{decpat="NoPattern"},mp) | (d,mp)<-decs], [])
+                              Errors  errs -> (fatal 1030 ("Do not refer to undefined declarations\n"++show errs), errs)
+    (apurp,   xplcxes)   = case (parallelList . map  pPurp2aPurp            . ctx_ps   ) p_context of
                             Checked purps -> (purps, [])
                             Errors  errs  -> (fatal 1033 ("Do not refer to undefined purposes\n"++show errs), errs)
-    (pats,    patcxes)   = case (parallelList . map pPat2aPat                 . ctx_pats ) p_context of
+    (pats,    patcxes)   = case (parallelList . map pPat2aPat               . ctx_pats ) p_context of
                             Checked pats' -> (pats', [])
                             Errors  errs  -> (fatal 1036 ("Do not refer to undefined patterns\n"++show errs), errs)
-    (procs,   proccxes)  = case (parallelList . map pProc2aProc               . ctx_PPrcs) p_context of
+    (procs,   proccxes)  = case (parallelList . map pProc2aProc             . ctx_PPrcs) p_context of
                             Checked prcs -> (prcs, [])
                             Errors errs  -> (fatal 1039 ("Do not refer to undefined processes\n" ++ show errs), errs)
-    (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern")   . ctx_rs   ) p_context of
+    (ctxrules,rulecxes)  = case (parallelList . map (pRul2aRul "NoPattern") . ctx_rs   ) p_context of
                             Checked ruls -> (ruls, [])
                             Errors errs  -> (fatal 1042 ("Do not refer to undefined rules\n"++show errs), errs)
-    (keys,    keycxes)   = case (parallelList . map pIndex2aIndex               . ctx_ks   ) p_context of
+    (keys,    keycxes)   = case (parallelList . map pIdentity2aIdentity     . ctx_ks   ) p_context of
                             Checked ks   -> (ks, [])
                             Errors errs  -> (fatal 1045 ("Do not refer to undefined keys\n"++show errs), errs)
-    (views,   viewcxes)  = case (parallelList . map pVDef2aVDef               . ctx_vs   ) p_context of
+    (views,   viewcxes)  = case (parallelList . map pViewDef2aViewDef       . ctx_vs   ) p_context of
                             Checked vs   -> (vs, [])
                             Errors errs  -> (fatal 566 ("Do not refer to undefined views\n"++show errs), errs)
-    (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC                . ctx_ifcs ) p_context of
+    (ifcs,interfacecxes) = case (parallelList . map  pIFC2aIFC              . ctx_ifcs ) p_context of
                             Checked is -> (is, []) -- (fatal 543 ("Diagnostic: "++concat ["\n\n   "++show ifc | ifc<-is])::[Interface], [])
                             Errors errs  -> (fatal 1048 ("Do not refer to undefined interfaces\n"++show errs), errs)
-    (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef []) . ctx_sql  ) p_context of
+    (sqlPlugs,sPlugcxes) = case (parallelList . map (pODef2aODef [])        . ctx_sql  ) p_context of
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 1051 ("Do not refer to undefined sqlPlugs\n"++show errs), errs)
-    (phpPlugs,pPlugcxes) = case (parallelList . map (pODef2aODef []) . ctx_php  ) p_context of
+    (phpPlugs,pPlugcxes) = case (parallelList . map (pODef2aODef [])        . ctx_php  ) p_context of
                             Checked plugs -> (plugs, [])
                             Errors errs   -> (fatal 1054 ("Do not refer to undefined phpPlugs\n"++show errs), errs)
-    (popsfrompops, popcxes)   = case (parallelList . map  pPop2aPop                . pops     ) p_context of
-                            Checked ps -> (ps, [])
-                            Errors errs  -> (fatal 1057 ("Do not refer to undefined populations\n"++show errs), errs)
+    (popsfrompops, popcxes) = case (parallelList . map  pPop2aPop . pops) p_context of
+                               Checked ps -> (ps, [])
+                               Errors errs  -> (fatal 1057 ("Do not refer to undefined populations\n"++show errs), errs)
     pops pc
      = ctx_pops pc ++
        [ pop | pat<-ctx_pats pc,  pop<-pt_pop pat] ++
@@ -630,14 +630,14 @@ pCtx2aCtx p_context
                  , ptgns = agens'
                  , ptdcs = [d{decpat=name ppat} | (d,_)<-decsNpops]
                  , ptups = catMaybes (map snd decsNpops)
-                 , ptixs = keys'
+                 , ptids = keys'
                  , ptvds = views'
                  , ptxps = xpls
                  }
         agens'   = map (pGen2aGen (name ppat)) (pt_gns ppat)
         parRuls  = parallelList . map (pRul2aRul (name ppat)) . pt_rls
-        parKeys  = parallelList . map pIndex2aIndex . pt_ixs
-        parViews = parallelList . map pVDef2aVDef . pt_vds
+        parKeys  = parallelList . map pIdentity2aIdentity . pt_ids
+        parViews = parallelList . map pViewDef2aViewDef . pt_vds
         parDcls  = parallelList . map pDecl2aDecl . pt_dcs
         parPrps  = parallelList . map pPurp2aPurp . pt_xps
 
@@ -655,7 +655,7 @@ pCtx2aCtx p_context
                 , prcUps   = catMaybes (map snd decsNpops)
                 , prcRRuls = [(rol,rul) |rul<-udefrules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr] -- The assignment of roles to rules.
                 , prcRRels = [(rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
-                , prcIxs   = keys'                                                    -- The index definitions defined in this process
+                , prcIds   = keys'                                                    -- The identity definitions defined in this process
                 , prcVds   = views'                                                   -- The view definitions defined in this process
                 , prcXps   = expls                                                    -- The purposes of elements defined in this process
                 } 
@@ -663,8 +663,8 @@ pCtx2aCtx p_context
         parDcls  = parallelList . map pDecl2aDecl . procDcls
         parRRels = parallelList . map pRRel2aRRel . procRRels
         parRRuls = parallelList . map pRRul2aRRul . procRRuls
-        parKeys  = parallelList . map pIndex2aIndex . procIds
-        parViews = parallelList . map pVDef2aVDef . procVds
+        parKeys  = parallelList . map pIdentity2aIdentity . procIds
+        parViews = parallelList . map pViewDef2aViewDef . procVds
         parPrps  = parallelList . map pPurp2aPurp . procXps
  
     pRRul2aRRul :: RoleRule -> Guarded RoleRule
@@ -756,37 +756,37 @@ pCtx2aCtx p_context
                   }
                where fmt = fromMaybe defFormat (mFormat pm)
 
-    -- | pIndex2aIndex checks compatibility of composition with index concept on equality
-    pIndex2aIndex :: P_IndDef -> Guarded IndexDef
-    pIndex2aIndex index
+    -- | pIdentity2aIdentity checks compatibility of composition with identity concept on equality
+    pIdentity2aIdentity :: P_IndDef -> Guarded IdentityDef
+    pIdentity2aIdentity identity
      = case typeErrors' of
-        [] -> Checked (Ix { ixPos = ix_pos index
-                          , ixLbl = ix_lbl index
-                          , ixCpt = c
-                          , indexAts = segs
+        [] -> Checked (Id { idPos = ix_pos identity
+                          , idLbl = ix_lbl identity
+                          , idCpt = c
+                          , identityAts = segs
                           })
-        _  -> Errors [CxeOrig typeErrors' "index definition" "" (origin index) | (not.null) typeErrors']
+        _  -> Errors [CxeOrig typeErrors' "identity definition" "" (origin identity) | (not.null) typeErrors']
        where
-        typeErrors' = indexCxe++segscxes
-        (segs, segscxes) = case (parallelList . map (pKeySeg2aKeySeg (ix_cpt index)) . ix_ats) index of
+        typeErrors' = identityCxe++segscxes
+        (segs, segscxes) = case (parallelList . map (pKeySeg2aKeySeg (ix_cpt identity)) . ix_ats) identity of
                              Checked segments -> (segments, [])
                              Errors  errs     -> (fatal 1166 ("Do not refer to undefined segments\n"++show errs), errs)
-        c  = pCpt2aCpt (ix_cpt index)
+        c  = pCpt2aCpt (ix_cpt identity)
         -- check equality
-        ats = [ expr | IndExp expr <- segs ]
-        indexCxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
+        ats = [ expr | IdentityExp expr <- segs ]
+        identityCxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
                          (intercalate "\n" ["The source of term " ++ showADL (objctx x) 
-                                            ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the index concept ("++ showADL c ++ ")."
+                                            ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the identity concept ("++ showADL c ++ ")."
                                            |x<-ats,source (objctx x)/=c])
 
-    pKeySeg2aKeySeg :: P_Concept -> P_IndSegment -> Guarded IndexSegment
+    pKeySeg2aKeySeg :: P_Concept -> P_IndSegment -> Guarded IdentitySegment
     pKeySeg2aKeySeg _ (P_IndExp pObj) = do { objDef <- pODef2aODef [] pObj
-                                           ; return (IndExp objDef)
+                                           ; return (IdentityExp objDef)
                                            }
 
-    -- | pVDef2aVDef checks compatibility of composition with view concept on equality
-    pVDef2aVDef :: P_ViewDef -> Guarded ViewDef
-    pVDef2aVDef pvdef
+    -- | pViewDef2aViewDef checks compatibility of composition with view concept on equality
+    pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
+    pViewDef2aViewDef pvdef
      = case typeErrors' of
         [] -> Checked (Vd { vdpos = vd_pos pvdef
                           , vdlbl = vd_lbl pvdef
@@ -899,9 +899,9 @@ pCtx2aCtx p_context
     pExOb2aExOb (PRef2Rule str        ) = case [rul | rul<-p_rules p_context, name rul==str ] of
                                            [] -> Errors [newcxe (" No rule named '"++str++"'")]
                                            _  -> Checked (ExplRule str)
-    pExOb2aExOb (PRef2IndexDef str      ) = case [index | index<-p_keys p_context, name index==str] of
-                                           [] -> Errors [newcxe (" No index definition named '"++str++"'")]
-                                           _  -> Checked (ExplKeyDef str)
+    pExOb2aExOb (PRef2IdentityDef str ) = case [identity | identity<-p_keys p_context, name identity==str] of
+                                           [] -> Errors [newcxe (" No identity definition named '"++str++"'")]
+                                           _  -> Checked (ExplIdentityDef str)
     pExOb2aExOb (PRef2ViewDef str     ) = case [vd | vd<-p_views p_context, name vd==str] of
                                            [] -> Errors [newcxe (" No view definition named '"++str++"'")]
                                            _  -> Checked (ExplViewDef str)

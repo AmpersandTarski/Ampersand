@@ -111,7 +111,7 @@ where
           ++ [ Elem (simpleTag "Gens")         (map mkXmlTree (ptgns pat)) |not (null (ptgns pat))] 
           ++ [ Elem (simpleTag "Declarations") (map mkXmlTree (ptdcs pat)) |not (null (ptdcs pat))] 
           ++ [ Elem (simpleTag "Concepts")     (map mkXmlTree (conceptDefs pat)) |not (null (conceptDefs pat))] 
-          ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptixs pat)) |not (null (ptixs pat))] 
+          ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptids pat)) |not (null (ptids pat))] 
           ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (ptxps pat)) |not (null (ptxps pat))] 
            )
 
@@ -121,11 +121,11 @@ where
       = Elem (mkTag r)
              [Elem (simpleTag "Expression")   [PlainText (showADL (rrexp r))]]
    
-   instance XML IndexDef where
-     mkTag k = Tag "IndexDef" [nameToAttr k]
+   instance XML IdentityDef where
+     mkTag k = Tag "IdentityDef" [nameToAttr k]
      mkXmlTree k = Elem (mkTag k)
-                        ( Elem (simpleTag "Index on") [mkXmlTree (ixCpt k)] :
-                          attributesTree [e | IndExp e <- indexAts k] -- TODO: currently ignores ViewText and ViewHtml segments
+                        ( Elem (simpleTag "Identity on") [mkXmlTree (idCpt k)] :
+                          attributesTree [e | IdentityExp e <- identityAts k] -- TODO: currently ignores ViewText and ViewHtml segments
                         )
 
 
@@ -180,7 +180,7 @@ where
 --                PRef2ConceptDef{}  -> Tag "ExplConceptDef"  atts
 --                PRef2Declaration{} -> Tag "ExplDeclaration" atts
 --                PRef2Rule{}        -> Tag "ExplRule"        atts
---                PRef2IndexDef{}      -> Tag "ExplKeyDef"      atts
+--                PRef2IdentityDef{} -> Tag "ExplIdentityDef" atts
 --                PRef2Pattern{}     -> Tag "ExplPattern"     atts
 --                PRef2Process{}     -> Tag "ExplProcess"     atts
 --                PRef2Interface{}   -> Tag "ExplInterface"   atts
@@ -204,7 +204,8 @@ where
 --                ExplConceptDef  cdef  lang ref _ -> Tag "ExplConceptDef"  (atts cdef lang ref)
 --                ExplDeclaration d     lang ref _ -> Tag "ExplDeclaration" (atts (name d++name(source d)++name(target d)) lang ref)
 --                ExplRule        rname lang ref _ -> Tag "ExplRule"        (atts rname lang ref)
---                ExplKeyDef      kname lang ref _ -> Tag "ExplKeyDef"      (atts kname lang ref)
+--                ExplIdentityDef kname lang ref _ -> Tag "ExplIdentityDef" (atts kname lang ref)
+--                ExplViewDef     kname lang ref _ -> Tag "ExplViewDef"     (atts kname lang ref)
 --                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
 --                ExplProcess     pname lang ref _ -> Tag "ExplProcess"     (atts pname lang ref)
 --                ExplInterface   cname lang ref _ -> Tag "ExplInterface"   (atts cname lang ref)

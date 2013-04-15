@@ -54,14 +54,14 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , fRoleRels ::    [(String,Declaration)]   -- ^ the relation saying which roles may change the population of which relation.
                  , fRoleRuls ::    [(String,Rule)]          -- ^ the relation saying which roles may change the population of which relation.
                  , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire Fspc
-                 , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and index rules
+                 , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                  , invars ::       [Rule]                   -- ^ All invariant rules
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                  , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fspec
                  , allDecls ::     [Declaration]            -- ^ All declarations in the fspec
-                 , allRelations :: [Relation]            -- ^ All relations in the fspec
+                 , allRelations :: [Relation]               -- ^ All relations in the fspec
                  , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
-                 , vIndices ::     [IndexDef]               -- ^ All keys that apply in the entire Fspc
+                 , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
                  , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire Fspc
                  , vconjs ::       [Expression]             -- ^ All conjuncts generated (by ADL2Fspec)
@@ -104,7 +104,7 @@ instance Language Fspc where
   declarations = vrels
   udefrules    = vrules -- only user defined rules
   invariants   = invars
-  indexes      = vIndices
+  identities      = vIndices
   viewDefs     = vviews
   gens         = vgens
   patterns     = vpatterns
@@ -122,7 +122,7 @@ instance Language FProcess where
   declarations = declarations.fpProc
   udefrules    = udefrules.fpProc
   invariants   = invariants.fpProc
-  indexes      = indexes.fpProc
+  identities      = identities.fpProc
   viewDefs     = viewDefs.fpProc
   gens         = gens.fpProc
   patterns     = patterns.fpProc

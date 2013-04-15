@@ -34,7 +34,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
                        , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                       , "RELATION", "MEANING", "DEFINE", "CONCEPT", "INDEX"
+                       , "RELATION", "MEANING", "DEFINE", "CONCEPT", "IDENTITY"
                        , "VIEW", "TXT", "PRIMHTML"
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
@@ -75,7 +75,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                , ctx_ds     = [p | CRel p<-ces]       -- The declarations defined in this context, outside the scope of patterns
                , ctx_cs     = [c | CCon c<-ces]       -- The concept definitions defined in this context, outside the scope of patterns
                , ctx_gs     = [g | CGen g<-ces]       -- The gen definitions defined in this context, outside the scope of patterns
-               , ctx_ks     = [k | CIndx k<-ces]       -- The index definitions defined in this context, outside the scope of patterns
+               , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
                , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
                , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
                , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]  
@@ -152,7 +152,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 , pt_gns = [g | Pg g<-pes]
                 , pt_dcs = [d | Pd d<-pes]
                 , pt_cds = [c | Pc c<-pes]
-                , pt_ixs = [k | Pk k<-pes]
+                , pt_ids = [k | Pk k<-pes]
                 , pt_vds = [v | Pv v<-pes]
                 , pt_xps = [e | Pe e<-pes]
                 , pt_pop = [p | Pp p<-pes]
@@ -329,19 +329,20 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pGenDef           = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
-   -- | A index definition looks like:   INDEX onNameAdress : Person(name, address),
+   -- | A identity definition looks like:   IDENTITY onNameAdress : Person(name, address),
    -- which means that name<>name~ /\ address<>addres~ |- I[Person].
-   -- The label 'onNameAddress' is used to refer to this index.
-   -- You may also use an expression on each attribute place, for example: INDEX onpassport: Person(nationality, passport;documentnr),
+   -- The label 'onNameAddress' is used to refer to this identity.
+   -- You may also use an expression on each attribute place, for example: IDENTITY onpassport: Person(nationality, passport;documentnr),
    -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
    pIndex :: Parser Token P_IndDef
-   pIndex  = index <$ pKey "INDEX" <*> pLabel <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
-       where index :: Label -> P_Concept -> [P_IndSegment] -> P_IndDef 
-             index (Lbl nm p _) c ats = P_Ix { ix_pos = p
-                                             , ix_lbl = nm
-                                             , ix_cpt = c
-                                             , ix_ats = ats
-                                             }
+   pIndex  = identity <$ pKey "IDENTITY" <*> pLabel <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
+       where identity :: Label -> P_Concept -> [P_IndSegment] -> P_IndDef 
+             identity (Lbl nm p _) c ats
+              = P_Id { ix_pos = p
+                     , ix_lbl = nm
+                     , ix_cpt = c
+                     , ix_ats = ats
+                     }
 
              pIndSegment :: Parser Token P_IndSegment
              pIndSegment = P_IndExp <$> pIndAtt
@@ -475,7 +476,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
           pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString) <|>
                      PRef2Declaration <$ pKey "RELATION"  <*> pRelSign             <|>
                      PRef2Rule        <$ pKey "RULE"      <*> pADLid               <|>
-                     PRef2IndexDef      <$ pKey "INDEX"       <*> pADLid               <|>  
+                     PRef2IdentityDef <$ pKey "IDENTITY" <*> pADLid               <|>  
                      PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid               <|>  
                      PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid               <|>
                      PRef2Process     <$ pKey "PROCESS"   <*> pADLid               <|>
@@ -666,7 +667,7 @@ In practice, we have it a little different.
 
 --  (SJ) Why does a label have (optional) strings?
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
---  (SJ April 15th, 2013) Since INDEX has been replaced by INDEX and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
+--  (SJ April 15th, 2013) Since KEY has been replaced by IDENTITY and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
    pLabelProps :: Parser Token Label
    pLabelProps       = lbl <$> pADLid_val_pos
                            <*> (pArgs `opt` [])
