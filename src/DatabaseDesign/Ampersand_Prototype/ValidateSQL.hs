@@ -42,7 +42,7 @@ validateRuleSQL fSpec flags =
     ; let allExps = getAllInterfaceExps fSpec ++ 
                     getAllRuleExps fSpec ++
                     getAllPairViewExps fSpec ++
-                    getAllKeyExps fSpec ++
+                    getAllIdExps fSpec ++
                     getAllViewExps fSpec
                     
     ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
@@ -81,10 +81,10 @@ getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fS
          [ (exp, "violation view for rule "++show (name r)) | PairViewExp _ exp <- pvsegs ]
        getPairViewExps _    = []              
 
-getAllKeyExps :: Fspc -> [ValidationExp]
-getAllKeyExps fSpec = concatMap getKeyExps $ vIndices fSpec
- where getKeyExps index = [ (objctx objDef, "index "++show (name index)) 
-                            | IndExp objDef <- indexAts index ]
+getAllIdExps :: Fspc -> [ValidationExp]
+getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
+ where getIdExps identity = [ (objctx objDef, "identity "++show (name identity)) 
+                            | IdentityExp objDef <- identityAts identity ]
 
 getAllViewExps :: Fspc -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
