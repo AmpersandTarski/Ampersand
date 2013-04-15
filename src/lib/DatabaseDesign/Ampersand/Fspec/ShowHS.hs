@@ -888,7 +888,7 @@ where
     showHSName c = haskellIdentifier ("cpt_"++name c) 
    instance ShowHS A_Concept where
     showHS _ _ c = case c of
-                       C{} -> "C "++show (name c) ++ " gE "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
+                       PlainConcept{} -> "PlainConcept "++show (name c) ++ " gE "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
                        ONE -> "ONE"
 
 -- \***********************************************************************

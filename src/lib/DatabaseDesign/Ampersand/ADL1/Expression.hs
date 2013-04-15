@@ -124,12 +124,14 @@ foldrMapExpression _ _ a  EMp1{}           = a
 deMorgan :: Sign -> Expression -> Expression
 deMorgan sgn@(Sign s t) (ERad (l,r) _)
     = case (target l, source r) of
-       (tl@C{},sr@C{}) -> let z = tl `meet` sr in notCpl sgn (notCpl (Sign s z) l .:. notCpl (Sign z t) r)
-       _               -> fatal 137 "expression in wrong format (has never been signalled so far...)"
+       (tl@PlainConcept{},sr@PlainConcept{}) 
+          -> let z = tl `meet` sr in notCpl sgn (notCpl (Sign s z) l .:. notCpl (Sign z t) r)
+       _  -> fatal 137 "expression in wrong format (has never been signalled so far...)"
 deMorgan sgn@(Sign s t) (ECps (l,r) _)
     = case (target l, source r) of
-       (tl@C{},sr@C{}) -> let z = tl `join` sr in notCpl sgn (notCpl (Sign s z) l .!. notCpl (Sign z t) r)
-       _               -> fatal 141 "expression in wrong format (has never been signalled so far...)"
+       (tl@PlainConcept{},sr@PlainConcept{})
+          -> let z = tl `join` sr in notCpl sgn (notCpl (Sign s z) l .!. notCpl (Sign z t) r)
+       _  -> fatal 141 "expression in wrong format (has never been signalled so far...)"
        
 deMorgan sgn (EUni (l,r) _)    = notCpl sgn (notCpl sgn l ./\. notCpl sgn r)
 deMorgan sgn (EIsc (l,r) _)    = notCpl sgn (notCpl sgn l .\/. notCpl sgn r)
