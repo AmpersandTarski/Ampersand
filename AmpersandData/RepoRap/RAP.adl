@@ -85,7 +85,7 @@ MEANING IN ENGLISH "The initial source of a relationship from the initial popula
 iniright::PairID*Atom
 MEANING IN ENGLISH "The initial target of a relationship from the initial population of a relation from a rule specification file."
 CONCEPT ErrorMessage "An error message is a description of an error." TYPE "Blob"
-KEY ParseError: ParseError(TXT "Click here for error details.")
+VIEW ParseError: ParseError(TXT "Click here for error details.")
 parseerror   :: File * ParseError[UNI]
 MEANING IN ENGLISH "The parse error resulting from the parser of the Ampersand compiler when the rule specification file was loaded for the first time."
 pe_action    :: ParseError -> String
@@ -94,7 +94,7 @@ pe_position  :: ParseError -> String
 MEANING IN ENGLISH "The position of a parse error."
 pe_expecting :: ParseError -> ErrorMessage
 MEANING IN ENGLISH "A message of what was expected by the parser."
-KEY TypeError: TypeError(TXT "Click here for details of error at ", te_position)
+VIEW TypeError: TypeError(TXT "Click here for details of error at ", te_position)
 typeerror   :: File * TypeError
 MEANING IN ENGLISH "The type error resulting from the type checker of the Ampersand compiler when the rule specification file was loaded for the first time."
 te_message  :: TypeError * ErrorMessage [UNI]
@@ -114,7 +114,7 @@ filename :: File->FileName
 MEANING IN ENGLISH "The name of a file"
 filepath :: File*FilePath[UNI]
 MEANING IN ENGLISH "The path of a file"
-KEY File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
+VIEW File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
 RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I
 MEANING IN ENGLISH "Each file has its own location on the file system."
 
@@ -129,7 +129,6 @@ RULE "user roles": 'Student' \/ 'StudentDesigner' \/ 'Designer' |- I[Role]
 MEANING IN ENGLISH "There are three roles: Student, StudentDesigner and Designer"
 
 SPEC AdlFile ISA File
---KEY AdlFile: inherit from File
 sourcefile::Context->AdlFile
 MEANING IN ENGLISH "The rule specification file in which a context is defined."
 includes  ::Context*File
@@ -141,25 +140,26 @@ functionname :: G->String
 MEANING IN ENGLISH "The description of the application of an Ampersand compiler function to a rule specification file."
 operation :: G->Int
 MEANING IN ENGLISH "The operation number of an Ampersand compiler function."
-KEY G: G(PRIMHTML "<a href='../../index.php?operation=",operation
-        ,PRIMHTML "&file=", applyto;filepath , applyto;filename
-        ,PRIMHTML "&userrole=", applyto;uploaded[User*AdlFile]~;userrole
-        ,PRIMHTML "'>", functionname, PRIMHTML "</a>")
+VIEW G: G(PRIMHTML "<a href='../../index.php?operation=",operation
+         ,PRIMHTML "&file=", applyto;filepath , applyto;filename
+         ,PRIMHTML "&userrole=", applyto;uploaded[User*AdlFile]~;userrole
+         ,PRIMHTML "'>", functionname, PRIMHTML "</a>"
+         )
 
 
 SPEC NewAdlFile ISA AdlFile
-KEY NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename[NewAdlFile*FileName],PRIMHTML"</a>")
+VIEW NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename[NewAdlFile*FileName],PRIMHTML"</a>")
 newfile::User->NewAdlFile
 MEANING IN ENGLISH "The predefined rule specification file with an empty context, which is copied to create a new file requested by a student."
 
 SPEC SavePopFile ISA File
-KEY SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", filepath[SavePopFile*FilePath] , filename[SavePopFile*FileName]
+VIEW SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", filepath[SavePopFile*FilePath] , filename[SavePopFile*FileName]
                             ,PRIMHTML "'>", filename[SavePopFile*FileName] ,PRIMHTML "</a>")
 savepopulation::Context->SavePopFile
 MEANING IN ENGLISH "The file, which will be created to export the population of a context when requested by a student."
 
 SPEC SaveAdlFile ISA AdlFile
-KEY SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath[SaveAdlFile*FilePath] , filename[SaveAdlFile*FileName]
+VIEW SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath[SaveAdlFile*FilePath] , filename[SaveAdlFile*FileName]
                             ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded[User*AdlFile]~;userrole
                             ,PRIMHTML "'>", filename[SaveAdlFile*FileName], PRIMHTML "</a>")
 savecontext::Context->SaveAdlFile
