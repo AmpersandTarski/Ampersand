@@ -209,8 +209,8 @@ typing st declsByName
   = ( st
     , stClos
     , eqType
-    , stClosAdded
-    , stClos1
+    , stClos
+    , stClos0
     , do _ <- checkUndefined  -- relation for which there is no declaration
          _ <- checkBindings   -- unresolved bindings for relations
          _ <- checkIVBindings -- unresolved bindings for I and V
@@ -307,7 +307,8 @@ typing st declsByName
     bindings = Map.mapMaybe exactlyOne newBindings
     ivBoundConcepts :: Map Type [P_Concept]
     (ivBoundConcepts, stClos1)
-      = fixPoint (improveBindings ivTypByTyp) (Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv'],stClos0)
+      = fixPoint (improveBindings ivTypByTyp) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
+                                              , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
     -- ivToTyps x = [TypExpr x Src]
     -- ivBoundConcepts = Map.fromList (concat . map doubleIs
