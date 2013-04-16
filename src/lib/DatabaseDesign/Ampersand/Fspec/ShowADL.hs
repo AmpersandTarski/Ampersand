@@ -56,8 +56,6 @@ instance LanguageDependent ObjectDef where
 instance LanguageDependent SubInterface where
   mapexprs _ _ iref@(InterfaceRef _) = iref
   mapexprs f l (Box objs) = Box $ map (mapexprs f l) objs
-instance LanguageDependent Relation where
-  mapexprs _ _ = id
 instance LanguageDependent Declaration where
   mapexprs _ _ = id
 instance LanguageDependent ECArule where
@@ -126,7 +124,7 @@ instance ShowADL Lang where
 instance ShowADL ExplObj where
  showADL e = case e of
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
-      ExplDeclaration d  -> "RELATION "++showADL (makeRelation d)
+      ExplDeclaration d  -> "RELATION "++show (name d)
       ExplRule str       -> "RULE "++showstr str
       ExplIdentityDef str-> "IDENT "++showstr str
       ExplViewDef str    -> "VIEW "++showstr str
@@ -162,7 +160,7 @@ instance ShowADL Process where
 instance ShowADL (String,Rule) where
  showADL (role,rul) = "ROLE "++role++" MAINTAINS "++show (name rul)
 
-instance ShowADL (String,Relation) where
+instance ShowADL (String,Declaration) where
  showADL           (role,rel) = "ROLE "++role++" EDITS "++showADL rel
 
 instance ShowADL (String,Interface) where
@@ -238,8 +236,8 @@ instance ShowADL ViewSegment where
 
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
-instance ShowADL Relation where
- showADL rel = show rel -- showADL (ETyp (ERel rel (sign rel)) (sign rel))
+--instance ShowADL Relation where
+-- showADL rel = show rel -- showADL (ETyp (ERel rel (sign rel)) (sign rel))
 
 instance ShowADL Expression where
  showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses

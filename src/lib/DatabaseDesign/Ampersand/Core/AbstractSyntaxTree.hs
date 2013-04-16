@@ -26,7 +26,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Purpose(..)
  , ExplObj(..)
  , Expression(..), iExpr, vExpr
- , Relation(..)
  , A_Concept(..)
  , A_Markup(..)
  , AMeaning(..)
@@ -39,8 +38,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith 
- , makeDeclaration
- , sameDecl
  , showSign
  , aMarkup2String
  , insParentheses
@@ -568,14 +565,6 @@ instance Association Relation where
   sign Rel{reldcl = dcl } = sign dcl
   sign I{rel1typ  = c   } = Sign c c
   sign V{reltyp   = t   } = t
-makeDeclaration :: Relation -> Declaration
-makeDeclaration r = case r of
-      Rel{} -> reldcl r
-      I{}   -> Isn{ detyp = rel1typ r}
-      V{}   -> Vs { decsgn = sign r}
-sameDecl :: Relation -> Relation -> Bool
-sameDecl r r' = makeDeclaration r == makeDeclaration r'
-
 
 showSign :: Association a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"

@@ -18,7 +18,6 @@ module DatabaseDesign.Ampersand.ADL1
            , Interface(..)
            , Term(..),Expression(..) 
            , A_Gen(..),P_Gen(..)
-           , Relation(..)
            , Declaration(..),decusr
            , P_Declaration(..)
            , ConceptDef(..)
@@ -27,7 +26,7 @@ module DatabaseDesign.Ampersand.ADL1
            , Prop(..)
            , isaRule
            , FilePos(..), Origin(..), Pos(..), Traced(..)
-           , makeDeclaration,sameDecl, iExpr, vExpr
+           , iExpr, vExpr
            , antecedent,hasantecedent,notCpl,isCpl,deMorgan
            , Signaling(..)
            , Association(..)
@@ -63,13 +62,12 @@ where
                                          ,Pattern(..)
                                          ,PairView(..)
                                          ,PairViewSegment(..) 
-                                         ,Relation(..)
                                          ,Rule(..)
                                          ,RuleType(..)
                                          ,RoleRelation(..)
                                          ,UserDefPop(..)
                                          ,Purpose(..), ExplObj(..)
-                                         ,makeDeclaration,sameDecl, iExpr, vExpr
+                                         , iExpr, vExpr
                                          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
                                          )
    import DatabaseDesign.Ampersand.ADL1.Expression                 (

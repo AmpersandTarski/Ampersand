@@ -43,12 +43,6 @@ instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl
    itemstring = name  --copied from atlas.hs
  
-instance Navigatable Relation where 
-   interfacename _ = "Relatiedetails"
-   itemstring x = name x ++ "["
-                  ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
-                  ++ "]"
-
 instance Navigatable Declaration where 
    interfacename _ = "Relatiedetails"
    itemstring x = name x ++ "["
