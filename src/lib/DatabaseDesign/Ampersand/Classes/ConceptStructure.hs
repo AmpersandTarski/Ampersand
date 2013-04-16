@@ -8,7 +8,6 @@ where
    import Data.List
    import Data.Maybe
    import DatabaseDesign.Ampersand.ADL1.Expression
-   -- import DatabaseDesign.Ampersand.Classes.Relational(multiplicities,makeRelation)
    import Prelude hiding (Ordering(..))
    fatal :: Int -> String -> a
    fatal = fatalMsg "Classes.ConceptStructure"
@@ -16,171 +15,135 @@ where
    class ConceptStructure a where
     concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
     declsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-    declsUsedIn a = nub (map makeDeclaration (relationsIn a))
-    relationsIn ::  a -> [Relation]        -- ^ the set of all relations used within data structure a
+    declsUsedIn a = map prim2dcl ((filter (isMp1).nub.concatMap primitives.expressionsIn) a)
+      where prim2dcl expr =
+             case expr of
+               EDcD d@Sgn{} _ -> d
+               EDcD _       _ -> fatal 23 "invalid declaration in EDcD{}" 
+               EDcI sgn       -> Isn (source sgn)
+               EDcV sgn       -> Vs sgn
+               EMp1{}  -> fatal 25 "EMp1 should be filtered out from primitives. use `filter (not isMp1)`"
+               _       -> fatal 26 "prim2dcl is not supposed to be calleed on a non-primitive expression."
+    expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
+    mp1Exprs = filter isMp1.nub.concatMap primitives.expressionsIn
     genE ::     a -> GenR
     genE cstruc = case concs cstruc of
                    [] -> fatal 25 "No concepts???"
                    x:_ -> genE x
 
--- class KleeneClos where
---  closExprs :: a -> [Expression] Relation  -- no double occurrences in the resulting list of expressions
-
    instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
     concs    (a,b) = concs a `uni` concs b
-    relationsIn  (a,b) = relationsIn a `uni` relationsIn b
-    mp1Exprs (a,b) = mp1Exprs a `uni` mp1Exprs b
+    expressionsIn (a,b) = expressionsIn a `uni` expressionsIn b
 
    instance ConceptStructure a => ConceptStructure (Maybe a) where
     concs    ma = maybe [] concs ma
-    relationsIn  ma = maybe [] relationsIn ma
-    mp1Exprs ma = maybe [] mp1Exprs ma
+    expressionsIn ma = maybe [] expressionsIn ma
  
    instance ConceptStructure a => ConceptStructure [a] where
     concs     = nub . concatMap concs
-    relationsIn = foldr ((uni) . relationsIn) [] 
-    mp1Exprs  = nub . concatMap mp1Exprs 
+    expressionsIn = foldr ((uni) . expressionsIn) [] 
     
    instance ConceptStructure A_Context where
     concs     c =       concs ( ctxds c ++ concatMap ptdcs (ctxpats c)  ++ concatMap prcDcls (ctxprocs c) ) 
                   `uni` concs ( ctxgs c ++ concatMap ptgns (ctxpats c)  ++ concatMap prcGens (ctxprocs c) )
                   `uni` [ONE]
-    relationsIn c = foldr (uni) []
-                      [ (relationsIn.ctxpats) c
-                      , (relationsIn.ctxprocs) c
-                      , (relationsIn.ctxifcs) c
-                      , (relationsIn.ctxrs) c
-                      , (relationsIn.ctxks) c
-                      , (relationsIn.ctxsql) c
-                      , (relationsIn.ctxphp) c
+    expressionsIn c = foldr (uni) []
+                      [ (expressionsIn.ctxpats) c
+                      , (expressionsIn.ctxprocs) c
+                      , (expressionsIn.ctxifcs) c
+                      , (expressionsIn.ctxrs) c
+                      , (expressionsIn.ctxks) c
+                      , (expressionsIn.ctxvs) c
+                      , (expressionsIn.ctxsql) c
+                      , (expressionsIn.ctxphp) c
                       ]
-    mp1Exprs  _ = fatal 64 "do not use this from a context"
     genE      c = ctxpo c
 
    instance ConceptStructure IdentityDef where
-    concs       identity = [idCpt identity] `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
-    relationsIn identity = relationsIn               [objDef | IdentityExp objDef <- identityAts identity]
-    mp1Exprs    identity = mp1Exprs                  [objDef | IdentityExp objDef <- identityAts identity]
+    concs       identity   = [idCpt identity] `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
+    expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
 
    instance ConceptStructure ViewDef where
     concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp objDef <- vdats vd]
-    relationsIn vd = relationsIn            [objDef | ViewExp objDef <- vdats vd]
-    mp1Exprs    vd = mp1Exprs               [objDef | ViewExp objDef <- vdats vd]
+    expressionsIn vd = expressionsIn        [objDef | ViewExp objDef <- vdats vd]
 
    instance ConceptStructure Expression where
     concs          = foldrMapExpression uni concs []
-    relationsIn    = foldrMapExpression (uni) relationsIn []
-    mp1Exprs (EEqu (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (EImp (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (EIsc (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (EUni (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (EDif (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (ELrs (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (ERrs (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (ECps (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (ERad (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (EPrd (l,r) _) = mp1Exprs l `uni` mp1Exprs r
-    mp1Exprs (EKl0 e _)     = mp1Exprs e
-    mp1Exprs (EKl1 e _)     = mp1Exprs e
-    mp1Exprs (EFlp e _)     = mp1Exprs e
-    mp1Exprs (ECpl e _)     = mp1Exprs e
-    mp1Exprs (EBrk e)       = mp1Exprs e
-    mp1Exprs (ETyp e _)     = mp1Exprs e
-    mp1Exprs EDcD{}         = []
-    mp1Exprs EDcI{}         = []
-    mp1Exprs EDcV{}         = []
-    mp1Exprs e@EMp1{}       = [e]
+    expressionsIn e = [e]
 
 
    instance ConceptStructure A_Concept where
     concs   c     = [c]
-    relationsIn c = [I c]
-    mp1Exprs _    = []
+    expressionsIn c = []  --XXX 
     genE PlainConcept{cptgE = a}  = a
     genE _ = fatal 100 "A_Concept without cptgE"
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]
-    relationsIn   _  = []
-    mp1Exprs  _      = []
+    expressionsIn _  = []
 
    instance ConceptStructure ObjectDef where
     concs     obj = [target (objctx obj)] `uni` concs (objmsub obj)
-    relationsIn obj = foldr (uni) []
-                       [ (relationsIn.objctx) obj
-                       , (relationsIn.objmsub) obj
-                       , (relationsIn.target.objctx) obj
+    expressionsIn obj = foldr (uni) []
+                       [ (expressionsIn.objctx) obj
+                       , (expressionsIn.objmsub) obj
                        ]
-    mp1Exprs  obj = mp1Exprs (objctx obj) `uni` mp1Exprs (objmsub obj)
 
    -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
    instance ConceptStructure SubInterface where
     concs (Box objs)         = concs objs 
     concs (InterfaceRef _)   = [] 
-    relationsIn (Box objs)       = relationsIn objs 
-    relationsIn (InterfaceRef _) = [] 
-    mp1Exprs (Box objs)       = mp1Exprs objs 
-    mp1Exprs (InterfaceRef _) = [] 
+    expressionsIn (Box objs)       = expressionsIn objs 
+    expressionsIn (InterfaceRef _) = [] 
           
    instance ConceptStructure Pattern where
     concs       p = concs (ptgns p)   `uni` concs (ptdcs p)   `uni` concs (ptrls p)    `uni` concs (ptids p)
-    relationsIn p = foldr (uni) []
-                       [ (relationsIn.ptrls) p
-                       , (relationsIn.ptids) p
+    expressionsIn p = foldr (uni) []
+                       [ (expressionsIn.ptrls) p
+                       , (expressionsIn.ptids) p
+                       , (expressionsIn.ptvds) p
                        ]
-    mp1Exprs  p = mp1Exprs (ptrls p) `uni` mp1Exprs (ptids p)
 
    instance ConceptStructure Process where
     concs     p = concs (prcGens p) `uni` concs (prcDcls p) `uni` concs (prcRules p) `uni` concs (prcIds p)
-    relationsIn p = foldr (uni) []
-                       [ (relationsIn.prcRules) p
-                       , (relationsIn.prcIds) p
-                       , (relationsIn.prcrrels) p
+    expressionsIn p = foldr (uni) []
+                       [ (expressionsIn.prcRules) p
+                       , (expressionsIn.prcIds) p
+                       , (expressionsIn.prcVds) p
+                       , (expressionsIn.prcrrels) p
                        ]
            where prcrrels x = map snd (prcRRels x)
-    mp1Exprs  p = mp1Exprs (prcRules p) `uni` mp1Exprs (prcIds p)
 
    instance ConceptStructure Interface where
     concs       ifc = concs       (ifcObj ifc)
-    relationsIn ifc = foldr (uni) []
-                       [ (relationsIn.ifcObj) ifc
-                       , (relationsIn.ifcParams) ifc
+    expressionsIn ifc = foldr (uni) []
+                       [ (expressionsIn.ifcObj) ifc
+                       , (expressionsIn.ifcParams) ifc
                        ]
-    mp1Exprs    ifc = mp1Exprs    (ifcObj ifc)
 
-   instance ConceptStructure Relation where
-    concs       rel = let d=makeDeclaration rel in nub [source d,target d]
-    relationsIn rel = [rel]
-    mp1Exprs    _   = fatal 142 "mp1Exprs not allowed on Relation"
-                    
    instance ConceptStructure Declaration where
     concs       d = concs (sign d)
-    relationsIn _ = []
-    mp1Exprs    _ = fatal 148 "mp1Exprs not allowed on Declaration"
+    expressionsIn _ = fatal 148 "expressionsIn not allowed on Declaration"
 
    instance ConceptStructure Rule where
     concs r   = concs (rrexp r) ++ concs (rrviol r)
-    relationsIn r = foldr (uni) []
-                     [ (relationsIn.rrexp ) r
-                     , (relationsIn.rrviol) r
+    expressionsIn r = foldr (uni) []
+                     [ (expressionsIn.rrexp ) r
+                     , (expressionsIn.rrviol) r
                      ]
-    mp1Exprs r = mp1Exprs (rrexp r)
    
    instance ConceptStructure PairView where
-    concs       (PairView ps) = concs       ps
-    relationsIn (PairView ps) = relationsIn ps
-    mp1Exprs    (PairView ps) = mp1Exprs    ps
+    concs         (PairView ps) = concs         ps
+    expressionsIn (PairView ps) = expressionsIn ps
      
    instance ConceptStructure PairViewSegment where
     concs       (PairViewText _)  = []
     concs       (PairViewExp _ x) = concs x
-    relationsIn (PairViewText _)  = []
-    relationsIn (PairViewExp _ x) = relationsIn x
-    mp1Exprs    (PairViewText _)  = []
-    mp1Exprs    (PairViewExp _ x) = mp1Exprs x
+    expressionsIn    (PairViewText _)  = []
+    expressionsIn    (PairViewExp _ x) = expressionsIn x
      
    instance ConceptStructure A_Gen where
     concs g        = nub [gengen g,genspc g]  
-    relationsIn _  = []
-    mp1Exprs _ = fatal 160 "mp1Exprs not allowed on A_Gen"
+    expressionsIn _ = fatal 160 "expressionsIn not allowed on A_Gen"
+    
