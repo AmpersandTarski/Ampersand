@@ -128,7 +128,7 @@ instance ShowADL ExplObj where
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
       ExplDeclaration d  -> "RELATION "++showADL (makeRelation d)
       ExplRule str       -> "RULE "++showstr str
-      ExplIdentityDef str-> "IDENTITY "++showstr str
+      ExplIdentityDef str-> "IDENT "++showstr str
       ExplViewDef str    -> "VIEW "++showstr str
       ExplPattern str    -> "PATTERN "++ showstr str
       ExplProcess str    -> "PROCESS "++str
@@ -218,7 +218,7 @@ instance ShowADL Interface where
 
 instance ShowADL IdentityDef where
  showADL identity 
-  = "IDENTITY "++idLbl identity
+  = "IDENT "++idLbl identity
           ++ ": " ++name (idCpt identity)
           ++ "(" ++intercalate ", " (map showADL $ identityAts identity) ++ ")"
 
