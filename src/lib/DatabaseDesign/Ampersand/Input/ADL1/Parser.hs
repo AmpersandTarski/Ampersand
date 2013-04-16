@@ -111,7 +111,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        | CRel P_Declaration
                        | CCon ConceptDef
                        | CGen P_Gen
-                       | CIndx P_IndDef
+                       | CIndx P_IdentDef
                        | CView P_ViewDef
                        | Cifc P_Interface
                        | CSqlPlug P_ObjectDef
@@ -171,7 +171,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 | Pd P_Declaration 
                 | Pc ConceptDef
                 | Pg P_Gen
-                | Pk P_IndDef
+                | Pk P_IdentDef
                 | Pv P_ViewDef
                 | Pe PPurpose
                 | Pp P_Population
@@ -215,7 +215,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  | PrL P_RoleRelation
                  | PrC ConceptDef
                  | PrG P_Gen
-                 | PrI P_IndDef
+                 | PrI P_IdentDef
                  | PrV P_ViewDef
                  | PrE PPurpose
                  | PrP P_Population
@@ -334,9 +334,9 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    -- The label 'onNameAddress' is used to refer to this identity.
    -- You may also use an expression on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
    -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
-   pIndex :: Parser Token P_IndDef
+   pIndex :: Parser Token P_IdentDef
    pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
-       where identity :: Label -> P_Concept -> [P_IndSegment] -> P_IndDef 
+       where identity :: Label -> P_Concept -> [P_IdentSegment] -> P_IdentDef 
              identity (Lbl nm p _) c ats
               = P_Id { ix_pos = p
                      , ix_lbl = nm
@@ -344,8 +344,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                      , ix_ats = ats
                      }
 
-             pIndSegment :: Parser Token P_IndSegment
-             pIndSegment = P_IndExp <$> pIndAtt
+             pIndSegment :: Parser Token P_IdentSegment
+             pIndSegment = P_IdentExp <$> pIndAtt
              
              pIndAtt :: Parser Token P_ObjectDef
              pIndAtt  = attL <$> pLabelProps <*> pTerm <|>
