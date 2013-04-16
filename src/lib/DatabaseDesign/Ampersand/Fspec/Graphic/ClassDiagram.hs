@@ -206,7 +206,7 @@ where
           class2node cl = DotNode 
             { nodeID         = name cl
             , nodeAttributes = [ Shape PlainText
-                               , GVcomp.Color [(X11Color Purple)]
+                               , GVcomp.Color [WC (X11Color Purple) Nothing]
                                , Label (HtmlLabel (Table htmlTable))
                                ]
             } where 
@@ -316,7 +316,7 @@ where
                                            ] ++
                                            ( if blackWhite flags
                                              then [Style [SItem Dashed []]]
-                                             else [GVcomp.Color [X11Color Red]]
+                                             else [GVcomp.Color [WC (X11Color Red) Nothing]]
                                            )
                               }
              

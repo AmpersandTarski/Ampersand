@@ -257,7 +257,7 @@ constrEdge nodeFrom nodeTo pObj isDirected' flags
                                , FontName (fromString(pangoFont flags))
                                , Dir (if isDirected' then Forward else NoDir)
                                , LabelAngle (-25.0)
-                               , Color [X11Color Gray30]
+                               , Color [WC(X11Color Gray30)Nothing]
                                , LabelFontColor (X11Color Black)
                                , LabelFloat True
                             --   , LabelDistance 2.0
