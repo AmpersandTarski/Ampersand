@@ -14,7 +14,7 @@ CONCEPT ADLid "An ADLid is an identifier of type pVarid <|> pConid <|> pString"
 PATTERN Context
 CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
                 "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Context(ctxnm,ctxpats,ctxcs):svn568"
-IDENTITY Context: Context(ctxnm)
+IDENT Context: Context(ctxnm)
 
 ctxnm  ::Context->Conid [INJ]
 MEANING IN ENGLISH "The name of a context."
@@ -27,7 +27,7 @@ ENDPATTERN
 PATTERN Pattern
 CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
                 "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Pattern(ptnm,ptdcs,ptgns,ptrls):svn568"
-IDENTITY Pattern: Pattern(ptnm)
+IDENT Pattern: Pattern(ptnm)
 
 ptnm  :: Pattern->Conid [INJ]
 MEANING IN ENGLISH "The name of a pattern."
@@ -44,7 +44,7 @@ ENDPATTERN
 PATTERN Gen
 CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Gen(genspc,gengen):svn568"
-IDENTITY Gen: Gen( genspc, gengen )
+IDENT Gen: Gen( genspc, gengen )
 VIEW Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING IN ENGLISH "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
@@ -64,7 +64,7 @@ CONCEPT PlainConcept "The set of instances by name."
 SPEC PlainConcept ISA Concept
 SPEC "ONE" ISA Concept
 
-IDENTITY PlainConcept: PlainConcept(cptnm)
+IDENT PlainConcept: PlainConcept(cptnm)
 
 name :: Concept->Conid [INJ]
 MEANING IN ENGLISH "The name of a concept."
@@ -78,7 +78,7 @@ MEANING IN ENGLISH "The purposes of a concept."
 
 
 CONCEPT Order "The order of the is-a-relation between concepts."
-IDENTITY Order: Order(ordername)
+IDENT Order: Order(ordername)
 SPEC PlainConcept ISA Concept
 SPEC "ONE" ISA Concept
 ordername :: Order -> String [INJ]
@@ -101,7 +101,7 @@ VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that
 CONCEPT AtomID "An atomID is the identity of an atomic term."
 CONCEPT Atom "An atom is the value of an atomic term." TYPE "Blob"
              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn568"
-IDENTITY AtomID: AtomID( atomvalue, cptos~)
+IDENT AtomID: AtomID( atomvalue, cptos~)
 VIEW AtomID: AtomID( atomvalue , TXT " :: ", cptos~)
 atomvalue::AtomID->Atom
 MEANING IN ENGLISH "The value of an atom."
@@ -115,7 +115,7 @@ ENDPATTERN
 PATTERN Sign
 CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
              "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn568"
-IDENTITY Sign: Sign( src, trg )
+IDENT Sign: Sign( src, trg )
 VIEW Sign: Sign( src;cptnm , TXT " * " , trg;cptnm )
 src::Sign->Concept
 MEANING IN ENGLISH "The source of a sign."
@@ -123,7 +123,7 @@ trg::Sign->Concept
 MEANING IN ENGLISH "The target of a sign."
 
 CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
-IDENTITY PairID: PairID( left;atomvalue, right;atomvalue )
+IDENT PairID: PairID( left;atomvalue, right;atomvalue )
 VIEW PairID: PairID( left;atomvalue , TXT " * " , right;atomvalue )
 left::PairID->AtomID
 MEANING IN ENGLISH "The source of a relationship."
@@ -134,7 +134,7 @@ ENDPATTERN
 PATTERN Declaration
 CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
                     "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn568"
-IDENTITY Declaration: Declaration( decnm , decsgn;src, decsgn;trg )
+IDENT Declaration: Declaration( decnm , decsgn;src, decsgn;trg )
 VIEW Declaration: Declaration( decnm , TXT " :: ", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
 RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
 MEANING IN ENGLISH "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
@@ -189,7 +189,7 @@ PATTERN Expression
 CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
 CONCEPT Expression "An expression is a relation algebraic expression in Ampersand ASCII syntax"
                    "DatabaseDesign.Ampersand.Input.ADL1.Parser.pExpr:svn568"
-IDENTITY ExpressionID : ExpressionID(exprvalue)
+IDENT ExpressionID : ExpressionID(exprvalue)
 
 exprvalue :: ExpressionID->Expression
 MEANING IN ENGLISH "The value of an expression."
@@ -197,7 +197,7 @@ rels  :: ExpressionID*Relation
 MEANING IN ENGLISH "The user-declared relations in an expression."
 
 CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
-IDENTITY Relation: Relation( relnm , relsgn;src, relsgn;trg)
+IDENT Relation: Relation( relnm , relsgn;src, relsgn;trg)
 VIEW Relation: Relation( relnm , TXT "[" , relsgn;src;cptnm , TXT "*" , relsgn;trg;cptnm , TXT "]")
 
 relnm :: Relation -> Varid
@@ -213,7 +213,7 @@ ENDPATTERN
 PATTERN Rule
 CONCEPT Rule "A rule is the definition of an expression with the meaning of an assertion"
              "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Rule(rrnm,rrexp):svn568"
-IDENTITY Rule: Rule(rrnm)
+IDENT Rule: Rule(rrnm)
 
 rrnm  :: Rule -> ADLid [INJ]
 MEANING IN ENGLISH "The name of a rule."
