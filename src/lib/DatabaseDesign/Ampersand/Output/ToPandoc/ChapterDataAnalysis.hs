@@ -510,6 +510,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally
 -- the signals are documented.
+{-
   daAssociations :: [Relation] -> [Block]
   daAssociations rs = heteroMultiplicities ++ endoProperties ++ identityDocumentation ++ viewDocumentation
    where
@@ -624,6 +625,7 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
         (viewds, Dutch) -> [ Para $ Str "De volgende views bestaan: ": commaNLPandoc (Str "en") [Str (name v) | v<-viewds]]
         (viewds, English)->[ Para $ Str "The following views exist: ": commaEngPandoc (Str "and") [Str (name v) | v<-viewds]]
 
+-}
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the endo-poperties are given, and finally

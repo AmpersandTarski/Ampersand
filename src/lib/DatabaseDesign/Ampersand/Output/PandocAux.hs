@@ -413,14 +413,6 @@ addParensToSuper e@EKl1{} = EBrk e
 addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
-instance ShowMath Relation where
- showMath rel@Rel{}
-  = (texOnly_Id.name) rel
- showMath I{}
-  = "I"
- showMath V{}
-  = "V"
-
 instance ShowMath Declaration where
  showMath decl@(Sgn{})
   = "\\declare{"++latexEscShw(name decl)++"}{"++latexEscShw(name (source decl))++"}{"++latexEscShw(name (target decl))++"}"

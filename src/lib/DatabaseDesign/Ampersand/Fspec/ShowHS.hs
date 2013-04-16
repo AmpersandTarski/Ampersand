@@ -432,38 +432,6 @@ where
      = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS flags (ind++"    ") (mPos rs)
    
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Field                         ***
--- \***********************************************************************
-
-   instance ShowHSName Field where
-    showHSName fld = haskellIdentifier ("fld_"++fld_name fld)
-
-   instance ShowHS Field where
-    showHS flags indent fld
-     = intercalate indentA
-         [  "Att { fld_name     = "++show (fld_name fld)
-         , wrap ", fld_sub      = " indentB (showHS flags) (fld_sub fld)
-         ,      ", fld_expr     = "++showHS flags "" (fld_expr fld)
-         ,      ", fld_rel      = "++showHSName  (fld_rel fld)
-         ,      ", fld_editable = "++show (fld_editable fld)
-         ,      ", fld_list     = "++show (fld_list     fld)
-         ,      ", fld_must     = "++show (fld_must     fld)
-         ,      ", fld_new      = "++show (fld_new      fld)
-         ,      ", fld_sLevel   = "++show (fld_sLevel   fld)
-         ,      ", fld_insAble  = "++show (fld_insAble  fld)
-         ,      ", fld_onIns    = "++showHS flags "" (fld_onIns fld)
-         ,      ", fld_delAble  = "++show (fld_delAble  fld)
-         ,      ", fld_onDel    = "++showHS flags "" (fld_onDel fld)
-        , "}"
-        ] where indentA = indent ++"    "     -- adding the width of "Att "
-                indentB = indentA++"                 " -- adding the width of ", fld_editable = "
-
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FSid                          ***
--- \***********************************************************************
-
    instance ShowHSName FSid where
     showHSName (FS_id nm ) = haskellIdentifier nm 
 
@@ -806,30 +774,6 @@ where
    instance ShowHS A_Gen where
     showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "++show (genpat gen)
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Relation Concept            ***
--- \***********************************************************************
-
-   instance ShowHSName Relation where
-    showHSName rel
-       = case rel of
-            Rel{} -> haskellIdentifier ("rrel_"++name rel++name (source rel)++name ( target rel)++showHSName (origin rel))
-            I{}   -> haskellIdentifier ("irel_"++          name (source rel)                    )
-            V{}   -> haskellIdentifier ("vrel_"++          name (source rel)++name ( target rel))
-       
-   instance ShowHS Relation where
-    showHS flags _ rel 
-       = case rel of
-            Rel{} -> "Rel "++" ("++showHS flags "" (origin rel)++")"
-                         ++" "++showHSName (reldcl rel)
-            I{}   -> "I "++showHSName (rel1typ  rel)
-            V{}   -> "V ("++showHS flags "" (reltyp  rel)++")"
-
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Declaration                   ***
--- \***********************************************************************
-
    instance ShowHSName Declaration where
     showHSName d | decusr d  = haskellIdentifier ("dcl_"++name d++name (source d)++name (target d)) -- user defined relations
                  | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++name (target d)) -- relations generated for signalling
