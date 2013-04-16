@@ -271,15 +271,15 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f _ e@(EDcD dcl _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
-               Flr  -> R (Funs a [dcl]) (makeDeclaration(I tv)) (Funs b [])
-               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [dcl])
+               Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
+               Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
                Rn   -> R (Funs a []) (dcl) (Funs b [])
                Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
       f _ e@(EFlp (EDcD dcl _) _) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
-               Flr  -> R (Funs a [dcl]) (makeDeclaration(I tv)) (Funs b [])
-               Frl  -> R (Funs a []) (makeDeclaration(I sv)) (Funs b [dcl])
+               Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
+               Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
                Rn   -> R (Funs b []) (dcl) (Funs a [])
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
       f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)

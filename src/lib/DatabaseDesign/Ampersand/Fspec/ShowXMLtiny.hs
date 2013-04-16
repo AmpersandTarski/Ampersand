@@ -89,19 +89,6 @@ where
      mkXmlTree fpa'
         = Elem (mkTag fpa') []  -- TODO make content for this XML field
 
-   instance XML Field where
-     mkTag _ = Tag "Field" [] 
-     mkXmlTree f
-        = Elem (Tag "Field"
-                    [ mkAttr "Editable" (show (fld_editable f))
-                    , mkAttr "list"     (show (fld_list     f))
-                    , mkAttr "Must"     (show (fld_must     f))
-                    , mkAttr "New"      (show (fld_new      f))
-                    , mkAttr "sLevel"   (show (fld_sLevel   f))
-                    ])
-               ( Elem (simpleTag "Expression") [mkXmlTree (fld_expr f)] :
-                 [ Elem (simpleTag "Relation")   [mkXmlTree (fld_rel f)]]
-               ) 
 
    instance XML Pattern where
      mkTag pat = Tag "Pattern" [ nameToAttr pat]
@@ -226,17 +213,6 @@ where
                          )
      mkXmlTree g = Node (mkTag g) 
    
-
-   instance XML Relation where
-     mkTag f = Tag "Relation" [nameToAttr f] 
-     mkXmlTree rel = Elem (mkTag rel) 
-      (case rel of  
-          Rel{} ->  Elem (simpleTag "Source") [mkXmlTree (source rel)]
-                    :[Elem (simpleTag "Target") [mkXmlTree (target rel)]]                  
-          I{}   ->  [still2bdone "Relation_I"]
-          V{}   ->  [still2bdone "Relation_V"]
-           ) 
-
 
    instance XML Declaration where
      mkTag d = Tag "Association" ([nameToAttr d]

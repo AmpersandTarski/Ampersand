@@ -67,13 +67,6 @@ instance Motivated A_Concept where
   explForObj _ _ = False
   explanations _ = []
 
-instance Motivated Relation where
---  meaning l r = meaning l (makeDeclaration r)
-  explForObj r (ExplDeclaration d) =  makeDeclaration r == d
-  explForObj _ _ = False
-  explanations _ = []
---  autoMeaning l r = autoMeaning l (makeDeclaration r)
-
 instance Motivated Declaration where
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]

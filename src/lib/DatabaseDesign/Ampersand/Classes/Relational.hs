@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.Relational (Relational(..)
-                                  ,makeRelation
-                                  ) where
+module DatabaseDesign.Ampersand.Classes.Relational 
+   (Relational(..)
+   ) where
 
 import Data.Maybe
                                   
@@ -40,33 +40,33 @@ class Association r => Relational r where
     isAsy r = Asy `elem` multiplicities r
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
 
-instance Relational Relation where
-    multiplicities rel 
-      = case rel of
-           Rel{}               -> multiplicities (reldcl rel)
-           V {}                -> [Tot]
-                                ++[Sur]
-                                ++[Inj | isSingleton (source rel)]
-                                ++[Uni | isSingleton (target rel)]
-                                ++[Asy | isEndo rel, isSingleton (source rel)]
-                                ++[Sym | isEndo rel]
-                                ++[Rfx | isEndo rel]
-                                ++[Trn | isEndo rel]
-           I{}                 -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-    isProp rel = case rel of
-           Rel{}               -> null ([Asy,Sym]>-multiplicities (reldcl rel))
-           V{}                 -> isEndo rel && isSingleton (source rel)
-           I{}                 -> True
-    isImin rel  = isImin (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
-    isTrue rel = case rel of
-           Rel{}               -> False
-           V{}                 -> True
-           I{}                 -> False
-    isFalse _   = False
-    isIdent rel = case rel of       -- > tells whether the argument is equivalent to I
-                   Rel{} -> False
-                   V{}   -> isEndo rel && isSingleton (source rel)
-                   I{}   -> True
+--instance Relational Relation where
+--    multiplicities rel 
+--      = case rel of
+--           Rel{}               -> multiplicities (reldcl rel)
+--           V {}                -> [Tot]
+--                                ++[Sur]
+--                                ++[Inj | isSingleton (source rel)]
+--                                ++[Uni | isSingleton (target rel)]
+--                                ++[Asy | isEndo rel, isSingleton (source rel)]
+--                                ++[Sym | isEndo rel]
+--                                ++[Rfx | isEndo rel]
+--                                ++[Trn | isEndo rel]
+--           I{}                 -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+--    isProp rel = case rel of
+--           Rel{}               -> null ([Asy,Sym]>-multiplicities (reldcl rel))
+--           V{}                 -> isEndo rel && isSingleton (source rel)
+--           I{}                 -> True
+--    isImin rel  = isImin (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
+--    isTrue rel = case rel of
+--           Rel{}               -> False
+--           V{}                 -> True
+--           I{}                 -> False
+--    isFalse _   = False
+--    isIdent rel = case rel of       -- > tells whether the argument is equivalent to I
+--                   Rel{} -> False
+--                   V{}   -> isEndo rel && isSingleton (source rel)
+--                   I{}   -> True
 
 instance Relational Declaration where
     multiplicities d = case d of
@@ -91,12 +91,6 @@ instance Relational Declaration where
 isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
 isSingleton _   = False
-
-makeRelation :: Declaration -> Relation
-makeRelation d
-    = Rel { relpos = origin d 
-          , reldcl = d
-          }
 
 -- The function "multiplicities" does not only provide the multiplicities provided by the Ampersand user,
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,

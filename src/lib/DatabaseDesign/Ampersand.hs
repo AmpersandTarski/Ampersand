@@ -16,7 +16,6 @@ module DatabaseDesign.Ampersand
    , UserDefPop(..)
    , Fspc(..)
    , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
-   , Relation(..)
    , Rule(..), ruleviolations, violationsexpr
    , Prop(..)
    , Lang(..)
@@ -46,7 +45,6 @@ module DatabaseDesign.Ampersand
    -- * Functions on concepts
    , (<==>),meet,join,sortWith,atomsOf
    -- * Functions on declarations
-   , makeRelation ,makeDeclaration
    , decusr
    -- * Functions on rules
    -- * Functions on expressions:
