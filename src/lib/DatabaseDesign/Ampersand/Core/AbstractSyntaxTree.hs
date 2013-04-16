@@ -308,7 +308,7 @@ instance Association A_Gen where
   sign r = Sign (genspc r) (gengen r)
 
 
-data Interface = Ifc { ifcParams :: [Declaration]
+data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
                      , ifcArgs ::   [[String]]
                      , ifcRoles ::  [String]
                      , ifcObj ::    ObjectDef -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)

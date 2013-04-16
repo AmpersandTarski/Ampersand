@@ -59,7 +59,6 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                  , allRules::      [Rule]                   -- ^ All rules, both generated (from multiplicity and keys) as well as user defined ones.
                  , allUsedDecls :: [Declaration]            -- ^ All used declarations in the fspec
                  , allDecls ::     [Declaration]            -- ^ All declarations in the fspec
-                 , allRelations :: [Relation]               -- ^ All relations in the fspec
                  , allConcepts ::  [A_Concept]              -- ^ All concepts in the fspec
                  , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire Fspc
                  , vviews ::       [ViewDef]                -- ^ All views that apply in the entire Fspc
@@ -86,9 +85,9 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 instance ConceptStructure Fspc where
   concs     fSpec = concs (vrels fSpec)                     -- The set of all concepts used in this Fspc
-  relationsIn fSpec = foldr (uni) []
-                        [ (relationsIn.interfaceS) fSpec
-                        , (relationsIn.vrules) fSpec
+  expressionsIn fSpec = foldr (uni) []
+                        [ (expressionsIn.interfaceS) fSpec
+                        , (expressionsIn.vrules) fSpec
                         ]
   mp1Exprs  _ = fatal 77 "do not use mp1Exprs from an Fspc"
   
@@ -174,8 +173,7 @@ instance Show Finterface where
 
 instance ConceptStructure Finterface where
   concs     ifc = concs (fsv_ifcdef ifc)
-  relationsIn   ifc = relationsIn (fsv_ifcdef ifc)
-  mp1Exprs  _ = fatal 160 "do not use mp1Exprs from an Finterface"
+  expressionsIn   ifc = expressionsIn (fsv_ifcdef ifc)
 
 
 --   instance Explainable Finterface where
@@ -236,8 +234,7 @@ instance Identified Activity where
        
 instance ConceptStructure Activity where
  concs     act = concs (actRule act) `uni` concs (actAffect act)
- relationsIn   act = relationsIn (actRule act) `uni` nub (map makeRelation (actAffect act))
- mp1Exprs  act = mp1Exprs (actRule act)
+ expressionsIn  act = expressionsIn (actRule act)
 
 data Quad     = Quad
           { qDcl :: Declaration        -- The relation that, when affected, triggers a restore action.
