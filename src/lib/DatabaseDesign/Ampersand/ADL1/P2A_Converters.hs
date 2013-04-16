@@ -126,7 +126,7 @@ class Expr a where
   p_declarations _ = []
   p_rules :: a -> [P_Rule]
   p_rules _ = []
-  p_keys :: a -> [P_IndDef]
+  p_keys :: a -> [P_IdentDef]
   p_keys _ = []
   p_views :: a -> [P_ViewDef]
   p_views _ = []
@@ -226,7 +226,7 @@ instance Expr P_PairViewSegment where
  uType _ (P_PairViewExp Tgt term) = uType term term
  uType _ _ = nothing
   
-instance Expr P_IndDef where
+instance Expr P_IdentDef where
  p_keys k = [k]
  uType _ k
   = let x=Pid (ix_cpt k) in
@@ -234,7 +234,7 @@ instance Expr P_IndDef where
     foldr (.+.) nothing [ uType obj obj .+.
                           mSpecific Src x Src (obj_ctx obj) (obj_ctx obj)
                            -- TODO: improve mSpecific's error message here
-                        | P_IndExp obj <- ix_ats k
+                        | P_IdentExp obj <- ix_ats k
                         ]
 
 instance Expr P_ViewDef where
@@ -328,8 +328,8 @@ instance Expr Term where
                       .+. uType a a .+. uType b b
      (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                       .+. uType' a .+. uType' b
-                      .+. mEqual Src x Src b x .+. mEqual Tgt x Tgt b x
-                      .+. mEqual Src x Src a x .+. mEqual Tgt x Tgt a x
+                      .+. mGeneric Src x Src b x .+. mGeneric Tgt x Tgt b x
+                      .+. mGeneric Src x Src a x .+. mGeneric Tgt x Tgt a x
      (PCps _ a b)  -> let (bm,s) = mSpecific'' Tgt a Src b x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
@@ -757,7 +757,7 @@ pCtx2aCtx p_context
                where fmt = fromMaybe defFormat (mFormat pm)
 
     -- | pIdentity2aIdentity checks compatibility of composition with identity concept on equality
-    pIdentity2aIdentity :: P_IndDef -> Guarded IdentityDef
+    pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity identity
      = case typeErrors' of
         [] -> Checked (Id { idPos = ix_pos identity
@@ -779,8 +779,8 @@ pCtx2aCtx p_context
                                             ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the identity concept ("++ showADL c ++ ")."
                                            |x<-ats,source (objctx x)/=c])
 
-    pKeySeg2aKeySeg :: P_Concept -> P_IndSegment -> Guarded IdentitySegment
-    pKeySeg2aKeySeg _ (P_IndExp pObj) = do { objDef <- pODef2aODef [] pObj
+    pKeySeg2aKeySeg :: P_Concept -> P_IdentSegment -> Guarded IdentitySegment
+    pKeySeg2aKeySeg _ (P_IdentExp pObj) = do { objDef <- pODef2aODef [] pObj
                                            ; return (IdentityExp objDef)
                                            }
 

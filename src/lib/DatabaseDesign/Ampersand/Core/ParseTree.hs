@@ -23,7 +23,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , P_Interface(..), P_ObjectDef(..), P_SubInterface(..)
    
-   , P_IndDef(..) , P_IndSegment(..)
+   , P_IdentDef(..) , P_IdentSegment(..)
    , P_ViewDef(..) , P_ViewSegment(..)
    
    , PPurpose(..),PRef2Obj(..),PMeaning(..)
@@ -63,7 +63,7 @@ where
             , ctx_rs ::     [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
             , ctx_ds ::     [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
             , ctx_cs ::     [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks ::     [P_IndDef]      -- ^ The identity definitions defined in this context, outside the scope of patterns
+            , ctx_ks ::     [P_IdentDef]      -- ^ The identity definitions defined in this context, outside the scope of patterns
             , ctx_vs ::     [P_ViewDef]     -- ^ The view definitions defined in this context, outside the scope of patterns
             , ctx_gs ::     [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
             , ctx_ifcs ::   [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
@@ -110,7 +110,7 @@ where
                           , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
                           , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
                           , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
-                          , procIds :: [P_IndDef]         -- ^ The identity definitions defined in this process
+                          , procIds :: [P_IdentDef]         -- ^ The identity definitions defined in this process
                           , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
                           , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
                           , procPop :: [P_Population]     -- ^ The populations that are local to this process
@@ -141,7 +141,7 @@ where
               , pt_gns :: [P_Gen]         -- ^ The generalizations defined in this pattern
               , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
               , pt_cds :: [ConceptDef]    -- ^ The concept definitions defined in this pattern
-              , pt_ids :: [P_IndDef]      -- ^ The identity definitions defined in this pattern
+              , pt_ids :: [P_IdentDef]      -- ^ The identity definitions defined in this pattern
               , pt_vds :: [P_ViewDef]     -- ^ The view definitions defined in this pattern
               , pt_xps :: [PPurpose]      -- ^ The purposes of elements defined in this pattern
               , pt_pop :: [P_Population]  -- ^ The populations that are local to this pattern
@@ -349,21 +349,21 @@ where
    instance Traced P_ObjectDef where
     origin = obj_pos
 
-   data P_IndDef =
+   data P_IdentDef =
             P_Id { ix_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                  , ix_lbl :: String         -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                  , ix_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-                 , ix_ats :: [P_IndSegment] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
+                 , ix_ats :: [P_IdentSegment] -- ^ the constituent segments of this identity. TODO: refactor to a list of terms
                  } deriving (Show)
-   instance Identified P_IndDef where
+   instance Identified P_IdentDef where
     name = ix_lbl
-   instance Eq P_IndDef where identity==identity' = origin identity==origin identity'
+   instance Eq P_IdentDef where identity==identity' = origin identity==origin identity'
 
-   instance Traced P_IndDef where
+   instance Traced P_IdentDef where
     origin = ix_pos
    
-   data P_IndSegment 
-                 = P_IndExp  { ks_obj :: P_ObjectDef }
+   data P_IdentSegment 
+                 = P_IdentExp  { ks_obj :: P_ObjectDef }
                    deriving (Eq, Show)
 
    data P_ViewDef = 

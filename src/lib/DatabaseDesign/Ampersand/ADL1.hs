@@ -8,7 +8,7 @@ module DatabaseDesign.Ampersand.ADL1
            , P_PairView(..), P_PairViewSegment(..), PairView(..), PairViewSegment(..) 
            , SrcOrTgt(..)
            , P_Rule(..), Rule(..), consequent, rulefromProp, ruleviolations, violationsexpr
-           , P_IndDef(..), P_IndSegment(..), IdentityDef(..), IdentitySegment(..)
+           , P_IdentDef(..), P_IdentSegment(..), IdentityDef(..), IdentitySegment(..)
            , P_ViewDef(..), P_ViewSegment(..), ViewDef(..), ViewSegment(..)
            , P_Population(..), UserDefPop(..)
            , P_ObjectDef(..)
