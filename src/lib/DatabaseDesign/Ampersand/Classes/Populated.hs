@@ -36,18 +36,6 @@ where
                PRelPopu{}  -> d == popdcl pop
                PCptPopu{}  -> False
 
-{-
-   instance Populated Relation where
-{- The atoms in a relation are accessible as follows:
-   Atoms in a Rel{} are found through the declaration (via decpopu.reldcl).
-   Atoms in a I{} and V{} are found in the concept (via rel1typ and reltyp).
--}    fullContents pt rel
-       = case rel of
-           Rel{}     -> fullContents pt (reldcl rel)
-           I  {}     -> [mkPair a a | a <- atomsOf pt (rel1typ rel)]
-           V  {}     -> [mkPair s t | s <- atomsOf pt (source rel)
-                                    , t <- atomsOf pt (target rel) ]
--}
 
    instance Populated Expression where
     fullContents pt = contents

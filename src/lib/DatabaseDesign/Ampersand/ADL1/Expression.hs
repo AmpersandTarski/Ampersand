@@ -3,9 +3,10 @@
 module DatabaseDesign.Ampersand.ADL1.Expression (
                        subst,subsi
                       ,foldlMapExpression,foldrMapExpression
+                      ,primitives,isMp1
                       ,isPos,isNeg, deMorgan ,notCpl, isCpl)
 where
-import DatabaseDesign.Ampersand.Basics (fatalMsg)
+import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
 fatal :: Int -> String -> a
@@ -113,11 +114,29 @@ foldrMapExpression _ _ a (EDcI     _)      = a
 foldrMapExpression _ _ a (EDcV     _)      = a
 foldrMapExpression _ _ a  EMp1{}           = a
 
-
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Expression                    ***
--- \***********************************************************************
+primitives :: Expression -> [Expression]
+primitives expr =
+  case expr of
+    (EEqu (l,r) _) -> primitives l `uni` primitives r
+    (EImp (l,r) _) -> primitives l `uni` primitives r
+    (EIsc (l,r) _) -> primitives l `uni` primitives r
+    (EUni (l,r) _) -> primitives l `uni` primitives r
+    (EDif (l,r) _) -> primitives l `uni` primitives r
+    (ELrs (l,r) _) -> primitives l `uni` primitives r
+    (ERrs (l,r) _) -> primitives l `uni` primitives r
+    (ECps (l,r) _) -> primitives l `uni` primitives r
+    (ERad (l,r) _) -> primitives l `uni` primitives r
+    (EPrd (l,r) _) -> primitives l `uni` primitives r
+    (EKl0 e _)     -> primitives e
+    (EKl1 e _)     -> primitives e
+    (EFlp e _)     -> primitives e
+    (ECpl e _)     -> primitives e
+    (EBrk e)       -> primitives e
+    (ETyp e _)     -> primitives e
+    EDcD{}         -> [expr]
+    EDcI{}         -> [expr]
+    EDcV{}         -> [expr]
+    EMp1{}         -> [expr]
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
@@ -151,3 +170,6 @@ isPos _ = True
 isNeg :: Expression -> Bool
 isNeg = not . isPos 
 
+isMp1 :: Expression -> Bool
+isMp1 EMp1{} = True
+isMp1 _ = False

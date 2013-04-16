@@ -288,7 +288,6 @@ where
            ,wrap ", allRules      = " indentA (\_->showHSName) (allRules fspec)
            ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fspec)
            ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
-           ,wrap ", allRelations  = " indentA (\_->showHSName) (allRelations fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
@@ -387,17 +386,8 @@ where
        (if null (allConcepts fspec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
-       )++
-       (let rs fs = allRelations fs `uni` map makeRelation (allDecls fs) `uni` map I (allConcepts fspec) `uni` [ V (Sign s t) | s <- allConcepts fspec,t <- allConcepts fspec ]in
-        if null (rs fspec) then "" else
-        "\n -- *** Relations (total: "++(show.length.rs) fspec++" relations) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing originOF) (rs fspec)]++"\n"
        )
-           where originOF rel =
-                   case rel of
-                     Rel{} -> Just $ relpos rel
-                     _     -> Nothing
-                 indentA = indent ++"                      "
+           where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  (envExpr,bindings) = vctxenv fspec
                  showbinding :: (Declaration,String) -> String

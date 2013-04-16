@@ -62,10 +62,8 @@ instance FPAble PlugInfo where
 instance ConceptStructure PlugInfo where
   concs   (InternalPlug psql) = concs   psql
   concs   (ExternalPlug obj)  = concs   obj
-  relationsIn (InternalPlug psql) = relationsIn psql
-  relationsIn (ExternalPlug obj)  = relationsIn obj
-  mp1Exprs (InternalPlug psql) = mp1Exprs psql
-  mp1Exprs (ExternalPlug obj)  = mp1Exprs obj
+  expressionsIn (InternalPlug psql) = expressionsIn psql
+  expressionsIn (ExternalPlug obj)  = expressionsIn obj
    
 
 
@@ -430,12 +428,12 @@ clusterBy f cs xs
 --For convenience, I implemented localfunction, which should be removed at revision
 instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
-  relationsIn   f = relationsIn   (fldexpr f)
+  expressionsIn   f = expressionsIn   (fldexpr f)
   mp1Exprs = fatal 452 "mp1Exprs is not meant to be for a plug."
 
 instance ConceptStructure PlugSQL where
   concs     p = concs   (plugFields p)
-  relationsIn   p = relationsIn (plugFields p)
+  expressionsIn   p = expressionsIn (plugFields p)
   mp1Exprs = fatal 458 "mp1Exprs is not meant to be for a plug."
 
 plugFields::PlugSQL->[SqlField]
