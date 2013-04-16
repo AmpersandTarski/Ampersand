@@ -476,7 +476,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
           pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString) <|>
                      PRef2Declaration <$ pKey "RELATION"  <*> pRelSign             <|>
                      PRef2Rule        <$ pKey "RULE"      <*> pADLid               <|>
-                     PRef2IdentityDef <$ pKey "IDENT"    IDENT <*> pADLid               <|>  
+                     PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid               <|>  
                      PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid               <|>  
                      PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid               <|>
                      PRef2Process     <$ pKey "PROCESS"   <*> pADLid               <|>
