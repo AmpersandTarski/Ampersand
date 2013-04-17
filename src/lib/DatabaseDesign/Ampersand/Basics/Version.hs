@@ -9,12 +9,12 @@ import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
 fatalMsg :: String -> Int -> String -> a
 fatalMsg haskellModuleName lineNr msg
  = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++", "++ampersandVersionWithoutBuildTimeStr++")\n  "++
-            let maxLen = 2000 -- This trick is to make sure the process is terminated after the error. 
-                              -- If the string is too long , it seems that the sentinell `hangs`.
+            let maxLen = 1500 -- This trick is to make sure the process is terminated after the error. 
+                              -- If the string is too long, it seems that the sentinell `hangs`.
                               -- But what is too long???
             in case drop maxLen msg of
                 [] -> msg
-                _  -> take maxLen msg ++"\n<TERMINATED>"
+                _  -> take maxLen msg ++"\n<The rest of error message has been cut off.>"
            )
 
 -- | String, containing the Ampersand version, including the build timestamp.

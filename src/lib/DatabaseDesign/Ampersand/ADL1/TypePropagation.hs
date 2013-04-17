@@ -208,6 +208,12 @@ typing :: Typemap -> Map String [P_Declaration]
              , Map P_Concept [P_Concept]  -- isaClosReversed  -- same, but reversed
              )                                   
 typing st declsByName
+--  = error $
+--           " *** st = \n"++
+--           intercalate "\n" (map show (Map.toList st))++
+--           "\n\n"++
+--           " *** declsByName =\n" ++
+--           intercalate "\n" (map show (Map.toList declsByName))
   = ( st
     , stClos
     , eqType
@@ -245,7 +251,15 @@ typing st declsByName
                                         }]
                                         
     -- check that all I's and V's have types. If not, throw an error where V's are replaced for Cpl if they occur in it
-    checkIVBindings = parallelList (map checkUnique2 allIVs)
+    checkIVBindings' = parallelList (map checkUnique2 allIVs)  -- TODO: Herstellen na opsporen van de fout in try14.adl
+    checkIVBindings = let result = parallelList (map checkUnique2 allIVs)
+                      in case result of
+                         Errors err
+                          -> fatal 258 $ "Analyse t.b.v. onder andere try14.adl:\n*** Terms:\n"++intercalate "\n" (map show allIVs)
+                                  ++"\n"
+                                  ++"*** ivBoundConcepts:\n"
+                                  ++intercalate "\n" (map show (Map.assocs  ivBoundConcepts))
+                         _    -> result
     checkUnique2 iv = case ( Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts
                            , Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
                         ([_],[_]) -> return ()
