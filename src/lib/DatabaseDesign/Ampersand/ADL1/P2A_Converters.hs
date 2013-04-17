@@ -328,8 +328,8 @@ instance Expr Term where
                       .+. uType a a .+. uType b b
      (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                       .+. uType' a .+. uType' b
-                      .+. mGeneric Src x Src b x .+. mGeneric Tgt x Tgt b x
-                      .+. mGeneric Src x Src a x .+. mGeneric Tgt x Tgt a x
+                      .+. mEqual Src x Src b x .+. mEqual Tgt x Tgt b x
+                      .+. mEqual Src x Src a x .+. mEqual Tgt x Tgt a x
      (PCps _ a b)  -> let (bm,s) = mSpecific'' Tgt a Src b x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
