@@ -328,8 +328,7 @@ instance Expr Term where
                       .+. uType a a .+. uType b b
      (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                       .+. uType' a .+. uType' b
-                      .+. mEqual Src x Src b x .+. mEqual Tgt x Tgt b x
-                      .+. mEqual Src x Src a x .+. mEqual Tgt x Tgt a x
+                      .+. mGeneric' (dom a) Src a Src b x .+. mGeneric' (cod a) Tgt a Tgt b x
      (PCps _ a b)  -> let (bm,s) = mSpecific'' Tgt a Src b x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
@@ -346,7 +345,6 @@ instance Expr Term where
                         .+. pnidTest a (dom b.<.dom x) .+. pnidTest b (cod a.<.cod x)
      (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
                      .+. uType a a .+. uType b b
-     (PCpl o a)   -> uType x (PDif o (PVee o) a)
      (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
      (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType e e
@@ -354,6 +352,9 @@ instance Expr Term where
      (PTrel _ _ (P_Sign src trg)) -> dom x.<.thing src .+. cod x.<.thing trg
      (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
+     (PCpl o a)   -> let e = PDif o (PVee o) a
+                     in dom x.=.dom e .+. cod x.=.cod e .+.
+                        uType x e                  --  -a    unary complement
      (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
                      in dom x.=.dom e .+. cod x.=.cod e .+.
                         uType x e                 --  a|-b    implication (aka: subset)
