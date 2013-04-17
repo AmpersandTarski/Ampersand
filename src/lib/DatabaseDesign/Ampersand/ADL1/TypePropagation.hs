@@ -47,13 +47,15 @@ instance Show Type where
     showsPrec _ typTerm = showString (showType typTerm)
 
 showType :: Type -> String
-showType (TypExpr (Pid c) _)          = "pop ("++name c++") "
-showType (TypExpr term@(PVee o) _)    = showADL term     ++"("++ shOrig o++")"
-showType (TypExpr term@(Pfull _ _) _) = showADL term
--- dom x    = TypExpr x         False
-showType (TypExpr term Src)           = "dom ("++showADL term++") "++ shOrig (origin term)
-showType (TypExpr term Tgt)           = "cod ("++showADL term++") "++ shOrig (origin term)
-showType (Between _ a b t)            = showType a++" "++show t++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
+showType t
+ = case t of
+     TypExpr (Pid c) _             -> "pop ("++name c++") "
+     TypExpr term@(PVee o) sORt    -> codOrDom sORt++" ("++showADL term++") "++"("++ shOrig o++")"
+     TypExpr term@(Pfull _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
+     TypExpr term sORt             -> codOrDom sORt++" ("++showADL term++") "++ shOrig (origin term)
+     Between _ a b t               -> showType a++" "++show t++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
+   where codOrDom Src = "dom"
+         codOrDom Tgt = "cod"
 
 instance Show BetweenType where
   showsPrec _ BTUnion     = showString ".\\/."
