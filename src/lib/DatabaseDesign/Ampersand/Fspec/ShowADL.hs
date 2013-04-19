@@ -428,11 +428,11 @@ instance ShowADL Term where
      = showchar (insP_Parentheses expr)
       where
        showchar (PI _)                                   = "I"
-       showchar (Pid c)                                  = "I["++showADL c++"]"
+       showchar (Pid _ c)                                = "I["++showADL c++"]"
        showchar (Patm _ a [])                            = "'"++a++"'"
        showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
        showchar (PVee _)                                 = "V"
-       showchar (Pfull s t)                              = "V["++show s++"*"++show t++"]"
+       showchar (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
        showchar (Prel _ rel)                             = rel
        showchar (PTrel _ rel psgn)                       = rel++showsign psgn
        showchar (Pequ _ l r)                             = showchar l++equi++showchar r

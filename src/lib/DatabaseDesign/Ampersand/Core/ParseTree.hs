@@ -201,10 +201,10 @@ where
                                                --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
                                                --   to know whether an eqClass represents a concept, we only look at its witness
                                                --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
-      | Pid P_Concept                          -- ^ identity element restricted to a type
+      | Pid Origin P_Concept                          -- ^ identity element restricted to a type
       | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
       | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
-      | Pfull P_Concept P_Concept              -- ^ the complete relation, restricted to a type.
+      | Pfull Origin P_Concept P_Concept              -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | PTrel Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
@@ -223,18 +223,28 @@ where
       | PFlp Origin Term               -- ^ conversion (flip, wok)  ~
       | PCpl Origin Term               -- ^ Complement
       | PBrk Origin Term               -- ^ bracketed expression ( ... )
-      deriving (Eq, Ord, Show) -- deriving Show for debugging purposes
+      deriving (Ord, Show) -- deriving Show for debugging purposes
 
 -- TODO: write instance Eq and Ord Term that compares on the basis of origin,
 -- for performance reasons.
-
+   instance Eq Term where
+      t == t' =
+        case t of
+         Pid _ cpt -> case t' of
+                           Pid _ cpt' -> cpt == cpt'
+                           _          -> False
+         Pfull _ cpt1 cpt2 -> case t' of
+                                Pfull _ cpt1' cpt2' -> cpt1 == cpt1' && cpt2 == cpt2'
+                                _     -> False
+         _  -> origin t == origin t'
+         
    instance Traced Term where
     origin e = case e of
       PI orig        -> orig
-      Pid _          -> OriginUnknown
+      Pid orig _     -> orig
       Patm orig _ _  -> orig
       PVee orig      -> orig
-      Pfull _ _      -> OriginUnknown
+      Pfull orig _ _ -> orig
       Prel orig _    -> orig
       PTrel orig _ _ -> orig
       Pequ orig _ _  -> orig
