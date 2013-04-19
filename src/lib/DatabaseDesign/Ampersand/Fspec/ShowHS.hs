@@ -290,6 +290,7 @@ where
            ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fspec)
            ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fspec)
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
+           ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
            ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
@@ -345,8 +346,12 @@ where
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fspec]++"\n"
        ) ++
        (if null (vIndices fspec)     then "" else
-        "\n -- *** Keys (total: "++(show.length.vIndices) fspec++" keys) ***: "++
+        "\n -- *** Indices (total: "++(show.length.vIndices) fspec++" indices) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vIndices fspec]++"\n"
+       ) ++
+       (if null (vviews fspec)     then "" else
+        "\n -- *** Views (total: "++(show.length.vviews) fspec++" views) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vviews fspec]++"\n"
        ) ++
        (if null (vprocesses fspec ) then "" else
         "\n -- *** Processes (total: "++(show.length.vprocesses) fspec++" processes) ***: "++

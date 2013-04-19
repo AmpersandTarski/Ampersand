@@ -75,7 +75,7 @@ where
 
    instance ConceptStructure A_Concept where
     concs   c     = [c]
-    expressionsIn c = []  --XXX 
+    expressionsIn c = []
     genE PlainConcept{cptgE = a}  = a
     genE _ = fatal 100 "A_Concept without cptgE"
 
