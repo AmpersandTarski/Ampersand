@@ -642,9 +642,9 @@ In practice, we have it a little different.
                        pfull <$> pKey_pos "V"  <*> optional pSign                                    <|>
                        singl <$> pAtom_val_pos <*> optional (pSpec '[' *> pConceptRef <* pSpec ']')
                        where pid orig Nothing = PI orig
-                             pid  _  (Just c) = Pid c
+                             pid orig (Just c)= Pid orig c
                              pfull orig Nothing = PVee orig
-                             pfull _ (Just (P_Sign src trg, _)) = Pfull src trg
+                             pfull orig (Just (P_Sign src trg, _)) = Pfull orig src trg
                              singl (nm,orig) Nothing  = Patm orig nm []
                              singl (nm,orig) (Just c) = Patm orig nm [c]
 

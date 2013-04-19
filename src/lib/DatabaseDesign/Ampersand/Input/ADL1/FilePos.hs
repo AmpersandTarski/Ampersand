@@ -10,7 +10,7 @@ where
 
    --Traced a have an origin, which may be unknown.
    data FilePos = FilePos ( String, Pos, String) deriving (Eq, Ord)
-   data Origin = OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord)
+   data Origin = SomewhereNear String | OriginUnknown | Origin String | FileLoc FilePos | DBLoc String deriving (Eq, Ord)
 --line column pos
 
    posIn :: Traced a => Origin -> a -> Origin -> Bool

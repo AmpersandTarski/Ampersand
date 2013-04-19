@@ -49,11 +49,11 @@ instance Show Type where
 showType :: Type -> String
 showType t
  = case t of
-     TypExpr (Pid c) _             -> "pop ("++name c++") "
-     TypExpr term@(PVee o) sORt    -> codOrDom sORt++" ("++showADL term++") "++"("++ shOrig o++")"
-     TypExpr term@(Pfull _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
-     TypExpr term sORt             -> codOrDom sORt++" ("++showADL term++") "++ shOrig (origin term)
-     Between _ a b t'               -> showType a++" "++show t'++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
+     TypExpr (Pid _ c) _             -> "pop ("++name c++") "
+     TypExpr term@(PVee o) sORt      -> codOrDom sORt++" ("++showADL term++") "++"("++ shOrig o++")"
+     TypExpr term@(Pfull _ _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
+     TypExpr term sORt               -> codOrDom sORt++" ("++showADL term++") "++ shOrig (origin term)
+     Between _ a b t'                -> showType a++" "++show t'++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
    where codOrDom Src = "dom"
          codOrDom Tgt = "cod"
 
@@ -68,9 +68,9 @@ instance Show BetweenType where
 --   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy r = r~.
-  compare (TypExpr (Pid c)        _) (TypExpr (Pid c')         _) = Prelude.compare c c'
-  compare (TypExpr (Pid _)        _) (TypExpr _                _) = Prelude.LT
-  compare (TypExpr _              _) (TypExpr (Pid _)          _) = Prelude.GT
+  compare (TypExpr (Pid _ c)      _) (TypExpr (Pid _ c')       _) = Prelude.compare c c'
+  compare (TypExpr (Pid _ _)      _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr _              _) (TypExpr (Pid _ _ )       _) = Prelude.GT
   compare (TypExpr (Patm _ x [c]) _) (TypExpr (Patm _ x' [c']) _) = Prelude.compare (x,c) (x',c')
   compare (TypExpr (Patm _ _ [_]) _) (TypExpr (Patm _ _   _  ) _) = Prelude.LT
   compare (TypExpr (Patm _ _  _ ) _) (TypExpr (Patm _ _  [_ ]) _) = Prelude.GT
@@ -83,9 +83,9 @@ instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy 
   compare (TypExpr (PVee _)       _) (TypExpr _                _) = Prelude.LT
   compare (TypExpr _              _) (TypExpr (PVee _)         _) = Prelude.GT
   -- here we implement V[A*B] = V[B*A]~ directly in the TypExpr
-  compare (TypExpr (Pfull s t)    x) (TypExpr (Pfull s' t')   x') = Prelude.compare (if x==Src then (s,t) else (t,s)) (if x'==Src then (s',t') else (t',s')) -- This is a V of which the type is determined by the user
-  compare (TypExpr (Pfull _ _)    _) (TypExpr _                _) = Prelude.LT
-  compare (TypExpr _              _) (TypExpr (Pfull _ _)      _) = Prelude.GT
+  compare (TypExpr (Pfull _ s t)  x) (TypExpr (Pfull _ s' t') x') = Prelude.compare (if x==Src then (s,t) else (t,s)) (if x'==Src then (s',t') else (t',s')) -- This is a V of which the type is determined by the user
+  compare (TypExpr (Pfull _ _ _)  _) (TypExpr _                _) = Prelude.LT
+  compare (TypExpr _              _) (TypExpr (Pfull _ _ _)    _) = Prelude.GT
   -- as r = r~ does not hold in general, we need to compare x'==y'
   compare (TypExpr x             x') (TypExpr y               y') = Prelude.compare (x,x') (y,y')
   compare (TypExpr _              _) _                            = Prelude.LT
@@ -138,7 +138,7 @@ p_flp a@PI{}       = a
 p_flp a@Pid{}      = a
 p_flp a@Patm{}     = a
 -- p_flp a@(PVee _)   = PFlp a -- This was earlier: a, which is a mistake. (V[A*B])~ = V[B*A])
-p_flp (Pfull s t)  = Pfull t s
+p_flp (Pfull o s t)  = Pfull o t s
 p_flp (PFlp _ a)   = a
 p_flp a            = PFlp (origin a) a
 
@@ -173,7 +173,7 @@ makeDecisions inp trnRel
        typsFull = Map.unionWith mrgUnion trnRel
                     (Map.map (foldl mrgUnion [].(map (\(_,_,x)->Map.findWithDefault [] x trnRel'))) inpTrnRel)
        trnRel' = Map.map (filter isConc) trnRel
-       isConc (TypExpr (Pid _) _) = True
+       isConc (TypExpr (Pid _ _) _) = True
        isConc _ = False
        f x  = Map.findWithDefault [] x trnRel
        f' x = Map.findWithDefault [] x typsFull
@@ -238,7 +238,7 @@ typing st declsByName
     isIV   (Patm _ _ _) = True
     isIV   _            = False
     allTerms    = [e | TypExpr e _ <- typeTerms]
-    allConcs    = [c | (Pid c) <- allTerms]
+    allConcs    = [c | (Pid _ c) <- allTerms]
     
     checkUndefined = parallelList (map checkNonempty (Map.toList declByTerm))
     checkNonempty (t,[]) = Errors [CxeRelUndefined { cxeExpr = t}]
@@ -310,7 +310,7 @@ typing st declsByName
                      )
     
     ivTypByTyp :: Map Type [P_Concept] -> Map Type [(Type,P_Concept,Type)]
-    ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid c) Src)) concs)
+    ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid (SomewhereNear (fatal 313 "Hopefully this isn't inspected")) c) Src)) concs)
                                                  | (tp,concs) <- Map.toList ivMap ]
     
     typByTyp :: Map Term [P_Declaration] -> Map Type [(Term,P_Declaration,Type)]
@@ -347,7 +347,7 @@ typing st declsByName
     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
     eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
     isaClos :: Map P_Concept [P_Concept]
-    isaClos' = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid c') _<-ts,c'/=c]) | (TypExpr (Pid c) _, ts)<-Map.toAscList stClos]
+    isaClos' = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid _ c') _<-ts,c'/=c]) | (TypExpr (Pid _ c) _, ts)<-Map.toAscList stClos]
     isaClosReversed :: Map P_Concept [P_Concept]
     isaClosReversed = reverseMap isaClos
     isaClos = addIdentity isaClos' 
@@ -355,7 +355,7 @@ typing st declsByName
     stConcepts =  Map.map f stClos
                   where f :: [Type] -> [P_Concept]
                         f ts = [t | t <- ownTypes ts, not (t `elem` derived ts)]
-                        ownTypes ts = [c | TypExpr (Pid c) _<-ts]
+                        ownTypes ts = [c | TypExpr (Pid _ c) _<-ts]
                         derived ts = foldl mrgUnion [] [Map.findWithDefault [] t isaClos' | t<-ownTypes ts]
     srcTypes' :: Type -> [P_Concept]
     srcTypes' typ = case Map.lookup typ stConcepts of

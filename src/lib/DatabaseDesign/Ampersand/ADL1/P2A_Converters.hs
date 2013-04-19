@@ -87,7 +87,7 @@ a .=. b  = (Map.fromList [(a, [b]),(b, [a])])
 (.+.) :: Typemap -> Typemap -> Typemap
 m1 .+. m2 = Map.unionWith mrgUnion m1 m2
 thing :: P_Concept -> Type
-thing c  = TypExpr (Pid c) Src
+thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src
 dom, cod :: Term -> Type
 dom x    = TypExpr x Src -- the domain of x
 cod x    = TypExpr x Tgt 
@@ -230,7 +230,7 @@ instance Expr P_PairViewSegment where
 instance Expr P_IdentDef where
  p_keys k = [k]
  uType _ k
-  = let x=Pid (ix_cpt k) in
+  = let x=Pid (SomewhereNear (fatal 233 "clueless about where this is found. Sorry" )) (ix_cpt k) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
                           mSpecific Src x Src (obj_ctx obj) (obj_ctx obj)
@@ -241,7 +241,7 @@ instance Expr P_IdentDef where
 instance Expr P_ViewDef where
  p_views v = [v]
  uType _ v
-  = let x=Pid (vd_cpt v) in
+  = let x=Pid (SomewhereNear (fatal 244 "clueless about where this is found. Sorry" )) (vd_cpt v) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
                           mSpecific Src x Src (obj_ctx obj) (obj_ctx obj)
@@ -276,7 +276,7 @@ instance Expr PPurpose where
  uType _ purp = let x=pexObj purp in uType x x
 
 instance Expr PRef2Obj where
- uType _ (PRef2ConceptDef str) = let x=Pid (PCpt str) in uType x x
+ uType _ (PRef2ConceptDef str) = let x=Pid (SomewhereNear (fatal 279 "clueless about where this is found. Sorry" ))(PCpt str) in uType x x
  uType _ (PRef2Declaration t)  = uType t t
  uType _ _                     = nothing
 
@@ -285,7 +285,7 @@ instance Expr P_Sign where
 
 instance Expr P_Gen where
  uType _ g
-  = let x=Pimp (origin g) (Pid (gen_spc g)) (Pid (gen_gen g)) in uType x x
+  = let x=Pimp (origin g) (Pid (origin g) (gen_spc g)) (Pid (origin g) (gen_gen g)) in uType x x
 
 instance Expr P_Declaration where
  uType _ d
@@ -299,7 +299,7 @@ instance Expr P_Population where
     where x = case pop of
                    P_RelPopu{} -> Prel  (p_orig pop) (name pop)
                    P_TRelPop{} -> PTrel (p_orig pop) (name pop) (p_type pop)
-                   P_CptPopu{} -> Pid   (PCpt (name pop))
+                   P_CptPopu{} -> Pid   (p_orig pop) (PCpt (name pop))
 
 instance Expr a => Expr (Maybe a) where
  uType _ Nothing  = nothing
@@ -317,7 +317,7 @@ instance Expr Term where
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
-     (Pfull s t)   -> dom x.<.dom (Pid s) .+. cod x.<.cod (Pid t)              --  V[A*B] (the typed full set)
+     (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                       .+. mEqual Src a Src b x .+. mEqual Tgt a Tgt b x
                       .+. uType a a .+. uType b b
@@ -537,7 +537,7 @@ pCtx2aCtx p_context
     derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the terms derived from the script).
      = [ CxeEqConcepts eqs
        | (TypExpr (Pid{}) _, equals)<-Map.toAscList eqType
-       , let eqs=[c | TypExpr (Pid c) _<-equals ]
+       , let eqs=[c | TypExpr (Pid _ c) _<-equals ]
        , length eqs>1]
     (stTypeGraph,eqTypeGraph) = typeAnimate st stClos eqType stClosAdded stClos1
     cxerrs = rulecxes++keycxes++viewcxes++interfacecxes++patcxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
@@ -930,8 +930,8 @@ pCtx2aCtx p_context
         Errors errs     -> Errors errs
        where
         expr = case pop of
-                    P_CptPopu{} -> Pid (PCpt (name pop))
-                    P_RelPopu{} -> Prel (origin pop) (name pop)
+                    P_CptPopu{} -> Pid   (origin pop) (PCpt (name pop))
+                    P_RelPopu{} -> Prel  (origin pop) (name pop)
                     P_TRelPop{} -> PTrel (origin pop) (name pop) (p_type pop)
         popsOf e =
           case e of
@@ -1022,10 +1022,10 @@ pCtx2aCtx p_context
          f :: Term -> Guarded Expression
          f x = case x of
            PI _            -> return (EDcI $ getSign x)
-           Pid c           -> return (iExpr (pCpt2aCpt c))
+           Pid _ c         -> return (iExpr (pCpt2aCpt c))
            Patm _ atom _   -> return (EMp1 atom $ getSign x)
            PVee _          -> return (vExpr $ getSign x)
-           Pfull s t       -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
+           Pfull _ s t     -> return (vExpr (Sign (pCpt2aCpt s) (pCpt2aCpt t)))
            Prel _ _        -> do { decl <- getDeclaration x
                                  ; return$ EDcD decl (getSign x) }
            Pequ _ a b      -> (.==.) <$> f a <*> f b
