@@ -185,24 +185,24 @@ showErr err = case err of
                ([], _,_)          -> ["    The source of  "++showADL x++"  is ambiguous."]
                (cs, [t],PCpl _ y) -> ["    The complement of "++showADL y++" is ambiguous with respect to its source.\n"]++
                                      ["    The source concept must be either "++commaEng "or" (map showADL cs)++".\n"]++
-                                     ["    Use (V[ <source concept> , "++showADL t++" ]-"++showADL y++") to disambiguate."]
+                                     ["    Use (V[ <source concept> * "++showADL t++" ]-"++showADL y++") to disambiguate."]
                (cs, [_],_)        -> ["    Cannot pick a concept for the source of  "++showADL x++"\n"]++
                                      ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
                ([s], cs,PCpl _ y) -> ["    The complement of "++showADL y++" is ambiguous with respect to its target.\n"]++
                                      ["    The target concept must be either "++commaEng "or" (map showADL cs)++".\n"]++
-                                     ["    Use (V[ "++showADL s++" , <target concept> ]-"++showADL y++") to disambiguate."]
+                                     ["    Use (V[ "++showADL s++" * <target concept> ]-"++showADL y++") to disambiguate."]
                ([_], cs,_)        -> ["    Cannot pick a concept for the target of  "++showADL x++"\n"]++
                                      ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]
                (cs, cs',PCpl _ y  )
                 -> if sort cs==sort cs'
                    then ["    The complement of "++showADL y++" is ambiguous with respect to\n"]++
                         ["    concepts "++commaEng "and" (map showADL cs)++".\n"]++
-                        ["    Use (V[  ,  ]-"++showADL y++") to disambiguate the complement."]
+                        ["    Use (V[ <source concept> * <target concept> ]-"++showADL y++") to disambiguate the complement."]
                    else ["    Ambiguous concept for the complement of "++showADL y++"\n"]++
                         ["    Concepts can be one of "++commaEng "and" (map showADL cs)++"."]++
                         ["    The target of  "++showADL x++"\n"]++
                         ["    is ambiguous too, with respect to concepts "++commaEng "and" (map showADL cs')++".\n"]++
-                        ["    Use (V[  ,  ]-"++showADL y++") to disambiguate the complement."]
+                        ["    Use (V[ <source concept> * <target concept> ]-"++showADL y++") to disambiguate the complement."]
                (cs, cs',_)
                 -> if sort cs==sort cs'
                    then ["    the source and target of  "++showADL x++"\n"]++
