@@ -11,7 +11,6 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Rule(..)
  , RuleType(..)
  , RuleOrigin(..)
--- , RelConceptDef(..)
  , Declaration(..), decusr, deciss
  , IdentityDef(..)
  , IdentitySegment(..)
@@ -521,55 +520,8 @@ instance Association Expression where
  sign (EDcV   sgn) = sgn
  sign (EMp1 _ sgn) = sgn
 
-
-data Relation = 
-  Rel { relpos ::  Origin           -- ^ the position in the Ampersand source file. Let rel_pos be Nowhere if not applicable e.g. relations in generated rules
-      , reldcl ::  Declaration      -- ^ the declaration bound to this relation.
-      } |
-  I   { rel1typ :: A_Concept        -- ^ the allocated type.
-      } |
-  V   { reltyp ::  Sign             -- ^ the allocated type.
-      }
-
-instance Eq Relation where
- rel == rel' 
-   = case (rel,rel') of
-       (Rel{},Rel{}) -> if relpos  rel==relpos  rel' -- The position in the original script identifies the relation. It assumes that when the origins are equal, the Declaration will be equal too.
-                        then reldcl rel == reldcl rel'
-                           {-  if reldcl rel == reldcl rel'
-                             then True
-                             else fatal 533 ( "Equal origins, but still different declarations! \n"
-                                            ++show (relpos rel)
-                                            ++"\n"
-                                            ++show ( (reldcl rel), (reldcl rel'))
-                                            ++"\n"
-                                            )
-                           -}                 
-                        else False 
-       (I{}  ,I{}  ) -> rel1typ rel==rel1typ rel'
-       (V{}  ,V{}  ) -> reltyp  rel==reltyp  rel'
-       (_    ,_    ) -> False
-
-
-       
-instance Show Relation where
- showsPrec _ r = case r of
-   Rel{} -> showString (name r++showSign r)
-   I{}   -> showString (name r++"["++show (rel1typ r)++"]")
-   V{}   -> showString (name r++show (sign r))
-instance Identified Relation where
-  name Rel{reldcl = dcl } = name dcl
-  name I{}   = "I"
-  name V{}   = "V"
-instance Association Relation where
-  sign Rel{reldcl = dcl } = sign dcl
-  sign I{rel1typ  = c   } = Sign c c
-  sign V{reltyp   = t   } = t
-
 showSign :: Association a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
-instance Traced Relation where
- origin = relpos
 
 -- The following definition of concept is used in the type checker only.
 -- It is called Concept, meaning "type checking concept"
