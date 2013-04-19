@@ -251,8 +251,8 @@ typing st declsByName
                                         }]
                                         
     -- check that all I's and V's have types. If not, throw an error where V's are replaced for Cpl if they occur in it
-    checkIVBindings' = parallelList (map checkUnique2 allIVs)  -- TODO: Herstellen na opsporen van de fout in try14.adl
-    checkIVBindings = let result = parallelList (map checkUnique2 allIVs)
+    checkIVBindings = parallelList (map checkUnique2 allIVs)  -- TODO: Herstellen na opsporen van de fout in try14.adl
+    checkIVBindings' = let result = parallelList (map checkUnique2 allIVs)
                       in case result of
                          Errors err
                           -> fatal 258 $ "Analyse t.b.v. onder andere try14.adl:\n*** Terms:\n"++intercalate "\n" (map show allIVs)
