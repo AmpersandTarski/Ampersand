@@ -165,6 +165,7 @@ instance Expr P_Context where
     uType' (ctx_rs    pContext) .+.
     uType' (ctx_ds    pContext) .+.
     uType' (ctx_ks    pContext) .+.
+    uType' (ctx_vs    pContext) .+.
     uType' (ctx_gs    pContext) .+.
     uType' (ctx_ifcs  pContext) .+.
     uType' (ctx_ps    pContext) .+.
@@ -1072,8 +1073,9 @@ pCtx2aCtx p_context
     getDeclaration term@(Prel _ _)
      = case Map.lookup term bindings of
         Just d  -> do { (decl,_) <- pDecl2aDecl d ; return decl }
-        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings.\n  "++
-                                intercalate "\n  " [showADL x | x<-Map.keys bindings]
+        Nothing -> fatal 1601 ("Term "++showADL term++" ("++show(origin term)++") was not found in "++show (length (Map.toAscList bindings))++" bindings.\n"
+                              ++ "  A possible cause could be that it isn't harvested. (see function uType)\n"
+                              ++  intercalate "\n  " [showADL x++"("++show(origin x)++")" | x<-Map.keys bindings]
                               )
                    --concat ["\n  "++show b | b<-Map.toAscList bindings, take 7 ( tail (show b))==take 7 (show term) ])
     getDeclaration term = fatal 1607 ("Illegal call to getDeclaration ("++show term++")")
