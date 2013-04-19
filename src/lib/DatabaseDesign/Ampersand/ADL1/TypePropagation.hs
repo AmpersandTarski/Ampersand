@@ -53,7 +53,7 @@ showType t
      TypExpr term@(PVee o) sORt    -> codOrDom sORt++" ("++showADL term++") "++"("++ shOrig o++")"
      TypExpr term@(Pfull _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
      TypExpr term sORt             -> codOrDom sORt++" ("++showADL term++") "++ shOrig (origin term)
-     Between _ a b t               -> showType a++" "++show t++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
+     Between _ a b t'               -> showType a++" "++show t'++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
    where codOrDom Src = "dom"
          codOrDom Tgt = "cod"
 
