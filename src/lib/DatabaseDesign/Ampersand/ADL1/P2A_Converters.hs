@@ -94,12 +94,14 @@ cod x    = TypExpr x Tgt
 domOrCod :: SrcOrTgt -> Term -> Type
 domOrCod Src = dom
 domOrCod Tgt = cod
-mSpecific', mGeneric' :: Type -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
+mSpecific', mGeneric', mEqual' :: Type -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
 mSpecific' s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mSpecific'' ta a tb b e
 mGeneric'  s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mGeneric''  ta a tb b e
-mSpecific'', mGeneric'' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> (Typemap,Type)
-mGeneric''  ta a tb b e = ((domOrCod ta a) .<. r .+. (domOrCod tb b) .<. r,r ) where r = Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) BTUnion
-mSpecific'' ta a tb b e = (r .<. (domOrCod ta a) .+. r .<. (domOrCod tb b),r ) where r = Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) BTIntersect
+mEqual'    s ta a tb b e = s .=. s' .+. dm  where (dm,s')=mEqual''    ta a tb b e
+mSpecific'', mGeneric'', mEqual'' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> (Typemap,Type)
+mGeneric''  ta a tb b e = ((domOrCod ta a) .<. r .+. (domOrCod tb b) .<. r, r ) where r = Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) BTUnion
+mSpecific'' ta a tb b e = (r .<. (domOrCod ta a) .+. r .<. (domOrCod tb b), r ) where r = Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) BTIntersect
+mEqual''    ta a tb b e = (r .=. (domOrCod ta a) .+. r .=. (domOrCod tb b), r ) where r = Between (tCxe ta a tb b TETEq    e) (domOrCod ta a) (domOrCod tb b) BTEqual
 mSpecific, mGeneric, mEqual :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
 mSpecific ta a tb b e = fst (mSpecific'' ta a tb b e)
 mGeneric  ta a tb b e = fst (mGeneric''  ta a tb b e)
@@ -319,7 +321,7 @@ instance Expr Term where
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
      (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                      .+. mEqual Src a Src b x .+. mEqual Tgt a Tgt b x
+                      .+. mEqual' (dom x) Src a Src b x .+. mEqual' (cod x) Tgt a Tgt b x
                       .+. uType a a .+. uType b b
      (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
                       .+. mSpecific' (dom x) Src a Src b x .+. mSpecific' (cod x) Tgt a Tgt b x
@@ -329,7 +331,7 @@ instance Expr Term where
                       .+. uType a a .+. uType b b
      (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                       .+. uType' a .+. uType' b
-                      .+. mGeneric' (dom a) Src a Src b x .+. mGeneric' (cod a) Tgt a Tgt b x
+                      .+. mSpecific Src a Src b x .+. mSpecific Tgt a Tgt b x
      (PCps _ a b)  -> let (bm,s) = mSpecific'' Tgt a Src b x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
@@ -1122,6 +1124,6 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
      condensedEdges :: [(Int,Int)]
      condensedEdges = nub [ (nr t, nr t') | (t,t')<-flattenMap st, nr t /= nr t' ]
      nr t = case Map.lookup t eqType of
-             Just xs -> eqNr (head xs)
+             Just (x:_) -> eqNr x
              _ -> fatal 571 ("Element "++show t++" not found in nr")
      condensedEdges2 = nub [(nr t,nr t') | (t,t')<-flattenMap stClosAdded, nr t /= nr t', t' `notElem` findIn t stClos1]>-condensedEdges
