@@ -50,9 +50,9 @@ showType :: Type -> String
 showType t
  = case t of
      TypExpr (Pid _ c) _             -> "pop ("++name c++") "
-     TypExpr term@(PVee o) sORt      -> codOrDom sORt++" ("++showADL term++") "++"("++ shOrig o++")"
+     TypExpr term@(PVee o) sORt      -> codOrDom sORt++" ("++showADL term++") "++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
-     TypExpr term sORt               -> codOrDom sORt++" ("++showADL term++") "++ shOrig (origin term)
+     TypExpr term sORt               -> codOrDom sORt++" ("++showADL term++") "++ show (origin term)
      Between _ a b t'                -> showType a++" "++show t'++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
    where codOrDom Src = "dom"
          codOrDom Tgt = "cod"
@@ -251,15 +251,7 @@ typing st declsByName
                                         }]
                                         
     -- check that all I's and V's have types. If not, throw an error where V's are replaced for Cpl if they occur in it
-    checkIVBindings = parallelList (map checkUnique2 allIVs)  -- TODO: Herstellen na opsporen van de fout in try14.adl
-    checkIVBindings' = let result = parallelList (map checkUnique2 allIVs)
-                      in case result of
-                         Errors err
-                          -> fatal 258 $ "Analyse t.b.v. onder andere try14.adl:\n*** Terms:\n"++intercalate "\n" (map show allIVs)
-                                  ++"\n"
-                                  ++"*** ivBoundConcepts:\n"
-                                  ++intercalate "\n" (map show (Map.assocs  ivBoundConcepts))
-                         _    -> result
+    checkIVBindings = parallelList (map checkUnique2 allIVs)
     checkUnique2 iv = case ( Map.findWithDefault [] (TypExpr iv Src) ivBoundConcepts
                            , Map.findWithDefault [] (TypExpr iv Tgt) ivBoundConcepts) of
                         ([_],[_]) -> return ()
