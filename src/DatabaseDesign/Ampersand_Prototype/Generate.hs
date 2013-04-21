@@ -276,7 +276,7 @@ generateViews fSpec flags =
        (_,islands,_,_,_) = case concs fSpec of
                                []  -> (undef,[],undef,undef,undef)
                                c:_ -> case c of 
-                                        C{}  -> cptgE c
+                                        PlainConcept{}  -> cptgE c
                                         ONE  -> fatal 280 "What to do with ONE???" --HJO, 20130216: Deze bug kwam aan het licht bij Roles.adl. Ik heb er de fatal message bij geplaatst, zodat diagnose eenvoudiger is.
                            where undef=fatal 281 "undef would cause a loop..."
        conceptsFromSpecificToGeneric = concat (map reverse islands)
@@ -302,7 +302,7 @@ generateInterface fSpec flags interface =
   genInterfaceObjects fSpec flags (ifcParams interface) (Just $ ifcRoles interface) 1 (ifcObj interface) 
   
 -- two arrays: one for the object and one for the list of subinterfaces
-genInterfaceObjects :: Fspc -> Options -> [Declaration] -> Maybe [String] -> Int -> ObjectDef -> [String]
+genInterfaceObjects :: Fspc -> Options -> [Expression] -> Maybe [String] -> Int -> ObjectDef -> [String]
 genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   [ "array ( 'name' => "++showPhpStr (name object)]
   ++ (if objctx object /= normalizedInterfaceExp && verboseP flags
@@ -317,20 +317,23 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
-  ++ case objctx object of
-         EDcD d _          | isEditable d -> [ "      , 'relation' => "++showPhpStr (name d) -- only support editing on user-specified relations (no expressions, and no I or V)
-                                             , "      , 'relationIsFlipped' => false" 
-                                             , "      , 'min' => "++ if isTot d then "'One'" else "'Zero'"
-                                             , "      , 'max' => "++ if isUni d then "'One'" else "'Many'"
-                                             ]
-         EFlp (EDcD d _) _ | isEditable d -> [ "      , 'relation' => "++showPhpStr (name d) -- and on flipped versions of those relations. NOTE: same cases appear in getEditableConcepts
-                                             , "      , 'relationIsFlipped' => true" 
-                                             , "      , 'min' => "++ if isSur d then "'One'" else "'Zero'"
-                                             , "      , 'max' => "++ if isInj d then "'One'" else "'Many'"
-                                             ]          
-         _                                -> [ "      , 'relation' => ''" 
-                                             , "      , 'relationIsFlipped' => ''" 
-                                             ]          
+  ++ let e = objctx object
+         (flipped, d) =
+           case e of 
+             EDcD d' _ -> (False, d')
+             EFlp (EDcD d' _)_ -> (True, d') 
+             _ -> fatal 325 "only support editing on user-specified relations (no expressions, and no I or V)"
+     in
+     if isEditable (if flipped then flp e else e)
+     then [ "      , 'relation' => "++showPhpStr (name d) 
+          , "      , 'relationIsFlipped' => "++show flipped ]++ 
+          [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'" | flipped] ++
+          [ "      , 'max' => "++ if isInj d then "'One'" else "'Many'" | flipped] ++
+          [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" | not flipped] ++
+          [ "      , 'max' => "++ if isUni d then "'One'" else "'Many'" | not flipped]
+     else [ "      , 'relation' => ''" 
+          , "      , 'relationIsFlipped' => ''" 
+          ]          
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
@@ -341,15 +344,17 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable dcl = dcl `elem` editableRels
+ where isEditable (EDcD d _) = d `elem` [d' | EDcD d' _ <- editableRels]
+       isEditable _ = False
        normalizedInterfaceExp = conjNF $ objctx object
-       getEditableConcepts obj = (case objctx obj of
-                                   EDcD d _          | isEditable d -> [target d]
-                                   EFlp (EDcD d _) _ | isEditable d -> [source d]
+       getEditableConcepts obj = (let e = objctx obj in
+                                  case e of
+                                   EDcD d _          | isEditable e -> [target d]
+                                   EFlp (EDcD d _) _ | isEditable e -> [source d]
                                    _                                -> [])
                                  ++ concatMap getEditableConcepts (objAts obj)
   
-generateMSubInterface :: Fspc -> Options -> [Declaration] -> Int -> Maybe SubInterface -> [String] 
+generateMSubInterface :: Fspc -> Options -> [Expression] -> Int -> Maybe SubInterface -> [String] 
 generateMSubInterface fSpec flags editableRels depth subIntf =
   case subIntf of
     Nothing                -> [ "      // No subinterfaces" ] 
