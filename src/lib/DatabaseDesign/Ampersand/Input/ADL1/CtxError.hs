@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
-       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),shOrig,showErr, ParseError)
+       (newcxe,newcxeif,TypErrTyp(..),CtxError(..),showErr, ParseError)
 where
 --import DatabaseDesign.Ampersand.Input.ADL1.FilePos()
 import DatabaseDesign.Ampersand.ADL1 (Pos(..))
@@ -13,13 +13,6 @@ import DatabaseDesign.Ampersand.Core.ParseTree
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
-
---WAAROM? @Stef: Why is there a difference between show and shOrig for Origin? 
-shOrig :: Origin -> String
-shOrig (FileLoc (FilePos (_,DatabaseDesign.Ampersand.ADL1.Pos l c,_))) = "line " ++ show l++":"++show c
-shOrig (DBLoc str)   = "Database location: "++str
-shOrig (Origin str)  = str
-shOrig OriginUnknown = "Unknown origin"
 
 type ParseError = Message Token
 data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term
@@ -212,7 +205,12 @@ showErr err = case err of
                         ["    and the target of  "++showADL x++"\n"]++
                         ["    is in conflict with respect to concepts "++commaEng "and" (map showADL cs')++"."]
        )
-
+ where shOrig orig =
+          case orig of
+            (FileLoc (FilePos (_,DatabaseDesign.Ampersand.ADL1.Pos l c,_)))
+              -> "line " ++ show l++":"++show c
+            _ -> show orig
+   
 {-
 showErrBetweenTerm :: CtxError -> Term -> Term -> [Char] -> [Char] -> [Char]
 showErrBetweenTerm err a b lSrcTrgText rSrcTrgText
