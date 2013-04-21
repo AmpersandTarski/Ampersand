@@ -862,6 +862,7 @@ where
                  DBLoc l   -> "DBLoc " ++ show l
                  Origin s  -> "Origin " ++ show s
                  OriginUnknown -> "OriginUnknown"
+                 SomewhereNear s -> "SomewhereNear "++show s
    
    instance ShowHS Origin where
     showHS flags indent (FileLoc l) = "FileLoc (" ++ showHS flags indent l++")"
@@ -869,6 +870,8 @@ where
     showHS _ _ (Origin s) = "Origin " ++ show s
     showHS _ _ OriginUnknown
       = "OriginUnknown"
+    showHS _ _ (SomewhereNear s) 
+      = "SomewhereNear "++show s
 
 
 -- \***********************************************************************

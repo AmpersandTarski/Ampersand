@@ -32,7 +32,7 @@ where
      show (DBLoc str)   = "Database location: "++str
      show (Origin str)  = str
      show OriginUnknown = "Unknown origin"
-
+     show (SomewhereNear str) = "Somewhere near: "++str
    class Traced a where
     origin :: a -> Origin
     filenm :: a -> String
