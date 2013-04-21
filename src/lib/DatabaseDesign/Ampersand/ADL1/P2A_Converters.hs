@@ -189,6 +189,7 @@ instance Expr P_Pattern where
     uType' (pt_gns pPattern) .+.
     uType' (pt_dcs pPattern) .+.
     uType' (pt_ids pPattern) .+.
+    uType' (pt_vds pPattern) .+.
     uType' (pt_xps pPattern) .+.
     uType' (pt_pop pPattern)
 
@@ -206,13 +207,15 @@ instance Expr P_Process where
     uType' (procGens  pProcess) .+.
     uType' (procDcls  pProcess) .+.
     uType' (procIds   pProcess) .+.
+    uType' (procVds   pProcess) .+.
     uType' (procXps   pProcess) .+.
     uType' (procPop   pProcess)
 
 instance Expr P_Rule where
  p_rules r = [r]
  uType _ r
-  = uType' (rr_exp r) .+. uType' (rr_viol r) .+.
+  = uType' (rr_exp r) .+. 
+    uType' (rr_viol r) .+.
     foldr (.+.) nothing ( [ typeToMap$
                             Between (\s t->CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
                                     ((\x -> TypExpr x sOrT) (rr_exp r))
@@ -227,7 +230,7 @@ instance Expr P_PairView where
 instance Expr P_PairViewSegment where
  uType _ (P_PairViewExp Src term) = uType term term
  uType _ (P_PairViewExp Tgt term) = uType term term
- uType _ _ = nothing
+ uType _ P_PairViewText{} = nothing
   
 instance Expr P_IdentDef where
  p_keys k = [k]
@@ -255,7 +258,7 @@ instance Expr P_ViewDef where
 instance Expr P_Interface where
  uType _ ifc
   = let x=ifc_Obj ifc in
-    foldr (.+.) nothing [ uType param param | param<-ifc_Params ifc ] .+.
+    foldr (.+.) nothing (map uType' (ifc_Params ifc)) .+.
     uType x x
 
 instance Expr P_ObjectDef where
@@ -271,23 +274,27 @@ instance Expr P_ObjectDef where
                         ]
  
 instance Expr P_SubInterface where
- uType _  mIfc@P_Box{} = let x=si_box mIfc in uType x x
- uType _  _              = nothing
+ uType _  mIfc = 
+   case mIfc of
+     P_Box{} -> uType' (si_box mIfc)
+     P_InterfaceRef {} -> nothing
 
 instance Expr PPurpose where
- uType _ purp = let x=pexObj purp in uType x x
+ uType _ purp = uType' (pexObj purp)
 
 instance Expr PRef2Obj where
- uType _ (PRef2ConceptDef str) = let x=Pid (SomewhereNear (fatal 279 "clueless about where this is found. Sorry" ))(PCpt str) in uType x x
- uType _ (PRef2Declaration t)  = uType t t
- uType _ _                     = nothing
+ uType _ pRef =
+   case pRef of 
+     PRef2ConceptDef str -> uType' (Pid (SomewhereNear (fatal 279 "clueless about where this is found. Sorry" ))(PCpt str))
+     PRef2Declaration t  -> uType' t
+     _                   -> nothing
 
 instance Expr P_Sign where
  uType _ _ = nothing
 
 instance Expr P_Gen where
  uType _ g
-  = let x=Pimp (origin g) (Pid (origin g) (gen_spc g)) (Pid (origin g) (gen_gen g)) in uType x x
+  = uType' (Pimp (origin g) (Pid (origin g) (gen_spc g)) (Pid (origin g) (gen_gen g)))
 
 instance Expr P_Declaration where
  uType _ d
@@ -305,10 +312,10 @@ instance Expr P_Population where
 
 instance Expr a => Expr (Maybe a) where
  uType _ Nothing  = nothing
- uType _ (Just x) = uType x x
+ uType _ (Just x) = uType' x
 
 instance Expr a => Expr [a] where
- uType _ xs = foldr (.+.) nothing [ uType x x | x <- xs]
+ uType _ xs = foldr (.+.) nothing (map uType' xs)
 
 instance Expr Term where 
  uType x term 
@@ -825,7 +832,7 @@ pCtx2aCtx p_context
        where
         f prms obj
          = Ifc { ifcParams = [ case erel of
-                                EDcD dcl _ -> erel
+                                EDcD{} -> erel
                                 _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
                , ifcArgs   = ifc_Args pifc
