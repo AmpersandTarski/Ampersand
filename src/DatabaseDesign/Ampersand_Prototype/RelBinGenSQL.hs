@@ -221,7 +221,7 @@ selectExpr fSpec i src trg expr
 --    (ERel mrph _)  
 --      -> case mrph of
     (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (iExpr c)]
-                            in sqlcomment i ("case: (vExpr (Sign s t))"++phpIndent (i+3)++"ERel [ \""++showADL (Vs (Sign s t))++"\" ]") $
+                            in sqlcomment i ("case: (vExpr (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (src',src) (trg',trg) tbls "1"
                                     | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
                                     , (t',trg') <- concNames (if name s==name t then "cfst1" else quote (name t)) t
