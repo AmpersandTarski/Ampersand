@@ -78,6 +78,7 @@ data Fspc = Fspc { fsName ::       String                   -- ^ The name of the
                                    , [(Declaration,String)])-- an expression on the context with unbound relations, to be bound in this environment
                  , userDefPops ::    [UserDefPop]           -- all user defined populations of relations and concepts
                  , allViolations ::  [(Rule,[Paire])]       -- all rules with violations.
+                 , kernels   ::   [[Expression]]  
                  }
 metaValues :: String -> Fspc -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
