@@ -304,6 +304,7 @@ where
            ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
            ,wrap ", userDefPops   = " indentA (showHS flags)   (userDefPops fspec)
            ,wrap ", allViolations = " indentA showViolatedRule (allViolations fspec)
+           ,wrap ", kernels       = " indentA (showHS flags)   (kernels fspec)
            ,"}" 
            ] ++   
        indent++"where"++
@@ -340,7 +341,7 @@ where
         "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fspec++" interfaces) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-interfaceG fspec ]++"\n"
        )++        
-       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fspec in
+       (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fspec `uni` nub (map qDcl (vquads fs)) in
         if null (ds fspec)     then "" else
         "\n -- *** Declarations (total: "++(show.length.ds) fspec++" declarations) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-ds fspec]++"\n"
