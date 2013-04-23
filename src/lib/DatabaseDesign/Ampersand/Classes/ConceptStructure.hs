@@ -15,7 +15,7 @@ where
    class ConceptStructure a where
     concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
     declsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-    declsUsedIn a = map prim2dcl ((filter (isMp1).nub.concatMap primitives.expressionsIn) a)
+    declsUsedIn a = map prim2dcl ((filter (not.isMp1).nub.concatMap primitives.expressionsIn) a)
       where prim2dcl expr =
              case expr of
                EDcD d@Sgn{} _ -> d
