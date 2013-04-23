@@ -177,7 +177,7 @@ getOptions =
                defaultFlags
                       { genTime       = localTime
                       , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
-                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env) </> fName
+                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env) </> (replaceExtension fName ".proto")
                       , dbName        = fromMaybe ""        (lookup envdbName       env)
                       , logName       = fromMaybe "Ampersand.log" (lookup envlogName      env)
                       , dirExec       = case exePath of
