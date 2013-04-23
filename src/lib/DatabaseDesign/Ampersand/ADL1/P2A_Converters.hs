@@ -342,6 +342,7 @@ instance Expr Term where
      (PCps _ a b)  -> let (bm,s) = mSpecific'' Tgt a Src b x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
+                          pidTest (Patm{}) r = r
                           pidTest _ _ = nothing
                       in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
                          bm .+. uType a a .+. uType b b
@@ -349,6 +350,7 @@ instance Expr Term where
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
                          pnidTest (PCpl _ (Pid{})) r = r
+                         pnidTest (PCpl _ (Patm{})) r = r
                          pnidTest _ _ = nothing
                      in dom x .<. dom a .+. cod x .<. cod b
                         .+. mGeneric Tgt a Src b x .+. uType a a .+. uType b b
