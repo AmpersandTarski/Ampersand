@@ -58,7 +58,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vEcas        = {-preEmpt-} assembleECAs [q | q<-vquads fSpec, isInvariantQuad q] -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
-                 , allDecls     = declarations context
+                 , allDecls     = alldecls
                  , allConcepts  = concs context
                  , fsisa        = isas
                  , vpatterns    = patterns context
@@ -72,7 +72,13 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vctxenv      = ctxenv context
                  , userDefPops  = userdefpops
                  , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
+                 , kernels  = 
+                     case [c | c@PlainConcept{} <- concs alldecls] of
+                          [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
+                          c:cx -> let (_,islands,_,_,_) = cptgE c in
+                                  [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
                  }
+        alldecls = declarations context
         allQuads = quads flags (\_->True) allrules
         (_,_,isas,_,_)=ctxpo context
         userdefpops = ctxpopus context
@@ -634,11 +640,11 @@ while maintaining all invariants.
    -- | de functie genPAclause beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
-   genPAclause :: (Declaration->Bool)           -- True if a relation may be changed (i.e. is editable)
-                  -> InsDel                  -- the type of action: Insert or Delete
-                  -> Expression              -- the expression in which a delete or insert takes place
-                  -> Expression              -- the delta to be inserted or deleted
-                  -> [(Expression,[Rule])]   -- the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+   genPAclause :: (Declaration->Bool)        -- ^True if a relation may be changed (i.e. is editable)
+                  -> InsDel                  -- ^the type of action: Insert or Delete
+                  -> Expression              -- ^the expression in which a delete or insert takes place
+                  -> Expression              -- ^the delta to be inserted or deleted
+                  -> [(Expression,[Rule])]   -- ^the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
                   -> PAclause
    genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1 motive
     where
@@ -906,7 +912,13 @@ CHC [ if isRel e
           (_  , e@(EDcD m _)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                                  if editAble m then Do tOp m deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
-          (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\ndoCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
+
+-- **HJO, 20130423: *LET OP!! De volgende code is er bij gefreubeld om geen last te hebben van de fatal767, maar is niet goed. *****
+-- Dit is in overleg met Stef, die deze hele code toch compleet wil herzien, i.v.m. de nieuwe typechecker.
+          (_ , e@(EDcV _ )) -> Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
+-- ***************************************************************************************************************************** 
+          (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\n"
+                                       ++"doCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
                                          "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++
                                          concat
                                          [ "while trying to maintain conjunct "++showADL conjunct++
