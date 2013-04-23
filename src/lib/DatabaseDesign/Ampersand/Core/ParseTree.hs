@@ -225,8 +225,7 @@ where
       | PBrk Origin Term               -- ^ bracketed expression ( ... )
       deriving (Ord, Show) -- deriving Show for debugging purposes
 
--- TODO: write instance Eq and Ord Term that compares on the basis of origin,
--- for performance reasons.
+-- This instance of Eq is required in the type checker. It is needed in this way in order to define the relation st[Type*Type] correctly.
    instance Eq Term where
       t == t' =
         case t of
