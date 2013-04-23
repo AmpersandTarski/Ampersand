@@ -19,7 +19,7 @@ where
    
    -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
    atomsOf :: [UserDefPop] -> A_Concept -> [String] 
-   atomsOf _ ONE  = ["1(ONE)"] -- fatal 126 "Asking for the value of the universal singleton"
+   atomsOf _ ONE  = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
    atomsOf pt c@PlainConcept{}
      = nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
