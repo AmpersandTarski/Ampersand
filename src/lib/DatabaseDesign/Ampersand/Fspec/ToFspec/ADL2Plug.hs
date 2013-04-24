@@ -13,6 +13,7 @@ import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
 import DatabaseDesign.Ampersand.Misc
 -- import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
+import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,partition)
 import GHC.Exts (sortWith)
@@ -189,7 +190,7 @@ rel2fld kernel
                             -> not $ 
                                  isSur dcl &&
                                  (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
-                   EDcI   sgn -> source sgn == target sgn
+                   EDcI   sgn -> source sgn /= target sgn
                    ETyp (EDcI  _) _
                             -> True
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
@@ -246,13 +247,13 @@ rel2fld kernel
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: Options -> ConceptStructure a => [Declaration] -> [a] -> [PlugSQL]
 makeEntityTables _ {-flags-} allDcls exclusions
- = {- The following may be useful for debugging: 
+ = {- The following may be useful for debugging:
    error 
-    ("\nallRels:"++concat ["\n  "++show r | r<-allRels]++
-     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allRels>-declsUsedIn exclusions, not (isIdent rel)]]++
+    ("\nallRels:"++concat ["\n  "++show r | r<-allDcls]++
+     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allDcls>-declsUsedIn exclusions, not (isIdent rel)]]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
      "\nkernels:"++concat ["\n  "++show kernel ++show (nub (map target kernel))| kernel<-kernels]++
-     "\nmainkernels:"++concat ["\n  "++show [head cl |cl<-eqCl target kernel] | kernel<-kernels]++
+     "\nmainkernels:"++concat ["\n  "++show [(head 256) cl |cl<-eqCl target kernel] | kernel<-kernels]++
   --   "\nplugs:"++concat ["\n   "++showHS flags "\n   " (kernel2Plug kernel) | kernel <-kernels]++
 
      "\nDistribution of Attributes:"++ concat ["\n   "++show dist | dist <-distributionOfAtts]++
@@ -278,12 +279,20 @@ makeEntityTables _ {-flags-} allDcls exclusions
                         , sqlColumn = rel2fld [r] [] r (PrimKey c)
                         , cLkp      = c 
                         }
-      else
-      TblSQL { sqlname = name c
-             , fields  = plugfields
-             , cLkpTbl = conceptLookuptable
-             , mLkpTbl = attributeLookuptable
-             }
+      else  {- -}
+           error   
+             ("\n *** kernel:"
+           ++ "\n  "++show [(head 256) cl |cl<-eqCl target kernel]
+           ++ "\n *** atts:"++concat ["\n  "++show a | a<-atts]
+           ++ "\n *** plugAtts:"++concat ["\n  "++show a | a<-plugAtts]
+           ++ "\n *** attRels:"++concat ["\n  "++show a | a<-attRels]
+           ++ "\n *** mainkernel:"++concat ["\n  "++show a | a<-mainkernel]
+             )
+--        TblSQL { sqlname = name c
+--             , fields  = plugfields
+--             , cLkpTbl = conceptLookuptable
+--             , mLkpTbl = attributeLookuptable
+--             } 
         where
           mainkernel = [(head 276) cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
                                                          -- note that eqCl guarantees that cl is not empty.
@@ -324,9 +333,29 @@ makeEntityTables _ {-flags-} allDcls exclusions
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
-    attRels = [     EDcD d (sign d)  | d<-ds, isUni d, not (isInj d && isSur d)] ++
-              [flp (EDcD d (sign d)) | d<-ds, isInj d, not (isUni d && isTot d)]
-              where ds = [ decl | decl <- allDcls>-declsUsedIn exclusions, not (isIdent decl)]
+    attRels = mapMaybe attExprOf (allDcls>-declsUsedIn exclusions)
+    attExprOf :: Declaration -> Maybe Expression
+    attExprOf d =
+     case d of  --make explicit what happens with each possible decl...
+       Isn{} -> Nothing -- These relations are already in the kernel
+       Vs{}  -> Nothing -- Vs are not implemented at all
+       Sgn{} ->
+            case (isInj d, isUni d, isSur d, isTot d) of
+                 (False  , False  , _      , _      ) --Will become a link-table
+                     -> Nothing 
+                 (False  , True   , _      , _      )
+                     -> Just $      EDcD d (sign d)
+                 (True   , False  , _      , _      )
+                     -> Just $ flp (EDcD d (sign d))
+                 (True   , True   , False  , False  )
+                     -> Just $      EDcD d (sign d)
+                 (True   , True   , False  , True   ) --Equivalent to SPEC t ISA s
+                     -> Just $ ETyp (iExpr s) (Sign s t)
+                 (True   , True   , True   , False  ) --Equivalent to SPEC s ISA t
+                     -> Just $ ETyp (iExpr t) (Sign t s)
+                 (True   , True   , True   , True   )
+                     -> fatal 350 "The source and target are synonymous."
+              where (s,t) = (source d,target d)   
 
 
 -----------------------------------------
