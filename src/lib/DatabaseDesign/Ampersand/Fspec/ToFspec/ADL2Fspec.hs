@@ -59,7 +59,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = alldecls
-                 , allConcepts  = concs context
+                 , allConcepts  = allConceptsPlus
                  , fsisa        = isas
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -78,6 +78,15 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                           c:cx -> let (_,islands,_,_,_) = cptgE c in
                                   [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
                  }
+        allConceptsPlus  = concs context `uni` 
+                           nub([cd2c cd | cd <- ctxcds context]) -- A concept for each ConceptDef that is'nt used in a term
+           where cd2c :: ConceptDef -> A_Concept
+                 cd2c cd = 
+                   PlainConcept { cptnm = name cd
+                                , cptgE = genE context
+                                , cpttp = cdtyp cd
+                                , cptdf = [cd' | cd'<-conceptDefs context,name cd==name cd']
+                                }
         alldecls = declarations context
         allQuads = quads flags (\_->True) allrules
         (_,_,isas,_,_)=ctxpo context
