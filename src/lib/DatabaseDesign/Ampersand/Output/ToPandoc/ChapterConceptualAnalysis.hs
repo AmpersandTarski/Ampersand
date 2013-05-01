@@ -30,7 +30,7 @@ chpConceptualAnalysis lev fSpec flags = (header <> caIntro <> caBlocks, pictures
                    ]]
         English -> [Para
 --                    [ Str "This chapter provides an analysis of the principles described in chapter "
---                    , xrefReference FunctReqts
+--                    , xrefReference SharedLang
 --                    , Str ". Each section in that chapter is analysed in terms of relations "
 --                    , Str "and each principle is then translated in a rule. "
                     [ Str "This chapter defines the formal language, in which functional requirements of "
