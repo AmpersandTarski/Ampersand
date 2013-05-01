@@ -279,7 +279,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
                         , sqlColumn = rel2fld [r] [] r (PrimKey c)
                         , cLkp      = c 
                         }
-      else  {- -}
+      else  {- The following may be useful for debugging:
            error   
              ("\n *** kernel:"
            ++ "\n  "++show [(head 256) cl |cl<-eqCl target kernel]
@@ -287,12 +287,12 @@ makeEntityTables _ {-flags-} allDcls exclusions
            ++ "\n *** plugAtts:"++concat ["\n  "++show a | a<-plugAtts]
            ++ "\n *** attRels:"++concat ["\n  "++show a | a<-attRels]
            ++ "\n *** mainkernel:"++concat ["\n  "++show a | a<-mainkernel]
-             )
---        TblSQL { sqlname = name c
---             , fields  = plugfields
---             , cLkpTbl = conceptLookuptable
---             , mLkpTbl = attributeLookuptable
---             } 
+             ) -}
+        TblSQL { sqlname = name c
+             , fields  = plugfields
+             , cLkpTbl = conceptLookuptable
+             , mLkpTbl = attributeLookuptable
+             } 
         where
           mainkernel = [(head 276) cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
                                                          -- note that eqCl guarantees that cl is not empty.
@@ -381,13 +381,14 @@ makeUserDefinedSqlPlug _ obj
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = fatal 2372 "TODO151210 -> implement defining binary plugs in ASCII"
  | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
-   = {- error 
-    ("\nc: "++show c++
-     "\nrels:"++concat ["\n  "++show r | r<-rels]++
-     "\nkernel:"++concat ["\n  "++show r | r<-kernel]++
-     "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
-     "\nplugfields:"++concat ["\n  "++show plugField | plugField<-plugfields]
-    ) -}
+   = {- The following may be useful for debugging:
+     error 
+      ("\nc: "++show c++
+       "\nrels:"++concat ["\n  "++show r | r<-rels]++
+       "\nkernel:"++concat ["\n  "++show r | r<-kernel]++
+       "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
+       "\nplugfields:"++concat ["\n  "++show plugField | plugField<-plugfields]
+      ) -}
      TblSQL { sqlname = name obj
             , fields  = plugfields
             , cLkpTbl = conceptLookuptable     
