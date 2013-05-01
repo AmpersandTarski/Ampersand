@@ -639,8 +639,8 @@ chpDiagnosis fSpec flags
                <> para (text ("Totaal aantal overtredingen: "++show (length ps))
                        )
                <> table capt 
-                   [(AlignLeft,0)           ,(AlignLeft,0)          ]
-                   [(para.strong .text)"Source" ,(para.strong .text)"Target"]
+                   [(AlignLeft,0)                          ,(AlignLeft,0)          ]
+                   [(para.strong.text.name.source.rrexp) r,(para.strong.text.name.target.rrexp) r]
                    (map showRow ps)
             
      in (para (case (language flags, invariantViolations, processViolations) of
