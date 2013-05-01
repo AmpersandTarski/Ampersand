@@ -220,7 +220,7 @@ selectExpr fSpec i src trg expr
 
 --    (ERel mrph _)  
 --      -> case mrph of
-    (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames fSpec (iExpr c)]
+    (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames False fSpec (iExpr c)]
                             in sqlcomment i ("case: (vExpr (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (src',src) (trg',trg) tbls "1"
                                     | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
@@ -298,7 +298,7 @@ selectExprBrac fSpec i src trg expr
         EDcV{}   -> leafCode
         _        -> phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    where 
-     leafCode = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames fSpec expr,quote s==quote src,quote t==quote trg]
+     leafCode = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames False fSpec expr,quote s==quote src,quote t==quote trg]
              ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg expr+++" )"))
      unquoted [] = False
      unquoted (x:_) = x /= '`'
@@ -356,7 +356,7 @@ selectExprRelation fSpec i src trg dcl =
                   (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
    where
      leafCode expr =  -- made for both Rel and I
-       case sqlRelPlugNames fSpec expr of
+       case sqlRelPlugNames False fSpec expr of
          []        -> fatal 344 $ "No plug for expression "++show expr
          (p,s,t):_ -> Just $ selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
@@ -397,20 +397,21 @@ selectSelItem (att,alias)
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
 -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
 -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
-sqlRelPlugs :: Fspc -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
-sqlRelPlugs fSpec e
- = [ (plug,fld0,fld1)
-   | InternalPlug plug<-plugInfos fSpec
-   , (fld0,fld1)<-sqlPlugFields plug e
-   ]
-
-sqlRelPlugNames :: Fspc -> Expression  -> [(String,String,String)] --(plug,source,target)
-sqlRelPlugNames f e = [(name p,fldname s,fldname t) |(p,s,t)<-sqlRelPlugs f e]
+sqlRelPlugs :: Bool -> Fspc -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
+sqlRelPlugs test fSpec e
+   =  
+     [ (plug,fld0,fld1)
+     | InternalPlug plug<-plugInfos fSpec
+     , (fld0,fld1)<-sqlPlugFields test plug e
+     ]
+ 
+sqlRelPlugNames :: Bool -> Fspc -> Expression  -> [(String,String,String)] --(plug,source,target)
+sqlRelPlugNames test f e = [(name p,fldname s,fldname t) |(p,s,t)<-sqlRelPlugs test f e]
 
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
-getDeclarationTableInfo :: Fspc -> Declaration -> Maybe (String,String,String)
-getDeclarationTableInfo fSpec decl 
-    = case sqlRelPlugNames fSpec (EDcD decl (sign decl)) of
+getDeclarationTableInfo :: Bool -> Fspc -> Declaration -> Maybe (String,String,String)
+getDeclarationTableInfo test fSpec decl 
+    = case sqlRelPlugNames test fSpec (EDcD decl (sign decl)) of
             [plugInfo] -> Just plugInfo
             []         -> Nothing
             plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show decl
@@ -421,9 +422,34 @@ getDeclarationTableInfo fSpec decl
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
 --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
-sqlPlugFields :: PlugSQL -> Expression  -> [(SqlField, SqlField)]
-sqlPlugFields p e'
-  = let e = disjNF e'
+sqlPlugFields :: Bool -> PlugSQL -> Expression  -> [(SqlField, SqlField)]
+sqlPlugFields test p e' =
+  if test 
+  then let e = disjNF e'
+           showFld f = 
+             show (fldname f)++" ["++(name.source.fldexpr) f++" * "++(name.target.fldexpr) f++"]"
+           flds0 = [f |f<-plugFields p,target (fldexpr f)==source e]
+           flds1 = [f |f<-plugFields p,target (fldexpr f)==target e]
+           showplugpath f0 f1 = "f0: "++fldname f0 ++", f1: "++fldname f1++", plugexpr: "++show (plugpath p f0 f1)
+       in (error $ 
+         "\n*** plug:"
+       ++"\n   "++name p
+       ++"\n*** e:"
+       ++"\n   "++show e'
+       ++"\n*** disjNF e':"
+       ++"\n   "++show (disjNF e')
+       ++"\n*** plugFields p:"
+       ++"\n   "++intercalate "\n   " (map showFld (plugFields p))
+       ++"\n*** flds0 :" ++show (map fldname flds0)
+       ++"\n*** flds1 :" ++show (map fldname flds1)
+       ++"\n*** plugexprs:"
+       ++"\n   "++intercalate "\n   " [showplugpath fld0 fld1 | fld0 <- flds0, fld1 <- flds1 ]
+       ++"\n*** plugpaths p:"
+       ++"\n   "++intercalate "\n   " (map showFld (plugFields p))
+       
+        )
+  else 
+    let e = disjNF e'
     in nub
         [(fld0,fld1)
         | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
@@ -435,7 +461,7 @@ sqlPlugFields p e'
               bt = (isTrue.disjNF) (notCpl (sign e) (flp se .:. te) .\/. e)  --       se~;te |- e
         , --reasons why e is equivalent to plugexpr:
            --because e and plugexpr are equal
-           show e==show plugexpr
+           e==plugexpr
      -- || because1 e fld0 fld1              
      --OR e is equivalent to plugexpr for some other reason (requires reasoning)
         || bs && bt     ]                                          --       e = se~;te
