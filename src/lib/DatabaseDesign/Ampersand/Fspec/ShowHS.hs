@@ -33,7 +33,7 @@ where
              ++"\n  import DatabaseDesign.Ampersand.Misc (getOptions)"
              ++"\n  import DatabaseDesign.Ampersand.Basics"
              ++"\n  import DatabaseDesign.Ampersand.Classes"
-             ++"\n  import Text.Pandoc"
+             ++"\n  import Text.Pandoc hiding (Meta)"
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
              ++"\n  main :: IO ()"
