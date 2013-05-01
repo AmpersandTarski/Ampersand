@@ -247,7 +247,7 @@ rel2fld kernel
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: Options -> ConceptStructure a => [Declaration] -> [a] -> [PlugSQL]
 makeEntityTables _ {-flags-} allDcls exclusions
- = {- The following may be useful for debugging:
+ = {- The following may be useful for debugging: 
    error 
     ("\nallRels:"++concat ["\n  "++show r | r<-allDcls]++
      "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allDcls>-declsUsedIn exclusions, not (isIdent rel)]]++
@@ -266,8 +266,8 @@ makeEntityTables _ {-flags-} allDcls exclusions
    --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
         dist []   []     result = result
         dist _    []     _      = fatal 246 "No kernel found for atts"
-        dist atts (k:ks) result = dist rest ks (result ++ [(k,attsOfKernel)])
-           where (attsOfKernel,rest) = partition belongsInK atts
+        dist atts (k:ks) result = dist otherAtts ks ([(k,attsOfK)] ++ result)
+           where (attsOfK,otherAtts) = partition belongsInK atts
                  belongsInK att = source att `elem` map target k
     -- | converts a kernel into a plug
     kernel2Plug :: ([Expression],[Expression]) -> PlugSQL
@@ -279,16 +279,17 @@ makeEntityTables _ {-flags-} allDcls exclusions
                         , sqlColumn = rel2fld [r] [] r (PrimKey c)
                         , cLkp      = c 
                         }
-      else  {- The following may be useful for debugging:
+      else  {- The following may be useful for debugging: 
            error   
              ("\n *** kernel:"
            ++ "\n  "++show [(head 256) cl |cl<-eqCl target kernel]
-           ++ "\n *** atts:"++concat ["\n  "++show a | a<-atts]
-           ++ "\n *** plugAtts:"++concat ["\n  "++show a | a<-plugAtts]
-           ++ "\n *** attRels:"++concat ["\n  "++show a | a<-attRels]
-           ++ "\n *** mainkernel:"++concat ["\n  "++show a | a<-mainkernel]
+           ++ "\n *** mainkernel:"
+           ++ "\n   "++ intercalate "\n  " (map show mainkernel)
+           ++ "\n *** atts:"
+           ++ "\n   "++ intercalate "\n  " (map show atts)
              ) -}
-        TblSQL { sqlname = name c
+        TblSQL 
+             { sqlname = name c
              , fields  = plugfields
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable
@@ -305,12 +306,12 @@ makeEntityTables _ {-flags-} allDcls exclusions
           c = if null mainkernel
               then fatal 198 "null mainkernel. Is this kernel empty???"
               else target ((head 286) mainkernel)       -- one concept from the kernel is designated to "lead" this plug.
-          plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
-          -- | all relations for which the target is stored in the plug
+--          plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
+--          -- | all relations for which the target is stored in the plug
           plugMors :: [(Expression, SqlFieldUsage)]
-          plugMors              = zip mainkernel (PrimKey c : repeat NonMainKey)
-                                ++zip restkernel (repeat FillInLater)
-                                ++zip plugAtts   (repeat PlainAttr ) 
+          plugMors              = zip mainkernel (repeat (PrimKey c))
+                                ++zip restkernel (repeat NonMainKey)
+                                ++zip atts    (repeat PlainAttr ) 
           plugfields            = [fld a u | (a,u)<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable :: [(A_Concept,SqlField)]
           conceptLookuptable    = [(target r,fld r u) |(r,u) <-zip mainkernel (PrimKey c : repeat NonMainKey)]
@@ -320,7 +321,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
           lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                                   then fatal 209 "null cLkptable."
                                   else (head 301) [f |(c',f)<-conceptLookuptable, cpt==c']
-          fld a u                 = rel2fld mainkernel (restkernel++plugAtts) a u
+          fld a u                 = rel2fld mainkernel (restkernel++atts) a u
               
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
