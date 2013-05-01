@@ -133,26 +133,27 @@ evaluateExpSQL fSpec flags exp =
   
 performQuery :: Options -> String -> IO [(String,String)]
 performQuery flags queryStr =
- do { queryResult <- executePHP . showPHP $ 
-        connectToServer flags ++
-        [ "mysql_select_db('"++tempDbName++"');"
-        , "$result=mysql_query('"++queryStr++"');"
-        , "if(!$result)"
-        , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
-        , "$rows=Array();"
-        , "  while (($row = @mysql_fetch_array($result))!==false) {"
-        , "    $rows[]=$row;"
-        , "    unset($row);"
-        , "  }"
-        , "echo '[';"
-        , "for ($i = 0; $i < count($rows); $i++) {"
-        , "  if ($i==0) echo ''; else echo ',';"
-        , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
-        , "}"
-        , "echo ']';"
-        ]
+ do { let php = connectToServer flags ++
+                [ "mysql_select_db('"++tempDbName++"');"
+                , "$result=mysql_query('"++queryStr++"');"
+                , "if(!$result)"
+                , "  die('Error '.($ernr=mysql_errno($DB_link)).': '.mysql_error());"
+                , "$rows=Array();"
+                , "  while (($row = @mysql_fetch_array($result))!==false) {"
+                , "    $rows[]=$row;"
+                , "    unset($row);"
+                , "  }"
+                , "echo '[';"
+                , "for ($i = 0; $i < count($rows); $i++) {"
+                , "  if ($i==0) echo ''; else echo ',';"
+                , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
+                , "}"
+                , "echo ']';"
+                ]
+    ; queryResult <- executePHP . showPHP $ php 
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then fatal 141 $ "PHP/SQL problem: "++queryResult
+      then do verboseLn flags (unlines php)
+              fatal 141 $ "PHP/SQL problem: "++queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
              _            -> fatal 143 $ "Parse error on php result: "++show queryResult
