@@ -360,13 +360,13 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 --                    then 
 --                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
 --                       [ Str "Een aantal concepten uit hoofdstuk "
---                       , xrefReference FunctReqts
+--                       , xrefReference SharedLang
 --                       , Str " zit in een classificatiestructuur. Deze is in figuur "
 --                       , xrefReference classificationPicture
 --                       , Str " weergegeven. " ] 
 --                     ) ++
 --                     [ Str "De eisen, die in hoofdstuk "
---                     , xrefReference FunctReqts
+--                     , xrefReference SharedLang
 --                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
 --                     , xrefReference classDiagramPicture
 --                     , Str ". " ]
@@ -389,12 +389,12 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 --                    then 
 --                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
 --                       [ Str "A number of concepts from chapter "
---                       , xrefReference FunctReqts
+--                       , xrefReference SharedLang
 --                       , Str " is organized in a classification structure. This is represented in figure "
 --                       , xrefReference classificationPicture
 --                       , Str ". " ] ) ++
 --                     [ Str "The requirements, which are listed in chapter "
---                     , xrefReference FunctReqts
+--                     , xrefReference SharedLang
 --                     , Str ", have been translated into the data model in figure "
 --                     , xrefReference classDiagramPicture
 --                     , Str ". " ]
@@ -426,13 +426,13 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 --                    then 
 --                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
 --                       [ Str "Een aantal concepten uit hoofdstuk "
---                       , xrefReference FunctReqts
+--                       , xrefReference SharedLang
 --                       , Str " zit in een classificatiestructuur. Deze is in figuur "
 --                       , xrefReference classificationPicture
 --                       , Str " weergegeven. " ] 
 --                     ) ++
 --                     [ Str "De eisen, die in hoofdstuk "
---                     , xrefReference FunctReqts
+--                     , xrefReference SharedLang
 --                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
 --                     , xrefReference classDiagramPicture
 --                     , Str ". " ]
@@ -443,12 +443,12 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
 --                    then 
 --                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
 --                       [ Str "A number of concepts from chapter "
---                       , xrefReference FunctReqts
+--                       , xrefReference SharedLang
 --                       , Str " is organized in a classification structure. This is represented in figure "
 --                       , xrefReference classificationPicture
 --                       , Str ". " ] ) ++
 --                     [ Str "The requirements, which are listed in chapter "
---                     , xrefReference FunctReqts
+--                     , xrefReference SharedLang
 --                     , Str ", have been translated into the data model in figure "
 --                     , xrefReference classDiagramPicture
 --                     , Str ". " ]

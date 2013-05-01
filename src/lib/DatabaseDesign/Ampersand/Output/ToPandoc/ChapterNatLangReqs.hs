@@ -25,7 +25,7 @@ chpNatLangReqs lev fSpec flags =
    fromList (header ++ dpIntro ++ dpRequirements ++ if genLegalRefs flags then legalRefs else [])
   where
   header :: [Block]
-  header = toList (chptHeader flags FunctReqts)
+  header = toList (chptHeader flags SharedLang)
   legalRefs :: [Block]
   legalRefs = toList (labeledThing flags (lev+1) "LegalRefs" sectionTitle) ++
               [  Plain [ RawInline "latex" $  unlines $

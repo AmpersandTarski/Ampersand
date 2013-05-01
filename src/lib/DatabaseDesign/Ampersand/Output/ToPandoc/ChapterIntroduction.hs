@@ -23,13 +23,13 @@ chpIntroduction fSpec flags =
                    <> text "Een aantal van deze afspraken is gebruikt als functionele eis om de onderhavige functionele specificatie"
                    <> (note.para.text) "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
                    <> text " samen te stellen. "
-                   <> (if FunctReqts `elem` chaptersInDoc flags
+                   <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
                               then text "Deze eisen staan opgesomd in hoofdstuk "
-                                <> xRefReference flags FunctReqts
+                                <> xRefReference flags SharedLang
                                 <> text ", geordend op thema. "
                               else text "Deze eisen staan opgesomd in het hoofdstuk genaamd "
-                                <> (doubleQuoted.chptTitle flags) FunctReqts
+                                <> (doubleQuoted.chptTitle flags) SharedLang
                             ) <> text ", geordend op thema. "
                        else text "Deze eisen zijn niet opgenomen in dit document."
                       )
@@ -91,13 +91,13 @@ chpIntroduction fSpec flags =
                    <> text "A number of these rules have been used as functional requirement to assemble this functional specification"
                    <> (note.para.text) "To use agreements as functional requirements characterizes the Ampersand approach, which has been used to produce this document. "
                    <> text ". "
-                   <> (if FunctReqts `elem` chaptersInDoc flags
+                   <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
                               then text "Those rules are listed in chapter "
-                                <> xRefReference flags FunctReqts
+                                <> xRefReference flags SharedLang
                                 <> text ", ordered by theme. "
                               else text "Those rules are listed in the chapter named "
-                                <> (doubleQuoted.chptTitle flags) FunctReqts
+                                <> (doubleQuoted.chptTitle flags) SharedLang
                             ) <> text ", ordered by theme. " 
                        else text "Those rules are not included in this document."
                       )

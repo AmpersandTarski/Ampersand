@@ -51,7 +51,7 @@ fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
 
 data Chapter = Intro 
              | NatLangReqs
-             | FunctReqts 
+             | SharedLang 
              | Diagnosis 
              | ConceptualAnalysis
              | ProcessAnalysis
@@ -69,7 +69,7 @@ chaptersInDoc flags
  | diagnosisOnly flags         = [Diagnosis]
  | theme flags == StudentTheme = [ Intro
                                  , NatLangReqs
-                   --              , FunctReqts  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
+                   --              , SharedLang  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
                                  , Diagnosis 
                                  , ConceptualAnalysis
                                  , ProcessAnalysis
@@ -77,7 +77,7 @@ chaptersInDoc flags
                                  ]
  | otherwise                   = [ Intro 
                                  , NatLangReqs
-                   --              , FunctReqts  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
+                   --              , SharedLang  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
                                  , Diagnosis 
                                  , ConceptualAnalysis
                                  , ProcessAnalysis
@@ -100,8 +100,8 @@ chptTitle flags cpt =
         (Intro             , English) -> text "Introduction"
         (NatLangReqs       , Dutch  ) -> text "Gemeenschappelijke taal"
         (NatLangReqs       , English) -> text "Shared Language"
-        (FunctReqts        , Dutch  ) -> text "Functionele eisen en wensen" 
-        (FunctReqts        , English) -> text "Functional requirements" 
+        (SharedLang        , Dutch  ) -> text "Gemeenschappelijke taal" 
+        (SharedLang        , English) -> text "Shared vocabulary" 
         (Diagnosis         , Dutch  ) -> text "Diagnose" 
         (Diagnosis         , English) -> text "Diagnosis" 
         (ConceptualAnalysis, Dutch  ) -> text "Conceptuele Analyse"
