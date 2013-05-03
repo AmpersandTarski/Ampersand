@@ -350,12 +350,14 @@ makeEntityTables _ {-flags-} allDcls exclusions
                      -> Just $ flp (EDcD d (sign d))
                  (True   , True   , False  , False  )
                      -> Just $      EDcD d (sign d)
-                 (True   , True   , False  , True   ) --Equivalent to SPEC t ISA s
-                     -> Just $ ETyp (iExpr s) (Sign s t)
-                 (True   , True   , True   , False  ) --Equivalent to SPEC s ISA t
-                     -> Just $ ETyp (iExpr t) (Sign t s)
-                 (True   , True   , True   , True   )
-                     -> fatal 350 "The source and target are synonymous."
+                 (True   , True   , False  , True   ) --Equivalent to SPEC t ISA s, however, it is named, so it must be stored in a plug!
+--                     -> Just $ ETyp (iExpr s) (Sign s t)
+                     -> Just $      EDcD d (sign d)
+                 (True   , True   , True   , False  ) --Equivalent to SPEC s ISA t, however, it is named, so it must be stored in a plug!
+--                     -> Just $ ETyp (iExpr t) (Sign t s)
+                     -> Just $ flp (EDcD d (sign d))
+                 (True   , True   , True   , True   ) --An interesting relation indeed. However, it must be implemented, for it is relevant: i.d. `successor` relation on weekdays.
+                     -> Just $      EDcD d (sign d)
               where (s,t) = (source d,target d)   
 
 
