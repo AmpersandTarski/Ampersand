@@ -100,7 +100,9 @@ generateTableInfos fSpec =
   addToLastLine ";" 
     (indent 4 (blockParenthesize "(" ")" ","
          [ [showPhpStr (name decl)++" => array ('srcConcept' => "++showPhpStr (name (source decl))++", 'tgtConcept' => "++showPhpStr (name (target decl))++
-                                          ", 'table' => "++showPhpStr table++", 'srcCol' => "++showPhpStr srcCol++", 'tgtCol' => "++showPhpStr tgtCol++")"] 
+                                          ", 'table' => "++showPhpStr (name table)
+                                        ++", 'srcCol' => "++showPhpStr (fldname srcCol)
+                                        ++", 'tgtCol' => "++showPhpStr (fldname tgtCol)++")"] 
          | decl@Sgn{} <- declsUsedIn fSpec
          , let (table,srcCol,tgtCol) = fromMaybe (head $ maybeToList  (getDeclarationTableInfo True  fSpec decl)) -- (fatal 105 $ "No table info for declaration " ++ show decl)
                                                  (getDeclarationTableInfo False fSpec decl)

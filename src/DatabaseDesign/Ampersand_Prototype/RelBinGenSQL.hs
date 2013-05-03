@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
- (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,sqlRelPlugNames,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
+ (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..))
@@ -220,7 +220,7 @@ selectExpr fSpec i src trg expr
 
 --    (ERel mrph _)  
 --      -> case mrph of
-    (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote p ++ " AS "++pfx],pfx++"."++quote s') | (p,s',_) <- sqlRelPlugNames False fSpec (iExpr c)]
+    (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote (name p) ++ " AS "++pfx],pfx++"."++quote (fldname s')) | (p,s',_) <- sqlRelPlugs False fSpec (iExpr c)]
                             in sqlcomment i ("case: (vExpr (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (src',src) (trg',trg) tbls "1"
                                     | (s',src') <- concNames (if name s==name t then "cfst0" else quote (name s)) s
@@ -298,7 +298,7 @@ selectExprBrac fSpec i src trg expr
         EDcV{}   -> leafCode
         _        -> phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    where 
-     leafCode = listToMaybe ([quote$p |(p,s,t)<-sqlRelPlugNames False fSpec expr,quote s==quote src,quote t==quote trg]
+     leafCode = listToMaybe ([quote (name p) |(p,s,t)<-sqlRelPlugs False fSpec expr,quote (fldname s)==quote src,quote (fldname t)==quote trg]
              ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg expr+++" )"))
      unquoted [] = False
      unquoted (x:_) = x /= '`'
@@ -356,9 +356,9 @@ selectExprRelation fSpec i srcAS trgAS dcl =
                   (src+++" IS NOT NULL AND "++trg++" IS NOT NULL")
    where
      leafCode expr =  -- made for both Rel and I
-       case sqlRelPlugNames False fSpec expr of
+       case sqlRelPlugs False fSpec expr of
          []        -> fatal 344 $ "No plug for expression "++show expr
-         (p,s,t):_ -> Just $ selectGeneric i (quote s,srcAS) (quote t,trgAS) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
+         (p,s,t):_ -> Just $ selectGeneric i (quote (fldname s),srcAS) (quote (fldname t),trgAS) (quote (name p)) (quote (fldname s)++" IS NOT NULL AND "++quote (fldname t)++" IS NOT NULL")
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
                
@@ -405,19 +405,18 @@ sqlRelPlugs test fSpec e
      , (fld0,fld1)<-sqlPlugFields test plug e
      ]
  
-sqlRelPlugNames :: Bool -> Fspc -> Expression  -> [(String,String,String)] --(plug,source,target)
-sqlRelPlugNames test f e = [(name p,fldname s,fldname t) |(p,s,t)<-sqlRelPlugs test f e]
-
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
-getDeclarationTableInfo :: Bool -> Fspc -> Declaration -> Maybe (String,String,String)
-getDeclarationTableInfo test fSpec decl 
-    = case sqlRelPlugNames test fSpec (EDcD decl (sign decl)) of
+getDeclarationTableInfo :: Bool -> Fspc -> Declaration -> Maybe (PlugSQL,SqlField,SqlField)
+getDeclarationTableInfo test fSpec decl =
+ case decl of 
+   Sgn{} -> 
+      case sqlRelPlugs test fSpec (EDcD decl (sign decl)) of
             [plugInfo] -> Just plugInfo
             []         -> Nothing
             plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show decl
                       -- TODO: currently this fatal is disabled because some relations return multiple plugs
                       --       (see ticket #217)
-
+   _     -> fatal 420 $ "getDeclarationTableInfo is must not be used on this type of declaration!"
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)

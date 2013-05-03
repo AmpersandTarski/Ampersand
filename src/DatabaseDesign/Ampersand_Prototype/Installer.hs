@@ -6,7 +6,7 @@ import Data.List
 import Data.Maybe
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics(indentBlock,commentBlock,addSlashes)
-import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugNames)
+import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL(selectExprRelation,sqlRelPlugs)
   
 --  import Debug.Trace
 
@@ -79,10 +79,10 @@ installer fSpec flags = intercalate "\n  "
         ["  fwrite($dumpfile, dumprel(\""++showADL d++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
         , let relExpr = EDcD d (sign d)
-        , let dbrel = sqlRelPlugNames False fSpec relExpr
+        , let dbrel = sqlRelPlugs False fSpec relExpr
         , not(null dbrel)
         , let (_,src,trg) = head dbrel
-        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) src trg d)]
+        , let qry = fromMaybe [] (selectExprRelation fSpec (-1) (fldname src) (fldname trg) d)]
         ++
         ["  fwrite($dumpfile, \"ENDCONTEXT\");"
         ,"  fclose($dumpfile);"
