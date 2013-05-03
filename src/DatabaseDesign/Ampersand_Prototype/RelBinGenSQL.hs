@@ -182,13 +182,13 @@ selectExpr fSpec i src trg expr
     Imagine subexpressions as "fences". The source and target of a "fence" are the "poles" between which that "fence" is mounted.
     In this metaphor, we create the FROM-clause directly from the "fences", and the WHERE-clause from the "poles" between "fences".
     The "outer poles" correspond to the source and target of the entire expression.
-    To prevents name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
+    To prevent name conflicts in SQL, each subexpression is aliased in SQL by the name "ECps<n>".
 -}
           _:_:_  -- in this case, it is certain that there are at least two elements in es.
-            -> let mainSrc = "ECps0."++selectSelItem (sqlSrc,src)
-                             where (_,_,sqlSrc,_) = head fenceExprs
-                   mainTrg = "ECps"++show (length es-1)++"."++selectSelItem (sqlTrg,trg) 
-                             where (_,_,_,sqlTrg) = last fenceExprs
+            -> let mainSrc = selectSelItem ("ECps"++show n++"."++sqlSrc,src)
+                             where (n,_,sqlSrc,_) = head fenceExprs
+                   mainTrg = selectSelItem ("ECps"++show n++"."++sqlTrg,trg) 
+                             where (n,_,_,sqlTrg) = last fenceExprs
                    selectClause = "SELECT DISTINCT " ++ mainSrc ++ ", " ++mainTrg
                    fromClause   = "FROM " ++ intercalate (","++phpIndent (i+5)) [ lSQLexp | (_,lSQLexp,_,_)<-fenceExprs ]
                    whereClause
@@ -231,7 +231,7 @@ selectExpr fSpec i src trg expr
                                  sql:_ -> Just sql 
     (EDcI     sgn)       -> sqlcomment i ("I["++(show.name.source) sgn++"]") 
                                          (selectExpr fSpec i src trg (vExpr sgn))
-    (EDcD d   sgn)       -> selectExprRelation fSpec i ((name.source) sgn) ((name.target) sgn) d
+    (EDcD d   _)         -> selectExprRelation fSpec i src trg d
 
     (EBrk e) -> selectExpr fSpec i src trg e
 
@@ -339,26 +339,26 @@ noCollideUnlessTm' (EDcV{}) _ nm = quote nm
 noCollideUnlessTm' _  names nm = noCollide' names nm
 
 selectExprRelation :: Fspc
-                   -> Int
-                   -> String -- ^ source
-                   -> String -- ^ target
+                   -> Int    -- ^ Indentation
+                   -> String -- ^ Alias of source
+                   -> String -- ^ Alias of target
                    -> Declaration
                    -> Maybe String
 
-selectExprRelation fSpec i src trg dcl =
+selectExprRelation fSpec i srcAS trgAS dcl =
   case dcl of
     Sgn{}  -> leafCode (EDcD dcl (sign dcl))
     Isn{}  -> leafCode (EDcI     (sign dcl))
-    Vs sgn -> let src'="vfst."++sqlAttConcept fSpec (source sgn)
-                  trg'="vsnd."++sqlAttConcept fSpec (target sgn)
-              in selectGeneric i (src',src) (trg',trg)
+    Vs sgn -> let src="vfst."++sqlAttConcept fSpec (source sgn)
+                  trg="vsnd."++sqlAttConcept fSpec (target sgn)
+              in selectGeneric i (src,srcAS) (trg,trgAS)
                   (sqlConcept fSpec (source sgn) +++ " AS vfst, "++sqlConcept fSpec (target sgn)++ " AS vsnd")
-                  (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
+                  (src+++" IS NOT NULL AND "++trg++" IS NOT NULL")
    where
      leafCode expr =  -- made for both Rel and I
        case sqlRelPlugNames False fSpec expr of
          []        -> fatal 344 $ "No plug for expression "++show expr
-         (p,s,t):_ -> Just $ selectGeneric i (quote s,src) (quote t,trg) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
+         (p,s,t):_ -> Just $ selectGeneric i (quote s,srcAS) (quote t,trgAS) (quote p) (quote s++" IS NOT NULL AND "++quote t++" IS NOT NULL")
   -- TODO: "NOT NULL" checks could be omitted if column is non-null, but the
   -- code for computing table properties is currently unreliable.
                
