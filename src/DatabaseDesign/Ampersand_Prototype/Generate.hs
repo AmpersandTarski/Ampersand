@@ -324,7 +324,7 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
            case e of 
              EDcD d' _ -> (False, d')
              EFlp (EDcD d' _)_ -> (True, d') 
-             _ -> fatal 325 "only support editing on user-specified relations (no expressions, and no I or V)"
+             _ -> fatal 325 $ "only support editing on user-specified relations (no expressions, and no I or V)\nHere we see: " ++ show e
      in
      if isEditable (if flipped then flp e else e)
      then [ "      , 'relation' => "++showPhpStr (name d) 
