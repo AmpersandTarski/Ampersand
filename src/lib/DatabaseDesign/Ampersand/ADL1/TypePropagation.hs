@@ -167,8 +167,9 @@ makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
                  -> [[Type]] -- classes of types that - according to Between-like bindings - should be of equal types
                  -> Map from [to] -- resulting bindings
 makeDecisions inp trnRel eqtyps
- = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) (getDecision eqs)
+ = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
                                                 | eqs <- eqtyps
+                                                , let d = (getDecision eqs)
                                                 ]
  where inpTrnRel = composeMaps trnRel inp
        typsFull = Map.unionWith mrgUnion trnRel
@@ -176,12 +177,16 @@ makeDecisions inp trnRel eqtyps
        trnRel' = Map.map (filter isConc) trnRel
        isConc (TypExpr (Pid _ _) _) = True
        isConc _ = False
+       f :: Type -> [Type]
        f x  = Map.findWithDefault [] x trnRel' `orWhenEmpty` Map.findWithDefault [] x typsFull
        getDecision equals
         = foldl (Map.unionWith mrgIntersect) Map.empty allDecisions
           where iscTyps = isctAll (filter (not.null) (map f equals))
+                isctAll :: (Ord a) => [[a]] -> [a]
                 isctAll [] = []
-                isctAll x = foldr1 mrgIntersect x
+                isctAll x = [e | (e,v)<-Map.toList tmap, v==top]
+                  where tmap = Map.fromListWith (+) [(x'',1) | x'<-x,x''<-x']
+                        top = foldr max (0::Int) (Map.elems tmap)
                 allDecisions
                  = [ Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
                                                          , t' <- Map.findWithDefault [] tp trnRel
