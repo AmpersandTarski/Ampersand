@@ -319,14 +319,18 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                               , "      , 'editableConcepts' => array (" ++ intercalate ", " (map (showPhpStr . name) $ getEditableConcepts object) ++")" ]
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
-  ++ let e = objctx object
-         (flipped, d) =
-           case e of 
-             EDcD d' _ -> (False, d')
-             EFlp (EDcD d' _)_ -> (True, d') 
-             _ -> fatal 325 $ "only support editing on user-specified relations (no expressions, and no I or V)\nHere we see: " ++ show e
+  ++ let (flipped, unflippedExpr) = case objctx object of
+                                       EFlp e _ -> (True,e)
+                                       e        -> (False,e)
+         d = case unflippedExpr of 
+             EDcD d' _       -> d'
+             EDcI (Sign s t) -> if s==t
+                                then Isn s
+                                else fatal 329 "I with wrong type has been found! (should be impossible)" 
+             EDcV sgn        -> Vs sgn
+             _               -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ show unflippedExpr
      in
-     if isEditable (if flipped then flp e else e)
+     if isEditable unflippedExpr
      then [ "      , 'relation' => "++showPhpStr (name d) 
           , "      , 'relationIsFlipped' => "++show flipped ]++ 
           [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'" | flipped] ++
