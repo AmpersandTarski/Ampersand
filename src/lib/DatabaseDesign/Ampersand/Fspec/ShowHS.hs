@@ -92,7 +92,7 @@ where
           TblSQL{} -> intercalate indent 
                       ["let " ++ intercalate (indent++"    ")
                                              [showHSName f++indent++"     = "++showHS flags (indent++"       ") f | f<-fields plug] ++indent++"in"
-                      ,"TblSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"TblSQL { sqlname = " ++ (show.name) plug
                       ,"       , fields  = ["++intercalate ", " (map showHSName (fields plug))++"]"
                       ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
@@ -103,7 +103,7 @@ where
                       ["let " ++ showHSName (fst (columns plug))++indent++"     = "++showHS flags (indent++"       ") (fst (columns plug))
                               ++ (indent++"    ") ++ showHSName (snd (columns plug))++indent++"     = "++showHS flags (indent++"       ") (snd (columns plug))
                               ++indent++"in"
-                      ,"BinSQL { sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"BinSQL { sqlname = " ++ (show.name) plug
                       ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
                       ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                       ,"       , mLkp = "++showHS flags "" (mLkp plug)
@@ -111,7 +111,7 @@ where
                       ,"       }"
                       ]
           ScalarSQL{} -> intercalate indent 
-                      ["ScalarSQL { sqlname   = "++ (show.haskellIdentifier.name) plug
+                      ["ScalarSQL { sqlname   = "++ (show.name) plug
                       ,"          , sqlColumn = "++ showHS flags (indent++"                     ") (sqlColumn plug)
                       ,"          , cLkp      = "++ showHSName (cLkp plug)
                   --    ,"          , sqlfpa    = "++ showHS flags "" (fpa plug)

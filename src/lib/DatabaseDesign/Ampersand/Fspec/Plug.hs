@@ -17,7 +17,7 @@ where
 import DatabaseDesign.Ampersand.ADL1 
 import DatabaseDesign.Ampersand.Classes (Object(..),Populated(..),atomsOf,ConceptStructure(..),Relational(..))
 import DatabaseDesign.Ampersand.Basics
-import Data.List(elemIndex,nub)
+import Data.List(elemIndex,nub,intercalate)
 import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
@@ -331,6 +331,7 @@ plugpath p@TblSQL{} srcfld trgfld
   | (not . null) (paths srcfld trgfld) = if length (head (paths srcfld trgfld)) == 1
                                          then head (head (paths srcfld trgfld))
                                          else foldr1 (.:.) (head (paths srcfld trgfld)) -- SJ Jan 4th 2013: WHY do we know that head (paths srcfld trgfld) is not empty?
+                                                                                        -- HJ May 4th 2013: BECAUSE of the guard a few lines earlier.... 
       
   | (not . null) (paths trgfld srcfld) = if length (head (paths trgfld srcfld)) == 1
                                          then flp (head (head (paths trgfld srcfld)))
@@ -341,7 +342,13 @@ plugpath p@TblSQL{} srcfld trgfld
   --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
   | (not.null) (pathsoverIs srcfld trgfld) =      foldr1 (.:.) (head (pathsoverIs srcfld trgfld))
   | (not.null) (pathsoverIs trgfld srcfld) = flp (foldr1 (.:.) (head (pathsoverIs trgfld srcfld)))
-  | otherwise = fatal 406 $ "no kernelpath:"++show(fldname srcfld,fldname trgfld,name p,[(show es,fldname s,fldname t) |(es,s,t)<-eLkpTbl p])
+  | otherwise = let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  "++intercalate "\n     " (map (take 80.show) es)
+                in fatal 406 $ "no kernelpath:"
+                ++"\nplugname: "++(show.name) p
+                ++"\nsrcfld: "++(show.fldname) srcfld
+                ++"\ntrgfld: "++(show.fldname) trgfld
+                ++"\neLkpTbl ("++(show.length.eLkpTbl) p++" rows):\n"
+                ++intercalate "\n***\n" (map showRow (eLkpTbl p))
   --paths from s to t by connecting r from mLkpTbl
   --the (r,srcfld,trgfld) from mLkpTbl form paths longer paths if connected: (trgfld m1==srcfld m2) => (m1;m2,srcfld m1,trgfld m2)
   where
