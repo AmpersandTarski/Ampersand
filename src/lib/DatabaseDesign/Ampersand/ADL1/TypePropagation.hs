@@ -147,14 +147,15 @@ decToTyp b d = TypExpr (PTrel (origin d) (dec_nm d) (dec_sign d)) b
 
 improveBindings :: (Ord a,Show a,Ord b,Show b)
                 => (Map a [b] -> Map Type [(a,b,Type)])
+                -> [[Type]]
                 -> (Map a [b], Map Type [Type])
                 -> (Map a [b], Map Type [Type])
-improveBindings typByTyp (oldMap,st')
+improveBindings typByTyp eqtyps (oldMap,st')
  = (bindings', stPlus)
   where bindings' = Map.union decisions oldMap
         bindings = Map.mapMaybe checkOne bindings' -- these are final: add them to st'
         expanded = Map.fromListWith mrgUnion [(t1,[t2 | (_,_,t2)<-r]) | (t1,r)<-Map.toList (typByTyp bindings)]
-        decisions = Map.filter (not.null) $ makeDecisions typByTyp' st'
+        decisions = Map.filter (not.null) $ makeDecisions typByTyp' st' eqtyps
         stPlus = setClosure (Map.unionWith mrgUnion st' (symClosure (expanded))) "(st' \\/ bindings')*"
         typByTyp' = typByTyp oldMap
         checkOne [c] = Just [c]
@@ -163,11 +164,11 @@ improveBindings typByTyp (oldMap,st')
 makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
                     Map Type [(from,to,Type)] -- when binding "from" to "to", one knows that the first type equals the second
                  -> Map Type [Type] -- reflexive transitive graph with inferred types
+                 -> [[Type]] -- classes of types that - according to Between-like bindings - should be of equal types
                  -> Map from [to] -- resulting bindings
-makeDecisions inp trnRel
- = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
-                                                | (Between _ t1 t2 _) <- Map.keys trnRel
-                                                , let d = (getDecision t1 t2)
+makeDecisions inp trnRel eqtyps
+ = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) (getDecision eqs)
+                                                | eqs <- eqtyps
                                                 ]
  where inpTrnRel = composeMaps trnRel inp
        typsFull = Map.unionWith mrgUnion trnRel
@@ -175,22 +176,17 @@ makeDecisions inp trnRel
        trnRel' = Map.map (filter isConc) trnRel
        isConc (TypExpr (Pid _ _) _) = True
        isConc _ = False
-       f x  = Map.findWithDefault [] x trnRel
-       f' x = Map.findWithDefault [] x typsFull
-       bestUnion a b = isct `orWhenEmpty` union'
-        where isct = mrgIntersect a b
-              union' = mrgUnion a b
-       getDecision src trg
-        = Map.unionWith bestUnion lhsDecisions rhsDecisions
-          where iscTyps = mrgIntersect (f src) (f trg) `orWhenEmpty` mrgIntersect (f' src) (f' trg)
-                lhsDecisions
-                 = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
-                                                       , t' <- Map.findWithDefault [] tp trnRel
-                                                       , t' `elem` iscTyps ]
-                rhsDecisions
-                 = Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] trg inpTrnRel
-                                                       , t' <- Map.findWithDefault [] tp trnRel
-                                                       , t' `elem` iscTyps ]
+       f x  = Map.findWithDefault [] x trnRel' `orWhenEmpty` Map.findWithDefault [] x typsFull
+       getDecision equals
+        = foldl (Map.unionWith mrgIntersect) Map.empty allDecisions
+          where iscTyps = isctAll (filter (not.null) (map f equals))
+                isctAll [] = []
+                isctAll x = foldr1 mrgIntersect x
+                allDecisions
+                 = [ Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
+                                                         , t' <- Map.findWithDefault [] tp trnRel
+                                                         , t' `elem` iscTyps ]
+                   | src <- equals]
 
 orWhenEmpty :: [a] -> [a] -> [a]
 orWhenEmpty [] n = n
@@ -309,17 +305,18 @@ typing st declsByName
     typByTyp oldMap = Map.fromList [ (trm, triples b t) | trm@(TypExpr t b) <- typeTerms ]
          where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
     
-    (newBindings,stClos0) = fixPoint (improveBindings typByTyp)
+    (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
                                      (declByTerm,setClosure (addIdentity st) "(st \\/ I)*")
     bindings :: Map Term P_Declaration
     bindings = Map.mapMaybe exactlyOne newBindings
     ivBoundConcepts :: Map Type [P_Concept]
     (ivBoundConcepts, stClos1)
-      = fixPoint (improveBindings ivTypByTyp) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
-                                              , fixPoint stClosAdd stClos0)
+      = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
+                                                     , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    -- ivToTyps x = [TypExpr x Src]
-    -- ivBoundConcepts = Map.fromList (concat . map doubleIs
+    eqtyps' = setClosure (symClosure (Map.fromListWith mrgUnion [ (lhs,[rhs]) | Between _ lhs rhs _ <- typeTerms ]))
+                         "between types"
+    eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
     
     exactlyOne [x] = Just x
     exactlyOne _ = Nothing
