@@ -173,24 +173,32 @@ makeDecisions inp trnRel eqtyps
                                                 ]
  where inpTrnRel = composeMaps trnRel inp
        typsFull = Map.unionWith mrgUnion trnRel
-                    (Map.map (foldl mrgUnion [].(map (\(_,_,x)->Map.findWithDefault [] x trnRel'))) inpTrnRel)
+                    (Map.map (getConcsFromTriples) inpTrnRel)
+       getConcsFromTriples [] = []
+       getConcsFromTriples ((_,_,x):xs) = mrgUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
        trnRel' = Map.map (filter isConc) trnRel
        isConc (TypExpr (Pid _ _) _) = True
        isConc _ = False
        f :: Type -> [Type]
-       f x  = Map.findWithDefault [] x trnRel' `orWhenEmpty` Map.findWithDefault [] x typsFull
+       f x = Map.findWithDefault [] x trnRel'
+       f' x = Map.findWithDefault [] x typsFull
        getDecision equals
         = foldl (Map.unionWith mrgIntersect) Map.empty allDecisions
-          where iscTyps = isctAll (filter (not.null) (map f equals))
-                isctAll :: (Ord a) => [[a]] -> [a]
-                isctAll [] = []
-                isctAll x = [e | (e,v)<-Map.toList tmap, v==top]
+          where iscTyps = isctAll (map f equals) `orWhenEmpty` isctAll (map f' equals)
+                isctAll :: (Ord a,Show a) => [[a]] -> [a]
+                -- isctAll [] = []
+                isctAll x = [e | (e,v)<-Map.toList tmap, v>=top]
                   where tmap = Map.fromListWith (+) [(x'',1) | x'<-x,x''<-x']
-                        top = foldr max (0::Int) (Map.elems tmap)
+                        top = zeroOneAll (foldr max (0::Int) (Map.elems tmap))
+                        zeroOneAll 0 = 0
+                        -- zeroOneAll 1 = 1
+                        zeroOneAll n | n==(length equals) = n
+                        zeroOneAll _ = 1
                 allDecisions
                  = [ Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
-                                                         , t' <- Map.findWithDefault [] tp trnRel
-                                                         , t' `elem` iscTyps ]
+                                                         , t' <- Map.findWithDefault [] tp trnRel'
+                                                         , t' `elem` iscTyps
+                                                          ]
                    | src <- equals]
 
 orWhenEmpty :: [a] -> [a] -> [a]
@@ -310,8 +318,11 @@ typing st declsByName
     typByTyp oldMap = Map.fromList [ (trm, triples b t) | trm@(TypExpr t b) <- typeTerms ]
          where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
     
+    firstClos = setClosure (addIdentity st) "(st \\/ I)*"
+    firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
+    
     (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
-                                     (declByTerm,setClosure (addIdentity st) "(st \\/ I)*")
+                                     (declByTerm,firstClos)
     bindings :: Map Term P_Declaration
     bindings = Map.mapMaybe exactlyOne newBindings
     ivBoundConcepts :: Map Type [P_Concept]
@@ -319,7 +330,8 @@ typing st declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    eqtyps' = setClosure (symClosure (Map.fromListWith mrgUnion [ (lhs,[rhs]) | Between _ lhs rhs _ <- typeTerms ]))
+    betweensAsMap = (Map.fromListWith mrgUnion [ (o,sort [rhs,lhs]) | o@(Between _ lhs rhs _) <- typeTerms ])
+    eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
                          "between types"
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
     
