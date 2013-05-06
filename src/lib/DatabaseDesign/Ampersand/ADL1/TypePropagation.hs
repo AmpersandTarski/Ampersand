@@ -330,7 +330,7 @@ typing st declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    betweensAsMap = (Map.fromListWith mrgUnion [ (o,sort [rhs,lhs]) | o@(Between _ lhs rhs _) <- typeTerms ])
+    betweensAsMap = (Map.fromListWith mrgUnion [ (o,nub'$ sort [rhs,lhs]) | o@(Between _ lhs rhs _) <- typeTerms ])
     eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
                          "between types"
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
