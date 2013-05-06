@@ -14,7 +14,7 @@ import Prelude hiding (head)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.List hiding (head)
 
-import Debug.Trace
+-- import Debug.Trace
 
 import Control.Applicative
 import Data.Map (Map)
@@ -187,9 +187,13 @@ makeDecisions inp trnRel eqtyps
           where iscTyps = isctAll (map f equals) `orWhenEmpty` isctAll (map f' equals)
                 isctAll :: (Ord a,Show a) => [[a]] -> [a]
                 -- isctAll [] = []
-                isctAll x = (trace (show tmap) [e | (e,v)<-Map.toList tmap, v>=top])
+                isctAll x = [e | (e,v)<-Map.toList tmap, v>=top]
                   where tmap = Map.fromListWith (+) [(x'',1) | x'<-x,x''<-x']
                         top = (foldr max (0::Int) (Map.elems tmap))
+                        {- zeroOneAll 0 = 0
+                        -- zeroOneAll 1 = 1
+                        zeroOneAll n | n==(length equals) = n
+                        zeroOneAll _ = 1 -}
                 allDecisions
                  = [ Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
                                                          , t' <- Map.findWithDefault [] tp trnRel'
