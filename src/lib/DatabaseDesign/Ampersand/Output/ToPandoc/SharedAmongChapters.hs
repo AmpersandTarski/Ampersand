@@ -65,7 +65,7 @@ data Chapter = Intro
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]  
 chaptersInDoc flags
- | test flags                  = [DataAnalysis]
+ | test flags                  = [NatLangReqs, Diagnosis]
  | diagnosisOnly flags         = [Diagnosis]
  | theme flags == StudentTheme = [ Intro
                                  , NatLangReqs
