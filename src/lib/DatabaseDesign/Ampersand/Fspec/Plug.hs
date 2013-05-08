@@ -22,7 +22,7 @@ import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
 import Prelude hiding (Ordering(..),head)
-
+import Debug.Trace
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
@@ -343,12 +343,13 @@ plugpath p@TblSQL{} srcfld trgfld
   | (not.null) (pathsoverIs srcfld trgfld) =      foldr1 (.:.) (head (pathsoverIs srcfld trgfld))
   | (not.null) (pathsoverIs trgfld srcfld) = flp (foldr1 (.:.) (head (pathsoverIs trgfld srcfld)))
   | otherwise = let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " -- ++intercalate "\n     " (map show es)
+  
                 in fatal 406 $ "no kernelpath:"
                 ++"\nplugname: "++(show.name) p
                 ++"\nsrcfld: "++(show.fldname) srcfld
                 ++"\ntrgfld: "++(show.fldname) trgfld
                 ++"\neLkpTbl ("++(show.length.eLkpTbl) p++" rows):\n"
-                ++intercalate "\n***\n" (sort (map showRow [(es,s,t) | (es,s,t) <- eLkpTbl p]))
+                ++intercalate "\n***\n" (sort [trace (showRow (es,s,t)) (showRow (es,s,t)) | (es,s,t) <- eLkpTbl p])
   --paths from s to t by connecting r from mLkpTbl
   --the (r,srcfld,trgfld) from mLkpTbl form paths longer paths if connected: (trgfld m1==srcfld m2) => (m1;m2,srcfld m1,trgfld m2)
   where
