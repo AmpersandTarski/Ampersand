@@ -342,7 +342,7 @@ plugpath p@TblSQL{} srcfld trgfld
   --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
   | (not.null) (pathsoverIs srcfld trgfld) =      foldr1 (.:.) (head (pathsoverIs srcfld trgfld))
   | (not.null) (pathsoverIs trgfld srcfld) = flp (foldr1 (.:.) (head (pathsoverIs trgfld srcfld)))
-  | otherwise = let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " -- ++intercalate "\n     " (map show es)
+  | otherwise = let showRow (es, s, t) = fldname s ++" => "++fldname t++":\n  " ++intercalate "\n     " (map show es)
   
                 in fatal 406 $ "no kernelpath:"
                 ++"\nplugname: "++(show.name) p
