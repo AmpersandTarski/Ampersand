@@ -25,7 +25,7 @@ INTERFACE "Diagnosis" FOR Student: I[ONE]
 BOX [ "concepts without definition": V[ONE*PlainConcept];(I[PlainConcept]-(cptdf;cptdf~))
     , "relations without MEANING": V[ONE*Declaration];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
     , "RULEs without MEANING": V[ONE*Rule];(I[Rule]-(rrmean;rrmean~)) -- -(V[ONE*Blob];rrmean~)
-    , "populated relations": V[ONE*PairID];decpopu~
+    , "populated relations": V[ONE*RelPopu];decpopu~
     , "unpopulated relations": V[ONE*Declaration];(I-(decpopu;decpopu~)) -- -(V[ONE*PairID];decpopu~)
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;rels;reldcl)
     ]
@@ -162,17 +162,18 @@ INTERFACE "Concept"(popas,atomvalue) FOR Student: I[PlainConcept]
 BOX ["PURPOSEs" :cptpurpose
     ,"CONCEPT definition" :cptdf
     ,"name" :cptnm
-    ,"POPULATION" :popas BOX ["atom":atomvalue]
+    ,"POPULATION" :popcpt~;popas BOX ["atom":atomvalue]
     ,"POPULATION (through ISA)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
-    BOX ["more specific concept":I[PlainConcept], "POPULATION":popas;atomvalue]
+    BOX ["more specific concept":I[PlainConcept], "POPULATION":popcpt~;popas;atomvalue]
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;popas BOX ["atom":atomvalue, "of concept":popas~]
     ,"used in relations": (decsgn;(src \/ trg))~
-    ,"used in RULEs": ((src \/ trg);rrexp;rels;decsgn)~;(I[Rule]-I[PropertyRule])
+    ,"used in RULEs": (rrexp;rels;decsgn;(src \/ trg))~;(I[Rule]-I[PropertyRule])
     ,"diagram" : cptpic
     ]
-INTERFACE "Atom"(popas) FOR Student: I[Atom];atomvalue~
-BOX ["in POPULATION of": popas~]
+INTERFACE "Atom"(atomvalue) FOR Student: I[Atom]
+BOX ["atom": atomvalue
+    ,"in POPULATION of": popas~]
 INTERFACE Relation(decpopu,left,right) FOR Student: I[Declaration]
 BOX ["PURPOSEs" :decpurpose
     ,"MEANING" :decmean
@@ -181,7 +182,7 @@ BOX ["PURPOSEs" :decpurpose
     ,"type" :decsgn BOX ["source":src , "target":trg]
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
-    ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
+    ,"POPULATION" :decpopu;popps BOX ["source":left , "target":right] --select existing atoms only!
     ,"used in RULEs": (rrexp;rels)~;(I[Rule]-I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]

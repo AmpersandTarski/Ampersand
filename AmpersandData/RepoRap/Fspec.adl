@@ -10,7 +10,7 @@ ENDPATTERN
 PATTERN Conceptual
 ptpic::Pattern*Image[UNI]
 MEANING IN ENGLISH "A conceptual diagram for a pattern."
-cptpic::Concept*Image[UNI]
+cptpic::PlainConcept*Image[UNI]
 MEANING IN ENGLISH "A conceptual diagram for a concept."
 rrpic::Rule*Image[UNI]
 MEANING IN ENGLISH "A conceptual diagram for a rule."
