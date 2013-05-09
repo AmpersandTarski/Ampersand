@@ -1,6 +1,6 @@
 CONTEXT RAP 
-INCLUDE "student_AST_interfaces.adl"
-INCLUDE "admin_interfaces.adl"
+--INCLUDE "student_AST_interfaces.adl"
+--INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
 --IN ENGLISH
 --LATEX
@@ -25,17 +25,17 @@ MESSAGE "<br/>You entered change(s) on the screen. You can: <br/> 1) <b>enter mo
 VIOLATION (TXT "added or deleted pair ",TGT I[RelPopu], TXT " of ", TGT (inipopu\/decpopu)~)
 
 
-RULE "parseerror": parseerror |- -parseerror
+RULE "parseerror": parseerror |- V[File*ParseError]-parseerror
 MESSAGE "<span class='errsignal'>A syntax error was encountered in your script.</span> No CONTEXT screen could be generated."
-VIOLATION (TGT I[File], TXT " Open ", SRC I[File],TXT " to fix error.")
+VIOLATION (TGT I[ParseError], TXT " Open ", SRC I[File],TXT " to fix error.")
 
-RULE "typeerror": typeerror |- -typeerror
+RULE "typeerror": typeerror |- V[File*TypeError]-typeerror
 MESSAGE "<span class='errsignal'>Type error(s) were encountered in your script.</span> A CONTEXT screen was generated with concepts and relation declarations only, which may be useful to understand and fix the errors"
-VIOLATION (TGT I[File], TXT ". Open ", SRC I[File],TXT " to fix error.")
+VIOLATION (TGT I[TypeError], TXT ". Open ", SRC I[File],TXT " to fix error.")
 ENDPROCESS
 
 PROCESS Student
-ROLE Student MAINTAINS otherviolations, {-HJO multviolations1,-}multviolations2,multviolations3, homoviolations
+ROLE Student MAINTAINS otherviolations, multviolations1,multviolations2,multviolations3, homoviolations
 
 --RULE "conceptorphan": cptos |- src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right
 --MESSAGE "<br/><span class='warnsignal'>The atoms below are not related to any atom, besides the identity relation.</span> These atoms have no purpose to exist, except when the atom is used in a RULE assertion. An atom that has lost its purpose will not exist anymore in the next CONTEXT version if you <a href='index.php?interface=Validate&atom=1&role=0'>Validate</a> now."
@@ -45,25 +45,25 @@ ROLE Student MAINTAINS otherviolations, {-HJO multviolations1,-}multviolations2,
 --MESSAGE "<span class='warnsignal'>Atom(s) of a concept that is a specialization have the same name(s) as atom(s) of a more general concept.</span> The integrity rules demand that no two atoms in the population of a concept have the same name. If you commit and validate on the <a href='index.php?interface=Validate&atom=1&role=0'>Validate-screen</a> then Ampersand records that the atoms with identical names refer to the same real-world object. If the atoms refer to different real-world objects, then you must change the name of at least one atom before validating."
 --VIOLATION (TXT "Atom ", TGT I, TXT "will become the most specific concept")
 
---HJO RULE "multviolations1": -((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
---HJO MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
---HJO VIOLATION (TXT "RULE ", SRC I, TXT " is violated by the atom ", TGT left, TXT ".")
+RULE "multviolations1": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
+MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
+VIOLATION (TXT "RULE ", SRC I[Rule], TXT " is violated by the atom ", TGT I[Violation];left, TXT ".")
 
-RULE "multviolations2": -((I[PropertyRule] /\ declaredthrough;('UNI' \/ 'INJ');declaredthrough~);rrviols)
+RULE "multviolations2": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('UNI' \/ 'INJ');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or INJective multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
---HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
 
-RULE "multviolations3": -((I[PropertyRule] /\ declaredthrough;'->';declaredthrough~);rrviols)
+RULE "multviolations3": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;'->';declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A UNIvalence or TOTal multiplicity rule is violated for some relation(s).</span> Delete tuple(s) in the relation(s) to correct the violation(s)."
---HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
 
-RULE "homoviolations": -((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
+RULE "homoviolations": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A rule for homogeneous relation(s) is violated.</span> Add or delete tuple(s) in the relation(s) to correct the violation(s)."
---HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
 
-RULE "otherviolations": -((-I[PropertyRule] /\ I[Rule]);rrviols)
+RULE "otherviolations": V[Rule*Violation]-((I[Rule]-I[PropertyRule]);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A business rule that involves several relations is violated.</span> Add or delete tuple(s) in one or more of the relation(s) to correct the violation(s)."
---HJO VIOLATION (TXT "RULE ",SRC I, TXT " is violated by the tuple ", TGT I, TXT " in combination with some other tuple(s).")
+VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
 ENDPROCESS
 
 PROCESS Admin
@@ -76,9 +76,9 @@ ENDPROCESS
 PATTERN AtlasLoad2
 firstloadedwith :: AdlFile * AdlVersion [UNI]
 MEANING IN ENGLISH "The version of the Ampersand compiler with which the rule specification file was loaded for the first time."
-inios::Concept*AtomID
+inios::Concept*CptPopu
 MEANING IN ENGLISH "The initial population of a concept from a rule specification file."
-inipopu::Declaration*PairID
+inipopu::Declaration*RelPopu
 MEANING IN ENGLISH "The initial population of a relation from a rule specification file."
 inileft::PairID*Atom
 MEANING IN ENGLISH "The initial source of a relationship from the initial population of a relation from a rule specification file."
@@ -148,20 +148,20 @@ VIEW G: G(PRIMHTML "<a href='../../index.php?operation=",operation
 
 
 SPEC NewAdlFile ISA AdlFile
-VIEW NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",filename,PRIMHTML"</a>")
+VIEW NewAdlFile: NewAdlFile(PRIMHTML "<a href='../../index.php'>",I[NewAdlFile];filename,PRIMHTML"</a>")
 newfile::User->NewAdlFile
 MEANING IN ENGLISH "The predefined rule specification file with an empty context, which is copied to create a new file requested by a student."
 
 SPEC SavePopFile ISA File
-VIEW SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", filepath , filename
-                            ,PRIMHTML "'>", filename ,PRIMHTML "</a>")
+VIEW SavePopFile: SavePopFile(PRIMHTML "<a href='../../index.php?operation=4&file=", I[SavePopFile];filepath , I[SavePopFile];filename
+                            ,PRIMHTML "'>", I[SavePopFile];filename ,PRIMHTML "</a>")
 savepopulation::Context->SavePopFile
 MEANING IN ENGLISH "The file, which will be created to export the population of a context when requested by a student."
 
 SPEC SaveAdlFile ISA AdlFile
-VIEW SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath , filename
+VIEW SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", I[SaveAdlFile];filepath , I[SaveAdlFile];filename
                             ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded~;userrole
-                            ,PRIMHTML "'>", filename, PRIMHTML "</a>")
+                            ,PRIMHTML "'>", I[SaveAdlFile];filename, PRIMHTML "</a>")
 savecontext::Context->SaveAdlFile
 MEANING IN ENGLISH "The rule specification file, which will be created to commit and upload changes in the loaded context when requested by a student."
 ENDPATTERN
