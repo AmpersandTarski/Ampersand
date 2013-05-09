@@ -17,7 +17,7 @@ MEANING IN ENGLISH "A conceptual diagram for a rule."
 ENDPATTERN
 
 PATTERN RuleEnforcement
-SPEC Violation ISA PairID
+SPEC Violation ISA Pair
 rrviols::Rule*Violation
 MEANING IN ENGLISH "The violations of a rule."
 ENDPATTERN
