@@ -275,10 +275,13 @@ instance ShowADL Expression where
 instance ShowADL HornClause where
  showADL hornClause = showADL (horn2expr hornClause)
 
+{- SJ May 9th, 2013 @Han
+WHY is it forbidden to apply showADL to declarations that were not user defined?
+I got fatal 330 in RAP.adl, when generating a functional specification, so I hesitantly switched showADL on...
 instance ShowADL Declaration where
  showADL decl = 
   case decl of
-     Sgn{decusrX = False} -> fatal 323 "call to ShowADL for declarations can be done on user defined relations only." 
+     Sgn{decusrX = False} -> fatal 323 "call to ShowADL for declarations may be done on user defined relations only." 
      Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
               (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
                if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++
@@ -286,8 +289,24 @@ instance ShowADL Declaration where
                " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
                ++ concatMap meaning (ameaMrk (decMean decl))
                ++ maybe "" (\(RelConceptDef srcOrTgt def) -> " DEFINE "++showADL srcOrTgt ++ " " ++ def) (decConceptDef decl)
-     Isn{}     -> fatal 330 "Illegal call to ShowADL (Isn{}). Isn{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
-     Vs{}      -> fatal 332 "Illegal call to ShowADL (Vs{}). Vs{} is of type Declaration and it is not user defined. A call to ShowADL for declarations can be done on user defined declarations only." 
+     Isn{}     -> fatal 330 ("Illegal call to ShowADL (Isn{"++show (detyp decl)++"}). Isn{} is of type Declaration and it is not user defined. A call to ShowADL for declarations may be done on user defined declarations only.")
+     Vs{}      -> fatal 332 ("Illegal call to ShowADL (Vs{}). Vs{} is of type Declaration and it is not user defined. A call to ShowADL for declarations may be done on user defined declarations only.")
+   where
+     meaning :: A_Markup -> String
+     meaning pmkup = " MEANING "++showADL pmkup
+-}
+instance ShowADL Declaration where
+ showADL decl = 
+  case decl of
+     Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
+              (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
+               if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++
+              (if null(decprL decl++decprM decl++decprR decl) then "" else
+               " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
+               ++ concatMap meaning (ameaMrk (decMean decl))
+               ++ maybe "" (\(RelConceptDef srcOrTgt def) -> " DEFINE "++showADL srcOrTgt ++ " " ++ def) (decConceptDef decl)
+     Isn{} -> "DECLARE I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
+     Vs{}  -> "DECLARE V"++show (decsgn decl)      -- Vs{}  is of type Declaration and it is implicitly defined
    where
      meaning :: A_Markup -> String
      meaning pmkup = " MEANING "++showADL pmkup
