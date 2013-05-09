@@ -1,6 +1,6 @@
 CONTEXT RAP 
---INCLUDE "student_AST_interfaces.adl"
---INCLUDE "admin_interfaces.adl"
+INCLUDE "student_AST_interfaces.adl"
+INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
 --IN ENGLISH
 --LATEX
