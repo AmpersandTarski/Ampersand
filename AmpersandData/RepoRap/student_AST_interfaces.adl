@@ -16,7 +16,7 @@ BOX ["loaded into Atlas" : V[ONE*Context]
     BOX ["CONTEXT":I,"source file (click to edit)":sourcefile \/ includes,"operations (click to perform)":sourcefile;applyto~]
     ,"overview of files" : V[ONE*User]
     BOX [ "open new source file" : newfile
-        , "source files" : uploaded[User*AdlFile];I[AdlFile] BOX ["file name (click to edit)":I,"created at":filetime,"operations (click to perform)":applyto~]
+        , "source files" : uploaded;I[AdlFile] BOX ["file name (click to edit)":I,"created at":filetime,"operations (click to perform)":applyto~]
         ]
     ]
 
@@ -160,21 +160,21 @@ BOX ["SPEC" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~
     ]
-INTERFACE "Concept"(cptos,atomvalue) FOR Student: I[Concept]
+INTERFACE "Concept"(popas,atomvalue) FOR Student: I[PlainConcept]
 BOX ["PURPOSEs" :cptpurpose
     ,"CONCEPT definition" :cptdf
     ,"name" :cptnm
-    ,"POPULATION" :cptos BOX ["atom":atomvalue]
+    ,"POPULATION" :popas BOX ["atom":atomvalue]
     ,"POPULATION (through ISA)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
-    BOX ["more specific concept":I, "POPULATION":cptos;atomvalue]
+    BOX ["more specific concept":I, "POPULATION":popas;atomvalue]
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
---    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
+--    ,"comparable atoms":order;order~;popas BOX ["atom":atomvalue, "of concept":popas~]
     ,"used in relations": (decsgn;(src \/ trg))~
-    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": ((src \/ trg);rrexp;rels;decsgn)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
-INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
-BOX ["in POPULATION of": cptos~]
+INTERFACE "Atom"(popas) FOR Student: I[Atom];atomvalue~
+BOX ["in POPULATION of": popas~]
 INTERFACE Relation(decpopu,left,right) FOR Student: I[Declaration]
 BOX ["PURPOSEs" :decpurpose
     ,"MEANING" :decmean
@@ -184,14 +184,14 @@ BOX ["PURPOSEs" :decpurpose
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
-    ,"used in RULEs": (rrexp;rels;reldcl)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": (rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :rrpurpose
     ,"MEANING" :rrmean
     ,"name" :rrnm
     ,"assertion" :rrexp
-    ,"uses":rrexp;rels BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
+    ,"uses":rrexp;rels BOX ["relation":I, "with properties": decprps;declaredthrough, "source":decsgn;src, "target":decsgn;trg]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]
