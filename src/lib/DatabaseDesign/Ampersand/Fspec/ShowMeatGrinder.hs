@@ -105,8 +105,8 @@ metaPopsOf _ fSpec =
      PlainConcept{} ->
       [ Pop "name"    "PlainConcept" "Conid"
              [(uri cpt, name cpt)]
-      , Pop "cptgE"   "PlainConcept" "GenR"
-             [(uri cpt,uri (cptgE cpt))]
+      , Pop "context"   "PlainConcept" "Context"
+             [(uri cpt,uri fSpec)]
       , Pop "cpttp"   "PlainConcept" "Blob"
              [(uri cpt,cpttp cpt) ]
       , Pop "cptdf"   "PlainConcept" "Blob"
