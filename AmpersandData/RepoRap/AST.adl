@@ -22,6 +22,9 @@ ctxpats::Context*Pattern
 MEANING IN ENGLISH "The patterns in a context."
 ctxcs  ::Context*Concept
 MEANING IN ENGLISH "A concept, mentioned anywhere in a context, is declared."
+ctxgE :: Context*GenR
+MEANING IN ENGLISH "The generalization relation of a concept."
+
 ENDPATTERN
 
 PATTERN Pattern
@@ -68,8 +71,8 @@ IDENT PlainConcept: PlainConcept(cptnm)
 
 name :: Concept->Conid [INJ]
 MEANING IN ENGLISH "The name of a concept."
-cptgE :: PlainConcept*GenR
-MEANING IN ENGLISH "The generalization relation of a concept."
+context :: PlainConcept*Context --@Stef: Willen we dit opnemen? of is dit dezelfde relatie als ctxcs? (maar daar hebben we het alleen over de definities, dus dit is wellicht een andere relatie.
+MEANING IN ENGLISH "The context where the concept is known."
 cpttp :: PlainConcept*Blob
 MEANING IN ENGLISH "The definitions of a concept."
 cptdf :: PlainConcept*Blob
