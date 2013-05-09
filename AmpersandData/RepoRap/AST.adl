@@ -48,7 +48,7 @@ PATTERN Gen
 CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Gen(genspc,gengen):svn568"
 IDENT Gen: Gen( genspc, gengen )
-VIEW Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
+VIEW Gen: Gen( TXT "SPEC ", genspc;name[Concept*Conid] , TXT " ISA " , gengen;name[Concept*Conid] )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING IN ENGLISH "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
@@ -67,7 +67,7 @@ CONCEPT PlainConcept "The set of instances by name."
 SPEC PlainConcept ISA Concept
 SPEC "ONE" ISA Concept
 
-IDENT PlainConcept: PlainConcept(cptnm)
+IDENT PlainConcept: PlainConcept(name[Concept*Conid])
 
 name :: Concept->Conid [INJ]
 MEANING IN ENGLISH "The name of a concept."
@@ -119,7 +119,7 @@ PATTERN Sign
 CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
              "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn568"
 IDENT Sign: Sign( src, trg )
-VIEW Sign: Sign( src;cptnm , TXT " * " , trg;cptnm )
+VIEW Sign: Sign( src;name[Concept*Conid] , TXT " * " , trg;name[Concept*Conid] )
 src::Sign->Concept
 MEANING IN ENGLISH "The source of a sign."
 trg::Sign->Concept
@@ -138,7 +138,7 @@ PATTERN Declaration
 CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
                     "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn568"
 IDENT Declaration: Declaration( decnm , decsgn;src, decsgn;trg )
-VIEW Declaration: Declaration( decnm , TXT " :: ", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
+VIEW Declaration: Declaration( decnm , TXT " :: ", decsgn;src;name[Concept*Conid] ,TXT " * ", decsgn;trg;name[Concept*Conid] )
 RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
 MEANING IN ENGLISH "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
@@ -201,7 +201,7 @@ MEANING IN ENGLISH "The user-declared relations in an expression."
 
 CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
 IDENT Relation: Relation( relnm , relsgn;src, relsgn;trg)
-VIEW Relation: Relation( relnm , TXT "[" , relsgn;src;cptnm , TXT "*" , relsgn;trg;cptnm , TXT "]")
+VIEW Relation: Relation( relnm , TXT "[" , relsgn;src;name[Concept*Conid] , TXT "*" , relsgn;trg;name[Concept*Conid] , TXT "]")
 
 relnm :: Relation -> Varid
 MEANING IN ENGLISH "The name of a relation used as a relation token."
