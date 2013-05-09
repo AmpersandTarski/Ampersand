@@ -50,8 +50,7 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters.hs"
 
 data Chapter = Intro 
-             | NatLangReqs
-             | SharedLang 
+             | SharedLang
              | Diagnosis 
              | ConceptualAnalysis
              | ProcessAnalysis
@@ -64,29 +63,25 @@ data Chapter = Intro
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]  
-chaptersInDoc flags
- | test flags                  = [NatLangReqs, Diagnosis]
- | diagnosisOnly flags         = [Diagnosis]
- | theme flags == StudentTheme = [ Intro
-                                 , NatLangReqs
-                   --              , SharedLang  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
-                                 , Diagnosis 
-                                 , ConceptualAnalysis
-                                 , ProcessAnalysis
-                                 , DataAnalysis
-                                 ]
- | otherwise                   = [ Intro 
-                                 , NatLangReqs
-                   --              , SharedLang  Han, ik heb deze gedisabled. Het is een doubluren met NatLangReqs
-                                 , Diagnosis 
-                                 , ConceptualAnalysis
-                                 , ProcessAnalysis
-                                 , DataAnalysis
-                                 , SoftwareMetrics
-                        --         , EcaRules
-                                 , Interfaces
-                                 , Glossary
-                                 ]
+chaptersInDoc flags = [chp | chp<-chapters, chp `notElem` disabled]
+ where
+   -- temporarily switch off chapters that need too much refactoring, but keep this Haskell code compilable.
+    disabled = [EcaRules,Interfaces]
+    chapters
+     | test flags                  = [SharedLang, Diagnosis]
+     | diagnosisOnly flags         = [Diagnosis]
+     | theme flags == StudentTheme = [Intro,SharedLang,Diagnosis,ConceptualAnalysis,DataAnalysis]
+     | otherwise                   = [ Intro 
+                                     , SharedLang
+                                     , Diagnosis 
+                                     , ConceptualAnalysis
+                                     , ProcessAnalysis
+                                     , DataAnalysis
+                                     , SoftwareMetrics
+                                     , EcaRules
+                                     , Interfaces
+                                     , Glossary
+                                     ]
 
 -- | This function returns a header of a chapter
 chptHeader :: Options -> Chapter -> Blocks
@@ -98,10 +93,8 @@ chptTitle flags cpt =
      (case (cpt,language flags) of
         (Intro             , Dutch  ) -> text "Inleiding"
         (Intro             , English) -> text "Introduction"
-        (NatLangReqs       , Dutch  ) -> text "Gemeenschappelijke taal"
-        (NatLangReqs       , English) -> text "Shared Language"
-        (SharedLang        , Dutch  ) -> text "Gemeenschappelijke taal" 
-        (SharedLang        , English) -> text "Shared vocabulary" 
+        (SharedLang        , Dutch  ) -> text "Gemeenschappelijke taal"
+        (SharedLang        , English) -> text "Shared Language"
         (Diagnosis         , Dutch  ) -> text "Diagnose" 
         (Diagnosis         , English) -> text "Diagnosis" 
         (ConceptualAnalysis, Dutch  ) -> text "Conceptuele Analyse"

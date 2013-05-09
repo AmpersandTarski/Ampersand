@@ -5,7 +5,7 @@ BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"
     ,"concepts" : V[ONE*Context];ctxcs
     ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
     ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
-    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] -I[PropertyRule])
+    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule]-I[PropertyRule])
     ]
 INTERFACE "Validate" FOR Student: I[ONE]
 BOX ["Click to commit and validate":V[ONE*Context];savecontext
