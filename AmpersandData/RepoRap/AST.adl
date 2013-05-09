@@ -129,14 +129,14 @@ MEANING IN ENGLISH "The target of a relationship."
 CONCEPT Atom "An atomID is the identity of an atomic term."
 CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn568"
---IDENT Atom: Atom( atomvalue, popas~)  --HJO20130509 Dit kan niet, want popas~ is niet UNI.
---VIEW Atom: Atom( atomvalue , TXT " :: ", cptos~)
+IDENT Atom: Atom( atomvalue)
+VIEW Atom: Atom( atomvalue , TXT " :: ", popas~)
 atomvalue::Atom->AtomValue
 MEANING IN ENGLISH "The value of an atom."
-RULE "entity integrity concept": atomvalue;atomvalue~ /\ popas~;order;order~;popas |- I
-MEANING IN ENGLISH "An atom of a concept has a unique value within the class of that concept."
-MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
-VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
+--RULE "entity integrity concept": atomvalue;atomvalue~ /\ popas~;order;order~;popas |- I
+--MEANING IN ENGLISH "An atom of a concept has a unique value within the class of that concept."
+--MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
+--VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
 
 ENDPATTERN
 
@@ -195,12 +195,13 @@ MEANING IN ENGLISH "There cannot be two relationships in the population of a rel
 MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
 VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
 
-RULE "typed domain": decpopu;left;popas~;order  |- decsgn;src;order
+-- Onderstaande regel is afleidbaar, en hoeft derhalve niet gechecked te worden. We laten de regel echter hier wel staan
+RULE "typed domain": decpopu;left;popas~  |- decsgn;src
 MEANING IN ENGLISH "The atoms in the domain of a relation belong to the same class as the source of that relation."
 MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC decsgn;src)
 
-RULE "typed codomain": decpopu;right;popas~;order |- decsgn;trg;order
+RULE "typed codomain": decpopu;right;popas~ |- decsgn;trg
 MEANING IN ENGLISH "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
