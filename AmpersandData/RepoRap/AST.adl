@@ -1,6 +1,6 @@
 CONTEXT RAP
 
-PATTERN Context
+PATTERN Contexts
 IDENT Context: Context(ctxnm)
 
 ctxnm  ::Context->Conid [INJ]
@@ -14,7 +14,7 @@ MEANING IN ENGLISH "The generalization relation of a concept."
 
 ENDPATTERN
 
-PATTERN Pattern
+PATTERN Patterns
 IDENT Pattern: Pattern(ptnm)
 
 ptnm  :: Pattern->Conid [INJ]
@@ -29,7 +29,7 @@ ptxps :: Pattern*Blob
 MEANING IN ENGLISH "The purposes of a pattern."
 ENDPATTERN
 
-PATTERN Gen
+PATTERN Gens
 IDENT Gen: Gen( genspc, gengen )
 VIEW Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
@@ -42,7 +42,7 @@ MEANING IN ENGLISH "A generalization rule refers to a more specific concept."
 
 ENDPATTERN
 
-PATTERN Concept
+PATTERN Concepts
 SPEC PlainConcept ISA A_Concept
 SPEC ConceptOne ISA A_Concept
 
@@ -83,7 +83,7 @@ MEANING IN ENGLISH "The purposes of a concept."
 --VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
 ENDPATTERN
 
-PATTERN Population
+PATTERN Populations
 
 SPEC RelPopu ISA Population
 SPEC CptPopu ISA Population
@@ -113,7 +113,7 @@ MEANING IN ENGLISH "The value of an atom."
 
 ENDPATTERN
 
-PATTERN Sign
+PATTERN Signs
 IDENT Sign: Sign( src, trg )
 -- VIEW Sign: Sign( src;name[Concept*Conid] , TXT " * " , trg;name[Concept*Conid] )
 src::Sign->A_Concept
@@ -123,7 +123,7 @@ MEANING IN ENGLISH "The target of a sign."
 
 ENDPATTERN
 
-PATTERN Declaration
+PATTERN Declarations
 IDENT Declaration: Declaration( decnm , decsgn;src, decsgn;trg )
 VIEW Declaration: Declaration( decnm , TXT " :: ", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
 RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
@@ -172,7 +172,7 @@ MESSAGE "You try to add a tuple with a target atom, that is not in the populatio
 VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
 ENDPATTERN
 
-PATTERN Expression
+PATTERN Expressions
 IDENT ExpressionID : ExpressionID(exprvalue)
 
 exprvalue :: ExpressionID->Expression
@@ -194,7 +194,7 @@ MEANING IN ENGLISH "The user-declared relations in an expression."
 --MEANING IN ENGLISH "The name of a relation is used as a relation token to refer to that relation."
 ENDPATTERN
 
-PATTERN Rule
+PATTERN Rules
 IDENT Rule: Rule(rrnm)
 
 rrnm  :: Rule -> ADLid [INJ]
