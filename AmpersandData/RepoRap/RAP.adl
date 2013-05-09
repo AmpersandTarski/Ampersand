@@ -22,16 +22,16 @@ ROLE Student MAINTAINS parseerror,typeerror,popchanged
 RULE "popchanged": inipopu = decpopu
 --RULE "popchanged": (-((left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue) \/ (inileft~;(inipopu~;inipopu /\ I);iniright)) /\ (-(inileft~;(inipopu~;inipopu /\ I);iniright) \/ ((left;atomvalue)~;(decpopu~;decpopu /\ I);right;atomvalue))
 MESSAGE "<br/>You entered change(s) on the screen. You can: <br/> 1) <b>enter more</b> change(s), or; <br/> 2) <b>undo</b> your changes <b>by (re)loading</b> any CONTEXT into Atlas, or;<br/> 3) <a href='index.php?interface=Validate&atom=1&role=0'>click here</a> to <b>commit</b> the change(s) <b>and update</b> violations on your rules."
-VIOLATION (TXT "added or deleted pair ",TGT I, TXT " of ", TGT (inipopu\/decpopu)~)
+VIOLATION (TXT "added or deleted pair ",TGT I[RelPopu], TXT " of ", TGT (inipopu\/decpopu)~)
 
 
 RULE "parseerror": parseerror |- -parseerror
 MESSAGE "<span class='errsignal'>A syntax error was encountered in your script.</span> No CONTEXT screen could be generated."
-VIOLATION (TGT I, TXT " Open ", SRC I,TXT " to fix error.")
+VIOLATION (TGT I[File], TXT " Open ", SRC I[File],TXT " to fix error.")
 
 RULE "typeerror": typeerror |- -typeerror
 MESSAGE "<span class='errsignal'>Type error(s) were encountered in your script.</span> A CONTEXT screen was generated with concepts and relation declarations only, which may be useful to understand and fix the errors"
-VIOLATION (TGT I, TXT ". Open ", SRC I,TXT " to fix error.")
+VIOLATION (TGT I[File], TXT ". Open ", SRC I[File],TXT " to fix error.")
 ENDPROCESS
 
 PROCESS Student
@@ -115,7 +115,7 @@ MEANING IN ENGLISH "The name of a file"
 filepath :: File*FilePath[UNI]
 MEANING IN ENGLISH "The path of a file"
 VIEW File: File(PRIMHTML "<a href='../../index.php?file=", filepath, filename,PRIMHTML "&userrole=", uploaded~;userrole, PRIMHTML "'>", filename, PRIMHTML "</a>")
-RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I
+RULE "unique file location": filename;filename~ /\ filepath;filepath~ |- I[File]
 MEANING IN ENGLISH "Each file has its own location on the file system."
 
 filetime :: File*CalendarTime[UNI]
