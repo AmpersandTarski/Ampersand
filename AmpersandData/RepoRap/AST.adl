@@ -92,7 +92,7 @@ popdcl::RelPopu->Declaration
 popps::RelPopu*Pair
 
 popcpt::CptPopu->A_Concept
-popas::CptPopu->Atom
+popas::CptPopu*Atom
 
 IDENT Pair: Pair( left;atomvalue, right;atomvalue )
 VIEW Pair: Pair( left;atomvalue , TXT " * " , right;atomvalue )
@@ -155,21 +155,21 @@ MEANING IN ENGLISH "The purposes of a relation."
 decpopu ::Declaration->RelPopu
 MEANING IN ENGLISH "The population of a relation."
 
-RULE "entity integrity of relation": left;left~ /\ right;right~ /\ decpopu~;decpopu |- I
-MEANING IN ENGLISH "There cannot be two relationships in the population of a relation with the same source and same target."
+RULE "entity integrity of relation": left;left~ /\ right;right~ /\ popps~;popps |- I[Pair]
+MEANING IN ENGLISH "There cannot be two pairs in the population of a relation with the same source and same target."
 MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
-VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
+VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I[Pair], TXT " already exists." )
 
 -- Onderstaande regel is afleidbaar, en hoeft derhalve niet gechecked te worden. We laten de regel echter hier wel staan
-RULE "typed domain": decpopu;left;popas~  |- decsgn;src
+RULE "typed domain": decpopu;popps;left;popas~  |- decsgn;src;popcpt~
 MEANING IN ENGLISH "The atoms in the domain of a relation belong to the same class as the source of that relation."
 MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
-VIOLATION (TXT "Source atom ", TGT I[PlainConcept], TXT " is not in the population of ", SRC decsgn;src)
+VIOLATION (TXT "Source atom ", TGT I[CptPopu], TXT " is not in the population of ", SRC decsgn;src)
 
-RULE "typed codomain": decpopu;right;popas~ |- decsgn;trg
+RULE "typed codomain": decpopu;popps;right;popas~ |- decsgn;trg;popcpt~
 MEANING IN ENGLISH "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
-VIOLATION (TXT "Target atom ", TGT I[PlainConcept], TXT " is not in the population of ", SRC decsgn;trg)
+VIOLATION (TXT "Target atom ", TGT I[CptPopu], TXT " is not in the population of ", SRC decsgn;trg)
 ENDPATTERN
 
 PATTERN Expressions

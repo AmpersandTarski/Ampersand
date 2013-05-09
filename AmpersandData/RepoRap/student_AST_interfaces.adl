@@ -5,7 +5,7 @@ BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"
     ,"concepts" : V[ONE*Context];ctxcs
     ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
     ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
-    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule])
+    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] -I[PropertyRule])
     ]
 INTERFACE "Validate" FOR Student: I[ONE]
 BOX ["Click to commit and validate":V[ONE*Context];savecontext
@@ -22,13 +22,11 @@ BOX ["loaded into Atlas" : V[ONE*Context]
 
 --css refers to this interface
 INTERFACE "Diagnosis" FOR Student: I[ONE]
-BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- THIS IS A THIRD CHOICE expression!!
---SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
---FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
+BOX [ "concepts without definition": V[ONE*PlainConcept];(I[PlainConcept]-(cptdf;cptdf~))
     , "relations without MEANING": V[ONE*Declaration];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
-    , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I[Rule]) -- -(V[ONE*Blob];rrmean~)
+    , "RULEs without MEANING": V[ONE*Rule];(I[Rule]-(rrmean;rrmean~)) -- -(V[ONE*Blob];rrmean~)
     , "populated relations": V[ONE*PairID];decpopu~
-    , "unpopulated relations": V[ONE*Declaration];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*PairID];decpopu~)
+    , "unpopulated relations": V[ONE*Declaration];(I-(decpopu;decpopu~)) -- -(V[ONE*PairID];decpopu~)
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;rels;reldcl)
     ]
 
@@ -136,7 +134,7 @@ INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
-    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
+    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File]-I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
     ]
 
 INTERFACE "CONTEXT" FOR Student: I[Context]
@@ -145,12 +143,12 @@ BOX ["name" : ctxnm
     ,"concepts" : ctxcs 
     ,"ISA-relations" : ctxpats;ptgns 
     ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": decprps;declaredthrough]
-    ,"RULEs" : ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule]) 
+    ,"RULEs" : ctxpats;ptrls;(I[Rule]-I[PropertyRule]) 
     ]
 INTERFACE "PATTERN" FOR Student: I[Pattern]
 BOX ["PURPOSEs" :ptxps
     ,"name" :ptnm
-    ,"RULEs" :ptrls;(I[Rule] /\ -I[PropertyRule])
+    ,"RULEs" :ptrls;(I[Rule]-I[PropertyRule])
     ,"relations" :ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough]
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
@@ -170,7 +168,7 @@ BOX ["PURPOSEs" :cptpurpose
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;popas BOX ["atom":atomvalue, "of concept":popas~]
     ,"used in relations": (decsgn;(src \/ trg))~
-    ,"used in RULEs": ((src \/ trg);rrexp;rels;decsgn)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": ((src \/ trg);rrexp;rels;decsgn)~;(I[Rule]-I[PropertyRule])
     ,"diagram" : cptpic
     ]
 INTERFACE "Atom"(popas) FOR Student: I[Atom];atomvalue~
@@ -184,7 +182,7 @@ BOX ["PURPOSEs" :decpurpose
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
-    ,"used in RULEs": (rrexp;rels)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in RULEs": (rrexp;rels)~;(I[Rule]-I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :rrpurpose
