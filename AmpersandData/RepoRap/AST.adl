@@ -48,7 +48,7 @@ PATTERN Gen
 CONCEPT Gen "A gen, or generalization rule, is the is-a-relation between a more specific and a more generic concept."
             "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Gen(genspc,gengen):svn568"
 IDENT Gen: Gen( genspc, gengen )
-VIEW Gen: Gen( TXT "SPEC ", genspc;name[Concept*Conid] , TXT " ISA " , gengen;name[Concept*Conid] )
+VIEW Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 MEANING IN ENGLISH "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
@@ -59,17 +59,17 @@ MEANING IN ENGLISH "A generalization rule refers to a more specific concept."
 
 ENDPATTERN
 
-PATTERN Concept
-CONCEPT Concept "A concept is an abstract term representing a set of atomic terms."
+PATTERN A_Concept
+CONCEPT A_Concept "A concept is an abstract term representing a set of atomic terms."
                 "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.A_Concept(cptnm,cptdf,cptos):svn568"
 CONCEPT ConceptOne "The universal singleton"
 CONCEPT PlainConcept "The set of instances by name."
-SPEC PlainConcept ISA Concept
-SPEC "ONE" ISA Concept
+SPEC PlainConcept ISA A_Concept
+SPEC ConceptOne ISA A_Concept
 
-IDENT PlainConcept: PlainConcept(name[Concept*Conid])
+IDENT PlainConcept: PlainConcept(cptnm)
 
-name :: Concept->Conid [INJ]
+cptnm :: PlainConcept->Conid [INJ]
 MEANING IN ENGLISH "The name of a concept."
 context :: PlainConcept*Context --@Stef: Willen we dit opnemen? of is dit dezelfde relatie als ctxcs? (maar daar hebben we het alleen over de definities, dus dit is wellicht een andere relatie.
 MEANING IN ENGLISH "The context where the concept is known."
@@ -80,35 +80,60 @@ MEANING IN ENGLISH "The purposes of a concept."
 
 
 
-CONCEPT Order "The order of the is-a-relation between concepts."
-IDENT Order: Order(ordername)
-SPEC PlainConcept ISA Concept
-SPEC "ONE" ISA Concept
-ordername :: Order -> String [INJ]
-MEANING IN ENGLISH "The name of a class of is-a-related concepts."
-order :: PlainConcept -> Order
-MEANING IN ENGLISH "A concept belongs to a class of is-a-related concepts."
-RULE "order": order~;genspc~;gengen;order |- I
-MEANING IN ENGLISH "Is-a-related concepts belong to the same class of is-a-related concepts."
+-- CONCEPT Order "The order of the is-a-relation between concepts."
+-- IDENT Order: Order(ordername)
+-- SPEC PlainConcept ISA Concept
+-- SPEC "ONE" ISA Concept
+-- ordername :: Order -> String [INJ]
+-- MEANING IN ENGLISH "The name of a class of is-a-related concepts."
+-- order :: PlainConcept -> Order
+-- MEANING IN ENGLISH "A concept belongs to a class of is-a-related concepts."
+-- RULE "order": order~;genspc~;gengen;order |- I
+-- MEANING IN ENGLISH "Is-a-related concepts belong to the same class of is-a-related concepts."
 --RULE "different order": ???, a closure would be nice...
 --MEANING IN ENGLISH "Concepts, that are not is-a-related, are in different orders of the is-a-relation."
 
 --NOTE: MESSAGEs depend on the edit possibilities of the interface they are used in.
 --if you have written messages for interfaces at a certain moment and you add an interface which can violate a message differently, then you should revise those messages, but probably you will forget to do so -> risk for awkward messages in new interface
-RULE "referential integrity": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- order;order~;cptos
-MEANING IN ENGLISH "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
-MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
-VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
 
 
-CONCEPT AtomID "An atomID is the identity of an atomic term."
-CONCEPT Atom "An atom is the value of an atomic term." TYPE "Blob"
+--RULE "referential integrity": src~;decsgn~;decpopu;left \/ trg~;decsgn~;decpopu;right |- order;order~;cptos
+--MEANING IN ENGLISH "An atom in the domain or codomain of a relation is an instance of a concept from the same class as the source respectively the target of that relation."
+--MESSAGE "If an atom is in some tuple of a relation, then that atom must exist in the concept that is the source respectively target of that relation. Deletion of an atom from a concept is not permitted if that atom is still present in some tuple of some relation. Nor is addition of a tuple permitted if the source or target atom is not present in the related concept. It is a violation of <b>Referential integrity</b> rule for a relation." 
+--VIOLATION (TXT "The tuple ", SRC I, TXT " refers to a source or target atom that does not exist." )
+ENDPATTERN
+
+PATTERN Population
+
+CONCEPT Population "The content of some Concept or some Relation"
+CONCEPT RelPopu "The content of a relation"
+CONCEPT CptPopu "The content of a concept"
+SPEC RelPopu ISA Population
+SPEC CptPopu ISA Population
+
+popdcl::RelPopu->Declaration
+popps::RelPopu*Pair
+
+popcpt::CptPopu->A_Concept
+popas::CptPopu->Atom
+
+CONCEPT Pair "A pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
+IDENT Pair: Pair( left;atomvalue, right;atomvalue )
+VIEW Pair: Pair( left;atomvalue , TXT " * " , right;atomvalue )
+left::Pair->Atom
+MEANING IN ENGLISH "The source of a relationship."
+right::Pair->Atom
+MEANING IN ENGLISH "The target of a relationship."
+
+
+CONCEPT Atom "An atomID is the identity of an atomic term."
+CONCEPT AtomValue "An atom is the value of an atomic term." TYPE "Blob"
              "DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.pAtom:svn568"
-IDENT AtomID: AtomID( atomvalue, cptos~)
-VIEW AtomID: AtomID( atomvalue , TXT " :: ", cptos~)
-atomvalue::AtomID->Atom
+--IDENT Atom: Atom( atomvalue, popas~)  --HJO20130509 Dit kan niet, want popas~ is niet UNI.
+--VIEW Atom: Atom( atomvalue , TXT " :: ", cptos~)
+atomvalue::Atom->AtomValue
 MEANING IN ENGLISH "The value of an atom."
-RULE "entity integrity concept": atomvalue;atomvalue~ /\ cptos~;order;order~;cptos |- I
+RULE "entity integrity concept": atomvalue;atomvalue~ /\ popas~;order;order~;popas |- I
 MEANING IN ENGLISH "An atom of a concept has a unique value within the class of that concept."
 MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
 VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
@@ -119,30 +144,23 @@ PATTERN Sign
 CONCEPT Sign "A sign is a relation type signature consisting of a source concept and a target concept."
              "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Sign:svn568"
 IDENT Sign: Sign( src, trg )
-VIEW Sign: Sign( src;name[Concept*Conid] , TXT " * " , trg;name[Concept*Conid] )
-src::Sign->Concept
+-- VIEW Sign: Sign( src;name[Concept*Conid] , TXT " * " , trg;name[Concept*Conid] )
+src::Sign->A_Concept
 MEANING IN ENGLISH "The source of a sign."
-trg::Sign->Concept
+trg::Sign->A_Concept
 MEANING IN ENGLISH "The target of a sign."
 
-CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
-IDENT PairID: PairID( left;atomvalue, right;atomvalue )
-VIEW PairID: PairID( left;atomvalue , TXT " * " , right;atomvalue )
-left::PairID->AtomID
-MEANING IN ENGLISH "The source of a relationship."
-right::PairID->AtomID
-MEANING IN ENGLISH "The target of a relationship."
 ENDPATTERN
 
 PATTERN Declaration
 CONCEPT Declaration "A declaration is a declaration of a relation with a sign and properties of that relation"
                     "DatabaseDesign.Ampersand.Core.AbstractSyntaxTree.Declaration(decnm,decsgn,decprps):svn568"
 IDENT Declaration: Declaration( decnm , decsgn;src, decsgn;trg )
-VIEW Declaration: Declaration( decnm , TXT " :: ", decsgn;src;name[Concept*Conid] ,TXT " * ", decsgn;trg;name[Concept*Conid] )
+VIEW Declaration: Declaration( decnm , TXT " :: ", decsgn;src;cptnm ,TXT " * ", decsgn;trg;cptnm )
 RULE "eq declaration": decnm;decnm~ /\ decsgn;src;(decsgn;src)~ /\ decsgn;trg;(decsgn;trg)~ |- I
 MEANING IN ENGLISH "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
-
-name   ::Declaration->Varid
+-- HJO20130509: There should be a rule that ONE must not be source and/or target of a Declaration
+decnm   ::Declaration->Varid
 MEANING IN ENGLISH "The name of a relation."
 decsgn ::Declaration->Sign
 MEANING IN ENGLISH "The sign of a declaration."
@@ -169,7 +187,7 @@ decmean ::Declaration * Blob
 MEANING IN ENGLISH "The meanings of a relation."
 decpurpose::Declaration * Blob
 MEANING IN ENGLISH "The purposes of a relation."
-decpopu ::Declaration*PairID
+decpopu ::Declaration->RelPopu
 MEANING IN ENGLISH "The population of a relation."
 
 RULE "entity integrity of relation": left;left~ /\ right;right~ /\ decpopu~;decpopu |- I
@@ -177,12 +195,12 @@ MEANING IN ENGLISH "There cannot be two relationships in the population of a rel
 MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
 VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
 
-RULE "typed domain": decpopu;left;cptos~;order  |- decsgn;src;order
+RULE "typed domain": decpopu;left;popas~;order  |- decsgn;src;order
 MEANING IN ENGLISH "The atoms in the domain of a relation belong to the same class as the source of that relation."
 MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC decsgn;src)
 
-RULE "typed codomain": decpopu;right;cptos~;order |- decsgn;trg;order
+RULE "typed codomain": decpopu;right;popas~;order |- decsgn;trg;order
 MEANING IN ENGLISH "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
@@ -196,21 +214,21 @@ IDENT ExpressionID : ExpressionID(exprvalue)
 
 exprvalue :: ExpressionID->Expression
 MEANING IN ENGLISH "The value of an expression."
-rels  :: ExpressionID*Relation
+rels  :: ExpressionID*Declaration
 MEANING IN ENGLISH "The user-declared relations in an expression."
 
-CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
-IDENT Relation: Relation( relnm , relsgn;src, relsgn;trg)
-VIEW Relation: Relation( relnm , TXT "[" , relsgn;src;name[Concept*Conid] , TXT "*" , relsgn;trg;name[Concept*Conid] , TXT "]")
+--CONCEPT Relation "A relation is a relation term in an expression linked to a user-declared relation"
+--IDENT Relation: Relation( relnm , relsgn;src, relsgn;trg)
+--VIEW Relation: Relation( relnm , TXT "[" , relsgn;src;name[Concept*Conid] , TXT "*" , relsgn;trg;name[Concept*Conid] , TXT "]")
 
-relnm :: Relation -> Varid
-MEANING IN ENGLISH "The name of a relation used as a relation token."
-relsgn:: Relation -> Sign
-MEANING IN ENGLISH "The sign of a relation."
-reldcl:: Relation -> Declaration
-MEANING IN ENGLISH "A relation token refers to a relation."
-RULE "rel name is decl name": relnm = reldcl;decnm
-MEANING IN ENGLISH "The name of a relation is used as a relation token to refer to that relation."
+--relnm :: Relation -> Varid
+--MEANING IN ENGLISH "The name of a relation used as a relation token."
+--relsgn:: Relation -> Sign
+--MEANING IN ENGLISH "The sign of a relation."
+--reldcl:: Relation -> Declaration
+--MEANING IN ENGLISH "A relation token refers to a relation."
+--RULE "rel name is decl name": relnm = reldcl;decnm
+--MEANING IN ENGLISH "The name of a relation is used as a relation token to refer to that relation."
 ENDPATTERN
 
 PATTERN Rule
