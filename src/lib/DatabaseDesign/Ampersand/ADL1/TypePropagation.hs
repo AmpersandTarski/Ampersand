@@ -147,7 +147,7 @@ decToTyp b d = TypExpr (PTrel (origin d) (dec_nm d) (dec_sign d)) b
 
 improveBindings :: (Ord a,Show a,Ord b,Show b)
                 => (Map a [b] -> Map Type [(a,b,Type)])
-                -> [[Type]]
+                -> [[Type]] -- equality classes for Between-like bindings yield improved propagation on (I /\ I /\ I);I-like terms.
                 -> (Map a [b], Map Type [Type])
                 -> (Map a [b], Map Type [Type])
 improveBindings typByTyp eqtyps (oldMap,st')
@@ -317,10 +317,10 @@ typing st declsByName
     typByTyp :: Map Term [P_Declaration] -> Map Type [(Term,P_Declaration,Type)]
     typByTyp oldMap = Map.fromList [ (trm, triples b t) | trm@(TypExpr t b) <- typeTerms ]
          where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
-    
+
     firstClos = setClosure (addIdentity st) "(st \\/ I)*"
     firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
-    
+
     (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
                                      (declByTerm,firstClos)
     bindings :: Map Term P_Declaration
@@ -334,7 +334,7 @@ typing st declsByName
     eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
                          "between types"
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
-    
+
     exactlyOne [x] = Just x
     exactlyOne _ = Nothing
     

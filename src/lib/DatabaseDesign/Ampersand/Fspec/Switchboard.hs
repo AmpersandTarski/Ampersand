@@ -228,8 +228,8 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
    nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => Fspc -> String -> [a] -> a -> String
    nmLkp _ prefix xs x
     = head ([prefix++show (i::Int) | (i,e)<-zip [1..] xs, e==x]++
-            fatal 216 ("illegal lookup in nmLkp: " ++showADL x++
-                       "\nin: ["++intercalate ", " (map showADL xs)++"]")
+            fatal 216 ("illegal lookup in nmLkp "++show prefix++": " ++showADL x++
+                       "\nin: ["++intercalate "\n    , " (map showADL xs)++"\n    ]")
            )
    positiveIn :: Expression -> Declaration -> [Bool]
    positiveIn expr decl = f expr   -- all are True, so an insert in rel means an insert in expr
@@ -251,5 +251,6 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (EBrk e)         = f e
      f (ETyp e _)       = f e
      f (EDcD d _)       = [ True | d==decl ]
-     
+     f (EDcI sgn)       = [ True | Isn (source sgn)==decl ]
+     f EDcV{}           = fatal 255 "Illegal call of positiveIn."
      f (EMp1 _ _)       = []
