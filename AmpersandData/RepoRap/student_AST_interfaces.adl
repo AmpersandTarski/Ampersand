@@ -16,7 +16,7 @@ BOX ["loaded into Atlas" : V[ONE*Context]
     BOX ["CONTEXT":I,"source file (click to edit)":sourcefile \/ includes,"operations (click to perform)":sourcefile;applyto~]
     ,"overview of files" : V[ONE*User]
     BOX [ "open new source file" : newfile
-        , "source files" : uploaded;I[AdlFile] BOX ["file name (click to edit)":I,"created at":filetime,"operations (click to perform)":applyto~]
+        , "source files" : uploaded;I[AdlFile] BOX ["file name (click to edit)":I[AdlFile],"created at":filetime,"operations (click to perform)":applyto~]
         ]
     ]
 
@@ -26,7 +26,7 @@ BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- TH
 --SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
 --FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
     , "relations without MEANING": V[ONE*Declaration];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
-    , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I) -- -(V[ONE*Blob];rrmean~)
+    , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I[Rule]) -- -(V[ONE*Blob];rrmean~)
     , "populated relations": V[ONE*PairID];decpopu~
     , "unpopulated relations": V[ONE*Declaration];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*PairID];decpopu~)
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;rels;reldcl)
@@ -136,7 +136,7 @@ INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
-    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I,"created at":filetime]
+    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File] /\ -I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
     ]
 
 INTERFACE "CONTEXT" FOR Student: I[Context]
@@ -166,7 +166,7 @@ BOX ["PURPOSEs" :cptpurpose
     ,"name" :cptnm
     ,"POPULATION" :popas BOX ["atom":atomvalue]
     ,"POPULATION (through ISA)":(genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen)~ --TODO closure
-    BOX ["more specific concept":I, "POPULATION":popas;atomvalue]
+    BOX ["more specific concept":I[PlainConcept], "POPULATION":popas;atomvalue]
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;popas BOX ["atom":atomvalue, "of concept":popas~]
     ,"used in relations": (decsgn;(src \/ trg))~

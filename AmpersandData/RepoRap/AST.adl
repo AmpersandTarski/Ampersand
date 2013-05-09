@@ -164,12 +164,12 @@ VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " al
 RULE "typed domain": decpopu;left;popas~  |- decsgn;src
 MEANING IN ENGLISH "The atoms in the domain of a relation belong to the same class as the source of that relation."
 MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
-VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC decsgn;src)
+VIOLATION (TXT "Source atom ", TGT I[PlainConcept], TXT " is not in the population of ", SRC decsgn;src)
 
 RULE "typed codomain": decpopu;right;popas~ |- decsgn;trg
 MEANING IN ENGLISH "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
-VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC decsgn;trg)
+VIOLATION (TXT "Target atom ", TGT I[PlainConcept], TXT " is not in the population of ", SRC decsgn;trg)
 ENDPATTERN
 
 PATTERN Expressions
