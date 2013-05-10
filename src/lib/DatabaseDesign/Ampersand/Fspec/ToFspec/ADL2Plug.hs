@@ -17,7 +17,12 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,partition)
 import GHC.Exts (sortWith)
-import Debug.Trace
+
+-- import Debug.Trace  
+-- Dummy trace function.
+trace :: String -> a -> a  
+trace _ a = a
+
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 
