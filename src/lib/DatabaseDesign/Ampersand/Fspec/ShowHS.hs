@@ -304,7 +304,6 @@ where
            ,     ", vctxenv       = vctxenv' -- the expression by which this context is bound to its environment, together with possible relation bindings."
            ,wrap ", userDefPops   = " indentA (showHS flags)   (userDefPops fspec)
            ,wrap ", allViolations = " indentA showViolatedRule (allViolations fspec)
-           ,wrap ", kernels       = " indentA (showHS flags)   (kernels fspec)
            ,"}" 
            ] ++   
        indent++"where"++
