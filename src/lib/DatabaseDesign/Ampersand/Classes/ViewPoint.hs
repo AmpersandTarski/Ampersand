@@ -59,6 +59,7 @@ makeDecl g
          , decfpos = origin g
          , decissX = True
          , decusrX = False
+         , decISA  = True
          , decpat  = ""
          , decplug = False
          }
@@ -114,6 +115,7 @@ rulesFromIdentity identity
                             , decfpos = origin identity
                             , decissX = False
                             , decusrX = False
+                            , decISA  = False
                             , decpat  = ""
                             , decplug = False
                             }

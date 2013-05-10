@@ -135,38 +135,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    ]
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
-        entityRels = 
-           {- The following may be useful for debugging: 
-           error 
-             ("\ncalculatedDecls:"++concat ["\n  "++show r | r<-calculatedDecls]++
-              "\nIsas:"++concat ["\n  "++show i | i<-isas]
-              
-             ) ++  -}
-        
-        
-                     [ d | d<-calculatedDecls, not (decplug d)] -- The persistent relations
--- Het volgende heb ik verwijderd, want de ISA relatie is al aanwezig in calculatedDecls. Zou anders dubbel zijn. 
---                  ++ [ Rel { relnm  = name s
---                           , relpos = OriginUnknown 
---                           , reldcl = Sgn { decnm         = "ISA"
---                                          , decsgn        = Sign s g
---                                          , decprps       = [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
---                                          , decprps_calc  = Just [Uni,Inj,Tot,Sym,Asy,Trn,Rfx]
---                                          , decprL        = ""
---                                          , decprM        = "is a"
---                                          , decprR        = ""
---                                          , decMean       = AMeaning [ A_Markup Dutch ReST (string2Blocks ReST 
---                                                                       ("Each "++name s++" is a "++name g++"."))
---                                                                     ]
---                                          , decConceptDef = Nothing
---                                          , decfpos       = OriginUnknown
---                                          , deciss        = False
---                                          , decusr        = False
---                                          , decpat        = ""
---                                          , decplug       = False
---                                          }
---                           }
---                     | (s,g)<-isas ]
+        entityRels = [ d | d<-calculatedDecls, not (decplug d), not (decISA d)] -- The persistent relations, not being ISA relations.
 
         qlfname x = if null (namespace flags) then x else "ns"++namespace flags++x
 
@@ -641,6 +610,7 @@ while maintaining all invariants.
                  , decfpos = Origin ("generated relation (Delta "++show sgn++")")
                  , decissX = True
                  , decusrX = False
+                 , decISA = False
                  , decpat  = ""
                  , decplug = True
                  } 

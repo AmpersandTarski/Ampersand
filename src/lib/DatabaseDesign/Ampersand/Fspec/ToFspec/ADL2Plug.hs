@@ -17,7 +17,7 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,partition)
 import GHC.Exts (sortWith)
-
+import Debug.Trace
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.ToFspec.ADL2Plug"
 
@@ -36,7 +36,8 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = makeEntityTables flags entityDcls vsqlplugs
+        gPlugs   = trace ("---\nStart makeEntityTables with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n") 
+                         (makeEntityTables flags entityDcls (declsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable dcl totsurs
@@ -128,16 +129,19 @@ makeLinkTable dcl totsurs =
 rel2fld :: [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r) _) that may be represented as attributes of this entity.
         -> [Expression] -- ^ all relations (in the form either EDcD r or EFlp (EDcD r) _) that are defined as attributes by the user.
         -> Expression   -- ^ either EDcD r, EDcI or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
-        -> SqlFieldUsage
         -> SqlField
 rel2fld kernel
         plugAtts
         e
-        usage
+        
  = Fld { fldname = fldName 
        , fldexpr = e
        , fldtype = makeSqlType (target e)
-       , flduse  = usage
+       , flduse  = case e of
+                    EDcI sgn        -> PrimKey (source sgn)
+                    ETyp (EDcI _) _ -> NonMainKey
+                    EDcD _ _        -> PlainAttr
+                    _               -> fatal 144 ("No flduse defined for "++show e)
        , fldnull = maybenull e
        , flduniq = isInj e      -- all kernel fldexprs are inj
                                 -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
@@ -245,19 +249,16 @@ rel2fld kernel
    The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
-makeEntityTables :: Options -> ConceptStructure a => [Declaration] -> [a] -> [PlugSQL]
+makeEntityTables :: Options 
+                -> [Declaration] -- ^ all relations in scope
+                -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs. 
+                -> [PlugSQL]
 makeEntityTables _ {-flags-} allDcls exclusions
- = {- The following may be useful for debugging: 
-   error 
-    ("\nallRels:"++concat ["\n  "++show r | r<-allDcls]++
-     "\nrels:"++concat ["\n  "++show r++(show.multiplicities) r  | r<-[rel | rel <- allDcls>-declsUsedIn exclusions, not (isIdent rel)]]++
+ = trace 
+    ("\nallDcls:"++concat ["\n  "++show r | r<-allDcls]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
-     "\nkernels:"++concat ["\n  "++show kernel ++show (nub (map target kernel))| kernel<-kernels]++
-     "\nmainkernels:"++concat ["\n  "++show [(head 256) cl |cl<-eqCl target kernel] | kernel<-kernels]++
-  --   "\nplugs:"++concat ["\n   "++showHS flags "\n   " (kernel2Plug kernel) | kernel <-kernels]++
-
      "\nDistribution of Attributes:"++ concat ["\n   "++show dist | dist <-distributionOfAtts]++
-     "") ++  -}
+     "") $
    sortWith ((0-).length.plugFields)
     (map kernel2Plug distributionOfAtts)
    where
@@ -271,26 +272,25 @@ makeEntityTables _ {-flags-} allDcls exclusions
                  belongsInK att = source att `elem` map target k
     -- | converts a kernel into a plug
     kernel2Plug :: ([Expression],[Expression]) -> PlugSQL
-    kernel2Plug (kernel, atts) =  --TODO: Use atts to build the table.
+    kernel2Plug (kernel, atts) =
+     trace ("---\n***kernel:\n  "++intercalate "\n  " (map show kernel)
+             ++"\n***mainkernel:\n  "++intercalate "\n  " (map show mainkernel)
+             ++if (not.null) restkernel
+               then ("\n***restkernel:\n  "++intercalate "\n  " (map show restkernel))
+               else ""
+             ++"\n***atts:\n  "++intercalate "\n  " (map show atts)
+      ) $
       if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
-           let r = iExpr c 
-           in ScalarSQL { sqlname   = name c
-                        , sqlColumn = rel2fld [r] [] r (PrimKey c)
-                        , cLkp      = c 
+           let r = iExpr primaryConcept 
+           in ScalarSQL { sqlname   = name primaryConcept
+                        , sqlColumn = rel2fld [r] [] r
+                        , cLkp      = primaryConcept 
                         }
-      else  {- The following may be useful for debugging: 
-           error   
-             ("\n *** kernel:"
-           ++ "\n  "++show [(head 256) cl |cl<-eqCl target kernel]
-           ++ "\n *** mainkernel:"
-           ++ "\n   "++ intercalate "\n  " (map show mainkernel)
-           ++ "\n *** atts:"
-           ++ "\n   "++ intercalate "\n  " (map show atts)
-             ) -}
+      else
         TblSQL 
-             { sqlname = name c
-             , fields  = plugfields
+             { sqlname = name primaryConcept
+             , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable
              } 
@@ -303,25 +303,23 @@ makeEntityTables _ {-flags-} allDcls exclusions
             [ERel I[X] [X*X]]
             [ERel I[Y] [Y*Y]]  -}
           restkernel = kernel >- mainkernel --the complement of mainkernel
-          c = if null mainkernel
+          primaryConcept -- one concept from the kernel is designated to "lead" this plug.
+            = if null mainkernel
               then fatal 198 "null mainkernel. Is this kernel empty???"
-              else target ((head 286) mainkernel)       -- one concept from the kernel is designated to "lead" this plug.
+              else target ((head 286) mainkernel)       
 --          plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
 --          -- | all relations for which the target is stored in the plug
-          plugMors :: [(Expression, SqlFieldUsage)]
-          plugMors              = zip mainkernel (repeat (PrimKey c))
-                                ++zip restkernel (repeat NonMainKey)
-                                ++zip atts    (repeat PlainAttr ) 
-          plugfields            = [fld a u | (a,u)<-plugMors]      -- Each field comes from a relation.
+          plugMors :: [Expression]
+          plugMors = mainkernel++restkernel++atts 
           conceptLookuptable :: [(A_Concept,SqlField)]
-          conceptLookuptable    = [(target r,fld r u) |(r,u) <-zip mainkernel (PrimKey c : repeat NonMainKey)]
+          conceptLookuptable    = [(target r,fld r) | r <-mainkernel]
           attributeLookuptable :: [(Expression,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
-                                  [(e,lookupC (source e),fld e u) | (e,u) <-plugMors] 
+                                  [(e,lookupC (source e),fld e) | e <-plugMors] 
           lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 
                                   then fatal 209 "null cLkptable."
                                   else (head 301) [f |(c',f)<-conceptLookuptable, cpt==c']
-          fld a u                 = rel2fld mainkernel (restkernel++atts) a u
+          fld a                 = rel2fld mainkernel (restkernel++atts) a
               
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
@@ -334,7 +332,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
     attRels :: [Expression]
-    attRels = mapMaybe attExprOf (allDcls>-declsUsedIn exclusions)
+    attRels = mapMaybe attExprOf (allDcls>- exclusions)
     attExprOf :: Declaration -> Maybe Expression
     attExprOf d =
      case d of  --make explicit what happens with each possible decl...
@@ -351,14 +349,12 @@ makeEntityTables _ {-flags-} allDcls exclusions
                  (True   , True   , False  , False  )
                      -> Just $      EDcD d (sign d)
                  (True   , True   , False  , True   ) --Equivalent to SPEC t ISA s, however, it is named, so it must be stored in a plug!
---                     -> Just $ ETyp (iExpr s) (Sign s t)
                      -> Just $      EDcD d (sign d)
                  (True   , True   , True   , False  ) --Equivalent to SPEC s ISA t, however, it is named, so it must be stored in a plug!
---                     -> Just $ ETyp (iExpr t) (Sign t s)
                      -> Just $ flp (EDcD d (sign d))
-                 (True   , True   , True   , True   ) --An interesting relation indeed. However, it must be implemented, for it is relevant: i.d. `successor` relation on weekdays.
+                 (True   , True   , True   , True   ) --An interesting relation indeed. However, it must be implemented, for it is relevant: i.e. `successor` relation on weekdays.
                      -> Just $      EDcD d (sign d)
-              where (s,t) = (source d,target d)   
+
 
 
 -----------------------------------------
@@ -378,7 +374,7 @@ makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeUserDefinedSqlPlug _ obj
  | null(objatsLegacy obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = name obj
-                , sqlColumn = rel2fld [iExpr c] [] (iExpr c) (PrimKey c)
+                , sqlColumn = rel2fld [iExpr c] [] (iExpr c)
                 , cLkp      = c
                 } 
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
@@ -414,7 +410,7 @@ makeUserDefinedSqlPlug _ obj
      = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
    plugfields            = [fld r tp | (r,tp)<-plugMors] 
-   fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r UserDefinedUsage){fldtype=tp}  --redefine sqltype
+   fld r tp              = (rel2fld (map fst kernel) (map fst attRels) r){fldtype=tp}  --redefine sqltype
    conceptLookuptable    = [(target e,fld e tp) |(e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er),fld er tp) | (er,tp)<-plugMors]
    lookupC cpt           = if null [f |(c',f)<-conceptLookuptable, cpt==c'] 

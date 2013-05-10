@@ -743,6 +743,7 @@ pCtx2aCtx p_context
                                       , decfpos = rr_fps prul
                                       , decissX = True
                                       , decusrX = False
+                                      , decISA = False
                                       , decpat = ""
                                       , decplug = True
                                       }
@@ -1013,6 +1014,7 @@ pCtx2aCtx p_context
                              , decfpos = dec_fpos pd 
                              , decissX  = True
                              , decusrX  = True
+                             , decISA  = False
                              , decpat  = ""
                              , decplug = dec_plug pd
                              } 
