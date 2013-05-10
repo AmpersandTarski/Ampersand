@@ -166,10 +166,24 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                                            ) 
                                                    <> (emph .text.name.assTrg) assoc
                                                   )
+                                  English -> para (   text (case assrhm assoc of
+                                                              Mult MinZero _ -> "Some "
+                                                              Mult MinOne  _ -> "Each "
+                                                           ) 
+                                                   <> (emph.text.name.assSrc) assoc
+                                                   <> text " "
+                                                   <> (singleQuoted.text.     assrhr) assoc
+                                                   <> text (case assrhm assoc of
+                                                              Mult _ MaxOne  -> fatal 167 "This should have become an attribute of this Class!"
+                                                              Mult _ MaxMany -> " one or more "
+                                                           ) 
+                                                   <> (emph .text.name.assTrg) assoc
+                                                  )
                            else 
                            if (not.null.asslhr) assoc && assTrg assoc == clcpt cl
                            then case language flags of
                                   Dutch   -> para ( text "---TODO---")
+                                  English -> para ( text "---TODO---")
                            else (para.text) "Dit zou niet voor moeten komen!"
                             --      English -> para ()
 --                         , (para.text.name.assSrc) assoc
