@@ -104,8 +104,8 @@ generateTableInfos fSpec =
                                         ++", 'srcCol' => "++showPhpStr (fldname srcCol)
                                         ++", 'tgtCol' => "++showPhpStr (fldname tgtCol)++")"] 
          | decl@Sgn{} <- declsUsedIn fSpec
-         , let (table,srcCol,tgtCol) = fromMaybe (head $ maybeToList  (getDeclarationTableInfo True  fSpec decl)) -- (fatal 105 $ "No table info for declaration " ++ show decl)
-                                                 (getDeclarationTableInfo False fSpec decl)
+         , let (table,srcCol,tgtCol) = fromMaybe (fatal 105 $ "No table info for declaration " ++ show decl)
+                                                 (getDeclarationTableInfo fSpec decl)
          ])) ++
   [ ""
   , "$conceptTableInfo ="
