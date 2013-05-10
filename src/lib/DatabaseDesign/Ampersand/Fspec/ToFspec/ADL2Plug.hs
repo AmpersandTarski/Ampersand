@@ -142,11 +142,15 @@ rel2fld kernel
  = Fld { fldname = fldName 
        , fldexpr = e
        , fldtype = makeSqlType (target e)
-       , flduse  = case e of
+       , flduse  =  
+          let f expr =
+                 case expr of
                     EDcI sgn        -> PrimKey (source sgn)
                     ETyp (EDcI _) _ -> NonMainKey
                     EDcD _ _        -> PlainAttr
-                    _               -> fatal 144 ("No flduse defined for "++show e)
+                    EFlp e' _       -> f e'
+                    _               -> fatal 144 ("No flduse defined for "++show expr)
+          in f e
        , fldnull = maybenull e
        , flduniq = isInj e      -- all kernel fldexprs are inj
                                 -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
