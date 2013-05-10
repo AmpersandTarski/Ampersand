@@ -803,6 +803,7 @@ where
                         ,"   , decfpos = " ++ showHS flags "" (decfpos d)
                         ,"   , decissX = " ++ show (deciss d)
                         ,"   , decusrX = " ++ show (decusr d)
+                        ,"   , decISA  = " ++ show (decISA d)
                         ,"   , decpat  = " ++ show (decpat d)
                         ,"   , decplug = " ++ show (decplug d)
                         ]++"}"
