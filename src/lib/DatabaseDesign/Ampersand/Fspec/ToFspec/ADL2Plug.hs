@@ -272,13 +272,14 @@ makeEntityTables _ {-flags-} allDcls exclusions
                  belongsInK att = source att `elem` map target k
     -- | converts a kernel into a plug
     kernel2Plug :: ([Expression],[Expression]) -> PlugSQL
-    kernel2Plug (kernel, atts) =
+    kernel2Plug (kernel, attsAndIsaRels) =
      trace ("---\n***kernel:\n  "++intercalate "\n  " (map show kernel)
              ++"\n***mainkernel:\n  "++intercalate "\n  " (map show mainkernel)
              ++if (not.null) restkernel
                then ("\n***restkernel:\n  "++intercalate "\n  " (map show restkernel))
                else ""
              ++"\n***atts:\n  "++intercalate "\n  " (map show atts)
+             ++"\n***isaAtts:\n  "++intercalate "\n  " (map show isaAtts)
       ) $
       if and [isIdent r |(r,_,_)<-attributeLookuptable] && length conceptLookuptable==1  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
@@ -292,7 +293,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
              { sqlname = name primaryConcept
              , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
-             , mLkpTbl = attributeLookuptable
+             , mLkpTbl = attributeLookuptable ++ isaLookuptable
              } 
         where
           mainkernel = [(head 276) cl |cl<-eqCl target kernel] -- the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
@@ -309,6 +310,9 @@ makeEntityTables _ {-flags-} allDcls exclusions
               else target ((head 286) mainkernel)       
 --          plugAtts              = [a | a <-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
 --          -- | all relations for which the target is stored in the plug
+          (isaAtts,atts) = partition isISA attsAndIsaRels
+            where isISA (EDcD r _) = decISA r
+                  isISA _          = False
           plugMors :: [Expression]
           plugMors = mainkernel++restkernel++atts 
           conceptLookuptable :: [(A_Concept,SqlField)]
@@ -320,7 +324,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
                                   then fatal 209 "null cLkptable."
                                   else (head 301) [f |(c',f)<-conceptLookuptable, cpt==c']
           fld a                 = rel2fld mainkernel (restkernel++atts) a
-              
+          isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]    
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
     kernels :: [[Expression]]
