@@ -135,7 +135,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                    ]
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
-        entityRels = [ d | d<-calculatedDecls, not (decplug d), not (decISA d)] -- The persistent relations, not being ISA relations.
+        entityRels = [ d | d<-calculatedDecls, not (decplug d)] -- The persistent relations.
 
         qlfname x = if null (namespace flags) then x else "ns"++namespace flags++x
 
