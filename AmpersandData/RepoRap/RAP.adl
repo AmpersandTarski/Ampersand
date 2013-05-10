@@ -3,8 +3,8 @@ INCLUDE "student_AST_interfaces.adl"
 INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
 INCLUDE "ASTdocumentation.adl"
---IN ENGLISH
---LATEX
+IN ENGLISH
+LATEX
 
 PROCESS AtlasLoad1
 ROLE Student MAINTAINS parseerror,typeerror,popchanged

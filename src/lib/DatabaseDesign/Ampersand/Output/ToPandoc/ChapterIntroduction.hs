@@ -8,8 +8,8 @@ import Data.Time.Format
 chpIntroduction :: Fspc -> Options -> Blocks
 chpIntroduction fSpec flags =
       chptHeader flags Intro
-   <> readingGuide       -- tells what can be expected in this document.
-   <> purposesOfContext  -- the motivation(s) of this context 
+   <> fromList purposesOfContext  -- the motivation(s) of this context 
+   <> readingGuide                -- tells what can be expected in this document.
   where 
     readingGuide 
       = case (language flags) of
@@ -19,10 +19,9 @@ chpIntroduction fSpec flags =
                    <> text " definieert de functionaliteit van een informatiesysteem genaamd "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
-                   <> text "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken om afspraken na te leven. "
-                   <> text "Een aantal van deze afspraken is gebruikt als functionele eis om de onderhavige functionele specificatie"
-                   <> (note.para.text) "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
-                   <> text " samen te stellen. "
+                   <> text "Het definieert de database en de business-services van " <> (text.name) fSpec <> text " door middel van bedrijfsregels"
+                   <> (note.para.text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
+                   <> text ". "
                    <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
                               then text "Deze eisen staan opgesomd in hoofdstuk "
@@ -86,10 +85,8 @@ chpIntroduction fSpec flags =
                    <> text " defines the functionality of an information system called "
                    <> (singleQuoted.text.name) fSpec
                    <> text ". "
-                   <> text "It defines business services in a system where people and applications work together "
-                   <> text "in order to fullfill their commitments. "
-                   <> text "A number of these rules have been used as functional requirement to assemble this functional specification"
-                   <> (note.para.text) "To use agreements as functional requirements characterizes the Ampersand approach, which has been used to produce this document. "
+                   <> text "It defines the database and the business services of " <> (text.name) fSpec <> text " by means of business rules"
+                   <> (note.para.text) "Rule based design characterizes the Ampersand approach, which has been used to produce this document. "
                    <> text ". "
                    <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
@@ -149,6 +146,6 @@ chpIntroduction fSpec flags =
     date = formatTime (lclForLang flags) "%-d-%-m-%Y" (genTime flags)
     time = formatTime (lclForLang flags) "%H:%M:%S" (genTime flags)
  
-    purposesOfContext = fromList (concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (language flags) fSpec])
+    purposesOfContext = concat [amPandoc (explMarkup p) | p<-purposesDefinedIn fSpec (language flags) fSpec]
     
  

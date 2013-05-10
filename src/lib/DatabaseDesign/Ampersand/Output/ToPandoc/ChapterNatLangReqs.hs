@@ -311,8 +311,8 @@ chpNatLangReqs lev fSpec flags =
                  purposes2Blocks flags purps
                  ++ 
                  [ DefinitionList [ ( [ Str (case language flags of
-                                                      Dutch   -> "Eis "
-                                                      English -> "Requirement ")
+                                                      Dutch   -> "Afspraak "
+                                                      English -> "Agreement ")
                                      , Str (show(getEisnr cnt))
                                      ,if development flags && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
                                    , [ Plain [RawInline "latex" $ symReqLabel dcl]:
@@ -321,10 +321,10 @@ chpNatLangReqs lev fSpec flags =
                                    )] ]++
                  ( case (language flags, length samplePop) of
                         (_      , 0) -> []
-                        (Dutch  , 1) -> [Para [Str "Een zin die hiermee gemaakt kan worden is bijvoorbeeld:"]]
-                        (English, 1) -> [Para [Str "A sentence that can be formed is for instance:"]]
-                        (Dutch  , _) -> [Para [Str "Zinnen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
-                        (English, _) -> [Para [Str "Sentences that can be made are for instance:"]]
+                        (Dutch  , 1) -> [Para [Str "Een frase die hiermee gemaakt kan worden is bijvoorbeeld:"]]
+                        (English, 1) -> [Para [Str "A phrase that can be formed is for instance:"]]
+                        (Dutch  , _) -> [Para [Str "Frasen die hiermee gemaakt kunnen worden zijn bijvoorbeeld:"]]
+                        (English, _) -> [Para [Str "Phrases that can be made are for instance:"]]
                  ) ++
                  sampleSentences
                  where purps     = purposesDefinedIn fSpec (language flags) dcl
@@ -345,8 +345,8 @@ chpNatLangReqs lev fSpec flags =
                   purposes2Blocks flags purps
                   ++
                   [ DefinitionList [ ( [ Str (case language flags of
-                                                Dutch   -> "Eis "
-                                                English -> "Requirement ")
+                                                Dutch   -> "Afspraak "
+                                                English -> "Agreement ")
                                        , Str (show(getEisnr cnt))
                                        , if development flags && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
                                      , [ Plain [ RawInline "latex" $ symReqLabel rul] :
