@@ -625,10 +625,12 @@ chpDiagnosis fSpec flags
    = let (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
          showViolatedRule :: (Rule,Pairs) -> Blocks
          showViolatedRule (r,ps) 
-             = let capt = case language flags of
-                               Dutch   -> text "Overtredingen van regel "
-                               English -> text "Violations of rule "
-                         <>  text (name r)
+             = let capt = case (language flags,isSignal r) of
+                               (Dutch  , False) -> text "Overtredingen van regel "<>  text (name r)
+                               (English, False) -> text "Violations of rule "<>  text (name r)
+                               (Dutch  , True ) -> text "Openstaande taken voor " <> text (commaNL  "of" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                               (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                         
                    showRow :: Paire -> [Blocks]
                    showRow p = [(para.text.fst) p,(para.text.snd) p]
                in para ( case language flags of
@@ -636,7 +638,12 @@ chpDiagnosis fSpec flags
                             English -> text "Rule "
                          <>  text (name r)
                        )
-               <> para (text ("Totaal aantal overtredingen: "++show (length ps))
+               <> para (text (case (language flags,isSignal r) of
+                               (Dutch  , False) -> "Totaal aantal overtredingen: "++show (length ps)
+                               (English, False) -> "Total number of violations: " ++show (length ps)
+                               (Dutch  , True ) -> "Totaal aantal taken: "        ++show (length ps)
+                               (English, True ) -> "Total number of work items: " ++show (length ps)
+                             )
                        )
                <> table capt 
                    [(AlignLeft,0)                          ,(AlignLeft,0)          ]

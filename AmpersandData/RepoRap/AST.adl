@@ -27,6 +27,7 @@ ptdcs :: Pattern*Declaration
 MEANING IN ENGLISH "The relation declarations in a pattern."
 ptxps :: Pattern*Blob
 MEANING IN ENGLISH "The purposes of a pattern."
+ptctx :: Pattern*Context PRAGMA "" "is used in" -- @Han, wil je deze relatie toevoegen en invullen met de inhoud van ctxpats~    Uitleg volgt mondeling.
 ENDPATTERN
 
 PATTERN Gens
