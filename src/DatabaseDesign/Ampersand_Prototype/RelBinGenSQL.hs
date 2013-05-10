@@ -280,7 +280,7 @@ selectExpr fSpec i src trg expr
            selectExpr fSpec i src trg (foldr1 (.:.) [l,v,r])
     ETyp x sgn -> sqlcomment i ("case: ETyp x _"++phpIndent (i+3)++showADL expr++" (possible mistake: has the population been restricted using signature "++show sgn++"?)") $
                   selectExpr fSpec i src trg x  -- TODO, this is wrong. Delimit the population using the sgn of ETyp!!!
-
+    EMp1 _ _ -> fatal 283 "EMp1 is currently unimplemented. "
 selectExprBrac :: Fspc
                -> Int         -- ^ indentation
                -> String      -- ^ source name (preferably quoted)
