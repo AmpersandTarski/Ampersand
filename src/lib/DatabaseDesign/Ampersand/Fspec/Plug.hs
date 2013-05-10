@@ -22,7 +22,12 @@ import GHC.Exts (sortWith)
 import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Fspec.FPA (FPAble(fpa))
 import Prelude hiding (Ordering(..),head)
-import Debug.Trace
+
+-- import Debug.Trace  
+-- Dummy trace function.
+trace :: String -> a -> a  
+trace _ a = a
+
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
