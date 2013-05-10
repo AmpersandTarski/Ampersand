@@ -72,11 +72,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vctxenv      = ctxenv context
                  , userDefPops  = userdefpops
                  , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
-                 , kernels  = 
-                     case [c | c@PlainConcept{} <- concs alldecls] of
-                          [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
-                          c:cx -> let (_,islands,_,_,_) = cptgE c in
-                                  [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
                  }
         allConceptsPlus  = concs context `uni` 
                            nub([cd2c cd | cd <- ctxcds context]) -- A concept for each ConceptDef that is'nt used in a term
