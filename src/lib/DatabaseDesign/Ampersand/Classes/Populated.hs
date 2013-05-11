@@ -27,10 +27,16 @@ where
 
    instance Populated Declaration where
     fullContents pt dcl
-      = case filter (isTheDecl dcl) pt of
-         []    -> []
-         [pop] -> popps pop
-         _     -> fatal 31 $ "Multiple entries in lookup table found for declaration."
+      = case dcl of
+         Isn c -> [ mkPair a a | a <-atomsOf pt c]
+         Vs sgn -> [ mkPair sa ta | sa<-atomsOf pt (source sgn), ta<-atomsOf pt (target sgn)]
+         Sgn{} -> if decISA dcl
+                  then [ mkPair a a | a <-atomsOf pt (source dcl)] 
+                  else 
+                   case filter (isTheDecl dcl) pt of
+                     []    -> [] 
+                     [pop] -> popps pop
+                     _     -> fatal 31 $ "Multiple entries in lookup table found for declaration."
      where isTheDecl d pop =
              case pop of
                PRelPopu{}  -> d == popdcl pop

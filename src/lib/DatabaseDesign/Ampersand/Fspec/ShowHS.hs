@@ -390,10 +390,13 @@ where
        )++
        (if null (allConcepts fspec) then "" else
         "\n -- *** Concepts (total: "++(show.length.allConcepts) fspec++" concepts) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x
+             ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fspec)]++"\n"
        )
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
+                 showAtomsOfConcept c =
+                              "-- atoms: "++(show.sort) (atomsOf (userDefPops fspec) c)
                  (envExpr,bindings) = vctxenv fspec
                  showbinding :: (Declaration,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
@@ -831,10 +834,6 @@ where
                        PlainConcept{} -> "PlainConcept "++show (name c) ++ " gE "++ show (cpttp c) ++ "["++intercalate ", " (map showHSName (cptdf c))++"]"
                        ONE -> "ONE"
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FPA                           ***
--- \***********************************************************************
-   
    instance ShowHS FPcompl where
     showHS _ _   = show
 
