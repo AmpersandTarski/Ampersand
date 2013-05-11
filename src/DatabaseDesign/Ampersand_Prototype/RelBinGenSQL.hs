@@ -216,10 +216,8 @@ selectExpr fSpec i src trg expr
 
     (EFlp x _) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
---    (EMp1 atom _) -> fatal 219 "TODO: implement SQL code for EMp1"
-
---    (ERel mrph _)  
---      -> case mrph of
+    (EMp1 atom _) -> sqlcomment i "case: EMp1 atom."
+                      (Just $ "SELECT "++show atom++" AS "++src++", "++show atom++" AS "++trg)
     (EDcV (Sign s t))    -> let concNames pfx c = [([],"1") |c==ONE]++[([quote (name p) ++ " AS "++pfx],pfx++"."++quote (fldname s')) | (p,s',_) <- sqlRelPlugs fSpec (iExpr c)]
                             in sqlcomment i ("case: (vExpr (Sign s t))"++phpIndent (i+3)++"V [ \""++show (Sign s t)++"\" ]") $
                                case [selectGeneric i (src',src) (trg',trg) tbls "1"
@@ -230,7 +228,7 @@ selectExpr fSpec i src trg expr
                                  []    -> fatal 216 $ "Problem in selectExpr (vExpr (Sign \""++show s++"\" \""++show t++"\"))"
                                  sql:_ -> Just sql 
     (EDcI     sgn)       -> sqlcomment i ("I["++(show.name.source) sgn++"]") 
-                                         (selectExpr fSpec i src trg (vExpr sgn))
+                                         (selectExpr fSpec i src trg (vExpr sgn)) --TODO HJO is vExpr hier goed???
     (EDcD d   _)         -> selectExprRelation fSpec i src trg d
 
     (EBrk e) -> selectExpr fSpec i src trg e
@@ -280,7 +278,7 @@ selectExpr fSpec i src trg expr
            selectExpr fSpec i src trg (foldr1 (.:.) [l,v,r])
     ETyp x sgn -> sqlcomment i ("case: ETyp x _"++phpIndent (i+3)++showADL expr++" (possible mistake: has the population been restricted using signature "++show sgn++"?)") $
                   selectExpr fSpec i src trg x  -- TODO, this is wrong. Delimit the population using the sgn of ETyp!!!
-    EMp1 _ _ -> fatal 283 "EMp1 is currently unimplemented. "
+
 selectExprBrac :: Fspc
                -> Int         -- ^ indentation
                -> String      -- ^ source name (preferably quoted)
