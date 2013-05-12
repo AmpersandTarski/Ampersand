@@ -836,7 +836,8 @@ pCtx2aCtx p_context
         f prms obj
          = Ifc { ifcParams = [ case erel of
                                 EDcD{} -> erel
-                                _ -> fatal 1273 ("Erroneous expression "++showADL erel++" in pIFC2aIFC.")
+                                ETyp EDcD{} _ -> erel
+                                _ -> fatal 1273 ("Erroneous expression "++show erel++" in pIFC2aIFC.")
                              | (erel,_,_)<-prms ]
                , ifcArgs   = ifc_Args pifc
                , ifcRoles  = parentIfcRoles
