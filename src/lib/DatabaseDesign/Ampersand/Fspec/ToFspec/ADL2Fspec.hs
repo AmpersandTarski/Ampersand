@@ -18,7 +18,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import Data.List (nub,intercalate)
    import DatabaseDesign.Ampersand.ADL1.Expression
    import Data.Char        (toLower)
-   
+
    head :: [a] -> a
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
@@ -59,7 +59,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vrels        = calculatedDecls
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = alldecls
-                 , allConcepts  = allConceptsPlus
+                 , allConcepts  = concs context
                  , fsisa        = isas
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -73,15 +73,6 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , userDefPops  = userdefpops
                  , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
                  }
-        allConceptsPlus  = concs context `uni` 
-                           nub([cd2c cd | cd <- ctxcds context]) -- A concept for each ConceptDef that is'nt used in a term
-           where cd2c :: ConceptDef -> A_Concept
-                 cd2c cd = 
-                   PlainConcept { cptnm = name cd
-                                , cptgE = genE context
-                                , cpttp = cdtyp cd
-                                , cptdf = [cd' | cd'<-conceptDefs context,name cd==name cd']
-                                }
         alldecls = declarations context
         allQuads = quads flags (\_->True) allrules
         (_,_,isas,_,_)=ctxpo context

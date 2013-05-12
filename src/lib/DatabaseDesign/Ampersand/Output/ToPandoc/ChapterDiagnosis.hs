@@ -17,12 +17,13 @@ chpDiagnosis fSpec flags
  = ( fromList $
      header ++                -- the chapter header
      diagIntro ++             -- an introductory text
-     roleomissions ++         -- says which role-rule, role-interface, and role-relation assignments are missing
+     roleomissions ++         -- tells which role-rule, role-interface, and role-relation assignments are missing
      roleRuleTable ++         -- gives an overview of rule-rule assignments
-     missingConceptDefs ++    -- says which concept definitions are missing
-     missingRels ++           -- says which relation declarations are missing
-     relsNotUsed ++           -- says which relations are not used in any rule
-     missingRules ++          -- says which rule definitions are missing
+     missingConceptDefs ++    -- tells which concept definitions are missing
+     missingRels ++           -- tells which relation declarations are missing
+     unusedConceptDefs ++     -- tells which concept definitions are not used in any relation
+     relsNotUsed ++           -- tells which relations are not used in any rule
+     missingRules ++          -- tells which rule definitions are missing
      ruleRelationRefTable ++  -- table that shows percentages of relations and rules that have references
      invariantsInProcesses ++ -- 
      processrulesInPatterns++ -- 
@@ -154,6 +155,31 @@ chpDiagnosis fSpec flags
                       , null (cptdf c)
                    ]
          ccs = concs [ d | d<-declarations fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+  unusedConceptDefs :: [Block]
+  unusedConceptDefs
+   = case (language flags, unused) of
+      (Dutch,[])  -> [Para
+                       [Str "Alle concept definities in dit document worden gebruikt in relaties."]
+                     | (not.null.vConceptDefs) fSpec]
+      (Dutch,[c]) -> [Para
+                       [Str "Het concept ", Quoted SingleQuote [Str (name c)], Str " is gedefinieerd, maar wordt niet gebruikt."]
+                     ]
+      (Dutch,xs)  -> [Para $
+                       [Str "De concepten: "]++commaNLPandoc (Str "en") (map (Str . name) xs)++[Str " zijn gedefinieerd, maar worden niet gebruikt."]
+                     ]
+      (English,[])  -> [Para 
+                        [Str "All concept definitions in this document are used in relations."]
+                     | (not.null.vConceptDefs) fSpec]
+      (English,[c]) -> [Para 
+                         [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " is defined, but isn't used."]
+                     ]
+      (English,xs)  -> [Para $
+                       [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " are defined, but not used."]
+                     ]
+   where unused = [cd | cd <-vConceptDefs fSpec, name cd `notElem` map name (allConcepts fSpec)]
+         
+    
+  
   missingRels :: [Block]
   missingRels
    = case (language flags, missing) of
