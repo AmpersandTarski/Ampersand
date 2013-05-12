@@ -71,7 +71,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , metas        = ctxmetas context
                  , vctxenv      = ctxenv context
                  , userDefPops  = userdefpops
-                 , allViolations = [(r,vs) |r<- allrules, let vs = ruleviolations userdefpops r,  not (null vs)]
+                 , allViolations = [(r,vs) |r<- allrules, not (isSignal r), let vs = ruleviolations userdefpops r,  not (null vs)]
                  }
         alldecls = declarations context
         allQuads = quads flags (\_->True) allrules
