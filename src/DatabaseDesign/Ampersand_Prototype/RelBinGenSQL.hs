@@ -134,7 +134,7 @@ selectExpr fSpec i src trg expr
                     WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
                       AND NOT EXISTS (SELECT foo)            representing neven
 -}
-                   (_:_:_)   | sqlOk ->  sqlcomment i ("case: (EIsc lst'@(_:_:_) _"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
+                   (_:_:_)   | sqlOk ->  sqlcomment i ("case: (EIsc lst'@(_:_:_) _)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
                                          selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                                                          (cChain ", " exprbracs) (cChain " AND " wherecl)
                              | otherwise -> fatal 71 "sqlOk does not hold"

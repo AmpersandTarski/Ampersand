@@ -262,18 +262,18 @@ generateViews fSpec flags =
            , "            array" 
            ] ++
            indent 14 (blockParenthesize "(" ")" "," (map genViewSeg viewSegs)) ++  
-           [ "      )" ]           
+           [ "        )" ]           
          | Vd _ label cpt viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
          ]
     ) )
  where genViewSeg (ViewText str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ] 
        genViewSeg (ViewHtml str)   = [ "array ( 'segmentType' => 'Html', 'Html' => " ++ showPhpStr str ++ ")" ] 
        genViewSeg (ViewExp objDef) = [ "array ( 'segmentType' => 'Exp'"
-                                   , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
-                                   , "      , 'expSQL' =>"
-                                   , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" (objctx objDef))
-                                                                (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)
-                                                   ++"' )"
+                                     , "      , 'label' => "++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (show $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                                     , "      , 'expSQL' =>"
+                                     , "          '" ++ fromMaybe (fatal 100 $ "No sql generated for "++showHS flags "" (objctx objDef))
+                                                                (selectExpr fSpec 33 "src" "tgt" $ objctx objDef)++"'"
+                                     , "      )"
                                    ]
        (_,islands,_,_,_) = case concs fSpec of
                                []  -> (undef,[],undef,undef,undef)
@@ -329,17 +329,16 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                                 else fatal 329 "I with wrong type has been found! (should be impossible)" 
              EDcV sgn        -> Vs sgn
              _               -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ show unflippedExpr
-     in
-     if isEditable unflippedExpr
-     then [ "      , 'relation' => "++showPhpStr (name d) 
-          , "      , 'relationIsFlipped' => "++show flipped ]++ 
-          [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'" | flipped] ++
-          [ "      , 'max' => "++ if isInj d then "'One'" else "'Many'" | flipped] ++
-          [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" | not flipped] ++
-          [ "      , 'max' => "++ if isUni d then "'One'" else "'Many'" | not flipped]
-     else [ "      , 'relation' => ''" 
-          , "      , 'relationIsFlipped' => ''" 
-          ]          
+     in (if isEditable unflippedExpr
+         then [ "      , 'relation' => "++showPhpStr (name d) 
+              , "      , 'relationIsFlipped' => "++show flipped ]++ 
+              [ "      , 'min' => "++ if isSur d then "'One'" else "'Zero'" | flipped] ++
+              [ "      , 'max' => "++ if isInj d then "'One'" else "'Many'" | flipped] ++
+              [ "      , 'min' => "++ if isTot d then "'One'" else "'Zero'" | not flipped] ++
+              [ "      , 'max' => "++ if isUni d then "'One'" else "'Many'" | not flipped]
+         else [ "      , 'relation' => ''" 
+              , "      , 'relationIsFlipped' => ''" 
+              ])       
   ++     
   [ "      , 'srcConcept' => "++showPhpStr (name (source normalizedInterfaceExp))
   , "      , 'tgtConcept' => "++showPhpStr (name (target normalizedInterfaceExp))
