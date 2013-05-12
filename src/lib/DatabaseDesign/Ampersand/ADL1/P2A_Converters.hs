@@ -102,10 +102,10 @@ mSpecific'', mGeneric'', mEqual'' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Ter
 mGeneric''  ta a tb b e = ((domOrCod ta a) .<. r .+. (domOrCod tb b) .<. r, r ) where r = Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) BTUnion
 mSpecific'' ta a tb b e = (r .<. (domOrCod ta a) .+. r .<. (domOrCod tb b), r ) where r = Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) BTIntersect
 mEqual''    ta a tb b e = (r .=. (domOrCod ta a) .+. r .=. (domOrCod tb b), r ) where r = Between (tCxe ta a tb b TETEq    e) (domOrCod ta a) (domOrCod tb b) BTEqual
-mSpecific, mGeneric, mEqual :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
+mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> Typemap
 mSpecific ta a tb b e = fst (mSpecific'' ta a tb b e)
 mGeneric  ta a tb b e = fst (mGeneric''  ta a tb b e)
-mEqual    ta a tb b e = typeToMap$ Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual
+--mEqual    ta a tb b e = typeToMap$ Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
