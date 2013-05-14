@@ -134,7 +134,9 @@ chpNatLangReqs lev fSpec flags =
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
       printThemes  (still2doCPre, still2doRelsPre, still2doRulesPre) iPre allThemes 
            = case allThemes of
-              []  -> printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
+              []  -> if null still2doCPre && null still2doRelsPre && null still2doRelsPre
+                     then ([],iPre)
+                     else printOneTheme Nothing (still2doCPre, still2doRelsPre, still2doRulesPre) iPre
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (thm:thms) = allThemes
