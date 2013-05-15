@@ -65,7 +65,7 @@ data Options = Options { showVersion :: Bool
                        , outputfile :: String -- the file to generate the output in.
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
-                       , altGraphics :: Bool   -- Graphics are generated without hinge nodes on edges.    
+                       , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.    
                        , showPredExpr :: Bool   -- for generated output, show predicate logic?
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional specification document
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
@@ -128,7 +128,7 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , haskell       = False
                       , crowfoot      = False
                       , blackWhite    = False
-                      , altGraphics   = False
+                      , doubleEdges   = False
                       , showPredExpr  = False
                       , noDiagnosis   = False
                       , diagnosisOnly = False
@@ -297,7 +297,7 @@ options = map pp
           , (Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell (for debugging).", Public)
           , (Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics.", Public)
           , (Option []        ["blackWhite"]  (NoArg blackWhiteOpt)       "do not use colours in generated graphics", Public)
-          , (Option []        ["altGraphics"] (NoArg altGraphicsOpt)      "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)", Public)
+          , (Option []        ["doubleEdges"] (NoArg doubleEdgesOpt)      "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)", Public)
           , (Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the form of predicate logic." , Public)
           , (Option []        ["noDiagnosis"] (NoArg noDiagnosisOpt)      "omit the diagnosis chapter from the functional specification document." , Public)
           , (Option []        ["diagnosis"]   (NoArg diagnosisOpt)        "diagnose your Ampersand script (generates a .pdf file).", Public)
@@ -428,8 +428,8 @@ crowfootOpt :: Options -> Options
 crowfootOpt flags                    = flags{crowfoot      = True}
 blackWhiteOpt :: Options -> Options
 blackWhiteOpt flags                  = flags{blackWhite    = True}
-altGraphicsOpt :: Options -> Options
-altGraphicsOpt flags                 = flags{altGraphics   = not (altGraphics flags)}
+doubleEdgesOpt :: Options -> Options
+doubleEdgesOpt flags                 = flags{doubleEdges   = not (doubleEdges flags)}
 predLogicOpt :: Options -> Options
 predLogicOpt flags                   = flags{showPredExpr  = True}
 noDiagnosisOpt :: Options -> Options
