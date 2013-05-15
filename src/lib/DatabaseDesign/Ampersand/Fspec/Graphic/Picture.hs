@@ -25,7 +25,7 @@ data Picture = Pict { origName :: String    -- ^ The original name of the object
                     , dotSource :: DotGraph String    -- ^ the string representing the .dot
                     , fullPath :: FilePath  -- ^ the full file path where the .dot and .png file resides
                     , relPng :: FilePath  -- ^ the relative file path where the .png file resides
-                    , dotProgName :: GraphvizCommand   -- ^ the name of the program to use  ("dot" or "neato" )
+                    , dotProgName :: GraphvizCommand   -- ^ the name of the program to use  ("dot" or "neato" or "fdp")
                     , caption :: String    -- ^ a human readable name of this picture
                     }
 data PictType = PTClassDiagram -- a UML class diagram, or something that comes close
@@ -65,7 +65,7 @@ makePictureObj flags nm pTyp dotsource
            , dotProgName = case pTyp of
                      PTClassDiagram -> Dot
                      PTSwitchBoard  -> Dot
-                     _              -> Neato
+                     _              -> Fdp
            , caption      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ nm
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
