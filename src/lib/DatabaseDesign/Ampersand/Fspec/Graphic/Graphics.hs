@@ -193,7 +193,7 @@ conceptual2Dot :: Options                   -- ^ the flags
                -> DotGraph String           -- ^ The resulting DotGraph
 conceptual2Dot flags graphName cpts' rels idgs
      = DotGraph { strictGraph = False
-                , directedGraph = False
+                , directedGraph = True
                 , graphID = Just (Str (fromString graphName))
                 , graphStatements 
                       = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture flags)]
@@ -207,7 +207,7 @@ conceptual2Dot flags graphName cpts' rels idgs
         conceptNodes = [constrNode (baseNodeId c) (CptOnlyOneNode c) flags | c<-cpts]
         (relationNodes,relationEdges) = (concat a, concat b) 
               where (a,b) = unzip [relationNodesAndEdges r | r<-zip rels [1..]]
-        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge True  flags | (s,g)<-idgs]
+        isaEdges = [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge  flags | (s,g)<-idgs]
               
         baseNodeId :: A_Concept -> String  -- returns the NodeId of the node where edges to this node should connect to. 
         baseNodeId c 
@@ -220,15 +220,15 @@ conceptual2Dot flags graphName cpts' rels idgs
              (Declaration,Int)           -- ^ tuple contains the declaration and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
-          | altGraphics flags
-               = ( [] --No intermediate node
-                 , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r) True  flags]
-                 )
-          | otherwise
+          | doubleEdges flags
              = (  [ relNameNode ]    -- node to place the name of the relation
-               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) True flags     -- edge to connect the source with the hinge
-                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) True flags]     -- edge to connect the hinge to the target
+               ,  [ constrEdge (baseNodeId (source r)) (nodeID relNameNode)   (RelSrcEdge r) flags     -- edge to connect the source with the hinge
+                  , constrEdge (nodeID relNameNode)   (baseNodeId (target r)) (RelTgtEdge r) flags]     -- edge to connect the hinge to the target
                )
+          | otherwise
+               = ( [] --No intermediate node
+                 , [constrEdge (baseNodeId (source r)) (baseNodeId (target r)) (RelOnlyOneEdge r)  flags]
+                 )
           where
         --    relHingeNode   = constrNode ("relHinge_"++show n) RelHingeNode   flags
             relNameNode    = constrNode ("relName_"++show n) (RelIntermediateNode r) flags
@@ -236,24 +236,25 @@ conceptual2Dot flags graphName cpts' rels idgs
 constrNode :: a -> PictureObject -> Options -> DotNode a
 constrNode nodeId pObj flags
   = DotNode { nodeID = nodeId
-            , nodeAttributes = [ FontSize 8
+            , nodeAttributes = [ FontSize 10
                                , FontName (fromString(pangoFont flags))
-                               , Width 0.1
-                               , Height  0.1
+                           --    , Width 0.1
+                           --    , Height  0.1
                                ]++handleFlags pObj flags
             }
 
-constrEdge :: a -> a -> PictureObject -> Bool -> Options -> DotEdge a
-constrEdge nodeFrom nodeTo pObj isDirected' flags 
+constrEdge :: a -> a -> PictureObject -> Options -> DotEdge a
+constrEdge nodeFrom nodeTo pObj flags 
   = DotEdge { fromNode = nodeFrom
             , toNode   = nodeTo
-            , edgeAttributes = [ FontSize 8
+            , edgeAttributes = [ FontSize 12
                                , FontName (fromString(pangoFont flags))
-                               , Dir (if isDirected' then Forward else NoDir)
-                               , LabelAngle (-25.0)
-                               , Color [WC(X11Color Gray30)Nothing]
+                               , Dir Forward
+                            --   , LabelAngle (-25.0)
+                               , Color [WC(X11Color Gray35)Nothing]
                                , LabelFontColor (X11Color Black)
-                               , LabelFloat True
+                               , LabelFloat False
+                               , Decorate False
                             --   , LabelDistance 2.0
                             --   , (HeadLabel . StrLabel . fromString) "Test"
                                ]++handleFlags pObj flags
@@ -307,17 +308,12 @@ handleFlags po flags =
                           , Style [filled] 
                           , URL (theURL flags c)
                           ]
-      RelOnlyOneEdge r -> [ (Label . StrLabel . fromString . name) r
-                          , ArrowHead (if crowfoot flags
-                                       then crowfootArrowType True r
-                                       else plainArrowType True r
-                                      )
-                          , ArrowTail (if crowfoot flags
-                                       then crowfootArrowType False r
-                                       else plainArrowType False r
-                                      )
-                          , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
-                          , URL (theURL flags r)
+      RelOnlyOneEdge r -> [ URL (theURL flags r)
+                          , (XLabel . StrLabel .fromString.name) r
+                          , ArrowHead (plainArrowType True r)
+                          , ArrowTail (plainArrowType False r) --Not supported yet. See http://www.graphviz.org/bugs/b1951.html
+                          , Dir Forward  -- Note that the tail is not supported , so no crowfoot notation possible with a single edge.
+                          , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot flags  then normal                    else
                                     if isFunction r    then noArrow                   else
@@ -330,7 +326,7 @@ handleFlags po flags =
                                     noArrow
                                   )
                       ,HeadClip False
-                      , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
+                --      , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ]
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot flags  then crowfootArrowType True r  else
@@ -343,7 +339,7 @@ handleFlags po flags =
                                     if isInvFunction r then AType [(noMod ,Inv)]      else
                                     AType [(noMod ,Inv)]
                                   )
-                      , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
+                   --   , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ,TailClip False
                       ] 
       RelIntermediateNode r -> 
@@ -354,12 +350,14 @@ handleFlags po flags =
                        ]
       IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow
-                       , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                        , if blackWhite flags then Style [dotted] else penColor Red
                        ]
-      TotalPicture -> [ Overlap ScaleOverlaps 
+      TotalPicture -> [ Sep (DVal (if doubleEdges flags then 1/2 else 2)) -- The minimal amount of whitespace between nodes
+                      , OutputOrder  EdgesFirst --make sure the nodes are always on top...
+                      , Overlap VoronoiOverlap 
+                      , Splines PolyLine  -- SplineEdges could work as well.
                       , Landscape False
-                      , Model Circuit
+                   --   , Model Circuit
                       ]
 
 isInvFunction :: Declaration -> Bool
