@@ -90,7 +90,7 @@ instance Dotable Pattern where
    -- | The Plain_CG of pat makes a picture of at least the declsUsedIn within pat; 
    --   extended with a limited number of more general concepts;
    --  and rels to prevent disconnected concepts, which can be connected given the entire context.
-   conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) cpts (rels++xrels) idgs
+   conceptualGraph fSpec flags Plain_CG pat = conceptual2Dot flags (name pat) cpts (rels `uni` xrels) idgs
         where 
          --DESCR -> get concepts and arcs from pattern
           idgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
@@ -102,7 +102,7 @@ instance Dotable Pattern where
                     ]
           -- extra rels to connect concepts without rels in this picture, but with rels in the fspec
           xrels = let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-                  in [r | c<-orphans, r@Sgn{}<-declarations fSpec
+                  in nub [r | c<-orphans, r@Sgn{}<-declarations fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
