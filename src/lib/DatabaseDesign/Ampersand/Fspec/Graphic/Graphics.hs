@@ -350,14 +350,13 @@ handleFlags po flags =
                        ]
       IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow
-                       , if blackWhite flags then Style [dotted] else penColor Red
+                       , if blackWhite flags then Style [dotted] else Color [WC(X11Color Red)Nothing]
                        ]
       TotalPicture -> [ Sep (DVal (if doubleEdges flags then 1/2 else 2)) -- The minimal amount of whitespace between nodes
                       , OutputOrder  EdgesFirst --make sure the nodes are always on top...
-                      , Overlap VoronoiOverlap 
+                      , Overlap ScaleXYOverlaps
                       , Splines PolyLine  -- SplineEdges could work as well.
                       , Landscape False
-                   --   , Model Circuit
                       ]
 
 isInvFunction :: Declaration -> Bool
