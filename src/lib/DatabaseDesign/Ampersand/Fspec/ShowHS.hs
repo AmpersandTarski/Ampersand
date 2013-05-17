@@ -16,6 +16,7 @@ where
    import DatabaseDesign.Ampersand.Misc
    import Data.Hashable
    import Data.Ord
+   import Data.Function
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.ShowHS"
@@ -378,7 +379,7 @@ where
        )++
        (if null (plugInfos fspec ) then "" else
         "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fspec++" plugInfos) ***: "++
-        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-plugInfos fspec ]++"\n"
+        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-sortBy (compare `on` name) (plugInfos fspec) ]++"\n"
        )++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns (total: "++(show.length.vpatterns) fspec++" patterns) ***: "++

@@ -85,7 +85,8 @@ fSpec2UML fSpec flags =
                , "</xmi:XMI>" ]
     }
  where classDiag = cdAnalysis fSpec flags
-       (contextName, allConcs) = nameandcpts classDiag
+       contextName = cdName classDiag
+       allConcs = ooCpts classDiag
        classNames    = map name (classes classDiag)
        datatypeNames = map name allConcs >- classNames
 

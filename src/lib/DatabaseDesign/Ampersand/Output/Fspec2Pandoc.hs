@@ -15,6 +15,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis    (chpPr
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAnalysis)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
+import Debug.Trace
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -63,7 +64,7 @@ import Data.List (nub)
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
 fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
-fSpec2Pandoc fSpec flags = ( myDoc , concat docFigures )
+fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
   where 
     myDoc = 
       ( (setTitle  
@@ -88,8 +89,8 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat docFigures )
       ) 
       (doc (foldr (<>) mempty docContents))
     docContents :: [Blocks]
-    docFigures  :: [[Picture]]
-    (docContents, docFigures) = unzip [fspec2Blocks chp | chp<-chaptersInDoc flags]
+    picturesByChapter  :: [[Picture]]
+    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc flags]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro              = (chpIntroduction        fSpec flags, [])
@@ -97,10 +98,12 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat docFigures )
     fspec2Blocks Diagnosis          = chpDiagnosis            fSpec flags
     fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis 0 fSpec flags
     fspec2Blocks ProcessAnalysis    = chpProcessAnalysis    0 fSpec flags
-    fspec2Blocks DataAnalysis       = chpDataAnalysis       0 fSpec flags
+    fspec2Blocks DataAnalysis       = let x = chpDataAnalysis         fSpec flags 
+                                          ( _ ,ps) = x
+                                      in trace (show (length ps)) x
     fspec2Blocks SoftwareMetrics    = (fpAnalysis             fSpec flags, [])
     fspec2Blocks EcaRules           = (chpECArules            fSpec flags, [])
     fspec2Blocks Interfaces         = (chpInterfacesBlocks  0 fSpec flags, chpInterfacesPics fSpec flags)
     fspec2Blocks Glossary           = (chpGlossary          0 fSpec flags, [])
     
-  --level = 0,  1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
+

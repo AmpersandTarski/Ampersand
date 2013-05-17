@@ -28,7 +28,12 @@ where
 
 
    instance CdNode ClassDiag where
-    nodes (OOclassdiagram cs as rs gs _) = nub (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
+    nodes cd = nub (concat (  map nodes (classes cd)
+                            ++map nodes (assocs  cd)
+                            ++map nodes (aggrs   cd)
+                            ++map nodes (geners  cd)
+                   )       )
+
 
    instance CdNode Class where
     nodes (OOClass c _ _) = [name c]
@@ -50,106 +55,80 @@ where
    instance CdNode Generalization where
     nodes (OOGener g ss) = map name (g:ss)
 
-   -- | This function makes a classification diagram.
+   -- | This function makes the classification diagram.
    -- It focuses on generalizations and specializations.
-   clAnalysis :: Fspc -> Options -> Maybe ClassDiag
-   clAnalysis fSpec _ = if null classes' then Nothing else Just (OOclassdiagram classes' [] [] geners' ("classification"++name fSpec, concs fSpec))
+   clAnalysis :: Fspc -> Options -> ClassDiag
+   clAnalysis fSpec _ = 
+       OOclassdiagram { cdName  = "classification"++name fSpec
+                      , classes = [ OOClass c (attrs c) [] | c<-cpts]
+                      , assocs  = []
+                      , aggrs   = []
+                      , geners  = nub [ OOGener c (map snd gs)
+                                      | gs<-eqCl fst (fsisa fSpec)
+                                      , let c=fst (head gs), c `elem` cpts -- select only those generalisations whose specific concept is part of the themes to be printed.
+                        ]
+                      , ooCpts  = concs fSpec
+                      }
+
     where
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [EDcD decl (sign decl) | decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)]
+       rels       = [EDcD r (sign r) | r@Sgn{} <- declarations fSpec, decusr r]
        relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
-       cpts       = nub [ c
-                        | gs<-fsisa fSpec
-                        , let c=fst gs -- select only those generalisations whose specific concept is part of the themes to be printed.
-                        , null (themes fSpec) || c `elem` (concs [declsUsedIn pat | pat<-patterns fSpec, name pat `elem` themes fSpec ] `uni`  -- restrict to those themes that must be printed.
-                                                           concs [declsUsedIn (fpProc prc) | prc<-vprocesses fSpec, name prc `elem` themes fSpec ])
-                        , (not.null) [ r | r<-relsAtts, source r==c ] ||  -- c is either a concept that has attributes or
-                               null  [ r | r<-relsAtts, target r==c ]     --      it does not occur as an attribute.
+       cpts       = nub [ specific
+                        | specific <-map fst (fsisa fSpec)
+                         -- select only those generalisations whose specific concept is part of the themes to be printed.
+                        , specific `elem` (concs [declsUsedIn (pattsInScope fSpec) 
+                                            `uni` declsUsedIn (procsInScope fSpec)
+                                                 ])
+                        , (not.null) [ r | r<-relsAtts, source r==specific ] ||  -- c is either a concept that has attributes or
+                               null  [ r | r<-relsAtts, target r==specific ]     --      it does not occur as an attribute.
                         ]
-       geners'    = nub [ OOGener c (map snd gs)
-                        | gs<-eqCl fst (fsisa fSpec)
-                        , let c=fst (head gs), c `elem` cpts -- select only those generalisations whose specific concept is part of the themes to be printed.
-                        ]
-       classes'   = [ OOClass c (attrs c) []
-                    | c<-cpts]
+
        attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  name (target (fldexpr fld))) (fldnull fld)
                     | plug<-lookup' c, fld<-tail (plugFields plug), not (inKernel fld), source (fldexpr fld)==c]
                     where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
        lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
        isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
         
+   pattsInScope :: Fspc -> [Pattern]
+   pattsInScope fSpec = if null (themes fSpec)
+                        then patterns fSpec
+                        else [ pat | pat<-patterns fSpec, name pat `elem` themes fSpec ]
+   procsInScope :: Fspc -> [Process]
+   procsInScope fSpec = if null (themes fSpec)
+                        then map fpProc (vprocesses fSpec)
+                        else [ fpProc fprc | fprc<-vprocesses fSpec, name fprc `elem` themes fSpec ]
 
 
----- The following function, plugs2classdiagram, is useful to make a technical data model.
----- It draws on the plugs, which are meant to implement database tables for OLTP purposes.
----- Plugs come in three flavours: TblSQL, which is an entity (class),
-----                               BinSQL, which is a relation between entities, and
-----                               ScalarSQL, which represents scalars.
---   plugs2classdiagram :: Fspc -> Options -> ClassDiag
---   plugs2classdiagram fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
---    where
----- The condition for becoming a class is in the function isClass. Does this correspond with the distinction TblSQL and BinSQL?
---       isClass :: PlugSQL -> Bool
---       isClass  p = (not.null) [fld |fld<-tblfields p, flduniq fld] &&      -- an assocciation does not have fields that are flduniq
---                    (not.null) [fld |fld<-tblfields p, not (flduniq fld)]   -- a scalar has only fields that are flduniq
---       classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull | (a,atype,fNull)<-attrs plug] [] -- drop the I field.
---                    | InternalPlug plug <- plugInfos fSpec, isClass plug
---                    , not (null (attrs plug))
---                    ]
---       assocs'    = [ OOAssoc (source s) (mults $ flp rel) "" (target t) (mults rel) relname
---                    | InternalPlug plug@BinSQL{} <-plugInfos fSpec
---                    , let rel=mLkp plug
---       --           , not ((isSignal.head.declsUsedIn) rel)  -- SJ 2012/12/19: Why is this here? How can a relation be a signal? I have disabled it to see what goes wrong...
---                    , let relname=case rel of
---                           ERel r _ -> name r
---                           EFlp (ERel r _) _ -> name r
---                           _ -> fatal 109 (show rel ++ " has no name.")
---                    , let (s,t)=columns plug
---                    ]
---                    where
---                     mults r = let minVal = if isTot r then MinOne else MinZero
---                                   maxVal = if isInj r then MaxOne else MaxMany
---                               in  Mult minVal maxVal 
---                     nm f = name.concept.lookup'.f.fldexpr
---       aggrs'     = []
---       geners'    = []
---       -- The attributes are shown without the key-attributes. Hence the first attribute (key of this concept) and
---       -- the keys of its subtypes (filtered by 'inKernel') are not shown.
---       attrs plug = [ if isPropty fld
---                      then (fldname fld, "Bool",                      False      )
---                      else (fldname fld, name (target (fldexpr fld)), fldnull fld)
---                    | fld<-tail (tblfields plug), not (inKernel fld)]
---                    where isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
---                    -- TODO: (SJ) I'm not sure if inKernel is correct. Check with Bas.
---                          inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
---       lookup' c = if null ps
---                   then fatal 112 $ "erroneous lookup for concept "++name c++" in plug list"
---                   else head ps
---                   where ps = [p |InternalPlug p<-plugInfos fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c' |(c',_)<-cLkpTbl p, c'==c]]
 
    -- | This function, cdAnalysis, generates a conceptual data model.
    -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
    -- This yields more classes than plugs2classdiagram does, as plugs contain their specialized concepts.
    -- Properties and identities are not shown.
    cdAnalysis :: Fspc -> Options -> ClassDiag
-   cdAnalysis fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
+   cdAnalysis fSpec _ = 
+     OOclassdiagram {cdName  = name fSpec
+                    ,classes = 
+                      let cls=eqClass (==) assRels in
+                      if length cls /= length assRels
+                      then fatal 125 (show [map show cl | cl<-cls, length cl>1])
+                      else [ OOClass c (attrs cl) []
+                           | cl<-eqCl source attRels, let c=source (head cl)
+                           , c `elem` (map source assRels `uni` map target assRels)]
+                    ,assocs  = 
+                      let mults r = let minVal = if isTot r then MinOne else MinZero
+                                        maxVal = if isInj r then MaxOne else MaxMany
+                                    in  Mult minVal maxVal 
+                      in [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.declsUsedIn) r)
+                         | r<-assRels]
+                    ,aggrs   = []
+                    ,geners  = []
+                    ,ooCpts  = concs fSpec
+                    }
+
     where
-       classes'   = let cls=eqClass (==) assRels in
-                    if length cls /= length assRels
-                    then fatal 125 (show [map show cl | cl<-cls, length cl>1])
-                    else [ OOClass c (attrs cl) []
-                         | cl<-eqCl source attRels, let c=source (head cl)
-                         , c `elem` (map source assRels `uni` map target assRels)]
-       assocs'    = [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.declsUsedIn) r)
-                    | r<-assRels]
-                    where
-                     mults r = let minVal = if isTot r then MinOne else MinZero
-                                   maxVal = if isInj r then MaxOne else MaxMany
-                               in  Mult minVal maxVal 
-       aggrs'     = []
-       geners'    = []
 -- The following code was inspired on ADL2Plug
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
@@ -157,8 +136,8 @@ where
        relsLim    = [EDcD decl (sign decl)           -- The set of relations that is defined in patterns to be printed.
                     | decl<- if null (themes fSpec)
                              then declarations fSpec
-                             else [d | pat <- patterns   fSpec, name pat `elem` themes fSpec, d@Sgn{} <- declarations pat ]++
-                                  [d | prc <- vprocesses fSpec, name prc `elem` themes fSpec, d@Sgn{} <- declarations prc ]
+                             else [d | pat <- pattsInScope fSpec, d@Sgn{} <- declarations pat ]++
+                                  [d | prc <- procsInScope fSpec, d@Sgn{} <- declarations prc ]
                        -- restrict to those themes that must be printed.
                     , decusr decl, not (isIdent decl)]
 -- In order to make classes, all relations that are univalent and injective are flipped
@@ -324,15 +303,15 @@ where
 
 
 -------------- Class Diagrams ------------------
-   data ClassDiag = OOclassdiagram { classes :: [Class]            --
-                                   , assocs :: [Association]      --
-                                   , aggrs :: [Aggregation]      --
-                                   , geners :: [Generalization]   --
-                                   , nameandcpts :: (String,[A_Concept])
-                                   } deriving Show
+   data ClassDiag = OOclassdiagram {cdName :: String
+                                   ,classes :: [Class]            --
+                                   ,assocs :: [Association]      --
+                                   ,aggrs :: [Aggregation]      --
+                                   ,geners :: [Generalization]   --
+                                   ,ooCpts :: [A_Concept]}
+                            deriving Show
    instance Identified ClassDiag where
-      name cd = n
-        where (n,_) = nameandcpts cd
+      name = cdName
         
    data Class          = OOClass  { clcpt :: A_Concept      -- ^ Main concept of the class
                                   , clAtts :: [CdAttribute] -- ^ Attributes of the class
