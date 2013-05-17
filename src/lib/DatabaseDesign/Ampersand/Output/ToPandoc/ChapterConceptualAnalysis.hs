@@ -13,10 +13,8 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis.hs"
 
 chpConceptualAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
-chpConceptualAnalysis lev fSpec flags = (header <> caIntro <> caBlocks, pictures)
+chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> caIntro <> caBlocks, pictures)
   where
-  header :: Blocks
-  header = chptHeader flags ConceptualAnalysis
   caIntro :: Blocks
   caIntro
    = fromList $ (case language flags of
@@ -153,7 +151,7 @@ chpConceptualAnalysis lev fSpec flags = (header <> caIntro <> caBlocks, pictures
                       ++ [Str " - als " | language flags==Dutch]
                       ++ [Str " - as "     | language flags==English]]
                ++ (if showPredExpr flags
-                   then pandocEquation ((showLatex.toPredLogic) r++symDefLabel r)
+                   then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
                    else pandocEquation (showMath r++symDefLabel r)
                   )
                ])

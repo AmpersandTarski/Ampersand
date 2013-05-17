@@ -723,110 +723,102 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
   daPlug p
    = if null content then [] else plugHeader ++ content
      where
+       thing2block r = pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
        plugHeader = toList $ labeledThing flags (lev+1) ("sct:Plug "++escapeNonAlphaNum (name p)) (name p)
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugIdentities ++ iRules
        plugRules
         = case language flags of
            English -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
                        []  -> []
-                       [r] -> [ Para [ Str "Within this data set, the following integrity rule shall be true at all times. " ]
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
-                                else Para [ Math DisplayMath $ showMath r]
-                              ]
+                       [r] -> [ Para [ Str "Within this data set, the following integrity rule shall be true at all times. " ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
+                              else [ Para [ Math DisplayMath $ showMath r]]
                        rs  -> [ Para [ Str "Within this data set, the following integrity rules shall be true at all times. " ]
                               , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
+                                then BulletList [(pandocEqnArrayOnelabel (symDefLabel r) . showLatex . toPredLogic) r | r<-rs ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath r]] | r<-rs ]
                               ]
            Dutch   -> case [r | r<-invariants fSpec, null (declsUsedIn r >- declsUsedIn p)] of
                        []  -> []
-                       [r] -> [ Para [ Str "Binnen deze gegevensverzameling dient de volgende integriteitsregel te allen tijde waar te zijn. " ]
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
-                                else Para [ Math DisplayMath $ showMath r]
-                              ]
+                       [r] -> [ Para [ Str "Binnen deze gegevensverzameling dient de volgende integriteitsregel te allen tijde waar te zijn. " ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
+                              else [ Para [ Math DisplayMath $ showMath r]]
                        rs  -> [ Para [ Str "Binnen deze gegevensverzameling dienen de volgende integriteitsregels te allen tijde waar te zijn. " ]
                               , if showPredExpr flags
-                                then BulletList [ [Para [ Math DisplayMath (showLatex (toPredLogic r)) ]] | r<-rs ]
-                                else BulletList [ [Para [Math DisplayMath $ showMath r]]
-                                                | r<-rs ]
+                                then BulletList [(pandocEqnArrayOnelabel (symDefLabel r) . showLatex . toPredLogic) r | r<-rs ]
+                                else BulletList [ [Para [Math DisplayMath $ showMath r]] | r<-rs ]
                               ]
        plugIdentities
         = case language flags of
            English -> case [k | k<-identityRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
-                       [s] -> [ Para [ Str "This data set contains one key. " ]
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else Para [ Math DisplayMath $ showMath s]
-                              ]
+                       [s] -> [ Para [ Str "This data set contains one key. " ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel (symDefLabel s) ((showLatex.toPredLogic) s)
+                              else [ Para [ Math DisplayMath $ showMath s]]
                        ss  -> [ Para [ Str "This data set contains the following keys. " ]
                               , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
+                                then BulletList [(pandocEqnArrayOnelabel (symDefLabel s) . showLatex . toPredLogic) s | s<-ss ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]]
                                                 | s<-ss ]
                               ]
            Dutch   -> case [k | k<-identityRules fSpec, null (declsUsedIn k >- declsUsedIn p)] of
                        []  -> []
-                       [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ] 
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else Para [ Math DisplayMath $ showMath s]
-                              ]
+                       [s] -> [ Para [ Str ("Deze gegevensverzameling genereert één key. ") ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel (symDefLabel s) ((showLatex.toPredLogic) s)
+                              else [ Para [ Math DisplayMath $ showMath s]]
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende keys. " ]
                               , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
+                                then BulletList [(pandocEqnArrayOnelabel (symDefLabel s) . showLatex . toPredLogic) s | s<-ss ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
        plugSignals
         = case (language flags, [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)]) of
     --       English -> case [r | r<-vrules fSpec, isSignal r , null (declsUsedIn r >- declsUsedIn p)] of
             (_      , [])  -> []
-            (English, [s]) -> [ Para [ Str "This data set generates one process rule. " ]
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else Para [ Math DisplayMath $ showMath s]
-                              ] 
+            (English, [s]) -> [ Para [ Str "This data set generates one process rule. " ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel (symDefLabel s) ((showLatex.toPredLogic) s)
+                              else [ Para [ Math DisplayMath $ showMath s]]
             (English, ss)  -> [  Para [ Str "This data set generates the following process rules. " ]
                               , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
+                                then BulletList [(pandocEqnArrayOnelabel (symDefLabel s) . showLatex . toPredLogic) s | s<-ss ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
-            (Dutch  ,  [s]) -> [ Para [ Str ("Deze gegevensverzameling genereert één procesregel. ") ] 
+            (Dutch  , [s]) -> [ Para [ Str ("Deze gegevensverzameling genereert één procesregel. ") ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel (symDefLabel s) ((showLatex.toPredLogic) s)
+                              else [ Para [ Math DisplayMath $ showMath s]]
+            (Dutch  , ss ) -> [ Para [ Str "Deze gegevensverzameling genereert de volgende procesregels. " ]
                               , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
-                                else Para [ Math DisplayMath $ showMath s]
-                              ]
-            (Dutch  ,  ss ) -> [ Para [ Str "Deze gegevensverzameling genereert de volgende procesregels. " ]
-                              , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]] | s<-ss ]
+                                then BulletList [(pandocEqnArrayOnelabel (symDefLabel s) . showLatex . toPredLogic) s | s<-ss ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath s]] | s<-ss ]
                               ]
        iRules
         = case language flags of
            English -> case irs of
                        []  -> []
-                       [e] -> [ Para [ Str "The following rule defines the integrity of data within this data set. It must remain true at all times. " ]
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
-                                else Para [ Math DisplayMath $ showMath e]
-                              ]
+                       [e] -> [ Para [ Str "The following rule defines the integrity of data within this data set. It must remain true at all times. " ]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel "" ((showLatex.toPredLogic) e)
+                              else [ Para [ Math DisplayMath $ showMath e]]
                        es  -> [ Para [ Str "The following rules define the integrity of data within this data set. They must remain true at all times. " ]
                               , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
+                                then BulletList [(pandocEqnArrayOnelabel "" . showLatex . toPredLogic) e | e<-es ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
            Dutch   -> case irs of
                        []  -> []
-                       [e] -> [ Para [ Str "De volgende regel definieert de integriteit van gegevens binnen deze gegevensverzameling. Hij moet te allen tijde blijven gelden. " ]
-                              , if showPredExpr flags
-                                then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
-                                else Para [ Math DisplayMath $ showMath e]
-                              ]
+                       [e] -> [ Para [ Str "De volgende regel definieert de integriteit van gegevens binnen deze gegevensverzameling. Hij moet te allen tijde blijven gelden. "]]++
+                              if showPredExpr flags
+                              then pandocEqnArrayOnelabel "" ((showLatex.toPredLogic) e)
+                              else [ Para [ Math DisplayMath $ showMath e]]
                        es  -> [ Para [ Str "De volgende regels definiëren de integriteit van gegevens binnen deze gegevensverzameling. Zij moeten te allen tijde blijven gelden. " ]
                               , if showPredExpr flags
-                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]] | e<-es ]
+                                then BulletList [(pandocEqnArrayOnelabel "" . showLatex . toPredLogic) e | e<-es ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
           where irs = [ horn2expr hc

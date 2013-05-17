@@ -324,12 +324,12 @@ where
 
 
 -------------- Class Diagrams ------------------
-   data ClassDiag = OOclassdiagram {classes :: [Class]            --
-                                   ,assocs :: [Association]      --
-                                   ,aggrs :: [Aggregation]      --
-                                   ,geners :: [Generalization]   --
-                                   ,nameandcpts :: (String,[A_Concept])}
-                            deriving Show
+   data ClassDiag = OOclassdiagram { classes :: [Class]            --
+                                   , assocs :: [Association]      --
+                                   , aggrs :: [Aggregation]      --
+                                   , geners :: [Generalization]   --
+                                   , nameandcpts :: (String,[A_Concept])
+                                   } deriving Show
    instance Identified ClassDiag where
       name cd = n
         where (n,_) = nameandcpts cd
