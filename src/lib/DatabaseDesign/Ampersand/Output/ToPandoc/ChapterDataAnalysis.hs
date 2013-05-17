@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis
+module DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis)
 where 
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters 
 import DatabaseDesign.Ampersand.ADL1
@@ -9,7 +9,7 @@ import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Output.PandocAux
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
-import Data.List (nub,sortBy)
+import Data.List (sortBy)
 import Data.Function (on)
 
 fatal :: Int -> String -> a
@@ -18,38 +18,63 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis.hs"
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
-chpDataAnalysis :: Int -> Fspc -> Options -> (Blocks,[Picture])
-chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
+chpDataAnalysis :: Fspc -> Options -> (Blocks,[Picture])
+chpDataAnalysis fSpec flags = (theBlocks, thePictures)
  where 
-  -- | In some cases, only a summary of the data analysis is required as output.
+ 
+  theBlocks 
+    =  chptHeader flags DataAnalysis  -- The header
+    <> (case language flags of 
+             Dutch   -> para ( text "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
+                            <> text "De opbouw is als volgt:"
+                             )
+                     <> para ( if summaryOnly
+                               then text "We beginnen met "
+                               else text "We beginnen met het classificatiemodel, gevolgd door "
+                            <> text "een overzicht van alle relaties, die samen de basis vormen van de rest van deze analyse. "
+                            <> text "tenslotte volgen achtereenvolgend het logische- en technische gegevensmodel."
+                             )   
+             English -> para ( text "This chapter contains the result of the data analisys. "
+                            <> text "It is structured as follows:"
+                             )
+                     <> para ( if summaryOnly
+                               then text "We start with "
+                               else text "We start with the classification model, followed by "
+                            <> text "a list of all relations, that are the foundation of the rest of the analisys. "
+                            <> text "Finally, the logical and technical data model are discussed."
+                             )   
+       )
+    <> if summaryOnly then mempty else classificationBlocks
+    <> daBasicBlocks
+    <> logicalDataModelBlocks
+    <> technicalDataModelBlocks
+  thePictures
+    =  [classificationPicture | not summaryOnly]
+    ++ logicalDataModelPictures ++ technicalDataModelPictures
+
+  daBasicBlocks                                          = daBasicsSection           sectionLevel fSpec flags
+  (classificationBlocks    , classificationPicture     ) = classificationSection     sectionLevel fSpec flags
+  (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec flags
+  (technicalDataModelBlocks, technicalDataModelPictures) = technicalDataModelSection sectionLevel fSpec flags
+  sectionLevel = 2
+                          -- | In some cases, only a summary of the data analysis is required as output.
   summaryOnly :: Bool
   summaryOnly = theme flags `elem` [StudentTheme]
   
-  -- | The user can specify that only specific themes should be taken into account 
-  -- in the output. However, when no themes are specified, all themes are relevant.
-  relevantThemes = if null (themes fSpec)
-                   then map name (patterns fSpec) ++ map name (vprocesses fSpec)
-                   else themes fSpec
-  
-  classificationModel :: Maybe ClassDiag
-  classificationModel = if summaryOnly
-                        then Nothing
-                        else clAnalysis fSpec flags
 
-  classificationPicture :: ClassDiag -> Picture
-  classificationPicture cl
-     = (makePicture flags fSpec Gen_CG cl)
-          {caption = case language flags of
-                       Dutch   ->"Classificatie van "++name fSpec
-                       English ->"Classification of "++name fSpec}
-
-  classificationBlocks :: ClassDiag -> Picture -> Blocks
-  classificationBlocks cl pict = 
-       header 2 (case language flags of
-                  Dutch   -> text "Classificaties"
-                  English -> text "Classifications"
-                )
-    <> para (case language flags of 
+classificationSection :: Int -> Fspc -> Options -> (Blocks,Picture)
+classificationSection lev fSpec flags = (theBlocks,pict)
+ where 
+  theBlocks =
+       header lev (case language flags of
+                    Dutch   -> text "Classificaties"
+                    English -> text "Classifications"
+                  )
+    <> content
+  content = 
+    if null (classes classificationModel)
+    then para $ text "Er zijn geen classificaties gedefinieerd."
+    else para (case language flags of 
               Dutch   -> text "Een aantal concepten zit in een classificatiestructuur. "
                        <> (if canXRefer flags 
                            then text "Deze is in figuur " <> xRefReference flags pict <> text "weergegeven."
@@ -61,22 +86,24 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                            else text "This is shown in the figure below."
                           )
             )
-    <> para (showImage flags pict)
-    
+         <> para (showImage flags pict)
+     
+   where
+  classificationModel :: ClassDiag
+  classificationModel = clAnalysis fSpec flags
 
-  logicalDataModel :: ClassDiag
-  logicalDataModel = cdAnalysis fSpec flags
-  
-  logicalDataModelPicture :: ClassDiag -> Picture
-  logicalDataModelPicture cd
-                 = (makePicture flags fSpec Plain_CG cd)
-                        {caption = case language flags of
-                                    Dutch   ->"Datamodel van "++name fSpec
-                                    English ->"Data model of "++name fSpec}
-  
-  logicalDataModelBlocks :: ClassDiag -> Picture -> Blocks
-  logicalDataModelBlocks dm pict =
-       header 2 (case language flags of
+  pict :: Picture
+  pict = (makePicture flags fSpec Gen_CG classificationModel)
+          {caption = case language flags of
+                       Dutch   ->"Classificatie van "++name fSpec
+                       English ->"Classification of "++name fSpec}
+
+
+logicalDataModelSection :: Int -> Fspc -> Options -> (Blocks,[Picture])
+logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
+ where
+  theBlocks =
+       header lev (case language flags of
                     Dutch   -> text "Logisch gegevensmodel"
                     English -> text "Logical datamodel"
                 )
@@ -93,29 +120,31 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                           ) )
             )
      <> para (showImage flags pict)
-     <> if summaryOnly 
-        then mempty
-        else let nrOfClasses = length (classes dm)
-             in case language flags of
-                  Dutch   -> para (case nrOfClasses of
-                                     0 -> text "Er zijn geen gegevensverzamelingen."
-                                     1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
-                                     _ -> text ("Er zijn "++count flags nrOfClasses "gegevensverzameling"++". ") 
-                                       <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
-                                  )
-                  English -> para (case nrOfClasses of
-                                     0 -> text "There are no entity types."
-                                     1 -> text "There is only one entity type:"
-                                     _ -> text ("There are "++count flags nrOfClasses "entity type" ++".")
-                                       <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
-                                  )
-          <> mconcat [detailsOfClass cd | cd <- sortBy (compare `on` name) (classes dm)]
-        
-        
-    where
-      detailsOfClass :: Class -> Blocks
-      detailsOfClass cl = 
-           header 3 ((case language flags of
+     <> let nrOfClasses = length (classes oocd)
+        in case language flags of
+             Dutch   -> para (case nrOfClasses of
+                                0 -> text "Er zijn geen gegevensverzamelingen."
+                                1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
+                                _ -> text ("Er zijn "++count flags nrOfClasses "gegevensverzameling"++". ") 
+                                  <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
+                             )
+             English -> para (case nrOfClasses of
+                                0 -> text "There are no entity types."
+                                1 -> text "There is only one entity type:"
+                                _ -> text ("There are "++count flags nrOfClasses "entity type" ++".")
+                                  <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
+                             )
+     <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+       
+  pict = (makePicture flags fSpec Plain_CG oocd)
+           {caption = case language flags of
+                        Dutch   ->"Logisch gegevensmodel van "++name fSpec
+                        English ->"Logical data model of "++name fSpec}      
+  oocd = cdAnalysis fSpec flags
+  
+  detailsOfClass :: Class -> Blocks
+  detailsOfClass cl = 
+           header (lev+1) ((case language flags of
                        Dutch   -> text "Gegevensverzameling: "
                        English -> text "Entity type: "
                      )
@@ -133,7 +162,14 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                      ,mempty
                                      ]
                        )
-                       [ [ (plain.text.name) attr
+                       ( [[ (plain.text) "Id"
+                          , (plain.text.name) cl
+                          , (plain.text) (case language flags of
+                                            Dutch -> "Sleutel"
+                                            English -> "Primary key"
+                                         )
+                         ]]
+                    <> [ [ (plain.text.name) attr
                          , (plain.text.attTyp) attr
                          , (plain.text) $ case (language flags,attOptional attr) of
                                             (Dutch  ,True ) -> "Optioneel"
@@ -141,70 +177,80 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                             (Dutch  ,False) -> "Verplicht"
                                             (English,False) -> "Mandatory"
                          ]
-                         | attr <- clAtts cl]  
+                         | attr <- clAtts cl]
+                       )  
         <> case language flags of 
              Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
              English -> para ( text (name cl) <> text " has the following associations: ")
-        <> simpleTable (case language flags of
-                          Dutch   -> [(para.text) "Associatie"
-                                     ]
-                          English -> [(para.text) "Association"
-                                     ]
-                       )
-                       [ [ if (not.null.assrhr) assoc && assSrc assoc == clcpt cl
-                           then case language flags of
-                                  Dutch   -> para (   text (case assrhm assoc of
-                                                              Mult MinZero _ -> "Sommige "
-                                                              Mult MinOne  _ -> "Elk(e) "
-                                                           ) 
-                                                   <> (emph.text.name.assSrc) assoc
-                                                   <> text " "
-                                                   <> (singleQuoted.text.     assrhr) assoc
-                                                   <> text (case assrhm assoc of
-                                                              Mult _ MaxOne  -> fatal 167 "Deze zou als attribuut opgenomen moeten zijn in de Class!"
-                                                              Mult _ MaxMany -> " één of meerdere "
-                                                           ) 
-                                                   <> (emph .text.name.assTrg) assoc
-                                                  )
-                                  English -> para (   text (case assrhm assoc of
-                                                              Mult MinZero _ -> "Some "
-                                                              Mult MinOne  _ -> "Each "
-                                                           ) 
-                                                   <> (emph.text.name.assSrc) assoc
-                                                   <> text " "
-                                                   <> (singleQuoted.text.     assrhr) assoc
-                                                   <> text (case assrhm assoc of
-                                                              Mult _ MaxOne  -> fatal 167 "This should have become an attribute of this Class!"
-                                                              Mult _ MaxMany -> " one or more "
-                                                           ) 
-                                                   <> (emph .text.name.assTrg) assoc
-                                                  )
-                           else 
-                           if (not.null.asslhr) assoc && assTrg assoc == clcpt cl
-                           then case language flags of
-                                  Dutch   -> para ( text "---TODO---")
-                                  English -> para ( text "---TODO---")
-                           else (para.text) "Dit zou niet voor moeten komen!"
-                            --      English -> para ()
---                         , (para.text.name.assSrc) assoc
---                         , (para.text.show.asslhm) assoc
---                         , (para.text.     asslhr) assoc
---                         , (para.text.name.assTrg) assoc
---                         , (para.text.show.assrhm) assoc
---                         , (para.text.     assrhr) assoc
-                         ] 
-
-                         | assoc <- assocs dm, assSrc assoc == clcpt cl || assTrg assoc == clcpt cl]  
+        <> orderedList [assocToRow assoc | assoc <- assocs oocd
+                         , assSrc assoc == clcpt cl || assTrg assoc == clcpt cl]
+                       
+    where
+     assocToRow :: DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow assoc  =                 
+      --  showDummy assoc <>
+        if (null.assrhr) assoc
+        then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
+        else case language flags of
+           Dutch   -> para (   text "Ieder(e) "
+                            <> (emph.text.name.assSrc) assoc
+                            <> let rel = (singleQuoted.text.assrhr) assoc
+                                   rel' = text ""
+                               in (case assrhm assoc of
+                                     Mult MinZero MaxOne  -> text " "  <> rel <> text " maximaal één " 
+                                     Mult MinZero MaxMany -> text " "  <> rel <> text " geen tot meerdere "
+                                     Mult MinOne  MaxOne  -> text " moet " <> rel <> text " precies één "
+                                     Mult MinOne  MaxMany -> text " moet " <> rel <> text " ten minste één "
+                                  ) 
+                            <> (emph.text.name.assTrg) assoc 
+                            <> text ". Over deze relatie geldt omgekeerd dat "
+                            <> text "ieder(e) "
+                            <> (emph.text.name.assTrg) assoc
+                            <> (case asslhm assoc of
+                                     Mult MinZero MaxOne  -> text " "  <> rel' <> text " maximaal één " 
+                                     Mult MinZero MaxMany -> text " "  <> rel' <> text " geen tot meerdere "
+                                     Mult MinOne  MaxOne  -> text " moet " <> rel' <> text " precies één "
+                                     Mult MinOne  MaxMany -> text " moet " <> rel' <> text " ten minste één "
+                                  )
+                            <> (emph.text.name.assSrc) assoc
+                            <> text " kan hebben."
+                           )
+           English -> para (   text (case assrhm assoc of
+                                       Mult MinZero _ -> "Some "
+                                       Mult MinOne  _ -> "Each "
+                                    ) 
+                            <> (emph.text.name.assSrc) assoc
+                            <> text " "
+                            <> (singleQuoted.text.     assrhr) assoc
+                            <> text (case assrhm assoc of
+                                       Mult _ MaxOne  -> fatal 167 "This should have become an attribute of this Class!"
+                                       Mult _ MaxMany -> " one or more "
+                                    ) 
+                            <> (emph .text.name.assTrg) assoc
+                           )
+             
+showDummy assoc = --(plain.text.show) assoc 
+        (para.text) ("assSrc: "++(name.assSrc) assoc)
+     <> (para.text) ("asslhm: "++(show.asslhm) assoc)
+     <> (para.text) ("asslhr: "++(     asslhr) assoc)
+     <> (para.text) ("assTrg: "++(name.assTrg) assoc)
+     <> (para.text) ("assrhm: "++(show.assrhm) assoc)
+     <> (para.text) ("assrhr: "++(     assrhr) assoc)
                
-               
-                
-  technicalDataModelBlocks :: Blocks
-  technicalDataModelBlocks =
-       header 2 (case language flags of
+technicalDataModelSection :: Int -> Fspc -> Options -> (Blocks,[Picture])
+technicalDataModelSection lev fSpec flags = (theBlocks,[])
+ where 
+   theBlocks =
+       header lev (case language flags of
                     Dutch   -> text "Technisch datamodel"
                     English -> text "Technical datamodel"
-                )
-    <> para (let nrOfTables = length (plugInfos fSpec) in
+                      )
+    <> para (let nrOfTables = length (filter isTable (plugInfos fSpec)) 
+                 isTable (InternalPlug TblSQL{}) = True
+                 isTable (InternalPlug BinSQL{}) = True
+                 isTable (InternalPlug ScalarSQL{}) = False
+                 isTable ExternalPlug{} = False
+             in
              case language flags of
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
         English -> text ("The technical datamodel consists of the following "++show nrOfTables++"tables:")
@@ -230,32 +276,23 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                   )
                <> showFields (plugFields tbl)
              InternalPlug bin@BinSQL{} 
-               -> (let rel = case mLkp bin of
-                               EDcD r _ -> r
-                               _        -> fatal 254 "relation unknown. contact your dealer!"
-                   in para 
+               -> para 
                        (case language flags of
                          Dutch
                            ->  text "Dit is een koppeltabel, die "
-                            <> mathRel (mLkp bin)
+                            <> primExpr2pandocMath flags (mLkp bin)
                             <> text " implementeert. De tabel bestaat uit de volgende kolommen:"      
                            
                          English
                            ->  text "This is a link-table, implementing "
-                            <> mathRel (mLkp bin)
+                            <> primExpr2pandocMath flags (mLkp bin)
                             <> text ". It contains the following columns:"  
                        )
                      <> showFields (plugFields bin)
-                   )
+                   
                   
-             InternalPlug sclr@ScalarSQL{} 
-               -> para (case language flags of
-                          Dutch   -> text "Dit is een enumeratie. Deze tabel heeft "
-                                   <>text "slechts één kolom:"
-                          English -> text "This table contains an enumeration. "
-                                   <>text "This table has a single column only:"
-                       )
-               <> showFields (plugFields sclr)
+             InternalPlug ScalarSQL{} 
+                -> mempty
              ExternalPlug _
                -> case language flags of
                     Dutch   -> para (text "De details van deze service zijn in dit document (nog) niet verder uitgewerkt.")
@@ -306,218 +343,49 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                                   (case language flags of
                                      Dutch   -> text ("Dit attribuut implementeert ")
                                      English -> text ("This attribute implements ")
-                                  <> mathRel (fldexpr fld)
+                                  <> primExpr2pandocMath flags (fldexpr fld)
                                   <> text "."
                                   )
                          )
                      )
                    
              
-  thePictures 
-    = logicalDataModelPicture logicalDataModel
-    : case classificationModel of
-         Nothing -> []
-         Just cl -> [classificationPicture cl] 
-
-  theBlocks 
-    =  chptHeader flags DataAnalysis  -- The header
-    <> (case language flags of 
-             Dutch   -> para $ text "Dit hoofdstuk is nog niet uit-ontwikkeld!"
-             English -> para $ text "This chapter needs more work. It is work in progress!"
-       )
-    <> (case classificationModel of --If there is a classification model, show it in the output
-          Nothing -> mempty
-          Just cl -> classificationBlocks cl (classificationPicture cl)
-       )
-    <> -- Fact type table containing the relevant relations:
-       daBasics [d | d<-declarations fSpec
-                   , decusr d
-                   , (  decpat d `elem` relevantThemes
-                     || d `elem` [r | pat<-patterns fSpec  , name pat `elem` relevantThemes, r@Sgn{}<-declsUsedIn pat]
-                     || d `elem` [r | prc<-vprocesses fSpec, name prc `elem` relevantThemes, r@Sgn{}<-declsUsedIn (fpProc prc)]
-                     )
-                ]
-    
-    <> logicalDataModelBlocks logicalDataModel (logicalDataModelPicture logicalDataModel) 
-    <> horizontalRule 
-    <> technicalDataModelBlocks
-    <> horizontalRule 
-
-  remainingRels = (if null (themes fSpec)
-                   then declsUsedIn fSpec
-                   else [d | d@Sgn{}<-declsUsedIn fSpec, decpat d `elem` themes fSpec]
-                  ) >- [r | p<-plugInfos fSpec, r<-declsUsedIn p]
-
-
-
---  theRest :: [a]
---  theRest
---   = fromList (
---       daAssociations remainingRels ++
---       [b | p<-entities, b<-daPlug p]
---              )
- 
- -- The declarations that are used in entities need not be drawn in pictures, because they are attributes.
-  entities = if null (themes fSpec)
-             then [p | InternalPlug p<-plugInfos fSpec]
-             else nub [p | c<-concs remainingRels, (p,_)<-lookupCpt fSpec c ]
-             
-        
-  
-  -- | a short summary of the statistics. This text also serves as an introduction
---  daIntro :: Lang -> Blocks
---  daIntro lang = fromList $ intro lang ++ classificationPictures ++ classDiagramPictureParagraph
---    where 
---     intro Dutch =
---                [Para $
---                  ( if genGraphics flags 
---                    then 
---                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
---                       [ Str "Een aantal concepten uit hoofdstuk "
---                       , xrefReference SharedLang
---                       , Str " zit in een classificatiestructuur. Deze is in figuur "
---                       , xrefReference classificationPicture
---                       , Str " weergegeven. " ] 
---                     ) ++
---                     [ Str "De eisen, die in hoofdstuk "
---                     , xrefReference SharedLang
---                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
---                     , xrefReference classDiagramPicture
---                     , Str ". " ]
---                    else []
---                  )++
---                  [ Str (case length (classes classDiagram) of
---                            0 -> "Er zijn"
---                            1 -> "Er is één gegevensverzameling,"
---                            _ -> "Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
---                        )
---                  , Space, Str $ count flags (length (assocs classDiagram)) "associatie" ]++
---                  ( case classification of
---                     Nothing -> []
---                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisatie" ] ) ++
---                  [ Str $ " en "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
---                  , Str $ " "++name fSpec++" kent in totaal "++count flags (length (concs fSpec)) "concept"++"."
---                  ]]
---     intro English = [Para $
---                  ( if genGraphics flags 
---                    then 
---                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
---                       [ Str "A number of concepts from chapter "
---                       , xrefReference SharedLang
---                       , Str " is organized in a classification structure. This is represented in figure "
---                       , xrefReference classificationPicture
---                       , Str ". " ] ) ++
---                     [ Str "The requirements, which are listed in chapter "
---                     , xrefReference SharedLang
---                     , Str ", have been translated into the data model in figure "
---                     , xrefReference classDiagramPicture
---                     , Str ". " ]
---                    else []
---                  )++
---                  [ Str (case length (classes classDiagram) of
---                            0 -> "There are"
---                            1 -> "There is one data set,"
---                            _ -> "There are "++count flags (length (classes classDiagram)) "data set"++","
---                        )
---                  , Space, Str $ count flags (length (assocs classDiagram)) "association"]++
---                  ( case classification of
---                     Nothing -> []
---                     Just cl -> [ Str $ ", "++count flags (length (geners cl)) "generalisation"++"," ] ) ++
---                  [ Str $ " and "++count flags (length (aggrs classDiagram)) "aggregation"++"."
---                  , Str $ " "++name fSpec++" has a total of "++count flags (length (concs fSpec)) "concept"++"."
---                  ]] --TODO
---  classificationPictures :: [Block]
---  classificationPictures = [ Plain $ xrefFigure1 classificationPicture | Just _<-[classification]]
---  
---  classDiagramPictureParagraph :: [Block]
---  classDiagramPictureParagraph = [ Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
---
---  daPicsOnly :: [Block]
---  daPicsOnly = 
---   (case language flags of
---     Dutch   -> [Para
---                  ( if genGraphics flags 
---                    then 
---                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
---                       [ Str "Een aantal concepten uit hoofdstuk "
---                       , xrefReference SharedLang
---                       , Str " zit in een classificatiestructuur. Deze is in figuur "
---                       , xrefReference classificationPicture
---                       , Str " weergegeven. " ] 
---                     ) ++
---                     [ Str "De eisen, die in hoofdstuk "
---                     , xrefReference SharedLang
---                     , Str " beschreven zijn, zijn in een gegevensanalyse vertaald naar het gegevensmodel van figuur "
---                     , xrefReference classDiagramPicture
---                     , Str ". " ]
---                    else []
---                  )]
---     English -> [Para
---                  ( if genGraphics flags 
---                    then 
---                     ( if null [() | Just _<-[classification]] then [] else   -- if there is no classification, print nothing
---                       [ Str "A number of concepts from chapter "
---                       , xrefReference SharedLang
---                       , Str " is organized in a classification structure. This is represented in figure "
---                       , xrefReference classificationPicture
---                       , Str ". " ] ) ++
---                     [ Str "The requirements, which are listed in chapter "
---                     , xrefReference SharedLang
---                     , Str ", have been translated into the data model in figure "
---                     , xrefReference classDiagramPicture
---                     , Str ". " ]
---                    else []
---                  )]
---   ) ++ [ Plain $ xrefFigure1 classificationPicture | Just _<-[classification]] ++[ Plain $ xrefFigure1 classDiagramPicture ]
-
-
-{- The switchboard should probably not be in the chapter "Data analysis" 
-  picSwitchboard :: Picture
-  picSwitchboard
-   = (makePicture flags fSpec Plain_CG sb) 
-        {caption = case language flags of
-                    Dutch   ->"Schakelpaneel van "++name fSpec
-                    English ->"Switchboard of "++name fSpec}
-     where
-       sb :: SwitchBdDiagram
-       sb = (sbDiagram fSpec . fSwitchboard) fSpec -- the Picture that represents this interface's knowledge graph
-
-  txtSwitchboard :: [Block]
-  txtSwitchboard
-   = (case language flags of                                     -- announce the switchboard diagram
-           Dutch   -> [Para [ Str "Figuur ", xrefReference picSwitchboard
-                            , Str " geeft het schakelpaneel (switchboard diagram) weer. "
-                            , Str "Dit wordt gebruikt bij het ontwerpen van de database functionaliteit."] ]
-           English -> [Para [ Str "Figure ", xrefReference picSwitchboard
-                            , Str " shows the switchboard diagram."
-                            , Str "This is used in designing the database functionality."] ]
-     )
-     ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
--}
-
-  -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
-  daBasics :: [Declaration] -> Blocks
-  daBasics ds
-   | summaryOnly = mempty
-   | otherwise   =
-      table 
+ -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
+daBasicsSection  :: Int -> Fspc -> Options -> Blocks
+daBasicsSection lev fSpec flags = theBlocks
+ where 
+  theBlocks =
+       header lev (case language flags of
+                    Dutch   -> text "Basiszinnen"
+                    English -> text "Fact types"
+                  )
+   <>  table 
         (-- caption -- 
          case language flags of
-           Dutch   -> text "Deze tabel bevat de basiszinnen, die gebruikt zijn om het gegevensmodel te genereren."
-           English -> text "This table contains the fact types, used to generate the datamodel."
+           Dutch   -> text "Deze tabel bevat de basiszinnen, die gebruikt zijn als basis voor de gegevensanalyse."
+           English -> text "This table lists the fact types, that have been used in assembling the data models."
         )
         [(AlignLeft,0.4)       , (AlignCenter, 0.4)         , (AlignCenter, 0.2)]
         ( case language flags of
            Dutch   -> [plain (text "Relatie") , plain (text "Beschrijving"), plain (text "Eigenschappen")]
            English -> [plain (text "Relation"), plain (text "Description") , plain (text "Properties")   ]
         ) 
-        (map toRow ds)
+        (map toRow declsInRelevantThemes)
     where
+      declsInRelevantThemes = 
+        -- a declaration is considered relevant iff it is declared or used in one of the relevant themes.
+         [d | d<-declarations fSpec
+         , decusr d
+         , (  decpat d `elem` relevantThemes fSpec  
+               || d `elem` declsUsedIn [p | p<-            patterns fSpec   , name p `elem` relevantThemes fSpec]
+               || d `elem` declsUsedIn [p | p<-map fpProc (vprocesses fSpec), name p `elem` relevantThemes fSpec]
+           )
+         ]
       toRow :: Declaration -> [Blocks]
       toRow d
         = [ (plain.math.showMath) d
           , fromList (meaning2Blocks (language flags) d)
-          ,  plain ( inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d])
+          , plain ( inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d])
           ]
 
 -- The properties of various declarations are documented in different tables.
@@ -832,33 +700,42 @@ chpDataAnalysis lev fSpec flags = (theBlocks, thePictures)
                   ScalarSQL{} -> [cLkp p]
                   _           -> map fst (cLkpTbl p)
 
-  mathRel :: Expression -> Inlines
-  mathRel (EDcD d           _) = 
-      case language flags of
-        Dutch -> text "de relatie " 
-        English -> text "the relation "
-   <> math ((name.source) d++ " \\xrightarrow {"++name d++"} "++(name.target) d)
-  mathRel (EFlp (EDcD d _ ) _) = 
-      case language flags of
-        Dutch -> text "de relatie " 
-        English -> text "the relation "
-   <> math ((name.source) d++ " \\xleftarrow  {"++name d++"} "++(name.target) d)
-  mathRel (EIsc (r1,_)     _) = 
-      let srcTable = case r1 of
-                       EDcI sgn -> source sgn
-                       _        -> fatal 767 ("Unexpected expression: "++show r1)
-      in 
-      case language flags of
-        Dutch -> text "de identiteitsrelatie van " 
-        English -> text "the identityrelation of "
-   <> math (name srcTable) 
-  mathRel t@(ETyp (EDcI _) _) =
-      case language flags of
-        Dutch   -> text "het feit of deze " <> (math.name.source) t <> text " een "  <> (math.name.target) t <> text " is." 
-        English -> text "weather this "     <> (math.name.source) t <> text " is a " <> (math.name.target) t <> text " or not." 
-  --  mathRel (ECps (r1,r2)     _) = mathRel r1 <> math " ; "     <> mathRel r2
-  mathRel expr                    = fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show expr) 
+primExpr2pandocMath :: Options -> Expression -> Inlines
+primExpr2pandocMath flags e =
+ case e of
+  (EDcD d           _) ->  
+           case language flags of
+             Dutch -> text "de relatie " 
+             English -> text "the relation "
+        <> math ((name.source) d++ " \\xrightarrow {"++name d++"} "++(name.target) d)
+  (EFlp (EDcD d _ ) _) -> 
+           case language flags of
+             Dutch -> text "de relatie " 
+             English -> text "the relation "
+        <> math ((name.source) d++ " \\xleftarrow  {"++name d++"} "++(name.target) d)
+  (EIsc (r1,_)     _) -> 
+           let srcTable = case r1 of
+                            EDcI sgn -> source sgn
+                            _        -> fatal 767 ("Unexpected expression: "++show r1)
+           in 
+           case language flags of
+             Dutch -> text "de identiteitsrelatie van " 
+             English -> text "the identityrelation of "
+        <> math (name srcTable) 
+  (ETyp (EDcI _) _) ->
+           case language flags of
+             Dutch   -> text "het feit of deze " <> (math.name.source) e <> text " een "  <> (math.name.target) e <> text " is." 
+             English -> text "weather this "     <> (math.name.source) e <> text " is a " <> (math.name.target) e <> text " or not." 
+  _   -> fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show e) 
   
+  
+  
+  -- | The user can specify that only specific themes should be taken into account 
+  -- in the output. However, when no themes are specified, all themes are relevant.
+relevantThemes :: Fspc -> [String]
+relevantThemes fSpec = if null (themes fSpec)
+                       then map name (patterns fSpec) ++ map name (vprocesses fSpec)
+                       else themes fSpec
   
                           
   
