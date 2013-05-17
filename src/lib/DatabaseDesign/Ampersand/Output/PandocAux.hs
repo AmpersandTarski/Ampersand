@@ -6,6 +6,7 @@ module DatabaseDesign.Ampersand.Output.PandocAux
       , symReqLabel, symReqRef, symReqPageRef
       , xrefSupported
       , pandocEqnArray
+      , pandocEqnArrayOnelabel
       , pandocEquation
       , makeDefinition, uniquecds
       , count
@@ -354,9 +355,18 @@ pandocEqnArray xs
                                "\n\\end{eqnarray}") ]
    | not (null xs)]
    
+pandocEqnArrayOnelabel :: String -> [(String,String,String)] -> [Block]
+pandocEqnArrayOnelabel label xs
+ = case xs of
+    []           -> []
+    (a,b,c):rest -> [ Para [ RawInline "latex" ("\\begin{eqnarray}\n   "++a++"&"++b++"&"++c++label++"\\\\\n   "++
+                               intercalate "\\nonumber\\\\\n   " [ l++"&"++m++"&"++r | (l,m,r)<-rest ]++
+                               "\\nonumber\n\\end{eqnarray}")
+                    ]      ]
+   
 pandocEquation :: String -> [Block]
 pandocEquation x
- = [ Para [ RawInline "latex" ("\\begin{dmath}\n   "++ x ++"\n\\end{dmath}") ]
+ = [ Para [ RawInline "latex" ("\\begin{equation}\n   "++ x ++"\n\\end{equation}") ]
    | not (null x)]
 
 --DESCR -> pandoc print functions for Ampersand data structures
@@ -569,18 +579,18 @@ uniquecds :: A_Concept -> [(String,ConceptDef)]
 uniquecds c = [(if length(cptdf c)==1 then cdcpt cd else cdcpt cd++show i , cd) | (i,cd)<-zip [(1::Integer)..] (cptdf c)]
 
 makeDefinition :: Options -> Int -> String -> String -> String -> String -> [Block]
-makeDefinition flags i nm lbl def ref =
+makeDefinition flags i nm lbl defin ref =
   case fspecFormat flags of
-    FLatex ->  [ Para ( [ RawInline "latex" $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw def++"}}\n"] ++
+    FLatex ->  [ Para ( [ RawInline "latex" $ "\\newglossaryentry{"++escapeNonAlphaNum nm ++"}{name={"++latexEscShw nm ++"}, description={"++latexEscShw defin++"}}\n"] ++
                         [ RawInline "latex" $ lbl ++ "\n" | i == 0] ++
                         [ RawInline "latex" $ insertAfterFirstWord refStr defStr] ++
                         [ RawInline "latex" (latexEscShw (" ["++ref++"]")) | not (null ref) ]
                       )
                ]
-    _      ->  [ Para ( Str def : [ Str (" ["++ref++"]") | not (null ref) ] )
+    _      ->  [ Para ( Str defin : [ Str (" ["++ref++"]") | not (null ref) ] )
                ]
  where refStr = "\\marge{\\gls{"++escapeNonAlphaNum nm++"}}" 
-       defStr = latexEscShw def
+       defStr = latexEscShw defin
        -- by putting the ref after the first word of the definition, it aligns nicely with the definition
        insertAfterFirstWord s wordsStr = let (fstWord, rest) = break (==' ') wordsStr
                                          in  fstWord ++ s ++ rest

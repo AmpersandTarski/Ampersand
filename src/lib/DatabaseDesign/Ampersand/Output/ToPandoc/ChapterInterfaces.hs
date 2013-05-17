@@ -237,7 +237,7 @@ picKnowledgeGraph flags fSpec act
 
 picSwitchboard :: Options -> Fspc -> Activity -> Picture
 picSwitchboard flags fSpec act
-    = (makePicture flags fSpec Plain_CG(switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
+    = (makePicture flags fSpec Plain_CG (switchboardAct fSpec act)) -- the Picture that represents this interface's knowledge graph
         {caption = case language flags of
                     Dutch   ->"Schakelpaneel van "++name act
                     English ->"Switchboard of "++name act}
