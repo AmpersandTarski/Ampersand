@@ -173,9 +173,6 @@ chpProcessAnalysis lev fSpec flags
 
   picProcessModel :: FProcess->Picture
   picProcessModel fproc
-   = (makePicture flags fSpec Plain_CG fproc) -- the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
-        {caption = case language flags of
-                    Dutch   ->"Procesmodel van "++name fproc
-                    English ->"Process model of "++name fproc}
+   = makePicture flags fSpec Plain_CG fproc -- the Picture that represents this interface's knowledge graph with only those relations that are used in rules (controlled by Plain_CG).
 
 

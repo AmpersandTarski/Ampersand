@@ -64,7 +64,11 @@ class Identified a => Dotable a where
    --  1. conceptualGraph:  creates a DotGraph data structure
    --  2. printDotGraph:    makes a string, which is the contents of the dot-file for GraphViz
    --  3. makePictureObj:   creates a Picture data structure, containing the required metadata needed for production.
-   makePicture :: Options -> Fspc -> DrawingType -> a -> Picture
+   makePicture :: Options
+               -> Fspc
+               -> DrawingType
+               -> a
+               -> Picture
 
 instance Dotable ClassDiag where
    conceptualGraph _ _ _ _ = fatal 58 "TODO: ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd."

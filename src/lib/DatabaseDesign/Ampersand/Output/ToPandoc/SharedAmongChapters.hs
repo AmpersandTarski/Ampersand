@@ -138,7 +138,7 @@ instance Xreferencable Picture where
 showImage :: Options -> Picture -> Inlines
 showImage flags pict = 
       case fspecFormat flags of
-         FLatex  -> rawInline "latex" "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
+         FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
    <> image (uniqueName pict) (xLabel pict) (text $ "Here, "++uniqueName pict++" should have been visible" )
    <> case fspecFormat flags of
@@ -151,7 +151,7 @@ showImage flags pict =
          _       -> mempty
 xrefFigure1 :: Picture -> [Inline]  --DEPRECIATED! Use showImage instead.
 xrefFigure1 pict =
-   [ RawInline "latex" "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
+   [ RawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
    , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] (uniqueName pict, xLabel pict)
    , RawInline "latex" "}\n"
    , RawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n") 
@@ -229,13 +229,13 @@ dpRule fSpec flags = dpR
              [ Plain text2 | not (null rds)] ++
              [ Plain text3 ] ++
              (if showPredExpr flags
-              then pandocEquation ((showLatex.toPredLogic) r++symDefLabel r)
+              then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
               else pandocEquation (showMath r++symDefLabel r)
              )++
              [ Plain text4 | isSignal r] ++
              (if not (isSignal r) then [] else
               if showPredExpr flags
-              then pandocEquation ((showLatex.toPredLogic) r++symDefLabel r)
+              then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
               else pandocEquation (showMath r++symDefLabel r)
              )++
              [ Plain text5 | length nds>1]

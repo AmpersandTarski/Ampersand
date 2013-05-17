@@ -19,21 +19,21 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 
  --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook AdlExplanation. HJO. 
    data PredLogic       
-    = Forall [Var] PredLogic         |
-      Exists [Var] PredLogic         |
-      Implies PredLogic PredLogic    |
-      Equiv PredLogic PredLogic      |
-      Conj [PredLogic]               |
-      Disj [PredLogic]               |
-      Not PredLogic                  |
-      Pred String String             |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
-      PlK0 PredLogic                 |
-      PlK1 PredLogic                 |
+    = Forall [Var] PredLogic            |
+      Exists [Var] PredLogic            |
+      Implies PredLogic PredLogic       |
+      Equiv PredLogic PredLogic         |
+      Conj [PredLogic]                  |
+      Disj [PredLogic]                  |
+      Not PredLogic                     |
+      Pred String String                |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
+      PlK0 PredLogic                    |
+      PlK1 PredLogic                    |
       R PredLogic Declaration PredLogic |
-      Atom String                    |
+      Atom String                       |
       Funs String [Declaration]         |
-      Dom Expression Var             |
-      Cod Expression Var          deriving Eq
+      Dom Expression Var                |
+      Cod Expression Var                deriving Eq
 
    data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
 
@@ -58,9 +58,9 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 -- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
 -- It circumvents the PanDoc structure and goes straight to LaTeX source code.
 -- TODO when PanDoc is up to the job.
-   showLatex :: PredLogic -> String
-   showLatex
-    = predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\wedge", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in")
+   showLatex :: PredLogic -> [(String,String,String)]
+   showLatex x
+    = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\ \\wedge\t", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
       where rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
               = if isIdent r then lhs++"\\ =\\ "++rhs else
                 case name r of
@@ -82,9 +82,19 @@ module DatabaseDesign.Ampersand.Output.PredLogic
             mathVars :: String -> [Var] -> String
             mathVars q vs
              = if null vs then "" else
-               q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\ \\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++": "
+               q++" "++intercalate "; " [intercalate ", " var++"\\coloncolon\\id{"++latexEscShw dType++"}" | (var,dType)<-vss]++":\n"
                where
                 vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+            chop :: String -> [(String,String,String)]
+            chop str = (map chops.lins) str
+             where
+               lins ""        = []
+               lins ('\n':cs) = "": lins cs
+               lins (c:cs)    = (c:r):rs where r:rs = case lins cs of  [] -> [""] ; e -> e
+               chops cs = let [a,b,c] = take 3 (tabs cs) in (a,b,c)
+               tabs "" = ["","","",""]
+               tabs ('\t':cs) = "": tabs cs
+               tabs (c:cs) = (c:r):rs where r:rs = tabs cs
 
 -- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
 -- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
@@ -285,6 +295,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
       f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
       f _ (EMp1 atom _) _             = Atom atom
+      f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
+      f _ (EDcV _) _                = Atom "True"
 
 -- fC treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
