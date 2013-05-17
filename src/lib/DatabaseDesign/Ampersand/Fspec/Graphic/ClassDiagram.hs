@@ -19,7 +19,7 @@ where
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
    import Data.GraphViz.Attributes.HTML as Html
-   
+   import Debug.Trace 
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
 
@@ -71,9 +71,6 @@ where
                       }
 
     where
--- The following code was inspired on ADL2Plug
--- The first step is to determine which entities to generate.
--- All concepts and relations mentioned in exclusions are excluded from the process.
        rels       = [EDcD r (sign r) | r@Sgn{} <- declarations fSpec, decusr r]
        relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
        cpts       = nub [ specific
@@ -111,45 +108,57 @@ where
    cdAnalysis fSpec _ = 
      OOclassdiagram {cdName  = name fSpec
                     ,classes = 
-                      let cls=eqClass (==) assRels in
-                      if length cls /= length assRels
-                      then fatal 125 (show [map show cl | cl<-cls, length cl>1])
-                      else [ OOClass c (attrs cl) []
-                           | cl<-eqCl source attRels, let c=source (head cl)
-                           , c `elem` (map source assRels `uni` map target assRels)]
+                       [ OOClass{ clcpt  = root
+                                , clAtts = map ooAttr (filter (\x -> source x == root) attribs)
+                                , clMths = []
+                                }
+                       | root <- rootConcepts]
                     ,assocs  = 
-                      let mults r = let minVal = if isTot r then MinOne else MinZero
-                                        maxVal = if isInj r then MaxOne else MaxMany
-                                    in  Mult minVal maxVal 
-                      in [ OOAssoc (source r) (mults $ flp r) "" (target r) (mults r) ((name.head.declsUsedIn) r)
-                         | r<-assRels]
+                       [ OOAssoc { assSrc = source r
+                                 , asslhm = (mults.flp) r
+                                 , asslhr = ""
+                                 , assTrg = target r
+                                 , assrhm = mults r
+                                 , assrhr = (name.head.declsUsedIn) r
+                                 }
+                       | r <- relRels ]
                     ,aggrs   = []
                     ,geners  = []
-                    ,ooCpts  = concs fSpec
+                    ,ooCpts  = rootConcepts
                     }
 
     where
--- The following code was inspired on ADL2Plug
--- The first step is to determine which entities to generate.
--- All concepts and relations mentioned in exclusions are excluded from the process.
-       rels       = [EDcD decl (sign decl)| decl@Sgn{} <- declarations fSpec, decusr decl, not (isIdent decl)] -- TODO (SJ 26-01-2013): is this double code?
-       relsLim    = [EDcD decl (sign decl)           -- The set of relations that is defined in patterns to be printed.
-                    | decl<- if null (themes fSpec)
-                             then declarations fSpec
-                             else [d | pat <- pattsInScope fSpec, d@Sgn{} <- declarations pat ]++
-                                  [d | prc <- procsInScope fSpec, d@Sgn{} <- declarations prc ]
-                       -- restrict to those themes that must be printed.
-                    , decusr decl, not (isIdent decl)]
--- In order to make classes, all relations that are univalent and injective are flipped
--- attRels contains all relations that occur as attributes in classes.
-       attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[flp r |r<-rels, not (isUni r), isInj r] ++
-                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
--- assRels contains all relations that do not occur as attributes in classes
-       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
-       attrs rs   = [ OOAttr ((name.head.declsUsedIn) r) (name (target r)) (not(isTot r))
-                    | r<-rs, not (isPropty r)]
-       isPropty r = null([Sym,Asy]>-multiplicities r)
+      ooAttr r = OOAttr { attNm = (name.head.declsUsedIn) r
+                        , attTyp = (name.target) r
+                        , attOptional = (not.isTot) r
+                        }
+      mults r = let minVal = if isTot r then MinOne else MinZero
+                    maxVal = if isInj r then MaxOne else MaxMany
+                in  Mult minVal maxVal 
+      rels = [ EDcD r (sign r) -- restricted to those themes that must be printed.
+             | r <- (nub.concat)
+                       ([declarations p ++ declsUsedIn p  | p <- pattsInScope fSpec ]++
+                        [declarations p ++ declsUsedIn p  | p <- procsInScope fSpec ])
+               , decusr r]
+      (attribRels,relRels)= partition isAttribRel rels
+          where isAttribRel r = isUni r || isInj r
+      attribs = map flipWhenInj attribRels
+          where flipWhenInj r = if isInj r then flp r else r
+      rootConcepts :: [A_Concept]
+      rootConcepts = nub (map source relRels ++ map target relRels)
+       
 
+
+---- In order to make classes, all relations that are univalent and injective are flipped
+---- attRels contains all relations that occur as attributes in classes.
+--       attRels    = [r |r<-rels, isUni r, not (isInj r)]        ++[flp r |r<-rels, not (isUni r), isInj r] ++
+--                    [r |r<-rels, isUni r,      isInj r, isSur r]++[flp r |r<-rels,      isUni r , isInj r, not (isSur r)]
+---- assRels contains all relations that do not occur as attributes in classes
+--       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
+--       attrs rs   = [ OOAttr ((name.head.declsUsedIn) r) (name (target r)) (not(isTot r))
+--                    | r<-rs, not (isPropty r)]
+--       isPropty r = null([Sym,Asy]>-multiplicities r)
+       
    -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture. 
    classdiagram2dot :: Options -> ClassDiag -> DotGraph String
    classdiagram2dot flags cd
