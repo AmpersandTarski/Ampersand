@@ -19,7 +19,7 @@ where
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
    import Data.GraphViz.Attributes.HTML as Html
-   import Debug.Trace 
+
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
 
@@ -112,7 +112,7 @@ where
                                 , clAtts = map ooAttr (filter (\x -> source x == root) attribs)
                                 , clMths = []
                                 }
-                       | root <- rootConcepts]
+                       | root <- roots]
                     ,assocs  = 
                        [ OOAssoc { assSrc = source r
                                  , asslhm = (mults.flp) r
@@ -121,10 +121,11 @@ where
                                  , assrhm = mults r
                                  , assrhr = (name.head.declsUsedIn) r
                                  }
-                       | r <- relRels ]
+                       | r <- allrels
+                       ]
                     ,aggrs   = []
                     ,geners  = []
-                    ,ooCpts  = rootConcepts
+                    ,ooCpts  = roots
                     }
 
     where
@@ -135,19 +136,23 @@ where
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isInj r then MaxOne else MaxMany
                 in  Mult minVal maxVal 
-      rels = [ EDcD r (sign r) -- restricted to those themes that must be printed.
-             | r <- (nub.concat)
+      allrels = [ EDcD r (sign r) -- restricted to those themes that must be printed.
+                | r <- (nub.concat)
                        ([declarations p ++ declsUsedIn p  | p <- pattsInScope fSpec ]++
                         [declarations p ++ declsUsedIn p  | p <- procsInScope fSpec ])
                , decusr r]
-      (attribRels,relRels)= partition isAttribRel rels
+      attribs = map flipWhenInj (filter isAttribRel allrels)
           where isAttribRel r = isUni r || isInj r
-      attribs = map flipWhenInj attribRels
-          where flipWhenInj r = if isInj r then flp r else r
-      rootConcepts :: [A_Concept]
-      rootConcepts = nub (map source relRels ++ map target relRels)
-       
-
+                flipWhenInj r = if isInj r then flp r else r
+      roots = nub (map source allrels)
+                     
+   mshow [] = "."
+   mshow (e:es) = "\n"++myshowExpr e++mshow es    
+   myshowExpr expr = 
+      case expr of
+        EDcD r _   -> show(name r)++show (sign r)
+        EFlp e _    -> "flp("++myshowExpr e++")"
+        _ -> fatal 154 (show expr)
 
 ---- In order to make classes, all relations that are univalent and injective are flipped
 ---- attRels contains all relations that occur as attributes in classes.
@@ -313,9 +318,9 @@ where
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {cdName :: String
-                                   ,classes :: [Class]            --
+                                   ,classes :: [Class]           --
                                    ,assocs :: [Association]      --
-                                   ,aggrs :: [Aggregation]      --
+                                   ,aggrs  :: [Aggregation]      --
                                    ,geners :: [Generalization]   --
                                    ,ooCpts :: [A_Concept]}
                             deriving Show

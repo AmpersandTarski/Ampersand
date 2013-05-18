@@ -98,9 +98,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
     fspec2Blocks Diagnosis          = chpDiagnosis            fSpec flags
     fspec2Blocks ConceptualAnalysis = chpConceptualAnalysis 0 fSpec flags
     fspec2Blocks ProcessAnalysis    = chpProcessAnalysis    0 fSpec flags
-    fspec2Blocks DataAnalysis       = let x = chpDataAnalysis         fSpec flags 
-                                          ( _ ,ps) = x
-                                      in trace (show (length ps)) x
+    fspec2Blocks DataAnalysis       = chpDataAnalysis         fSpec flags 
     fspec2Blocks SoftwareMetrics    = (fpAnalysis             fSpec flags, [])
     fspec2Blocks EcaRules           = (chpECArules            fSpec flags, [])
     fspec2Blocks Interfaces         = (chpInterfacesBlocks  0 fSpec flags, chpInterfacesPics fSpec flags)
