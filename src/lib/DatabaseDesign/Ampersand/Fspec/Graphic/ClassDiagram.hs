@@ -121,7 +121,7 @@ where
                                  , assrhm = mults r
                                  , assrhr = (name.head.declsUsedIn) r
                                  }
-                       | r <- allrels
+                       | r <- allrels, target r `elem` roots
                        ]
                     ,aggrs   = []
                     ,geners  = []
