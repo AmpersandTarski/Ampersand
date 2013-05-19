@@ -69,7 +69,6 @@ makePictureObj flags nm pTyp dotsource
                             PTProcess      -> "0.4"
                             PTSwitchBoard  -> "0.4"
                             _              -> "0.7"
-                            _              -> "0.7"
            , dotProgName = case pTyp of
                      PTClassDiagram -> Dot
                      PTSwitchBoard  -> Dot
