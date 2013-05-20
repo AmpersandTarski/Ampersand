@@ -314,9 +314,11 @@ handleFlags po flags =
                           ]
       RelOnlyOneEdge r -> [ URL (theURL flags r)
                           , (XLabel . StrLabel .fromString.name) r
-                          , ArrowHead (plainArrowType True r)
-                          , ArrowTail (plainArrowType False r) --Not supported yet. See http://www.graphviz.org/bugs/b1951.html
-                          , Dir Forward  -- Note that the tail is not supported , so no crowfoot notation possible with a single edge.
+                          ]
+                    --    ++[ (HeadLabel . StrLabel .fromString) "1" | isTot r && isUni r]
+                    --    ++[ (TailLabel . StrLabel .fromString) "1" | isSur r && isInj r]
+                        ++[ ArrowTail noArrow, ArrowHead noArrow
+                          , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot flags  then normal                    else
@@ -389,15 +391,6 @@ crowfootArrowType isHead r
          my_crow :: ( ArrowModifier , ArrowShape )
          my_crow= ( open, Crow )
 
-plainArrowType :: Bool -> Declaration -> ArrowType
-plainArrowType isHead r
-   = if isHead 
-     then (if isFunction r 
-           then noArrow 
-           else AType [(noMod, Normal)]
-          )
-     else noArrow
-      --    AType [(ArrMod FilledArrow BothSides,NoArrow),(ArrMod OpenArrow LeftSide, Inv)]
 noMod :: ArrowModifier
 noMod = ArrMod { arrowFill = FilledArrow
                , arrowSide = BothSides
