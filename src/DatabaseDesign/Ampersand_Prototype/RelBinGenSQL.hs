@@ -228,7 +228,10 @@ selectExpr fSpec i src trg expr
                                  []    -> fatal 216 $ "Problem in selectExpr (vExpr (Sign \""++show s++"\" \""++show t++"\"))"
                                  sql:_ -> Just sql 
     (EDcI     sgn)       -> sqlcomment i ("I["++(show.name.source) sgn++"]") 
-                                (selectExprRelation fSpec i src trg (Isn (source sgn)))
+                                ( case source sgn of
+                                    ONE -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
+                                    c   -> selectExprRelation fSpec i src trg (Isn c)
+                                )
     (EDcD d   _)         -> selectExprRelation fSpec i src trg d
 
     (EBrk e) -> selectExpr fSpec i src trg e
