@@ -6,29 +6,24 @@ import Data.List
 import Data.Function (on)
 import System.FilePath        (combine)
 import System.Exit
-import Prelude hiding (putStr,readFile,writeFile)
+import Prelude hiding (putStr,putStrLn,readFile,writeFile)
 import DatabaseDesign.Ampersand_Prototype.ObjBinGen    (phpObjInterfaces)
 import DatabaseDesign.Ampersand_Prototype.Apps.RAP   (atlas2context, atlas2populations)
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand_Prototype.Version
-import DatabaseDesign.Ampersand_Prototype.GenBericht
+import DatabaseDesign.Ampersand_Prototype.Version (prototypeVersionStr)
+import DatabaseDesign.Ampersand_Prototype.GenBericht (doGenBericht)
 import DatabaseDesign.Ampersand_Prototype.ValidateSQL (validateRuleSQL)
-import DatabaseDesign.Ampersand.InputProcessing
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr)
 import qualified DatabaseDesign.Ampersand.Basics as Basics
-
-import DatabaseDesign.Ampersand.Components
-import DatabaseDesign.Ampersand.InputProcessing
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr)
 
 main :: IO ()
 main =
  do flags <- getOptions
     if showVersion flags || showHelp flags
-    then mapM_ Basics.putStr (helpNVersionTexts Basics.ampersandVersionStr flags)
+    then mapM_ Basics.putStr (helpNVersionTexts prototypeVersionStr flags)
     else do gFspec <- createFspec flags
             case gFspec of
-              Errors err -> do Prelude.putStrLn "Error(s) found:"
+              Errors err -> do Basics.putStrLn "Error(s) found:"
                                mapM_ Basics.putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                exitWith $ ExitFailure 10
               Checked fspc -> generateAmpersandOutput flags fspc
@@ -72,7 +67,7 @@ doGenProto fSpec flags =
     ; reportViolations (allViolations fSpec)
     
     ; if (not . null) (allViolations fSpec) && not (development flags) && theme flags/=StudentTheme 
-      then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
+      then do { Basics.putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               } 
       else do { verboseLn flags "Generating prototype..."
@@ -84,7 +79,7 @@ doGenProto fSpec flags =
  where reportViolations []    = verboseLn flags "No violations found."
        reportViolations viols =
          let ruleNamesAndViolStrings = [ (name r, show p) | (r,p) <- viols ]
-         in  putStrLn $ intercalate "\n"
+         in  Basics.putStrLn $ intercalate "\n"
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps 
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
@@ -93,13 +88,13 @@ doGenProto fSpec flags =
 ruleTest :: Fspc -> Options -> String -> IO ()
 ruleTest fSpec _ ruleName =
  case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
-   [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found." 
-   (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
-                  ; putStrLn $ showContents rule
+   [] -> Basics.putStrLn $ "\nRule test error: rule "++show ruleName++" not found." 
+   (rule:_) -> do { Basics.putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+                  ; Basics.putStrLn $ showContents rule
                   ; let rExpr = rrexp rule
                   ; let ruleComplement = rule { rrexp = notCpl (sign rExpr) (EBrk rExpr) }
-                  ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
-                  ; putStrLn $ showContents ruleComplement
+                  ; Basics.putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                  ; Basics.putStrLn $ showContents ruleComplement
                   } 
  where showContents rule = let pairs = [ "("++f++"," ++s++")" | (r,vs) <- allViolations fSpec, r == rule, (f,s) <- vs]
                            in  "[" ++ intercalate ", " pairs ++ "]" 
