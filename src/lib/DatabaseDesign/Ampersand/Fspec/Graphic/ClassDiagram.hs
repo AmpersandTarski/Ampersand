@@ -5,7 +5,7 @@
 module DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..), MinValue(..), MaxValue(..),
-          clAnalysis, cdAnalysis, classdiagram2dot)
+          clAnalysis, cdAnalysis, tdAnalysis, classdiagram2dot)
 where
    import Data.List
    import DatabaseDesign.Ampersand.Basics
@@ -15,6 +15,7 @@ where
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import Data.String
+   import Data.Maybe
    import Data.GraphViz.Types.Canonical hiding (attrs)
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
@@ -36,7 +37,7 @@ where
 
 
    instance CdNode Class where
-    nodes (OOClass c _ _) = [name c]
+    nodes OOClass{clName=nm} = [nm]
    instance CdNode a => CdNode [a] where
     nodes = concatMap nodes
 
@@ -47,7 +48,10 @@ where
     nodes _ = []
 
    instance CdNode Association where
-    nodes (OOAssoc s _ _ t _ _) = map name [s,t]
+    nodes (OOAssoc s _ _ t _ _) = map nm [s,t]
+      where
+       nm (Left  c  ) = name c
+       nm (Right str) = str
 
    instance CdNode Aggregation where
     nodes (OOAggr _ s t) = map name [s,t]
@@ -59,8 +63,12 @@ where
    -- It focuses on generalizations and specializations.
    clAnalysis :: Fspc -> Options -> ClassDiag
    clAnalysis fSpec _ = 
-       OOclassdiagram { cdName  = "classification"++name fSpec
-                      , classes = [ OOClass c (attrs c) [] | c<-cpts]
+       OOclassdiagram { cdName  = "classification_"++name fSpec
+                      , classes = [ OOClass { clName = name c
+                                            , clcpt  = Just c
+                                            , clAtts = attrs c
+                                            , clMths = [] 
+                                            } | c<-cpts]
                       , assocs  = []
                       , aggrs   = []
                       , geners  = nub [ OOGener c (map snd gs)
@@ -106,18 +114,19 @@ where
    -- Properties and identities are not shown.
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec _ = 
-     OOclassdiagram {cdName  = name fSpec
+     OOclassdiagram {cdName  = "logical_"++name fSpec
                     ,classes = 
-                       [ OOClass{ clcpt  = root
+                       [ OOClass{ clName = name root
+                                , clcpt  = Just root
                                 , clAtts = map ooAttr (filter (\x -> source x == root) attribs)
                                 , clMths = []
                                 }
                        | root <- roots]
                     ,assocs  = 
-                       [ OOAssoc { assSrc = source r
+                       [ OOAssoc { assSrc = Left (source r)
                                  , asslhm = (mults.flp) r
                                  , asslhr = ""
-                                 , assTrg = target r
+                                 , assTrg = Left (target r)
                                  , assrhm = mults r
                                  , assrhr = (name.head.declsUsedIn) r
                                  }
@@ -146,6 +155,89 @@ where
                 flipWhenInj r = if isInj r then flp r else r
       roots = nub (map source allrels)
                      
+   -- | This function generates a technical data model.
+   -- It is based on the plugs that are calculated.
+   tdAnalysis :: Fspc -> Options -> ClassDiag
+   tdAnalysis fSpec _ = 
+     OOclassdiagram {cdName  = "technical_"++name fSpec
+                    ,classes = 
+                       [ OOClass{ clName = sqlname table
+                                , clcpt  = primKey table
+                                , clAtts = case table of
+                                              TblSQL{fields=(_:attribs)} -> map (ooAttr.fldexpr) attribs
+                                              BinSQL{columns=(a,b)}      -> 
+                                                 [OOAttr { attNm       = fldname a
+                                                         , attTyp      = (name.target.fldexpr) a
+                                                         , attOptional = False
+                                                         }
+                                                 ,OOAttr { attNm       = fldname b
+                                                         , attTyp      = (name.target.fldexpr) b
+                                                         , attOptional = False
+                                                         }
+                                                 ]
+                                              _     -> fatal 166 "Unexpeced type of table!"
+                                , clMths = []
+                                }
+                       | table <- tables]
+                    ,assocs  = allAssocs
+                    ,aggrs   = []
+                    ,geners  = []
+                    ,ooCpts  = roots
+                    }
+     where
+      tables = [ pSql | InternalPlug pSql <- plugInfos fSpec, not (isScalar pSql)]
+         where isScalar ScalarSQL{} = True
+               isScalar _           = False 
+      roots :: [A_Concept]
+      roots = catMaybes (map primKey tables)
+      primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f))
+      primKey _                    = Nothing
+      ooAttr :: Expression -> CdAttribute
+      ooAttr r = OOAttr { attNm = (name.head.declsUsedIn) r
+                        , attTyp = (name.target) r
+                        , attOptional = (not.isTot) r
+                        }
+      allAssocs = concatMap relsOf tables
+        where
+          relsOf t = 
+            case t of
+              TblSQL{} -> map mkRel (catMaybes [relOf fld | fld <- fields t])
+              BinSQL{columns=(a,b)} -> 
+                        [ OOAssoc { assSrc = Right (sqlname t)
+                                  , asslhm = Mult MinZero MaxMany
+                                  , asslhr = ""
+                                  , assTrg = (Left .target.fldexpr) a
+                                  , assrhm = Mult MinOne MaxOne
+                                  , assrhr = ""
+                                  }
+                        , OOAssoc { assSrc = Right (sqlname t)
+                                  , asslhm = Mult MinZero MaxMany
+                                  , asslhr = ""
+                                  , assTrg = (Left .target.fldexpr) b
+                                  , assrhm = Mult MinOne MaxOne
+                                  , assrhr = ""
+                                  }
+                        ]
+              _  -> fatal 195 "Unexpeced type of table!"
+          relOf f = 
+            let expr = fldexpr f in
+            case expr of
+              EDcI{} -> Nothing
+              ETyp EDcI{} _ -> Nothing    
+              EDcD _ sgn -> if target sgn `elem` roots then Just expr else Nothing
+              _ -> fatal 200 ("Unexpected expression: "++show expr)
+          mkRel :: Expression -> Association
+          mkRel r = OOAssoc { assSrc = Left (source r)
+                            , asslhm = (mults.flp) r
+                            , asslhr = ""
+                            , assTrg = Left (target r)
+                            , assrhm = mults r
+                            , assrhr = (name.head.declsUsedIn) r
+                            }
+      mults r = let minVal = if isTot r then MinOne else MinZero
+                    maxVal = if isInj r then MaxOne else MaxMany
+                in  Mult minVal maxVal 
+
    mshow [] = "."
    mshow (e:es) = "\n"++myshowExpr e++mshow es    
    myshowExpr expr = 
@@ -257,8 +349,12 @@ where
   -------------------------------
           association2edge :: Association -> DotEdge String
           association2edge ass = 
-             DotEdge { fromNode       = name(assSrc ass)
-                     , toNode         = name(assTrg ass)
+             DotEdge { fromNode       = case assSrc ass of
+                                          Left c  -> name c
+                                          Right s -> s
+                     , toNode         = case assTrg ass of
+                                          Left c  -> name c
+                                          Right s -> s
                      , edgeAttributes = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowHead
                                         , ArrowTail (AType [(ArrMod OpenArrow BothSides, NoArrow)])  -- No arrowTail
                                         , HeadLabel (mult2Lable (assrhm ass))
@@ -327,12 +423,13 @@ where
    instance Identified ClassDiag where
       name = cdName
         
-   data Class          = OOClass  { clcpt :: A_Concept      -- ^ Main concept of the class
-                                  , clAtts :: [CdAttribute] -- ^ Attributes of the class
-                                  , clMths :: [Method]      -- ^ Methods of the class
+   data Class          = OOClass  { clName :: String          -- ^ name of the class
+                                  , clcpt  :: Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
+                                  , clAtts :: [CdAttribute]   -- ^ Attributes of the class
+                                  , clMths :: [Method]        -- ^ Methods of the class
                                   } deriving Show
    instance Identified Class where
-      name = name.clcpt
+      name = clName
    data CdAttribute    = OOAttr   { attNm :: String            -- ^ name of the attribute
                                   , attTyp :: String           -- ^ type of the attribute (Concept name or built-in type)
                                   , attOptional :: Bool        -- ^ says whether the attribute is optional
@@ -345,10 +442,10 @@ where
    
    data Multiplicities = Mult MinValue MaxValue deriving Show
    
-   data Association    = OOAssoc  { assSrc :: A_Concept           -- ^ source: the left hand side class
+   data Association    = OOAssoc  { assSrc :: Either A_Concept String -- ^ source: the left hand side class. In case of a link table, the name of that table.
                                   , asslhm :: Multiplicities   -- ^ left hand side multiplicities
                                   , asslhr :: String           -- ^ left hand side role
-                                  , assTrg :: A_Concept           -- ^ target: the right hand side class
+                                  , assTrg :: Either A_Concept String -- ^ target: the right hand side class. In case of a link table, the name of that table.
                                   , assrhm :: Multiplicities   -- ^ right hand side multiplicities
                                   , assrhr :: String           -- ^ right hand side role
                                   }  deriving Show
