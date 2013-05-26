@@ -3,7 +3,7 @@
 module DatabaseDesign.Ampersand.ADL1.TypePropagation (
  -- * Exported functions
  typing, Type(..), Typemap, parallelList, findIn, showType, Guarded(..), p_flp
- , mrgUnion, BetweenType(..)
+ , mrgUnion, BetweenType(..), Between(..), BTUOrI(..)
  )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
@@ -30,18 +30,33 @@ fatal = fatalMsg "ADL1.TypePropagation"
 
 type Typemap = Map Type [Type]
 
-data Type = TypExpr Term SrcOrTgt -- term is deriving Ord
-          | Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
+data Type = TypExpr Term SrcOrTgt | TypArising Term -- term is deriving Ord
+data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     Type -- lhs type, e.g. cod(a)
                     Type -- rhs type, e.g. dom(b)
                     BetweenType -- whether for this term, the intersection or the union should be a valid type, or both
 type BetweenError = ([P_Concept] -> [P_Concept] -> CtxError)
-data BetweenType = BTUnion     -- there must be a union type: folowing the st-graph, a type must be encountered in the union
-                 | BTIntersect -- there must be a non-empty intersection, and it must have a name
+data BetweenType = BetweenType BTUOrI Type -- this must be a union/intersect type: folowing the st-graph, a type must be encountered in the union/intersection (this must be a non-empty union/intersection and it must get a name)
                  | BTEqual     -- both sides must have the same type. Note that this is different from adding .=.
                                -- BTEqual requires both sides to be named and equal; this will be tested
                                -- while adding .=. makes both sides equal
-                   deriving (Ord,Eq)
+                   -- deriving (Ord,Eq)
+data BTUOrI = BTUnion | BTIntersection deriving (Ord,Eq)
+
+instance Prelude.Ord BetweenType where
+  compare (BetweenType a _) (BetweenType b _) = compare a b
+  compare BTEqual BTEqual = EQ
+  compare _ BTEqual = LT
+  compare BTEqual _ = GT
+
+instance Eq BetweenType where
+  (==) a b = (compare a b) == EQ
+  
+instance Prelude.Ord Between where
+  compare (Between _ a b c) (Between _ d e f) = compare (c,a,b) (f,d,e)
+
+instance Eq Between where
+  (==) a b = (compare a b) == EQ
 
 instance Show Type where
     showsPrec _ typTerm = showString (showType typTerm)
@@ -53,14 +68,9 @@ showType t
      TypExpr term@(PVee o) sORt      -> codOrDom sORt++" ("++showADL term++") "++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
      TypExpr term sORt               -> codOrDom sORt++" ("++showADL term++") "++ show (origin term)
-     Between _ a b t'                -> showType a++" "++show t'++" "++showType b  -- The Lub is the smallest set in which both a and b are contained.
+     TypArising term                 -> "Arising inside ("++showADL term++") "++show (origin term)
    where codOrDom Src = "dom"
          codOrDom Tgt = "cod"
-
-instance Show BetweenType where
-  showsPrec _ BTUnion     = showString ".\\/."
-  showsPrec _ BTIntersect = showString "./\\."
-  showsPrec _ BTEqual     = showString ".==."
 
 -- | Equality of Type is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
@@ -88,11 +98,13 @@ instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy 
   compare (TypExpr _              _) (TypExpr (Pfull _ _ _)    _) = Prelude.GT
   -- as r = r~ does not hold in general, we need to compare x'==y'
   compare (TypExpr x             x') (TypExpr y               y') = Prelude.compare (x,x') (y,y')
+  
   compare (TypExpr _              _) _                            = Prelude.LT
   compare _                          (TypExpr _                _) = Prelude.GT
+  compare (TypArising t)             (TypArising t')              = compare t t'
   -- since the first argument of Between is a function, we cannot compare it.
   -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
-  compare (Between _ a b t) (Between _ a' b' t')                  = compare (t,a,b) (t',a',b')
+  -- compare (Between _ a b t) (Between _ a' b' t')                  = compare (t,a,b) (t',a',b')
 
 instance Eq Type where
   t == t' = compare t t' == EQ
@@ -214,7 +226,7 @@ orWhenEmpty n  _ = n
 --   Besides term term, this function requires a universe in which to operate.
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
 
-typing :: Typemap -> Map String [P_Declaration]
+typing :: Typemap -> [Between] -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
              , Typemap                    -- stClos           -- (st\/stAdded)*\/I  (reflexive and transitive)
              , Typemap                    -- eqType           -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
@@ -225,7 +237,7 @@ typing :: Typemap -> Map String [P_Declaration]
              , Map P_Concept [P_Concept]  -- isaClos          -- concept lattice
              , Map P_Concept [P_Concept]  -- isaClosReversed  -- same, but reversed
              )                                   
-typing st declsByName
+typing st betweenTerms declsByName
   = ( st
     , stClos
     , eqType
@@ -272,18 +284,17 @@ typing st declsByName
     fromVtoCpl v@(PVee o) = head ([t | t@(PCpl o' _) <- allTerms, o==o'] ++ [v])
     fromVtoCpl x = x
     
-    checkBetweens = parallelList (map checkBetween typeTerms)
+    checkBetweens = parallelList (map checkBetween betweenTerms)
     checkBetween (Between e src trg BTEqual) -- since the BTEqual does not participate in stClosAdd, it will be isolated here
      = case (srcTypes' src,srcTypes' trg) of
               ([a],[b]) -> if a==b then
                              return ()
                            else Errors [e [a] [b]]
               (a,b) -> Errors [e a b]
-    checkBetween o@(Between e src trg _)
-     = case srcTypes' o of
+    checkBetween (Between e src trg (BetweenType _ t))
+     = case srcTypes' t of
         [_] -> return ()
         _ -> Errors [e (srcTypes' src) (srcTypes' trg)]
-    checkBetween _ = return ()
     
     stClosAdded :: Typemap
     stClosAdded = fixPoint stClosAdd (addIdentity stClos1)
@@ -292,13 +303,12 @@ typing st declsByName
     stClosAdd :: Typemap -> Typemap
     stClosAdd tm = reverseMap (foldl f (reverseMap (foldl f tm glbs)) lubs)
       where
-       f :: Typemap -> Type -> Typemap
-       f dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
-       f  _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: " ++show o)
+       f :: Typemap -> (Type,Type,Type) -> Typemap
+       f dataMap (a, b, t) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups t dataMap]) dataMap
        -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
        -- (These arcs show up as dotted lines in the type graphs)
-       lubs = [l | l@(Between _ _ _ BTUnion    ) <- typeTerms]
-       glbs = [l | l@(Between _ _ _ BTIntersect) <- typeTerms]
+       lubs = [(a,b,t) | (Between _ a b (BetweenType BTUnion t)) <- betweenTerms]
+       glbs = [(a,b,t) | (Between _ a b (BetweenType BTIntersection t)) <- betweenTerms]
     
     declByTerm :: Map Term [P_Declaration]
     declByTerm
@@ -332,10 +342,12 @@ typing st declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    betweensAsMap = (Map.fromListWith mrgUnion [ (o,nub'$ sort [rhs,lhs]) | o@(Between _ lhs rhs _) <- typeTerms ])
+    betweensAsMap = (Map.fromListWith mrgUnion [ (lhs,nub'$ sort [rhs,lhs]) | (Between _ lhs rhs _) <- betweenTerms ])
+    
     eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
                          "between types"
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
+    
 
     exactlyOne [x] = Just x
     exactlyOne _ = Nothing
