@@ -70,6 +70,7 @@ defaultWriterVariables flags fSpec
     [ ("header-includes", unlines 
          [ "% ============Ampersand specific Begin================="
          , "\\usepackage[toc]{glossaries}    % package used to define terms"
+         , "\\makeglossaries"
          , "\\usepackage{breqn}"
          , "\\usepackage{colonequals}"
          , "% == [all]{hypcap} after {hyperref} shows the ref'd picture i.o. the caption @ click =="

@@ -84,12 +84,12 @@ chpNatLangReqs lev fSpec flags =
                      [ Str "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
                      , Quoted  SingleQuote [Str (name fSpec)]
                      , Str " kunnen worden besproken en uitgedrukt. "
-                     , Str "Hiermee wordt beoogd dat verschillende belanghebbenden de eisen op dezelfde manier begrijpen. "
+                     , Str "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
                      , Str "De taal van ", Quoted  SingleQuote [Str (name fSpec)], Str " bestaat uit begrippen en basiszinnen, "
-                     , Str "waarin functionele eisen worden uitgedrukt. "
+                     , Str "waarin afspraken worden uitgedrukt. "
                      , Str "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
                      , Str "althans voor zover het ", Quoted  SingleQuote [Str (name fSpec)], Str " betreft, "
-                     , Str "delen zij precies voldoende taal om functionele eisen op dezelfde manier te begrijpen. "
+                     , Str "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
                      , Str "Alle definities zijn genummerd omwille van de traceerbaarheid. "
                      ]]
         English -> [ Para
@@ -341,24 +341,25 @@ chpNatLangReqs lev fSpec flags =
 
               printRules :: [Rule] -> [(Origin,Counter -> [Block])]
               printRules = map (\rul -> (origin rul, printRule rul))
-              printRule :: Rule -> Counter -> [Block]
-              printRule rul cnt 
-               =  Plain [RawInline "latex" "\\bigskip"] :
-                  purposes2Blocks flags purps
-                  ++
-                  [ DefinitionList [ ( [ Str (case language flags of
-                                                Dutch   -> "Afspraak "
-                                                English -> "Agreement ")
-                                       , Str (show(getEisnr cnt))
-                                       , if development flags && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
-                                     , [ Plain [ RawInline "latex" $ symReqLabel rul] :
-                                                   meaning2Blocks (language flags) rul
-                                       ]
-                                     )
-                                   ] 
-                  | not (null$meaning2Blocks (language flags) rul)]
-               where purps = purposesDefinedIn fSpec (language flags) rul
-                      
+
+  printRule :: Rule -> Counter -> [Block]
+  printRule rul cnt 
+   =  Plain [RawInline "latex" "\\bigskip"] :
+      purposes2Blocks flags purps
+      ++
+      [ DefinitionList [ ( [ Str (case language flags of
+                                    Dutch   -> "Afspraak "
+                                    English -> "Agreement ")
+                           , Str (show(getEisnr cnt))
+                           , if development flags && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
+                         , [ Plain [ RawInline "latex" $ symReqLabel rul] :
+                                       meaning2Blocks (language flags) rul
+                           ]
+                         )
+                       ] 
+      | not (null$meaning2Blocks (language flags) rul)]
+   where purps = purposesDefinedIn fSpec (language flags) rul
+          
   mkSentence :: Bool -> Declaration -> String -> String -> [Inline]
   mkSentence isDev decl srcAtom tgtAtom
    = case decl of

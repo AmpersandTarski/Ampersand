@@ -22,21 +22,21 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
                     [ Str "Dit hoofdstuk beschrijft een formele taal, waarin functionele eisen ten behoeve van "
                     , Quoted  SingleQuote [Str (name fSpec)]
                     , Str " kunnen worden besproken en uitgedrukt. "
-                    , Str "Het doel van dit hoofdstuk is het vastleggen van de totstandkoming van de formele regels vanuit het gedeelde begrip van de belanghebbende."
-                    , Str "De formele taal van ", Quoted  SingleQuote [Str (name fSpec)], Str " bestaat uit binaire relaties en concepten."
-                    , Str "Iedere regel wordt uitgedrukt in termen van deze binaire relaties als een assertie in relatie algebra."
+                    , Str "De formalisering dient om een bouwbare specificatie te verkrijgen. "
+                    , Str "Een derde met voldoende deskundigheid kan op basis van dit hoofdstuk toetsen of de gemaakte afspraken "
+                    , Str "overeenkomen met de formele regels en definities. "
                    ]]
         English -> [Para
 --                    [ Str "This chapter provides an analysis of the principles described in chapter "
---                    , xrefReference SharedLang
+--                    
 --                    , Str ". Each section in that chapter is analysed in terms of relations "
 --                    , Str "and each principle is then translated in a rule. "
                     [ Str "This chapter defines the formal language, in which functional requirements of "
                     , Quoted  SingleQuote [Str (name fSpec)]
                     , Str " can be analysed and expressed."
-                    , Str "The purpose of this chapter is to document the translation of the shared understanding among stakeholders into formal rules. "
-                    , Str "The formal language of ", Quoted  SingleQuote [Str (name fSpec)], Str " consists of binary relations on concepts."
-                    , Str "All rules are expressed on these binary relations as relation algebraic assertions. "
+                    , Str "The purpose of this formalisation is to obtain a buildable specification. "
+                    , Str "This chapter allows an independent professional with sufficient background to check whether the agreements made "
+                    , Str "correspond to the formal rules and definitions. "
                     ]])
      ++ purposes2Blocks flags (purposesDefinedIn fSpec (language flags) fSpec) -- This explains the purpose of this context.
      
@@ -133,8 +133,8 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
              , [  -- First the reason why the rule exists, if any..
                   purp  
                   -- Then the rule as a requirement
-               ++ [Plain$[if null purp then Str "De volgende eis is gesteld in paragraaf " 
-                                       else Str "Daarom is als eis gesteld in paragraaf " | language flags==Dutch]
+               ++ [Plain$[if null purp then Str "De volgende afspraak is gesteld in paragraaf " 
+                                       else Str "Daarom is als afspraak gesteld in paragraaf " | language flags==Dutch]
                       ++ [if null purp then Str "The following requirement has been defined in section " 
                                        else Str "Therefore the following requirement has been defined in section " | language flags==English]
                       ++ [RawInline "latex" "~"
