@@ -160,7 +160,11 @@ improveBindings typByTyp eqtyps (oldMap,st')
         typByTyp' = typByTyp oldMap
         checkOne [c] = Just [c]
         checkOne _ = Nothing
-        
+
+-- find out which bindings can be determined.
+-- candidate bindings are given in the first argument (inp), where the triple (from,to,Type) is used to bind "from" to "to"
+-- (this results in a map of possible bindings)
+-- Note that it is possible that an element of type "from" is not in the final map (hence totality of the resulting map is not guaranteed)
 makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
                     Map Type [(from,to,Type)] -- when binding "from" to "to", one knows that the first type equals the second
                  -> Map Type [Type] -- reflexive transitive graph with inferred types
@@ -190,10 +194,6 @@ makeDecisions inp trnRel eqtyps
                 isctAll x = [e | (e,v)<-Map.toList tmap, v>=top]
                   where tmap = Map.fromListWith (+) [(x'',1) | x'<-x,x''<-x']
                         top = (foldr max (0::Int) (Map.elems tmap))
-                        {- zeroOneAll 0 = 0
-                        -- zeroOneAll 1 = 1
-                        zeroOneAll n | n==(length equals) = n
-                        zeroOneAll _ = 1 -}
                 allDecisions
                  = [ Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
                                                          , t' <- Map.findWithDefault [] tp trnRel'
@@ -212,27 +212,20 @@ orWhenEmpty n  _ = n
 --   In the code below, this shows up as  dom a.<.dom b
 --   The function typing does a recursive scan through all subterms, collecting all tuples on its way.
 --   Besides term term, this function requires a universe in which to operate.
---   Specify 'Anything Anything' if there are no restrictions.
 --   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
 
 typing :: Typemap -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
              , Typemap                    -- stClos           -- (st\/stAdded)*\/I  (reflexive and transitive)
              , Typemap                    -- eqType           -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
-             , Typemap                    -- stClosAdded      -- additional links added to stClos
-             , Typemap                    -- stClos1          -- st*  (transitive)
+             , Typemap                    -- stClos           -- additional links added to stClos
+             , Typemap                    -- stClos0          -- st* plus bindings for terms (transitive)
              , Guarded ( Map Term P_Declaration -- bindings   -- declarations that may be bound to relations
                        , Type -> P_Concept)     -- srcTypes   -- types of terms and betweens
              , Map P_Concept [P_Concept]  -- isaClos          -- concept lattice
              , Map P_Concept [P_Concept]  -- isaClosReversed  -- same, but reversed
              )                                   
 typing st declsByName
---  = error $
---           " *** st = \n"++
---           intercalate "\n" (map show (Map.toList st))++
---           "\n\n"++
---           " *** declsByName =\n" ++
---           intercalate "\n" (map show (Map.toList declsByName))
   = ( st
     , stClos
     , eqType
@@ -297,13 +290,11 @@ typing st declsByName
 
  -- The purpose of stClosAdd is to enhance a type map with Between nodes.
     stClosAdd :: Typemap -> Typemap
-    stClosAdd tm = reverseMap (foldl f' (reverseMap (foldl f tm glbs)) lubs)
+    stClosAdd tm = reverseMap (foldl f (reverseMap (foldl f tm glbs)) lubs)
       where
-       f, f' :: Typemap -> Type -> Typemap -- Functions f and f' are identical, but generate different fatal errors. That helps in debugging.
+       f :: Typemap -> Type -> Typemap
        f dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
        f  _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: " ++show o)
-       f' dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
-       f' _ o = fatal 407 ("Inexhaustive pattern in f' in stClosAdded in tableOfTypes: "++show o)
        -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
        -- (These arcs show up as dotted lines in the type graphs)
        lubs = [l | l@(Between _ _ _ BTUnion    ) <- typeTerms]
@@ -358,7 +349,7 @@ typing st declsByName
       where b = f a
     
     -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
-    -- Check whether stClosAdded is transitive...
+    -- Check whether stClosAdded is transitive and reflexive...
     stClos = if stClosAdded == addIdentity (setClosure stClosAdded "stClosAdded") then stClosAdded else
                 fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
