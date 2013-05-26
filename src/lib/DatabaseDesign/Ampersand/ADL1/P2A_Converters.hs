@@ -74,8 +74,8 @@ type TypeInfo = (Typemap,[Between])
 
 nothing :: TypeInfo
 nothing = (Map.empty,[])
-between :: Between -> TypeInfo
-between a = (Map.empty,[a])
+between :: Type -> Between -> TypeInfo
+between t a = (Map.fromList [(t,[])],[a])
 
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
@@ -97,15 +97,15 @@ domOrCod :: SrcOrTgt -> Term -> Type
 domOrCod Src = dom
 domOrCod Tgt = cod
 mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
-mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
-mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
+mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
+mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
-mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypArising  e) .+. (domOrCod tb b) .<. (TypArising  e) .+. between (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypArising e)))
-mSpecific'  ta a tb b e = (TypArising  e) .<. (domOrCod ta a) .+. (TypArising  e) .<. (domOrCod tb b) .+. between (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypArising e)))
+mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypArising  e) .+. (domOrCod tb b) .<. (TypArising  e) .+. between (TypArising e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypArising e)))
+mSpecific'  ta a tb b e = (TypArising  e) .<. (domOrCod ta a) .+. (TypArising  e) .<. (domOrCod tb b) .+. between (TypArising e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypArising e)))
 mEqual' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mEqual'    ta a tb b e = (Map.empty, [Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
-existsSpecific a b err at = between (Between err a b (BetweenType BTIntersection at))
+existsSpecific a b err at = between at (Between err a b (BetweenType BTIntersection at))
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
