@@ -57,7 +57,8 @@ chpDataAnalysis fSpec flags = (theBlocks, thePictures)
   (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec flags
   (technicalDataModelBlocks, technicalDataModelPictures) = technicalDataModelSection sectionLevel fSpec flags
   sectionLevel = 2
-                          -- | In some cases, only a summary of the data analysis is required as output.
+
+  -- | In some cases, only a summary of the data analysis is required as output.
   summaryOnly :: Bool
   summaryOnly = theme flags `elem` [StudentTheme]
   
@@ -185,17 +186,20 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
              Dutch   -> para ( text (name cl) <> text " heeft de volgende associaties: ")
              English -> para ( text (name cl) <> text " has the following associations: ")
         <> orderedList [assocToRow assoc | assoc <- assocs oocd
-                         , assSrc assoc == clcpt cl || assTrg assoc == clcpt cl]
+                         , assSrc assoc == root || assTrg assoc == root]
                        
     where
+     root = case clcpt cl of
+       Nothing -> fatal 193 "A class in the logical data model should have a root concept."
+       Just c  -> Left c
      assocToRow :: DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =                 
-      --  showDummy assoc <>
+        -- showDummy assoc <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
         else case language flags of
            Dutch   -> para (   text "Ieder(e) "
-                            <> (emph.text.name.assSrc) assoc
+                            <> (emph.text.nm.assSrc) assoc
                             <> let rel = (singleQuoted.text.assrhr) assoc
                                    rel' = text ""
                                in (case assrhm assoc of
@@ -204,61 +208,79 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
                                      Mult MinOne  MaxOne  -> text " moet " <> rel <> text " precies één "
                                      Mult MinOne  MaxMany -> text " moet " <> rel <> text " ten minste één "
                                   ) 
-                            <> (emph.text.name.assTrg) assoc 
+                            <> (emph.text.nm.assTrg) assoc 
                             <> text ". Over deze relatie geldt omgekeerd dat "
                             <> text "ieder(e) "
-                            <> (emph.text.name.assTrg) assoc
+                            <> (emph.text.nm.assTrg) assoc
                             <> (case asslhm assoc of
                                      Mult MinZero MaxOne  -> text " "  <> rel' <> text " maximaal één " 
                                      Mult MinZero MaxMany -> text " "  <> rel' <> text " geen tot meerdere "
                                      Mult MinOne  MaxOne  -> text " moet " <> rel' <> text " precies één "
                                      Mult MinOne  MaxMany -> text " moet " <> rel' <> text " ten minste één "
                                   )
-                            <> (emph.text.name.assSrc) assoc
+                            <> (emph.text.nm.assSrc) assoc
                             <> text " kan hebben."
                            )
            English -> para (   text (case assrhm assoc of
                                        Mult MinZero _ -> "Some "
                                        Mult MinOne  _ -> "Each "
                                     ) 
-                            <> (emph.text.name.assSrc) assoc
+                            <> (emph.text.nm.assSrc) assoc
                             <> text " "
                             <> (singleQuoted.text.     assrhr) assoc
                             <> text (case assrhm assoc of
                                        Mult _ MaxOne  -> fatal 167 "This should have become an attribute of this Class!"
                                        Mult _ MaxMany -> " one or more "
                                     ) 
-                            <> (emph .text.name.assTrg) assoc
+                            <> (emph .text.nm.assTrg) assoc
                            )
              
+showDummy :: DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram.Association -> Blocks
 showDummy assoc = --(plain.text.show) assoc 
-        (para.text) ("assSrc: "++(name.assSrc) assoc)
+        (para.text) ("assSrc: "++(nm.assSrc) assoc)
      <> (para.text) ("asslhm: "++(show.asslhm) assoc)
      <> (para.text) ("asslhr: "++(     asslhr) assoc)
-     <> (para.text) ("assTrg: "++(name.assTrg) assoc)
+     <> (para.text) ("assTrg: "++(nm.assTrg) assoc)
      <> (para.text) ("assrhm: "++(show.assrhm) assoc)
      <> (para.text) ("assrhr: "++(     assrhr) assoc)
-               
+  
+nm x = case x of 
+         Left c  -> name c
+         Right s -> s             
 technicalDataModelSection :: Int -> Fspc -> Options -> (Blocks,[Picture])
-technicalDataModelSection lev fSpec flags = (theBlocks,[])
+technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
  where 
    theBlocks =
        header lev (case language flags of
                     Dutch   -> text "Technisch datamodel"
                     English -> text "Technical datamodel"
                       )
+    <> para (case language flags of
+               Dutch   -> (text "De afspraken zijn vertaald naar een technisch datamodel. "
+                         <> ( if canXRefer flags
+                              then text "Dit model is in figuur " <> xRefReference flags pict <> text " weergegeven."
+                              else text "Dit model is in onderstaand figuur weergegeven. "
+                          ) )
+               English -> (text "The functional requirements have been translated into a technical data model. "
+                         <> ( if canXRefer flags
+                              then text "This model is shown by figure " <> xRefReference flags pict <> text "."
+                              else text "This model is shown by the figure below. "
+                          ) )
+            )
+    <> para (showImage flags pict)
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec)) 
-                 isTable (InternalPlug TblSQL{}) = True
-                 isTable (InternalPlug BinSQL{}) = True
-                 isTable (InternalPlug ScalarSQL{}) = False
-                 isTable ExternalPlug{} = False
              in
              case language flags of
         Dutch   -> text ("Het technisch datamodel bestaat uit de volgende "++show nrOfTables++" tabellen:")
         English -> text ("The technical datamodel consists of the following "++show nrOfTables++"tables:")
             )
-    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` name) (plugInfos fSpec)]
+    <> mconcat [detailsOfplug p | p <- sortBy (compare `on` name) (plugInfos fSpec), isTable p]
     where
+      isTable :: PlugInfo -> Bool
+      isTable (InternalPlug TblSQL{}) = True
+      isTable (InternalPlug BinSQL{}) = True
+      isTable (InternalPlug ScalarSQL{}) = False
+      isTable ExternalPlug{} = False
       detailsOfplug :: PlugInfo -> Blocks
       detailsOfplug p = 
            header 3 (   case (language flags, p) of
@@ -311,23 +333,7 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[])
                                   EIsc (EDcI sgn,_) _ -> Just (source sgn)
                                   _                   -> Nothing  
              in para (  (strong.text.fldname) fld
-                      <> linebreak 
-    
-                      <>   (code.show.fldtype) fld
-                      <> text ", "
-                      <> (case language flags of
-                            Dutch 
-                              -> text (if fldnull fld then "Optioneel" else "Verplicht")
-                               <>text (if flduniq fld then ", Uniek" else "")
-                               <>text "."
-                            English 
-                              -> text (if fldnull fld then "Optional" else "Mandatory")
-                               <>text (if flduniq fld then ", Unique" else "")
-                               <>text "."
-                         )
                       <> linebreak
-                      <> (strong.code.show.flduse) fld
-                      <> linebreak  
                       <> (if isPrimaryKey 
                           then case language flags of
                                 Dutch   -> text ("Dit attribuut is de primaire sleutel. ")
@@ -349,7 +355,28 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[])
                                   <> text "."
                                   )
                          )
+                      <> linebreak 
+                      <> (code.show.fldtype) fld
+                      <> text ", "
+                      <> (case language flags of
+                            Dutch 
+                              -> text (if fldnull fld then "Optioneel" else "Verplicht")
+                               <>text (if flduniq fld then ", Uniek" else "")
+                               <>text "."
+                            English 
+                              -> text (if fldnull fld then "Optional" else "Mandatory")
+                               <>text (if flduniq fld then ", Unique" else "")
+                               <>text "."
+                         )
                      )
+   pict :: Picture
+   pict = (makePicture flags fSpec Plain_CG oocd)
+            {caption = case language flags of
+                         Dutch   -> "Technisch gegevensmodel van "++name fSpec
+                         English -> "Technical data model of "++name fSpec}      
+   oocd :: ClassDiag
+   oocd = tdAnalysis fSpec flags
+  
                    
              
  -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
@@ -361,18 +388,27 @@ daBasicsSection lev fSpec flags = theBlocks
                     Dutch   -> text "Basiszinnen"
                     English -> text "Fact types"
                   )
-   <>  table 
-        (-- caption -- 
-         case language flags of
-           Dutch   -> text "Deze tabel bevat de basiszinnen, die gebruikt zijn als basis voor de gegevensanalyse."
-           English -> text "This table lists the fact types, that have been used in assembling the data models."
-        )
-        [(AlignLeft,0.4)       , (AlignCenter, 0.4)         , (AlignCenter, 0.2)]
-        ( case language flags of
-           Dutch   -> [plain (text "Relatie") , plain (text "Beschrijving"), plain (text "Eigenschappen")]
-           English -> [plain (text "Relation"), plain (text "Description") , plain (text "Properties")   ]
-        ) 
-        (map toRow declsInRelevantThemes)
+   <> case language flags of 
+        Dutch   -> para (text "In deze paragraaf worden de basiszinnen opgesomd, die een rol spelen bij het ontwerp van de gegevensstructuur. "
+                       <>text "Per basiszin wordt de naam en het bron- en doelconcept gegeven, alsook de eigenschappen van deze relatie."
+                        )
+        English -> para (text "This section enumerates the fact types, that have been used in the design of the datastructure. "
+                       <>text "For each fact type its name, the source and target concept and the properties are documented."
+                        )       
+   <> definitionList (map toDef declsInRelevantThemes)
+-- HJO, 20130526: onderstaande tabel vervangen door bovenstaande lijst, ivm leesbaarheid.
+--   <>  table 
+--        (-- caption -- 
+--         case language flags of
+--           Dutch   -> text "Deze tabel bevat de basiszinnen, die gebruikt zijn als basis voor de gegevensanalyse."
+--           English -> text "This table lists the fact types, that have been used in assembling the data models."
+--        )
+--        [(AlignLeft,0.4)       , (AlignCenter, 0.4)         , (AlignCenter, 0.2)]
+--        ( case language flags of
+--           Dutch   -> [plain (text "Relatie") , plain (text "Beschrijving"), plain (text "Eigenschappen")]
+--           English -> [plain (text "Relation"), plain (text "Description") , plain (text "Properties")   ]
+--        ) 
+--        (map toRow declsInRelevantThemes)
     where
       declsInRelevantThemes = 
         -- a declaration is considered relevant iff it is declared or used in one of the relevant themes.
@@ -389,6 +425,25 @@ daBasicsSection lev fSpec flags = theBlocks
           , fromList (meaning2Blocks (language flags) d)
           , plain ( inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d])
           ]
+      toDef :: Declaration -> (Inlines, [Blocks])
+      toDef d
+        = ( (math.showMath) d
+          , [   para linebreak
+             <> fromList (meaning2Blocks (language flags) d)
+                   
+          <> para (   ((strong.text) (case language flags of
+                                       Dutch   -> "Eigenschappen"
+                                       English -> "Properties"
+                                    ))
+                   <> text ": "
+                   <> if null (multiplicities d) 
+                      then text "--"
+                      else inlineIntercalate (str ", ") [ text (showADL m) | m <-multiplicities d]
+                  )
+          <> para linebreak
+            ]
+            
+          )
 
 -- The properties of various declarations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
