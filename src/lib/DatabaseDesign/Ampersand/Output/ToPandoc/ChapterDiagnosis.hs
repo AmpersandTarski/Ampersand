@@ -159,7 +159,7 @@ chpDiagnosis fSpec flags
   unusedConceptDefs
    = case (language flags, unused) of
       (Dutch,[])  -> [Para
-                       [Str "Alle concept definities in dit document worden gebruikt in relaties."]
+                       [Str "Alle conceptdefinities in dit document worden gebruikt in relaties."]
                      | (not.null.vConceptDefs) fSpec]
       (Dutch,[c]) -> [Para
                        [Str "Het concept ", Quoted SingleQuote [Str (name c)], Str " is gedefinieerd, maar wordt niet gebruikt."]

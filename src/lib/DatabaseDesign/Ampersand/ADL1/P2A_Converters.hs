@@ -113,16 +113,6 @@ flattenMap :: Map t [t1] -> [(t, t1)]
 flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
 -- alternatively: flattenMap mp = [ (a,b) | (a,bs)<-Map.toList mp , b<-bs])
 
--- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
---   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
---   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
---   this is represented by a tuple (TypExpr a _,TypExpr b _) in st.
---   In the code below, this shows up as  dom a.<.dom b
---   The function typing does a recursive scan through all subterms, collecting all tuples on its way.
---   Besides term term, this function requires a universe in which to operate.
---   Specify 'Anything Anything' if there are no restrictions.
---   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
-
 class Expr a where
   p_declarations :: a -> [P_Declaration]
   p_declarations _ = []
@@ -216,13 +206,13 @@ instance Expr P_Rule where
  uType _ r
   = uType' (rr_exp r) .+. 
     uType' (rr_viol r) .+.
-    foldr (.+.) nothing ( [ typeToMap$
-                            Between (\s t->CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
-                                    ((\x -> TypExpr x sOrT) (rr_exp r))
-                                    (TypExpr trm Src) BTEqual
-                          | Just pv <- [rr_viol r]
-                          , (P_PairViewExp sOrT trm) <- ppv_segs pv ]
-                        )
+    foldr (.+.) nothing [ typeToMap$
+                          Between (\s t->CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
+                                  (TypExpr (rr_exp r) sOrT) (TypExpr trm Src)
+                                  BTEqual
+                        | Just pv <- [rr_viol r]
+                        , P_PairViewExp sOrT trm <- ppv_segs pv
+                        ]
 
 instance Expr P_PairView where
  uType _ (P_PairView segments) = uType segments segments

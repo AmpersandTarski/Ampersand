@@ -3,16 +3,16 @@
 module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)
 where
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis (chpConceptualAnalysis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis       (chpDataAnalysis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis          (chpDiagnosis)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules           (chpECArules)
-import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterInterfaces         (chpInterfacesBlocks, chpInterfacesPics)
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterIntroduction       (chpIntroduction)
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs        (chpNatLangReqs)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDiagnosis          (chpDiagnosis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis (chpConceptualAnalysis)
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis    (chpProcessAnalysis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterECArules           (chpECArules)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterDataAnalysis       (chpDataAnalysis)
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAnalysis)
+import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
 import Debug.Trace

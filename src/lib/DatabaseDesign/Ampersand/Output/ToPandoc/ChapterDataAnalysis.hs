@@ -108,7 +108,7 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
                     English -> text "Logical datamodel"
                 )
     <> para (case language flags of
-               Dutch   -> (text "De functionele eisen zijn vertaald naar een gegevensmodel. "
+               Dutch   -> (text "De afspraken zijn vertaald naar een gegevensmodel. "
                          <> ( if canXRefer flags
                               then text "Dit gegevensmodel is in figuur " <> xRefReference flags pict <> text " weergegeven."
                               else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
@@ -135,11 +135,13 @@ logicalDataModelSection lev fSpec flags = (theBlocks, [pict])
                                   <> text "The details of each entity type are described (in alfabetical order) in the following paragraphs:"
                              )
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
-       
+
+  pict :: Picture
   pict = (makePicture flags fSpec Plain_CG oocd)
            {caption = case language flags of
-                        Dutch   ->"Logisch gegevensmodel van "++name fSpec
-                        English ->"Logical data model of "++name fSpec}      
+                        Dutch   -> "Logisch gegevensmodel van "++name fSpec
+                        English -> "Logical data model of "++name fSpec}      
+  oocd :: ClassDiag
   oocd = cdAnalysis fSpec flags
   
   detailsOfClass :: Class -> Blocks

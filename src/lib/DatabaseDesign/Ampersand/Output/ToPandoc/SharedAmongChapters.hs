@@ -119,7 +119,7 @@ class Xreferencable a where
   xrefReference a = RawInline "latex" ("\\ref{"++xLabel a++"}")
   xRefReference :: Options -> a -> Inlines
   xRefReference flags a 
-    | canXRefer flags = rawInline "latex" ("\\label{"++xLabel a++"}")
+    | canXRefer flags = rawInline "latex" ("\\ref{"++xLabel a++"}")
     | otherwise       = mempty -- "fatal 89 xreferencing is not supported!"
   xrefLabel :: a -> Inline
   xrefLabel a = RawInline "latex" ("\\label{"++xLabel a++"}")
@@ -232,13 +232,7 @@ dpRule fSpec flags = dpR
               then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
               else pandocEquation (showMath r++symDefLabel r)
              )++
-             [ Plain text4 | isSignal r] ++
-             (if not (isSignal r) then [] else
-              if showPredExpr flags
-              then pandocEqnArrayOnelabel (symDefLabel r) ((showLatex.toPredLogic) r)
-              else pandocEquation (showMath r++symDefLabel r)
-             )++
-             [ Plain text5 | length nds>1]
+             (if length nds>1 then text5 else [])
            ] 
          ): dpNext
        , n'
@@ -272,7 +266,7 @@ dpRule fSpec flags = dpR
            )
         text3
          = case (language flags,isSignal r) of
-            (Dutch  ,False) -> [Str "Dit betekent: "]
+            (Dutch  ,False) -> [Str "De regel luidt: "]
             (English,False) -> [Str "This means: "]
             (Dutch  ,True)  -> [Str "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "]
             (English,True)  -> [Str "Activities that are defined by this rule are finished when: "]
@@ -282,14 +276,14 @@ dpRule fSpec flags = dpR
                  English -> [Str " These activities are signalled by:"]
         text5
          = case (language flags,isSignal r) of
-             (Dutch  ,False) -> [Str "Dit komt overeen met eis",RawInline "latex" "~",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str "."]
-             (English,False) -> [Str "This corresponds to requirement",RawInline "latex" "~",RawInline "latex" $ symReqRef r, Str " on page",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str "."]
-             (Dutch  ,True)  -> [ Str "Dit komt overeen met "
-                                , Quoted  SingleQuote [Str (name r)]
-                                , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]
-             (English,True)  -> [Str "This corresponds to "
-                                , Quoted  SingleQuote [Str (name r)]
-                                , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]
+             (Dutch  ,False) -> [ Plain [ Str "Dit komt overeen met de afspraak op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
+             (English,False) -> [ Plain [ Str "This corresponds to the requirement on page",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ":"]]++meaning2Blocks (language flags) r
+             (Dutch  ,True)  -> [ Plain [ Str "Dit komt overeen met "
+                                        , Quoted  SingleQuote [Str (name r)]
+                                        , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]]
+             (English,True)  -> [ Plain [ Str "This corresponds to "
+                                        , Quoted  SingleQuote [Str (name r)]
+                                        , Str " (",RawInline "latex" $ symReqRef r, Str " op pg.",RawInline "latex" "~",RawInline "latex" $ symReqPageRef r, Str ")."]]
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  =  declsUsedIn r

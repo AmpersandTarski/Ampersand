@@ -63,11 +63,12 @@ makePictureObj flags nm pTyp dotsource
            , relPng      = relImgPath </> cdName
            , pType       = pTyp
            , scale       = case pTyp of
-                            PTClassDiagram -> "0.7"
+                            PTClassDiagram -> "1.0"
                             PTPattern      -> "0.7"
                             PTFullPat      -> "0.5"
                             PTProcess      -> "0.4"
                             PTSwitchBoard  -> "0.4"
+                            PTProcLang     -> "0.7"
                             _              -> "0.7"
            , dotProgName = case pTyp of
                      PTClassDiagram -> Dot

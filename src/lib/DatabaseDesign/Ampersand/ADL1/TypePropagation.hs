@@ -205,6 +205,16 @@ orWhenEmpty :: [a] -> [a] -> [a]
 orWhenEmpty [] n = n
 orWhenEmpty n  _ = n
 
+-- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
+--   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
+--   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
+--   this is represented by a tuple (TypExpr a _,TypExpr b _) in st.
+--   In the code below, this shows up as  dom a.<.dom b
+--   The function typing does a recursive scan through all subterms, collecting all tuples on its way.
+--   Besides term term, this function requires a universe in which to operate.
+--   Specify 'Anything Anything' if there are no restrictions.
+--   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
+
 typing :: Typemap -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
              , Typemap                    -- stClos           -- (st\/stAdded)*\/I  (reflexive and transitive)
@@ -284,11 +294,12 @@ typing st declsByName
     
     stClosAdded :: Typemap
     stClosAdded = fixPoint stClosAdd (addIdentity stClos1)
-    
+
+ -- The purpose of stClosAdd is to enhance a type map with Between nodes.
     stClosAdd :: Typemap -> Typemap
     stClosAdd tm = reverseMap (foldl f' (reverseMap (foldl f tm glbs)) lubs)
       where
-       f :: Typemap -> Type -> Typemap
+       f, f' :: Typemap -> Type -> Typemap -- Functions f and f' are identical, but generate different fatal errors. That helps in debugging.
        f dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
        f  _ o = fatal 406 ("Inexhaustive pattern in f in stClosAdded in tableOfTypes: " ++show o)
        f' dataMap o@(Between _ a b _) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups o dataMap]) dataMap
@@ -348,8 +359,8 @@ typing st declsByName
     
     -- stClos :: Typemap -- ^ represents the transitive closure of stClosAdded.
     -- Check whether stClosAdded is transitive...
-    stClos = if (stClosAdded == (addIdentity $ setClosure stClosAdded "stClosAdded")) then
-                stClosAdded else fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
+    stClos = if stClosAdded == addIdentity (setClosure stClosAdded "stClosAdded") then stClosAdded else
+                fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
     eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
     isaClos :: Map P_Concept [P_Concept]
@@ -368,7 +379,7 @@ typing st declsByName
                       Just x -> x
                       _ -> fatal 447 ("Type "++show typ++" was not found in stConcepts.")
     srcTypes :: Type -> P_Concept
-    srcTypes typ = case (srcTypes' typ) of
+    srcTypes typ = case srcTypes' typ of
                    -- A type may have an empty codomain in stConcepts, because that means it is type incorrect.
                     [cs] -> cs
                     _ -> fatal 446 ("Type "++show typ++" was found in stConcepts, but not a singleton.")
