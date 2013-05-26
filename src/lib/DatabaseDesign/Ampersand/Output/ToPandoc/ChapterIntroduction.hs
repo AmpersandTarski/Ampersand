@@ -24,13 +24,12 @@ chpIntroduction fSpec flags =
                    <> text ". "
                    <> (if SharedLang `elem` chaptersInDoc flags
                        then ( if canXRefer flags 
-                              then text "Deze eisen staan opgesomd in hoofdstuk "
+                              then text "Deze afspraken staan opgesomd in hoofdstuk "
                                 <> xRefReference flags SharedLang
-                                <> text ", geordend op thema. "
-                              else text "Deze eisen staan opgesomd in het hoofdstuk genaamd "
+                              else text "Deze afspraken staan opgesomd in het hoofdstuk genaamd "
                                 <> (doubleQuoted.chptTitle flags) SharedLang
                             ) <> text ", geordend op thema. "
-                       else text "Deze eisen zijn niet opgenomen in dit document."
+                       else text "Deze afspraken zijn niet opgenomen in dit document."
                       )
                     )
             <> if Diagnosis `elem` chaptersInDoc flags
@@ -52,7 +51,7 @@ chpIntroduction fSpec flags =
                              <> text " te valideren en te formaliseren. "
                              <> text "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
                              <> text "De formalisatie in dit hoofdstuk maakt consistentie van de functionele specificatie bewijsbaar. "
-                             <> text "Ook garandeert het een eenduidige interpretatie van de eisen."
+                             <> text "Ook garandeert het een eenduidige interpretatie van de afspraken."
                          )
                else mempty
             <> if DataAnalysis `elem` chaptersInDoc flags
@@ -74,7 +73,7 @@ chpIntroduction fSpec flags =
                  <> para ( text "Tezamen ondersteunen deze services alle geldende afspraken. "
                         <> text "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt "
                         <> (singleQuoted.text.name) fSpec
-                        <> text " compliance ten aanzien van alle gestelde eisen. "
+                        <> text " compliance ten aanzien van alle gestelde afspraken. "
                          )
                else mempty
 

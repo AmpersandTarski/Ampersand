@@ -70,6 +70,7 @@ class Identified a => Dotable a where
                -> a
                -> Picture
 
+{- This instance of Dotable is meant for drawing data models -}
 instance Dotable ClassDiag where
    conceptualGraph _ _ _ _ = fatal 58 "TODO: ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd."
    makePicture flags _ _ cd =
