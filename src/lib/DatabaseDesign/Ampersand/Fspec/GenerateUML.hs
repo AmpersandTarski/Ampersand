@@ -105,11 +105,11 @@ genUMLDatatype nm =
     }
 
 genUMLClass :: Class -> UML
-genUMLClass (OOClass main attrs _) =
- do { classId <- refLabeledId (name main)
+genUMLClass cl =
+ do { classId <- refLabeledId (clName cl)
     ; addToDiagram classId
-    ; attributesUML <- mapM genUMAttribute attrs
-    ; return $ [ "    <packagedElement xmi:type=\"uml:Class\" xmi:id=\""++classId++"\" name=\""++name main++"\" visibility=\"public\">"] ++
+    ; attributesUML <- mapM genUMAttribute (clAtts cl)
+    ; return $ [ "    <packagedElement xmi:type=\"uml:Class\" xmi:id=\""++classId++"\" name=\""++clName cl++"\" visibility=\"public\">"] ++
                concat attributesUML ++
                [ "    </packagedElement>"]
     }
@@ -144,7 +144,10 @@ genUMLAssociation (OOAssoc lType lMults _ rType rMults rRole) =
     }
  where genMemberAndOwnedEnd (Mult minVal maxVal) assocId type' =
         do { endId <- mkUnlabeledId "MemberEnd"
-           ; typeId <- refLabeledId (name type')
+           ; typeId <- refLabeledId (case type' of
+                                       Left c -> name c
+                                       Right s -> s
+                                    )
            ; lIntId <- mkUnlabeledId "Int"
            ; uIntId <- mkUnlabeledId "Int"
            ; return 
