@@ -37,7 +37,7 @@ where
 
 
    instance CdNode Class where
-    nodes OOClass{clName=nm} = [nm]
+    nodes cl = [clName cl]
    instance CdNode a => CdNode [a] where
     nodes = concatMap nodes
 
@@ -48,7 +48,7 @@ where
     nodes _ = []
 
    instance CdNode Association where
-    nodes (OOAssoc s _ _ t _ _) = map nm [s,t]
+    nodes a = map nm [assSrc a,assTrg a]
       where
        nm (Left  c  ) = name c
        nm (Right str) = str
@@ -124,6 +124,7 @@ where
                        | root <- roots]
                     ,assocs  = 
                        [ OOAssoc { assSrc = Left (source r)
+                                 , assSrcPort = (name.head.declsUsedIn) r
                                  , asslhm = (mults.flp) r
                                  , asslhr = ""
                                  , assTrg = Left (target r)
@@ -164,7 +165,8 @@ where
                        [ OOClass{ clName = sqlname table
                                 , clcpt  = primKey table
                                 , clAtts = case table of
-                                              TblSQL{fields=(_:attribs)} -> map (ooAttr.fldexpr) attribs
+                                              TblSQL{fields=attribs
+                                                    ,mLkpTbl=t} -> map (ooAttr.lookInFor t.fldexpr) attribs
                                               BinSQL{columns=(a,b)}      -> 
                                                  [OOAttr { attNm       = fldname a
                                                          , attTyp      = (name.target.fldexpr) a
@@ -185,6 +187,10 @@ where
                     ,ooCpts  = roots
                     }
      where
+      lookInFor [] _ = fatal 191 "Expression not found!"
+      lookInFor ((expr,_,t):xs) a 
+                 | expr == a = t
+                 | otherwise = lookInFor xs a 
       tables = [ pSql | InternalPlug pSql <- plugInfos fSpec, not (isScalar pSql)]
          where isScalar ScalarSQL{} = True
                isScalar _           = False 
@@ -192,18 +198,24 @@ where
       roots = catMaybes (map primKey tables)
       primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f))
       primKey _                    = Nothing
-      ooAttr :: Expression -> CdAttribute
-      ooAttr r = OOAttr { attNm = (name.head.declsUsedIn) r
-                        , attTyp = (name.target) r
-                        , attOptional = (not.isTot) r
-                        }
-      allAssocs = concatMap relsOf tables
+      ooAttr :: SqlField -> CdAttribute
+      ooAttr f= OOAttr { attNm = fldname f 
+                       , attTyp = (name.target.fldexpr) f
+                       , attOptional = (not.isTot.fldexpr) f
+                       }
+      allAssocs = [a | a<-concatMap relsOf tables
+                     , hasRootTarget a
+                  ]
         where
+          hasRootTarget a = case assTrg a of
+                               Left c -> c `elem` roots
+                               Right _ -> False
           relsOf t = 
             case t of
               TblSQL{} -> map mkRel (catMaybes [relOf fld | fld <- fields t])
               BinSQL{columns=(a,b)} -> 
                         [ OOAssoc { assSrc = Right (sqlname t)
+                                  , assSrcPort = fldname a
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
                                   , assTrg = (Left .target.fldexpr) a
@@ -211,6 +223,7 @@ where
                                   , assrhr = ""
                                   }
                         , OOAssoc { assSrc = Right (sqlname t)
+                                  , assSrcPort = fldname b
                                   , asslhm = Mult MinZero MaxMany
                                   , asslhr = ""
                                   , assTrg = (Left .target.fldexpr) b
@@ -224,22 +237,26 @@ where
             case expr of
               EDcI{} -> Nothing
               ETyp EDcI{} _ -> Nothing    
-              EDcD _ sgn -> if target sgn `elem` roots then Just expr else Nothing
+              EDcD _ sgn -> if target sgn `elem` roots then Just (expr,f) else Nothing
               _ -> fatal 200 ("Unexpected expression: "++show expr)
-          mkRel :: Expression -> Association
-          mkRel r = OOAssoc { assSrc = Left (source r)
-                            , asslhm = (mults.flp) r
-                            , asslhr = ""
-                            , assTrg = Left (target r)
-                            , assrhm = mults r
-                            , assrhr = (name.head.declsUsedIn) r
-                            }
+          mkRel :: (Expression,SqlField) -> Association
+          mkRel (expr,f) =
+               OOAssoc { assSrc = Left (source expr)
+                       , assSrcPort = fldname f
+                       , asslhm = (mults.flp) expr
+                       , asslhr = fldname f
+                       , assTrg = Left (target expr)
+                       , assrhm = mults expr
+                       , assrhr = (name.head.declsUsedIn) expr
+                       }
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isInj r then MaxOne else MaxMany
                 in  Mult minVal maxVal 
 
+   mshow :: [Expression] -> String
    mshow [] = "."
    mshow (e:es) = "\n"++myshowExpr e++mshow es    
+   myshowExpr :: Expression -> String
    myshowExpr expr = 
       case expr of
         EDcD r _   -> show(name r)++show (sign r)
@@ -321,7 +338,9 @@ where
                                 } 
                  where
                    attrib2row a = Cells
-                                    [ Html.LabelCell [ Html.Align HLeft] 
+                                    [ Html.LabelCell [ Html.Align HLeft
+                                                     , (Port .PN .fromString) (attNm a)
+                                                     ] 
                                          ( Html.Text [ Html.Str (fromString (if attOptional a then "o " else "+ "))
                                                      , Html.Str (fromString (name a))
                                                      , Html.Str (fromString " : ")
@@ -349,9 +368,9 @@ where
   -------------------------------
           association2edge :: Association -> DotEdge String
           association2edge ass = 
-             DotEdge { fromNode       = case assSrc ass of
+             DotEdge { fromNode       = (case assSrc ass of
                                           Left c  -> name c
-                                          Right s -> s
+                                          Right s -> s)
                      , toNode         = case assTrg ass of
                                           Left c  -> name c
                                           Right s -> s
@@ -362,6 +381,7 @@ where
                                         , Label     (StrLabel (fromString (assrhr ass)))
                                         , LabelFloat True
                                         ]
+                                      ++[(TailPort (LabelledPort (PN ((fromString.assSrcPort) ass)) Nothing))]
                      }
               where
                  mult2Lable = StrLabel . fromString . mult2Str
@@ -443,6 +463,7 @@ where
    data Multiplicities = Mult MinValue MaxValue deriving Show
    
    data Association    = OOAssoc  { assSrc :: Either A_Concept String -- ^ source: the left hand side class. In case of a link table, the name of that table.
+                                  , assSrcPort :: String       -- ^ the name of the field in the source table
                                   , asslhm :: Multiplicities   -- ^ left hand side multiplicities
                                   , asslhr :: String           -- ^ left hand side role
                                   , assTrg :: Either A_Concept String -- ^ target: the right hand side class. In case of a link table, the name of that table.

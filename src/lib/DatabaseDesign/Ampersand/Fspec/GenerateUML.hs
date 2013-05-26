@@ -129,13 +129,13 @@ genUMAttribute  (OOAttr nm attrType optional) =
     }
 
 genUMLAssociation :: Association -> UML
-genUMLAssociation (OOAssoc lType lMults _ rType rMults rRole) =
+genUMLAssociation ass = 
  do { assocId <- mkUnlabeledId "Assoc"
-    ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd lMults assocId lType
-    ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd rMults assocId rType
+    ; lMemberAndOwnedEnd <- genMemberAndOwnedEnd (asslhm ass) assocId (assSrc ass)
+    ; rMemberAndOwnedEnd <- genMemberAndOwnedEnd (assrhm ass) assocId (assTrg ass)
         
     ; return $
-        [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\""++assocId++"\" name=\""++rRole++"\" visibility=\"public\">"
+        [ "    <packagedElement xmi:type=\"uml:Association\" xmi:id=\""++assocId++"\" name=\""++assrhr ass++"\" visibility=\"public\">"
         ] ++
         lMemberAndOwnedEnd ++
         rMemberAndOwnedEnd ++
