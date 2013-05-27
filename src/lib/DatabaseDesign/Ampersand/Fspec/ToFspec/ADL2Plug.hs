@@ -196,12 +196,13 @@ rel2fld kernel
     | length(map target kernel) > length(nub(map target kernel))
        = fatal 146 "more than one kernel field for the same concept"
     | otherwise = case expr of
-                   EDcD dcl _ -> not $
-                                 isTot dcl && 
+                   EDcD dcl _ 
+                        | (not.isTot) dcl -> True
+                        | otherwise  -> 
                                  (not.null) [()|k<-kernelpaths, target k==source dcl && isTot k || target k==target dcl && isSur k ]
                    EFlp (EDcD dcl _) _
-                            -> not $ 
-                                 isSur dcl &&
+                        | (not.isSur) dcl -> True
+                        | otherwise  -> 
                                  (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
                    EDcI   sgn -> source sgn /= target sgn
                    ETyp (EDcI  _) _
