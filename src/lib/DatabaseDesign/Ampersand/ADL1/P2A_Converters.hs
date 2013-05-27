@@ -100,12 +100,12 @@ mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term 
 mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
 mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
-mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypArising  e) .+. (domOrCod tb b) .<. (TypArising  e) .+. between (TypArising e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypArising e)))
-mSpecific'  ta a tb b e = (TypArising  e) .<. (domOrCod ta a) .+. (TypArising  e) .<. (domOrCod tb b) .+. between (TypArising e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypArising e)))
+mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypInCps  e) .+. (domOrCod tb b) .<. (TypInCps  e) .+. between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypInCps e)))
+mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<. (domOrCod tb b) .+. between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypInCps e)))
 mEqual' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mEqual'    ta a tb b e = (Map.empty, [Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
-existsSpecific a b err at = between at (Between err a b (BetweenType BTIntersection at))
+existsSpecific a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
@@ -223,7 +223,7 @@ instance Expr P_PairViewSegment where
   
   
 -- TODO: these calls of existsSpecific are wrong, and should be fixed.
--- Wrongness: TypArising is overloaded: it means "inside term" in case of ;, and it means "around term" in the three cases below
+-- Wrongness: TypInCps is overloaded: it means "inside term" in case of ;, and it means "around term" in the three cases below
 
 instance Expr P_IdentDef where
  p_keys k = [k]
@@ -231,7 +231,7 @@ instance Expr P_IdentDef where
   = let x=Pid (SomewhereNear (fatal 233 "clueless about where this is found. Sorry" )) (ix_cpt k) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
-                          existsSpecific (dom x) (dom$ obj_ctx obj) (tCxe Src x Src (obj_ctx obj) TETIsc (obj_ctx obj)) (TypArising (obj_ctx obj))
+                          mEqual' Src x Src (obj_ctx obj) (obj_ctx obj)
                            -- TODO: improve mSpecific's error message here
                         | P_IdentExp obj <- ix_ats k
                         ]
@@ -242,7 +242,7 @@ instance Expr P_ViewDef where
   = let x=Pid (SomewhereNear (fatal 244 "clueless about where this is found. Sorry" )) (vd_cpt v) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
-                          existsSpecific (dom x) (dom$ obj_ctx obj) (tCxe Src x Src (obj_ctx obj) TETIsc (obj_ctx obj)) (TypArising (obj_ctx obj))
+                          mEqual' Src x Src (obj_ctx obj) (obj_ctx obj)
                            -- TODO: improve mSpecific's error message here
                         | P_ViewExp obj <- vd_ats v
                         ]
@@ -259,7 +259,7 @@ instance Expr P_ObjectDef where
   = let x=obj_ctx o in
     uType x x .+. 
     foldr (.+.) nothing [ uType obj obj .+.
-                        existsSpecific (cod x) (dom$ obj_ctx obj) (tCxe Tgt x Src (obj_ctx obj) TETIsc (obj_ctx obj)) (TypArising (obj_ctx obj))
+                        existsSpecific (cod x) (dom$ obj_ctx obj) (tCxe Tgt x Src (obj_ctx obj) TETIsc (obj_ctx obj)) (TypInObjDef obj)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
@@ -278,7 +278,7 @@ instance Expr PPurpose where
 instance Expr PRef2Obj where
  uType _ pRef =
    case pRef of 
-     PRef2ConceptDef str -> uType' (Pid (SomewhereNear (fatal 279 "clueless about where this is found. Sorry" ))(PCpt str))
+     PRef2ConceptDef str -> uType' (Pid (SomewhereNear (fatal 279 "clueless about where this is found. Sorry" )) (PCpt str))
      PRef2Declaration t  -> uType' t
      _                   -> nothing
 
@@ -332,7 +332,7 @@ instance Expr Term where
      (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                       .+. uType' a .+. uType' b
                       .+. mEqual' Src a Src b x .+. mEqual' Tgt a Tgt b x
-     (PCps _ a b)  -> let s = TypArising x
+     (PCps _ a b)  -> let s = TypInCps x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
                           pidTest (Patm{}) r = r
@@ -345,7 +345,7 @@ instance Expr Term where
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest (PCpl _ (Patm{})) r = r
                          pnidTest _ _ = nothing
-                         s = TypArising x
+                         s = TypInCps x
                      in dom x .<. dom a .+. cod x .<. cod b
                         .+. mGeneric' Tgt a Src b x .+. uType a a .+. uType b b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)

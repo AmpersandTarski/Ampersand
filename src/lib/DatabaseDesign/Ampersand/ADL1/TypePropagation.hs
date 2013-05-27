@@ -13,9 +13,6 @@ import DatabaseDesign.Ampersand.Fspec.ShowADL
 import Prelude hiding (head)
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import Data.List hiding (head)
-
--- import Debug.Trace
-
 import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map hiding (Map)
@@ -30,7 +27,7 @@ fatal = fatalMsg "ADL1.TypePropagation"
 
 type Typemap = Map Type [Type]
 
-data Type = TypExpr Term SrcOrTgt | TypArising Term -- term is deriving Ord
+data Type = TypExpr Term SrcOrTgt | TypInCps Term | TypInObjDef P_ObjectDef -- term is deriving Ord
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     Type -- lhs type, e.g. cod(a)
                     Type -- rhs type, e.g. dom(b)
@@ -68,7 +65,8 @@ showType t
      TypExpr term@(PVee o) sORt      -> codOrDom sORt++" ("++showADL term++") "++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt -> codOrDom sORt++" ("++showADL term++")"
      TypExpr term sORt               -> codOrDom sORt++" ("++showADL term++") "++ show (origin term)
-     TypArising term                 -> "Arising inside ("++showADL term++") "++show (origin term)
+     TypInCps term                   -> "Arising inside ("++showADL term++") "++show (origin term)
+     TypInObjDef obj                 -> "Arising inside object ("++name obj++") " ++ show (origin obj)
    where codOrDom Src = "dom"
          codOrDom Tgt = "cod"
 
@@ -98,10 +96,12 @@ instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy 
   compare (TypExpr _              _) (TypExpr (Pfull _ _ _)    _) = Prelude.GT
   -- as r = r~ does not hold in general, we need to compare x'==y'
   compare (TypExpr x             x') (TypExpr y               y') = Prelude.compare (x,x') (y,y')
-  
+  compare (TypInObjDef _)            (TypInCps _)                 = Prelude.LT
+  compare (TypInCps _)               (TypInObjDef _)              = Prelude.GT
+  compare (TypInObjDef o)            (TypInObjDef o')             = Prelude.compare (origin o) (origin o')
   compare (TypExpr _              _) _                            = Prelude.LT
   compare _                          (TypExpr _                _) = Prelude.GT
-  compare (TypArising t)             (TypArising t')              = compare t t'
+  compare (TypInCps t)               (TypInCps t')                = compare (origin t) (origin t')
   -- since the first argument of Between is a function, we cannot compare it.
   -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
   -- compare (Between _ a b t) (Between _ a' b' t')                  = compare (t,a,b) (t',a',b')
