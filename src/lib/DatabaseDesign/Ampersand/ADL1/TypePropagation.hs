@@ -342,7 +342,8 @@ typing st betweenTerms declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    betweensAsMap = (Map.fromListWith mrgUnion [ (lhs,nub'$ sort [rhs,lhs]) | (Between _ lhs rhs _) <- betweenTerms ])
+    betweensAsMap = (Map.fromListWith mrgUnion [ (case thrd of {(BetweenType _ t) -> t;_ -> rhs}
+                                                 , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs thrd) <- betweenTerms ])
     
     eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
                          "between types"

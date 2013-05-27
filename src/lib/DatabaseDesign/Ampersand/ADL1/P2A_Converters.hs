@@ -105,7 +105,10 @@ mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<
 mEqual' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mEqual'    ta a tb b e = (Map.empty, [Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
-existsSpecific a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
+existsSpecific = existsGS BTIntersection
+existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
+existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
+existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
