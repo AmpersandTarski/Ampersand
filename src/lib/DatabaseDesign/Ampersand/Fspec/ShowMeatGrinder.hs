@@ -77,6 +77,8 @@ metaPopsOf _ fSpec =
   -- Some population for 'ONE' ??
   , Pop "ctxcs"   "Context" "Concept"
          [(uri fSpec,uri x) | x <- allConcepts fSpec]
+--  , Pop "ctxgE"   "Context" "GenR"
+--         [(uri fSpec,uri x) | x <- 
   ]
  ++ concat [metaPopsOfPatternPattern pat | pat <- vpatterns   fSpec]
  ++ concat [metaPopsOfPatternGen     gen | gen <- vgens       fSpec]
