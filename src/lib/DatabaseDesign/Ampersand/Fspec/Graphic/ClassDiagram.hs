@@ -20,7 +20,7 @@ where
    import Data.GraphViz.Attributes.Complete as GVcomp
    import Data.GraphViz.Attributes as GVatt
    import Data.GraphViz.Attributes.HTML as Html
-
+   
    fatal :: Int -> String -> a
    fatal = fatalMsg "Fspec.Graphic.ClassDiagram"
 
@@ -208,8 +208,10 @@ where
                   ]
         where
           hasRootTarget a = case assTrg a of
-                               Left c -> c `elem` roots
+                               Left c ->  c `elem`  kernelConcepts
                                Right _ -> False
+          kernelConcepts = map fst (concatMap cLkpTbl tables)
+          rootOf c = head [(source.fldexpr.snd.head.cLkpTbl) t | t<-tables, c `elem` map fst ( cLkpTbl t)]
           relsOf t = 
             case t of
               TblSQL{} -> map mkRel (catMaybes [relOf fld | fld <- fields t])
@@ -237,8 +239,8 @@ where
             case expr of
               EDcI{} -> Nothing
               ETyp EDcI{} _ -> Nothing    
-              EDcD _ sgn -> if target sgn `elem` roots then Just (expr,f) else Nothing
-              EFlp EDcD{} sgn -> if target sgn `elem` roots then Just (expr,f) else Nothing
+              EDcD _ sgn -> if target sgn `elem` kernelConcepts then Just (expr,f) else Nothing
+              EFlp EDcD{} sgn -> if target sgn `elem` kernelConcepts then Just (expr,f) else Nothing
               _ -> fatal 200 ("Unexpected expression: "++show expr)
           mkRel :: (Expression,SqlField) -> Association
           mkRel (expr,f) =
@@ -246,7 +248,7 @@ where
                        , assSrcPort = fldname f
                        , asslhm = (mults.flp) expr
                        , asslhr = fldname f
-                       , assTrg = Left (target expr)
+                       , assTrg = Left (rootOf (target expr))
                        , assrhm = mults expr
                        , assrhr = (name.head.declsUsedIn) expr
                        }
