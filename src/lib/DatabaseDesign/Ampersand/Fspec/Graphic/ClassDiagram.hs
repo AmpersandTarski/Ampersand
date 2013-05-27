@@ -238,6 +238,7 @@ where
               EDcI{} -> Nothing
               ETyp EDcI{} _ -> Nothing    
               EDcD _ sgn -> if target sgn `elem` roots then Just (expr,f) else Nothing
+              EFlp EDcD{} sgn -> if target sgn `elem` roots then Just (expr,f) else Nothing
               _ -> fatal 200 ("Unexpected expression: "++show expr)
           mkRel :: (Expression,SqlField) -> Association
           mkRel (expr,f) =
