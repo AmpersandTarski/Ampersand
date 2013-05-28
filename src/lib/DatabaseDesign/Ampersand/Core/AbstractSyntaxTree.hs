@@ -637,7 +637,14 @@ instance Sortable A_Concept where
   meet  _  ONE = fatal 672 "meet must not be used with ONE!"
   meet a@PlainConcept{} b = case a `meets` b of        -- meet yields the more specific of two concepts
               [z] -> z
-              []  -> fatal 675 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
+              []  -> let (ga,gb,gc,gd,ge) = cptgE a
+                     in fatal 675 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common."
+                              ++"\n a) "++show ( a `ga` b)
+                              ++"\n b) "++show gb
+                              ++"\n c) "++show gc
+                              ++"\n d) "++show (a `gd` b)
+                              ++"\n e) "++show (a `ge` b) 
+                              )
               cs  -> greatest cs
              where (_,_,_,meets,_) = cptgE a
   join ONE  _  = fatal 678 "join must not be used with ONE!"
