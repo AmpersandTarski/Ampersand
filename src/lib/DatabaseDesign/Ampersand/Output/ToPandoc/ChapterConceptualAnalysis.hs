@@ -91,19 +91,19 @@ chpConceptualAnalysis lev fSpec flags = (chptHeader flags ConceptualAnalysis <> 
         = let purp = purposes2Blocks flags [p | p<-purposesDefinedIn fSpec (language flags) d]
           in ([]
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
-                  purp
+                ( if null purp
+                  then [ Plain$[ Str ("De volgende "++nladjs d++" relatie is gedeclareerd ")      | language flags==Dutch]
+                            ++ [ Str ("The following "++ukadjs d++" relation has been declared ") | language flags==English] ]
+                  else purp ) -- If there is a purpose, its text should introduce the declaration and the generator remains silent.
                   -- Then the declaration of the relation with its properties and its intended meaning 
-               ++ [ Plain$[if null purp then Str ("De volgende "++nladjs d++" relatie is gedeclareerd ")
-                                        else Str ("Daarom is de volgende "++nladjs d++" relatie gedeclareerd ") | language flags==Dutch]
-                       ++ [if null purp then Str ("The following "++ukadjs d++" relation has been declared ")
-                                        else Str ("Therefore the following "++ukadjs d++" relation has been declared ") | language flags==English] ]
                ++ pandocEqnArray 
                      [ ( texOnly_Id(name d)
                        , ":"
                        , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))++symDefLabel d
                        )  ]
-               ++ [Plain$[Str ", hetgeen betekent: "| language flags==Dutch]
-                      ++ [Str ", which means: "| language flags==English]]
+               ++ [Plain$[Str "(Geen betekenis gespecificeerd)"| language flags==Dutch]
+                      ++ [Str "(No meaning has been specified)"  | language flags==English]
+                  | null (meaning2Blocks (language flags) d)]
                ++ meaning2Blocks (language flags) d
               ])
   ukadjs d = intercalate ", " (map ukadj (multiplicities d))

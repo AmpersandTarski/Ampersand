@@ -515,7 +515,9 @@ pCtx2aCtx p_context
                           ((isaClos         Map.! a) `isc` (isaClos         Map.! b)))
                                                       = Poset.NC
                   | otherwise                         = Poset.CP
-          meets a b = map pCpt2aCpt ((isaClosReversed Map.! aCpt2pCpt a) `isc` (isaClosReversed Map.! aCpt2pCpt b))
+          meets a b = case map pCpt2aCpt ((isaClosReversed Map.! aCpt2pCpt a) `isc` (isaClosReversed Map.! aCpt2pCpt b)) of
+                       [] -> joins a b
+                       cs -> cs
           joins a b = map pCpt2aCpt ((isaClos         Map.! aCpt2pCpt a) `isc` (isaClos         Map.! aCpt2pCpt b))
           sorted = (GHC.Exts.sortWith ((0-).length.snd) (Map.toList isaClosReversed))
           classes = [map pCpt2aCpt (x:filter (/=x) xs) | (x,xs)<-recur sorted ]
