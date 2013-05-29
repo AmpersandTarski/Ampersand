@@ -299,7 +299,7 @@ typing st betweenTerms declsByName
     stClosAdded :: Typemap
     stClosAdded = fixPoint stClosAdd (addIdentity stClos1)
 
- -- The purpose of stClosAdd is to enhance a type map with Between nodes.
+ -- The purpose of stClosAdd is to enhance a type map with the edges from Between nodes.
     stClosAdd :: Typemap -> Typemap
     stClosAdd tm = reverseMap (foldl f (reverseMap (foldl f tm glbs)) lubs)
       where
