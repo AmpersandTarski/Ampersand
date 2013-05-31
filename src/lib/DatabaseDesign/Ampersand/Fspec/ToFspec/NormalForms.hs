@@ -9,7 +9,8 @@ where
    import qualified DatabaseDesign.Ampersand.Core.Poset as Poset
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import Data.List (nub)
+   import DatabaseDesign.Ampersand.Fspec.ShowADL
+   import Data.List (nub, intercalate)
    import Prelude hiding (head)
    
    fatal :: Int -> String -> a
@@ -141,7 +142,6 @@ where
             simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
             expr = (res,ss,equ)
     where
-     
      (res,ss,equ) = nM (if eq then Eql else Lte) expr []
 --     nM :: Expression -> [Expression] -> (Expression,[String],String)
      nM posNeg (EEqu (l,r) _) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
@@ -326,7 +326,7 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
-         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
+         | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posNeg l []
                (f,steps',equ'') = nM posNeg r (l:rs)
                absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
@@ -356,7 +356,14 @@ where
    nfProof shw = nfPr shw True True -- The first boolean True means that clauses are derived using <=> derivations. The second True means that a disjunctive normal form is produced.
    nfPr :: (Expression -> String) -> Bool -> Bool -> Expression -> [(Expression, [String], String)]
    nfPr shw eq dnf expr
-    = if expr==res
+    = {-if showADL expr=="r \\/ s"
+      then fatal 360 ("Diagnose expr: "++showADL expr++"\n"++
+                      "eq:            "++show eq++"\n"++
+                      "dnf:           "++show eq++"\n"++
+                      "res:           "++showADL res++"\n"++
+                      "expr==res:     "++show (expr==res)
+                     ) else-}
+      if expr==res
       then [(expr,[],"<=>")]
       else (expr,steps,equ):nfPr shw eq dnf (simplify res)
     where (res,steps,equ) = normStep shw eq dnf False expr

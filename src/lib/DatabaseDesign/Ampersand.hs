@@ -65,7 +65,7 @@ module DatabaseDesign.Ampersand
     -- * Generators of output
    , generateAmpersandOutput
    -- * Prettyprinters
-   , ShowADL(..), showSQL
+   , ShowADL(..), showSQL, showSign
    -- * Functions with Options
    , getOptions
    , verboseLn, verbose
