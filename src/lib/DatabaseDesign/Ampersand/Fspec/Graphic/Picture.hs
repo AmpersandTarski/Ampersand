@@ -77,10 +77,10 @@ makePictureObj flags nm pTyp dotsource
            , caption     = case (pTyp,language flags) of
                            (PTClassDiagram,English) -> "Class Diagram of " ++ nm
                            (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ nm
-                           (PTPattern     ,English) -> "Concept analysis of the rules in " ++ nm
-                           (PTPattern     ,Dutch  ) -> "Conceptuele analyse van de regels in " ++ nm
-                           (PTFullPat     ,English) -> "Concept analysis of relations in " ++ nm
-                           (PTFullPat     ,Dutch  ) -> "Conceptuele analyse van relaties in " ++ nm
+                           (PTPattern     ,English) -> "Concept diagram of the rules in " ++ nm
+                           (PTPattern     ,Dutch  ) -> "Conceptueel diagram van de regels in " ++ nm
+                           (PTFullPat     ,English) -> "Concept diagram of relations in " ++ nm
+                           (PTFullPat     ,Dutch  ) -> "Conceptueel diagram van relaties in " ++ nm
                            (PTProcess     ,English) -> "Process model of " ++ nm
                            (PTProcess     ,Dutch  ) -> "Procesmodel van " ++ nm
                            (PTSwitchBoard ,English) -> "Switchboard diagram of " ++ nm
