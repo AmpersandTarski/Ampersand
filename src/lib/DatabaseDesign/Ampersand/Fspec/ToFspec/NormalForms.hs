@@ -10,7 +10,7 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Fspec.ShowADL
-   import Data.List (nub, intercalate)
+   import Data.List (nub {- , intercalate -} )
    import Prelude hiding (head)
    
    fatal :: Int -> String -> a
@@ -326,10 +326,12 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
-         | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
+         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posNeg l []
                (f,steps',equ'') = nM posNeg r (l:rs)
+            -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
                absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
+            -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
                tauts = [x' |x<-exprUni2list r,x==notCpl (sign l) l, ECpl x' _<-[x,l]]
                absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
                absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
