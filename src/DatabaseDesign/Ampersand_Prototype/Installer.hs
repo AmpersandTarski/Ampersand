@@ -76,7 +76,7 @@ installer fSpec flags = intercalate "\n  "
         ,"  fwrite($dumpfile, \"CONTEXT "++name fSpec++"\\n\");"
         ]
         ++
-        ["  fwrite($dumpfile, dumprel(\""++showADL d++"\",\""++qry++"\"));" 
+        ["  fwrite($dumpfile, dumprel(\""++name d++showSign (sign d)++"\",\""++qry++"\"));" 
         | d<-declarations fSpec, decusr d
         , let relExpr = EDcD d (sign d)
         , let dbrel = sqlRelPlugs fSpec relExpr
