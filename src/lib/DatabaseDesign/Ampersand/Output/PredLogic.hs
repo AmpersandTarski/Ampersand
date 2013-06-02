@@ -363,9 +363,12 @@ module DatabaseDesign.Ampersand.Output.PredLogic
          res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
          conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                    -- So conr is not empty.
-         antr = (map (notCpl (sign e)).map flp.reverse.takeWhile isCpl) es
-         conl = (reverse.dropWhile isCpl.reverse) es
-         antl = (map (notCpl (sign e)).map flp.takeWhile isCpl.reverse) es
+         antr = let x = (map (notCpl (sign e)).map flp.reverse.takeWhile isCpl) es in
+                if null x then fatal 367 ("Entering in an empty foldr1") else x
+         conl = let x = (reverse.dropWhile isCpl.reverse) es in
+                if null x then fatal 369 ("Entering in an empty foldr1") else x
+         antl = let x = (map (notCpl (sign e)).map flp.takeWhile isCpl.reverse) es in
+                if null x then fatal 371 ("Entering in an empty foldr1") else x
         -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
          frels :: Var -> Var -> [PredLogic]
          frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]
