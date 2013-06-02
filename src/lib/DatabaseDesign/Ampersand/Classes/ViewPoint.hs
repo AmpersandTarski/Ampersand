@@ -11,8 +11,8 @@ import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Misc.Explain
 import Data.List
  
---fatal :: Int -> String -> a
---fatal = fatalMsg "Classes.ViewPoint"
+fatal :: Int -> String -> a
+fatal = fatalMsg "Classes.ViewPoint"
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, declarations, etc.)
@@ -78,7 +78,8 @@ class ProcessStructure a where
    
 rulesFromIdentity :: IdentityDef -> [Rule]
 rulesFromIdentity identity
- = [ mkKeyRule
+ = [ if null (identityAts identity) then fatal 81 ("Moving into foldr1 with empty list (identityAts identity).") else
+     mkKeyRule
       ( foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objctx att ]
         .|-. iExpr (idCpt identity)) ]
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}

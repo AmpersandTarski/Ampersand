@@ -507,6 +507,16 @@ pCtx2aCtx p_context
 -}
      = (gE, classes, isas, meets, joins)   -- The base hierarchy for the partial order of concepts (see makePartialOrder)
        where 
+          gE a b = pgE (aCpt2pCpt a) (aCpt2pCpt b)
+          pgE a b | a==b                              = Poset.EQ
+                  | b `elem` isaClos Map.! a          = Poset.LT
+                  | b `elem` isaClosReversed Map.! a  = Poset.GT
+                  | null (((isaClosReversed Map.! a) `isc` (isaClosReversed Map.! b)) `uni`
+                          ((isaClos         Map.! a) `isc` (isaClos         Map.! b)))
+                                                      = Poset.NC
+                  | otherwise                         = Poset.CP
+          meets a b = map pCpt2aCpt ((isaClosReversed Map.! aCpt2pCpt a) `isc` (isaClosReversed Map.! aCpt2pCpt b))
+{- suggestion:
           gE a b | aCpt2pCpt a==aCpt2pCpt b                              = Poset.EQ
                  | aCpt2pCpt b `elem` isaClos Map.! aCpt2pCpt a          = Poset.LT
                  | aCpt2pCpt b `elem` isaClosReversed Map.! aCpt2pCpt a  = Poset.GT
@@ -514,6 +524,7 @@ pCtx2aCtx p_context
                  | otherwise                                             = Poset.CP
           meets a b = map pCpt2aCpt (((isaClosReversed Map.! aCpt2pCpt a) `isc` (isaClosReversed Map.! aCpt2pCpt b)) `uni`
                                      ((isaClos         Map.! aCpt2pCpt a) `isc` (isaClos         Map.! aCpt2pCpt b)))
+-}
           joins a b = map pCpt2aCpt  ((isaClos         Map.! aCpt2pCpt a) `isc` (isaClos         Map.! aCpt2pCpt b))
           sorted = (GHC.Exts.sortWith ((0-).length.snd) (Map.toList isaClosReversed))
           classes = [map pCpt2aCpt (x:filter (/=x) xs) | (x,xs)<-recur sorted ]

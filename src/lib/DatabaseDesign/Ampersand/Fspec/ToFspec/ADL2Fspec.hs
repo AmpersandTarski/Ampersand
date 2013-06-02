@@ -13,6 +13,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA, exprUni2list, exprIsc2list, exprCps2list)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
+   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
    import Data.List (nub,intercalate)
@@ -367,8 +368,8 @@ while maintaining all invariants.
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is carried along for traceability.
    quads :: Options -> (Declaration->Bool) -> [Rule] -> [Quad]
-   quads _ visible rs
-    = [ Quad d (Clauses [ (horn2expr hornClause,allShifts hornClause)
+   quads flags visible rs
+    = [ Quad d (Clauses [ (horn2expr hornClause,allShifts flags hornClause)
                         | hornClause<-conjuncts rule
       --                , (not.null.lambda Ins (ERel r ??)) hornClause  -- causes infinite loop
       --                , not (checkMono hornClause Ins r)         -- causes infinite loop
@@ -381,10 +382,10 @@ while maintaining all invariants.
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
    allClauses :: Options -> Rule -> Clauses
-   allClauses _ rule = Clauses [(horn2expr hornClause,allShifts hornClause) | hornClause<-conjuncts rule] rule
+   allClauses flags rule = Clauses [(horn2expr hornClause,allShifts flags hornClause) | hornClause<-conjuncts rule] rule
 
-   allShifts :: HornClause -> [HornClause]
-   allShifts conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
+   allShifts :: Options -> HornClause -> [HornClause]
+   allShifts flags conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
     where
     {-
@@ -398,21 +399,27 @@ while maintaining all invariants.
       | null antcs || null conss = [hc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
       | otherwise                = [ Hc antc (case css of
                                                [] -> if source antcExpr==target antcExpr then [iExpr (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
-                                               _  ->  map (foldr1 (.:.)) css
+                                               _  ->  map (foldCompose 'c' ass css) css
                                              )
                                    | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
-                                   , let antc=map (foldr1 (.:.)) ass
-                                   , let antcExpr = foldr1 (./\.) antc
+                                   , let antc=map (foldCompose 'a' ass css) ass -- foldCompose is for safety. Read: let cons=map (foldr1 (.:.)) ass
+                                   , let antcExpr = case antc of
+                                                     [] -> fatal 401 ("Empty list should be impossible.")
+                                                     _  -> foldr1 (./\.) antc
                                    ]
       where
-      {-
-       diagnostic
-        = intercalate "\n  "
-          [ "fs:    [ "++intercalate "\n         , " [showHS flags "\n           " f | f<-fs    ]++"\n       ]"
-          , "antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antcs ]++"\n       ]"
-          , "conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"
-          ] -}
-          
+       foldCompose x ass css xs = case xs of
+                                   [] -> fatal 412 ("Empty list ("++[x]++"ss) should be impossible."++diagnostic)
+                                   _  -> foldr1 (.:.) xs
+        where
+         diagnostic
+           = "\n  antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antcs ]++"\n       ]"++
+             "\n  conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"++
+             "\n  map exprCps2list antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-map exprCps2list antcs ]++"\n       ]"++
+             "\n  map exprCps2list conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-map exprCps2list conss ]++"\n       ]"++
+             "\n  ass:   [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-ass ]++"\n       ]"++
+             "\n  css:   [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-css ]++"\n       ]"
+             
       -- informal example coming from  "r;s /\ p;r |- x;y;z"
       --  antcs =  [ ["r","s"], ["p","r"] ]
       --  conss =  [ ["x","y","z"] ]
@@ -420,7 +427,7 @@ while maintaining all invariants.
        move ass [] = [(ass,[])]
        move ass css
         = (ass,css):
-          if and [not (null cs) | cs<-css]
+          if and [(not.and.map isEDcI) cs | cs<-css] -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
           then [ts | length (eqClass (==) (map head css)) == 1         -- example: True, because map head css == [ "x" ]
                    , let h=head (map head css)                         -- example: h= "x"
                    , isUni h                                           -- example: assume True
@@ -436,21 +443,33 @@ while maintaining all invariants.
       | null antcs || null conss = [hc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
       | otherwise                = [ Hc (case ass of
                                           [] -> if source consExpr==target consExpr then [iExpr (source consExpr)] else fatal 463 "consExpr should be endorelation"
-                                          _  -> map (foldr1 (.:.)) ass
+                                          _  -> map (foldCompose 'a' ass css) ass
                                         ) cons
                                    | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
-                                   , let cons=map (foldr1 (.:.)) css
+                                   , let cons=map (foldCompose 'c' ass css) css -- foldCompose is for safety. Read: let cons=map (foldr1 (.:.)) css
                                    , let consExpr = foldr1 (.\/.) cons
                                    ]
       where
-      -- informal example coming from  "r;s /\ p;r |- x;y;z"
+       foldCompose x ass css xs = case xs of
+                                   [] -> fatal 454 ("Empty list ("++[x]++"ss) should be impossible."++diagnostic)
+                                   _  -> foldr1 (.:.) xs
+        where
+         diagnostic
+           = "\n  antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antcs ]++"\n       ]"++
+             "\n  conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"++
+             "\n  map exprCps2list antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-map exprCps2list antcs ]++"\n       ]"++
+             "\n  map exprCps2list conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-map exprCps2list conss ]++"\n       ]"++
+             "\n  ass:   [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-ass ]++"\n       ]"++
+             "\n  css:   [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-css ]++"\n       ]"
+
+      -- informal example coming from  "r;s /\ r;r |- x;y;z"
       --  ass =  [ ["r","s"], ["r","r"] ]
       --  css =  [ ["x","y","z"] ]
        move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
        move [] css = [([],css)]
        move ass css
         = (ass,css):
-          if and [not (null as) | as<-ass]
+          if and [(not.and.map isEDcI) as | as<-ass] -- all as are nonempty because: (not.and.map isEDcI) as ==> not (null as)
           then [ts | length (eqClass (==) (map head ass)) == 1       -- example: True, because map head ass == [ "r", "r" ]
                    , let h=head (map head ass)                       -- example: h= "r"
                    , isSur h                                         -- example: assume True
@@ -460,7 +479,8 @@ while maintaining all invariants.
                    , isTot l
                    , ts<-move (map init ass) [cs++[flp l] |cs<-css]]
           else []
-
+   isEDcI (EDcI{}) = True
+   isEDcI _ = False
 
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
@@ -641,13 +661,15 @@ while maintaining all invariants.
                                               , Sel c (flp ers) fRht motiv
                                               ] motiv
                                    | (ls,rs)<-chop (exprCps2list e)
-                                   , let els=foldr1 (.:.) ls
-                                   , let ers=foldr1 (.:.) rs
+                                   , let els=foldCompose ls
+                                   , let ers=foldCompose rs
                                    , let c=if source ers<=target els then source ers else target els
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Ins els []
                                    ] motiv
-
+                               where foldCompose xs = case xs of
+                                                       [] -> fatal 659 "Going into (foldr1 (.:.)) with an empty list"
+                                                       _  -> foldr1 (.:.) xs
 {- Problem: how to insert Delta into r;s
 This corresponds with:  genPAclause editAble Ins (ECps (r,s) sgn) Delta motive
 Let us solve it mathematically,  and gradually transform via pseudo-code into Haskell code.
@@ -831,12 +853,15 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                               , Sel c (disjNF (els ./\. flp ers)) fRht motiv
                                               ] motiv
                                    | (ls,rs)<-chop (exprCps2list e)
-                                   , let ers=foldr1 (.:.) rs
-                                   , let els=foldr1 (.:.) ls
+                                   , let ers=foldCompose rs
+                                   , let els=foldCompose ls
                                    , let c=if target ers<=source els then target ers else source els
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Del els []
                                    ] motiv
+                               where foldCompose xs = case xs of
+                                                       [] -> fatal 851 "Going into (foldr1 (.:.)) with an empty list"
+                                                       _  -> foldr1 (.:.) xs
 {- Purpose: how to delete Delta from ECps es
 This corresponds with:  genPAclause editAble Del (ECps es) Delta motive
 One way of doing this is to select from es one subexpression, e, that is editable.

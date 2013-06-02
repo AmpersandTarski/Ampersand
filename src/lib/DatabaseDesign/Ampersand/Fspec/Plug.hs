@@ -192,8 +192,7 @@ instance Object PlugSQL where
       = case sortWith length stop of
          []  -> f c mms'  -- a path from c to a is not found (yet), so add another step to the recursion
          (hd:_) -> case hd of
-                    []  -> fatal 204 "null in hd"
-                    [e] -> e
+                    []  -> fatal 204 "Empty head should be impossible."
                     es  -> foldr1 (.:.) es  -- pick the shortest path and turn it into an expression.
       where
         mms' = if [] `elem` mms 
@@ -333,14 +332,10 @@ plugpath p@ScalarSQL{} srcfld trgfld
 plugpath p@TblSQL{} srcfld trgfld  
   | srcfld==trgfld && isPlugIndex p trgfld = iExpr (target (fldexpr trgfld))
   | srcfld==trgfld && not(isPlugIndex p trgfld) = flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
-  | (not . null) (paths srcfld trgfld) = if length (head (paths srcfld trgfld)) == 1
-                                         then head (head (paths srcfld trgfld))
-                                         else foldr1 (.:.) (head (paths srcfld trgfld)) -- SJ Jan 4th 2013: WHY do we know that head (paths srcfld trgfld) is not empty?
-                                                                                        -- HJ May 4th 2013: BECAUSE of the guard a few lines earlier.... 
-      
-  | (not . null) (paths trgfld srcfld) = if length (head (paths trgfld srcfld)) == 1
-                                         then flp (head (head (paths trgfld srcfld)))
-                                         else flp (foldr1 (.:.) (head (paths trgfld srcfld)))
+  | (not . null) (paths srcfld trgfld)
+     = case head (paths srcfld trgfld) of
+        []    -> fatal 338 ("Empty head (paths srcfld trgfld) should be impossible.")
+        ps    -> foldr1 (.:.) ps
   --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
   --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
   --      because these kernel fields connect to themselves by r=I[X] (i.e. end of path).

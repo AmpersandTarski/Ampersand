@@ -9,7 +9,7 @@ where
    import qualified DatabaseDesign.Ampersand.Core.Poset as Poset
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
-   import DatabaseDesign.Ampersand.Fspec.ShowADL
+-- import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Data.List (nub {- , intercalate -} )
    import Prelude hiding (head)
    
@@ -240,7 +240,7 @@ where
      nM posNeg (EIsc (l,r) sgn) rs
 -- Absorb equals:    r/\r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
-              = ( foldr1 (./\.) [head cl | cl<-absorbClasses]
+              = ( case absorbClasses of [] -> fatal 243 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (./\.) [head cl | cl<-absorbClasses]
                 , [shw e++" /\\ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
                 , "<=>"
                 )
@@ -297,7 +297,7 @@ where
      nM posNeg (EUni (l,r) sgn) rs
 -- Absorb equals:    r\/r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
-              = ( foldr1 (.\/.) [head cl | cl<-absorbClasses]
+              = ( case absorbClasses of [] -> fatal 300 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (.\/.) [head cl | cl<-absorbClasses]
                 , [shw e++" \\/ "++shw e++" = "++shw e | cl<-absorbClasses, length cl>1, let e=head cl]
                 , "<=>"
                 )
@@ -326,7 +326,7 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
-         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
+         | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posNeg l []
                (f,steps',equ'') = nM posNeg r (l:rs)
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
