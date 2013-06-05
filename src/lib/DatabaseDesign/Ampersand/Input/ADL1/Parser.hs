@@ -36,6 +36,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                        , "RELATION", "MEANING", "DEFINE", "CONCEPT", "IDENT"
                        , "VIEW", "TXT", "PRIMHTML"
+                       , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
                        , "IMPORT", "SPEC", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
@@ -373,7 +374,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
    -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
    pViewDef :: Parser Token P_ViewDef
-   pViewDef  = vd <$ pKey "VIEW" <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+   pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
        where vd :: Label -> P_Concept -> [P_ViewSegment] -> P_ViewDef 
              vd (Lbl nm p _) c ats = P_Vd { vd_pos = p
                                           , vd_lbl = nm
