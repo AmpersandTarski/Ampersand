@@ -402,7 +402,7 @@ while maintaining all invariants.
                                                _  ->  map (foldCompose 'c' ass css) css
                                              )
                                    | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
-                                   , let antc=map (foldCompose 'a' ass css) ass -- foldCompose is for safety. Read: let cons=map (foldr1 (.:.)) ass
+                                   , let antc=map (foldCompose 'a' ass css) ass -- foldCompose is for safety. Read: let antc=map (foldr1 (.:.)) ass
                                    , let antcExpr = case antc of
                                                      [] -> fatal 401 ("Empty list should be impossible.")
                                                      _  -> foldr1 (./\.) antc
