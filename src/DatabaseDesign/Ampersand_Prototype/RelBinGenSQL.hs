@@ -147,11 +147,12 @@ selectExpr fSpec i src trg expr
        let es = exprCps2list expr in
        case es of 
           (EDcV (Sign ONE _):fs@(_:_))
-             -> let src' = noCollideUnlessTm' (foldr1 (.:.) fs) [trg'] (sqlExprSrc fSpec (foldr1 (.:.) fs))
-                    trg' = sqlExprTrg fSpec (foldr1 (.:.) fs)
+             -> let expr' = foldr1 (.:.) fs
+                    src'  = noCollideUnlessTm' expr' [trg'] (sqlExprSrc fSpec expr')
+                    trg'  = sqlExprTrg fSpec expr'
                 in sqlcomment i ("case:  (EDcV (Sign ONE _): fs@(_:_))"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("1",src) ("fst."++trg',trg)
-                      (selectExprBrac fSpec i src' trg' (foldr1 (.:.) fs) +++ " AS fst")
+                      (selectExprBrac fSpec i src' trg' expr' +++ " AS fst")
                       (Just$ "fst."++trg'++" IS NOT NULL")
           (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_)) -- to make more use of the thing below
              -> sqlcomment i ("case:  (s1@EMp1{}: s2@(EDcV _): s3@EMp1{}: fx@(_:_))"
@@ -162,18 +163,20 @@ selectExpr fSpec i src trg expr
                  Just$ "SELECT \\'"++atomSrc++"\\' AS "++src++", \\'"++atomTrg++"\\' AS "++trg
 
           (e@(EMp1 atom _):f:fx)
-             -> let src' = sqlExprSrc fSpec e
-                    trg' = noCollideUnlessTm' (foldr1 (.:.) (f:fx)) [src'] (sqlExprTrg fSpec (foldr1 (.:.) (f:fx)))
+             -> let expr' = foldr1 (.:.) (f:fx)
+                    src' = sqlExprSrc fSpec e
+                    trg' = noCollideUnlessTm' expr' [src'] (sqlExprTrg fSpec expr')
                 in sqlcomment i ("case:  (EMp1{}: f: fx)"++phpIndent (i+3)++showADL expr) $
                    selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
-                                   (selectExprBrac fSpec i src' trg' (foldr1 (.:.) (f:fx))+++" AS fst")
+                                   (selectExprBrac fSpec i src' trg' expr'+++" AS fst")
                                    (Just$"fst."++src'++" = \\'"++atom++"\\'")
           (e:EDcV _:f:fx) -- prevent calculating V in this case
              | src==trg && not (isProp e) -> fatal 146 $ "selectExpr 2 src and trg are equal ("++src++") in "++showADL e
-             | otherwise -> let src' = sqlExprSrc fSpec e
+             | otherwise -> let expr' = foldr1 (.:.) (f:fx)
+                                src' = sqlExprSrc fSpec e
                                 mid' = sqlExprTrg fSpec e
                                 mid2'= sqlExprSrc fSpec f
-                                trg' = noCollideUnlessTm' (foldr1 (.:.) (f:fx)) [mid2'] (sqlExprTrg fSpec (foldr1 (.:.) (f:fx)))
+                                trg' = noCollideUnlessTm' expr' [mid2'] (sqlExprTrg fSpec expr')
                             in sqlcomment i ("case:  (e:ERel (V _) _:f:fx)"++phpIndent (i+3)++showADL e) $
                                    selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                                                     ((selectExprBrac fSpec i src' mid' e)+++" AS fst,"++phpIndent (i+5)+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
