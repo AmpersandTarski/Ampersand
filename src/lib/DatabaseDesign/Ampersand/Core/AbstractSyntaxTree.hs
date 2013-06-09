@@ -637,16 +637,19 @@ instance Sortable A_Concept where
   meet  _  ONE = fatal 672 "meet must not be used with ONE!"
   meet a@PlainConcept{} b = case a `meets` b of        -- meet yields the more specific of two concepts
               [z] -> z
-              []  -> let (ga,gb,gc,gd,ge) = cptgE a
-                     in fatal 675 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common."
-                              ++"\n a) "++show ( a `ga` b)
-                              ++"\n b) "++show gb
-                              ++"\n c) "++show gc
-                              ++"\n d) "++show (a `gd` b)
-                              ++"\n e) "++show (a `ge` b) 
-                              )
+              []  -> case mostSpecificsInJoins of
+                      []  -> fatal 641 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common."++diagnose)
+                      [c] -> c
+                      cs  -> fatal 657 ("More than one concept for meet " ++ show a ++ " "++show b++" are possible. This should lead to a proper user error message. \n"++show cs++diagnose)
               cs  -> greatest cs
-             where (_,_,_,meets,_) = cptgE a
+             where (gE,classes,isas,meets,joins) = cptgE a
+                   mostSpecificsInJoins = [x | x<-a `joins` b, null [y | y<-a `joins` b, gE x y == GT]]
+                   diagnose = "\n a) "++show ( a `gE` b)
+                            ++"\n b) "++show classes
+                            ++"\n c) "++show isas
+                            ++"\n d) "++show (a `meets` b)
+                            ++"\n e) "++show (a `joins` b) 
+                            ++"\n mostSpecificsInJoins: "++show mostSpecificsInJoins
   join ONE  _  = fatal 678 "join must not be used with ONE!"
   join  _  ONE = fatal 679 "join must not be used with ONE!"
   join a@PlainConcept{} b = 
