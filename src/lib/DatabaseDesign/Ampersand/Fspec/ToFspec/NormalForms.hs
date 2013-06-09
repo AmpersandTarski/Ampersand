@@ -326,7 +326,7 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
-         | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
+         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posNeg l []
                (f,steps',equ'') = nM posNeg r (l:rs)
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
