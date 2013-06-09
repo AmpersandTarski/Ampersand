@@ -326,6 +326,9 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
+ -- Deksels! the following alternative is incorrect. It should yield t .\/. f (instead of now: t ./\. f)
+ -- However, it covers a more serious mistake in the generation of ECA-rules,
+ -- which causes the Sentinel to flip. So we keep it covered until that mistake is fixed.
          | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posNeg l []
                (f,steps',equ'') = nM posNeg r (l:rs)

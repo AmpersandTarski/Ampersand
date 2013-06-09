@@ -479,6 +479,7 @@ while maintaining all invariants.
                    , isTot l
                    , ts<-move (map init ass) [cs++[flp l] |cs<-css]]
           else []
+   isEDcI :: Expression -> Bool
    isEDcI (EDcI{}) = True
    isEDcI _ = False
 
