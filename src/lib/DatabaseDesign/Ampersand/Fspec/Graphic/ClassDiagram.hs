@@ -201,7 +201,7 @@ where
       ooAttr :: SqlField -> CdAttribute
       ooAttr f= OOAttr { attNm = fldname f 
                        , attTyp = (name.target.fldexpr) f
-                       , attOptional = (not.isTot.fldexpr) f
+                       , attOptional = fldnull f
                        }
       allAssocs = [a | a<-concatMap relsOf tables
                      , hasRootTarget a
