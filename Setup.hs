@@ -3,12 +3,13 @@ import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
 import Distribution.PackageDescription
-import System.Time
 import System.Process
 import System.IO
 import Control.Exception
-import Prelude hiding (catch)
 import Data.List
+import Data.Time.Clock
+import Data.Time.Format
+import System.Locale
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
@@ -27,11 +28,8 @@ generateBuildInfoHook pd  lbi uh bf =
                              then noSVNRevisionStr
                              else return r
                            }
-    ; clockTime <- getClockTime
-    ; calendarTime <- toCalendarTime clockTime
-    ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
-                         show (ctHour calendarTime) ++ ":" ++ showPadded (ctMin calendarTime) ++ "." ++ showPadded (ctSec calendarTime) 
-    
+    ; clockTime <- getCurrentTime 
+    ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile "src/lib/DatabaseDesign/Ampersand/Basics/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
