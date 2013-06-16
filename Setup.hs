@@ -3,7 +3,6 @@ import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
 import Distribution.PackageDescription
-import System.Time
 import System.Process
 import System.IO
 import Data.List
@@ -11,7 +10,10 @@ import System.Directory
 import System.FilePath
 import qualified Data.ByteString as BS
 import Control.Exception
-import Prelude hiding (catch)
+import Data.Time.Clock
+import Data.Time.Calendar
+import Data.Time.Format
+import System.Locale
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
@@ -31,11 +33,8 @@ generateBuildInfoHook pd  lbi uh bf =
                           else return r
                         }
 
-    ; clockTime <- getClockTime
-    ; calendarTime <- toCalendarTime clockTime
-    ; let buildTimeStr = show (ctDay calendarTime) ++ "-" ++ take 3 (show  $ ctMonth calendarTime) ++ "-" ++ show (ctYear calendarTime `mod` 100) ++ " " ++
-                         show (ctHour calendarTime) ++ ":" ++ showPadded (ctMin calendarTime) ++ "." ++ showPadded (ctSec calendarTime) 
-    
+    ; clockTime <- getCurrentTime 
+    ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile "src/DatabaseDesign/Ampersand_Prototype/BuildInfo_Generated.hs" $
         buildInfoModule cabalVersionStr svnRevisionStr buildTimeStr
 
@@ -44,8 +43,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
- where showPadded n = (if n<10 then "0" else "") ++ show n
-       pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
+ where pathFromModule m = "src/" ++ [if c == '.' then '/' else c | c <- m] ++ ".hs"
        myHandler :: IOException -> IO String
        myHandler err = do { print err
                           ; noSVNRevisionStr
@@ -106,10 +104,11 @@ getStaticFilesModuleContents =
     ; staticFilesBinary <- readStaticFiles True "staticBinary" ""
     ; return $ "module "++staticFileModuleName++" where\n"++
                "\n"++
-               "import System.Time\n"++
+               "import Data.Time.Calendar\n"++
+               "import Data.Time.Clock\n"++
                "\n"++
                "data StaticFile = SF { filePath ::      FilePath -- relative path, including extension\n"++
-               "                     , timeStamp ::     ClockTime\n"++
+               "                     , timeStamp ::     UTCTime\n"++
                "                     , isBinary ::      Bool\n"++
                "                     , contentString :: String\n"++
                "                     }\n"++
@@ -129,13 +128,19 @@ readStaticFiles isBin base fileOrDir =
            ; fmap concat $ mapM (\fOrD -> readStaticFiles isBin base (combine fileOrDir fOrD)) fOrDs
            }
        else
-        do { timeStamp@(TOD sec pico) <- getModificationTime path
+        do { timeStamp <- getModificationTime path
            ; fileContents <- if isBin then fmap show $ BS.readFile path 
                                       else readFile path
-           ; return ["SF "++show fileOrDir++" (TOD "++show sec++" "++show pico++"){- "++show timeStamp++" -} "++
+           ; return ["SF "++show fileOrDir++" ("++showTimestamp timeStamp++") {- "++show timeStamp++" -} "++
                             show isBin++" "++show fileContents]
            }
      }
-     
+  where showTimestamp :: UTCTime -> String
+        showTimestamp ts = "UTCTime (ModifiedJulianDay "++(show.toModifiedJulianDay.utctDay) ts++
+                                 ") "++(removeS.show.utctDayTime) ts
+        removeS :: String -> String
+        removeS s = case reverse s of
+                        's':theInt -> theInt
+                        other -> other  
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth 
