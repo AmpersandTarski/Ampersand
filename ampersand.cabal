@@ -53,7 +53,7 @@ flag library
 library
   hs-source-dirs:    src/lib
   build-depends:     
-                    ghc >= 7.4,
+                    ghc >= 7.6,
                     graphviz >= 2999.16.0.0 && <= 2999.17,
                     pandoc-types == 1.10.*,
                     pandoc >= 1.11.1 && < 1.12,

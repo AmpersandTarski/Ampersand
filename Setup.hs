@@ -3,6 +3,7 @@ import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
 import Distribution.PackageDescription
+import System.Time
 import System.Process
 import System.IO
 import Control.Exception
@@ -10,7 +11,6 @@ import Data.List
 import Data.Time.Clock
 import Data.Time.Format
 import System.Locale
-import Prelude hiding (catch) -- required for GHC < 7.6
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
