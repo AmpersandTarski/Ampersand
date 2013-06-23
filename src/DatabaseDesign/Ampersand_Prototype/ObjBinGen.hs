@@ -14,10 +14,12 @@ import qualified Data.ByteString as Bin
 import DatabaseDesign.Ampersand_Prototype.CoreImporter  
 import Prelude hiding (writeFile,readFile,getContents)
 
+
 import DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated
 #ifdef MIN_VERSION_MissingH 
 import System.Posix.Files  -- If MissingH is not available, we're on windows and cannot set file 
 import System.Time.Utils   -- modification time.
+import Data.Time.Clock.POSIX
 #endif
 
 phpObjInterfaces :: Fspc -> Options -> IO()
@@ -103,7 +105,7 @@ writeStaticFile flags sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
      ; write (absFilePath flags sf) (contentString sf) 
 #ifdef MIN_VERSION_MissingH 
-     ; let t = clockTimeToEpoch (timeStamp sf)
+     ; let t = floor (utcTimeToPOSIXSeconds (timeStamp sf))
      ; setFileTimes (absFilePath flags sf) t t
 #endif
      }
