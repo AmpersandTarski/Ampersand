@@ -106,7 +106,7 @@ writeStaticFile flags sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
      ; write (absFilePath flags sf) (contentString sf) 
 #ifdef MIN_VERSION_MissingH 
-     ; let t = (fromIntegral . toSecs) (timeStamp sf)
+     ; let t = (fromIntegral . fromEnum . utcTimeToPOSIXSeconds) (timeStamp sf)
      ; setFileTimes (absFilePath flags sf) t t
 #endif
      }
