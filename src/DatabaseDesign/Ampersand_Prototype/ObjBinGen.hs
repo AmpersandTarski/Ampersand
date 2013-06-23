@@ -18,7 +18,8 @@ import Prelude hiding (writeFile,readFile,getContents)
 import DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated
 #ifdef MIN_VERSION_MissingH 
 import System.Posix.Files  -- If MissingH is not available, we're on windows and cannot set file 
-import System.Time.Utils   -- modification time.
+import System.Time
+
 import Data.Time.Clock.POSIX
 #endif
 
@@ -105,7 +106,7 @@ writeStaticFile flags sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath flags sf))
      ; write (absFilePath flags sf) (contentString sf) 
 #ifdef MIN_VERSION_MissingH 
-     ; let t = floor (utcTimeToPOSIXSeconds (timeStamp sf))
+     ; let t = let t = (fromIntegral . toSecs) (timeStamp sf)
      ; setFileTimes (absFilePath flags sf) t t
 #endif
      }

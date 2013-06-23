@@ -14,7 +14,7 @@ import Data.Time.Clock
 import Data.Time.Calendar
 import Data.Time.Format
 import System.Locale
-import Prelude hiding (catch) -- required for GHC < 7.6
+
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
 
