@@ -40,8 +40,8 @@ Executable prototype
   -- Unfortunately, unix and MissingH are not available on windows
   if !os(windows)
     build-depends: 
-      unix >= 2.5 && <2.6,
-      MissingH >= 1.1 && < 1.2
+      unix >= 2.6,
+      MissingH >= 1.2
 
   other-modules: 
                  DatabaseDesign.Ampersand_Prototype.Apps,
