@@ -18,7 +18,6 @@ import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing -- (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.ADL1
 import Control.Exception
-import Prelude hiding (catch)
 import Paths_ampersand
 
 type ParseError = Message Token
