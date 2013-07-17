@@ -231,7 +231,7 @@ instance Expr P_PairViewSegment where
 instance Expr P_IdentDef where
  p_keys k = [k]
  uType _ k
-  = let x=Pid (SomewhereNear (fatal 233 "clueless about where this is found. Sorry" )) (ix_cpt k) in
+  = let x=Pid (ix_pos k) (ix_cpt k) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
                           mEqual' Src x Src (obj_ctx obj) (obj_ctx obj)
@@ -242,7 +242,7 @@ instance Expr P_IdentDef where
 instance Expr P_ViewDef where
  p_views v = [v]
  uType _ v
-  = let x=Pid (SomewhereNear (fatal 244 "clueless about where this is found. Sorry" )) (vd_cpt v) in
+  = let x=Pid (vd_pos v) (vd_cpt v) in
     uType x x .+.
     foldr (.+.) nothing [ uType obj obj .+.
                           mEqual' Src x Src (obj_ctx obj) (obj_ctx obj)
