@@ -420,12 +420,30 @@ infixl 8 .*.    -- cartesian product
 l .==. r = EEqu (l,r)
            (case sign l `compare` sign r of
               EQ -> sign l
-              _  -> fatal 417 ("Equality between two terms of different types.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              GT -> sign l `meet` sign r
+              LT -> sign l `meet` sign r
+              _  -> fatal 417 ("Equality between two terms of different types.\n"
+                             ++"\n  l: "++show l++"\t  signature: "++show (sign l)
+                             ++"\n  r: "++show r++"\t  signature: "++show (sign r)
+                             ++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r)
+                             ++"\n  "++show (sign l)++" `meet` "++show (sign r)++": "++show (sign l `meet` sign r)
+                             ++"\n  "++show (sign l)++" `join` "++show (sign r)++": "++show (sign l `join` sign r)
+                              )
            )
 l .|-. r = EImp (l,r)
            (case sign l `compare` sign (r./\.l) of
               EQ -> sign (l.==.r./\.l)
-              _  -> fatal 422 ("Implication between two terms is type incompatible.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              GT -> sign l `meet` sign (r./\.l)
+              LT -> sign l `meet` sign (r./\.l)
+              _  -> fatal 422 ("Implication between two terms is type incompatible.\n"
+                           ++"\n  l: "++show l++"\t  signature: "++show (sign l)
+                           ++"\n  r: "++show r++"\t  signature: "++show (sign r)
+                           ++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r)
+                           ++"\n  "++show (sign l)++" `compare` "++show (sign (r./\.l))++": "++show (sign l `compare` sign (r./\.l))
+                           ++"\n  "++show (sign (l.==.r./\.l))
+                           ++"\n  "++show (sign l `meet` sign r)
+                           ++"\n  "++show (sign l `join` sign r)
+                               )
            )
 l ./\. r = EIsc (l,r)
            (case sign l `compare` sign r of        -- meet yields the more specific of two concepts
