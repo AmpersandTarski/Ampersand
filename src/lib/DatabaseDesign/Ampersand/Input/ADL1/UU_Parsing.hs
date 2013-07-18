@@ -126,7 +126,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
    
    fatal :: Int -> String -> a
-   fatal i msg = error ("!Parse error (code UU_Parsing "++show i++") "++msg)
+   fatal = fatalMsg "UU_Parsing.hs"
 
    btLookup :: BinSearchTree (a -> Ordering) (Maybe b) -> a -> Maybe b
    tab2tree :: Ord a => [(SymbolR a,b)] -> BinSearchTree (a -> Ordering) b
@@ -542,8 +542,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
 
    instance Symbol s => Show (Message s) where
     show (Msg (action, position, expecting))  
-      =  "\nExpecting " ++ show expecting ++
-         "\n" ++ position ++
+      =  "\n" ++ position ++
+         "\nExpecting " ++ show expecting ++
          "\nTry " ++ action ++ "\n"
 
    addexpecting more  (StRepair    cost   msg   rest) = StRepair cost (addToMessage msg more) rest
