@@ -166,8 +166,8 @@ showErr err = case err of
     | otherwise                                    -> "in the " ++ t ++ " at "++ shOrig o ++ " in file "++ filenm o ++ ":\n" ++ intercalate "\n" (map showErr typeErrors)
   Cxe typeErrors x
    -> x ++ "\n" ++ intercalate "\n" (map showErr typeErrors)
-  PE msg
-    -> "Parse error:\n"++ show (case msg of 
+  PE msgs
+    -> "Parse error:"++ show (case msgs of 
                                   []  -> fatal 35 "No messages??? The impossible happened!" 
                                   x:_ -> x)
   CxeSign{cxeSrcs = srcs, cxeTrgs = trgs, cxeExpr = x }
