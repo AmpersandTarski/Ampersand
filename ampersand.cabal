@@ -133,7 +133,6 @@ library
                     DatabaseDesign.Ampersand.Misc.Options,
                     DatabaseDesign.Ampersand.Misc.TinyXML,
                     DatabaseDesign.Ampersand.Output,
-                    DatabaseDesign.Ampersand.Output.AdlExplanation,
                     DatabaseDesign.Ampersand.Output.Fspec2Excel,
                     DatabaseDesign.Ampersand.Output.Fspec2Pandoc,
                     DatabaseDesign.Ampersand.Output.PandocAux,
@@ -149,7 +148,8 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterNatLangReqs,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
-                    DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
+                    DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
+                    DatabaseDesign.Ampersand.Fspec.Motivations
   other-modules:     
                      DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                      Paths_ampersand
