@@ -15,12 +15,15 @@ copyright:      Stef Joosten
 bug-reports:    http://sourceforge.net/apps/trac/ampersand/newticket
 tested-with:    GHC == 7.4.1
 data-files:     
+                AmpersandData/Examples/Delivery/Delivery.adl, 
                 AmpersandData/RepoRap/admin_interfaces.adl, 
                 AmpersandData/RepoRap/AST.adl, 
+                AmpersandData/RepoRap/ASTdocumentation.adl, 
                 AmpersandData/RepoRap/Fspec.adl, 
                 AmpersandData/RepoRap/RAP.adl, 
                 AmpersandData/RepoRap/README.txt, 
                 AmpersandData/RepoRap/student_AST_interfaces.adl, 
+                outputTemplates/default.asciidoc, 
                 outputTemplates/default.context, 
                 outputTemplates/default.docbook, 
                 outputTemplates/default.html, 
