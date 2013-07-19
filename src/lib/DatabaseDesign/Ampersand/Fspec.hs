@@ -25,3 +25,6 @@ import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms as X
        (conjNF, disjNF, cfProof, simplify)
 import DatabaseDesign.Ampersand.Fspec.FPA as X
        ( fPoints)
+import DatabaseDesign.Ampersand.Fspec.Motivations as X
+       (Meaning(..),Motivated(..))
+       

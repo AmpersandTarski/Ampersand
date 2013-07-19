@@ -6,7 +6,6 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Declaration,Purpose(..))
 import DatabaseDesign.Ampersand.Fspec.Graphic.ClassDiagram
 import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Output.AdlExplanation
 import Data.Map (Map)
 import Data.List
 import qualified Data.Map as Map

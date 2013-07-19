@@ -67,8 +67,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vIndices     = identities context
                  , vviews       = viewDefs context
                  , vConceptDefs = conceptDefs context
-                 , fSexpls      = [ xpl { explObj = case explObj xpl of ExplContext str -> ExplFspc str; _ -> explObj xpl } -- All explanations are uses as-is. Only the context-explanations are relabeled to Fspc-explanations.
-                                  | xpl<-ctxps context]
+                 , fSexpls      = ctxps context
                  , metas        = ctxmetas context
                  , vctxenv      = ctxenv context
                  , userDefPops  = userdefpops

@@ -17,7 +17,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
    fatal :: Int -> String -> a
    fatal = fatalMsg "Output.PredLogic"
 
- --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook AdlExplanation. HJO. 
+ --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO. 
    data PredLogic       
     = Forall [Var] PredLogic            |
       Exists [Var] PredLogic            |

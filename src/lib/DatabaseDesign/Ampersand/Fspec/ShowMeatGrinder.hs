@@ -17,26 +17,34 @@ meatGrinder :: Options -> Fspc -> (FilePath, String)
 meatGrinder flags fSpec = ("TemporaryPopulationsFileOfRap" ,content)
  where 
   content = unlines
-     ([ "{-Generated code by "++ampersandVersionStr++" at "++show (genTime flags)++"-}"
+     ([ "{- Do not edit manually. This code has been generated!!!"
+      , "    Generated with "++ampersandVersionStr
+      , "    Generated at "++show (genTime flags)
+      , "-}"
+      , ""
       , "CONTEXT RapPopulations"]
-      ++ (concat.intersperse  []) (map (lines.showADL) (nub (metaPopsOf flags fSpec))) 
+      ++ (concat.intersperse  []) (map (lines.showADL) (metaPopsOf flags fSpec)) 
       ++
-      [ "ENDCONTEXT"
+      [ ""
+      , "ENDCONTEXT"
       ])
 data Pop = Pop { popName ::String
                , popSource :: String
                , popTarget :: String
                , popPairs :: [(String,String)]
-               } deriving Eq
+               } 
+         | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
+                   } 
 instance ShowADL Pop where
  showADL pop = 
-   ("POPULATION "++ popName pop++
-       " ["++popSource pop++" * "++popTarget pop++"] CONTAINS"
-   ++
-   if null (popPairs pop)
-   then "[]" 
-   else "\n"++indent++"[ "++intercalate ("\n"++indent++"; ") showContent++indent++"]"
-   )
+  case pop of
+      Pop{} -> "POPULATION "++ popName pop++
+                  " ["++popSource pop++" * "++popTarget pop++"] CONTAINS"
+              ++
+              if null (popPairs pop)
+              then "[]" 
+              else "\n"++indent++"[ "++intercalate ("\n"++indent++"; ") showContent++indent++"]"
+      Comment{} -> "-- "++comment pop        
     where indent = "   "
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
@@ -58,8 +66,8 @@ instance AdlId Rule where
  uri a= "Rul"++techId a
 instance AdlId A_Gen where 
  uri a= "Gen"++(show.hash) ((name.gengen) a++(name.genspc) a)
-instance AdlId GenR where 
- uri a= "GnR"++(show.hash)("TODO  Needs some ")
+--instance AdlId GenR where 
+-- uri a= "GnR"++(show.hash)("TODO  Needs some ")
 instance AdlId Declaration where 
  uri a= "Dcl"++techId a
 instance AdlId Purpose where 
@@ -69,23 +77,28 @@ instance AdlId Sign where
  
 metaPopsOf :: Options -> Fspc -> [Pop]
 metaPopsOf _ fSpec = 
-  [ Pop "ctxnm"   "Context" "Conid"
-         [(uri fSpec,name fSpec)]
-  , Pop "ctxpats" "Context" "Pattern"
-         [(uri fSpec,uri x) | x <- vpatterns fSpec]
-  
-  -- Some population for 'ONE' ??
-  , Pop "ctxcs"   "Context" "Concept"
-         [(uri fSpec,uri x) | x <- allConcepts fSpec]
---  , Pop "ctxgE"   "Context" "GenR"
---         [(uri fSpec,uri x) | x <- 
-  ]
- ++ concat [metaPopsOfPatternPattern pat | pat <- vpatterns   fSpec]
- ++ concat [metaPopsOfPatternGen     gen | gen <- vgens       fSpec]
- ++ concat [metaPopsOfPatternConcept cpt | cpt <- allConcepts fSpec]
+    [ Pop "ctxnm"   "Context" "Conid"
+           [(uri fSpec,name fSpec)]
+    ]
+  ++[ Comment "*** Patterns: ***"
+    , Pop "ctxpats" "Context" "Pattern"
+           [(uri fSpec,uri x) | x <- vpatterns fSpec]
+    ]
+  ++concat [metaPopsOfPattern pat | pat <- vpatterns   fSpec]
+  ++[ Comment "*** Concepts: ***"
+    , Pop "ctxcs"   "Context" "Concept"
+           [(uri fSpec,uri x) | x <- allConcepts fSpec]
+    ]
+  ++concat [metaPopsOfConcept cpt | cpt <- allConcepts fSpec]
+  ++[ Comment "*** Generalisations: ***"
+    ]
+  ++concat [metaPopsOfGen     gen | gen <- vgens       fSpec]
+    
  where
-  metaPopsOfPatternPattern pat =  
-   [ Pop "ptnm"    "Pattern" "Conid"
+  metaPopsOfPattern pat =  
+   [ Comment " "
+   , Comment $ "*** Pattern `"++ptnm pat++"` ***"
+   , Pop "ptnm"    "Pattern" "Conid"
           [(uri pat, ptnm pat)]
    , Pop "ptrls"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
@@ -96,27 +109,30 @@ metaPopsOf _ fSpec =
    , Pop "ptxps"   "Pattern" "Blob"
           [(uri pat,uri x) | x <- ptxps pat]
    ]
-  metaPopsOfPatternGen gen =  
+  metaPopsOfGen gen =  
    [ Pop "gengen"  "Gen" "Concept"
           [(uri gen,uri(gengen gen))]
    , Pop "genspc"  "Gen" "Concept"
           [(uri gen,uri(genspc gen))]
    ]
-  metaPopsOfPatternConcept cpt =
+  metaPopsOfConcept cpt =
     case cpt of
      PlainConcept{} ->
-      [ Pop "name"    "PlainConcept" "Conid"
+      [ Comment " "
+      , Comment $ "*** Concept `"++name cpt++"` ***"
+      , Pop "cptnm"      "PlainConcept" "Conid"
              [(uri cpt, name cpt)]
-      , Pop "context"   "PlainConcept" "Context"
+      , Pop "context"    "PlainConcept" "Context"
              [(uri cpt,uri fSpec)]
-      , Pop "cpttp"   "PlainConcept" "Blob"
+      , Pop "cpttp"      "PlainConcept" "Blob"
              [(uri cpt,cpttp cpt) ]
-      , Pop "cptdf"   "PlainConcept" "Blob"
+      , Pop "cptdf"      "PlainConcept" "Blob"
              [(uri cpt,showADL x) | x <- cptdf cpt]
--- TODO: Order?
+--      , Pop "cptpurpose" "PlainConcept" "Blob"
+--             [(uri cpt,showADL x) | x <- purposeOf fSpec cpt ]
+       
       ]
-     ONE -> [Pop "name" (show "ONE")  "Conid"
-                  [(uri cpt, name cpt)]
+     ONE -> [
             ]
   metaPopsOfSign sgn@(Sign s t) =
       [ Pop "srg"    "Sign" "Concept"

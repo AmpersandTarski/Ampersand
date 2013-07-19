@@ -415,4 +415,3 @@ getGeneralizations fSpec c = filter (c Poset.<) $ concs fSpec
 getSpecializations :: Fspc -> A_Concept -> [A_Concept]
 getSpecializations fSpec c = filter (c Poset.>) $ concs fSpec
 
-  

@@ -10,7 +10,6 @@ import Data.Maybe
 import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sortWith)
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
-import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 
 fatal :: Int -> String -> a

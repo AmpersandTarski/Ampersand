@@ -1,19 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module DatabaseDesign.Ampersand.Output.AdlExplanation (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
+module DatabaseDesign.Ampersand.Fspec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Fspec
-import DatabaseDesign.Ampersand.Fspec.Fspec(Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
+import DatabaseDesign.Ampersand.Fspec.Fspec(Fspc(..),FProcess(..), Activity(..)) -- TODO FProc should not be in here at the first place... It has been put here because of the removal of Activities from Process
 import DatabaseDesign.Ampersand.Basics
 import Text.Pandoc
---import DatabaseDesign.Ampersand.Output.PredLogic
---import Data.Char             (toLower)
 
 fatal :: Int -> String -> a
-fatal = fatalMsg "Output.AdlExplanation"
+fatal = fatalMsg "Motivations"
 
 
 -- The general idea is that an Ampersand declaration such as:
@@ -21,7 +17,7 @@ fatal = fatalMsg "Output.AdlExplanation"
 --     {+This text explains why r[A*B] exists-}
 -- produces the exact right text in the functional specification
 
--- The class Explainable exists so that we can write the Haskell expression 'purpose fSpec l x'
+-- The class Motivated exists so that we can write the Haskell expression 'purposeOf fSpec l x'
 -- anywhere we like for every type of x that could possibly be motivated in an Purpose.
 -- 'purpose fSpec l x' produces all explanations related to x from the context (fSpec)
 --  that are available in the language specified in 'l'.
@@ -63,7 +59,7 @@ instance Motivated ConceptDef where
   
 instance Motivated A_Concept where
 --  meaning _ c = fatal 54 ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
-  explForObj x (ExplConceptDef cd) = name x == cdcpt cd
+  explForObj x (ExplConceptDef cd) = name x == name cd
   explForObj _ _ = False
   explanations _ = []
 
@@ -349,9 +345,30 @@ instance Motivated Interface where
   explForObj _ _ = False
   explanations _ = []
 
+class Meaning a where 
+  meaning :: Lang -> a -> Maybe A_Markup
+  meaning2Blocks :: Lang -> a -> [Block]
+  meaning2Blocks l a = case meaning l a of
+                         Nothing -> []
+                         Just m  -> amPandoc m 
+  
+instance Meaning Rule where
+  meaning l r = case filter isLang (ameaMrk (rrmean r)) of
+                  []   -> Nothing 
+                  [m]  -> Just m
+                  _    -> fatal 381 ("Too many meanings given for rule "++name r ++".")
+                  where isLang m = l == amLang m
+  
+instance Meaning Declaration where
+  meaning l d = case filter isLang (ameaMrk (decMean d)) of
+                  []   -> Nothing 
+                  [m]  -> Just m
+                  _    -> fatal 388 ("Too many meanings given for declaration "++name d ++".")
+                  where isLang m = l == amLang m
+   
 instance Motivated Fspc where
 --  meaning _ fSpec = fatal 329 ("No Fspc has an intrinsic meaning, (used with Fspc '"++name fSpec++"')")
-  explForObj x (ExplFspc str) = name x == str
+  explForObj x (ExplContext str) = name x == str
   explForObj _ _ = False
   explanations fSpec
     = fSexpls fSpec ++
@@ -374,24 +391,5 @@ instance Motivated Activity where
                     []    -> Nothing
                     purps -> Just purps
 
-class Meaning a where 
-  meaning :: Lang -> a -> Maybe A_Markup
-  meaning2Blocks :: Lang -> a -> [Block]
-  meaning2Blocks l a = case meaning l a of
-                         Nothing -> []
-                         Just m  -> amPandoc m 
-  
-instance Meaning Rule where
-  meaning l r = case filter isLang (ameaMrk (rrmean r)) of
-                  []   -> Nothing 
-                  [m]  -> Just m
-                  _    -> fatal 381 ("Too many meanings given for rule "++name r ++".")
-                  where isLang m = l == amLang m
-  
-instance Meaning Declaration where
-  meaning l d = case filter isLang (ameaMrk (decMean d)) of
-                  []   -> Nothing 
-                  [m]  -> Just m
-                  _    -> fatal 388 ("Too many meanings given for declaration "++name d ++".")
-                  where isLang m = l == amLang m
+
    

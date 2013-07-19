@@ -132,7 +132,6 @@ instance ShowADL ExplObj where
       ExplProcess str    -> "PROCESS "++str
       ExplInterface str  -> "INTERFACE "++showstr str
       ExplContext str    -> "CONTEXT "++showstr str
-      ExplFspc str       -> "CONTEXT "++showstr str
 
 showstr :: String -> String
 showstr str = "\""++str++"\""

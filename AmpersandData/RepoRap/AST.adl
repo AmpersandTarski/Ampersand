@@ -53,6 +53,8 @@ cptnm :: PlainConcept->Conid [INJ]
 MEANING IN ENGLISH "The name of a concept."
 context :: PlainConcept*Context --@Stef: Willen we dit opnemen? of is dit dezelfde relatie als ctxcs? (maar daar hebben we het alleen over de definities, dus dit is wellicht een andere relatie.
 MEANING IN ENGLISH "The context where the concept is known."
+cpttp :: PlainConcept -> Blob 
+MEANING IN ENGLISH "The type of this Concept"
 cptdf :: PlainConcept*Blob
 MEANING IN ENGLISH "The definitions of a concept."
 cptpurpose :: PlainConcept*Blob

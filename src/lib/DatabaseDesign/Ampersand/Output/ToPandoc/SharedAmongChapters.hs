@@ -40,7 +40,6 @@ import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
 import DatabaseDesign.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import DatabaseDesign.Ampersand.Misc
-import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.Output.PandocAux
 import Data.List             (intercalate,partition)
 import Data.Monoid
