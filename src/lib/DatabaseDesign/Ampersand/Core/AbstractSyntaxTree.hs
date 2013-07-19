@@ -373,7 +373,6 @@ data ExplObj = ExplConceptDef ConceptDef
              | ExplProcess String
              | ExplInterface String
              | ExplContext String
-             | ExplFspc String
           deriving (Show ,Eq)
 
 data Expression

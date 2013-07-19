@@ -570,7 +570,6 @@ where
              ExplProcess str    -> "ExplProcess "    ++show str
              ExplInterface str  -> "ExplInterface "  ++show str
              ExplContext str    -> "ExplContext "    ++show str
-             ExplFspc str       -> "ExplFspc "       ++show str
            
    instance ShowHS P_Markup where
     showHS _ indent m

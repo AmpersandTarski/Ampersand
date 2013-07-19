@@ -95,7 +95,6 @@ import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.Input
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Components 
-import DatabaseDesign.Ampersand.Output.AdlExplanation
 import DatabaseDesign.Ampersand.ADL1.Expression (isPos,isNeg)
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
 import DatabaseDesign.Ampersand.InputProcessing

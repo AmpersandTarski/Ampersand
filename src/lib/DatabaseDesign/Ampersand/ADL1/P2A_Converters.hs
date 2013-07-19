@@ -932,7 +932,7 @@ pCtx2aCtx p_context
                                           else Checked (ExplContext str)
     pExOb2aExOb (PRef2Fspc str        ) = if name p_context/=str
                                           then Errors [newcxe (" No cospecificationntext named '"++str++"'")]
-                                          else Checked (ExplFspc str)
+                                          else Checked (ExplContext str)
 
     pPop2aPop :: P_Population -> Guarded UserDefPop
     pPop2aPop pop

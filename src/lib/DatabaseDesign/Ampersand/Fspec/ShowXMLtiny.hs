@@ -172,7 +172,7 @@ where
 --                PRef2Process{}     -> Tag "ExplProcess"     atts
 --                PRef2Interface{}   -> Tag "ExplInterface"   atts
 --                PRef2Context{}     -> Tag "ExplContext"     atts
---                PRef2Fspc{}        -> Tag "ExplFspc"        atts
+--                PRef2Fspc{}        -> Tag "ExplContext"     atts
            where
             atts ::  [XAtt]
             atts = [mkAttr "Explains" (name expl)
@@ -197,7 +197,6 @@ where
 --                ExplProcess     pname lang ref _ -> Tag "ExplProcess"     (atts pname lang ref)
 --                ExplInterface   cname lang ref _ -> Tag "ExplInterface"   (atts cname lang ref)
 --                ExplContext     cname lang ref _ -> Tag "ExplContext"     (atts cname lang ref)
---                ExplFspc        cname lang ref _ -> Tag "ExplFspc"        (atts cname lang ref)
 --           where
 --            atts :: String -> Lang -> String -> [XAtt]
 --            atts str lang ref = [mkAttr "Explains" str
