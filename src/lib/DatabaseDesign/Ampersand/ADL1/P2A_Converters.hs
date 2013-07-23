@@ -103,8 +103,10 @@ mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypInCps  e) .+. (domOrCod tb b) .<. (TypInCps  e) .+. between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypInCps e)))
 mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<. (domOrCod tb b) .+. between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypInCps e)))
-mEqual' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
-mEqual'    ta a tb b e = (Map.empty, [Between (tCxe ta a tb b TETEq e) (domOrCod ta a) (domOrCod tb b) BTEqual])
+mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
+mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
+mDif' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
+mDif'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETIncl e) (domOrCod sORt a) (domOrCod sORt b) (BetweenType BTUnion (domOrCod sORt e))])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
 existsSpecific = existsGS BTIntersection
 existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
@@ -225,32 +227,6 @@ instance Expr P_PairViewSegment where
  uType _ (P_PairViewExp Tgt term) = uType term term
  uType _ P_PairViewText{} = nothing
   
- {- 
--- TODO: these calls of existsSpecific are wrong, and should be fixed.
--- Wrongness: TypInCps is overloaded: it means "inside term" in case of ;, and it means "around term" in the three cases below
-
-instance Expr P_IdentDef where
- p_keys k = [k]
- uType _ k
-  = let x=Pid (ix_pos k) (ix_cpt k) in
-    uType x x .+.
-    foldr (.+.) nothing [ uType obj obj .+.
-                          mEqual' Src x Src (obj_ctx obj) (obj_ctx obj)
-                           -- TODO: improve mSpecific's error message here
-                        | P_IdentExp obj <- ix_ats k
-                        ]
-
-instance Expr P_ViewDef where
- p_views v = [v]
- uType _ v
-  = let x=Pid (vd_pos v) (vd_cpt v) in
-    uType x x .+.
-    foldr (.+.) nothing [ uType obj obj .+.
-                          mEqual' Src x Src (obj_ctx obj) (obj_ctx obj)
-                           -- TODO: improve mSpecific's error message here
-                        | P_ViewExp obj <- vd_ats v
-                        ]
--}
 instance Expr P_IdentDef where
  p_keys k = [k]
  uType _ k
@@ -343,7 +319,7 @@ instance Expr Term where
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
      (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                      .+. mEqual' Src a Src b x .+. mEqual' Tgt a Tgt b x
+                      .+. mEqual' Src a b x .+. mEqual' Tgt a b x
                       .+. uType a a .+. uType b b
      (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
                       .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
@@ -353,7 +329,7 @@ instance Expr Term where
                       .+. uType a a .+. uType b b
      (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
                       .+. uType' a .+. uType' b
-                      .+. mEqual' Src a Src b x .+. mEqual' Tgt a Tgt b x
+                      .+. mDif' Src a b x .+. mDif' Tgt a b x
      (PCps _ a b)  -> let s = TypInCps x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r

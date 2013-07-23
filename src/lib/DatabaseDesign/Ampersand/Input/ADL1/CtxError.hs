@@ -15,17 +15,18 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
 
 type ParseError = Message Token
-data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term
+data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term | TETIncl Term
                | TETPairView P_PairViewSegment
                | TETObj
                | TETKey
               
 instance ShowADL TypErrTyp where
-  showADL (TETUnion t) = "the union arising at "++showADL t
-  showADL (TETIsc t) = "the intersect arising at "++showADL t
-  showADL (TETEq t) = "the equality arising at "++showADL t
-  showADL (TETObj) = "the INTERFACE"
-  showADL (TETKey) = "the IDENT"
+  showADL (TETUnion t)    = "the union arising at "++showADL t
+  showADL (TETIsc t)      = "the intersect arising at "++showADL t
+  showADL (TETEq t)       = "the equality arising at "++showADL t
+  showADL (TETIncl t)     = "the inclusion arising at "++showADL t
+  showADL (TETObj)        = "the INTERFACE"
+  showADL (TETKey)        = "the IDENT"
   showADL (TETPairView t) = "the RULE View "++show t -- TODO: what to call this?
                
 data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]      -- ^ The list of concepts with different names, that have been proven equal.
