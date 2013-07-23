@@ -96,6 +96,7 @@ cod x    = TypExpr x Tgt
 domOrCod :: SrcOrTgt -> Term -> Type
 domOrCod Src = dom
 domOrCod Tgt = cod
+-- | mSpecific, mGeneric are shorthands for creating links in the type graph. mSpecific is used in unions, whereas mGeneric is used in intersections.
 mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
 mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
 mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
@@ -224,7 +225,7 @@ instance Expr P_PairViewSegment where
  uType _ (P_PairViewExp Tgt term) = uType term term
  uType _ P_PairViewText{} = nothing
   
-  
+ {- 
 -- TODO: these calls of existsSpecific are wrong, and should be fixed.
 -- Wrongness: TypInCps is overloaded: it means "inside term" in case of ;, and it means "around term" in the three cases below
 
@@ -249,7 +250,25 @@ instance Expr P_ViewDef where
                            -- TODO: improve mSpecific's error message here
                         | P_ViewExp obj <- vd_ats v
                         ]
+-}
+instance Expr P_IdentDef where
+ p_keys k = [k]
+ uType _ k
+  = let x=Pid (ix_pos k) (ix_cpt k) in
+    uType x x .+. 
+    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. cod (obj_ctx obj) .<. cod x .+. uType obj obj
+                        | P_IdentExp obj <- ix_ats k
+                        ]
 
+instance Expr P_ViewDef where
+ p_views v = [v]
+ uType _ v
+  = let x=Pid (vd_pos v) (vd_cpt v) in
+    uType x x .+. 
+    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj
+                        | P_ViewExp obj <- vd_ats v
+                        ]
+ 
 -- TODO: continue adding errors until you reach instance Expr Term
 instance Expr P_Interface where
  uType _ ifc
@@ -819,9 +838,20 @@ pCtx2aCtx p_context
         -- check equality
         ats = [ expr | ViewExp expr <- segs ]
         vdcxe = newcxeif (null segscxes && length (nub (c:map (source.objctx) ats))/=1)
-                         (intercalate "\n" ["The source of term " ++ showADL (objctx x) 
-                                            ++" ("++showADL (source (objctx x))++") is compatible, but not equal to the view concept ("++ showADL c ++ ")."
-                                           |x<-ats,source (objctx x)/=c])
+                         (intercalate "\n" [message att |att<-ats, (source (objctx att) `Poset.compare` c) `elem` [Poset.LT, Poset.CP, Poset.NC]])
+        message x
+         = case source (objctx x) `Poset.compare` c of
+            Poset.LT -> "   The source of " ++ showADL (objctx x)++" is "++showADL (source (objctx x))++"."
+                        ++"\n   Each instance of "++name (source (objctx x))++" is a "++ name c ++ "."
+                        ++"\n   Your VIEW definition does not specify how to view instances of "++ name c ++ " that are not "++name (source (objctx x))++"."
+                        ++"\n   In order to view every "++ name c ++ ", you must replace " ++ showADL (objctx x)++" by an expression whose source concept is equal to or more generic than "++ name c ++ "."
+            Poset.CP -> "   The source of " ++ showADL (objctx x)++" is "++name (source (objctx x))++"."
+                        ++"\n   Your VIEW definition does not specify how to view instances of "++ name c ++ " that are not "++showADL (source (objctx x))++"."
+                        ++"\n   In order to view every "++ name c ++ ", you must replace " ++ showADL (objctx x)++" by an expression whose source concept is equal to or more generic than "++ name c ++ "."
+            Poset.NC -> "   The source of " ++ showADL (objctx x)++" is "++name (source (objctx x))++","
+                        ++"   which is incompatible with "++ name c++"."
+                        ++"\nYou must replace " ++ showADL (objctx x)++" by an expression whose source concept is equal to "++name c++" or more generic."
+            _        -> fatal 850 ("This code should be unreachable, because the source of " ++ showADL (objctx x)++", which is "++name (source (objctx x))++", is equal to or more generic than "++name c++".")
 
     pViewSeg2aViewSeg :: P_Concept -> P_ViewSegment -> Guarded ViewSegment
     pViewSeg2aViewSeg _ (P_ViewText str) = return (ViewText str)

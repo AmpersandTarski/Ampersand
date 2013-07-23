@@ -342,10 +342,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    -- You may also use an expression on each attribute place, for example: IDENT onpassport: Person(nationality, passport;documentnr),
    -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
    pIndex :: Parser Token P_IdentDef
-   pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
-       where identity :: Label -> P_Concept -> [P_IdentSegment] -> P_IdentDef 
-             identity (Lbl nm p _) c ats
-              = P_Id { ix_pos = p
+   pIndex  = identity <$ pKey "IDENT" <*> pLabel <*> pConceptRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pIndSegment <* pSpec ')'
+       where identity :: Label -> (P_Concept, Origin) -> [P_IdentSegment] -> P_IdentDef 
+             identity (Lbl nm _ _) (c, orig) ats
+              = P_Id { ix_pos = orig
                      , ix_lbl = nm
                      , ix_cpt = c
                      , ix_ats = ats
@@ -380,17 +380,18 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
    -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
    pViewDef :: Parser Token P_ViewDef
-   pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptRef <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
-       where vd :: Label -> P_Concept -> [P_ViewSegment] -> P_ViewDef 
-             vd (Lbl nm p _) c ats = P_Vd { vd_pos = p
-                                          , vd_lbl = nm
-                                          , vd_cpt = c
-                                          , vd_ats = [ case viewSeg of
-                                                          P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm=show i} else P_ViewExp x 
-                                                          P_ViewText _ -> viewSeg 
-                                                          P_ViewHtml _ -> viewSeg 
-                                                     | (i,viewSeg)<-zip [(1::Integer)..] ats]
-                                          } -- nrs also count text segments but they're are not important anyway
+   pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+       where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef 
+             vd (Lbl nm _ _) (c, orig) ats
+                 = P_Vd { vd_pos = orig
+                        , vd_lbl = nm
+                        , vd_cpt = c
+                        , vd_ats = [ case viewSeg of
+                                        P_ViewExp x       -> if null (obj_nm x) then P_ViewExp $ x{obj_nm=show i} else P_ViewExp x 
+                                        P_ViewText _ -> viewSeg 
+                                        P_ViewHtml _ -> viewSeg 
+                                   | (i,viewSeg)<-zip [(1::Integer)..] ats]
+                        } -- nrs also count text segments but they're are not important anyway
              pViewSegment :: Parser Token P_ViewSegment
              pViewSegment = P_ViewExp  <$> pViewAtt <|> 
                             P_ViewText <$ pKey "TXT" <*> pString <|>
@@ -671,6 +672,13 @@ In practice, we have it a little different.
    
    pConceptRef :: Parser Token P_Concept
    pConceptRef       = (P_Singleton <$ pKey "ONE") <|> (PCpt <$> (pConid <|> pString))
+
+   pConceptRefPos :: Parser Token (P_Concept, Origin)
+   pConceptRefPos       = singl <$> pKey_pos "ONE"   <|>   conid <$> pConid_val_pos   <|>   conid <$> pString_val_pos
+                          where singl :: Origin ->  (P_Concept, Origin)
+                                singl orig     = (P_Singleton, orig)
+                                conid :: (String, Origin) ->  (P_Concept, Origin)
+                                conid (c,orig) = (PCpt c, orig)
 
 --  (SJ) Why does a label have (optional) strings?
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
