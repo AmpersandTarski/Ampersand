@@ -101,20 +101,21 @@ where
    instance Traced P_RoleRelation where
     origin = rr_Pos
 
-   data P_Process = P_Prc { procNm :: String
-                          , procPos :: Origin             -- ^ the start position in the file
-                          , procEnd :: Origin             -- ^ the end position in the file
-                          , procRules :: [P_Rule]
-                          , procGens :: [P_Gen]
-                          , procDcls :: [P_Declaration]
-                          , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
-                          , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-                          , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
-                          , procIds :: [P_IdentDef]         -- ^ The identity definitions defined in this process
-                          , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
-                          , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
-                          , procPop :: [P_Population]     -- ^ The populations that are local to this process
-                          } deriving Show
+   data P_Process
+      = P_Prc { procNm :: String
+              , procPos :: Origin             -- ^ the start position in the file
+              , procEnd :: Origin             -- ^ the end position in the file
+              , procRules :: [P_Rule]
+              , procGens :: [P_Gen]
+              , procDcls :: [P_Declaration]
+              , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
+              , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
+              , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
+              , procIds :: [P_IdentDef]         -- ^ The identity definitions defined in this process
+              , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
+              , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
+              , procPop :: [P_Population]     -- ^ The populations that are local to this process
+              } deriving Show
 
    instance Identified P_Process where
     name = procNm 
@@ -140,6 +141,8 @@ where
               , pt_rls :: [P_Rule]        -- ^ The user defined rules in this pattern
               , pt_gns :: [P_Gen]         -- ^ The generalizations defined in this pattern
               , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
+              , pt_rus :: [RoleRule]       -- ^ The assignment of roles to rules.
+              , pt_res :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
               , pt_cds :: [ConceptDef]    -- ^ The concept definitions defined in this pattern
               , pt_ids :: [P_IdentDef]      -- ^ The identity definitions defined in this pattern
               , pt_vds :: [P_ViewDef]     -- ^ The view definitions defined in this pattern

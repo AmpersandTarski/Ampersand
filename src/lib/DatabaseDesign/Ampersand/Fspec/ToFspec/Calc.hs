@@ -87,7 +87,16 @@ where
 
    deriveProofs :: Options -> Fspc -> [Inline]
    deriveProofs flags fSpec
-    = [ --"\nSignals for "++name fSpec++"\n--------------\n"++
+    = [ Str ("Rules and their conjuncts for "++name fSpec), LineBreak
+      ] ++
+--   conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
+      intercalate [LineBreak,Str "-- next rule ------------", LineBreak]
+        [ [ Str "rule r:   ", Str (showADL r), LineBreak]++
+          [ Str "rrexp r:  ", Str (showADL (rrexp r)), LineBreak]++
+          [ Str "conjNF:   ", Str (showADL (conjNF (rrexp r))), LineBreak]++
+          intercalate [LineBreak] [ [Str "     conj: ", Str (showADL conj)] | conj<-conjuncts r]
+        | r<-grules fSpec++vrules fSpec] ++
+      [ --"\nSignals for "++name fSpec++"\n--------------\n"++
         --proof (signals fSpec)++
         LineBreak
       , Str ("Transformation of user specified rules into ECA rules for "++name fSpec)

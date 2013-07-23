@@ -465,6 +465,14 @@ where
         , wrap ", ptgns = " indentB (showHS flags) (ptgns pat)
         , ", ptdcs = [" ++intercalate ", " [showHSName d | d<-ptdcs pat] ++ concat [" {- no declarations -} " | null (ptdcs pat)] ++"]"
         , wrap ", ptups = " indentB (showHS flags) (ptups pat) 
+        , case ptrruls pat of
+           []          -> "     , ptrruls = [] {- no role-rule assignments -}"
+           [(rol,rul)] -> "     , ptrruls = [ ("++show rol++", "++showHSName rul++") ]"
+           rs          -> "     , ptrruls = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHSName rul++")" | (rol,rul)<-rs] ++indentB++"]"
+        , case ptrrels pat of
+           []          -> "     , ptrrels = [] {- no role-relation assignments -}"
+           [(rol,rel)] -> "     , ptrrels = [ ("++show rol++", "++showHS flags "" rel++") ]"
+           rs          -> "     , ptrrels = [ "++intercalate (indentB++", ") ["("++show rol++", "++showHS flags "" rel++")" | (rol,rel)<-rs] ++indentB++"]"
         , wrap ", ptids = " indentB (showHS flags) (ptids pat)
         , wrap ", ptxps = " indentB (showHS flags) (ptxps pat)
         , "}"

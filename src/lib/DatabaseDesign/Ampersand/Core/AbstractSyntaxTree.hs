@@ -139,6 +139,8 @@ data Pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
            , ptdcs :: [Declaration] -- ^ The declarations declared in this pattern
            , ptups :: [UserDefPop]  -- ^ The user defined populations in this pattern
+           , ptrruls :: [(String,Rule)]         -- ^ The assignment of roles to rules.
+           , ptrrels :: [(String,Declaration)]  -- ^ The assignment of roles to Relations.
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
            , ptxps :: [Purpose]     -- ^ The purposes of elements defined in this pattern
