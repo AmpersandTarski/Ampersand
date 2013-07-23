@@ -105,8 +105,6 @@ mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypInCps  e) .+. (domOrCod tb b) 
 mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<. (domOrCod tb b) .+. between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypInCps e)))
 mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
-mDif' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
-mDif'    sORt a b e = between (domOrCod sORt e) (Between (tCxe sORt a sORt b TETIncl e) (domOrCod sORt a) (domOrCod sORt b) (BetweenType BTUnion (domOrCod sORt e)))
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
 existsSpecific = existsGS BTIntersection
 existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
@@ -129,7 +127,8 @@ class Expr a where
   p_views :: a -> [P_ViewDef]
   p_views _ = []
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
-  --   the tuples of a relation st :: Type * Type. Each tuple (TypExpr t, TypExpr t') means that the domain of t is a subset of the domain of t'.
+  --   the tuples of a relation st :: Type * Type. Each Type represents a set of atoms, even though the type checker will only use the fact that a type represents a set.
+  --   Let t, t' be types, then    (t, t') `elem` st    means that the set that t represents is a subset of the set that t' represents.
   --   These tuples are produced in two TypeInfos. The second TypeInfo is kept separate, because it depends on the existence of the first TypeInfo.
   --   The first element of the first argument is a P_Context that represents the parse tree of one context.
   --   This is provided to obtain a declaration table and a list of interfaces from the script.
@@ -327,9 +326,9 @@ instance Expr Term where
      (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
                       .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
                       .+. uType a a .+. uType b b
-     (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a                                        --  a-b    (difference)
-                      .+. uType' a .+. uType' b
-                      .+. mDif' Src a b x .+. mDif' Tgt a b x
+     (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a .+. dom b.<.dom a .+. cod b.<.cod a                                        --  a-b    (difference)
+                      .+. mGeneric Src x Src b Src a .+. mGeneric Tgt x Tgt b Tgt a
+                      .+. uType a a .+. uType b b
      (PCps _ a b)  -> let s = TypInCps x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
