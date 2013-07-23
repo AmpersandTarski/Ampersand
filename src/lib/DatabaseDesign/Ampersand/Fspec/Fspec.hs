@@ -247,7 +247,7 @@ data PAclause
                     }
 
 events :: PAclause -> [(InsDel,Declaration)]
-events paClause = nub (evs paClause) -- SJ: verwijderd:  fatal 299 $ "TODO Han: terugzetten" -- 
+events paClause = nub (evs paClause)
  where evs clause
         = case clause of
            CHC{} -> (concat.map evs) (paCls clause)

@@ -19,10 +19,7 @@ module DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters
     , showImage
     , canXRefer
     , Purpose(..)
-    , purposeOf
-    , purposesDefinedIn
     , purposes2Blocks
-    , meaning2Blocks
     , isMissing
     , lclForLang
     , dpRule
