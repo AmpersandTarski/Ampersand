@@ -106,7 +106,7 @@ mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<
 mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
 mDif' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
-mDif'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETIncl e) (domOrCod sORt a) (domOrCod sORt b) (BetweenType BTUnion (domOrCod sORt e))])
+mDif'    sORt a b e = between (domOrCod sORt e) (Between (tCxe sORt a sORt b TETIncl e) (domOrCod sORt a) (domOrCod sORt b) (BetweenType BTUnion (domOrCod sORt e)))
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
 existsSpecific = existsGS BTIntersection
 existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
