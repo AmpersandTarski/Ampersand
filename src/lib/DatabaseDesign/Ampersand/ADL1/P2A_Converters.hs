@@ -232,7 +232,7 @@ instance Expr P_IdentDef where
  uType _ k
   = let x=Pid (ix_pos k) (ix_cpt k) in
     uType x x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. cod (obj_ctx obj) .<. cod x .+. uType obj obj
+    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj
                         | P_IdentExp obj <- ix_ats k
                         ]
 
