@@ -5,7 +5,7 @@ BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"
     ,"concepts" : V[ONE*Context];ctxcs
     ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
     ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
-    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule]-I[PropertyRule])
+--    ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule]-I[PropertyRule])
     ]
 INTERFACE "Validate" FOR Student: I[ONE]
 BOX ["Click to commit and validate":V[ONE*Context];savecontext
@@ -134,7 +134,7 @@ INTERFACE "Extra functions"(filename,userrole) FOR Student: I[ONE]
 BOX ["Export POPULATIONs to...":V[ONE*Context];savepopulation
     BOX ["file (INCLUDE only)":I[SavePopFile],"type a file name":filename]
     ,"User settings": V[ONE*User] BOX ["use role to load files":userrole]
-    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File]-I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
+--    , "files with only POPULATIONs" : V[ONE*User];uploaded;(I[File]-I[AdlFile]) BOX ["file name":I[File],"created at":filetime]
     ]
 
 INTERFACE "CONTEXT" FOR Student: I[Context]
@@ -143,12 +143,12 @@ BOX ["name" : ctxnm
     ,"concepts" : ctxcs 
     ,"ISA-relations" : ctxpats;ptgns 
     ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": decprps;declaredthrough]
-    ,"RULEs" : ctxpats;ptrls;(I[Rule]-I[PropertyRule]) 
+--    ,"RULEs" : ctxpats;ptrls;(I[Rule]-I[PropertyRule]) 
     ]
 INTERFACE "PATTERN" FOR Student: I[Pattern]
 BOX ["PURPOSEs" :ptxps
     ,"name" :ptnm
-    ,"RULEs" :ptrls;(I[Rule]-I[PropertyRule])
+--    ,"RULEs" :ptrls;(I[Rule]-I[PropertyRule])
     ,"relations" :ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough]
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
@@ -168,7 +168,7 @@ BOX ["PURPOSEs" :cptpurpose
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;popas BOX ["atom":atomvalue, "of concept":popas~]
     ,"used in relations": (decsgn;(src \/ trg))~
-    ,"used in RULEs": (rrexp;rels;decsgn;(src \/ trg))~;(I[Rule]-I[PropertyRule])
+--    ,"used in RULEs": (rrexp;rels;decsgn;(src \/ trg))~;(I[Rule]-I[PropertyRule])
     ,"diagram" : cptpic
     ]
 INTERFACE "Atom"(atomvalue) FOR Student: I[Atom]
@@ -183,7 +183,7 @@ BOX ["PURPOSEs" :decpurpose
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu;popps BOX ["source":left , "target":right] --select existing atoms only!
-    ,"used in RULEs": (rrexp;rels)~;(I[Rule]-I[PropertyRule])
+--    ,"used in RULEs": (rrexp;rels)~;(I[Rule]-I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :rrpurpose

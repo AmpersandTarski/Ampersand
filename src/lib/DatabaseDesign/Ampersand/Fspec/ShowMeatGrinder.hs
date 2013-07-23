@@ -12,7 +12,10 @@ import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Data.Hashable
-   
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ShowMeatGrinder.hs"
+
 meatGrinder :: Options -> Fspc -> (FilePath, String)
 meatGrinder flags fSpec = ("TemporaryPopulationsFileOfRap" ,content)
  where 
@@ -66,8 +69,6 @@ instance AdlId Rule where
  uri a= "Rul"++techId a
 instance AdlId A_Gen where 
  uri a= "Gen"++(show.hash) ((name.gengen) a++(name.genspc) a)
---instance AdlId GenR where 
--- uri a= "GnR"++(show.hash)("TODO  Needs some ")
 instance AdlId Declaration where 
  uri a= "Dcl"++techId a
 instance AdlId Purpose where 
@@ -84,16 +85,19 @@ metaPopsOf _ fSpec =
     , Pop "ctxpats" "Context" "Pattern"
            [(uri fSpec,uri x) | x <- vpatterns fSpec]
     ]
-  ++concat [metaPopsOfPattern pat | pat <- vpatterns   fSpec]
+  ++concat [metaPopsOfPattern pat     | pat <- vpatterns      fSpec]
   ++[ Comment "*** Concepts: ***"
     , Pop "ctxcs"   "Context" "Concept"
-           [(uri fSpec,uri x) | x <- allConcepts fSpec]
+           [(uri fSpec,uri x) | x <- allConcepts              fSpec]
     ]
-  ++concat [metaPopsOfConcept cpt | cpt <- allConcepts fSpec]
+  ++concat [metaPopsOfConcept     cpt | cpt <- allConcepts    fSpec]
   ++[ Comment "*** Generalisations: ***"
     ]
-  ++concat [metaPopsOfGen     gen | gen <- vgens       fSpec]
-    
+  ++concat [metaPopsOfGen         gen | gen <- vgens          fSpec]
+  ++[ Comment "*** Declarations: ***"
+    ]
+  ++concat [metaPopsOfDeclaration dcl | dcl <- allDecls       fSpec]
+  
  where
   metaPopsOfPattern pat =  
    [ Comment " "
@@ -144,12 +148,14 @@ metaPopsOf _ fSpec =
   metaPopsOfDeclaration dcl =
    case dcl of 
      Sgn{} ->
-      [ Pop "name"    "Declaration" "Conid"
+      [ Pop "decnm"    "Declaration" "Conid"
              [(uri dcl, name dcl)]
       , Pop "decsgn"   "Declaration" "Sign"
              [(uri dcl,uri (decsgn dcl))]
       ] ++ metaPopsOfSign (decsgn dcl) ++
       [ Pop "decprps"  "Declaration" "Prop"
              [(uri dcl,show x)] | x <- decprps dcl] 
+     Isn{} -> fatal 157 "Isn is not implemented yet"
+     Vs{}  -> fatal 158 "Vs is not implemented yet"
         
    

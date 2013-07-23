@@ -35,6 +35,7 @@ MESSAGE "<span class='errsignal'>Type error(s) were encountered in your script.<
 VIOLATION (TGT I[TypeError], TXT ". Open ", SRC I[File],TXT " to fix error.")
 ENDPROCESS
 
+{-
 PROCESS Student
 ROLE Student MAINTAINS otherviolations, multviolations1,multviolations2,multviolations3, homoviolations
 
@@ -46,6 +47,7 @@ ROLE Student MAINTAINS otherviolations, multviolations1,multviolations2,multviol
 --MESSAGE "<span class='warnsignal'>Atom(s) of a concept that is a specialization have the same name(s) as atom(s) of a more general concept.</span> The integrity rules demand that no two atoms in the population of a concept have the same name. If you commit and validate on the <a href='index.php?interface=Validate&atom=1&role=0'>Validate-screen</a> then Ampersand records that the atoms with identical names refer to the same real-world object. If the atoms refer to different real-world objects, then you must change the name of at least one atom before validating."
 --VIOLATION (TXT "Atom ", TGT I, TXT "will become the most specific concept")
 
+--HJO, 20130723: Temporarily disabled the following rules, for they give problems. (and besides, what is the meaning of the rules????, there is no explicit purpose!)
 RULE "multviolations1": V[Rule*Violation]-((I[PropertyRule] /\ declaredthrough;('TOT' \/ 'SUR');declaredthrough~);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A TOTal or SURjective multiplicity rule is violated for some relation(s).</span> Add tuple(s) in the relation(s) to correct the violation(s)."
 VIOLATION (TXT "RULE ", SRC I[Rule], TXT " is violated by the atom ", TGT I[Violation];left, TXT ".")
@@ -65,8 +67,10 @@ VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Viol
 RULE "otherviolations": V[Rule*Violation]-((I[Rule]-I[PropertyRule]);rrviols)
 MESSAGE "<br/><br/><span class='violsignal'>A business rule that involves several relations is violated.</span> Add or delete tuple(s) in one or more of the relation(s) to correct the violation(s)."
 VIOLATION (TXT "RULE ",SRC I[Rule], TXT " is violated by the tuple ", TGT I[Violation], TXT " in combination with some other tuple(s).")
-ENDPROCESS
 
+
+ENDPROCESS
+-}
 PROCESS Admin
 --no signals for admin yet
 RULE dummy: firstloadedwith |- firstloadedwith
