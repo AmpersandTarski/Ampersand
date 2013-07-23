@@ -477,7 +477,7 @@ nub' [x] = [x]
 nub' [] = []
 -- -}
 
-{- The following mrgUnion and mrgIntersect are for debug purposes
+{- The following mrgUnion and mrgIntersect are for debug purposes. DO NOT DELETE!!!
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
 mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct l then
