@@ -256,15 +256,6 @@ where
                     maxVal = if isInj r then MaxOne else MaxMany
                 in  Mult minVal maxVal 
 
-   mshow :: [Expression] -> String
-   mshow [] = "."
-   mshow (e:es) = "\n"++myshowExpr e++mshow es    
-   myshowExpr :: Expression -> String
-   myshowExpr expr = 
-      case expr of
-        EDcD r _   -> show(name r)++show (sign r)
-        EFlp e _    -> "flp("++myshowExpr e++")"
-        _ -> fatal 154 (show expr)
 
 ---- In order to make classes, all relations that are univalent and injective are flipped
 ---- attRels contains all relations that occur as attributes in classes.

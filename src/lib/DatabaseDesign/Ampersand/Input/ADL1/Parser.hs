@@ -152,6 +152,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 , pt_rls = [r | Pr r<-pes]
                 , pt_gns = [g | Pg g<-pes]
                 , pt_dcs = [d | Pd d<-pes]
+                , pt_rus = [r | Pm r<-pes]
+                , pt_res = [r | Pl r<-pes]
                 , pt_cds = [c | Pc c<-pes]
                 , pt_ids = [k | Pk k<-pes]
                 , pt_vds = [v | Pv v<-pes]
@@ -161,15 +163,19 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
        pPatElem :: Parser Token PatElem
        pPatElem = Pr <$> pRuleDef      <|>
                   Pd <$> pRelationDef  <|>
+                  Pm <$> pRoleRule     <|>
+                  Pl <$> pRoleRelation <|>
                   Pc <$> pConceptDef   <|>
                   Pg <$> pGenDef       <|>
-                  Pk <$> pIndex       <|>
+                  Pk <$> pIndex        <|>
                   Pv <$> pViewDef      <|>
                   Pe <$> pPurpose      <|>
                   Pp <$> pPopulation
 
    data PatElem = Pr P_Rule
                 | Pd P_Declaration 
+                | Pm RoleRule
+                | Pl P_RoleRelation
                 | Pc ConceptDef
                 | Pg P_Gen
                 | Pk P_IdentDef

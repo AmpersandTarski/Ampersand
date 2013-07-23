@@ -133,6 +133,7 @@ entityfield p
   = Fld { fldname = name (entityconcept p)
         , fldexpr = iExpr (concept p)
         , fldtype = SQLId
+        , flduse  = fatal 136 ("TODO: specify field type")
         , fldnull = False
         , flduniq = True
         }

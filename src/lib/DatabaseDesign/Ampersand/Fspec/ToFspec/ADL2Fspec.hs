@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec 
-    (makeFspec,actSem, delta, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable)
+    (makeFspec,actSem, delta, allClauses, quads, assembleECAs, preEmpt, genPAclause, editable, conjuncts)
   where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Core.Poset
@@ -426,15 +426,15 @@ while maintaining all invariants.
        move ass [] = [(ass,[])]
        move ass css
         = (ass,css):
-          if and [(not.and.map isEDcI) cs | cs<-css] -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
-          then [ts | length (eqClass (==) (map head css)) == 1         -- example: True, because map head css == [ "x" ]
-                   , let h=head (map head css)                         -- example: h= "x"
-                   , isUni h                                           -- example: assume True
-                   , ts<-move [flp h : as |as<-ass] (map tail css)]++  -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
+          if and [not (null cs) && (not.and.map isEDcI) cs | cs<-css] -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
+          then [ts | length (eqClass (==) (map head css)) == 1        -- example: True, because map head css == [ "x" ]
+                   , let h=head (map head css)                        -- example: h= "x"
+                   , isUni h                                          -- example: assume True
+                   , ts<-move [flp h : as |as<-ass] (map tail css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
                [ts | length (eqClass (==) (map last css)) == 1
                    , let l=head (map last css)
                    , isInj l
-                   , ts<-move [as++[flp l] |as<-ass] (map init css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
+                   , ts<-move [as++[flp l] |as<-ass] (map init css)]  -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
           else []
 
      shiftR :: HornClause -> [HornClause]
@@ -468,12 +468,12 @@ while maintaining all invariants.
        move [] css = [([],css)]
        move ass css
         = (ass,css):
-          if and [(not.and.map isEDcI) as | as<-ass] -- all as are nonempty because: (not.and.map isEDcI) as ==> not (null as)
-          then [ts | length (eqClass (==) (map head ass)) == 1       -- example: True, because map head ass == [ "r", "r" ]
-                   , let h=head (map head ass)                       -- example: h= "r"
-                   , isSur h                                         -- example: assume True
-                   , ts<-move (map tail ass) [flp h:cs |cs<-css]]++  -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
-               [ts | length (eqClass (==) (map last ass)) == 1       -- example: False, because map last ass == [ ["s"], ["r"] ]
+          if and [not (null as) && (not.and.map isEDcI) as | as<-ass] -- all as are nonempty because: (not.and.map isEDcI) as ==> not (null as)
+          then [ts | length (eqClass (==) (map head ass)) == 1        -- example: True, because map head ass == [ "r", "r" ]
+                   , let h=head (map head ass)                        -- example: h= "r"
+                   , isSur h                                          -- example: assume True
+                   , ts<-move (map tail ass) [flp h:cs |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+               [ts | length (eqClass (==) (map last ass)) == 1        -- example: False, because map last ass == [ ["s"], ["r"] ]
                    , let l=head (map last ass)
                    , isTot l
                    , ts<-move (map init ass) [cs++[flp l] |cs<-css]]

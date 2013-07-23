@@ -631,9 +631,9 @@ pCtx2aCtx p_context
 
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> parRuls ppat <*> parKeys ppat <*> parViews ppat <*> parDcls ppat <*> parPrps ppat
+     = f <$> parRuls ppat <*> parKeys ppat <*> parViews ppat <*> parDcls ppat <*> parRRels ppat <*> parRRuls ppat <*> parPrps ppat
        where
-        f prules keys' views' decsNpops xpls
+        f prules keys' views' decsNpops rrels rruls xpls
          = A_Pat { ptnm  = name ppat
                  , ptpos = pt_pos ppat
                  , ptend = pt_end ppat
@@ -641,12 +641,16 @@ pCtx2aCtx p_context
                  , ptgns = agens'
                  , ptdcs = [d{decpat=name ppat} | (d,_)<-decsNpops]
                  , ptups = catMaybes (map snd decsNpops)
+                 , ptrruls = [(rol,rul) |rul<-udefrules contxt, rr<-rruls, name rul `elem` mRules rr, rol<-mRoles rr] -- The assignment of roles to rules.
+                 , ptrrels = [(rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                  , ptids = keys'
                  , ptvds = views'
                  , ptxps = xpls
                  }
         agens'   = map (pGen2aGen (name ppat)) (pt_gns ppat)
         parRuls  = parallelList . map (pRul2aRul (name ppat)) . pt_rls
+        parRRels = parallelList . map pRRel2aRRel . pt_res
+        parRRuls = parallelList . map pRRul2aRRul . pt_rus
         parKeys  = parallelList . map pIdentity2aIdentity . pt_ids
         parViews = parallelList . map pViewDef2aViewDef . pt_vds
         parDcls  = parallelList . map pDecl2aDecl . pt_dcs
