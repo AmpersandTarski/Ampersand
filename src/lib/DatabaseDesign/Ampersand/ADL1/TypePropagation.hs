@@ -256,6 +256,7 @@ typing st betweenTerms declsByName
  where
    -- The story: two Typemaps are made by uType, each of which contains tuples of the relation st.
    --            These are converted into two maps (each of type Typemap) for efficiency reasons.
+   
     allIVs     = nub' (sort [e | (TypExpr e _)<-typeTerms, isIV e])
     isIV   (PI _)       = True
     isIV   (PVee _)     = True
