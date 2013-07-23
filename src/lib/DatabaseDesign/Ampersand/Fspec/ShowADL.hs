@@ -169,11 +169,20 @@ instance ShowADL Pattern where
  showADL pat
   = "PATTERN " ++ showstr (name pat) ++ "\n"
     ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
+    ++ (if null (maintains pat) then "" else "\n  " ++                        showRM pat               ++ "\n")
+    ++ (if null (mayEdit pat)   then "" else "\n  " ++                        showRR pat               ++ "\n")
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
     ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
     ++ (if null (conceptDefs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (conceptDefs pat)) ++ "\n")
     ++ (if null (ptids pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptids pat)) ++ "\n")
     ++ "ENDPATTERN"
+    where -- TODO: the following definitions should be unneccessary, but 'map showADL (maintains prc)' and "map showADL (mayEdit prc)" don't work... 
+      showRM :: Pattern -> String
+      showRM pt = intercalate "\n  " [ "ROLE "++role++" MAINTAINS "++intercalate ", " [name rul | (_,rul)<-cl]
+                                      | cl<-eqCl fst (maintains pt), let role = fst (head cl)]
+      showRR :: Pattern -> String
+      showRR pt = intercalate "\n  " [ "ROLE "++role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
+                                      | cl<-eqCl fst (mayEdit pt), let role = fst (head cl)]
 
 instance ShowADL PairViewSegment where
  showADL (PairViewText str)         = "TXT " ++ show str

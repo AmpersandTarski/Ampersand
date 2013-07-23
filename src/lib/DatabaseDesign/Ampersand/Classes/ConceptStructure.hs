@@ -111,9 +111,7 @@ where
                        [ (expressionsIn.prcRules) p
                        , (expressionsIn.prcIds) p
                        , (expressionsIn.prcVds) p
-                       , (expressionsIn.prcrrels) p
                        ]
-           where prcrrels x = map snd (prcRRels x)
 
    instance ConceptStructure Interface where
     concs       ifc = concs       (ifcObj ifc)
@@ -123,7 +121,7 @@ where
                        ]
 
    instance ConceptStructure Declaration where
-    concs       d = concs (sign d)
+    concs         d = concs (sign d)
     expressionsIn _ = fatal 148 "expressionsIn not allowed on Declaration"
 
    instance ConceptStructure Rule where
