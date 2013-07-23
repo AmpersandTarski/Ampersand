@@ -418,40 +418,28 @@ infixl 8 .*.    -- cartesian product
 
 l .==. r = EEqu (l,r)
            (case sign l `compare` sign r of
-              EQ -> sign l
-              GT -> sign l `meet` sign r
-              LT -> sign l `meet` sign r
-              _  -> fatal 417 ("Equality between two terms of different types.\n"
-                             ++"\n  l: "++show l++"\t  signature: "++show (sign l)
-                             ++"\n  r: "++show r++"\t  signature: "++show (sign r)
-                             ++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r)
-                             ++"\n  "++show (sign l)++" `meet` "++show (sign r)++": "++show (sign l `meet` sign r)
-                             ++"\n  "++show (sign l)++" `join` "++show (sign r)++": "++show (sign l `join` sign r)
-                              )
+{-            EQ :   Medewerker    Medewerker     levert op: Medewerker
+              GT :   Persoon       Medewerker     levert op: Medewerker
+              LT :   Medewerker    Persoon        levert op: Medewerker
+              Bij CP weten we zeker dat meet bestaat, kortom er is een meest specifieke ondergrens (lub) tussen l en r. Deze lub kan zelfs groter zijn dan l en r...
+              CP :   Medewerker    Student        levert op: Studentassistent (als die tenminste gedefinieerd is...), of Persoon  (als die tenminste gedefinieerd is...)
+-}
+              NC -> fatal 421 ("Equality of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              _  -> sign l `meet` sign r   -- Medewerker Student levert op: Studentassistent (als die tenminste gedefinieerd is...), of Persoon  (als die tenminste gedefinieerd is...)
            )
 l .|-. r = EImp (l,r)
            (case sign l `compare` sign (r./\.l) of
-              EQ -> sign (l.==.r./\.l)
-              GT -> sign l `meet` sign (r./\.l)
-              LT -> sign l `meet` sign (r./\.l)
-              _  -> fatal 422 ("Implication between two terms is type incompatible.\n"
-                           ++"\n  l: "++show l++"\t  signature: "++show (sign l)
-                           ++"\n  r: "++show r++"\t  signature: "++show (sign r)
-                           ++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r)
-                           ++"\n  "++show (sign l)++" `compare` "++show (sign (r./\.l))++": "++show (sign l `compare` sign (r./\.l))
-                           ++"\n  "++show (sign (l.==.r./\.l))
-                           ++"\n  "++show (sign l `meet` sign r)
-                           ++"\n  "++show (sign l `join` sign r)
-                               )
+              NC -> fatal 426 ("Implication of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign (r./\.l))++"\n  "++show (sign l)++" `compare` "++show (sign (r./\.l))++": "++show (sign l `compare` sign (r./\.l)))
+              _  -> sign l `meet` sign (r./\.l)
            )
 l ./\. r = EIsc (l,r)
            (case sign l `compare` sign r of        -- meet yields the more specific of two concepts
-              NC -> fatal 426 ("Intersection of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              NC -> fatal 431 ("Intersection of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
               _  -> sign l `meet` sign r
            )
 l .\/. r = EUni (l,r)
            (case sign l `compare` sign r of        -- join yields the more generic of two concepts
-              NC -> fatal 432 ("Union of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
+              NC -> fatal 436 ("Union of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
               _  -> sign l `join` sign r
            )
 l .-. r  = EDif (l,r) (sign l)
