@@ -15,26 +15,32 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
 
 type ParseError = Message Token
-data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term | TETIncl Term
+data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term
                | TETPairView P_PairViewSegment
-               | TETObj
+               | TETObj | TETBox Term
                | TETKey
               
 instance ShowADL TypErrTyp where
   showADL (TETUnion t)    = "the union arising at "++showADL t
   showADL (TETIsc t)      = "the intersect arising at "++showADL t
   showADL (TETEq t)       = "the equality arising at "++showADL t
-  showADL (TETIncl t)     = "the inclusion arising at "++showADL t
-  showADL (TETObj)        = "the INTERFACE"
+  showADL (TETObj)        = "the INTERFACE" -- TODO: wordt dit gebruikt???? (SJ, 24  juli 2013)
+  showADL (TETBox _)      = "BOX"
   showADL (TETKey)        = "the IDENT"
   showADL (TETPairView t) = "the RULE View "++show t -- TODO: what to call this?
                
-data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]      -- ^ The list of concepts with different names, that have been proven equal.
+data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]       -- ^ The list of concepts with different names, that have been proven equal.
                               }   
               | CxeEqAttribs  { cxeOrig ::      Origin           -- ^ The location of the object/identity definition in which different attributes have the same name.
                               , cxeName ::      String           -- ^ The name shared by different attributes.
                               , cxeAtts ::      [Term]           -- ^ The list of attributes with the same name.
-                              }   
+                              }
+              | CxeAttrib     { cxeAtt ::       P_ObjectDef      -- ^ The attribute expression, whose source should be equal to or more specific than target cxeSelf.
+--                            , cxeCmp ::       Ordering         -- ^ The ordering of target cxeSelf `compare` source (objexpr (cxeAtt err))
+                              , cxeSrc ::       P_Concept        -- ^ The source of obj_ctx (cxeAtt err).
+                              , cxeTrg ::       P_Concept        -- ^ The target of cxeSelf err.
+                              , cxeSelf ::      Term             -- ^ The object expression, whose target is relevant for the error message.
+                              }
               | CxeUnsupRoles { cxeIfc ::       P_Interface
                               , cxeRoles ::     [String]
                               }   
@@ -61,7 +67,7 @@ data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]      -- ^ The list of
                               , cxeSrcs ::      [P_Concept]
                               , cxeTrgs ::      [P_Concept]
                               }   
-              | CxeTyping     { cxeLhs ::       (Term,SrcOrTgt,[P_Concept])
+              | CxeBetween     { cxeLhs ::       (Term,SrcOrTgt,[P_Concept])
                               , cxeRhs ::       (Term,SrcOrTgt,[P_Concept])
                               , cxeTyp ::       TypErrTyp
                               }   
@@ -92,6 +98,10 @@ showErr err = case err of
   CxeEqAttribs{}
      -> show (cxeOrig err)++": Different attributes have the same name:"++
         concat [ "\n   ("++show (origin term)++")\t \""++cxeName err++"\" : "++showADL term | term<-cxeAtts err ]
+  CxeAttrib{}
+     -> show (origin att)++": Type error in attribute \""++name att++"\":"++
+        "\n   source of "++showADL (obj_ctx att)++" is "++show (name (cxeSrc err))++", but it should be equal to "++show (name (cxeTrg err))++" or more specific."
+        where att = cxeAtt err
   CxeNoRules{}
      -> show (cxePos err)++":\n"++
         case cxeRules err of
@@ -123,7 +133,7 @@ showErr err = case err of
                  cs  -> ["    The source of the term  "++showADL (cxeExpr err)++", which is "++commaEng "or" (map showADL cs)++"\n"]++
                         ["    cannot be matched to "++commaEng "and" (map showADL (cxeEnv err)) ++" from its environment."]
           )
-  CxeTyping{} -- to get this error, create a "Between" data type in uType
+  CxeBetween{} -- to get this error, create a "Between" data type in uType
      ->   ( show (origin ((\(x,_,_)->x) (cxeLhs err)))++":\n"++
             "    Type mismatch for "++showADL (cxeTyp err)++
               case (cxeLhs err,cxeRhs err) of

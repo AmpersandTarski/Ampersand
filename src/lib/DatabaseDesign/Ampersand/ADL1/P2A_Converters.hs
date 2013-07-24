@@ -97,6 +97,14 @@ domOrCod :: SrcOrTgt -> Term -> Type
 domOrCod Src = dom
 domOrCod Tgt = cod
 -- | mSpecific, mGeneric are shorthands for creating links in the type graph. mSpecific is used in unions, whereas mGeneric is used in intersections.
+{-
+mSpecific doet twee dingen:
+1) probeert een Type te geven aan het laatste argument, e.
+2) genereert een foutmelding als 1) mislukt.
+   De markering BTUnion (dan wel BTIntersect) betekent dat er getest moet worden (in TypePropagation.adl) of het UNION-type bestaat.
+   De feitelijke test wordt uitgevoerd in checkBetweens (in TypePropagation.adl)
+mSpecific' gebruik je wanneer je in de aanroep niet weet of je de source of target bedoelt, bijv. "intersection arising inside r;s" 
+-}
 mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
 mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
 mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
@@ -111,7 +119,7 @@ existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -
 existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
-tCxe ta a tb b msg e src trg = CxeTyping{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
+tCxe ta a tb b msg e src trg = CxeBetween{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
 
 flattenMap :: Map t [t1] -> [(t, t1)]
 flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
@@ -255,8 +263,8 @@ instance Expr P_ObjectDef where
  uType _ o
   = let x=obj_ctx o in
     uType x x .+. 
-    foldr (.+.) nothing [ uType obj obj .+.
-                        existsSpecific (cod x) (dom$ obj_ctx obj) (tCxe Tgt x Src (obj_ctx obj) TETIsc (obj_ctx obj)) (TypInObjDef obj)
+    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj .+.
+                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
@@ -326,8 +334,8 @@ instance Expr Term where
      (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
                       .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
                       .+. uType a a .+. uType b b
-     (PDif _ a b)  -> dom x.<.dom a .+. cod x.<.cod a .+. dom b.<.dom a .+. cod b.<.cod a                                        --  a-b    (difference)
-                      .+. mGeneric Src x Src b Src a .+. mGeneric Tgt x Tgt b Tgt a
+     (PDif o a b)  -> dom x.<.dom a .+. cod x.<.cod a  --  a-b    (difference)
+                      .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
                       .+. uType a a .+. uType b b
      (PCps _ a b)  -> let s = TypInCps x
                           pidTest (PI{}) r = r
@@ -854,19 +862,19 @@ pCtx2aCtx p_context
                }
         parParams = parallelList . map pExpr2aExpr . ifc_Params
         parentIfcRoles = if null $ ifc_Roles pifc then roles contxt else nub (ifc_Roles pifc) -- if no roles are specified, the interface supports all roles
-        
+
     -- | pODef2aODef checks compatibility of composition of terms on equality
     pODef2aODef :: [String]              -- a list of roles that may use this object
                 -> P_ObjectDef           -- the object definition as specified in the parse tree
                 -> Guarded ObjectDef     -- result: the type checked object definition (only defined if there are no type errors) and a list of type errors
     pODef2aODef parentIfcRoles podef 
      = do { let oTerm = obj_ctx podef
-          ; msub <- p2a_MaybeSubInterface parentIfcRoles (obj_msub podef)
-          ; (expr, _, _) <- pExpr2aExpr oTerm
+          ; (expr, _, t) <- pExpr2aExpr oTerm
                 -- A name check ensures that all attributes have unique names
           ; _ <- case [ cl | Just (P_Box objs)<-[obj_msub podef], cl<-eqCl name objs, length cl>1] of
                    []  -> return []
                    cls -> Errors [CxeEqAttribs (origin podef) (name (head cl)) (map obj_ctx cl) | cl<-cls ]
+          ; msub <- p2a_MaybeSubInterface parentIfcRoles (obj_msub podef)
           ; return ( Obj { objnm   = obj_nm podef   
                          , objpos  = obj_pos podef  
                          , objctx  = expr           
@@ -1085,11 +1093,11 @@ pCtx2aCtx p_context
                               decl  = case Map.lookup x bindings of
                                         Just x' -> x'
                                         Nothing -> fatal 1480 "Map.lookup failed to find binding"
-         getSign :: Term -> Sign
-         getSign term
-          = Sign (pCpt2aCpt (srcTypes (dom term))) (pCpt2aCpt (srcTypes (cod term)))
-         lookupType :: Term -> P_Concept
-         lookupType t = srcTypes (dom t)
+    getSign :: Term -> Sign
+    getSign term
+     = Sign (pCpt2aCpt (srcTypes (dom term))) (pCpt2aCpt (srcTypes (cod term)))
+    lookupType :: Term -> P_Concept
+    lookupType t = srcTypes (dom t)
     getDeclaration :: Term -> Guarded Declaration
     getDeclaration term@(Prel _ _)
      = case Map.lookup term bindings of
