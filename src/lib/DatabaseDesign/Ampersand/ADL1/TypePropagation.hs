@@ -218,13 +218,11 @@ orWhenEmpty [] n = n
 orWhenEmpty n  _ = n
 
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
---   As a result, it builds a list of tuples st::[(Type,Type)], which represents a relation, st,  over Type*Type.
---   For any two Terms a and b,  if 'typing' can tell that dom(a) is a subset of dom(b),
---   this is represented by a tuple (TypExpr a _,TypExpr b _) in st.
---   In the code below, this shows up as  dom a.<.dom b
---   The function typing does a recursive scan through all subterms, collecting all tuples on its way.
---   Besides term term, this function requires a universe in which to operate.
---   If the source and target of term is restricted to concepts c and d, specify (thing c) (thing d).
+--   It expects a list of tuples st::[(Type,Type)], which has been made by uType.
+--   This list represents a relation, st,  over Type*Type.
+--   The function typing also expects a list of "between terms",
+--   which represent types that were created due to the use of specific operators, such as compose, union and intersect.
+--   Finally, it expects the declaration table. 
 
 typing :: Typemap -> [Between] -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
@@ -284,17 +282,18 @@ typing st betweenTerms declsByName
     
     fromVtoCpl v@(PVee o) = head ([t | t@(PCpl o' _) <- allTerms, o==o'] ++ [v])
     fromVtoCpl x = x
-    
+
+-- checkBetweens produces error messages for the "between terms", 
     checkBetweens = parallelList (map checkBetween betweenTerms)
     checkBetween (Between e src trg BTEqual) -- since the BTEqual does not participate in stClosAdd, it will be isolated here
      = case (srcTypes' src,srcTypes' trg) of
-              ([a],[b]) -> if a==b then
+              ([a],[b]) -> if a==b then    -- applicable to equality (i.e. rules with = )
                              return ()
                            else Errors [e [a] [b]]
               (a,b) -> Errors [e a b]
     checkBetween (Between e src trg (BetweenType _ t))
      = case srcTypes' t of
-        [_] -> return ()
+        [_] -> return () -- if the between-term is unique, everything is fine...
         _ -> Errors [e (srcTypes' src) (srcTypes' trg)]
     
     stClosAdded :: Typemap
@@ -387,7 +386,8 @@ typing st betweenTerms declsByName
     srcTypes typ = case srcTypes' typ of
                    -- A type may have an empty codomain in stConcepts, because that means it is type incorrect.
                     [cs] -> cs
-                    _ -> fatal 446 ("Type "++show typ++" was found in stConcepts, but not a singleton.")
+                    [] -> fatal 389 ("Type "++show typ++" was not found in stConcepts.")
+                    cs -> fatal 390 ("Type "++show typ++" was found in stConcepts more than once: "++intercalate ", " (map name cs))
      
 -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
 -- | note that the domain must be preserved!
@@ -525,7 +525,7 @@ distinctCons a _ bs = a:bs
 -- -}
 
 
--- | lookups is the reflexive closure of findIn. lookups(a,R) = findIn(a,R\/I) where a is an element and R is a relation.
+-- | lookups is the reflexive closure of findIn. lookups a R = findIn(a,R\/I) where a is an element and R is a relation.
 lookups :: (Show a,Ord a) => a -> Map a [a] -> [a]
 lookups o q = head ([mrgUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])  
 
