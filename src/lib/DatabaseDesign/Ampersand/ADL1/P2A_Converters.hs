@@ -263,7 +263,7 @@ instance Expr P_ObjectDef where
  uType _ o
   = let x=obj_ctx o in
     uType x x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj .+.
+    foldr (.+.) nothing [ uType obj obj .+.
                           existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
