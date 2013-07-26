@@ -420,7 +420,7 @@ getDeclarationTableInfo fSpec decl =
             plugInfo:_ -> Just plugInfo -- fatal 62 $ "Multiple plugs for relation "++ show decl
                       -- TODO: currently this fatal is disabled because some relations return multiple plugs
                       --       (see ticket #217)
-   _     -> fatal 420 $ "getDeclarationTableInfo is must not be used on this type of declaration!"
+   _     -> fatal 420 $ "getDeclarationTableInfo must not be used on this type of declaration!"
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
