@@ -54,6 +54,7 @@ instance ShowADL Pop where
           showContent = map showPaire (popPairs pop)
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
 
+
 techId :: Identified a => a -> String
 techId = show.hash.name
 class AdlId a where
@@ -78,9 +79,23 @@ instance AdlId Purpose where
 instance AdlId Sign where 
  uri (Sign s t) = "Sgn"++(show.hash) (uri s++uri t)
  
+data RelPopuType = InitPop | CurrPop deriving Show
+mkUriRelPopu :: Declaration -> RelPopuType  -> String
+mkUriRelPopu d t = show t++"Of"++uri d
+
+data Atom = Atom { atmCps :: [A_Concept] --de concepten van het atoom ( = popas~ )
+                 , atmVal :: String
+                 }
+instance AdlId Atom where
+ uri a="Atm"++atmVal a++"Of"++(concat.sort.map uri.atmCps) a  
+
+
+mkAtom :: Fspc -> String -> A_Concept -> Atom
+mkAtom fSpec value cpt = fatal 94 "--TODO -- Nog verder uit te werken"
+
 class MetaPopulations a where
  metaPops :: Options -> Fspc -> a -> [Pop]
- 
+
 instance MetaPopulations Fspc where
  metaPops flags _ fSpec = 
    filter (not.nullContent)
@@ -91,7 +106,7 @@ instance MetaPopulations Fspc where
     , Comment "NOTE:"
     , Comment "  The order of the declarations is determined in a special way, based on Concepts."
     ]
-  ++[Comment ("  "++show i++") "++name dcl++show (sign dcl)) | (i,dcl) <- (declOrder.allDecls)       fSpec]
+  ++[Comment ("  "++show i++") "++"Pop "++(show.name) dcl++" "++(show.name.source) dcl++" "++(show.name.target) dcl) | (i,dcl) <- (declOrder.allDecls)       fSpec]
   ++[ Pop "ctxnm"   "Context" "Conid"
            [(uri fSpec,name fSpec)]
     ]
@@ -119,6 +134,7 @@ instance MetaPopulations Fspc where
         conceptOrder = ["Pattern"
                        ,"Rule"
                        ,"Declaration"
+                       ,"RelPopu"
                        ,"A_Concept"
                        ,"Concept"
                        ]
@@ -189,15 +205,28 @@ instance MetaPopulations Declaration where
              [(uri dcl, unwords ["PRAGMA",show (decprL dcl),show (decprM dcl),show (decprR dcl)])]
       , Pop "decprps" "Declaration" "PropertyRule"
              [(uri dcl, uri rul) | rul <- filter ofDecl (allRules fSpec)]
- --TODO HIER GEBLEVEN. (HJO, 20130728)
- 
-      , Pop "decnm"    "Declaration" "Conid"
-             [(uri dcl, name dcl)]
-      , Pop "decsgn"   "Declaration" "Sign"
+      , Pop "decpopu" "Declaration" "RelPopu"
+             [(uri dcl,mkUriRelPopu dcl CurrPop)] 
+      , Pop "inipopu" "Declaration" "RelPopu"
+             [(uri dcl,mkUriRelPopu dcl InitPop)] 
+      , Pop "decsgn" "Declaration" "Sign"
              [(uri dcl,uri (decsgn dcl))]
-      ] ++ metaPops flags fSpec (decsgn dcl) ++
-      [ Pop "decprps"  "Declaration" "Prop"
-             [(uri dcl,show x)] | x <- decprps dcl] 
+      , Pop "decprL" "Declaration" "String"
+             [(uri dcl,decprL dcl)]
+      , Pop "decprM" "Declaration" "String"
+             [(uri dcl,decprM dcl)]
+      , Pop "decprR" "Declaration" "String"
+             [(uri dcl,decprR dcl)]
+      , Pop "decnm" "Declaration" "Varid"
+             [(uri dcl, name dcl)]
+ --TODO HIER GEBLEVEN. (HJO, 20130802)
+
+--      , Pop "rels" "ExpressionID" "Declaration"
+--      , Pop "popdcl" "RelPopu" "Declaration"
+
+
+ 
+      ] 
              
      Isn{} -> fatal 157 "Isn is not implemented yet"
      Vs{}  -> fatal 158 "Vs is not implemented yet"
