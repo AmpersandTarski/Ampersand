@@ -98,12 +98,12 @@ domOrCod Src = dom
 domOrCod Tgt = cod
 -- | mSpecific, mGeneric are shorthands for creating links in the type graph. mSpecific is used in unions, whereas mGeneric is used in intersections.
 {-
-mSpecific doet twee dingen:
-1) probeert een Type te geven aan het laatste argument, e.
-2) genereert een foutmelding als 1) mislukt.
-   De markering BTUnion (dan wel BTIntersect) betekent dat er getest moet worden (in TypePropagation.adl) of het UNION-type bestaat.
-   De feitelijke test wordt uitgevoerd in checkBetweens (in TypePropagation.adl)
-mSpecific' gebruik je wanneer je in de aanroep niet weet of je de source of target bedoelt, bijv. "intersection arising inside r;s" 
+mSpecific does two things:
+1) it tries to give a Type to its last argument, e.
+2) it generates type message if 1) fails.
+   The label BTUnion (dan wel BTIntersect) means that the checker must test (in TypePropagation.adl) whether the UNION-type (resp. INTERSECT-type) exists.
+   The actual test is done in checkBetweens (in TypePropagation.adl)
+mSpecific' is used when the intermediate type cannot be assigned to the source or target of e. For example inside r;s. In that case you get  TypInCps e as an intermediate type.
 -}
 mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
 mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
@@ -114,7 +114,7 @@ mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<
 mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
-existsSpecific = existsGS BTIntersection
+existsSpecific a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
 existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
@@ -239,7 +239,8 @@ instance Expr P_IdentDef where
  uType _ k
   = let x=Pid (ix_pos k) (ix_cpt k) in
     uType x x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj
+    foldr (.+.) nothing [ uType obj obj .+.
+                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETIdent (obj_ctx obj)) (TypInObjDef obj)
                         | P_IdentExp obj <- ix_ats k
                         ]
 
@@ -248,10 +249,11 @@ instance Expr P_ViewDef where
  uType _ v
   = let x=Pid (vd_pos v) (vd_cpt v) in
     uType x x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj
+    foldr (.+.) nothing [ uType obj obj .+.
+                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETView (obj_ctx obj)) (TypInObjDef obj)
                         | P_ViewExp obj <- vd_ats v
                         ]
- 
+
 -- TODO: continue adding errors until you reach instance Expr Term
 instance Expr P_Interface where
  uType _ ifc
@@ -264,7 +266,8 @@ instance Expr P_ObjectDef where
   = let x=obj_ctx o in
     uType x x .+. 
     foldr (.+.) nothing [ uType obj obj .+.
-                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj)
+                          (Map.empty, [Between (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (cod x) (dom (obj_ctx obj)) BTEqual])
+                       -- existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc

@@ -175,6 +175,8 @@ improveBindings typByTyp eqtyps (oldMap,st')
 
 -- find out which bindings can be determined.
 -- candidate bindings are given in the first argument (inp), where the triple (from,to,Type) is used to bind "from" to "to"
+-- example: from is Term I and to is Sign  [B*B]
+-- example: from is Term Prel r  and to is Declaration r::[A*B]
 -- (this results in a map of possible bindings)
 -- Note that it is possible that an element of type "from" is not in the final map (hence totality of the resulting map is not guaranteed)
 makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
@@ -182,17 +184,22 @@ makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
                  -> Map Type [Type] -- reflexive transitive graph with inferred types
                  -> [[Type]] -- classes of types that - according to Between-like bindings - should be of equal types
                  -> Map from [to] -- resulting bindings
+-- inp is a map of possible bindings. E.g.  (src I, [(I,Sign [A*A], pop A), (I, Sign [B*B], pop B)])
+-- trnRel is the type graph, which has been closed wrt transitivity and reflexivity.
+-- eqTyps contains classes of Types. If between A B holds, A and B are put in the same class.
 makeDecisions inp trnRel eqtyps
  = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
                                                 | eqs <- eqtyps
                                                 , let d = (getDecision eqs)
                                                 ]
  where inpTrnRel = composeMaps trnRel inp
+     -- typsFull is the largest conceivable type graph, i.e. all froms are bound to all tos
        typsFull = Map.unionWith mrgUnion trnRel
                     (Map.map (getConcsFromTriples) inpTrnRel)
        getConcsFromTriples [] = []
        getConcsFromTriples ((_,_,x):xs) = mrgUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
        trnRel' = Map.map (filter isConc) trnRel
+       trnRelFlip = Map.map (filter isConc) (reverseMap trnRel)
        isConc (TypExpr (Pid _ _) _) = True
        isConc _ = False
        f :: Type -> [Type]
