@@ -17,16 +17,16 @@ fatal = fatalMsg "Input.ADL1.CtxError"
 type ParseError = Message Token
 data TypErrTyp = TETUnion Term | TETIsc Term | TETEq Term
                | TETPairView P_PairViewSegment
-               | TETObj | TETBox Term
-               | TETKey
+               | TETBox Term
+               | TETIdent Term | TETView Term
               
 instance ShowADL TypErrTyp where
   showADL (TETUnion t)    = "the union arising at "++showADL t
   showADL (TETIsc t)      = "the intersect arising at "++showADL t
   showADL (TETEq t)       = "the equality arising at "++showADL t
-  showADL (TETObj)        = "the INTERFACE" -- TODO: wordt dit gebruikt???? (SJ, 24  juli 2013)
   showADL (TETBox _)      = "BOX"
-  showADL (TETKey)        = "the IDENT"
+  showADL (TETIdent _)    = "IDENT"
+  showADL (TETView _)     = "VIEW"
   showADL (TETPairView t) = "the RULE View "++show t -- TODO: what to call this?
                
 data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]       -- ^ The list of concepts with different names, that have been proven equal.
