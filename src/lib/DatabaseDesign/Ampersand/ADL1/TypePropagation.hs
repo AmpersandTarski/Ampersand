@@ -16,6 +16,7 @@ import Data.List hiding (head)
 import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map hiding (Map)
+-- import Debug.Trace
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -188,7 +189,8 @@ makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
 -- trnRel is the type graph, which has been closed wrt transitivity and reflexivity.
 -- eqTyps contains classes of Types. If between A B holds, A and B are put in the same class.
 makeDecisions inp trnRel eqtyps
- = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
+ = foldl (Map.unionWith mrgIntersect) Map.empty [ -- trace ("\n\n\nON:  "++show eqtyps++"\nGOT: "++show d)$
+                                                  Map.filter (not . null) d
                                                 | eqs <- eqtyps
                                                 , let d = (getDecision eqs)
                                                 ]
@@ -198,10 +200,11 @@ makeDecisions inp trnRel eqtyps
                     (Map.map (getConcsFromTriples) inpTrnRel)
        getConcsFromTriples [] = []
        getConcsFromTriples ((_,_,x):xs) = mrgUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
-       trnRel' = Map.map (filter isConc) trnRel
-       trnRelFlip = Map.map (filter isConc) (reverseMap trnRel)
-       isConc (TypExpr (Pid _ _) _) = True
-       isConc _ = False
+       trnRel' = prune (Map.mapWithKey (\k v -> filter (isDisjConc k) v) trnRel)
+       prune mp = Map.mapWithKey (\k x -> k:[v | v<-x, not (v `elem` (Map.findWithDefault [] k mp2))]) mp
+         where mp2 = composeMaps mp mp
+       isDisjConc k o@(TypExpr (Pid _ _) _) = k /= o
+       isDisjConc _ _ = False
        f :: Type -> [Type]
        f x = Map.findWithDefault [] x trnRel'
        f' x = Map.findWithDefault [] x typsFull
@@ -338,8 +341,7 @@ typing st betweenTerms declsByName
          where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
 
     firstClos = setClosure (addIdentity st) "(st \\/ I)*"
-    firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
-
+    
     (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
                                      (declByTerm,firstClos)
     bindings :: Map Term P_Declaration
@@ -349,11 +351,19 @@ typing st betweenTerms declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
+    
+    {- -- WAS:
+    firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
     betweensAsMap = (Map.fromListWith mrgUnion [ (case thrd of {(BetweenType _ t) -> t;_ -> rhs}
                                                  , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs thrd) <- betweenTerms ])
-    
     eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
-                         "between types"
+                         "between types 1"
+    -}
+    betweenEqsAsMap = (Map.fromListWith mrgUnion [ (rhs
+                                                 , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs BTEqual) <- betweenTerms ])
+    eqtyps' = setClosure (symClosure betweenEqsAsMap)
+                         "between types 2"
+                         
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
     
 
