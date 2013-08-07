@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , RelConceptDef(..), P_Declaration(..)
    
-   , Term(..)
+   , Term(..) , CTerm(..)
    
    , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..), isSrc
    
@@ -53,25 +53,25 @@ where
    fatal = fatalMsg "ParseTree"
    
    data P_Context
-      = PCtx{ ctx_nm ::     String          -- ^ The name of this context
-            , ctx_pos ::    [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-            , ctx_lang ::   Maybe Lang      -- ^ The default language specified by this context, if specified at all.
+      = PCtx{ ctx_nm ::     String           -- ^ The name of this context
+            , ctx_pos ::    [Origin]         -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
+            , ctx_lang ::   Maybe Lang       -- ^ The default language specified by this context, if specified at all.
             , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-            , ctx_thms ::   [String]        -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-            , ctx_pats ::   [P_Pattern]     -- ^ The patterns defined in this context
-            , ctx_PPrcs ::  [P_Process]     -- ^ The processes as defined by the parser
-            , ctx_rs ::     [P_Rule]        -- ^ All user defined rules in this context, but outside patterns and outside processes
-            , ctx_ds ::     [P_Declaration] -- ^ The declarations defined in this context, outside the scope of patterns
-            , ctx_cs ::     [ConceptDef]    -- ^ The concept definitions defined in this context, outside the scope of patterns
-            , ctx_ks ::     [P_IdentDef]      -- ^ The identity definitions defined in this context, outside the scope of patterns
-            , ctx_vs ::     [P_ViewDef]     -- ^ The view definitions defined in this context, outside the scope of patterns
-            , ctx_gs ::     [P_Gen]         -- ^ The gen definitions defined in this context, outside the scope of patterns
-            , ctx_ifcs ::   [P_Interface]   -- ^ The interfaces defined in this context, outside the scope of patterns
-            , ctx_ps ::     [PPurpose]      -- ^ The purposes defined in this context, outside the scope of patterns
-            , ctx_pops ::   [P_Population]  -- ^ The populations defined in this context
-            , ctx_sql ::    [P_ObjectDef]   -- ^ user defined sqlplugs, taken from the Ampersand script
-            , ctx_php ::    [P_ObjectDef]   -- ^ user defined phpplugs, taken from the Ampersand script
-            , ctx_metas ::  [P_Meta]        -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+            , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+            , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
+            , ctx_PPrcs ::  [P_Process]      -- ^ The processes as defined by the parser
+            , ctx_rs ::     [P_Rule]         -- ^ All user defined rules in this context, but outside patterns and outside processes
+            , ctx_ds ::     [P_Declaration]  -- ^ The declarations defined in this context, outside the scope of patterns
+            , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
+            , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
+            , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
+            , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
+            , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context, outside the scope of patterns
+            , ctx_ps ::     [PPurpose]       -- ^ The purposes defined in this context, outside the scope of patterns
+            , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
+            , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctx_metas ::  [P_Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
             } deriving Show
 
 --   instance Show P_Context where
@@ -105,13 +105,13 @@ where
       = P_Prc { procNm :: String
               , procPos :: Origin             -- ^ the start position in the file
               , procEnd :: Origin             -- ^ the end position in the file
-              , procRules :: [P_Rule]
-              , procGens :: [P_Gen]
-              , procDcls :: [P_Declaration]
+              , procRules :: [P_Rule]         -- ^ the rules in this process
+              , procGens :: [P_Gen]           -- ^ the generalizations in this process
+              , procDcls :: [P_Declaration]   -- ^ the relation declarations in this process
               , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
               , procRRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
               , procCds :: [ConceptDef]       -- ^ The concept definitions defined in this process
-              , procIds :: [P_IdentDef]         -- ^ The identity definitions defined in this process
+              , procIds :: [P_IdentDef]       -- ^ The identity definitions defined in this process
               , procVds :: [P_ViewDef]        -- ^ The view definitions defined in this process
               , procXps :: [PPurpose]         -- ^ The purposes of elements defined in this process
               , procPop :: [P_Population]     -- ^ The populations that are local to this process
@@ -135,19 +135,19 @@ where
     origin = mPos
 
    data P_Pattern
-      = P_Pat { pt_nm :: String          -- ^ Name of this pattern
-              , pt_pos :: Origin          -- ^ the starting position in the file in which this pattern was declared.
-              , pt_end :: Origin          -- ^ the end position in the file in which this pattern was declared.
-              , pt_rls :: [P_Rule]        -- ^ The user defined rules in this pattern
-              , pt_gns :: [P_Gen]         -- ^ The generalizations defined in this pattern
-              , pt_dcs :: [P_Declaration] -- ^ The declarations declared in this pattern
+      = P_Pat { pt_nm :: String            -- ^ Name of this pattern
+              , pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
+              , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
+              , pt_rls :: [P_Rule]         -- ^ The user defined rules in this pattern
+              , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
+              , pt_dcs :: [P_Declaration]  -- ^ The declarations declared in this pattern
               , pt_rus :: [RoleRule]       -- ^ The assignment of roles to rules.
               , pt_res :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
-              , pt_cds :: [ConceptDef]    -- ^ The concept definitions defined in this pattern
-              , pt_ids :: [P_IdentDef]      -- ^ The identity definitions defined in this pattern
-              , pt_vds :: [P_ViewDef]     -- ^ The view definitions defined in this pattern
-              , pt_xps :: [PPurpose]      -- ^ The purposes of elements defined in this pattern
-              , pt_pop :: [P_Population]  -- ^ The populations that are local to this pattern
+              , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
+              , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
+              , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
+              , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
+              , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
               }   deriving (Show)       -- for debugging purposes
 
    instance Identified P_Pattern where
@@ -198,16 +198,25 @@ where
    instance Traced P_Declaration where
     origin = dec_fpos
 
+   data CTerm 
+      = Ccpt Origin String       -- ^ concept
+      | CIsc Origin CTerm CTerm  -- ^ intersection            /\      
+      | CUni Origin CTerm CTerm  -- ^ union                   \/      
+      | Cequ Origin CTerm CTerm  -- ^ equivalence             =
+      | Cimp Origin CTerm CTerm  -- ^ implication             |-
+      | CBrk Origin CTerm        -- ^ brackets are allowed.
+      deriving (Eq, Ord, Show)   -- deriving Show for debugging purposes
+      
    data Term 
       = PI Origin                              -- ^ identity element without a type
                                                --   At parse time, there may be zero or one element in the list of concepts.
                                                --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
                                                --   to know whether an eqClass represents a concept, we only look at its witness
                                                --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
-      | Pid Origin P_Concept                          -- ^ identity element restricted to a type
+      | Pid Origin P_Concept                   -- ^ identity element restricted to a type
       | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
       | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
-      | Pfull Origin P_Concept P_Concept              -- ^ the complete relation, restricted to a type.
+      | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | PTrel Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
@@ -278,22 +287,28 @@ where
             deriving Show
 
    data P_Rule  =
-      P_Ru { rr_nm :: String             -- ^ Name of this rule
-           , rr_exp :: Term       -- ^ The rule expression 
-           , rr_fps :: Origin             -- ^ Position in the Ampersand file
-           , rr_mean :: [PMeaning]         -- ^ User-specified meanings, possibly more than one, for multiple languages.
-           , rr_msg :: [P_Markup]         -- ^ User-specified violation messages, possibly more than one, for multiple languages.
-           , rr_viol :: Maybe P_PairView   -- ^ Custom presentation for violations, currently only in a single language
+      P_Cy { rr_nm ::   String            -- ^ Name of this classify rule
+           , cr_exp ::  CTerm             -- ^ The concept expression 
+           , rr_fps ::  Origin            -- ^ Position in the Ampersand file
+           , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
+           } |
+      P_Ru { rr_nm ::   String            -- ^ Name of this rule
+           , rr_exp ::  Term              -- ^ The rule expression 
+           , rr_fps ::  Origin            -- ^ Position in the Ampersand file
+           , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
+           , rr_msg ::  [P_Markup]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+           , rr_viol :: Maybe P_PairView  -- ^ Custom presentation for violations, currently only in a single language
            } deriving Show
+
    instance Traced P_Rule where
     origin = rr_fps
 
    instance Identified P_Rule where
     name = rr_nm
-    
+
    data PMeaning = PMeaning P_Markup 
             deriving Show
-            
+
    data P_Markup = 
        P_Markup  { mLang ::   Maybe Lang
                  , mFormat :: Maybe PandocFormat
