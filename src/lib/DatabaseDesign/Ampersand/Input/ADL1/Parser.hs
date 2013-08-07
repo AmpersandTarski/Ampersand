@@ -38,6 +38,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "VIEW", "TXT", "PRIMHTML"
                        , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
                        , "IMPORT", "SPEC", "ISA", "I", "V"
+                       , "CLASSIFY"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
                        , "ONE"
@@ -95,7 +96,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          CRel     <$> pRelationDef  <|>
                          CCon     <$> pConceptDef   <|>
                          CGen     <$> pGenDef       <|>
-                         CIndx    <$> pIndex       <|>
+                         CIndx    <$> pIndex        <|>
                          CView    <$> pViewDef      <|>
                          Cifc     <$> pInterface    <|>
                          CSqlPlug <$> pSqlplug      <|>
@@ -206,17 +207,19 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  }
        pProcElem :: Parser Token ProcElem
        pProcElem = PrR <$> pRuleDef      <|>
+                   PrY <$> pClassify     <|>
                    PrD <$> pRelationDef  <|>
                    PrM <$> pRoleRule     <|>
                    PrL <$> pRoleRelation <|>
                    PrC <$> pConceptDef   <|>
                    PrG <$> pGenDef       <|>
-                   PrI <$> pIndex       <|>
+                   PrI <$> pIndex        <|>
                    PrV <$> pViewDef      <|>
                    PrE <$> pPurpose      <|>
                    PrP <$> pPopulation
 
    data ProcElem = PrR P_Rule
+                 | PrY P_Rule
                  | PrD P_Declaration
                  | PrM RoleRule
                  | PrL P_RoleRelation
@@ -227,39 +230,54 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  | PrE PPurpose
                  | PrP P_Population
 
+   pClassify :: Parser Token P_Rule
+   pClassify = rebuild <$> pKey_pos "CLASSIFY"
+                       <*> optional (pADLid <* pKey ":" )
+                       <*> pClassifyRule
+                       <*> pList pMeaning                 
+                  where
+                    rebuild po mn rexp mean
+                      = P_Cy { rr_nm   = fromMaybe (rulid po) mn
+                             , cr_exp  = rexp
+                             , rr_fps  = po
+                             , rr_mean = mean
+                             }
+                    rulid (FileLoc(FilePos (_,Pos l _,_))) = "classify@line"++show l
+                    rulid _ = fatal 226 "pClassify is expecting a file location."
 
-   pRuleDef :: Parser Token P_Rule
-   pRuleDef = rebuild <$> pKey_pos "RULE"
-                      <*> optional (pADLid <* pKey ":" )
-                      <*> pRule
-                      <*> pList pMeaning                 
-                      <*> pList pMessage
-                      <*> optional pViolation
-                 where
-                   rebuild po mn rexp mean msg mViolation
-                     = P_Ru { rr_nm   = fromMaybe (rulid po) mn
-                            , rr_exp  = rexp
-                            , rr_fps  = po
-                            , rr_mean = mean
-                            , rr_msg  = msg
-                            , rr_viol = mViolation
-                            }
-                   rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
-                   rulid _ = fatal 226 "rulid is expecting a file location."
-                   pMessage :: Parser Token P_Markup
-                   pMessage = P_Markup <$ pKey "MESSAGE" 
-                                      <*> optional pLanguageRef
-                                      <*> optional pTextMarkup
-                                      <*> (pString <|> pExpl)
-                   pViolation :: Parser Token P_PairView
-                   pViolation = id <$ pKey "VIOLATION" <*> pPairView
-
-                   pPairView :: Parser Token P_PairView
-                   pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
    
-                   pPairViewSegment :: Parser Token P_PairViewSegment
-                   pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pTerm
-                                  <|> P_PairViewText <$ pKey "TXT" <*> pString
+   pRuleDef :: Parser Token P_Rule
+   pRuleDef =  rebuild <$> pKey_pos "RULE"
+                       <*> optional (pADLid <* pKey ":" )
+                       <*> pRule
+                       <*> pList pMeaning                 
+                       <*> pList pMessage
+                       <*> optional pViolation
+                  where
+                    rebuild po mn rexp mean msg mViolation
+                      = P_Ru { rr_nm   = fromMaybe (rulid po) mn
+                             , rr_exp  = rexp
+                             , rr_fps  = po
+                             , rr_mean = mean
+                             , rr_msg  = msg
+                             , rr_viol = mViolation
+                             }
+                    rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
+                    rulid _ = fatal 226 "pRuleDef is expecting a file location."
+                    pMessage :: Parser Token P_Markup
+                    pMessage = P_Markup <$ pKey "MESSAGE" 
+                                       <*> optional pLanguageRef
+                                       <*> optional pTextMarkup
+                                       <*> (pString <|> pExpl)
+                    pViolation :: Parser Token P_PairView
+                    pViolation = id <$ pKey "VIOLATION" <*> pPairView
+               
+                    pPairView :: Parser Token P_PairView
+                    pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
+               
+                    pPairViewSegment :: Parser Token P_PairViewSegment
+                    pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pTerm
+                                   <|> P_PairViewText <$ pKey "TXT" <*> pString
    
    pSrcOrTgt :: Parser Token SrcOrTgt                    
    pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"
@@ -571,6 +589,25 @@ In practice, we have it a little different.
  - We would like the user to disambiguate between "=" and "|-" by using brackets. 
 -}
 
+   pClassifyRule :: Parser Token CTerm
+   pClassifyRule  =  pCTerm <??> (fEqu  <$> pKey_pos "="  <*> pCTerm <|>
+                                  fImpl <$> pKey_pos "|-" <*> pCTerm )
+             where fEqu  orig rExp lExp = Cequ orig lExp rExp
+                   fImpl orig rExp lExp = Cimp orig lExp rExp
+
+   pCTerm :: Parser Token CTerm
+   pCTerm  = pCTrm2 <??> (f CIsc <$> pars CIsc "/\\" <|> f CUni <$> pars CUni "\\/")
+             where pars combinator operator
+                    = g <$> pKey_pos operator <*> pCTrm2 <*> optional (pars combinator operator)
+                             where g orig y Nothing  = (orig, y)
+                                   g orig y (Just (org,z)) = (orig, combinator org y z)
+                   f combinator (orig, y) x = combinator orig x y
+
+   pCTrm2 :: Parser Token CTerm
+   pCTrm2 =  cCpt <$>  pConid_val_pos                                 <|>
+             CBrk <$>  pSpec_pos '('  <*>  pCTerm  <*  pSpec ')'
+             where cCpt (c,o) = Ccpt o c
+             
 {- In theory, the expression is parsed by:
    pRule :: Parser Token (Term)
    pRule  =  fEequ <$> pTrm1  <*>  pKey_pos "="   <*>  pTerm   <|>
