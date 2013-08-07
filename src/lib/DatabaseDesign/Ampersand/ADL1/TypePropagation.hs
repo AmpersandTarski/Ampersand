@@ -352,17 +352,18 @@ typing st betweenTerms declsByName
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
     
-    {- -- WAS:
     firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
     betweensAsMap = (Map.fromListWith mrgUnion [ (case thrd of {(BetweenType _ t) -> t;_ -> rhs}
                                                  , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs thrd) <- betweenTerms ])
     eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
                          "between types 1"
-    -}
+    
+    {- -- The thing that gave a mess @ Sentinel..
     betweenEqsAsMap = (Map.fromListWith mrgUnion [ (rhs
                                                  , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs BTEqual) <- betweenTerms ])
     eqtyps' = setClosure (symClosure betweenEqsAsMap)
                          "between types 2"
+    -}
                          
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
     
