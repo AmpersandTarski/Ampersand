@@ -106,11 +106,11 @@ mSpecific does two things:
 mSpecific' is used when the intermediate type cannot be assigned to the source or target of e. For example inside r;s. In that case you get  TypInCps e as an intermediate type.
 -}
 mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
-mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
-mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
+mGeneric   ta a tb b te e = existsGS BTUnion        (domOrCod ta a) (domOrCod tb b) (tCxe ta a tb b TETUnion e) (domOrCod te e)
+mSpecific  ta a tb b te e = existsGS BTIntersection (domOrCod ta a) (domOrCod tb b) (tCxe ta a tb b TETIsc   e) (domOrCod te e)
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
-mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypInCps  e) .+. (domOrCod tb b) .<. (TypInCps  e) .+. between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypInCps e)))
-mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<. (domOrCod tb b) .+. between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypInCps e)))
+mGeneric'   ta a tb b e = existsGS BTUnion        (domOrCod ta a) (domOrCod tb b) (tCxe ta a tb b TETUnion e) (TypInCps e)
+mSpecific'  ta a tb b e = existsGS BTIntersection (domOrCod ta a) (domOrCod tb b) (tCxe ta a tb b TETIsc   e) (TypInCps e)
 mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
