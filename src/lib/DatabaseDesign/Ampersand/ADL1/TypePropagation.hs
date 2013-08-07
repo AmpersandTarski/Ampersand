@@ -189,8 +189,7 @@ makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
 -- trnRel is the type graph, which has been closed wrt transitivity and reflexivity.
 -- eqTyps contains classes of Types. If between A B holds, A and B are put in the same class.
 makeDecisions inp trnRel eqtyps
- = foldl (Map.unionWith mrgIntersect) Map.empty [ -- trace ("\n\n\nON:  "++show eqtyps++"\nGOT: "++show d)$
-                                                  Map.filter (not . null) d
+ = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
                                                 | eqs <- eqtyps
                                                 , let d = (getDecision eqs)
                                                 ]
@@ -341,7 +340,8 @@ typing st betweenTerms declsByName
          where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
 
     firstClos = setClosure (addIdentity st) "(st \\/ I)*"
-    
+    firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
+
     (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
                                      (declByTerm,firstClos)
     bindings :: Map Term P_Declaration
@@ -351,20 +351,11 @@ typing st betweenTerms declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    
-    firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
     betweensAsMap = (Map.fromListWith mrgUnion [ (case thrd of {(BetweenType _ t) -> t;_ -> rhs}
                                                  , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs thrd) <- betweenTerms ])
-    eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
-                         "between types 1"
     
-    {- -- The thing that gave a mess @ Sentinel..
-    betweenEqsAsMap = (Map.fromListWith mrgUnion [ (rhs
-                                                 , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs BTEqual) <- betweenTerms ])
-    eqtyps' = setClosure (symClosure betweenEqsAsMap)
-                         "between types 2"
-    -}
-                         
+    eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
+                         "between types"
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
     
 
