@@ -1,5 +1,4 @@
 <?php
-if ( !defined('__DIR__') ) define('__DIR__', dirname(__FILE__)); //is.cs.ou.nl runs php 5.2.6 where __DIR__ is not defined
 require __DIR__.'/../dbSettings.php';
 // We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
 // Otherwise, when DatabaseUtils is included by Interface.php, we would need 'dbSettings.php', but when included
@@ -22,33 +21,33 @@ function initSession() {
 	// when using $_SESSION, we get a nonsense warning if not declared global, however here
 	// we only do isset, so no need for global
   global $conceptTableInfo;
-  if (!isset($conceptTableInfo['SESSION'])) 
-  	$sessionAtom = "_SESSION"; // doesn't matter what we put here, since no substitution will take place
- 	else // only execute session code if concept SESSION is used by adl source
-  	if (!isset($_SESSION)) { // if the session has not been initialized yet
+  
+  if (isset($conceptTableInfo['SESSION']) && !isset($_SESSION)) {
+  	// only execute session code when concept SESSION is used by adl script
     
-	  	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
-	    //       This way, errors during initSession do not prevent the reset-database link from being visible.
-	    DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
-	    if ($error) return;
-	    
-	    session_start();
-	    cleanupExpiredSessions();
-	    $sessionAtom = isset($_SESSION['sessionAtom']) ? $_SESSION['sessionAtom'] : null;
-	    
-	    // create a new session if $sessionAtom is not set (browser started a new session) 
-	    // or $sessionAtom is not in SESSIONS (previous session expired)
-	    if (!$sessionAtom || !isAtomInConcept($sessionAtom, 'SESSION')) {
-	      $sessionAtom = mkUniqueAtomByTime('SESSION');
-	      $_SESSION['sessionAtom']  = $sessionAtom;
-	      addAtomToConcept($sessionAtom, 'SESSION');
-	    }
-	    
-	    $timeInSeconds = time();
-	    DB_doquer("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
-	              "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
-	    //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
+  	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+    //       This way, errors during initSession do not prevent the reset-database link from being visible.
+    DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
+    if ($error) return;
+    
+    session_start();
+    cleanupExpiredSessions();
+    
+    $sessionAtom = $_SESSION['sessionAtom'];
+    
+    // create a new session if $sessionAtom is not set (browser started a new session) 
+    // or $sessionAtom is not in SESSIONS (previous session expired)
+    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
+      $sessionAtom = mkUniqueAtomByTime('SESSION');
+      $_SESSION['sessionAtom']  = $sessionAtom;
+      addAtomToConcept($sessionAtom, 'SESSION');
     }
+    
+    $timeInSeconds = time();
+    DB_doquer("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
+              "ON DUPLICATE KEY UPDATE `lastAccess` = '$timeInSeconds'");
+    //echo "SessionAtom is $sessionAtom access is $timeInSeconds";
+  }
 }
 
 function resetSession() {
@@ -86,13 +85,13 @@ function DB_doquer($quer) {
 }
 
 function DB_doquerErr($quer, &$error) {
-  global $sessionAtom;
-	global $dbName;
+  global $_SESSION; // when using $_SESSION, we get a nonsense warning if not declared global  
+  global $dbName;
   global $DB_link;
   global $DB_errs;
   
   //Replace the special atom value _SESSION by the current sessionAtom
-  $quer =  str_replace("_SESSION", $sessionAtom, $quer);
+  $quer =  str_replace("_SESSION", $_SESSION['sessionAtom'], $quer);
   
   $DB_slct = mysql_select_db($dbName, $DB_link);
     
@@ -117,17 +116,10 @@ function getSpecializations($concept) {
 }
 
 function getKey($concept) {
-  global $allViews;
+  global $allKeys;
 
-  //first try to get an exact match  
-  foreach ($allViews as $key)
-    if ($concept == $key['concept'])
-      return $key;
-  
-  //else the first specialization you can find, which is arbitrary. 
-  //Is there a way to get the most specialized existing key? In other words, is the ordering of concepts available in PHP?
-  foreach ($allViews as $key)
-    if (in_array($concept, getSpecializations($key['concept'])))
+  foreach ($allKeys as $key)
+    if ($concept == $key['concept'] || in_array($concept, getSpecializations($key['concept'])))
       return $key;
 
   return null;

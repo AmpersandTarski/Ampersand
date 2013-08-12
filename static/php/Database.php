@@ -2,9 +2,9 @@
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
-if ( !defined('__DIR__') ) define('__DIR__', dirname(__FILE__)); //is.cs.ou.nl runs php 5.2.6 where __DIR__ is not defined
 require __DIR__.'/../Generics.php'; 
 require_once __DIR__.'/DatabaseUtils.php';
+require 'loadplugins.php';
 
 initSession();
 
@@ -213,7 +213,7 @@ function checkInvariantRules() {
 function checkRules($ruleNames) {
   global $allRulesSql;
   global $selectedRoleNr;
-  
+// Hier staan de signals in // Sander
   $allRulesHold = true;
   $error = '';
 
@@ -224,6 +224,7 @@ function checkRules($ruleNames) {
     
     if (count($rows) > 0) {
       // if the rule has an associated message, we show that instead of the name and the meaning
+
       $message = $ruleSql['message'] ? $ruleSql['message'] 
                                      : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
       emitAmpersandErr($message);
@@ -232,10 +233,37 @@ function checkRules($ruleNames) {
       
       $pairView = $ruleSql['pairView'];
       foreach($rows as $violation)
-        emitAmpersandErr('- '.showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs,
-                                       $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs,
-                                       $pairView));
+      {
+        $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs,
+                        $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
+	$theCleanMessage = strip_tags($theMessage);
+
+	// Message format is '{EX} ChangeColour; Elementname; "Colour"
+	// Check for the {EX} tag to see if we need to run the eXecution Engine:
+	if (strpos($theCleanMessage,'{EX}') === 0)
+	{
+		// Strip EX tag and split variables:
+		$theCleanMessage=substr($theCleanMessage,4);
+		$params = explode(';',$theCleanMessage);
+		$cleanparams = array();
+		foreach ($params as $param) $cleanparams[] = trim($param);
+		$params = $cleanparams;
+		unset($cleanparams);
+		$func = array_shift($params); // First parameter is function name
+
+		if (function_exists($func))
+		{
+			emitAmpersandErr("Execution Engine will fix this: ".$theMessage);
+			call_user_func_array($func,$params);
+		}else{
+			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
+		}
+	} else {
+        	emitAmpersandErr('- ' . $theMessage);
+	}
+      }
       emitLog('Rule '.$ruleSql['name'].' is broken');
+
       $allRulesHold = false;
     }
     else
