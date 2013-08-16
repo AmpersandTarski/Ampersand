@@ -107,7 +107,22 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   global $tableColumnInfo;
   
   emitLog("editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
-  
+/* There seems to be a bug in 'editUpdate', nl. when a $relation occurs multiple times as KEY in the relationTableInfo (which we have seen happening when you overload an (Ampersand) relation (name). The following code may be used to find the right entry in the relationTableInfo, but that is not used by 'editUpdate'.
+  // check if $relation appears in $relationTableInfo
+  if (array_key_exists($relation, $relationTableInfo))
+  { foreach($relationTableInfo as $key => $arr)
+  	if($key == $relation)
+  	{ if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+		  { $table = $arr['table'];
+        $srcCol = $arr['srcCol'];
+			  $tgtCol = $arr['tgtCol'];
+			  echo "<br>[FOUND: table=$table, srcCol=$srcCol, tgtCol=$tgtCol]";
+	    }
+	  }
+  } else
+  { echo "ERROR: Relation $relation does not exist (in table info)";
+  }
+*/
   $table = $relationTableInfo[$rel]['table'];
   $srcCol = $relationTableInfo[$rel]['srcCol'];
   $tgtCol = $relationTableInfo[$rel]['tgtCol'];
@@ -210,21 +225,20 @@ function checkInvariantRules() {
   return checkRules($invariantRuleNames);
 }
 
-function checkRules($ruleNames) {
-  global $allRulesSql;
+function checkRules($ruleNames)
+{ global $allRulesSql;
   global $selectedRoleNr;
 // Hier staan de signals in // Sander
   $allRulesHold = true;
   $error = '';
 
-  foreach ($ruleNames as $ruleName) {
-    $ruleSql = $allRulesSql[$ruleName];
+  foreach ($ruleNames as $ruleName)
+  { $ruleSql = $allRulesSql[$ruleName];
     $rows = DB_doquerErr($ruleSql['violationsSQL'], $error);
     if ($error) error("While evaluating rule '$ruleName': ".$error);
     
-    if (count($rows) > 0) {
-      // if the rule has an associated message, we show that instead of the name and the meaning
-
+    if (count($rows) > 0)
+    { // if the rule has an associated message, we show that instead of the name and the meaning
       $message = $ruleSql['message'] ? $ruleSql['message'] 
                                      : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
       emitAmpersandErr($message);
@@ -233,42 +247,61 @@ function checkRules($ruleNames) {
       
       $pairView = $ruleSql['pairView'];
       foreach($rows as $violation)
-      {
-        $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs,
-                        $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
-	$theCleanMessage = strip_tags($theMessage);
+      { if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
+        { $theMessage = execPair($violation['src'], $ruleSql['srcConcept'],
+                                 $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
+  	      $theCleanMessage = strip_tags($theMessage);
+      		$theCleanMessage=substr($theCleanMessage,4); // Strip {EX} tag
+      		$params = explode(';',$theCleanMessage); // Split off variables
+      		$cleanparams = array();
+      		foreach ($params as $param) $cleanparams[] = trim($param);
+      		$params = $cleanparams;
+      		unset($cleanparams);
+      		$func = array_shift($params); // First parameter is function name
 
-	// Message format is '{EX} ChangeColour; Elementname; "Colour"
-	// Check for the {EX} tag to see if we need to run the eXecution Engine:
-	if (strpos($theCleanMessage,'{EX}') === 0)
-	{
-		// Strip EX tag and split variables:
-		$theCleanMessage=substr($theCleanMessage,4);
-		$params = explode(';',$theCleanMessage);
-		$cleanparams = array();
-		foreach ($params as $param) $cleanparams[] = trim($param);
-		$params = $cleanparams;
-		unset($cleanparams);
-		$func = array_shift($params); // First parameter is function name
+      		if (function_exists($func))
+      		{ emitAmpersandErr("FIXEDEXEC: ".$theMessage);
+      			call_user_func_array($func,$params);
+      		}else{
+      			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
+      		}
 
-		if (function_exists($func))
-		{
-			emitAmpersandErr("Execution Engine will fix this: ".$theMessage);
-			call_user_func_array($func,$params);
-		}else{
-			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
-		}
-	} else {
-        	emitAmpersandErr('- ' . $theMessage);
-	}
+        } else //ouwe code incl. die van Sander, moet straks worden opgeruimd
+        { $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs,
+                          $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
+  
+  	      $theCleanMessage = strip_tags($theMessage);
+  
+        	// Message format is '{EX} ChangeColour; Elementname; "Colour"
+        	// Check for the {EX} tag to see if we need to run the eXecution Engine:
+        	if (strpos($theCleanMessage,'{EX}') === 0)
+        	{
+        		// Strip EX tag and split variables:
+        		$theCleanMessage=substr($theCleanMessage,4);
+        		$params = explode(';',$theCleanMessage);
+        		$cleanparams = array();
+        		foreach ($params as $param) $cleanparams[] = trim($param);
+        		$params = $cleanparams;
+        		unset($cleanparams);
+        		$func = array_shift($params); // First parameter is function name
+        
+        		if (function_exists($func))
+        		{ emitAmpersandErr("Execution Engine will fix this: ".$theMessage);
+        			call_user_func_array($func,$params);
+        		}else{
+        			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
+        		}
+        	} else
+        	{	emitAmpersandErr('- ' . $theMessage);
+        	}
+  	    }
       }
       emitLog('Rule '.$ruleSql['name'].' is broken');
-
       $allRulesHold = false;
+    } else
+    { emitLog('Rule '.$ruleSql['name'].' holds');
     }
-    else
-      emitLog('Rule '.$ruleSql['name'].' holds');
-  } 
+  }
   return $allRulesHold;
 }
 

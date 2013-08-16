@@ -1,11 +1,10 @@
 <?
 define('DEBUGMSG', true);
 
-function ChangeColour($id, $colour)
-{
-	echo "XX SET COLOUR OF $id TO $colour";
-}
-
+// These are some examples of what you can do with execution-engine plugins
+// This was the first attempt of execution-engine plugins.
+// Note that they 'know' about the internals of the database.
+// Look at the generic plugins file for 'second generationn' stuff.
 
 function SetComputerStatus($id, $status)
 {

@@ -187,6 +187,21 @@ function showPair($srcAtom, $srcConcept, $srcNrOfIfcs, $tgtAtom, $tgtConcept, $t
   }
 }
 
+function execPair($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView)
+{ $pairStrs = array();
+  foreach ($pairView as $segment)
+  { if ($segment['segmentType'] == 'Text')
+    { $pairStrs[] = $segment['Text'];
+    } else
+    { $atom    = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
+      $concept = $segment['srcOrTgt'] == 'Src' ? $srcConcept : $tgtConcept;
+      $r = getCoDomainAtoms($atom, $segment['expSQL']); // SRC of TGT kunnen door een expressie gevolgd worden
+      $pairStrs[] = $r[0]; // Even er van uit gaan dat we maar 1 atoom kunnen behandelen...
+    }
+  }
+  return implode($pairStrs);
+}
+
 // return an atom "Concept_<n>" that is not in $existingAtoms (make sure that $existingAtoms covers all concept tables)
 function mkUniqueAtom($existingAtoms, $concept) {
   $generatedAtomNrs = array();
