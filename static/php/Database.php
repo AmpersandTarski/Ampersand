@@ -33,12 +33,13 @@ if (isset($_REQUEST['resetSession']) ) {
 
   processCommands(); // update database according to edit commands
 
-  echo '<div id="InvariantRuleResults">';
-  $invariantRulesHold = checkInvariantRules();
-  echo '</div>';
-  
+// Process processRules first, because the ExecEngine may execute code while processing this stuff.
   echo '<div id="ProcessRuleResults">';
   checkRoleRules($selectedRoleNr);
+  echo '</div>';
+  
+  echo '<div id="InvariantRuleResults">';
+  $invariantRulesHold = checkInvariantRules();
   echo '</div>';
   
   if ($invariantRulesHold) {
