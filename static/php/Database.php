@@ -204,12 +204,23 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 
 // NOTE: log messages emited here are only shown on a commit, not during normal navigation.
 function checkRoleRules($roleNr) {
-  global $allRoles;  
+  global $allRoles;
   if ($roleNr == -1) // if no role is selected, evaluate the rules for all roles
-    for ($r = 0; $r < count($allRoles); $r++)
+  { for ($r = 0; $r < count($allRoles); $r++)
       checkRoleRulesPerRole($r);  
+  }
   else
+  { $role = $allRoles[$roleNr];
     checkRoleRulesPerRole($roleNr);
+  }
+//See that the ExecEngine gets the opportunity to do some computations.
+//Note that this requires that in ADL, every VIOLATION that starts with {EX} must be assigned to the role ExecEngine!!!
+  for ($r = 0; $r < count($allRoles); $r++)
+  { $role = $allRoles[$r];
+    if ($role['name'] == 'ExecEngine') 
+      for ($i = 0; $i < 3; $i++) // limit the effort in case there are loops.
+         checkRules($role['ruleNames']);
+  }
 }
 
 // Precondition: $roleNr >= 0
@@ -261,7 +272,7 @@ function checkRules($ruleNames)
       		$func = array_shift($params); // First parameter is function name
 
       		if (function_exists($func))
-      		{ emitAmpersandErr("FIXEDEXEC: ".$theMessage);
+      		{ emitAmpersandErr($theMessage);
       			call_user_func_array($func,$params);
       		}else{
       			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");

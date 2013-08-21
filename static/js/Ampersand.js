@@ -82,13 +82,11 @@ function cancelEditing() {
     clearLogItems($('#PhpLog'));
     
     $('#AmpersandRoot').attr('editing','false');
-    $('button.SaveButton').text('Save');
     $('#AmpersandRoot').attr('style',''); // dummy update to have Safari refresh css (it doesn't recognize non-standard attribute changes)
   }
 }
 
 function commitEditing() {
-  log('1');
   $editedAtom = getEnclosingAtom( $('#atomEditor') );
   if ($editedAtom.length > 0) // autocomplete is extremely slow in its cancel and somehow blurs after the cancel event is handled,
     stopAtomEditing($editedAtom); // so we check whether it was active and stop any editing here.
@@ -102,7 +100,6 @@ function commitEditing() {
     return;
   }
   
-  $('button.SaveButton').text('Saving...');
   var dbCommands = computeDbCommands();
   window.onbeforeunload = null; // disable the navigation warning (it is set in computeDbCommands)
 
@@ -119,7 +116,6 @@ function sendCommands(dbCommands) {
   $.post('php/Database.php',  
   { commands: JSON.stringify(dbCommands), role: getSelectedRole() },
   function(data) {
-    $('button.SaveButton').text('Save');
     $results = $(data);
     $errors = $(data).find('.Error');
     $logMessages = $(data).find('.LogMsg');
@@ -209,7 +205,7 @@ function preventNameClashes(dbCommands) {
 	  safeDbCommands.push(safeDbCommand);
   }
 
-	return safeDbCommands.concat(renameCommands);
+	return Array.concat(safeDbCommands, renameCommands);
 }
 
 function isEditSourceTuple(relation, isFlipped, parentAtom, childAtom, dbCommands) {
@@ -612,7 +608,8 @@ function setAtomNavigationHandler($elt, atom, concept) {
   
   if (typeof(interfaces) != 'undefined' && interfaces.length > 0) { // if there are no interfaces for this concept, don't change the pointer and don't insert a click event
                                                                      // undefined means no interfaces are defined, length == 0 means no interfaces are visible for selected role
-    $elt.click(function (event) {
+  //$elt.click(function (event) {
+    $elt.css({"text-decoration":"underline","font-weight":"bold"}).click(function (event) {
       if (interfaces.length == 1)
         navigateTo(interfaces[0], atom);
       else
