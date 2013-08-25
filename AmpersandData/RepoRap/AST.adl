@@ -1,4 +1,4 @@
-CONTEXT RAP
+﻿CONTEXT RAP
 
 PATTERN Contexts
 IDENT Context: Context(ctxnm)
@@ -33,7 +33,7 @@ ENDPATTERN
 PATTERN Gens
 IDENT Gen: Gen( genspc, gengen )
 VIEW Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
-RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I[Gen]
 MEANING IN ENGLISH "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
 gengen :: Gen->PlainConcept
@@ -105,15 +105,17 @@ right::Pair->Atom
 MEANING IN ENGLISH "The target of a relationship."
 
 
-IDENT Atom: Atom( atomvalue)
-VIEW Atom: Atom( atomvalue , TXT " :: ", popas~)
+IDENT Atom: Atom( atomvalue,root)
+VIEW Atom: Atom( atomvalue , TXT " :: ", root)
 atomvalue::Atom->AtomValue
 MEANING IN ENGLISH "The value of an atom."
 --RULE "entity integrity concept": atomvalue;atomvalue~ /\ popas~;order;order~;popas |- I
 --MEANING IN ENGLISH "An atom of a concept has a unique value within the class of that concept."
 --MESSAGE "Every atom of a concept is unique, or, no two atoms in the population of a concept have the same name. Addition of a duplicate atom is not permitted. It is a violation of the <b>Entity integrity</b> rule for this concept. Please refer to book <i>Rule Based Design</i>, page 43 and 52, <i>entity integrity</i>. "
 --VIOLATION (TXT "An atom with name ", SRC I, TXT " already exists." )
-
+root::Atom->A_Concept
+MEANING IN ENGLISH "The root concept of an atom."
+-- an atom representing `Piet` as an instance of the concept `Student`, could have `Person` as root concept of that atom. (assuming Student ISA Person) 
 ENDPATTERN
 
 PATTERN Signs
