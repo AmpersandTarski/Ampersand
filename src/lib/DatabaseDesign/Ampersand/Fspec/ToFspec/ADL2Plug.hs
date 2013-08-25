@@ -340,7 +340,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
     kernels :: [[Expression]]
     kernels = case [c | c@PlainConcept{} <- concs allDcls] of
                 [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
-                cs -> let (_,islands,_,_,_) = cptgE ((head 309) cs) in
+                cs -> let (_,islands,_,_,_) = genE cs in
                       [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
               
 -- attRels contains all relations that will be attribute of a kernel.

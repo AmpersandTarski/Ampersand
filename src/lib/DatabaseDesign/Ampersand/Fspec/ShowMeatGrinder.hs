@@ -83,15 +83,17 @@ data RelPopuType = InitPop | CurrPop deriving Show
 mkUriRelPopu :: Declaration -> RelPopuType  -> String
 mkUriRelPopu d t = show t++"Of"++uri d
 
-data Atom = Atom { atmCps :: [A_Concept] --de concepten van het atoom ( = popas~ )
+data Atom = Atom { atmRoot :: A_Concept -- The root concept of the atom. (this implies that there can only be a single root for
                  , atmVal :: String
-                 }
+                 } deriving Eq
 instance AdlId Atom where
- uri a="Atm"++atmVal a++"Of"++(concat.sort.map uri.atmCps) a  
+ uri a="Atm"++atmVal a++"Of"++(uri.atmRoot) a  
 
 
-mkAtom :: Fspc -> String -> A_Concept -> Atom
-mkAtom fSpec value cpt = fatal 94 "--TODO -- Nog verder uit te werken"
+mkAtom :: A_Concept -> String -> Atom
+mkAtom cpt value = Atom { atmRoot = root cpt
+                        , atmVal  = value
+                        }
 
 class MetaPopulations a where
  metaPops :: Options -> Fspc -> a -> [Pop]
@@ -122,8 +124,18 @@ instance MetaPopulations Fspc where
   ++   concat [metaPops flags fSpec gen | gen <- vgens          fSpec]
   ++[ Comment " ", Comment $ "*** Declarations: (count="++(show.length.allDecls) fSpec++") ***"]
   ++   concat [metaPops flags fSpec dcl | (_,dcl) <- (declOrder.allDecls)       fSpec]
+  ++[ Comment " ", Comment $ "*** Atoms: ***"]
+  ++   concat [metaPops flags fSpec atm | atm <- allAtoms]
   )
    where
+    allAtoms :: [Atom]
+    allAtoms = nub (concatMap atoms (userDefPops fSpec))
+      where 
+        atoms :: UserDefPop -> [Atom]
+        atoms udp = case udp of
+          PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).fst) (popps udp) 
+                      ++ map (mkAtom ((target.popdcl) udp).snd) (popps udp) 
+          PCptPopu{} ->  map (mkAtom (        popcpt  udp)    ) (popas udp)
     nullContent :: Pop -> Bool
     nullContent (Pop _ _ _ []) = True
     nullContent _ = False
@@ -235,6 +247,14 @@ instance MetaPopulations Declaration where
       ofDecl rul = case rrdcl rul of
                      Nothing -> False
                      Just (_,d) -> d == dcl   
+instance MetaPopulations Atom where
+ metaPops _ _ atm = 
+   [ Pop "root"  "Atom" "Concept"
+          [(uri atm,uri(atmRoot atm))]
+   , Pop "atomvalue"  "Atom" "AtomValue"
+          [(uri atm,atmVal atm)]
+   ]
+   
 instance MetaPopulations A_Gen where
  metaPops _ _ gen = 
    [ Pop "gengen"  "Gen" "Concept"

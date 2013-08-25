@@ -25,7 +25,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Purpose(..)
  , ExplObj(..)
  , Expression(..), iExpr, vExpr
- , A_Concept(..)
+ , A_Concept(..), root
  , A_Markup(..)
  , AMeaning(..)
  , RoleRelation(..)
@@ -544,7 +544,12 @@ data A_Concept
          , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
          }  -- ^PlainConcept nm gE cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
-
+root :: A_Concept -> A_Concept
+root ONE = fatal 548 "ONE has no root concept"
+root cpt = let (_,islands,_,_,_) = cptgE cpt in
+           case [ head island | island <- islands, cpt `elem` island ] of
+             [r] -> r
+             roots -> fatal 552 "root should be exactly one A_Concept"
 
 instance Eq A_Concept where
    PlainConcept{cptnm=a} == PlainConcept{cptnm=b} = a==b
