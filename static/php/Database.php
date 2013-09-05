@@ -6,6 +6,9 @@ require __DIR__.'/../Generics.php';
 require_once __DIR__.'/DatabaseUtils.php';
 require 'loadplugins.php';
 
+// defines how the MYSQL_PROCEDURE_ROLE is named. The rules assigned to this role are assumed to be 'stored procedures' and hence are handled by runAllProcedures()
+define("MYSQL_PROCEDURE_ROLE", "DATABASE");
+
 initSession();
 
 // This module handles four requests: 
@@ -33,10 +36,13 @@ if (isset($_REQUEST['resetSession']) ) {
 
   processCommands(); // update database according to edit commands
 
-// Process processRules first, because the ExecEngine may execute code while processing this stuff.
+  // Process processRules first, because the ExecEngine may execute code while processing this stuff.
   echo '<div id="ProcessRuleResults">';
   checkRoleRules($selectedRoleNr);
   echo '</div>';
+  
+  // Run all stored procedures in the database
+  runAllProcedures();
   
   echo '<div id="InvariantRuleResults">';
   $invariantRulesHold = checkInvariantRules();
@@ -205,22 +211,33 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
 // NOTE: log messages emited here are only shown on a commit, not during normal navigation.
 function checkRoleRules($roleNr) {
   global $allRoles;
+  $allRoleRules = array();
+  
   if ($roleNr == -1) // if no role is selected, evaluate the rules for all roles
-  { for ($r = 0; $r < count($allRoles); $r++)
-      checkRoleRulesPerRole($r);  
-  }
-  else
-  { $role = $allRoles[$roleNr];
+  {
+    for ($r = 0; $r < count($allRoles); $r++)
+	{
+      // checkRoleRulesPerRole($r); // old function
+	  
+	  // filter rules for role MYSQL_PROCEDURE_ROLE, these will be handled by runAllProcedures()
+	  if($allRoles[$r]['name'] != MYSQL_PROCEDURE_ROLE)
+	  {
+		// Check every role only one time. 
+		$allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
+	  }
+	}
+	
+	$allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
+	checkRules($allRoleRules); // check every rule
+  }else
     checkRoleRulesPerRole($roleNr);
-  }
-//See that the ExecEngine gets the opportunity to do some computations.
-//Note that this requires that in ADL, every VIOLATION that starts with {EX} must be assigned to the role ExecEngine!!!
-  for ($r = 0; $r < count($allRoles); $r++)
-  { $role = $allRoles[$r];
-    if ($role['name'] == 'ExecEngine') 
-      for ($i = 0; $i < 3; $i++) // limit the effort in case there are loops.
-         checkRules($role['ruleNames']);
-  }
+}
+
+// new function
+function runAllProcedures(){
+	$query = "CALL AllProcedures";
+	emitLog ($query);
+	queryDb($query);
 }
 
 // Precondition: $roleNr >= 0
@@ -238,74 +255,72 @@ function checkInvariantRules() {
 }
 
 function checkRules($ruleNames)
-{ global $allRulesSql;
+{ 
+  global $allRulesSql;
   global $selectedRoleNr;
-// Hier staan de signals in // Sander
-  $allRulesHold = true;
+  
+  // Hier staan de signals in // Sander
+  
+  $allRulesHold = true; // by default $allRulesHold = true
   $error = '';
 
   foreach ($ruleNames as $ruleName)
-  { $ruleSql = $allRulesSql[$ruleName];
-    $rows = DB_doquerErr($ruleSql['violationsSQL'], $error);
-    if ($error) error("While evaluating rule '$ruleName': ".$error);
+  { 
+	$ruleSql = $allRulesSql[$ruleName];
+	
+    $rows = DB_doquerErr($ruleSql['violationsSQL'], $error); // execute violationsSQL to check for violations
+	if ($error) error("While evaluating rule '$ruleName': ".$error);
     
+	// if there are rows (i.e. violations)
     if (count($rows) > 0)
-    { // if the rule has an associated message, we show that instead of the name and the meaning
-      $message = $ruleSql['message'] ? $ruleSql['message'] 
-                                     : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
-      emitAmpersandErr($message);
+    { 
+	
+	  // if the rule has an associated message, we show that instead of the name and the meaning
+      $message = $ruleSql['message'] ? $ruleSql['message'] : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
+	  emitAmpersandErr($message);
+	  
       $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $selectedRoleNr);
       $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $selectedRoleNr);
       
-      $pairView = $ruleSql['pairView'];
+      $pairView = $ruleSql['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
+	  
       foreach($rows as $violation)
-      { if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
-        { $theMessage = execPair($violation['src'], $ruleSql['srcConcept'],
-                                 $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
-  	      $theCleanMessage = strip_tags($theMessage);
-      		$theCleanMessage=substr($theCleanMessage,4); // Strip {EX} tag
-      		$params = explode(';',$theCleanMessage); // Split off variables
-      		$cleanparams = array();
-      		foreach ($params as $param) $cleanparams[] = trim($param);
-      		$params = $cleanparams;
-      		unset($cleanparams);
-      		$func = array_shift($params); // First parameter is function name
+      { 
+	    if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
+        { 
+		          $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
+            //emitAmpersandErr($theMessage);
+  	         $theCleanMessage = strip_tags($theMessage);
+      		    $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
 
-      		if (function_exists($func))
-      		{ emitAmpersandErr($theMessage);
-      			call_user_func_array($func,$params);
-      		}else{
-      			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
-      		}
+            $functionsToBeCalled = explode('{EX}',$theCleanMessage); // Split off subsequent function calls
+            if(count($functionsToBeCalled)>1) emitAmpersandErr("[[START]]");
+          
+            foreach ($functionsToBeCalled as $functionToBeCalled) 
+            { 
+              $params = explode(';',$functionToBeCalled); // Split off variables
+        		    $cleanparams = array();
+        		    foreach ($params as $param) $cleanparams[] = trim($param);
+        		    $params = $cleanparams;
+              unset($cleanparams);
+        			  
+              emitAmpersandErr($functionToBeCalled);
+        		    $func = array_shift($params); // First parameter is function name
+        		    if (function_exists($func))
+        		    { 
+        		        call_user_func_array($func,$params);
+        		    } else
+        		    {	
+        		        emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
+        		    }
+            }
+            if(count($functionsToBeCalled)>1) emitAmpersandErr("[[DONE]]");
 
-        } else //ouwe code incl. die van Sander, moet straks worden opgeruimd
-        { $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs,
-                          $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
+        } else
+        { 
+		  $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
   
-  	      $theCleanMessage = strip_tags($theMessage);
-  
-        	// Message format is '{EX} ChangeColour; Elementname; "Colour"
-        	// Check for the {EX} tag to see if we need to run the eXecution Engine:
-        	if (strpos($theCleanMessage,'{EX}') === 0)
-        	{
-        		// Strip EX tag and split variables:
-        		$theCleanMessage=substr($theCleanMessage,4);
-        		$params = explode(';',$theCleanMessage);
-        		$cleanparams = array();
-        		foreach ($params as $param) $cleanparams[] = trim($param);
-        		$params = $cleanparams;
-        		unset($cleanparams);
-        		$func = array_shift($params); // First parameter is function name
-        
-        		if (function_exists($func))
-        		{ emitAmpersandErr("Execution Engine will fix this: ".$theMessage);
-        			call_user_func_array($func,$params);
-        		}else{
-        			emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
-        		}
-        	} else
-        	{	emitAmpersandErr('- ' . $theMessage);
-        	}
+          emitAmpersandErr('- ' . $theMessage);
   	    }
       }
       emitLog('Rule '.$ruleSql['name'].' is broken');
