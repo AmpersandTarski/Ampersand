@@ -5,6 +5,7 @@ ini_set("display_errors", 1);
 require __DIR__.'/../Generics.php';
 require_once __DIR__.'/DatabaseUtils.php';
 require __DIR__.'/InstallMysqlProcedures.php';
+require_once __DIR__.'/../pluginsettings.php'; // configuration for ExecEngine and plugins
 require_once __DIR__.'/loadplugins.php';
 
 initSession();
@@ -266,18 +267,22 @@ function checkRules($ruleNames)
 
   foreach ($ruleNames as $ruleName)
   { 
-	$ruleSql = $allRulesSql[$ruleName];
+   	$ruleSql = $allRulesSql[$ruleName];
 	
     $rows = DB_doquerErr($ruleSql['violationsSQL'], $error); // execute violationsSQL to check for violations
-	if ($error) error("While evaluating rule '$ruleName': ".$error);
+   	if ($error) error("While evaluating rule '$ruleName': ".$error);
     
-	// if there are rows (i.e. violations)
+   	// if there are rows (i.e. violations)
     if (count($rows) > 0)
     { 
-	
-	  // if the rule has an associated message, we show that instead of the name and the meaning
+		     // if the rule has an associated message, we show that instead of the name and the meaning
       $message = $ruleSql['message'] ? $ruleSql['message'] : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
-	  emitAmpersandErr($message);
+
+      if (ruleIsHandledByExecEngine($ruleName))
+      { emitAmpersandExecEngine($message);
+      } else
+      { emitAmpersandErr($message);
+      }
 	  
       $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $selectedRoleNr);
       $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $selectedRoleNr);
@@ -289,12 +294,12 @@ function checkRules($ruleNames)
 	    if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
         { 
 		          $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
-            //emitAmpersandErr($theMessage);
+            //emitAmpersandExecEngine($theMessage);
   	         $theCleanMessage = strip_tags($theMessage);
       		    $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
 
             $functionsToBeCalled = explode('{EX}',$theCleanMessage); // Split off subsequent function calls
-            if(count($functionsToBeCalled)>1) emitAmpersandErr("[[START]]");
+            if(count($functionsToBeCalled)>1) emitAmpersandExecEngine("[[START]]");
           
             foreach ($functionsToBeCalled as $functionToBeCalled) 
             { 
@@ -304,7 +309,7 @@ function checkRules($ruleNames)
         		    $params = $cleanparams;
               unset($cleanparams);
         			  
-              emitAmpersandErr($functionToBeCalled);
+              emitAmpersandExecEngine($functionToBeCalled);
         		    $func = array_shift($params); // First parameter is function name
         		    if (function_exists($func))
         		    { 
@@ -312,16 +317,17 @@ function checkRules($ruleNames)
         		    } else
         		    {	
         		        emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
+        		        // die;
         		    }
             }
-            if(count($functionsToBeCalled)>1) emitAmpersandErr("[[DONE]]");
+            if(count($functionsToBeCalled)>1) emitAmpersandExecEngine("[[DONE]]");
 
         } else
         { 
-		  $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
+		        $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
   
           emitAmpersandErr('- ' . $theMessage);
-  	    }
+  	     }
       }
       emitLog('Rule '.$ruleSql['name'].' is broken');
       $allRulesHold = false;
@@ -350,6 +356,32 @@ function queryDb($querySql) {
     error($error);
   
   return $result;
+}
+
+function ruleIsHandledByExecEngine($ruleName) // bepaal of '$rulename' GEEN regel voor de execengine is.
+{ global $allRoles;
+  global $ExecEngineRules; // array met alle ruleNames van de ExecEngine 
+  global $execEningeIsVerySilent; // set in 'pluginsettings.php'
+
+  if (!isset($ExecEngineRules))
+  { foreach ($allRoles as $role)
+    { if ($role['name'] == 'ExecEngine')
+      { $ExecEngineRules = $role['ruleNames'];
+  } } }
+  if (isset($ExecEngineRules)) // Er is geen garantie dat de rol 'ExecEngine' bestaat.
+  { if(in_array($ruleName, $ExecEngineRules))
+      if(!$execEningeIsVerySilent) // ExecEngine does (not) output names of rules that it processes violations of.
+        emitAmpersandErr("ExecEngine worked on rule '$ruleName'");
+      return true;
+  }
+  return false;
+}
+
+function emitAmpersandExecEngine($err) {
+  global $execEngineIsSilent; // set in 'pluginsettings.php'
+  if (!isset($execEngineIsSilent)) $execEngineIsSilent = false;
+  if (!$execEngineIsSilent)
+     echo "<div class=\"LogItem AmpersandErr\">[$err]</div>";
 }
 
 function emitAmpersandErr($err) {

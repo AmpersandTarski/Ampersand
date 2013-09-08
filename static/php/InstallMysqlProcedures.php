@@ -15,26 +15,28 @@ require_once 'loadplugins.php';
 global $allRoles;
 global $allRulesSql;
 global $dbName;
+global $storedProcedureCreated;
 
 $link = mysqli_connect('localhost', 'root', '', $dbName); // mysqli needed because of multiple statements execution support
 
 // loop over all roles
 for ($r = 0; $r < count($allRoles); $r++)
 {
-	// only handle 'DATABASE'
+	// only handle role 'DATABASE'
 	if($allRoles[$r]['name'] == 'DATABASE')
 	{
 		// foreach rule that is assigned to 'DATABASE'
 		foreach($allRoles[$r]['ruleNames'] as $ruleName)
 		{
-			procDBGecho( "RuleName: $ruleName<br/>");
-			procDBGecho( "--Rule: ".$allRulesSql[$ruleName]['ruleAdl']."<br/>");
+			$storedProcedureCreated = false; // if stored procedure remains uncreated, we MUST warn the developer/user!!
+			procDBGecho("RuleName: $ruleName");
+			procDBGecho("--Rule: ".$allRulesSql[$ruleName]['ruleAdl']);
 			
 			// if "|-" exists in ADL expression
-			if(strpos($allRulesSql[$ruleName]['ruleAdl'], "|-") !== false){
-			
+			if(strpos($allRulesSql[$ruleName]['ruleAdl'], "|-") !== false)
+			{
 				$symbol = "|-";
-				procDBGecho( "--Rule contains '|-'<br/>");
+				procDBGecho("--Rule contains '|-'");
 				// Break up rule into expressions
 				$expressions = explode("|-", $allRulesSql[$ruleName]['ruleAdl']);
 				
@@ -42,50 +44,54 @@ for ($r = 0; $r < count($allRoles); $r++)
 			}elseif(strpos($allRulesSql[$ruleName]['ruleAdl'], "-|") !== false)
 			{
 				$symbol = "-|";
-				procDBGecho( "--Rule contains '-|'<br/>");
+				procDBGecho("--Rule contains '-|'");
 				// Break up rule into expressions
 				$expressions = explode("-|", $allRulesSql[$ruleName]['ruleAdl']);
 				
 			}else
 			{
-				procDBGecho( "--Rule contains no |- or -|. No stored procedure created<br/>");
+				procDBGecho("--Rule contains no |- or -|. No stored procedure created");
+				echo("</br>--ERROR-- ROLE DATABASE MAINTAINS $rulename does not lead to a stored procedure.</br>");
+				die;
+// Om de zaak te redden kunnen we deze regel toekennen aan de rol 'ExecEngine' i.p.v. aan DATABASE
+// We kunnen overigens NIET het omgekeerde doen (alle ExecEngine regels aan DATABASE toekennen)
 				$expressions = array(); // empty arry
 			}
 				
 			foreach($expressions as $key => $expression)
 			{
 				$expression = trim($expression);
-				procDBGecho( "<br/>* Expression: $expression<br/>");
+				procDBGecho("* Expression: $expression");
 				
 				// check if $expression starts with '-' (e.g. -bfGebruiktARM20_DefProp)
 				if(substr($expression, 0, 1) == "-") {
 					$expressionIsNegative = true;
-					procDBGecho( " --Expression is negative<br/>");
+					procDBGecho(" --Expression is negative");
 					$expression = substr($expression, 1); // remove '-' before expression
 				}else{
 					$expressionIsNegative = false;
-					procDBGecho( " --Expression is <u>non</u> negative<br/>");
+					procDBGecho(" --Expression is <u>non</u> negative");
 				}
 				
 				// check if $expression is flipped (e.g. relation~)
 				if(substr($expression, -1) == "~"){
 					$expressionIsFlipped = true;
-					procDBGecho( " --Expression is flipped<br/>");
+					procDBGecho(" --Expression is flipped");
 					$expression = substr($expression, 0, -1); // remove '~' after expression
 				}else{
 					$expressionIsFlipped = false;
-					procDBGecho( " --Expression is <u>not</u> flipped<br/>");
+					procDBGecho(" --Expression is <u>not</u> flipped");
 				}
 				
 				if(array_key_exists($expression, $relationTableInfo))
 				{
-					procDBGecho( " --Expression exists in relationTableInfo as $expression<br/>");
+					procDBGecho(" --Expression exists in relationTableInfo as $expression");
 					$relation = $expression; // $expression exists in $relationTableInfo, so we call it a $relation
 					
 					// if $expressionIsFlipped provide ERROR and stop script
 					if($expressionIsFlipped)
 					{
-						echo " --<b>ERROR: Relation must not be flipped</b><br/>";
+						echo " --<b>ERROR: Relation must not be flipped</b>";
 						die;
 					}											
 					/* Decision table for deciding whether it must be an 'delpair' or 'inspair' procedure
@@ -172,24 +178,29 @@ for ($r = 0; $r < count($allRoles); $r++)
 					// query uitvoeren
 					mysqli_query($link, "DROP PROCEDURE IF EXISTS ".escapeSQL($allRulesSql[$ruleName]['name']));
 					mysqli_query($link, $query); 
-					procDBGecho( mysqli_error($link));
+					echo(mysqli_error($link));
 					
 					// reporting
-//			procDBGecho( $query . "<br/>");
-					procDBGecho( " --<b>Stored procedure aangemaakt voor $ruleName</b><br/>");
+//			procDBGecho($query);
+					procDBGecho(" --<b>Stored procedure aangemaakt voor $ruleName</b>");
 				}else
 				{
-					procDBGecho( " --Expression not in relationTableInfo</br>");
+					procDBGecho(" --Expression not in relationTableInfo</br>");
 				}
 			}
 				
-			procDBGecho( "<br/><hr/>");
+   if (!$storedProcedureCreated)  // Since stored procedure is uncreated, we MUST warn the developer/user!!
+   { echo("Rule $rule could not be created as a stored procedure!");
+     die;
+   }
+			procDBGecho("<hr/>");
 		}
-		$query = makeAllProceduresProcedure();
+
+		$query = makeAllProceduresProcedure(); // Dit werkt niet als er geen stored procedures zijn
 		mysqli_query($link, $query); 
-		procDBGecho( mysqli_error($link));
-		procDBGecho( $query . "<br/>");
-		procDBGecho( "AllProcedures PROCEDURE aangemaakt</br/>");
+		procDBGecho("InstallMysqlProcdures - make all procedures".mysqli_error($link));
+		procDBGecho($query . "");
+		procDBGecho("AllProcedures PROCEDURE aangemaakt</br/>");
 		
 	}
 }
@@ -199,6 +210,7 @@ function makeInspairSqlProcedure($ruleName, $relation){
 	global $relationTableInfo;
 	global $tableColumnInfo;
 	global $procedures;
+	global $storedProcedureCreated;
 	
 	// get table, srcCol and tgtCol for $relation
 	$table = $relationTableInfo[$relation]['table'];
@@ -246,9 +258,10 @@ function makeInspairSqlProcedure($ruleName, $relation){
 			CLOSE cur_1; 
 			END "; 
 	
-	procDBGecho( " --Inspair PROCEDURE aanmaken<br/>");
+	procDBGecho(" --Inspair PROCEDURE aanmaken");
 	addProcedureToAllProcedures($allRulesSql[$ruleName]['name']); // add this procedure to AllProcedures in order to call all procedures at once
-	
+	$storedProcedureCreated = TRUE;
+
 	return $query;
 }
 
@@ -257,6 +270,7 @@ function makeDelpairSqlProcedure($ruleName, $relation){
 	global $relationTableInfo;
 	global $tableColumnInfo;
 	global $procedures;
+	global $storedProcedureCreated;
 	
 	// get table, srcCol and tgtCol for $relation
 	$table = $relationTableInfo[$relation]['table'];
@@ -304,8 +318,9 @@ function makeDelpairSqlProcedure($ruleName, $relation){
 			CLOSE cur_1; 
 			END";
 			
-	procDBGecho( " --Delpair PROCEDURE aanmaken<br/>");
+	procDBGecho(" --Delpair PROCEDURE aanmaken");
 	addProcedureToAllProcedures($allRulesSql[$ruleName]['name']); // add this procedure to AllProcedures in order to call all procedures at once
+	$storedProcedureCreated = TRUE;
 	
 	return $sql;						
 }
@@ -326,14 +341,14 @@ function makeAllProceduresProcedure(){
 		$query .= "CALL $procedure;";
 	}
 	$query .= "END ";
-	procDBGecho( "AllProcedures PROCEDURE aanmaken<br/>");
+	procDBGecho("AllProcedures PROCEDURE aanmaken");
 	return $query;
 }
 
 $procdbg = FALSE;
 function procDBGecho ($text)
 { global $procdbg;
-  if ($procdbg) echo($text);
+  if ($procdbg) echo(" ".$text."<br/>");
 }  
 
 ?>
