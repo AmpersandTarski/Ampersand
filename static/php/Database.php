@@ -4,7 +4,7 @@ ini_set("display_errors", 1);
 
 require __DIR__.'/../Generics.php';
 require_once __DIR__.'/DatabaseUtils.php';
-require __DIR__.'/InstallMysqlProcedures.php';
+require_once __DIR__.'/InstallMysqlProcedures.php';
 require_once __DIR__.'/../pluginsettings.php'; // configuration for ExecEngine and plugins
 require_once __DIR__.'/loadplugins.php';
 
@@ -46,6 +46,7 @@ if (isset($_REQUEST['resetSession']) ) {
   // Run all stored procedures in the database
   // Doing so AFTER running the ExecEngine allows any problems with stored procedures to be 'fixed'
   // 2do this: create a rule with the same ruleexpression and handle the violation with th ExecEngine
+  runAllProcedures();
   runAllProcedures();
   
   echo '<div id="InvariantRuleResults">';

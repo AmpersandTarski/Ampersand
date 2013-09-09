@@ -176,7 +176,7 @@ for ($r = 0; $r < count($allRoles); $r++)
 					}
 										
 					// query uitvoeren
-					mysqli_query($link, "DROP PROCEDURE IF EXISTS ".escapeSQL($allRulesSql[$ruleName]['name']));
+					mysqli_query($link, "DROP PROCEDURE IF EXISTS ".escapeSQL(makeDBFunctionName($allRulesSql[$ruleName]['name'])));
 					mysqli_query($link, $query); 
 					echo(mysqli_error($link));
 					
@@ -190,15 +190,17 @@ for ($r = 0; $r < count($allRoles); $r++)
 			}
 				
    if (!$storedProcedureCreated)  // Since stored procedure is uncreated, we MUST warn the developer/user!!
-   { echo("Rule $rule could not be created as a stored procedure!");
+   { 
+     echo("Rule $rule could not be created as a stored procedure!");
      die;
    }
 			procDBGecho("<hr/>");
 		}
 
 		$query = makeAllProceduresProcedure(); // Dit werkt niet als er geen stored procedures zijn
+		mysqli_query($link, "DROP PROCEDURE IF EXISTS AllProcedures");
 		mysqli_query($link, $query); 
-		procDBGecho("InstallMysqlProcdures - make all procedures".mysqli_error($link));
+		procDBGecho("InstallMysqlProcdures - make all procedures". mysqli_error($link));
 		procDBGecho($query . "");
 		procDBGecho("AllProcedures PROCEDURE aangemaakt</br/>");
 		
@@ -241,7 +243,7 @@ function makeInspairSqlProcedure($ruleName, $relation){
 	}
 	
 	// build procedure
-	$query = "CREATE PROCEDURE ".escapeSQL($allRulesSql[$ruleName]['name'])."() 
+	$query = "CREATE PROCEDURE ".escapeSQL(makeDBFunctionName($allRulesSql[$ruleName]['name']))."() 
 			BEGIN 
 			DECLARE done INT DEFAULT 0; 
 			DECLARE srcAtom varchar(4000); 
@@ -259,7 +261,7 @@ function makeInspairSqlProcedure($ruleName, $relation){
 			END "; 
 	
 	procDBGecho(" --Inspair PROCEDURE aanmaken");
-	addProcedureToAllProcedures($allRulesSql[$ruleName]['name']); // add this procedure to AllProcedures in order to call all procedures at once
+	addProcedureToAllProcedures(makeDBFunctionName($allRulesSql[$ruleName]['name'])); // add this procedure to AllProcedures in order to call all procedures at once
 	$storedProcedureCreated = TRUE;
 
 	return $query;
@@ -301,7 +303,7 @@ function makeDelpairSqlProcedure($ruleName, $relation){
 		$query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`= srcAtom AND `$tgtColEsc`= tgtAtom";
 	}
 	// build procedure
-	$sql = "CREATE PROCEDURE ".escapeSQL($allRulesSql[$ruleName]['name'])."() 
+	$sql = "CREATE PROCEDURE ".escapeSQL(makeDBFunctionName($allRulesSql[$ruleName]['name']))."() 
 			BEGIN 
 			DECLARE done INT DEFAULT 0; 
 			DECLARE srcAtom varchar(4000); 
@@ -319,7 +321,7 @@ function makeDelpairSqlProcedure($ruleName, $relation){
 			END";
 			
 	procDBGecho(" --Delpair PROCEDURE aanmaken");
-	addProcedureToAllProcedures($allRulesSql[$ruleName]['name']); // add this procedure to AllProcedures in order to call all procedures at once
+	addProcedureToAllProcedures(makeDBFunctionName($allRulesSql[$ruleName]['name'])); // add this procedure to AllProcedures in order to call all procedures at once
 	$storedProcedureCreated = TRUE;
 	
 	return $sql;						
@@ -345,10 +347,16 @@ function makeAllProceduresProcedure(){
 	return $query;
 }
 
-$procdbg = FALSE;
+
 function procDBGecho ($text)
-{ global $procdbg;
-  if ($procdbg) echo(" ".$text."<br/>");
-}  
+{ 
+  //echo(" ".$text."<br/>");
+  
+} 
+
+function makeDBFunctionName($functionName){
+ $search = array(' ', '-');
+ return str_replace($search, '_', $functionName);
+}
 
 ?>
