@@ -17,6 +17,9 @@ initSession();
 //     Database.php?testRule=..
 //     Database.php?commands=..
 
+if (!isset($execEngineIsSilent))  // set in 'pluginsettings.php'
+   $execEngineIsSilent = false;   // false: ExecEngine actions/logs are shown in the yellow violations-window
+
 $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
 
 if (isset($_REQUEST['resetSession']) ) {
@@ -217,16 +220,14 @@ function checkRoleRules($roleNr) {
   if ($roleNr == -1) // if no role is selected, evaluate the rules for all roles
   {
     for ($r = 0; $r < count($allRoles); $r++)
-	{
-      // checkRoleRulesPerRole($r); // old function
-	  
-	  // filter rules for role 'DATABASE', these will be handled by runAllProcedures()
-	  if($allRoles[$r]['name'] != 'DATABASE')
-	  {
-		// Check every role only one time. 
-		$allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
-	  }
-	}
+   	{ 
+   	  // filter rules for role 'DATABASE', these will be handled by runAllProcedures()
+   	  if($allRoles[$r]['name'] != 'DATABASE')
+   	  {
+   		   // Check every role only one time. 
+      		$allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
+   	  }
+   	}
 	
 	$allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
 	checkRules($allRoleRules); // check every rule
@@ -235,15 +236,15 @@ function checkRoleRules($roleNr) {
 }
 
 // new function
-function runAllProcedures(){
-	$query = "CALL AllProcedures";
-	emitLog ($query);
-	queryDb($query);
+function runAllProcedures()
+{	$query = "CALL AllProcedures";
+	 emitLog ($query);
+	 queryDb($query);
 }
 
 // Precondition: $roleNr >= 0
-function checkRoleRulesPerRole($roleNr) {
-  global $allRoles;
+function checkRoleRulesPerRole($roleNr)
+{ global $allRoles;
   
   $role = $allRoles[$roleNr];
   emitLog("Checking rules for role $role[name]");
@@ -256,9 +257,17 @@ function checkInvariantRules() {
 }
 
 function checkRules($ruleNames)
-{ 
+{ global $allRoles;
   global $allRulesSql;
   global $selectedRoleNr;
+  global $execEningeIsVerySilent; // set in 'pluginsettings.php'
+
+  global $ExecEngineRules; // array met alle ruleNames van de ExecEngine 
+  if (!isset($ExecEngineRules))
+  { foreach ($allRoles as $role)
+    { if ($role['name'] == 'ExecEngine')
+      { $ExecEngineRules = $role['ruleNames'];
+  } } }
   
   // Hier staan de signals in // Sander
   
@@ -277,9 +286,13 @@ function checkRules($ruleNames)
     { 
 		     // if the rule has an associated message, we show that instead of the name and the meaning
       $message = $ruleSql['message'] ? $ruleSql['message'] : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
-
-      if (ruleIsHandledByExecEngine($ruleName))
-      { emitAmpersandExecEngine($message);
+       // however, for ExecEngine output we have the possibility to suppress some stuff
+      if (isset($ExecEngineRules)) // Er is geen garantie dat de rol 'ExecEngine' altijd bestaat.
+      { if(in_array($ruleName, $ExecEngineRules))
+        { if(!$execEningeIsVerySilent) // Test whether or not to output names of rules that the ExecEngine processes violations of.
+          { emitAmpersandErr("[{EE} restored '$ruleName']");
+            emitAmpersandExecEngine($message);
+        } }
       } else
       { emitAmpersandErr($message);
       }
@@ -291,7 +304,7 @@ function checkRules($ruleNames)
 	  
       foreach($rows as $violation)
       { 
-	    if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
+	     if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
         { 
 		          $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
             //emitAmpersandExecEngine($theMessage);
@@ -358,28 +371,8 @@ function queryDb($querySql) {
   return $result;
 }
 
-function ruleIsHandledByExecEngine($ruleName) // bepaal of '$rulename' GEEN regel voor de execengine is.
-{ global $allRoles;
-  global $ExecEngineRules; // array met alle ruleNames van de ExecEngine 
-  global $execEningeIsVerySilent; // set in 'pluginsettings.php'
-
-  if (!isset($ExecEngineRules))
-  { foreach ($allRoles as $role)
-    { if ($role['name'] == 'ExecEngine')
-      { $ExecEngineRules = $role['ruleNames'];
-  } } }
-  if (isset($ExecEngineRules)) // Er is geen garantie dat de rol 'ExecEngine' bestaat.
-  { if(in_array($ruleName, $ExecEngineRules))
-      if(!$execEningeIsVerySilent) // ExecEngine does (not) output names of rules that it processes violations of.
-        emitAmpersandErr("ExecEngine worked on rule '$ruleName'");
-      return true;
-  }
-  return false;
-}
-
 function emitAmpersandExecEngine($err) {
   global $execEngineIsSilent; // set in 'pluginsettings.php'
-  if (!isset($execEngineIsSilent)) $execEngineIsSilent = false;
   if (!$execEngineIsSilent)
      echo "<div class=\"LogItem AmpersandErr\">[$err]</div>";
 }

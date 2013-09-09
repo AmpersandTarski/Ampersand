@@ -17,7 +17,7 @@ global $SendEmail_From;
 global $SendEmail_Username;
 global $SendEmail_Password;
 
-emitAmpersandErr('Username = '.$SendEmail_Username);
+emitAmpersandExecEngine('Username = '.$SendEmail_Username);
 
 $mail = new PHPMailer;
 
@@ -41,10 +41,10 @@ $mail->Body    = $message;
 $mail->WordWrap = 50;                                 // Set word wrap to 50 characters
 
    if(!$mail->Send())
-   {  emitAmpersandErr('Message could not be sent.');
-      emitAmpersandErr('Mailer Error: ' . $mail->ErrorInfo);
+   {  emitAmpersandExecEngine('Message could not be sent.');
+      emitAmpersandExecEngine('Mailer Error: ' . $mail->ErrorInfo);
    } else
-   {  emitAmpersandErr('Email message sent.');
+   {  emitAmpersandExecEngine('Email message sent.');
    }
 }
 

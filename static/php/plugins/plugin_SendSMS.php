@@ -13,7 +13,7 @@ function SendSMS ($phonenumber,$message)
 global $SendSMS_Username;
 global $SendSMS_Password;
 
-emitAmpersandErr('Username = '.$SendSMS_Username);
+emitAmpersandExecEngine('Username = '.$SendSMS_Username);
 
 // Set the Messabeird username and password, and create an instance of the MessageBird class
 $sms = new MessageBird($SendSMS_Username, $SendSMS_Password);
@@ -43,10 +43,10 @@ $sms->addDestination($phonenumber); //e.g. $sms->addDestination('31600000000');
 // Send the message to the destination(s)
 $sms->sendSms($message);
 
-emitAmpersandErr ("Response:");
-emitAmpersandErr ($sms->getResponseCode());
-emitAmpersandErr ($sms->getResponseMessage());
-emitAmpersandErr ($sms->getCreditBalance());
+emitAmpersandExecEngine ("Response:");
+emitAmpersandExecEngine ($sms->getResponseCode());
+emitAmpersandExecEngine ($sms->getResponseMessage());
+emitAmpersandExecEngine ($sms->getCreditBalance());
 }
 
 ?>

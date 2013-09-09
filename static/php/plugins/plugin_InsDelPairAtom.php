@@ -78,7 +78,7 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // execute database query
  	queryDb($query); 
 // log
- 	emitAmpersandErr ("Insert pair ($srcAtom,$tgtAtom) into $relation($srcConcept*$tgtConcept)");
+ 	emitAmpersandExecEngine ("Insert pair ($srcAtom,$tgtAtom) into $relation($srcConcept*$tgtConcept)");
  	emitLog ("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	emitLog ($query);
 }
@@ -151,7 +151,7 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // execute database query
  	queryDb($query); 
 // log
- 	emitAmpersandErr ("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
+ 	emitAmpersandExecEngine("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
  	emitLog ("DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	emitLog ($query);
 }
@@ -162,7 +162,7 @@ function InsAtom($concept)
  	$atom = mkUniqueAtomByTime($concept); // create new atom name	
  	addAtomToConcept($atom, $concept); // insert new atom in databse
 // log
- 	emitAmpersandErr("New atom $atom ($concept) created");
+ 	emitAmpersandExecEngine("New atom $atom ($concept) created");
  	emitLog("addAtomToConcept($atom, $concept)");
 // return created atom identifier
  	return $atom;
@@ -173,7 +173,7 @@ function DelAtom($concept, $atom)
 { // call function from DatabaseUtils.php
 	 deleteAtom($atom, $concept); // delete atom + all relations with other atoms
 // log
-	emitAmpersandErr("Atom $atom ($concept) deleted");
+	emitAmpersandExecEngine("Atom $atom ($concept) deleted");
 	emitLog("deleteAtom($atom, $concept)");
 }
 
