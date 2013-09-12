@@ -1,4 +1,4 @@
-<?
+<?php
 require_once(__DIR__.'/../pluginsettings.php'); // configuration for ExecEngine and plugins
 // We need the __DIR__ because all require statements are relative to the path of the browser-requested php file.
 // Otherwise, when 'loadplugins' is included e.g. by Interface.php, we would need 'pluginsettings.php', but when included
@@ -32,4 +32,3 @@ foreach ($files as $file)
 }
 
 ?>
-

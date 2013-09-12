@@ -1,4 +1,4 @@
-<?
+<?php
 // This file contains all global variables that installations may want to keep private
 
 // Making the ExecEngine silent (or not):

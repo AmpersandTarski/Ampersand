@@ -4,7 +4,7 @@ This file loops over the rules in Generics.php, filters out the rules that are t
 Not all rules can be transformed into stored procedures - please see the documentation in the code below for the constraints.
 */
 set_time_limit(60);
-error_reporting(E_ALL);
+error_reporting(E_ALL ^ E_NOTICE);
 ini_set("display_errors", 1);
 
 // require __DIR__.'/../Generics.php'; // wordt al geladen, alleen nodig voor stand-alone executie
@@ -191,21 +191,22 @@ for ($r = 0; $r < count($allRoles); $r++)
 				
    if (!$storedProcedureCreated)  // Since stored procedure is uncreated, we MUST warn the developer/user!!
    { 
-     echo("Rule $rule could not be created as a stored procedure!");
+     echo("Rule $ruleName could not be created as a stored procedure!");
      die;
    }
 			procDBGecho("<hr/>");
 		}
-
-		$query = makeAllProceduresProcedure(); // Dit werkt niet als er geen stored procedures zijn
-		mysqli_query($link, "DROP PROCEDURE IF EXISTS AllProcedures");
-		mysqli_query($link, $query); 
-		procDBGecho("InstallMysqlProcdures - make all procedures". mysqli_error($link));
-		procDBGecho($query . "");
-		procDBGecho("AllProcedures PROCEDURE aangemaakt</br/>");
 		
 	}
 }
+
+// AllProcedures PROCEDURE aanmaken
+$query = makeAllProceduresProcedure(); // Dit werkt niet als er geen stored procedures zijn
+mysqli_query($link, "DROP PROCEDURE IF EXISTS AllProcedures");
+mysqli_query($link, $query); 
+procDBGecho("InstallMysqlProcdures - make all procedures". mysqli_error($link));
+procDBGecho($query . "");
+procDBGecho("AllProcedures PROCEDURE aangemaakt</br/>");
 
 function makeInspairSqlProcedure($ruleName, $relation){
 	global $allRulesSql;
@@ -338,7 +339,7 @@ function makeAllProceduresProcedure(){
 	global $procedures;
 	
 	$query = "CREATE PROCEDURE AllProcedures() BEGIN ";
-	foreach ($procedures as $procedure)
+	foreach ((array)$procedures as $procedure)
 	{
 		$query .= "CALL $procedure;";
 	}

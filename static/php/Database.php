@@ -254,6 +254,7 @@ function checkRoleRulesPerRole($roleNr)
 
 function checkInvariantRules() {
   global $invariantRuleNames;
+  emitLog("Checking invariant rules");
   return checkRules($invariantRuleNames);
 }
 
