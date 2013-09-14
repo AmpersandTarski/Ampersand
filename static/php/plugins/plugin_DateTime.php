@@ -8,50 +8,57 @@
    http://www.php.net/manual/en/datetime.formats.date.php
    http://www.php.net/manual/en/datetime.formats.time.php
 
->> EXAMPLE OF USE:
-   -- First, we define the relations for comparing dates/times that we need, e.g.:
+>> EXAMPLES OF USE:
    
-    eqlDateTime :: DateTime * DateTime PRAGMA "" " occurred simultaneously "
-    neqDateTime :: DateTime * DateTime PRAGMA "" " occurred either before or after "
-     ltDateTime :: DateTime * DateTime PRAGMA "" " has occurred before "
-     gtDateTime :: DateTime * DateTime PRAGMA "" " has occurred after "
+   stdDateTime :: DateTime * DateTimeStdFormat [UNI] PRAGMA "Standard output format for " " is " 
+
+   ROLE ExecEngine MAINTAINS "compute DateTime std values"
+   RULE "compute DateTime std values": I[DateTime] |- stdDateTime;stdDateTime~
+   VIOLATION (TXT "{EX} datimeStdFormat;stdDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;Y-m-d")
+
+   eqlDateTime :: DateTime * DateTime PRAGMA "" " occurred simultaneously "
+   neqDateTime :: DateTime * DateTime PRAGMA "" " occurred either before or after "
+    ltDateTime :: DateTime * DateTime PRAGMA "" " has occurred before "
+    gtDateTime :: DateTime * DateTime PRAGMA "" " has occurred after "
    
-   -- Then, we populate these relations automatically using the following RULE:
-   ROLE DATABASE {-ExecEngine-} MAINTAINS "insltDateTime"
-   RULE "insltDateTime": V[DateTime] |- eqlDateTime \/ neqDateTime
-   VIOLATION (TXT "{EX} datimeEQL;DateTime;", SRC I, TXT ";", TGT I
-             ,TXT "{EX} datimeNEQ;DateTime;", SRC I, TXT ";", TGT I
-             ,TXT "{EX} datimeLT;DateTime;", SRC I, TXT ";", TGT I
-             ,TXT "{EX} datimeGT;DateTime;", SRC I, TXT ";", TGT I
+   ROLE ExecEngine MAINTAINS "compute DateTime comparison relations"
+   RULE "compute DateTime comparison relations": V[DateTime] |- eqlDateTime \/ neqDateTime
+   VIOLATION (TXT "{EX} datimeEQL;eqlDateTime;DateTime;", SRC I, TXT ";", TGT I
+             ,TXT "{EX} datimeNEQ;neqDateTime;DateTime;", SRC I, TXT ";", TGT I
+             ,TXT "{EX} datimeLT;ltDateTime;DateTime;", SRC I, TXT ";", TGT I
+             ,TXT "{EX} datimeGT;gtDateTime;DateTime;", SRC I, TXT ";", TGT I
              )
-             
+            
 >> LIMITATIONS OF USE:
-   Stored procedures such as in the example (i.e. assigning the violation to DATABASE)
-   only look for violations after a transaction is completed (Edit - Save). Assigning
-   the rule to 'ExecEngine' also checks for violations when the initial screen is setup.
    Note that if you use many atoms in DateTime, this will take increasingly more time
    to check for violations. So do not use that many...
 */
 
+// VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
+function datimeStdFormat($stdFormatRelation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec)
+{ 	emitLog("datimeStdFormat($stdFormatRelation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec)");
+   $date = new DateTime($srcAtom);
+   InsPair($stdFormatRelation,$DateConcept,$srcAtom,$StdFormatConcept,$date->format($formatSpec));
+   return;
+}
+
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
 function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)
-{ 	emitAmpersandExecEngine("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
-  	emitLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
+{ 	emitLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
    $dt1 = strtotime($srcAtom);
    $dt2 = strtotime($tgtAtom);
    if ($dt1 == $dt2) 
-   { InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
+   { InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
 // Accommodate for different representations of the same time:
      if ($srcAtom != $tgtAtom)
-       InsPair($neqRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
-   }
+     { InsPair($eqlRelation,$DateConcept,$tgtAtom,$DateConcept,$srcAtom);
+   } }
    return;
 }
 
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
 function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)
-{ 	emitAmpersandExecEngine("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
-  	emitLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
+{ 	emitLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
    $dt1 = strtotime($srcAtom);
    $dt2 = strtotime($tgtAtom);
    if ($dt1 != $dt2) 
@@ -63,8 +70,7 @@ function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)
 
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)
-{ 	emitAmpersandExecEngine("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
-  	emitLog("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
+{ 	emitLog("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
    $dt1 = strtotime($srcAtom);
    $dt2 = strtotime($tgtAtom);
    if ($dt1 == $dt2) return;
@@ -78,8 +84,7 @@ function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)
 
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)
-{ 	emitAmpersandExecEngine("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
-  	emitLog("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
+{ 	emitLog("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
    $dt1 = strtotime($srcAtom);
    $dt2 = strtotime($tgtAtom);
    if ($dt1 == $dt2) return;
