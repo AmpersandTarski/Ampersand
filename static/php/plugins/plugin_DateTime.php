@@ -14,7 +14,7 @@
 
    ROLE ExecEngine MAINTAINS "compute DateTime std values"
    RULE "compute DateTime std values": I[DateTime] |- stdDateTime;stdDateTime~
-   VIOLATION (TXT "{EX} datimeStdFormat;stdDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;Y-m-d")
+   VIOLATION (TXT "{EX} datimeStdFormat;stdDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;Y-m-d") -- The text 'Y-m-d' may be replaced by any other format specification, see the 'Parameters' section on http://www.php.net/manual/en/function.date.php
 
    eqlDateTime :: DateTime * DateTime PRAGMA "" " occurred simultaneously "
    neqDateTime :: DateTime * DateTime PRAGMA "" " occurred either before or after "
