@@ -1,16 +1,17 @@
 <?php 
 /* Please forward any comments to the author: michiel.stornebrink@tno.nl
 
-   This file defines the functions 'InsPair', 'DelPair', InsAtom and DelAtom
+   This file defines the functions 'InsPair', 'DelPair', InsAtom, DelAtom and NewStruct
    There are no guarantees with respect to their 100% functioning. Have fun...
+*/
 
+/*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):
    ROLE ExecEngine MAINTAINS "New Customers"
    RULE "New Customers": customerOrder[Person*Order];companyOrder[Company*Order]~ |- customerOf[Person*Company]
    MEANING "If a person places an order at a company, the person is a customer of that company"
    VIOLATION (TXT "{EX} InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
-
 // Use:  VIOLATION (TXT "{EX} InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 { /* 
@@ -153,6 +154,83 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
  	emitAmpersandExecEngine("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
  	emitLog ("DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	emitLog ($query);
+}
+
+/* The function 'NewStruct' creates a new atom in some concept and uses this
+   atom to create two links (in relations in which the concept is SRC or TGT).
+
+   Example:
+   
+   r :: ConceptA * ConceptB
+   r1 :: ConceptA * ConceptC [INJ] -- multiplicity must be there (I think...)
+   r2 :: ConceptC * ConceptB [UNI] -- multiplicity must be there (I think...)
+   
+   RULE "equivalence": r = r1;r2 -- this rule is to be maintained automatically
+   
+   ROLE ExecEngine MAINTAINS "insEquivalence" -- Creation of the atom
+   RULE "insEquivalence": r |- r1;r2
+   VIOLATION (TXT "{EX} NewStruct;ConceptC"  -- Always use NULL as ConceptC atom
+             ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"
+             ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I
+              )
+
+   ROLE ExecEngine MAINTAINS "delEquivalence" -- Deletion of the atom
+   RULE "delEquivalence": I[ConceptC] |- r1~;r;r2~ 
+   VIOLATION (TXT "{EX} DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
+*/
+
+function NewStruct() // arglist: ($ConceptC,[$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
+{ 
+/* This function has a variable number of arguments. 
+  $numargs = func_num_args();
+  emitLog ("Number of arguments: $numargs");
+  if ($numargs >= 2)
+  { emitLog ("Second argument is: ".func_get_arg(1));
+  }
+  $arg_list = func_get_args();
+  for ($i = 0; $i < $numargs; $i++)
+  { emitLog ("Argument $i is: ".$arg_list[$i]);
+  }
+*/
+// First we create a new atom of type $ConceptC
+  if (func_num_args() % 5 != 1)
+  {  die ("Illegal number of arguments: ".func_num_args());
+  }
+  $ConceptC = func_get_arg(0); // Name of concept for which atom is to be created
+  emitLog ("<<< Creating an atom for concept $ConceptC");
+  $newAtom = InsAtom($ConceptC);
+// Next, for every relation that follows in the argument list, we create a link
+  for ($i = 1; $i < func_num_args(); $i = $i+5)
+  { emitLog ("i = $i");
+    $relation   = func_get_arg($i);
+    $srcConcept = func_get_arg($i+1);
+    $srcAtom    = func_get_arg($i+2);
+    $tgtConcept = func_get_arg($i+3);
+    $tgtAtom    = func_get_arg($i+4);
+// populate relation r1, first checking for allowed syntax:
+    if (!($srcAtom == 'NULL' xor $tgtAtom == 'NULL'))
+       die ("Either $srcAtom or $tgtAtom must be NULL (and not both) (in relation $relation)");
+    if (!($srcConcept == $ConceptC xor $tgtConcept == $ConceptC))
+       die ("Either $srcConcept or $tgtConcept must be $ConceptC (and not both) (in relation $relation)");
+    if ($srcConcept == $ConceptC)
+    {  if ($srcAtom == 'NULL')
+       {  $srcAtom = $newAtom;
+       } else
+       {  die ("$srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+       }
+    }
+    if ($tgtConcept == $ConceptC)
+    {  if ($tgtAtom == 'NULL')
+       {  $tgtAtom = $newAtom;
+       } else
+       {  die ("$tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+       }
+    }
+    emitLog ("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+    InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+    emitLog ("Insert seems to have succeeded");
+  }
+  emitLog (">>>");
 }
 
 // Use: VIOLATION (TXT "{EX} InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
