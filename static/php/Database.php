@@ -284,9 +284,13 @@ function checkRules($ruleNames)
    	if ($error) error("While evaluating rule '$ruleName': ".$error);
     
    	// if there are rows (i.e. violations)
-    if (count($rows) > 0)
-    { 
-		     // if the rule has an associated message, we show that instead of the name and the meaning
+    if (count($rows) == 0)
+    { // emitLog('Rule '.$ruleSql['name'].' holds');
+    } else
+		  { $allRulesHold = false;
+      emitLog('Rule '.$ruleSql['name'].' is broken');
+      
+      // if the rule has an associated message, we show that instead of the name and the meaning
       $message = $ruleSql['message'] ? $ruleSql['message'] : "Rule '$ruleSql[name]' is broken: $ruleSql[meaning]";
        // however, for ExecEngine output we have the possibility to suppress some stuff
       if (isset($ExecEngineRules)) // Er is geen garantie dat de rol 'ExecEngine' altijd bestaat.
@@ -306,7 +310,7 @@ function checkRules($ruleNames)
 	  
       foreach($rows as $violation)
       { 
-	     if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
+	       if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
         { 
 		          $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
             //emitAmpersandExecEngine($theMessage);
@@ -344,10 +348,6 @@ function checkRules($ruleNames)
           emitAmpersandErr('- ' . $theMessage);
   	     }
       }
-      emitLog('Rule '.$ruleSql['name'].' is broken');
-      $allRulesHold = false;
-    } else
-    { emitLog('Rule '.$ruleSql['name'].' holds');
     }
   }
   return $allRulesHold;
@@ -379,16 +379,16 @@ function emitAmpersandExecEngine($err) {
      echo "<div class=\"LogItem AmpersandErr\">[$err]</div>";
 }
 
-function emitAmpersandErr($err) {
-  echo "<div class=\"LogItem AmpersandErr\">$err</div>";
+function emitAmpersandErr($msg)
+{  echo "<div class=\"LogItem AmpersandErr\">$msg</div>";
 }
 
-function emitLog($msg) {
-  echo "<div class=\"LogItem LogMsg\">$msg</div>";
+function emitLog($msg) 
+{  echo "<div class=\"LogItem LogMsg\">$msg</div>";
 }
 
-function error($msg) {
-  die("<div class=\"LogItem Error\">Error in Database.php: $msg</div>");
+function error($err)
+{  die("<div class=\"LogItem Error\">Error in Database.php: $err</div>");
 } // because of this die, the top-level div is not closed, but that's better than continuing in an erroneous situtation
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)

@@ -32,6 +32,20 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
  	 - null	: whether or not the value in the column can be NULL. in case of UNI relations
  	*/
  	global $tableColumnInfo;
+// check if $relation appears in $relationTableInfo
+  $found = false;
+  foreach($relationTableInfo as $key => $arr)
+	 {	if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+		  { $found = true;
+		    $table = $arr['table'];
+			   $srcCol = $arr['srcCol'];
+			   $tgtCol = $arr['tgtCol'];
+	  	}
+	 }
+	 if (!$found)
+ 	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
+ 	  die("ERROR: Cannot find 'rel[Src*Tgt]' signature in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+ 	}
 // if srcAtom is specified as NULL, a new atom of srcConcept is created
  	if($srcAtom == "NULL") 
  	{ $srcAtom = InsAtom($srcConcept);
@@ -39,19 +53,6 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // if tgtAtom is specified as NULL, a new atom of tgtConcept is created
  	if($tgtAtom == "NULL") 
  	{ $tgtAtom = InsAtom($tgtConcept);
- 	}
-// check if $relation appears in $relationTableInfo
- 	if (array_key_exists($relation, $relationTableInfo))
- 	{ foreach($relationTableInfo as $key => $arr)
- 		 {	if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
- 			  { $table = $arr['table'];
- 				   $srcCol = $arr['srcCol'];
- 				   $tgtCol = $arr['tgtCol'];
- 		  	}
- 		 }
- 	} else
- 	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
- 	  die("ERROR: Relation $relation does not exist in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	}
 // get table column properties for $srcCol and $tgtCol
  	$srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
@@ -111,18 +112,18 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
  	*/
  	global $tableColumnInfo;
  	// check if $relation appears in $relationTableInfo
- 	if (array_key_exists($relation, $relationTableInfo))
- 	{ // due to relationname overloading in ADL, $relation may occus multiple times in $relationTableInfo ==> find right srcConcept-relation-tgtConcept combination
-  		foreach($relationTableInfo as $key => $arr) 
-  		{ if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
-  			 { $table = $arr['table'];
-  				  $srcCol = $arr['srcCol'];
-  				  $tgtCol = $arr['tgtCol'];
-   			}
-  		}
- 	} else
+  $found = false;
+  foreach($relationTableInfo as $key => $arr)
+	 {	if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+		  { $found = true;
+		    $table = $arr['table'];
+			   $srcCol = $arr['srcCol'];
+			   $tgtCol = $arr['tgtCol'];
+	  	}
+	 }
+	 if (!$found)
  	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
- 	  die("ERROR: Relation $relation does not exist in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+ 	  die("ERROR: Cannot find 'rel[Src*Tgt]' signature in DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	}
 // get table column properties for $srcCol and $tgtCol
  	$srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
@@ -181,23 +182,12 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 
 function NewStruct() // arglist: ($ConceptC,[$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
 { 
-/* This function has a variable number of arguments. 
-  $numargs = func_num_args();
-  emitLog ("Number of arguments: $numargs");
-  if ($numargs >= 2)
-  { emitLog ("Second argument is: ".func_get_arg(1));
-  }
-  $arg_list = func_get_args();
-  for ($i = 0; $i < $numargs; $i++)
-  { emitLog ("Argument $i is: ".$arg_list[$i]);
-  }
-*/
 // First we create a new atom of type $ConceptC
   if (func_num_args() % 5 != 1)
   {  die ("Illegal number of arguments: ".func_num_args());
   }
   $ConceptC = func_get_arg(0); // Name of concept for which atom is to be created
-  emitLog ("<<< Creating an atom for concept $ConceptC");
+  emitAmpersandExecEngine ("Creating a structure based on an atom for concept $ConceptC");
   $newAtom = InsAtom($ConceptC);
 // Next, for every relation that follows in the argument list, we create a link
   for ($i = 1; $i < func_num_args(); $i = $i+5)
@@ -226,11 +216,10 @@ function NewStruct() // arglist: ($ConceptC,[$relation,$srcConcept,$srcAtom,$tgt
        {  die ("$tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
        }
     }
-    emitLog ("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+// Any logging is done by InsPair:
     InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
-    emitLog ("Insert seems to have succeeded");
   }
-  emitLog (">>>");
+  emitAmpersandExecEngine ("Completed structure creation.");
 }
 
 // Use: VIOLATION (TXT "{EX} InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
