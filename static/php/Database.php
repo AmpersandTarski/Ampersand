@@ -17,8 +17,10 @@ initSession();
 //     Database.php?testRule=..
 //     Database.php?commands=..
 
-if (!isset($execEngineIsSilent))  // set in 'pluginsettings.php'
-   $execEngineIsSilent = false;   // false: ExecEngine actions/logs are shown in the yellow violations-window
+if (!isset($execEngineSays))    // set in 'pluginsettings.php'
+   $execEngineSays = true;      // When 'true' the ExecEngine provides high level logging
+if (!isset($execEngineWhispers))// set in 'pluginsettings.php'
+   $execEngineWhispers = false; // When 'true', the ExecEngine provides details when logging.
 
 $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
 
@@ -271,14 +273,11 @@ function checkRules($ruleNames)
       { $ExecEngineRules = $role['ruleNames'];
   } } }
   
-  // Hier staan de signals in // Sander
-  
   $allRulesHold = true; // by default $allRulesHold = true
   $error = '';
 
   foreach ($ruleNames as $ruleName)
-  { 
-   	$ruleSql = $allRulesSql[$ruleName];
+  { $ruleSql = $allRulesSql[$ruleName];
 	
     $rows = DB_doquerErr($ruleSql['violationsSQL'], $error); // execute violationsSQL to check for violations
    	if ($error) error("While evaluating rule '$ruleName': ".$error);
@@ -295,12 +294,13 @@ function checkRules($ruleNames)
        // however, for ExecEngine output we have the possibility to suppress some stuff
       if (isset($ExecEngineRules)) // Er is geen garantie dat de rol 'ExecEngine' altijd bestaat.
       { if(in_array($ruleName, $ExecEngineRules))
-        { if(!$execEningeIsVerySilent) // Test whether or not to output names of rules that the ExecEngine processes violations of.
-          { emitAmpersandErr("[{EE} restored '$ruleName']");
-            emitAmpersandExecEngine($message);
-        } }
+        { ExecEngineSays("[{EE} restored '$ruleName']");
+          ExecEngineWhispers($message);
+        } else
+        { emitAmpersandLog($message);
+        } 
       } else
-      { emitAmpersandErr($message);
+      { emitAmpersandLog($message);
       }
 	  
       $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $selectedRoleNr);
@@ -313,39 +313,31 @@ function checkRules($ruleNames)
 	       if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
         { 
 		          $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
-            //emitAmpersandExecEngine($theMessage);
+            // emitAmpersandLog($theMessage);
   	         $theCleanMessage = strip_tags($theMessage);
       		    $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
 
             $functionsToBeCalled = explode('{EX}',$theCleanMessage); // Split off subsequent function calls
-            if(count($functionsToBeCalled)>1) emitAmpersandExecEngine("[[START]]");
+            if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[START]]");
           
             foreach ($functionsToBeCalled as $functionToBeCalled) 
-            { 
-              $params = explode(';',$functionToBeCalled); // Split off variables
+            { $params = explode(';',$functionToBeCalled); // Split off variables
         		    $cleanparams = array();
         		    foreach ($params as $param) $cleanparams[] = trim($param);
         		    $params = $cleanparams;
               unset($cleanparams);
-        			  
-              emitAmpersandExecEngine($functionToBeCalled);
+              ExecEngineWhispers($functionToBeCalled);
         		    $func = array_shift($params); // First parameter is function name
         		    if (function_exists($func))
-        		    { 
-        		        call_user_func_array($func,$params);
+        		    {  call_user_func_array($func,$params);
         		    } else
-        		    {	
-        		        emitAmpersandErr("TODO: Create function $func with " . count($params) . " parameters.");
-        		        // die;
+        		    {	 ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
         		    }
             }
-            if(count($functionsToBeCalled)>1) emitAmpersandExecEngine("[[DONE]]");
-
+            if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[DONE]]");
         } else
-        { 
-		        $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
-  
-          emitAmpersandErr('- ' . $theMessage);
+        { $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
+          emitAmpersandLog('- ' . $theMessage);
   	     }
       }
     }
@@ -373,13 +365,24 @@ function queryDb($querySql) {
   return $result;
 }
 
-function emitAmpersandExecEngine($err) {
-  global $execEngineIsSilent; // set in 'pluginsettings.php'
-  if (!$execEngineIsSilent)
-     echo "<div class=\"LogItem AmpersandErr\">[$err]</div>";
+function ExecEngineWhispers($msg) {
+  global $execEngineWhispers; // set in 'pluginsettings.php'
+  global $execEngineSays; // set in 'pluginsettings.php'
+  if ($execEngineWhispers && $execEngineSays)
+     echo "<div class=\"LogItem AmpersandErr\">$msg</div>";
 }
 
-function emitAmpersandErr($msg)
+function ExecEngineSays($msg) {
+  global $execEngineSays; // set in 'pluginsettings.php'
+  if ($execEngineSays)
+     echo "<div class=\"LogItem AmpersandErr\"><i>$msg</i></div>";
+}
+
+function ExecEngineSHOUTS($msg)
+{  echo "<div class=\"LogItem AmpersandErr\" style=\"color:red\"><b>$msg</b></div>";
+}
+
+function emitAmpersandLog($msg)
 {  echo "<div class=\"LogItem AmpersandErr\">$msg</div>";
 }
 

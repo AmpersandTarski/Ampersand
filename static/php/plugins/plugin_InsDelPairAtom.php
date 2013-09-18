@@ -44,7 +44,8 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 	 }
 	 if (!$found)
  	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
- 	  die("ERROR: Cannot find 'rel[Src*Tgt]' signature in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+ 	  ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+    die;
  	}
 // if srcAtom is specified as NULL, a new atom of srcConcept is created
  	if($srcAtom == "NULL") 
@@ -79,7 +80,7 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // execute database query
  	queryDb($query); 
 // log
- 	emitAmpersandExecEngine ("Insert pair ($srcAtom,$tgtAtom) into $relation($srcConcept*$tgtConcept)");
+ 	ExecEngineWhispers ("Insert pair ($srcAtom,$tgtAtom) into $relation($srcConcept*$tgtConcept)");
  	emitLog ("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	emitLog ($query);
 }
@@ -123,7 +124,8 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 	 }
 	 if (!$found)
  	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
- 	  die("ERROR: Cannot find 'rel[Src*Tgt]' signature in DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+ 	  ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+ 	  die;
  	}
 // get table column properties for $srcCol and $tgtCol
  	$srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
@@ -152,7 +154,7 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 // execute database query
  	queryDb($query); 
 // log
- 	emitAmpersandExecEngine("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
+ 	ExecEngineWhispers("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
  	emitLog ("DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
  	emitLog ($query);
 }
@@ -170,9 +172,9 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
    
    ROLE ExecEngine MAINTAINS "insEquivalence" -- Creation of the atom
    RULE "insEquivalence": r |- r1;r2
-   VIOLATION (TXT "{EX} NewStruct;ConceptC"  -- Always use NULL as ConceptC atom
-             ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"
-             ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I
+   VIOLATION (TXT "{EX} NewStruct;ConceptC;NULL" -- 'NULL' specifies that a name is to be generated
+             ,TXT ";r1;ConceptA;", SRC I, TXT";ConceptC;NULL"  -- Always use NULL as ConceptC atom
+             ,TXT ";r2;ConceptC;NULL;ConceptB;atomB;", TGT I   -- Always use NULL as ConceptC atom
               )
 
    ROLE ExecEngine MAINTAINS "delEquivalence" -- Deletion of the atom
@@ -180,17 +182,23 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
    VIOLATION (TXT "{EX} DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
 */
 
-function NewStruct() // arglist: ($ConceptC,[$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
+function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
 { 
-// First we create a new atom of type $ConceptC
-  if (func_num_args() % 5 != 1)
-  {  die ("Illegal number of arguments: ".func_num_args());
+// We start with parsing the first one or two arguments
+  $ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
+  $AtomC = mkUniqueAtomByTime($ConceptC);   // Default marker for atom-to-be-created.
+  if (func_num_args() % 5 == 2)             // Check if name of new atom is explicitly specified
+  {  $AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
+  } elseif (func_num_args() % 5 != 1)       // check for valid number of arguments
+  {  ExecEngineSHOUTS("NewStruct: Illegal number of arguments: ".func_num_args());
+     die;
   }
-  $ConceptC = func_get_arg(0); // Name of concept for which atom is to be created
-  emitAmpersandExecEngine ("Creating a structure based on an atom for concept $ConceptC");
-  $newAtom = InsAtom($ConceptC);
+// Then, we create a new atom of type $ConceptC
+  ExecEngineWhispers ("Creating a structure based on an atom '$AtomC' for concept '$ConceptC'");
+ 	addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
+
 // Next, for every relation that follows in the argument list, we create a link
-  for ($i = 1; $i < func_num_args(); $i = $i+5)
+  for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5)
   { emitLog ("i = $i");
     $relation   = func_get_arg($i);
     $srcConcept = func_get_arg($i+1);
@@ -198,28 +206,34 @@ function NewStruct() // arglist: ($ConceptC,[$relation,$srcConcept,$srcAtom,$tgt
     $tgtConcept = func_get_arg($i+3);
     $tgtAtom    = func_get_arg($i+4);
 // populate relation r1, first checking for allowed syntax:
-    if (!($srcAtom == 'NULL' xor $tgtAtom == 'NULL'))
-       die ("Either $srcAtom or $tgtAtom must be NULL (and not both) (in relation $relation)");
-    if (!($srcConcept == $ConceptC xor $tgtConcept == $ConceptC))
-       die ("Either $srcConcept or $tgtConcept must be $ConceptC (and not both) (in relation $relation)");
+    if (!($srcAtom == 'NULL' or $tgtAtom == 'NULL')) // Note: when populating a [PROP] relation, both atoms can be NULL
+    {  ExecEngineSHOUTS("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be NULL");
+       die;
+    }
+    if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)) // Note: when populating a [PROP] relation, both atoms can be NULL
+    {  ExecEngineSHOUTS("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC");
+       die;
+    }
     if ($srcConcept == $ConceptC)
     {  if ($srcAtom == 'NULL')
-       {  $srcAtom = $newAtom;
-       } else
-       {  die ("$srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+       {  $srcAtom = $AtomC;
+       } else // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
+       {  ExecEngineSHOUTS ("NewStruct: $srcAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+          die;
        }
     }
     if ($tgtConcept == $ConceptC)
     {  if ($tgtAtom == 'NULL')
-       {  $tgtAtom = $newAtom;
-       } else
-       {  die ("$tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+       {  $tgtAtom = $AtomC;
+       } else // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
+       {  ExecEngineSHOUTS ("NewStruct: $tgtAtom must be NULL when $ConceptC is the concept (in relation $relation)");
+          die;
        }
     }
 // Any logging is done by InsPair:
     InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
   }
-  emitAmpersandExecEngine ("Completed structure creation.");
+  ExecEngineWhispers ("Completed structure creation.");
 }
 
 // Use: VIOLATION (TXT "{EX} InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
@@ -228,7 +242,7 @@ function InsAtom($concept)
  	$atom = mkUniqueAtomByTime($concept); // create new atom name	
  	addAtomToConcept($atom, $concept); // insert new atom in databse
 // log
- 	emitAmpersandExecEngine("New atom $atom ($concept) created");
+ 	ExecEngineWhispers("New atom $atom ($concept) created");
  	emitLog("addAtomToConcept($atom, $concept)");
 // return created atom identifier
  	return $atom;
@@ -239,7 +253,7 @@ function DelAtom($concept, $atom)
 { // call function from DatabaseUtils.php
 	 deleteAtom($atom, $concept); // delete atom + all relations with other atoms
 // log
-	emitAmpersandExecEngine("Atom $atom ($concept) deleted");
+	ExecEngineWhispers("Atom $atom ($concept) deleted");
 	emitLog("deleteAtom($atom, $concept)");
 }
 

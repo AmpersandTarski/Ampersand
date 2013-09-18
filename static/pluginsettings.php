@@ -1,9 +1,9 @@
 <?php
 // This file contains all global variables that installations may want to keep private
 
-// Making the ExecEngine silent (or not):
-$execEningeIsVerySilent = false; // ExecEngine DOES output names of rules that it processes violations of.
-$execEngineIsSilent = false; // ExecEngine DOES output details of how violations are processed.
+// ExecEngine logging
+$execEngineSays = true; // When 'true' the ExecEngine provides high level logging
+$execEngineWhispers = false; // When 'true' (and if $execEngineSays == true as well), the ExecEngine provides logging details
 
 // Variables for plugin_SendMail
 $SendEmail_From = 'your_email_address';
