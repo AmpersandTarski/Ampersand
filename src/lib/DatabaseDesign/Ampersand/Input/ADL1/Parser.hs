@@ -93,6 +93,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          CPat     <$> pPatternDef   <|>
                          CPrc     <$> pProcessDef   <|>
                          CRul     <$> pRuleDef      <|>
+                         CCfy     <$> pClassify     <|>
                          CRel     <$> pRelationDef  <|>
                          CCon     <$> pConceptDef   <|>
                          CGen     <$> pGenDef       <|>
@@ -110,6 +111,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        | CPat P_Pattern
                        | CPrc P_Process
                        | CRul P_Rule
+                       | CCfy P_Rule
                        | CRel P_Declaration
                        | CCon ConceptDef
                        | CGen P_Gen
@@ -163,6 +165,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 } 
        pPatElem :: Parser Token PatElem
        pPatElem = Pr <$> pRuleDef      <|>
+                  Py <$> pClassify     <|>
                   Pd <$> pRelationDef  <|>
                   Pm <$> pRoleRule     <|>
                   Pl <$> pRoleRelation <|>
@@ -174,6 +177,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                   Pp <$> pPopulation
 
    data PatElem = Pr P_Rule
+                | Py P_Rule
                 | Pd P_Declaration 
                 | Pm RoleRule
                 | Pl P_RoleRelation
