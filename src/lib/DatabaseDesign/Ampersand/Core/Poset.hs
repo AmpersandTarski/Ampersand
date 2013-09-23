@@ -12,11 +12,8 @@
 -- still define meaningful 'max' and 'sortWith functions for these types.
 --
 -- We define our own 'Ord' class which is intended as a replacement for
--- 'Prelude.Ord'.  However, in order to take advantage of existing libraries
--- which use 'Prelude.Ord', we make every instance of 'Ord' an instance of
--- 'Prelude.Ord'.  This is done using the OverlappingInstances and
--- UndecidableInstances extensions -- it remains to be seen if problems occur
--- as a result of this.
+-- 'Prelude.Ord'.  Should the user wish to take advantage of existing libraries
+-- which use 'Prelude.Ord', just let Prelude.compare = (totalOrder .) . compare
 module DatabaseDesign.Ampersand.Core.Poset (
     Poset(..), Sortable(..), Ordering(..), Ord, makePartialOrder,comparableClass,greatest,least,maxima,minima,sortWith
 ) where
