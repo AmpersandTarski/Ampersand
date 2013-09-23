@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
-   
+   , CRuleTyp(..)
    , P_Pattern(..)
    
    , RelConceptDef(..), P_Declaration(..)
@@ -201,10 +201,7 @@ where
    data CTerm 
       = Ccpt Origin String       -- ^ concept
       | CIsc Origin CTerm CTerm  -- ^ intersection            /\      
-      | CUni Origin CTerm CTerm  -- ^ union                   \/      
-      | Cequ Origin CTerm CTerm  -- ^ equivalence             =
-      | Cimp Origin CTerm CTerm  -- ^ implication             |-
-      | CBrk Origin CTerm        -- ^ brackets are allowed.
+      | CUni Origin CTerm CTerm  -- ^ union                   \/    
       deriving (Eq, Ord, Show)   -- deriving Show for debugging purposes
       
    data Term 
@@ -286,9 +283,12 @@ where
                           | P_PairViewExp SrcOrTgt Term
             deriving Show
 
+   data CRuleTyp = CRuleEqual | CRuleSubset deriving Show
    data P_Rule  =
       P_Cy { rr_nm ::   String            -- ^ Name of this classify rule
-           , cr_exp ::  CTerm             -- ^ The concept expression 
+           , cr_lhs ::  CTerm             -- ^ Left hand side concept expression 
+           , cr_rhs ::  CTerm             -- ^ Right hand side concept expression
+           , cr_tp  ::  CRuleTyp          -- ^ equality or subset?
            , rr_fps ::  Origin            -- ^ Position in the Ampersand file
            , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
            } |

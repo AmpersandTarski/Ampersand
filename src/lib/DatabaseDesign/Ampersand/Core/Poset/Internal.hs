@@ -113,13 +113,3 @@ class Poset a => Sortable a where
 -- @isOrdered a = True@ for all @a@.
 class Poset a => Ord a
 
--- This hack allows us to leverage existing data structures defined in terms
--- of 'Prelude.Ord'.
-instance DatabaseDesign.Ampersand.Core.Poset.Internal.Ord a => Prelude.Ord a where
-    compare = (totalOrder .) . compare
-    (<)     = (<)
-    (<=)    = (<=)
-    (>=)    = (>=)
-    (>)     = (>)
---    min     = min
---    max     = max

@@ -237,12 +237,17 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pClassify :: Parser Token P_Rule
    pClassify = rebuild <$> pKey_pos "CLASSIFY"
                        <*> optional (pADLid <* pKey ":" )
-                       <*> pClassifyRule
+                       <*> pCTerm
+                       <*> (const CRuleEqual <$> pKey_pos "=" <|>
+                            const CRuleSubset <$> pKey_pos "|-")
+                       <*> pCTerm
                        <*> pList pMeaning                 
                   where
-                    rebuild po mn rexp mean
+                    rebuild po mn lhs opr rhs mean
                       = P_Cy { rr_nm   = fromMaybe (rulid po) mn
-                             , cr_exp  = rexp
+                             , cr_lhs =lhs             --  Left hand side concept expression 
+                             , cr_rhs =rhs             --  Right hand side concept expression
+                             , cr_tp  =opr         -- equality or subset? (Operator)
                              , rr_fps  = po
                              , rr_mean = mean
                              }
@@ -593,11 +598,6 @@ In practice, we have it a little different.
  - We would like the user to disambiguate between "=" and "|-" by using brackets. 
 -}
 
-   pClassifyRule :: Parser Token CTerm
-   pClassifyRule  =  pCTerm <??> (fEqu  <$> pKey_pos "="  <*> pCTerm <|>
-                                  fImpl <$> pKey_pos "|-" <*> pCTerm )
-             where fEqu  orig rExp lExp = Cequ orig lExp rExp
-                   fImpl orig rExp lExp = Cimp orig lExp rExp
 
    pCTerm :: Parser Token CTerm
    pCTerm  = pCTrm2 <??> (f CIsc <$> pars CIsc "/\\" <|> f CUni <$> pars CUni "\\/")
@@ -609,7 +609,7 @@ In practice, we have it a little different.
 
    pCTrm2 :: Parser Token CTerm
    pCTrm2 =  cCpt <$>  pConid_val_pos                                 <|>
-             CBrk <$>  pSpec_pos '('  <*>  pCTerm  <*  pSpec ')'
+             id   <$>  pSpec '('  *>  pCTerm  <*  pSpec ')'
              where cCpt (c,o) = Ccpt o c
              
 {- In theory, the expression is parsed by:

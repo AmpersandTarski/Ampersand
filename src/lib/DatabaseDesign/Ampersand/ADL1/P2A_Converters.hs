@@ -23,6 +23,7 @@ import Data.GraphViz.Attributes.Complete hiding (Box, Pos)
 import Data.Maybe
 import Data.List hiding (head)
 import DatabaseDesign.Ampersand.ADL1.TypePropagation
+import DatabaseDesign.Ampersand.ADL1.Lattices
 
 import Data.Char
 import Control.Applicative
