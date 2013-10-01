@@ -16,7 +16,7 @@ import Data.List hiding (head)
 import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map hiding (Map)
-import DatabaseDesign.Ampersand.ADL1.Lattices (SetLike(..))
+
 -- import Debug.Trace
 
 head :: [a] -> a
@@ -529,3 +529,18 @@ lookups o q = head ([slUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])
 -- | findIn(k,R) yields all l such that: k R l.
 findIn :: Ord k => k -> Map k [a] -> [a]
 findIn = Map.findWithDefault []  
+
+
+slUnion :: (Ord a) => [a] -> [a] -> [a]
+slUnion (a:as) (b:bs) | a<b       = a:slUnion as (b:bs)
+                       | a==b      = a:slUnion as bs
+                       | otherwise = b:slUnion (a:as) bs
+slUnion a b = a ++ b -- since either a or b is the empty list
+{-# SPECIALIZE slUnion :: [Int] -> [Int] -> [Int] #-}
+
+slIsect :: (Ord a) => [a] -> [a] -> [a]
+slIsect (a:as) (b:bs) | a<b       = slIsect as (b:bs)
+                       | a==b      = b: slIsect as bs
+                       | otherwise = slIsect (a:as) bs
+slIsect _ _ = [] -- since either a or b is the empty list
+{-# SPECIALIZE slIsect :: [Int] -> [Int] -> [Int] #-}
