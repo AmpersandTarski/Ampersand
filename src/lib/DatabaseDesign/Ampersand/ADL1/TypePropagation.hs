@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-{-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
+{-# LANGUAGE RelaxedPolyRec #-}
 module DatabaseDesign.Ampersand.ADL1.TypePropagation (
  -- * Exported functions
  typing, Type(..), Typemap, parallelList, findIn, showType, Guarded(..), p_flp
- , mrgUnion, BetweenType(..), Between(..), BTUOrI(..)
+ , BetweenType(..), Between(..), BTUOrI(..)
  )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
@@ -16,6 +16,7 @@ import Data.List hiding (head)
 import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map hiding (Map)
+import DatabaseDesign.Ampersand.ADL1.Lattices (SetLike(..))
 -- import Debug.Trace
 
 head :: [a] -> a
@@ -167,9 +168,9 @@ improveBindings typByTyp eqtyps (oldMap,st')
  = (bindings', stPlus)
   where bindings' = Map.union decisions oldMap
         bindings = Map.mapMaybe checkOne bindings' -- these are final: add them to st'
-        expanded = Map.fromListWith mrgUnion [(t1,[t2 | (_,_,t2)<-r]) | (t1,r)<-Map.toList (typByTyp bindings)]
+        expanded = Map.fromListWith slUnion [(t1,[t2 | (_,_,t2)<-r]) | (t1,r)<-Map.toList (typByTyp bindings)]
         decisions = Map.filter (not.null) $ makeDecisions typByTyp' st' eqtyps
-        stPlus = setClosure (Map.unionWith mrgUnion st' (symClosure (expanded))) "(st' \\/ bindings')*"
+        stPlus = setClosure (Map.unionWith slUnion st' (symClosure (expanded))) "(st' \\/ bindings')*"
         typByTyp' = typByTyp oldMap
         checkOne [c] = Just [c]
         checkOne _ = Nothing
@@ -189,16 +190,16 @@ makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
 -- trnRel is the type graph, which has been closed wrt transitivity and reflexivity.
 -- eqTyps contains classes of Types. If between A B holds, A and B are put in the same class.
 makeDecisions inp trnRel eqtyps
- = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
+ = foldl (Map.unionWith slIsect) Map.empty [ Map.filter (not . null) d
                                                 | eqs <- eqtyps
                                                 , let d = (getDecision eqs)
                                                 ]
  where inpTrnRel = composeMaps trnRel inp
      -- typsFull is the largest conceivable type graph, i.e. all froms are bound to all tos
-       typsFull = Map.unionWith mrgUnion trnRel
+       typsFull = Map.unionWith slUnion trnRel
                     (Map.map (getConcsFromTriples) inpTrnRel)
        getConcsFromTriples [] = []
-       getConcsFromTriples ((_,_,x):xs) = mrgUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
+       getConcsFromTriples ((_,_,x):xs) = slUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
        trnRel' = prune (Map.mapWithKey (\k v -> filter (isDisjConc k) v) trnRel)
        prune mp = Map.mapWithKey (\k x -> k:[v | v<-x, not (v `elem` (Map.findWithDefault [] k mp2))]) mp
          where mp2 = composeMaps mp mp
@@ -208,7 +209,7 @@ makeDecisions inp trnRel eqtyps
        f x = Map.findWithDefault [] x trnRel'
        f' x = Map.findWithDefault [] x typsFull
        getDecision equals
-        = foldl (Map.unionWith mrgIntersect) Map.empty allDecisions
+        = foldl (Map.unionWith slIsect) Map.empty allDecisions
           where iscTyps = isctAll (map f equals) `orWhenEmpty` isctAll (map f' equals)
                 isctAll :: (Ord a,Show a) => [[a]] -> [a]
                 -- isctAll [] = []
@@ -216,7 +217,7 @@ makeDecisions inp trnRel eqtyps
                   where tmap = Map.fromListWith (+) [(x'',1) | x'<-x,x''<-x']
                         top = (foldr max (0::Int) (Map.elems tmap))
                 allDecisions
-                 = [ Map.fromListWith mrgUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
+                 = [ Map.fromListWith slUnion [ (t,[d]) | (t,d,tp) <- Map.findWithDefault [] src inpTrnRel
                                                          , t' <- Map.findWithDefault [] tp trnRel'
                                                          , t' `elem` iscTyps
                                                           ]
@@ -313,7 +314,7 @@ typing st betweenTerms declsByName
     stClosAdd tm = reverseMap (foldl f (reverseMap (foldl f tm glbs)) lubs)
       where
        f :: Typemap -> (Type,Type,Type) -> Typemap
-       f dataMap (a, b, t) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups t dataMap]) dataMap
+       f dataMap (a, b, t) = Map.map (\cs -> slUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups t dataMap]) dataMap
        -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
        -- (These arcs show up as dotted lines in the type graphs)
        lubs = [(a,b,t) | (Between _ a b (BetweenType BTUnion t)) <- betweenTerms]
@@ -332,7 +333,7 @@ typing st betweenTerms declsByName
                      )
     
     ivTypByTyp :: Map Type [P_Concept] -> Map Type [(Type,P_Concept,Type)]
-    ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid (SomewhereNear (fatal 313 "Hopefully this isn't inspected")) c) Src)) concs)
+    ivTypByTyp ivMap = Map.fromListWith slUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid (SomewhereNear (fatal 313 "Hopefully this isn't inspected")) c) Src)) concs)
                                                  | (tp,concs) <- Map.toList ivMap ]
     
     typByTyp :: Map Term [P_Declaration] -> Map Type [(Term,P_Declaration,Type)]
@@ -340,7 +341,7 @@ typing st betweenTerms declsByName
          where triples b t = sort [(t,d,decToTyp b d ) | d <- Map.findWithDefault [] t oldMap]
 
     firstClos = setClosure (addIdentity st) "(st \\/ I)*"
-    firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
+    firstClosSym = Map.intersectionWith slIsect firstClos (reverseMap firstClos)
 
     (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
                                      (declByTerm,firstClos)
@@ -351,10 +352,10 @@ typing st betweenTerms declsByName
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
     ivToTyps o = nub' [TypExpr o Src, TypExpr o Tgt]
-    betweensAsMap = (Map.fromListWith mrgUnion [ (case thrd of {(BetweenType _ t) -> t;_ -> rhs}
+    betweensAsMap = (Map.fromListWith slUnion [ (case thrd of {(BetweenType _ t) -> t;_ -> rhs}
                                                  , nub'$ sort [rhs,lhs]) | (Between _ lhs rhs thrd) <- betweenTerms ])
     
-    eqtyps' = setClosure (Map.unionWith mrgUnion firstClosSym (symClosure betweensAsMap))
+    eqtyps' = setClosure (Map.unionWith slUnion firstClosSym (symClosure betweensAsMap))
                          "between types"
     eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) eqtyps')
     
@@ -375,7 +376,7 @@ typing st betweenTerms declsByName
     stClos = if stClosAdded == addIdentity (setClosure stClosAdded "stClosAdded") then stClosAdded else
                 fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
-    eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
+    eqType = Map.intersectionWith slIsect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
     isaClos :: Map P_Concept [P_Concept]
     isaClos' = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid _ c') _<-ts,c'/=c]) | (TypExpr (Pid _ c) _, ts)<-Map.toAscList stClos]
     isaClosReversed :: Map P_Concept [P_Concept]
@@ -386,7 +387,7 @@ typing st betweenTerms declsByName
                   where f :: [Type] -> [P_Concept]
                         f ts = [t | t <- ownTypes ts, not (t `elem` derived ts)]
                         ownTypes ts = [c | TypExpr (Pid _ c) _<-ts]
-                        derived ts = foldl mrgUnion [] [Map.findWithDefault [] t isaClos' | t<-ownTypes ts]
+                        derived ts = foldl slUnion [] [Map.findWithDefault [] t isaClos' | t<-ownTypes ts]
     srcTypes' :: Type -> [P_Concept]
     srcTypes' typ = case Map.lookup typ stConcepts of
                       Just x -> x
@@ -402,12 +403,12 @@ typing st betweenTerms declsByName
 -- | note that the domain must be preserved!
 -- | reverseMap r = r~
 reverseMap :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
-reverseMap lst = (Map.fromListWith mrgUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Map.toAscList lst]))
+reverseMap lst = (Map.fromListWith slUnion (concat [(a,[]):[(b,[a])|b<-bs] | (a,bs)<-Map.toAscList lst]))
 -- note: reverseMap is relatively slow, but only needs to be calculated once
 
 -- | addIdentity r = r\/I
 addIdentity :: (Prelude.Ord a, Show a) => Map a [a] -> Map a [a]
-addIdentity mp = Map.mapWithKey (\k a->mrgUnion a [k]) mp
+addIdentity mp = Map.mapWithKey (\k a->slUnion a [k]) mp
 
 mapIsOk :: (Show a,Ord a) => Map k [a] -> Bool
 mapIsOk m = Map.fold (&&) True (Map.map (isSortedAndDistinct . checkRfx) m)
@@ -457,28 +458,15 @@ setClosureSlow :: (Show a,Ord a) => Map a [a] -> String -> Map a [a]
 setClosureSlow xs s | not (mapIsOk xs) = fatal 144 ("setClosure on the non-ok set "++s)
 setClosureSlow xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure contains errors!")
   where
---   f q x = Map.map (\bs->foldl mrgUnion bs [b' | b<-bs, b == x, (a', b') <- Map.toList q, a' == x]) q
-   f q x = Map.map (\bs->foldl mrgUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
+--   f q x = Map.map (\bs->foldl slUnion bs [b' | b<-bs, b == x, (a', b') <- Map.toList q, a' == x]) q
+   f q x = Map.map (\bs->foldl slUnion bs [b' | x `elem` bs, Just b' <- [Map.lookup x q]]) q
    res   = foldl f xs (Map.keys xs `isc` nub (concat (Map.elems xs)))
 
 
 composeMaps :: (Ord k1, Ord a, Show a) => Map k [k1] -> Map k1 [a] -> Map k [a]
-composeMaps m1 m2 = Map.map (\x -> foldr mrgUnion [] [Map.findWithDefault [] s m2 | s <- x]) m1
+composeMaps m1 m2 = Map.map (\x -> foldr slUnion [] [Map.findWithDefault [] s m2 | s <- x]) m1
 symClosure :: (Ord a, Show a) => Map a [a] -> Map a [a]
-symClosure m = Map.unionWith mrgUnion m (reverseMap m)
-
--- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
-mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
-mrgUnion (a:as) (b:bs) | a<b       = a:mrgUnion as (b:bs)
-                       | a==b      = b: mrgUnion as bs
-                       | otherwise = b:mrgUnion (a:as) bs
-mrgUnion a b = a ++ b -- since either a or b is the empty list
-
-mrgIntersect :: (Show a,Ord a) => [a] -> [a] -> [a]
-mrgIntersect (a:as) (b:bs) | a<b       = mrgIntersect as (b:bs)
-                           | a==b      = b: mrgIntersect as bs
-                           | otherwise = mrgIntersect (a:as) bs
-mrgIntersect _ _ = [] -- since either a or b is the empty list
+symClosure m = Map.unionWith slUnion m (reverseMap m)
 
 nub' :: (Show a,Ord a,Eq a) => [a] -> [a]
 nub' (x:y:xs) | x==y      = nub' (y:xs)
@@ -487,14 +475,14 @@ nub' [x] = [x]
 nub' [] = []
 -- -}
 
-{- The following mrgUnion and mrgIntersect are for debug purposes. DO NOT DELETE!!!
-mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
-mrgUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
+{- The following slUnion and slIsect are for debug purposes. DO NOT DELETE!!!
+slUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
+slUnion l r = if isSortedAndDistinct res then res else fatal 172 ("merge contains an error")
   where res = if isSortedAndDistinct l then
                 (if isSortedAndDistinct r then merge l r
-                 else fatal 175 ("mrgUnion should be called on sorted distinct lists, but its second argument is:\n "++show r)
+                 else fatal 175 ("slUnion should be called on sorted distinct lists, but its second argument is:\n "++show r)
                  )
-              else fatal 177 ("mrgUnion should be called on sorted distinct lists, but its first argument is:\n "++show l)
+              else fatal 177 ("slUnion should be called on sorted distinct lists, but its first argument is:\n "++show l)
         merge :: (Show a,Ord a) => [a] -> [a] -> [a]
         merge (a:as) (b:bs) | a<b  = if not (b<a) && not (a==b) then a:merge as (b:bs) else fatal 179 ("Compare is not antisymmetric for: "++show a++" and "++show b)
                             | a==b = if (b==a) then distinctCons a b (merge as bs) else fatal 180 ("Eq is not symmetric for: "++show a++" and "++show b)
@@ -536,7 +524,7 @@ distinctCons a _ bs = a:bs
 
 -- | lookups is the reflexive closure of findIn. lookups a R = findIn(a,R\/I) where a is an element and R is a relation.
 lookups :: (Show a,Ord a) => a -> Map a [a] -> [a]
-lookups o q = head ([mrgUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])  
+lookups o q = head ([slUnion [o] e | Just e<-[Map.lookup o q]]++[[o]])  
 
 -- | findIn(k,R) yields all l such that: k R l.
 findIn :: Ord k => k -> Map k [a] -> [a]
