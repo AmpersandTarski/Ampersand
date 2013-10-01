@@ -15,7 +15,7 @@
 -- 'Prelude.Ord'.  Should the user wish to take advantage of existing libraries
 -- which use 'Prelude.Ord', just let Prelude.compare = (totalOrder .) . compare
 module DatabaseDesign.Ampersand.Core.Poset (
-    Poset(..), Sortable(..), Ordering(..), Ord, makePartialOrder,comparableClass,greatest,least,maxima,minima,sortWith
+    Poset(..), Sortable(..), Ordering(..), Ord, comparableClass,greatest,least,maxima,minima,sortWith
 ) where
 import qualified Prelude
 import qualified GHC.Exts (sortWith)
@@ -62,33 +62,6 @@ fatal = fatalMsg "Core.Poset"
 --    + sort  [F,E,D,B,A,C] = [F,A,B,C,D,E]
 --    + sort  [B,F,E,C,D,A] = [A,B,F,C,D,E]
 
-makePartialOrder :: Eq a => [(a, a)] -> (a->a->Ordering,[[a]])
-makePartialOrder rs = (gE , classes)
-    where
-      nrs     = List.nub rs  -- nrs is a list of unique pairs (double occurences are removed). Let us treat it as a relation
-      paths   = clos nrs     -- paths is nrs+ (the transitive closure of nrs)
-      gE a b | a==b = EQ
-             | (a,b) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = LT
-             | (b,a) `elem` [ (fst (head pth), snd (last pth)) | pth<-paths ] = GT
-             | or [ a `elem` cl && b `elem` cl | cl <- classes ] = CP --not EQ, not LT, not GT, but still comparable
-             | otherwise = NC
-      classes = maxima cycles
-      cycles  = GHC.Exts.sortWith ((0-).length) (map strip pths)
-                where --pths :: Eq a => [[(a,a)]]
-                      pths          = clos (nrs `uni` map swap nrs)  -- pths = (nrs\/nrs~)+   If c and c' are in pths, they are one of EQ, LT, GT or CP, but not NC.
-                      swap (a,b)    = (b,a)
-                      strip :: Eq a => [(a,a)] -> [a]              --  Turns [(Amsterdam,Barneveld), (Barneveld,Ede), (Ede,Arnhem)] to [Amsterdam,Barneveld,Arnhem]
-                      strip pth     = List.nub (fst (head pth): map snd pth)
-      --maxima :: Eq a => [a] -> [a]
-      maxima []       = []
-      maxima (cy:cys) = cy:[cy' | cy'<-cys, null (cy `isc` cy')]
-
-      clos :: Eq a => [(a, a)] -> [[(a, a)]]
-      clos xs
-          = foldl f [[x]| x<-xs] (map fst xs `isc` map snd xs)
-            where
-             f q x = q ++ [ls ++ rs | ls <- q, x == snd (last ls)
-                                    , rs <- q, x == fst (head rs), null (ls `isc` rs)]
 
 instance Poset a => Poset (Maybe a) where
     Just x  <= Just y = x <= y

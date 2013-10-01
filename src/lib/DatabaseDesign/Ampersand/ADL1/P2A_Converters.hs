@@ -1,5 +1,5 @@
 ﻿{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-{-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
+{-# LANGUAGE RelaxedPolyRec #-}
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
      pCtx2aCtx,
@@ -22,8 +22,8 @@ import Data.GraphViz hiding (addExtension, C)
 import Data.GraphViz.Attributes.Complete hiding (Box, Pos)
 import Data.Maybe
 import Data.List hiding (head)
-import DatabaseDesign.Ampersand.ADL1.TypePropagation
-import DatabaseDesign.Ampersand.ADL1.Lattices
+import DatabaseDesign.Ampersand.ADL1.TypePropagation -- (Typemap, Type(..), showType, findIn, p_flp, Guarded(..), parallelList, typing, BTUOrI(..), Between(..), BetweenType(..))
+import DatabaseDesign.Ampersand.ADL1.Lattices (SetLike(..))
 
 import Data.Char
 import Control.Applicative
@@ -88,7 +88,7 @@ a .<. b  = (Map.fromList [(a, [b]),(b, [])],[]) -- a tuple meaning that a is a s
 (.=.) :: Type -> Type -> TypeInfo
 a .=. b  = (Map.fromList [(a, [b]),(b, [a])],[])
 (.+.) :: TypeInfo -> TypeInfo -> TypeInfo
-(m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
+(m1,l1) .+. (m2,l2) = (Map.unionWith slUnion m1 m2, l1++l2)
 thing :: P_Concept -> Type
 thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src
 dom, cod :: Term -> Type
@@ -482,7 +482,7 @@ pCtx2aCtx p_context
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindingsandsrcTypes, isaClos, isaClosReversed)
      = typing utypeST betweens
-              (Map.fromListWith mrgUnion [ (name (head cl)
+              (Map.fromListWith slUnion [ (name (head cl)
                                            , uniqueCl cl)
                                          | cl<-eqCl name (p_declarations p_context) ])
     (utypeST,betweens) = uType p_context p_context
