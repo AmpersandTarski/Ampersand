@@ -23,7 +23,7 @@ import Data.GraphViz.Attributes.Complete hiding (Box, Pos)
 import Data.Maybe
 import Data.List hiding (head)
 import DatabaseDesign.Ampersand.ADL1.TypePropagation -- (Typemap, Type(..), showType, findIn, p_flp, Guarded(..), parallelList, typing, BTUOrI(..), Between(..), BetweenType(..))
-import DatabaseDesign.Ampersand.ADL1.Lattices (SetLike(..))
+
 
 import Data.Char
 import Control.Applicative
@@ -1158,3 +1158,18 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
              Just (x:_) -> eqNr x
              _ -> fatal 571 ("Element "++show t++" not found in nr")
      condensedEdges2 = nub [(nr t,nr t') | (t,t')<-flattenMap stClosAdded, nr t /= nr t', t' `notElem` findIn t stClos1]>-condensedEdges
+
+
+slUnion :: (Ord a) => [a] -> [a] -> [a]
+slUnion (a:as) (b:bs) | a<b       = a:slUnion as (b:bs)
+                       | a==b      = a:slUnion as bs
+                       | otherwise = b:slUnion (a:as) bs
+slUnion a b = a ++ b -- since either a or b is the empty list
+{-# SPECIALIZE slUnion :: [Int] -> [Int] -> [Int] #-}
+
+slIsect :: (Ord a) => [a] -> [a] -> [a]
+slIsect (a:as) (b:bs) | a<b       = slIsect as (b:bs)
+                       | a==b      = b: slIsect as bs
+                       | otherwise = slIsect (a:as) bs
+slIsect _ _ = [] -- since either a or b is the empty list
+{-# SPECIALIZE slIsect :: [Int] -> [Int] -> [Int] #-}

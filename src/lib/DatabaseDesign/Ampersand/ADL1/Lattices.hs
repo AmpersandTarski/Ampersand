@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,addEquality,emptySystem,SetLike(slUnion, slIsect)) where
+module DatabaseDesign.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,addEquality,emptySystem) where
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map
 import qualified Data.Set as Set
