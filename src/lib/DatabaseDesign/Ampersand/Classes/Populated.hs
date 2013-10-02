@@ -83,16 +83,16 @@ where
                               --     (not.null) [ () |z<- atomsOf pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
                                    , (not.null) [ () |z<- atomsOf pt (source l), (z,x) `elem` contents l, (z,y) `notElem` contents r]
                                    ]   -- equals contents (ELrs (flp r, flp l))
-            ERad (l,r) _ -> [(x,y) | x <- case target l of
+            ERad (l,r) c _ -> [(x,y) | x <- case target l of
                                             tl@PlainConcept{} -> atomsOf pt tl
                                             tl     -> fatal 97 ("target l should be PlainConcept instead of "++show tl++".")
                                    , y <- case source r of
                                             sr@PlainConcept{} -> atomsOf pt sr
                                             sr     -> fatal 100 ("source r should be PlainConcept instead of "++show sr++".")
-                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf pt (target l `join` source r)]
+                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf pt c]
                                    ]
             EPrd (l,r) _ -> [ (a,b) | a <- atomsOf pt (source l), b <- atomsOf pt (target r) ]
-            ECps (l,r) _ -> contents l `kleenejoin` contents r
+            ECps (l,r) _ _ -> contents l `kleenejoin` contents r
             EKl0 e     _ -> if source e == target e --see #166
                             then closPair (contents e `uni` contents (iExpr (source e)))
                             else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
