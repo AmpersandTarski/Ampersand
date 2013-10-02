@@ -6,8 +6,8 @@ import qualified Data.Set as Set
 import Data.List (sort, partition)
 
 -- optimisations possible for the EqualitySystem(s):
--- (1) apply optimize1 directly
--- (2) include the transitively dependent rules
+-- (1) apply optimize1 inline, that is: don't use EqualitySystem but use ES1 instead
+-- (2) include the transitively dependent rules recursively
 data EqualitySystem a
  = ES (Map.Map a Int) -- whatever this is a system of
       (IntMap.IntMap  -- map for: whenever you encounter this element i in your set y
@@ -24,7 +24,7 @@ findExact = findWith (lookupInRevMap)
 findSubsets :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> [x a] -- returns a list of largest subsets
 findSubsets = findWith findSubsetInRevMap
 
-findWith :: (SetLike x, Ord a) => ((x Int) -> RevMap a -> b) -> Op1EqualitySystem a -> FreeLattice a -> b
+findWith :: (SetLike x, Ord a) => ((x Int) -> RevMap a -> b) -> Op1EqualitySystem a -> FreeLattice a -> Either b a
 findWith f es@(ES1 _ back _) trm
   = f (fromSet (intersections (map it (latticeToTranslatable es trm)))) back
   where it = simplifySet es
