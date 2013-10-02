@@ -22,8 +22,8 @@ subst (decl,f) = subs
        subs (EDif (l,r) sgn) = EDif (subs l,subs r) sgn
        subs (ELrs (l,r) sgn) = ELrs (subs l,subs r) sgn
        subs (ERrs (l,r) sgn) = ERrs (subs l,subs r) sgn
-       subs (ECps (l,r) sgn) = ECps (subs l,subs r) sgn
-       subs (ERad (l,r) sgn) = ERad (subs l,subs r) sgn
+       subs (ECps (l,r) c sgn) = ECps (subs l,subs r) c sgn
+       subs (ERad (l,r) c sgn) = ERad (subs l,subs r) c sgn
        subs (EPrd (l,r) sgn) = EPrd (subs l,subs r) sgn
        subs (EKl0 e     sgn) = EKl0 (subs e)        sgn
        subs (EKl1 e     sgn) = EKl1 (subs e)        sgn
@@ -66,10 +66,10 @@ subsi n f expr = expr'
          subs i (ERrs (l,r) sgn) = (ERrs (l',r') sgn, i'')
                                    where (l',i')  = subs i l
                                          (r',i'') = subs i' r
-         subs i (ECps (l,r) sgn) = (ECps (l',r') sgn, i'')
+         subs i (ECps (l,r) c sgn) = (ECps (l',r') c sgn, i'')
                                    where (l',i')  = subs i l
                                          (r',i'') = subs i' r
-         subs i (ERad (l,r) sgn) = (ERad (l',r') sgn, i'')
+         subs i (ERad (l,r) c sgn) = (ERad (l',r') c sgn, i'')
                                    where (l',i')  = subs i l
                                          (r',i'') = subs i' r
          subs i (EPrd (l,r) sgn) = (EPrd (l',r') sgn, i'')
@@ -100,8 +100,8 @@ foldrMapExpression f g a (EUni (l,r) _)    = foldrMapExpression f g (foldrMapExp
 foldrMapExpression f g a (EDif (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ELrs (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ERrs (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ECps (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ERad (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ECps (l,r) _ _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ERad (l,r) _ _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EPrd (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EKl0 e _)        = foldrMapExpression f g a                         e
 foldrMapExpression f g a (EKl1 e _)        = foldrMapExpression f g a                         e
@@ -124,8 +124,8 @@ primitives expr =
     (EDif (l,r) _) -> primitives l `uni` primitives r
     (ELrs (l,r) _) -> primitives l `uni` primitives r
     (ERrs (l,r) _) -> primitives l `uni` primitives r
-    (ECps (l,r) _) -> primitives l `uni` primitives r
-    (ERad (l,r) _) -> primitives l `uni` primitives r
+    (ECps (l,r) _ _) -> primitives l `uni` primitives r
+    (ERad (l,r) _ _) -> primitives l `uni` primitives r
     (EPrd (l,r) _) -> primitives l `uni` primitives r
     (EKl0 e _)     -> primitives e
     (EKl1 e _)     -> primitives e
@@ -141,15 +141,15 @@ primitives expr =
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
 deMorgan :: Sign -> Expression -> Expression
-deMorgan sgn@(Sign s t) (ERad (l,r) _)
+deMorgan sgn@(Sign s t) (ERad (l,r) z _)
     = case (target l, source r) of
-       (tl@PlainConcept{},sr@PlainConcept{}) 
-          -> let z = tl `meet` sr in notCpl sgn (notCpl (Sign s z) l .:. notCpl (Sign z t) r)
+       (PlainConcept{},PlainConcept{}) 
+          -> notCpl sgn (notCpl (Sign s z) l .:. notCpl (Sign z t) r)
        _  -> fatal 137 "expression in wrong format (has never been signalled so far...)"
-deMorgan sgn@(Sign s t) (ECps (l,r) _)
+deMorgan sgn@(Sign s t) (ECps (l,r) z _)
     = case (target l, source r) of
-       (tl@PlainConcept{},sr@PlainConcept{})
-          -> let z = tl `join` sr in notCpl sgn (notCpl (Sign s z) l .!. notCpl (Sign z t) r)
+       (PlainConcept{},PlainConcept{})
+          -> notCpl sgn (notCpl (Sign s z) l .!. notCpl (Sign z t) r)
        _  -> fatal 141 "expression in wrong format (has never been signalled so far...)"
        
 deMorgan sgn (EUni (l,r) _)    = notCpl sgn (notCpl sgn l ./\. notCpl sgn r)

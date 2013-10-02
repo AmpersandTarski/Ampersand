@@ -399,8 +399,8 @@ instance ShowMath Expression where
           showExpr (EDif (l,r) _) = showExpr l++texOnly_bx ++showExpr r
           showExpr (ELrs (l,r) _) = showExpr l++texOnly_lRes++showExpr r
           showExpr (ERrs (l,r) _) = showExpr l++texOnly_rRes++showExpr r
-          showExpr (ECps (l,r) _) = showExpr l++texOnly_compose++showExpr r
-          showExpr (ERad (l,r) _) = showExpr l++texOnly_relAdd++showExpr r
+          showExpr (ECps (l,r) _ _) = showExpr l++texOnly_compose++showExpr r
+          showExpr (ERad (l,r) _ _) = showExpr l++texOnly_relAdd++showExpr r
           showExpr (EPrd (l,r) _) = showExpr l++texOnly_crtPrd++showExpr r
           showExpr (EKl0 e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
           showExpr (EKl1 e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"

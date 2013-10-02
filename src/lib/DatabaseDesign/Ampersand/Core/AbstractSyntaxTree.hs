@@ -385,8 +385,8 @@ data Expression
       | EDif (Expression,Expression) Sign  -- ^ difference              -
       | ELrs (Expression,Expression) Sign  -- ^ left residual           /
       | ERrs (Expression,Expression) Sign  -- ^ right residual          \
-      | ECps (Expression,Expression) Sign  -- ^ composition             ; 
-      | ERad (Expression,Expression) Sign  -- ^ relative addition       ! 
+      | ECps (Expression,Expression) A_Concept Sign  -- ^ composition             ; 
+      | ERad (Expression,Expression) A_Concept Sign  -- ^ relative addition       ! 
       | EPrd (Expression,Expression) Sign  -- ^ cartesian product       * 
       | EKl0 Expression              Sign  -- ^ Rfx.Trn closure         *  (Kleene star)
       | EKl1 Expression              Sign  -- ^ Transitive closure      +  (Kleene plus)
@@ -447,8 +447,8 @@ l .\/. r = EUni (l,r)
 l .-. r  = EDif (l,r) (sign l)
 l ./. r  = ELrs (l,r) (Sign (source l) (source r))
 l .\. r  = ERrs (l,r) (Sign (target l) (target r))
-l .:. r  = ECps (l,r) (Sign (source l) (target r))
-l .!. r  = ERad (l,r) (Sign (source l) (target r))
+l .:. r  = ECps (l,r) (target l) (Sign (source l) (target r))
+l .!. r  = ERad (l,r) (target l) (Sign (source l) (target r))
 l .*. r  = EPrd (l,r) (Sign (source l) (target r))
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
@@ -465,8 +465,8 @@ instance Flippable Expression where
                EDif (l,r) sgn -> EDif (flp l, flp r) (flp sgn)
                ELrs (l,r) sgn -> ERrs (flp r, flp l) (flp sgn)
                ERrs (l,r) sgn -> ELrs (flp r, flp l) (flp sgn)
-               ECps (l,r) sgn -> ECps (flp r, flp l) (flp sgn)
-               ERad (l,r) sgn -> ERad (flp r, flp l) (flp sgn)
+               ECps (l,r) c sgn -> ECps (flp r, flp l) c (flp sgn)
+               ERad (l,r) c sgn -> ERad (flp r, flp l) c (flp sgn)
                EPrd (l,r) sgn -> EPrd (flp r, flp l) (flp sgn)
                EFlp e     _   -> e
                ECpl e     sgn -> ECpl (flp e) (flp sgn)
@@ -492,8 +492,8 @@ insParentheses = insPar 0
        insPar i (EDif (l,r) sgn) = wrap i     4 (EDif (insPar 5 l, insPar 5 r) sgn)
        insPar i (ELrs (l,r) sgn) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r) sgn)
        insPar i (ERrs (l,r) sgn) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r) sgn)
-       insPar i (ECps (l,r) sgn) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r) sgn)
-       insPar i (ERad (l,r) sgn) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r) sgn)
+       insPar i (ECps (l,r) c sgn) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r) c sgn)
+       insPar i (ERad (l,r) c sgn) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r) c sgn)
        insPar i (EPrd (l,r) sgn) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r) sgn)
        insPar _ (EKl0 e     sgn) = EKl0 (insPar 10 e) sgn
        insPar _ (EKl1 e     sgn) = EKl1 (insPar 10 e) sgn
@@ -514,8 +514,8 @@ instance Association Expression where
  sign (EDif _ sgn) = sgn
  sign (ELrs _ sgn) = sgn
  sign (ERrs _ sgn) = sgn
- sign (ECps _ sgn) = sgn
- sign (ERad _ sgn) = sgn
+ sign (ECps _ _ sgn) = sgn
+ sign (ERad _ _ sgn) = sgn
  sign (EPrd _ sgn) = sgn
  sign (EKl0 _ sgn) = sgn
  sign (EKl1 _ sgn) = sgn

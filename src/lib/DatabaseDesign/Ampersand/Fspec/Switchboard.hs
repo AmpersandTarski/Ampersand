@@ -241,9 +241,9 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (EDif (l,r) sgn) = f (l ./\. notCpl sgn r)
      f (ELrs (l,r) sgn) = f (l .!. notCpl sgn (flp r))
      f (ERrs (l,r) sgn) = f (notCpl sgn (flp l) .!. r)
-     f (ECps (l,r) _  ) = f l ++ f r
-     f (ERad (l,r) _  ) = f l ++ f r
-     f (EPrd (l,r) _  ) = f l ++ f r
+     f (ECps (l,r) _ _) = f l ++ f r
+     f (ERad (l,r) _ _) = f l ++ f r
+     f (EPrd (l,r) _ )  = f l ++ f r
      f (EKl0 e _)       = f e
      f (EKl1 e _)       = f e
      f (EFlp e _)       = f e

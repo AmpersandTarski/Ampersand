@@ -109,7 +109,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                    ++[Rfx | isEndo sgn]
                    ++[Trn | isEndo sgn]
      EBrk f       -> multiplicities f
-     ECps (l,r) _ -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
+     ECps (l,r) _ _ -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
      EPrd (l,r) _ -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
      EKl0 e'    _ -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      EKl1 e'    _ -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
@@ -129,12 +129,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) sgn -> isTrue (ETyp l sgn) && isTrue (ETyp r sgn)
      EUni (l,r) sgn -> isTrue (ETyp l sgn) || isTrue (ETyp r sgn)
      EDif (l,r) sgn -> isTrue (ETyp l sgn) && isFalse r
-     ECps (l,r) _   | null ([Uni,Tot]>-multiplicities l) -> isTrue r
-                    | null ([Sur,Inj]>-multiplicities r) -> isTrue l
-                    | otherwise                          -> isTrue (ETyp l (Sign sl z)) && isTrue (ETyp r (Sign z tr))
-                       where Sign sl tl = sign l
-                             Sign sr tr = sign r
-                             z = tl `meet` sr
+     ECps (l,r) z (Sign sl tr) | null ([Uni,Tot]>-multiplicities l) -> isTrue r
+                          | null ([Sur,Inj]>-multiplicities r) -> isTrue l
+                          | otherwise                          -> isTrue (ETyp l (Sign sl z)) && isTrue (ETyp r (Sign z tr))
      EPrd (l,r) sgn -> isTrue l' && isTrue r' || isTot l' && isSur r' || isRfx l' && isRfx r'
                        where l' = ETyp l sgn
                              r' = ETyp r sgn
@@ -159,7 +156,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) _   -> isFalse r || isFalse l
      EUni (l,r) _   -> isFalse r && isFalse l
      EDif (l,r) sgn -> isFalse l || isTrue (ETyp r sgn)
-     ECps (l,r) _   -> isFalse r || isFalse l
+     ECps (l,r) _ _ -> isFalse r || isFalse l
      EPrd (l,r) _   -> isFalse r || isFalse l
      EKl0 e     _   -> isFalse e
      EKl1 e     _   -> isFalse e
@@ -183,10 +180,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) sgn -> isIdent (ETyp l sgn) && isIdent (ETyp r sgn)
      EUni (l,r) sgn -> isIdent (ETyp l sgn) && isIdent (ETyp r sgn)
      EDif (l,r) sgn -> isIdent (ETyp l sgn) && isFalse r
-     ECps (l,r) _   -> isIdent (ETyp l (Sign sl z)) && isIdent (ETyp r (Sign z tr))
-                       where Sign sl tl = sign l
-                             Sign sr tr = sign r
-                             z = tl `meet` sr
+     ECps (l,r) z (Sign sl tr) -> isIdent (ETyp l (Sign sl z)) && isIdent (ETyp r (Sign z tr))
      EKl0 e     _   -> isIdent e || isFalse e
      EKl1 e     _   -> isIdent e
      ECpl e     sgn -> isImin (ETyp e sgn)
