@@ -32,7 +32,7 @@ ENDPATTERN
 
 PATTERN Gens
 IDENT Gen: Gen( genspc, gengen )
-VIEW Gen: Gen( TXT "SPEC ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
+VIEW Gen: Gen( TXT "CLASSIFY ", genspc;cptnm , TXT " ISA " , gengen;cptnm )
 RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I[Gen]
 MEANING IN ENGLISH "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 

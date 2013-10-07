@@ -2,7 +2,7 @@ CONTEXT RAP
 --INCLUDE "student_AST_interfaces.adl"
 --INCLUDE "admin_interfaces.adl"
 INCLUDE "Fspec.adl"
---INCLUDE "ASTdocumentation.adl"
+INCLUDE "ASTdocumentation.adl"
 IN ENGLISH
 LATEX
 
