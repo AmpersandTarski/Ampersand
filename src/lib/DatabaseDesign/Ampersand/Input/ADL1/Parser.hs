@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "RELATION", "MEANING", "DEFINE", "CONCEPT", "IDENT"
                        , "VIEW", "TXT", "PRIMHTML"
                        , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
-                       , "IMPORT", "SPEC", "ISA", "I", "V"
+                       , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                        , "CLASSIFY"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
@@ -143,7 +143,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
     where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
     
    pPatternDef :: Parser Token P_Pattern
-   pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> (pConid <|> pString)
+   pPatternDef = rebuild <$> pKey_pos "PATTERN" <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                          <*> pList pPatElem
                          <*> pKey_pos "ENDPATTERN"
      where
@@ -189,7 +189,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                 | Pp P_Population
                               
    pProcessDef :: Parser Token P_Process
-   pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> (pConid <|> pString)
+   pProcessDef = rebuild <$> pKey_pos "PROCESS" <*> pConceptName   -- The name spaces of patterns, processes and concepts are shared.
                          <*> pList pProcElem
                          <*> pKey_pos "ENDPROCESS"
       where
@@ -236,23 +236,21 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
    pClassify :: Parser Token P_Rule
    pClassify = rebuild <$> pKey_pos "CLASSIFY"
-                       <*> optional (pADLid <* pKey ":" )
-                       <*> pCTerm
-                       <*> (const CRuleEqual <$> pKey_pos "=" <|>
-                            const CRuleSubset <$> pKey_pos "|-")
-                       <*> pCTerm
-                       <*> pList pMeaning                 
+                       <*> pConceptRef
+                       <*  pKey "IS"
+                       <*> pCterm
                   where
-                    rebuild po mn lhs opr rhs mean
-                      = P_Cy { rr_nm   = fromMaybe (rulid po) mn
-                             , cr_lhs =lhs             --  Left hand side concept expression 
-                             , cr_rhs =rhs             --  Right hand side concept expression
-                             , cr_tp  =opr         -- equality or subset? (Operator)
+                    rebuild po lhs rhs
+                      = P_Cy { cr_lhs  = lhs             --  Left hand side concept expression 
+                             , cr_rhs  = rhs             --  Right hand side concept expression
                              , rr_fps  = po
-                             , rr_mean = mean
                              }
-                    rulid (FileLoc(FilePos (_,Pos l _,_))) = "classify@line"++show l
-                    rulid _ = fatal 226 "pClassify is expecting a file location."
+                    pCterm  = f <$> pList1Sep (pKey "/\\") pCterm1
+                    pCterm1 = g <$> pConceptRef                        <|>
+                              h <$> (pSpec '(' *> pCterm <* pSpec ')')  -- brackets are allowed for educational reasons.
+                    f ccs = concat ccs
+                    g c = [c]
+                    h cs = cs
 
    
    pRuleDef :: Parser Token P_Rule
@@ -353,15 +351,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                        
    pConceptDef :: Parser Token ConceptDef
    pConceptDef       = Cd <$> pKey_pos "CONCEPT"
-                          <*> (pConid <|> pString)   -- the concept name
+                          <*> pConceptName           -- the concept name
                           <*> ((True <$ pKey "BYPLUG") `opt` False)
                           <*> pString                -- the definition text
                           <*> ((pKey "TYPE" *> pString) `opt` "")     -- the type of the concept.
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
 
    pGenDef :: Parser Token P_Gen
-   pGenDef           = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
-                       where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
+   pGenDef           = rebuild <$ pKey "SPEC"     <*> pConceptRef <*> pKey_pos "ISA" <*> pConceptRef <|>  -- SPEC is obsolete syntax. Should disappear!
+                       rebuild <$ pKey "CLASSIFY" <*> pConceptRef <*> pKey_pos "ISA" <*> pConceptRef
+                       where rebuild spc p gen = PGen p gen spc
 
    -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
    -- which means that name<>name~ /\ address<>addres~ |- I[Person].
@@ -407,7 +406,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    --      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
    -- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
    pViewDef :: Parser Token P_ViewDef
-   pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
+   pViewDef  = vd <$ (pKey "VIEW" <|> pKey "KEY") <*> pLabelProps <*> pConceptOneRefPos <* pSpec '(' <*> pList1Sep (pSpec ',') pViewSegment <* pSpec ')'
        where vd :: Label -> (P_Concept, Origin) -> [P_ViewSegment] -> P_ViewDef 
              vd (Lbl nm _ _) (c, orig) ats
                  = P_Vd { vd_pos = orig
@@ -508,19 +507,19 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
           rebuild orig obj lang fmt ref str
               = PRef2 orig obj (P_Markup lang fmt str) ref
           pRef2Obj :: Parser Token PRef2Obj
-          pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> (pConid <|> pString) <|>
-                     PRef2Declaration <$ pKey "RELATION"  <*> pRelSign             <|>
-                     PRef2Rule        <$ pKey "RULE"      <*> pADLid               <|>
-                     PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid               <|>  
-                     PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid               <|>  
-                     PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid               <|>
-                     PRef2Process     <$ pKey "PROCESS"   <*> pADLid               <|>
-                     PRef2Interface   <$ pKey "INTERFACE" <*> pADLid               <|>
+          pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
+                     PRef2Declaration <$ pKey "RELATION"  <*> pRelSign     <|>
+                     PRef2Rule        <$ pKey "RULE"      <*> pADLid       <|>
+                     PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>  
+                     PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>  
+                     PRef2Pattern     <$ pKey "PATTERN"   <*> pADLid       <|>
+                     PRef2Process     <$ pKey "PROCESS"   <*> pADLid       <|>
+                     PRef2Interface   <$ pKey "INTERFACE" <*> pADLid       <|>
                      PRef2Context     <$ pKey "CONTEXT"   <*> pADLid
 
    pPopulation :: Parser Token P_Population
-   pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign             <* pKey "CONTAINS" <*> pContent <|>
-                 pcptpop <$> pKey_pos "POPULATION" <*> (pConid <|> pString) <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
+   pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent <|>
+                 pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
        where
          prelpop :: Origin -> Term -> Pairs -> P_Population
          prelpop orig (Prel _ nm) contents
@@ -558,8 +557,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
 
    pPrintThemes :: Parser Token [String]
    pPrintThemes = pKey "THEMES" 
-               *> pList1Sep (pSpec ',') (pConid <|> pString)
-
+               *> pList1Sep (pSpec ',') pConceptName  -- Patterns, processes and concepts share the same name space, so these names must be checked whether the processes and patterns exist.
    pMeaning :: Parser Token PMeaning
    pMeaning = rebuild <$  pKey "MEANING" 
                       <*> optional pLanguageRef
@@ -599,19 +597,6 @@ In practice, we have it a little different.
 -}
 
 
-   pCTerm :: Parser Token CTerm
-   pCTerm  = pCTrm2 <??> (f CIsc <$> pars CIsc "/\\" <|> f CUni <$> pars CUni "\\/")
-             where pars combinator operator
-                    = g <$> pKey_pos operator <*> pCTrm2 <*> optional (pars combinator operator)
-                             where g orig y Nothing  = (orig, y)
-                                   g orig y (Just (org,z)) = (orig, combinator org y z)
-                   f combinator (orig, y) x = combinator orig x y
-
-   pCTrm2 :: Parser Token CTerm
-   pCTrm2 =  cCpt <$>  pConid_val_pos                                 <|>
-             id   <$>  pSpec '('  *>  pCTerm  <*  pSpec ')'
-             where cCpt (c,o) = Ccpt o c
-             
 {- In theory, the expression is parsed by:
    pRule :: Parser Token (Term)
    pRule  =  fEequ <$> pTrm1  <*>  pKey_pos "="   <*>  pTerm   <|>
@@ -686,10 +671,10 @@ In practice, we have it a little different.
              PBrk <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')'
 
    pRelationRef :: Parser Token Term
-   pRelationRef      = pRelSign                                                                      <|>
-                       pid   <$> pKey_pos "I"  <*> optional (pSpec '[' *> pConceptRef <* pSpec ']')  <|>
-                       pfull <$> pKey_pos "V"  <*> optional pSign                                    <|>
-                       singl <$> pAtom_val_pos <*> optional (pSpec '[' *> pConceptRef <* pSpec ']')
+   pRelationRef      = pRelSign                                                                         <|>
+                       pid   <$> pKey_pos "I"  <*> optional (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
+                       pfull <$> pKey_pos "V"  <*> optional pSign                                       <|>
+                       singl <$> pAtom_val_pos <*> optional (pSpec '[' *> pConceptOneRef <* pSpec ']')
                        where pid orig Nothing = PI orig
                              pid orig (Just c)= Pid orig c
                              pfull orig Nothing = PVee orig
@@ -703,7 +688,7 @@ In practice, we have it a little different.
                              prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn
                                                                  
    pSign :: Parser Token (P_Sign,Origin)
-   pSign = rebuild <$> pSpec_pos '[' <*> pConceptRef <*> optional (pKey "*" *> pConceptRef) <* pSpec ']'
+   pSign = rebuild <$> pSpec_pos '[' <*> pConceptOneRef <*> optional (pKey "*" *> pConceptOneRef) <* pSpec ']'
       where
         rebuild :: Origin -> P_Concept -> Maybe P_Concept -> (P_Sign,Origin)
         rebuild orig a mb
@@ -711,15 +696,26 @@ In practice, we have it a little different.
              Just b  -> (P_Sign a b, orig)
              Nothing -> (P_Sign a a, orig)
    
-   pConceptRef :: Parser Token P_Concept
-   pConceptRef       = (P_Singleton <$ pKey "ONE") <|> (PCpt <$> (pConid <|> pString))
+   pConceptName ::   Parser Token String
+   pConceptName    = pConid <|> pString
+
+   pConceptRef ::    Parser Token P_Concept
+   pConceptRef     = PCpt <$> pConceptName
+
+   pConceptOneRef :: Parser Token P_Concept
+   pConceptOneRef  = (P_Singleton <$ pKey "ONE") <|> pConceptRef
 
    pConceptRefPos :: Parser Token (P_Concept, Origin)
-   pConceptRefPos       = singl <$> pKey_pos "ONE"   <|>   conid <$> pConid_val_pos   <|>   conid <$> pString_val_pos
-                          where singl :: Origin ->  (P_Concept, Origin)
-                                singl orig     = (P_Singleton, orig)
-                                conid :: (String, Origin) ->  (P_Concept, Origin)
-                                conid (c,orig) = (PCpt c, orig)
+   pConceptRefPos     = conid <$> pConid_val_pos   <|>   conid <$> pString_val_pos
+                        where conid :: (String, Origin) ->  (P_Concept, Origin)
+                              conid (c,orig) = (PCpt c, orig)
+
+   pConceptOneRefPos :: Parser Token (P_Concept, Origin)
+   pConceptOneRefPos  = singl <$> pKey_pos "ONE"   <|>   conid <$> pConid_val_pos   <|>   conid <$> pString_val_pos
+                        where singl :: Origin ->  (P_Concept, Origin)
+                              singl orig     = (P_Singleton, orig)
+                              conid :: (String, Origin) ->  (P_Concept, Origin)
+                              conid (c,orig) = (PCpt c, orig)
 
 --  (SJ) Why does a label have (optional) strings?
 --  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.

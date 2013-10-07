@@ -6,7 +6,6 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Process(..)
    , P_RoleRelation(..)
    , RoleRule(..)
-   , CRuleTyp(..)
    , P_Pattern(..)
    
    , RelConceptDef(..), P_Declaration(..)
@@ -283,14 +282,10 @@ where
                           | P_PairViewExp SrcOrTgt Term
             deriving Show
 
-   data CRuleTyp = CRuleEqual | CRuleSubset deriving Show
    data P_Rule  =
-      P_Cy { rr_nm ::   String            -- ^ Name of this classify rule
-           , cr_lhs ::  CTerm             -- ^ Left hand side concept expression 
-           , cr_rhs ::  CTerm             -- ^ Right hand side concept expression
-           , cr_tp  ::  CRuleTyp          -- ^ equality or subset?
+      P_Cy { cr_lhs ::  P_Concept         -- ^ Left hand side concept expression 
+           , cr_rhs ::  [P_Concept]       -- ^ Right hand side concept expression
            , rr_fps ::  Origin            -- ^ Position in the Ampersand file
-           , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
            } |
       P_Ru { rr_nm ::   String            -- ^ Name of this rule
            , rr_exp ::  Term              -- ^ The rule expression 
