@@ -18,14 +18,14 @@ set_error_handler("terminate_missing_variables");
 define( "EXPIRATION_TIME", 60*60 ); // expiration time in seconds
 
 function initSession() {
-	// when using $_SESSION, we get a nonsense warning if not declared global, however here
-	// we only do isset, so no need for global
+   // when using $_SESSION, we get a nonsense warning if not declared global, however here
+   // we only do isset, so no need for global
   global $conceptTableInfo;
   
   if (isset($conceptTableInfo['SESSION']) && !isset($_SESSION)) {
-  	// only execute session code when concept SESSION is used by adl script
+     // only execute session code when concept SESSION is used by adl script
     
-  	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+     // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
     //       This way, errors during initSession do not prevent the reset-database link from being visible.
     DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
     if ($error) return;
@@ -139,8 +139,8 @@ function showKeyAtom($atom, $concept) {
       elseif ($keySegment['segmentType'] == 'Html')
         $keyStrs[] = $keySegment['Html'];
       else {
-	$r = getCoDomainAtoms($atom, $keySegment['expSQL']);
-	$txt = count($r) ? $r[0] : "<Key relation not total>";
+   $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
+   $txt = count($r) ? $r[0] : "<Key relation not total>";
         $keyStrs[] = htmlSpecialChars($txt);
         // this can happen in a create-new interface when the key fields have not yet been 
         // filled out, while the atom is shown (but hidden by css) at the top. 
@@ -225,13 +225,14 @@ function mkUniqueAtomByTime($concept) {
   return $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
 }
 
-function addAtomToConcept($newAtom, $concept) {
-  global $conceptTableInfo;
+function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it does not yet exist...
+{ global $conceptTableInfo;
 
-  foreach ($conceptTableInfo[$concept] as $conceptTableCol) { // $conceptTableInfo[$concept] is an array of tables with arrays of columns 
-    $conceptTable = $conceptTableCol['table'];                // maintaining $concept. (we have an array rather than a single column because of generalizations)
-    $conceptCols = $conceptTableCol['cols'];                  // We insert the new atom in each of them.
-
+  foreach ($conceptTableInfo[$concept] as $conceptTableCol)
+  { // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
+    // (we have an array rather than a single column because of generalizations)
+    $conceptTable = $conceptTableCol['table']; 
+    $conceptCols = $conceptTableCol['cols'];   // We insert the new atom in each of them.
     
     $conceptTableEsc = escapeSQL($conceptTable);
     $newAtomEsc = escapeSQL($newAtom); 
@@ -241,8 +242,8 @@ function addAtomToConcept($newAtom, $concept) {
     
     $existingAtoms = firstCol(DB_doquer("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
     
-    if (!in_array($newAtom, $existingAtoms)) {
-      $allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
+    if (!in_array($newAtom, $existingAtoms))
+    { $allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
       $newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
       $allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
             

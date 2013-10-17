@@ -15,74 +15,82 @@
 // Use:  VIOLATION (TXT "{EX} InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 { /* 
- 	$relationTableInfo from Generics.php 
- 	contains array with all relations, for each relation the following is specified: 
- 	 - srcConcept : srcConcept of relation
- 	 - tgtConcept : tgtConcept of relation
- 	 - table : database table in which the relation is populated
- 	 - srcCol : column of database table in which the srcConcept is placed
- 	 - tgtCol : column of database table in which the tgtConcept is placed
- 	*/
- 	global $relationTableInfo;
- 	/* 
- 	$tableColumInfo from Generics.php 
- 	contains array with all database tables and their columns, for each tablecolumn the following is specified: 
- 	 - concept : the atoms of which concept are set here
- 	 - unique : whether or not the value in the column must be unique. 'true' for properties
- 	 - null	: whether or not the value in the column can be NULL. in case of UNI relations
- 	*/
- 	global $tableColumnInfo;
+    $relationTableInfo from Generics.php 
+    contains array with all relations, for each relation the following is specified: 
+     - srcConcept : srcConcept of relation
+     - tgtConcept : tgtConcept of relation
+     - table : database table in which the relation is populated
+     - srcCol : column of database table in which the srcConcept is placed
+     - tgtCol : column of database table in which the tgtConcept is placed
+    */
+    global $relationTableInfo;
+    /* 
+    $tableColumInfo from Generics.php 
+    contains array with all database tables and their columns, for each tablecolumn the following is specified: 
+     - concept : the atoms of which concept are set here
+     - unique : whether or not the value in the column must be unique. 'true' for properties
+     - null   : whether or not the value in the column can be NULL. in case of UNI relations
+    */
+    global $tableColumnInfo;
 // check if $relation appears in $relationTableInfo
   $found = false;
   foreach($relationTableInfo as $key => $arr)
-	 {	if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
-		  { $found = true;
-		    $table = $arr['table'];
-			   $srcCol = $arr['srcCol'];
-			   $tgtCol = $arr['tgtCol'];
-	  	}
-	 }
-	 if (!$found)
- 	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
- 	  ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+    {   if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+        { $found = true;
+          $table = $arr['table'];
+            $srcCol = $arr['srcCol'];
+            $tgtCol = $arr['tgtCol'];
+        }
+    }
+    if (!$found)
+    { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
+      ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
     die;
- 	}
+    }
 // if srcAtom is specified as NULL, a new atom of srcConcept is created
- 	if($srcAtom == "NULL") 
- 	{ $srcAtom = InsAtom($srcConcept);
- 	}	
+    if($srcAtom == "NULL") 
+    { $srcAtom = InsAtom($srcConcept);
+    }   
 // if tgtAtom is specified as NULL, a new atom of tgtConcept is created
- 	if($tgtAtom == "NULL") 
- 	{ $tgtAtom = InsAtom($tgtConcept);
- 	}
+    if($tgtAtom == "NULL") 
+    { $tgtAtom = InsAtom($tgtConcept);
+    }
 // get table column properties for $srcCol and $tgtCol
- 	$srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
- 	$srcColNull = $tableColumnInfo[$table][$srcCol]['null'];
- 	$tgtColUnique = $tableColumnInfo[$table][$tgtCol]['unique'];
- 	$tgtColNull = $tableColumnInfo[$table][$tgtCol]['null'];
+    $srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
+    $srcColNull = $tableColumnInfo[$table][$srcCol]['null'];
+    $tgtColUnique = $tableColumnInfo[$table][$tgtCol]['unique'];
+    $tgtColNull = $tableColumnInfo[$table][$tgtCol]['null'];
 // SQL escape table, column and atom names
- 	$tableEsc = escapeSQL($table);
- 	$srcColEsc = escapeSQL($srcCol);
- 	$tgtColEsc = escapeSQL($tgtCol);
- 	$srcAtomEsc = escapeSQL($srcAtom);
- 	$tgtAtomEsc = escapeSQL($tgtAtom);
+    $tableEsc = escapeSQL($table);
+    $srcColEsc = escapeSQL($srcCol);
+    $tgtColEsc = escapeSQL($tgtCol);
+    $srcAtomEsc = escapeSQL($srcAtom);
+    $tgtAtomEsc = escapeSQL($tgtAtom);
 // generate database query
- 	if($srcColUnique || $tgtColUnique) // srcCol, tgtCol or both are unique ==> update query
- 	{	if($srcColUnique)
- 			{ $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$srcColEsc`='$srcAtomEsc'";
- 		 }else
- 		 { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$tgtColEsc`='$tgtAtomEsc'";
- 		 }
- 	}else
- 	{ // neither srcCol nor tgtCol is unique ==> insert query
- 		 $query = "INSERT INTO `$tableEsc` (`$srcColEsc`, `$tgtColEsc`) VALUES ('$srcAtomEsc', '$tgtAtomEsc')";
- 	}
+    if($srcColUnique || $tgtColUnique) // srcCol, tgtCol or both are unique ==> update query
+    {   if($srcColUnique)
+        { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$srcColEsc`='$srcAtomEsc'";
+          ExecEngineWhispers ("Update $relation($srcConcept*$tgtConcept) with (<b>$srcAtom</b>,$tgtAtom)");
+        }else
+        { $query = "UPDATE `$tableEsc` SET `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc' WHERE `$tgtColEsc`='$tgtAtomEsc'";
+          ExecEngineWhispers ("Update $relation($srcConcept*$tgtConcept) with ($srcAtom,<b>$tgtAtom</b>)");
+        }
+    }else
+    { // neither srcCol nor tgtCol is unique ==> insert query
+      $query = "INSERT INTO `$tableEsc` (`$srcColEsc`, `$tgtColEsc`) VALUES ('$srcAtomEsc', '$tgtAtomEsc')";
+      ExecEngineWhispers ("INSERT $relation($srcConcept*$tgtConcept) with (<b>$srcAtom,$tgtAtom</b>)");
+    }
+/* Trying to implement 'on duplicate key update' (doesn't seem to work like this...)
+$updatequery = '';
+if ($tgtColUnique) $updatequery = "ON DUPLICATE KEY UPDATE `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc'";// WHERE `$tgtColEsc`='$tgtAtomEsc'";
+if ($srcColUnique) $updatequery = "ON DUPLICATE KEY UPDATE `$srcColEsc`='$srcAtomEsc', `$tgtColEsc`='$tgtAtomEsc'";// WHERE `$srcColEsc`='$srcAtomEsc'";
+$query = "INSERT INTO `$tableEsc` (`$srcColEsc`, `$tgtColEsc`) VALUES ('$srcAtomEsc', '$tgtAtomEsc') " . $updatequery;
+*/    
 // execute database query
- 	queryDb($query); 
+    queryDb($query); 
 // log
- 	ExecEngineWhispers ("Insert pair ($srcAtom,$tgtAtom) into $relation($srcConcept*$tgtConcept)");
- 	emitLog ("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
- 	emitLog ($query);
+    emitLog ("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+    emitLog ($query);
 }
 
 /*
@@ -94,69 +102,69 @@ Example of a rule that automatically deletes pairs from a relation:
 */
 // Use: VIOLATION (TXT "{EX} DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
-{	/* 
- 	$relationTableInfo from Generics.php 
- 	contains array with all relations, for each relation the following is specified: 
- 	 - srcConcept : srcConcept of relation
- 	 - tgtConcept : tgtConcept of relation
- 	 - table : database table in which the relation is populated
- 	 - srcCol : column of database table in which the srcConcept is placed
- 	 - tgtCol : column of database table in which the tgtConcept is placed
- 	*/
- 	global $relationTableInfo;
- 	/* 
- 	$tableColumInfo from Generics.php 
- 	contains array with all database tables and their columns, for each tablecolumn the following is specified: 
- 	 - concept : the atoms of which concept are set here
- 	 - unique : whether or not the value in the column must be unique. 'true' for properties
- 	 - null	: whether or not the value in the column can be NULL. in case of UNI relations
- 	*/
- 	global $tableColumnInfo;
- 	// check if $relation appears in $relationTableInfo
+{   /* 
+    $relationTableInfo from Generics.php 
+    contains array with all relations, for each relation the following is specified: 
+     - srcConcept : srcConcept of relation
+     - tgtConcept : tgtConcept of relation
+     - table : database table in which the relation is populated
+     - srcCol : column of database table in which the srcConcept is placed
+     - tgtCol : column of database table in which the tgtConcept is placed
+    */
+    global $relationTableInfo;
+    /* 
+    $tableColumInfo from Generics.php 
+    contains array with all database tables and their columns, for each tablecolumn the following is specified: 
+     - concept : the atoms of which concept are set here
+     - unique : whether or not the value in the column must be unique. 'true' for properties
+     - null   : whether or not the value in the column can be NULL. in case of UNI relations
+    */
+    global $tableColumnInfo;
+    // check if $relation appears in $relationTableInfo
   $found = false;
   foreach($relationTableInfo as $key => $arr)
-	 {	if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
-		  { $found = true;
-		    $table = $arr['table'];
-			   $srcCol = $arr['srcCol'];
-			   $tgtCol = $arr['tgtCol'];
-	  	}
-	 }
-	 if (!$found)
- 	{ // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
- 	  ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
- 	  die;
- 	}
+    {   if($key == $relation && $arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+        { $found = true;
+          $table = $arr['table'];
+            $srcCol = $arr['srcCol'];
+            $tgtCol = $arr['tgtCol'];
+        }
+    }
+    if (!$found)
+    { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
+      ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+      die;
+    }
 // get table column properties for $srcCol and $tgtCol
- 	$srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
- 	$srcColNull = $tableColumnInfo[$table][$srcCol]['null'];
- 	$tgtColUnique = $tableColumnInfo[$table][$tgtCol]['unique'];
- 	$tgtColNull = $tableColumnInfo[$table][$tgtCol]['null'];
+    $srcColUnique = $tableColumnInfo[$table][$srcCol]['unique'];
+    $srcColNull = $tableColumnInfo[$table][$srcCol]['null'];
+    $tgtColUnique = $tableColumnInfo[$table][$tgtCol]['unique'];
+    $tgtColNull = $tableColumnInfo[$table][$tgtCol]['null'];
 // SQL escape table, column and atom names
- 	$tableEsc = escapeSQL($table);
- 	$srcColEsc = escapeSQL($srcCol);
- 	$tgtColEsc = escapeSQL($tgtCol);
- 	$srcAtomEsc = escapeSQL($srcAtom);
- 	$tgtAtomEsc = escapeSQL($tgtAtom);
+    $tableEsc = escapeSQL($table);
+    $srcColEsc = escapeSQL($srcCol);
+    $tgtColEsc = escapeSQL($tgtCol);
+    $srcAtomEsc = escapeSQL($srcAtom);
+    $tgtAtomEsc = escapeSQL($tgtAtom);
 // generate database query
- 	if($srcColNull xor $tgtColNull) // srcCol xor tgtCol can be null ==> update query
- 	{	if($srcColNull)
- 			{ $query = "UPDATE `$tableEsc` SET `$srcColEsc`=NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'";
- 		 }else
- 		 { $query = "UPDATE `$tableEsc` SET `$tgtColEsc`=NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'";
- 		 }
- 	}elseif($srcColNull and $tgtColNull) // both srcCol and tgtCol can be null ==> delete query 		-- REMARK: maybe this should be an update instead of delete query
- 	  { $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
- 	  }else
- 	  { // neither srcCol nor tgtCol can be null ==> delete query
- 		   $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
- 	  }
+    if($srcColNull xor $tgtColNull) // srcCol xor tgtCol can be null ==> update query
+    {   if($srcColNull)
+          { $query = "UPDATE `$tableEsc` SET `$srcColEsc`=NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'";
+        }else
+        { $query = "UPDATE `$tableEsc` SET `$tgtColEsc`=NULL WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc'";
+        }
+    }elseif($srcColNull and $tgtColNull) // both srcCol and tgtCol can be null ==> delete query       -- REMARK: maybe this should be an update instead of delete query
+      { $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
+      }else
+      { // neither srcCol nor tgtCol can be null ==> delete query
+          $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
+      }
 // execute database query
- 	queryDb($query); 
+    queryDb($query); 
 // log
- 	ExecEngineWhispers("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
- 	emitLog ("DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
- 	emitLog ($query);
+    ExecEngineWhispers("Delete pair ($srcAtom,$tgtAtom) from $relation($srcConcept*$tgtConcept)");
+    emitLog ("DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+    emitLog ($query);
 }
 
 /* The function 'NewStruct' creates a new atom in some concept and uses this
@@ -195,7 +203,7 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
   }
 // Then, we create a new atom of type $ConceptC
   ExecEngineWhispers ("Creating a structure based on an atom '$AtomC' for concept '$ConceptC'");
- 	addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
+    addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
 
 // Next, for every relation that follows in the argument list, we create a link
   for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5)
@@ -239,22 +247,22 @@ function NewStruct() // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$s
 // Use: VIOLATION (TXT "{EX} InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($concept)
 { // call function from DatabaseUtils.php
- 	$atom = mkUniqueAtomByTime($concept); // create new atom name	
- 	addAtomToConcept($atom, $concept); // insert new atom in databse
+    $atom = mkUniqueAtomByTime($concept); // create new atom name   
+    addAtomToConcept($atom, $concept); // insert new atom in databse
 // log
- 	ExecEngineWhispers("New atom $atom ($concept) created");
- 	emitLog("addAtomToConcept($atom, $concept)");
+    ExecEngineWhispers("New atom $atom ($concept) created");
+    emitLog("addAtomToConcept($atom, $concept)");
 // return created atom identifier
- 	return $atom;
+    return $atom;
 }
 
 // Use: VIOLATION (TXT "{EX} DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atom)
 { // call function from DatabaseUtils.php
-	 deleteAtom($atom, $concept); // delete atom + all relations with other atoms
+    deleteAtom($atom, $concept); // delete atom + all relations with other atoms
 // log
-	ExecEngineWhispers("Atom $atom ($concept) deleted");
-	emitLog("deleteAtom($atom, $concept)");
+   ExecEngineWhispers("Atom $atom ($concept) deleted");
+   emitLog("deleteAtom($atom, $concept)");
 }
 
 ?>

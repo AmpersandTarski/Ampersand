@@ -34,6 +34,16 @@ function resetSession() {
   });
 }
 
+function loginSession()
+{ $.ajax({ url: 'php/main_login.php',
+           cache: false,
+           success: function(data)
+                    { alert('something happend.');
+                    },
+           error: function(data){ alert('Something went wrong.'); }
+  });
+}
+
 function resetDatabase() {
   $.ajax({ url: 'Installer.php',
            cache: false,

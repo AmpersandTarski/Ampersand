@@ -1,5 +1,5 @@
 <?php
-error_reporting(E_ALL);
+error_reporting(E_ALL ^ E_DEPRECATED);
 ini_set("display_errors", 1);
 
 require __DIR__.'/../Generics.php';
@@ -66,23 +66,18 @@ if (isset($_REQUEST['resetSession']) ) {
   echo '</div>';
 }
 
-function processCommands() {  
-  $commandsJson =$_POST['commands']; 
-  if (isset($commandsJson)) {
-    $commandArray = json_decode($commandsJson);
-          
-    foreach ($commandArray as $command)
-      processCommand($command);
-       
+function processCommands()
+{ $commandsJson =$_POST['commands']; 
+  if (isset($commandsJson))
+  { $commandArray = json_decode($commandsJson);
+    foreach ($commandArray as $command) processCommand($command);
   }
 }
 
-function processCommand($command) {
-  if (!isset($command->dbCmd))
-    error("Malformed command, missing 'dbCmd'");
-
-  switch ($command->dbCmd) {
-    case 'addToConcept':
+function processCommand($command)
+{ if (!isset($command->dbCmd)) error("Malformed command, missing 'dbCmd'");
+  switch ($command->dbCmd)
+  { case 'addToConcept':
       if (array_key_exists('atom', $command) && array_key_exists('concept', $command))
         editAddToConcept($command->atom, $command->concept);
       else 
@@ -101,23 +96,22 @@ function processCommand($command) {
       if (array_key_exists('relation', $command) && array_key_exists('isFlipped', $command) &&
           array_key_exists('parentAtom', $command) && array_key_exists('childAtom', $command))
         editDelete($command->relation, $command->isFlipped, $command->parentAtom, $command->childAtom);
-      else {
+      else 
         error("Command $command->dbCmd is missing parameters");
-      }
       break;
     default:
       error("Unknown command '$command->dbCmd'");
   }
 }
 
-function editAddToConcept($atom, $concept) {
-  emitLog("editAddToConcept($atom, $concept)");
+function editAddToConcept($atom, $concept)
+{ emitLog("editAddToConcept($atom, $concept)");
   addAtomToConcept($atom, $concept);  
 }
 
 // NOTE: if $originalAtom == '', editUpdate means insert
-function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom) {
-  global $relationTableInfo;
+function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $originalAtom)
+{ global $relationTableInfo;
   global $tableColumnInfo;
   
   emitLog("editUpdate($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom, $parentOrChild, $originalAtom)");
@@ -125,14 +119,14 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   // check if $relation appears in $relationTableInfo
   if (array_key_exists($relation, $relationTableInfo))
   { foreach($relationTableInfo as $key => $arr)
-  	if($key == $relation)
-  	{ if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
-		  { $table = $arr['table'];
+     if($key == $relation)
+     { if($arr['srcConcept'] == $srcConcept && $arr['tgtConcept'] == $tgtConcept)
+        { $table = $arr['table'];
         $srcCol = $arr['srcCol'];
-			  $tgtCol = $arr['tgtCol'];
-			  echo "<br>[FOUND: table=$table, srcCol=$srcCol, tgtCol=$tgtCol]";
-	    }
-	  }
+           $tgtCol = $arr['tgtCol'];
+           echo "<br>[FOUND: table=$table, srcCol=$srcCol, tgtCol=$tgtCol]";
+       }
+     }
   } else
   { echo "ERROR: Relation $relation does not exist (in table info)";
   }
@@ -157,25 +151,27 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   
   // only if the stable column is unique, we do an update
   // TODO: maybe we can do updates also in non-unique columns
-  if ($tableColumnInfo[$table][$stableCol]['unique']) { // note: this uniqueness is not set as an SQL table attribute
-    $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
-    emitLog ($query);
+  if ($tableColumnInfo[$table][$stableCol]['unique']) // note: this uniqueness is not set as an SQL table attribute
+  { $query = "UPDATE `$tableEsc` SET `$modifiedColEsc`='$modifiedAtomEsc' WHERE `$stableColEsc`='$stableAtomEsc'";
+    emitLog($query);
     queryDb($query);
   }
-  else /* if ($tableColumnInfo[$table][$modifiedCol]['unique']) { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
-    $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
-    emitLog ($query);
-    queryDb($query);
-  }
-  else */ {
+  else
+  { /* if ($tableColumnInfo[$table][$modifiedCol]['unique'])
+       { // todo: is this ok? no, we'd also have to delete stableAtom originalAtom and check if modified atom even exists, otherwise we need an insert, not an update.
+         $query = "UPDATE `$tableEsc` SET `$stableColEsc`='$stableAtomEsc' WHERE `$modifiedColEsc`='$modifiedAtomEsc'";
+         emitLog ($query);
+         queryDb($query);
+       }
+       else { */
     // delete only if there was an $originalAtom
-    if ($originalAtom!='') {
-      $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
-      emitLog ($query);
+    if ($originalAtom!='') 
+    { $query = "DELETE FROM `$tableEsc` WHERE `$stableColEsc`='$stableAtomEsc' AND `$modifiedColEsc`='$originalAtomEsc';";
+      emitLog($query);
       queryDb($query);
     }
     $query = "INSERT INTO `$tableEsc` (`$stableColEsc`, `$modifiedColEsc`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')";
-    emitLog ($query);
+    emitLog($query);
     queryDb($query);
   }
   
@@ -188,8 +184,8 @@ function editUpdate($rel, $isFlipped, $parentAtom, $childAtom, $parentOrChild, $
   // TODO: errors here are not reported correctly
 }
 
-function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
-  global $relationTableInfo;
+function editDelete($rel, $isFlipped, $parentAtom, $childAtom)
+{ global $relationTableInfo;
   global $tableColumnInfo;
   
   emitLog ("editDelete($rel, ".($isFlipped?'true':'false').", $parentAtom, $childAtom)");
@@ -211,38 +207,34 @@ function editDelete($rel, $isFlipped, $parentAtom, $childAtom) {
   else
     $query = "DELETE FROM `$tableEsc` WHERE `$srcColEsc`='$srcAtomEsc' AND `$tgtColEsc`='$tgtAtomEsc';";
   
-  emitLog ($query);
+  emitLog($query);
   queryDb($query);
 }
 
 // NOTE: log messages emited here are only shown on a commit, not during normal navigation.
-function checkRoleRules($roleNr) {
-  global $allRoles;
+function checkRoleRules($roleNr)
+{ global $allRoles;
   $allRoleRules = array();
   
   if ($roleNr == -1) // if no role is selected, evaluate the rules for all roles
-  {
-    for ($r = 0; $r < count($allRoles); $r++)
-   	{ 
-   	  // filter rules for role 'DATABASE', these will be handled by runAllProcedures()
-   	  if($allRoles[$r]['name'] != 'DATABASE')
-   	  {
-   		   // Check every role only one time. 
-      		$allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
-   	  }
-   	}
-	
-	$allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
-	checkRules($allRoleRules); // check every rule
+  { for ($r = 0; $r < count($allRoles); $r++)
+    { // filter rules for role 'DATABASE', these will be handled by runAllProcedures()
+      if($allRoles[$r]['name'] != 'DATABASE')
+      { // Check every role only one time. 
+        $allRoleRules = array_merge((array)$allRoleRules, $allRoles[$r]['ruleNames']); // merge process rules of all roles
+      }
+    }
+   $allRoleRules = array_unique((array)$allRoleRules); // optimize performance by remove duplicate ruleNames
+   checkRules($allRoleRules); // check every rule
   }else
     checkRoleRulesPerRole($roleNr);
 }
 
 // new function
 function runAllProcedures()
-{	$query = "CALL AllProcedures";
-	 emitLog ($query);
-	 queryDb($query);
+{   $query = "CALL AllProcedures";
+    emitLog($query);
+    queryDb($query);
 }
 
 // Precondition: $roleNr >= 0
@@ -254,8 +246,8 @@ function checkRoleRulesPerRole($roleNr)
   checkRules($role['ruleNames']);
 }
 
-function checkInvariantRules() {
-  global $invariantRuleNames;
+function checkInvariantRules()
+{ global $invariantRuleNames;
   emitLog("Checking invariant rules");
   return checkRules($invariantRuleNames);
 }
@@ -278,15 +270,15 @@ function checkRules($ruleNames)
 
   foreach ($ruleNames as $ruleName)
   { $ruleSql = $allRulesSql[$ruleName];
-	
+   
     $rows = DB_doquerErr($ruleSql['violationsSQL'], $error); // execute violationsSQL to check for violations
-   	if ($error) error("While evaluating rule '$ruleName': ".$error);
+      if ($error) error("While evaluating rule '$ruleName': ".$error);
     
-   	// if there are rows (i.e. violations)
+      // if there are rows (i.e. violations)
     if (count($rows) == 0)
     { // emitLog('Rule '.$ruleSql['name'].' holds');
     } else
-		  { $allRulesHold = false;
+        { $allRulesHold = false;
       emitLog('Rule '.$ruleSql['name'].' is broken');
       
       // if the rule has an associated message, we show that instead of the name and the meaning
@@ -302,59 +294,57 @@ function checkRules($ruleNames)
       } else
       { emitAmpersandLog($message);
       }
-	  
+     
       $srcNrOfIfcs = getNrOfInterfaces($ruleSql['srcConcept'], $selectedRoleNr);
       $tgtNrOfIfcs = getNrOfInterfaces($ruleSql['tgtConcept'], $selectedRoleNr);
       
       $pairView = $ruleSql['pairView']; // pairView contains an array with the fragments of the violations message (if specified)
-	  
+     
       foreach($rows as $violation)
-      { 
-	       if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
-        { 
-		          $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
-            // emitAmpersandLog($theMessage);
-  	         $theCleanMessage = strip_tags($theMessage);
-      		    $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
+      { if ($pairView[0]['segmentType'] == 'Text' && strpos($pairView[0]['Text'],'{EX}') === 0) // Check for execution (or not)
+        { $theMessage = execPair($violation['src'], $ruleSql['srcConcept'], $violation['tgt'], $ruleSql['tgtConcept'], $pairView);
+          // emitAmpersandLog($theMessage);
+          $theCleanMessage = strip_tags($theMessage);
+          $theCleanMessage = substr($theCleanMessage,4); // Strip {EX} tag
 
-            $functionsToBeCalled = explode('{EX}',$theCleanMessage); // Split off subsequent function calls
-            if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[START]]");
-          
-            foreach ($functionsToBeCalled as $functionToBeCalled) 
-            { $params = explode(';',$functionToBeCalled); // Split off variables
-        		    $cleanparams = array();
-        		    foreach ($params as $param) $cleanparams[] = trim($param);
-        		    $params = $cleanparams;
-              unset($cleanparams);
-              ExecEngineWhispers($functionToBeCalled);
-        		    $func = array_shift($params); // First parameter is function name
-        		    if (function_exists($func))
-        		    {  call_user_func_array($func,$params);
-        		    } else
-        		    {	 ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
-        		    }
+          $functionsToBeCalled = explode('{EX}',$theCleanMessage); // Split off subsequent function calls
+          if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[START]]");
+        
+          foreach ($functionsToBeCalled as $functionToBeCalled) 
+          { $params = explode(';',$functionToBeCalled); // Split off variables
+            $cleanparams = array();
+            foreach ($params as $param) $cleanparams[] = trim($param);
+            $params = $cleanparams;
+            unset($cleanparams);
+            ExecEngineWhispers($functionToBeCalled);
+            $func = array_shift($params); // First parameter is function name
+            if (function_exists($func))
+            { call_user_func_array($func,$params);
+            } else
+            { ExecEngineSHOUTS("TODO: Create function $func with " . count($params) . " parameters.");
             }
-            if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[DONE]]");
+          }
+          if(count($functionsToBeCalled)>1) ExecEngineWhispers("[[DONE]]");
         } else
         { $theMessage = showPair($violation['src'], $ruleSql['srcConcept'], $srcNrOfIfcs, $violation['tgt'], $ruleSql['tgtConcept'], $tgtNrOfIfcs, $pairView);
           emitAmpersandLog('- ' . $theMessage);
-  	     }
+          }
       }
     }
   }
   return $allRulesHold;
 }
 
-function dbStartTransaction() {
-  queryDb('START TRANSACTION');
+function dbStartTransaction()
+{ queryDb('START TRANSACTION');
 }
 
-function dbCommitTransaction() {
-  queryDb('COMMIT');
+function dbCommitTransaction()
+{ queryDb('COMMIT');
 }
 
-function dbRollbackTransaction() {
-  queryDb('ROLLBACK');
+function dbRollbackTransaction()
+{ queryDb('ROLLBACK');
 }
 
 function queryDb($querySql) {
@@ -365,15 +355,15 @@ function queryDb($querySql) {
   return $result;
 }
 
-function ExecEngineWhispers($msg) {
-  global $execEngineWhispers; // set in 'pluginsettings.php'
+function ExecEngineWhispers($msg)
+{ global $execEngineWhispers; // set in 'pluginsettings.php'
   global $execEngineSays; // set in 'pluginsettings.php'
   if ($execEngineWhispers && $execEngineSays)
      echo "<div class=\"LogItem AmpersandErr\">$msg</div>";
 }
 
-function ExecEngineSays($msg) {
-  global $execEngineSays; // set in 'pluginsettings.php'
+function ExecEngineSays($msg)
+{ global $execEngineSays; // set in 'pluginsettings.php'
   if ($execEngineSays)
      echo "<div class=\"LogItem AmpersandErr\"><i>$msg</i></div>";
 }
@@ -396,8 +386,8 @@ function error($err)
   // the current php session is broken off, which corresponds to a rollback. (doing an explicit roll back here is awkward
   // since it may trigger an error again, causing a loop)
 
-function testRule($ruleName) {
-  global $isDev;
+function testRule($ruleName)
+{ global $isDev;
   global $allRulesSql;
   
   if (!$isDev) {
@@ -423,8 +413,8 @@ function testRule($ruleName) {
   printBinaryTable( $rows );
 }
 
-function timestampHtml() {
-  $timestamp = getTimestamp();
+function timestampHtml()
+{ $timestamp = getTimestamp();
   echo "<div class=Result timestamp='$timestamp'>$timestamp</div>";
 }
 ?>
