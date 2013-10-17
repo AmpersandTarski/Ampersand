@@ -8,7 +8,7 @@ require_once __DIR__.'/InstallMysqlProcedures.php';
 require_once __DIR__.'/../pluginsettings.php'; // configuration for ExecEngine and plugins
 require_once __DIR__.'/loadplugins.php';
 
-initSession();
+initSession(); // is already done in index.php, but must be done here too because Database.php is also called directly...
 
 // This module handles four requests: 
 //
@@ -17,30 +17,19 @@ initSession();
 //     Database.php?testRule=..
 //     Database.php?commands=..
 
-if (!isset($execEngineSays))    // set in 'pluginsettings.php'
-   $execEngineSays = true;      // When 'true' the ExecEngine provides high level logging
-if (!isset($execEngineWhispers))// set in 'pluginsettings.php'
-   $execEngineWhispers = false; // When 'true', the ExecEngine provides details when logging.
-
 $selectedRoleNr = isset($_REQUEST['role']) ? $_REQUEST['role'] : -1; // role=-1 (or not specified) means no role is selected
 
-if (isset($_REQUEST['resetSession']) ) {
-  resetSession();
-} else if (isset($_REQUEST['getTimestamp']) ) {
-  timestampHtml();
-} else if (isset($_REQUEST['testRule']) ) {
-  testRule($_REQUEST['testRule']);
-} else if (isset($_REQUEST['ip']) ) {
-  echo $_SERVER['SERVER_ADDR'];
-} else if (isset($_REQUEST['commands']) ) {
-  echo '<div id="UpdateResults">';
+       if (isset($_REQUEST['resetSession']) ) { resetSession();  }
+  else if (isset($_REQUEST['getTimestamp']) ) { timestampHtml(); }
+  else if (isset($_REQUEST['testRule']) )     { testRule($_REQUEST['testRule']); }
+  else if (isset($_REQUEST['ip']) )           { echo $_SERVER['SERVER_ADDR']; }
+  else if (isset($_REQUEST['commands']) )
+{ echo '<div id="UpdateResults">';
 
   dbStartTransaction();
-  emitLog('BEGIN');
 
   processCommands(); // update database according to edit commands
 
-  // Process processRules first, because the ExecEngine may execute code while processing this stuff.
   echo '<div id="ProcessRuleResults">';
   checkRoleRules($selectedRoleNr);
   echo '</div>';
@@ -57,22 +46,19 @@ if (isset($_REQUEST['resetSession']) ) {
   
   if ($invariantRulesHold) {
     setTimeStamp();
-    emitLog('COMMIT');
     dbCommitTransaction();
   } else {
-    emitLog('ROLLBACK');
     dbRollbackTransaction();
   }
   echo '</div>';
 }
 
-function processCommands()
+function processCommands() 
 { $commandsJson =$_POST['commands']; 
-  if (isset($commandsJson))
+  if (isset($commandsJson)) 
   { $commandArray = json_decode($commandsJson);
     foreach ($commandArray as $command) processCommand($command);
-  }
-}
+} }
 
 function processCommand($command)
 { if (!isset($command->dbCmd)) error("Malformed command, missing 'dbCmd'");
@@ -336,19 +322,22 @@ function checkRules($ruleNames)
 }
 
 function dbStartTransaction()
-{ queryDb('START TRANSACTION');
+{ emitLog('START TRANSACTIONx');
+  queryDb('START TRANSACTION');
 }
 
 function dbCommitTransaction()
-{ queryDb('COMMIT');
+{ emitLog('COMMITx');
+  queryDb('COMMIT');
 }
 
 function dbRollbackTransaction()
-{ queryDb('ROLLBACK');
+{ emitLog('ROLLBACKx');
+  queryDb('ROLLBACK');
 }
 
-function queryDb($querySql) {
-  $result = DB_doquerErr($querySql, $error);
+function queryDb($querySql)
+{ $result = DB_doquerErr($querySql, $error);
   if ($error)
     error($error);
   
@@ -357,13 +346,19 @@ function queryDb($querySql) {
 
 function ExecEngineWhispers($msg)
 { global $execEngineWhispers; // set in 'pluginsettings.php'
+  if (!isset($execEngineWhispers))// set in 'pluginsettings.php'
+     $execEngineWhispers = false; // When 'true', the ExecEngine provides details when logging.
   global $execEngineSays; // set in 'pluginsettings.php'
+  if (!isset($execEngineSays))    // set in 'pluginsettings.php'
+     $execEngineSays = true;      // When 'true' the ExecEngine provides high level logging
   if ($execEngineWhispers && $execEngineSays)
      echo "<div class=\"LogItem AmpersandErr\">$msg</div>";
 }
 
 function ExecEngineSays($msg)
 { global $execEngineSays; // set in 'pluginsettings.php'
+  if (!isset($execEngineSays))    // set in 'pluginsettings.php'
+     $execEngineSays = true;      // When 'true' the ExecEngine provides high level logging
   if ($execEngineSays)
      echo "<div class=\"LogItem AmpersandErr\"><i>$msg</i></div>";
 }

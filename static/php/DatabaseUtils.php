@@ -5,8 +5,8 @@ require __DIR__.'/../dbSettings.php';
 // by php/Database.php, we would need '../dbSettings.php'.
 
 // let PHP also report undefined variable references
-function terminate_missing_variables($errno, $errstr, $errfile, $errline) {
-  if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
+function terminate_missing_variables($errno, $errstr, $errfile, $errline)
+{ if (($errno == E_NOTICE) and (strstr($errstr, "Undefined variable")))
   echo ("$errstr in $errfile line $errline");
 
   return false; // Let the PHP error handler handle all the rest
@@ -17,31 +17,38 @@ set_error_handler("terminate_missing_variables");
 
 define( "EXPIRATION_TIME", 60*60 ); // expiration time in seconds
 
-function initSession() {
-   // when using $_SESSION, we get a nonsense warning if not declared global, however here
-   // we only do isset, so no need for global
+function initSession()
+{
+// when using $_SESSION, we get a nonsense warning if not declared global, however here
+// we only do isset, so no need for global
   global $conceptTableInfo;
-  
-  if (isset($conceptTableInfo['SESSION']) && !isset($_SESSION)) {
-     // only execute session code when concept SESSION is used by adl script
-    
-     // TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
+
+  session_start(); // Start a new, or resume the existing, PHP session
+
+// only execute session code when concept SESSION is used by adl script
+  if (isset($conceptTableInfo['SESSION']))
+  {	// TODO: until error handling is improved, this hack tries a dummy query and returns silently if it fails.
     //       This way, errors during initSession do not prevent the reset-database link from being visible.
     DB_doquerErr("SELECT * FROM `__SessionTimeout__` WHERE false", $error);
     if ($error) return;
+
+// Remove expired Ampersand-sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+    $expirationLimit = time() - EXPIRATION_TIME; 
+    $expiredSessions = firstCol(DB_doquer("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
+    foreach ($expiredSessions as $expiredSessionAtom)
+      deleteSession($expiredSessionAtom);
     
-    session_start();
-    cleanupExpiredSessions();
-    
-    $sessionAtom = $_SESSION['sessionAtom'];
-    
-    // create a new session if $sessionAtom is not set (browser started a new session) 
-    // or $sessionAtom is not in SESSIONS (previous session expired)
-    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION')) {
-      $sessionAtom = mkUniqueAtomByTime('SESSION');
+// If the PHP session has the Ampersand sessionAtom, retrieve it. 
+// Note that it may still refer to an Ampersand session that has expired and therefore no longer exists in the Ampersand administration
+    $sessionAtom = $_SESSION['sessionAtom']; 
+// create a new session if $sessionAtom is not set (browser started a new session) 
+// or $sessionAtom is not in SESSIONS (previous session expired)
+    if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION'))
+    { $sessionAtom = mkUniqueAtomByTime('SESSION');
       $_SESSION['sessionAtom']  = $sessionAtom;
       addAtomToConcept($sessionAtom, 'SESSION');
     }
+// echo "sessionAtom = [$sessionAtom]<br>";
     
     $timeInSeconds = time();
     DB_doquer("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('$_SESSION[sessionAtom]','$timeInSeconds')".
@@ -50,29 +57,81 @@ function initSession() {
   }
 }
 
-function resetSession() {
-  global $conceptTableInfo;
+function resetSession()
+{ global $conceptTableInfo;
   
   if ($conceptTableInfo['SESSION']) // only execute session code when concept SESSION is used by adl script
-    deleteSession($_SESSION['sessionAtom']);
+  { deleteSession($_SESSION['sessionAtom']);
+  }
 }
 
-function deleteSession($sessionAtom) {
-  //echo "deleting $sessionAtom<br/>";
+function deleteSession($sessionAtom)
+{ //echo "deleting $sessionAtom<br/>";
   DB_doquer("DELETE FROM `__SessionTimeout__` WHERE SESSION = '$sessionAtom';");
   deleteAtom($sessionAtom, 'SESSION');
   
 }
 
-// Remove expired sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-function cleanupExpiredSessions() {
-  $expirationLimit = time() - EXPIRATION_TIME;
-  
-  $expiredSessions = firstCol(DB_doquer("SELECT SESSION FROM `__SessionTimeout__` WHERE lastAccess < $expirationLimit;"));
-  foreach ($expiredSessions as $sessionAtom)
-    deleteSession($sessionAtom);
+// Login
+
+function Login()
+{ echo '<br>
+<form name="loginform" method="post" action="index.php?CheckLogin">
+<table border="0" cellpadding="3" cellspacing="2">
+<tr> <td>&nbsp;</td> <td>Username</td> <td><input name="myusername" type="text" id="myusername"></td> </tr>
+<tr> <td>&nbsp;</td> <td>Password</td> <td><input name="mypassword" type="text" id="mypassword"></td> </tr>
+<tr> <td>&nbsp;</td> <td>&nbsp;</td> <td><input type="submit" name="Submit" value="Login"></td> </tr>
+</table>
+</form>';
 }
 
+function CheckLogin()
+{  echo 'Checking...';
+// If the PHP session has the Ampersand sessionAtom, retrieve it. 
+// Note that it may refer to an Ampersand session that has expired and therefore no longer exists in the Ampersand administration
+   $sessionAtom = $_SESSION['sessionAtom']; 
+// create a new session if $sessionAtom is not set (browser started a new session) 
+// or $sessionAtom is not in SESSIONS (previous session expired)
+   if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION'))
+   { $sessionAtom = mkUniqueAtomByTime('SESSION');
+     $_SESSION['sessionAtom']  = $sessionAtom;
+     addAtomToConcept($sessionAtom, 'SESSION');
+   }
+   echo "sessionAtom = [$sessionAtom]<br>";
+
+// Define $myusername and $mypassword
+   $myusername=$_POST['myusername'];
+   $mypassword=$_POST['mypassword'];
+
+// To protect MySQL injection (more detail about MySQL injection)
+   $myusername = stripslashes($myusername);
+   $mypassword = stripslashes($mypassword);
+   $myusername = mysql_real_escape_string($myusername);
+   $mypassword = mysql_real_escape_string($mypassword);
+
+   echo '<div id="UpdateResults">';
+     dbStartTransaction();
+     InsPair('sessionUserid','SESSION',$sessionAtom,'Userid',$myusername);
+     InsPair('sessionPassword','SESSION',$sessionAtom,'Password',$mypassword);
+     
+     echo '<div id="ProcessRuleResults">';
+       runAllProcedures; // Just in case these rules are stored procedures
+       $LoginRules = array ('inssessionAccount','delsessionAccount','inssessionHistAccount_Def');
+       checkRules($LoginRules);
+     echo '</div>';
+    
+     echo '<div id="InvariantRuleResults">';
+       $invariantRulesHold = checkInvariantRules(); // waaronder: 'Hernieuwd inloggen'
+     echo '</div>';
+  
+     if ($invariantRulesHold)
+     { setTimeStamp();
+       dbCommitTransaction();
+     } else {
+       dbRollbackTransaction();
+     }
+   echo '</div>';
+}
 
 // Queries
 
@@ -139,8 +198,8 @@ function showKeyAtom($atom, $concept) {
       elseif ($keySegment['segmentType'] == 'Html')
         $keyStrs[] = $keySegment['Html'];
       else {
-   $r = getCoDomainAtoms($atom, $keySegment['expSQL']);
-   $txt = count($r) ? $r[0] : "<Key relation not total>";
+	$r = getCoDomainAtoms($atom, $keySegment['expSQL']);
+	$txt = count($r) ? $r[0] : "<Key relation not total>";
         $keyStrs[] = htmlSpecialChars($txt);
         // this can happen in a create-new interface when the key fields have not yet been 
         // filled out, while the atom is shown (but hidden by css) at the top. 
@@ -228,7 +287,7 @@ function mkUniqueAtomByTime($concept) {
 function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it does not yet exist...
 { global $conceptTableInfo;
 
-  foreach ($conceptTableInfo[$concept] as $conceptTableCol)
+  foreach ($conceptTableInfo[$concept] as $conceptTableCol) 
   { // $conceptTableInfo[$concept] is an array of tables with arrays of columns maintaining $concept.
     // (we have an array rather than a single column because of generalizations)
     $conceptTable = $conceptTableCol['table']; 
@@ -242,8 +301,8 @@ function addAtomToConcept($newAtom, $concept) // Insert 'newAtom' only if it doe
     
     $existingAtoms = firstCol(DB_doquer("SELECT `$firstConceptColEsc` FROM `$conceptTableEsc`")); // no need to filter duplicates and NULLs
     
-    if (!in_array($newAtom, $existingAtoms))
-    { $allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
+    if (!in_array($newAtom, $existingAtoms)) {
+      $allConceptColsEsc = '`'.implode('`, `', $conceptCols).'`';
       $newAtomsEsc = array_fill(0, count($conceptCols), $newAtomEsc);
       $allValuesEsc = "'".implode("', '", $newAtomsEsc)."'";
             
