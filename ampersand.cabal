@@ -76,8 +76,8 @@ library
                     hashable >= 1.2 && < 1.3
   exposed-modules:   
                     DatabaseDesign.Ampersand.Input.ADL1.CtxError,
-                    DatabaseDesign.Ampersand
-  other-modules:     
+                    DatabaseDesign.Ampersand.Basics,
+                    DatabaseDesign.Ampersand,
                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     Paths_ampersand,
                     DatabaseDesign.Ampersand.ADL1,
@@ -87,7 +87,6 @@ library
                     DatabaseDesign.Ampersand.ADL1.Pair,
                     DatabaseDesign.Ampersand.ADL1.Rule,
                     DatabaseDesign.Ampersand.ADL1.Lattices,
-                    DatabaseDesign.Ampersand.Basics,
                     DatabaseDesign.Ampersand.Basics.Auxiliaries,
                     DatabaseDesign.Ampersand.Basics.Collection,
                     DatabaseDesign.Ampersand.Basics.String,
@@ -153,6 +152,8 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Fspec.Motivations
+  other-modules:     
+                    
   default-language:  Haskell2010
 
   if flag(library)

@@ -25,7 +25,7 @@ import Data.List  (intercalate)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
 import DatabaseDesign.Ampersand.Core.ParseTree
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (Declaration)
+import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
@@ -47,9 +47,9 @@ instance GetOneGuarded Declaration where
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
   getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++(showFullOrig$origin l) | l<-lst]]
 
-cannotDisambRel :: (Traced a1, ShowADL a1, ShowADL a2) => a1 -> [a2] -> Guarded a
+cannotDisambRel :: (Traced a1, ShowADL a1, ShowADL a2, Association a2) => a1 -> [a2] -> Guarded a
 cannotDisambRel o [] = Errors [CTXE (origin o)$ "No declarations match the relation: "++showADL o]
-cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l|l<-lst]]
+cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relation: "++showADL o++"\n  Please add a signature (e.g. [A*B]) to the relation.\n  Relations you may have intended:"++concat ["\n  "++showADL l++"["++showADL (source l)++"*"++showADL (target l)++"]"|l<-lst]]
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 
@@ -79,7 +79,7 @@ mustBeBound o [(p,e)]
 mustBeBound o lst
  = Errors [CTXE o$ "An ambiguity arises in type checking. Be more specific in the expressions "++intercalate " and " (map (showADL . snd) lst) ++".\n"++
                    "  You could add more types inside the expression, or write:"++
-                   concat ["\n  ("++showADL e++") /\\ "++showADL (EDcV$ sign e)| (_,e)<-lst]]
+                   concat ["\n  ("++showADL e++") /\\ "++showADL (EDcV$ sign e) ++ "["++showADL (source e)++"*"++showADL (target e)++"]"| (_,e)<-lst]]
 
 data Guarded a = Errors [CtxError] | Checked a deriving Show
 
@@ -105,5 +105,5 @@ showErr (PE s)
 
 showFullOrig :: Origin -> String
 showFullOrig (FileLoc (FilePos (_,DatabaseDesign.Ampersand.ADL1.Pos l c,t)))
-              = t ++ "\nArising on line " ++ show l++" : "++show c
+              = "Error at symbol "++ t ++ " at line " ++ show l++" : "++show c
 showFullOrig x = show x

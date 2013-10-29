@@ -150,10 +150,10 @@ where
      nM posNeg (EImp (l,r) _) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM (cplCmp posNeg) l []
                                                     (f,steps',equ'') = nM posNeg r []
-     nM posNeg (ELrs (l,r) _) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
+     nM posNeg (ELrs (l,r) _ _) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
                                               where (t,steps, equ')  = nM posNeg l []
                                                     (f,steps',equ'') = nM (cplCmp posNeg) r []
-     nM posNeg (ERrs (l,r) _) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (ERrs (l,r) _ _) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM (cplCmp posNeg) l []
                                                     (f,steps',equ'') = nM posNeg r []
      nM posNeg (EUni (EUni (l,k) _,r) _) rs = nM posNeg (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
@@ -188,11 +188,11 @@ where
      nM _      x _                  | simpl = (x,[],"<=>")
 -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
      nM _      (EEqu (l,r) _) _                                = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
-     nM _      (EImp (x,ELrs (z,y) _) _) _                     = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
-     nM _      (EImp (y,ERrs (x,z) _) _) _                     = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+     nM _      (EImp (x,ELrs (z,y) _ _) _) _                     = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+     nM _      (EImp (y,ERrs (x,z) _ _) _) _                     = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
      nM _      (EImp (l,r) sgn) _                              = (notCpl sgn l .\/. r, ["remove |-"],"<=>")
-     nM _      (ELrs (l,r) sgn) _                              = (l .!. notCpl sgn (flp r), ["remove left residual (/)"],"<=>")
-     nM _      (ERrs (l,r) sgn) _                              = (notCpl sgn (flp l) .!. r, ["remove right residual (\\)"],"<=>")
+     nM _      (ELrs (l,r) _ sgn) _                              = (l .!. notCpl sgn (flp r), ["remove left residual (/)"],"<=>")
+     nM _      (ERrs (l,r) _ sgn) _                              = (notCpl sgn (flp l) .!. r, ["remove right residual (\\)"],"<=>")
      nM _      (ECpl e@EIsc{} sgn) _                           = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
      nM _      (ECpl e@EUni{} sgn) _                           = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
      nM _      (ECpl e@(ERad (_,ECpl{}) _ _) sgn) _            = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
