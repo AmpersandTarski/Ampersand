@@ -226,11 +226,11 @@ rel2fld kernel
         where
          exprList :: [[Expression]]
          exprList = foldl f [[x] | x<-nub xs]
-                          (nub [c `meet` c' | c<-nub (map source xs), c'<-nub (map target xs), compare c c' `elem` [Poset.EQ,Poset.LT,Poset.GT]])
+                          $fatal 999229 "please retypecheck!" --(nub [c `meet` c' | c<-nub (map source xs), c'<-nub (map target xs), compare c c' `elem` [Poset.EQ,Poset.LT,Poset.GT]])
          f :: [[Expression]] -> A_Concept -> [[Expression]]
-         f q x = q ++
+         f q x = q ++ fatal 999231 "please retypecheck!" {-
                  [ls ++ rs | ls <- q, x <= target (last ls)
-                           , rs <- q, x <= source ((head 206)rs), null (ls `isc` rs)]
+                           , rs <- q, x <= source ((head 206)rs), null (ls `isc` rs)] -}
                   
 -- ^ Explanation:  rel is a relation from some kernel field k to f
 -- ^ (fldexpr k) is the relation from the plug's ID to k
@@ -338,10 +338,7 @@ makeEntityTables _ {-flags-} allDcls exclusions
 -- The first step is to determine which entities to generate.
 -- All concepts and relations mentioned in exclusions are excluded from the process.
     kernels :: [[Expression]]
-    kernels = case [c | c@PlainConcept{} <- concs allDcls] of
-                [] -> []   -- or maybe:   fatal 286 "empty set of concepts"
-                cs -> let (_,islands,_,_,_) = genE cs in
-                      [ iExpr root: [ ETyp (iExpr root) (Sign root c) | c<-specifics ]  | (root:specifics)<-islands ]
+    kernels = fatal 99341 "Do not know how to generate kernels"
               
 -- attRels contains all relations that will be attribute of a kernel.
 -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.

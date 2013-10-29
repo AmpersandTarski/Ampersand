@@ -3,8 +3,7 @@
 -- 
 module DatabaseDesign.Ampersand.Components 
   ( -- * Type checking and calculus
-     typeCheck
-   , makeFspec
+     makeFspec
     -- * Generators of output
    , generateAmpersandOutput
 --   , doGenADL
@@ -19,10 +18,8 @@ module DatabaseDesign.Ampersand.Components
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
-import Data.GraphViz (DotGraph(..))
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.ADL1.P2A_Converters
-import DatabaseDesign.Ampersand.ADL1
 import Text.Pandoc 
 import Text.Pandoc.Builder
 import DatabaseDesign.Ampersand.Basics 
@@ -55,15 +52,6 @@ generateAmpersandOutput flags fSpec =
     --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
     ; verboseLn flags "Done."
     }
-
-
--- | Typechecking takes a P_Context, and a list of P_Population. The result is either a typed context, or an error object.
---   If the list of populations is not empty, then it overwrites the one included in the parsed context
-typeCheck :: P_Context -> [P_Population] -> (Guarded A_Context,DotGraph String,DotGraph String)
-typeCheck p_context []   = pCtx2aCtx p_context                 
-typeCheck p_context pops = pCtx2aCtx (p_context{ctx_pops=pops})
-                           -- consisting of:  (aCtx,ctxcheck,stTypeGraph,condensedGraph)
-  
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.
 -- Q: Should we disambiguate the exprs in the fspec i.e. mapexprs disambiguate fSpec fSpec?

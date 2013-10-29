@@ -1,10 +1,9 @@
+{-# OPTIONS_GHC -Wall #-}
 -- This module provides an interface to be able to parse a scritp and to 
 -- return an Fspec, conform the user defined flags. 
 -- This might include that RAP is included in the returned Fspec. 
 module DatabaseDesign.Ampersand.InputProcessing (
    createFspec
-  ,parseADL1pExpr
-  
 )
 where
 import qualified DatabaseDesign.Ampersand.Basics as Basics
@@ -15,12 +14,13 @@ import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.Input.ADL1.Parser
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(PE),showErr)
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr,CtxError(PE))
 import Data.List
 import System.Directory
 import System.FilePath
 import Paths_ampersand
 import Control.Monad
+import Data.Traversable (sequenceA)
 import Data.GraphViz (runGraphvizCommand,GraphvizCommand(..),GraphvizOutput(..))
 
 fatal :: Int -> String -> a
@@ -40,7 +40,7 @@ createFspec flags =
                                                     ++"\n  (You might want to reinstall ampersand...)") 
                         rapCtx <- parseWithIncluded flags rapFile
                         popsCtx <- popsCtxOf userCtx
-                        case parallelList [userCtx, rapCtx, popsCtx] of
+                        case sequenceA [userCtx, rapCtx, popsCtx] of
                            Errors err -> return (Errors err)
                            Checked ps -> return (Checked 
                                                (foldr mergeContexts emptyContext ps))
@@ -48,8 +48,8 @@ createFspec flags =
      case bothCtx of
         Errors err -> return (Errors err)
         Checked pCtx
-           -> do let (gaCtx, stTypeGraph, condensedGraph) = pCtx2aCtx pCtx 
-                 when  (typeGraphs flags) (showGraphs stTypeGraph condensedGraph)
+           -> do let (gaCtx) = pCtx2aCtx pCtx 
+                 -- when  (typeGraphs flags) (showGraphs stTypeGraph condensedGraph)
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
                    (Checked aCtx) -> return (Checked (makeFspec flags aCtx ))
@@ -58,19 +58,20 @@ createFspec flags =
 -- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
 -- Use only for very small scripts, or else the results will not be very informative.
 -- For the large scripts that are used in projects, the program may abort due to insufficient resources.
+    {-
     showGraphs stTypeGraph condensedGraph
       = do condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".png")
            verboseLn flags (condensedGraphPath++" written.")
            stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName flags) ".png")
-           verboseLn flags (stDotGraphPath++" written.")
+           verboseLn flags (stDotGraphPath++" written.") -}
     popsCtxOf :: Guarded P_Context ->IO(Guarded P_Context)
     popsCtxOf gp =
      (case gp of
        Errors _ -> return (Errors []) -- The errors are already in the error list
        Checked pCtx 
          -> case pCtx2aCtx pCtx of
-              (Errors  err ,_,_) -> return (Errors err)
-              (Checked aCtx,_,_)
+              (Errors  err ) -> return (Errors err)
+              (Checked aCtx)
                  -> do let fspc = makeFspec flags aCtx
                            popScript = meatGrinder flags fspc
                        when (genMeat flags) 
@@ -134,7 +135,7 @@ parseWithIncluded flags f = tailRounds [] (emptyContext,[f])
        parseNext todos dones pCtx =
          case nub [f | f <- todos, f `notElem` dones] of
            [] -> Checked (pCtx,[])
-           fs -> case parallelList (map parse1File2pContext fs) of
+           fs -> case sequenceA (map parse1File2pContext fs) of
                    Checked prs -> Checked ( foldl mergeContexts pCtx (map fst prs)
                                           , concatMap snd prs)
                    Errors errs -> Errors errs
@@ -146,7 +147,7 @@ parse1File2pContext (fPath, fContent) =
    in  case  getMsgs steps of
          []  -> let Pair (pCtx,includes) _ = evalSteps steps 
                 in Checked (pCtx,map normalize includes)
-         msgs-> Errors [PE msgs]
+         msgs-> Errors (map PE msgs)
   where
   normalize ::FilePath -> FilePath
   normalize name = (takeDirectory fPath) </> name
@@ -180,13 +181,14 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs
       , ctx_metas = metas1 ++ metas2
       }
 
+{-
 -- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> Guarded Term
+parseADL1pExpr :: String -> String -> Guarded (Term PrimTerm)
 parseADL1pExpr filename input = 
   let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
       steps :: Steps (Pair Term (Pair [Token] a)) Token
       steps = parse pTerm $ scanner input
   in  case  getMsgs steps of
         []   -> Checked $ let Pair result _ = evalSteps steps in result
-        msgs -> Errors [PE msgs]
-
+        msgs -> Errors (map PE msgs)
+-}

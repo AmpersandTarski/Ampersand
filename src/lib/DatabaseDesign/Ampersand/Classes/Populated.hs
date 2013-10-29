@@ -21,10 +21,11 @@ where
    atomsOf :: [UserDefPop] -> A_Concept -> [String] 
    atomsOf _ ONE  = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
    atomsOf pt c@PlainConcept{}
-     = nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
+     = fatal 99924 "please retypecheck!" {-
+       nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
          ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
-
+       -}
    instance Populated Declaration where
     fullContents pt dcl
       = case dcl of

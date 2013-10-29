@@ -310,9 +310,6 @@ where
        indent++"where"++
        indent++" isa' :: [(A_Concept, A_Concept)]"++
        indent++" isa'  = "++    showHSName (fsisa fspec)++
-       indent++" vctxenv'  = ("++showHS flags (indent ++ "         ") envExpr ++ ", bindings)"++
-       indent++" bindings  = "++(if null bindings then "[]" else
-                                 "[ "++intercalate (indentB++", ") (map showbinding bindings)++indentB++"]")++
        indent++" gE = genE isa'"++
         "\n -- ***Interfaces Specified in Ampersand script***: "++
        indent++" interfaceS' = "++(if null (interfaceS fspec) then "[]" else
@@ -398,10 +395,6 @@ where
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
                               "-- atoms: "++(show.sort) (atomsOf (userDefPops fspec) c)
-                 (envExpr,bindings) = vctxenv fspec
-                 showbinding :: (Declaration,String) -> String
-                 showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
-                                    ", "++show s++") "
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'
@@ -788,7 +781,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS A_Gen where
-    showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "++show (genpat gen)
+    showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "
    
    instance ShowHSName Declaration where
     showHSName d | decusr d  = haskellIdentifier ("dcl_"++name d++name (source d)++name (target d)) -- user defined relations

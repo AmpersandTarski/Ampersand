@@ -327,7 +327,7 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
           eRelIs = [source sgn | EDcI sgn <- map fldexpr flds]
           showField fld =
              let isPrimaryKey = case fldexpr fld of
-                                  EDcI sgn -> foldl1 join eRelIs == source sgn 
+                                  EDcI sgn -> fatal 999386 "please retypecheck!" -- foldl1 join eRelIs == source sgn 
                                   _        -> False 
                  mForeignKey  = case fldexpr fld of
                                   EIsc (EDcI sgn,_) _ -> Just (source sgn)
@@ -379,8 +379,8 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
   
                    
              
- -- | The function daBasics lists the basic sentences that have been used in assembling the data model.
 daBasicsSection  :: Int -> Fspc -> Options -> Blocks
+-- | The function daBasicsSection lists the basic sentences that have been used in assembling the data model.
 daBasicsSection lev fSpec flags = theBlocks
  where 
   theBlocks =
@@ -787,8 +787,8 @@ primExpr2pandocMath flags e =
   
   
   
-  -- | The user can specify that only specific themes should be taken into account 
-  -- in the output. However, when no themes are specified, all themes are relevant.
+-- | The user can specify that only specific themes should be taken into account 
+--   in the output. However, when no themes are specified, all themes are relevant.
 relevantThemes :: Fspc -> [String]
 relevantThemes fSpec = if null (themes fSpec)
                        then map name (patterns fSpec) ++ map name (vprocesses fSpec)
