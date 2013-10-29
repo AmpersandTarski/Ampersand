@@ -269,10 +269,10 @@ selectExpr fSpec i src trg expr
     EDif (l,r) sgn
       -> sqlcomment i ("case: EDif (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
          selectExpr fSpec i src trg (l ./\. ECpl r sgn)
-    ERrs (l,r) sgn
+    ERrs (l,r) _ sgn
       -> sqlcomment i ("case: ERrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
          selectExpr fSpec i src trg (notCpl sgn (flp l) .!. r)
-    ELrs (l,r) sgn
+    ELrs (l,r) _ sgn
       -> sqlcomment i ("case: ELrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
          selectExpr fSpec i src trg (l .!. notCpl sgn (flp r))
     ERad{}
