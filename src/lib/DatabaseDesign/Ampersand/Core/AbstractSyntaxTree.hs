@@ -379,8 +379,8 @@ data Expression
       | EIsc (Expression,Expression) Sign  -- ^ intersection            /\
       | EUni (Expression,Expression) Sign  -- ^ union                   \/
       | EDif (Expression,Expression) Sign  -- ^ difference              -
-      | ELrs (Expression,Expression) Sign  -- ^ left residual           /
-      | ERrs (Expression,Expression) Sign  -- ^ right residual          \
+      | ELrs (Expression,Expression) A_Concept Sign  -- ^ left residual           /
+      | ERrs (Expression,Expression) A_Concept Sign  -- ^ right residual          \
       | ECps (Expression,Expression) A_Concept Sign  -- ^ composition             ; 
       | ERad (Expression,Expression) A_Concept Sign  -- ^ relative addition       ! 
       | EPrd (Expression,Expression) Sign  -- ^ cartesian product       * 
@@ -419,8 +419,8 @@ l .|-. r = EImp (l,r) (sign l)
 l ./\. r = EIsc (l,r) (sign l)
 l .\/. r = EUni (l,r) (sign l)
 l .-. r  = EDif (l,r) (sign l)
-l ./. r  = ELrs (l,r) (Sign (source l) (source r))
-l .\. r  = ERrs (l,r) (Sign (target l) (target r))
+l ./. r  = ELrs (l,r) (target l) (Sign (source l) (source r))
+l .\. r  = ERrs (l,r) (source l) (Sign (target l) (target r))
 l .:. r  = ECps (l,r) (target l) (Sign (source l) (target r))
 l .!. r  = ERad (l,r) (target l) (Sign (source l) (target r))
 l .*. r  = EPrd (l,r) (Sign (source l) (target r))
@@ -437,8 +437,8 @@ instance Flippable Expression where
                EIsc (l,r) sgn -> EIsc (flp l, flp r) (flp sgn)
                EUni (l,r) sgn -> EUni (flp l, flp r) (flp sgn)
                EDif (l,r) sgn -> EDif (flp l, flp r) (flp sgn)
-               ELrs (l,r) sgn -> ERrs (flp r, flp l) (flp sgn)
-               ERrs (l,r) sgn -> ELrs (flp r, flp l) (flp sgn)
+               ELrs (l,r) c sgn -> ERrs (flp r, flp l) c (flp sgn)
+               ERrs (l,r) c sgn -> ELrs (flp r, flp l) c (flp sgn)
                ECps (l,r) c sgn -> ECps (flp r, flp l) c (flp sgn)
                ERad (l,r) c sgn -> ERad (flp r, flp l) c (flp sgn)
                EPrd (l,r) sgn -> EPrd (flp r, flp l) (flp sgn)
@@ -464,8 +464,8 @@ insParentheses = insPar 0
        insPar i (EUni (l,r) sgn) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r) sgn)
        insPar i (EIsc (l,r) sgn) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r) sgn)
        insPar i (EDif (l,r) sgn) = wrap i     4 (EDif (insPar 5 l, insPar 5 r) sgn)
-       insPar i (ELrs (l,r) sgn) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r) sgn)
-       insPar i (ERrs (l,r) sgn) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r) sgn)
+       insPar i (ELrs (l,r) c sgn) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r) c sgn)
+       insPar i (ERrs (l,r) c sgn) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r) c sgn)
        insPar i (ECps (l,r) c sgn) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r) c sgn)
        insPar i (ERad (l,r) c sgn) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r) c sgn)
        insPar i (EPrd (l,r) sgn) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r) sgn)
@@ -486,8 +486,8 @@ instance Association Expression where
  sign (EIsc _ sgn) = sgn
  sign (EUni _ sgn) = sgn
  sign (EDif _ sgn) = sgn
- sign (ELrs _ sgn) = sgn
- sign (ERrs _ sgn) = sgn
+ sign (ELrs _ _ sgn) = sgn
+ sign (ERrs _ _ sgn) = sgn
  sign (ECps _ _ sgn) = sgn
  sign (ERad _ _ sgn) = sgn
  sign (EPrd _ sgn) = sgn

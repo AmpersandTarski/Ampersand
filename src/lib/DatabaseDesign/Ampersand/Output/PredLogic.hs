@@ -265,11 +265,11 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f exclVars e@EIsc{}       (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
       f exclVars e@EUni{}       (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
       f exclVars (EDif (l,r) _) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
-      f exclVars (ELrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
-                                         where [c]   = mkVar exclVars [target r]
+      f exclVars (ELrs (l,r) c' _) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
+                                         where [c]   = mkVar exclVars [c']
                                                eVars = exclVars++[c]
-      f exclVars (ERrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
-                                         where [c]   = mkVar exclVars [source l]
+      f exclVars (ERrs (l,r) c' _) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
+                                         where [c]   = mkVar exclVars [c']
                                                eVars = exclVars++[c]
       f exclVars e@ECps{}       (a,b)  = fC exclVars e (a,b)  -- special treatment, see below
       f exclVars e@ERad{}       (a,b)  = fD exclVars e (a,b)  -- special treatment, see below

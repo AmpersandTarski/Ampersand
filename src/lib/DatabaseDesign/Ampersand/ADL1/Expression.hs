@@ -20,8 +20,8 @@ subst (decl,f) = subs
        subs (EIsc (l,r) sgn) = EIsc (subs l,subs r) sgn
        subs (EUni (l,r) sgn) = EUni (subs l,subs r) sgn
        subs (EDif (l,r) sgn) = EDif (subs l,subs r) sgn
-       subs (ELrs (l,r) sgn) = ELrs (subs l,subs r) sgn
-       subs (ERrs (l,r) sgn) = ERrs (subs l,subs r) sgn
+       subs (ELrs (l,r) c sgn) = ELrs (subs l,subs r) c sgn
+       subs (ERrs (l,r) c sgn) = ERrs (subs l,subs r) c sgn
        subs (ECps (l,r) c sgn) = ECps (subs l,subs r) c sgn
        subs (ERad (l,r) c sgn) = ERad (subs l,subs r) c sgn
        subs (EPrd (l,r) sgn) = EPrd (subs l,subs r) sgn
@@ -60,10 +60,10 @@ subsi n f expr = expr'
          subs i (EDif (l,r) sgn) = (EDif (l',r') sgn, i'')
                                    where (l',i')  = subs i l
                                          (r',i'') = subs i' r
-         subs i (ELrs (l,r) sgn) = (ELrs (l',r') sgn, i'')
+         subs i (ELrs (l,r) c sgn) = (ELrs (l',r') c sgn, i'')
                                    where (l',i')  = subs i l
                                          (r',i'') = subs i' r
-         subs i (ERrs (l,r) sgn) = (ERrs (l',r') sgn, i'')
+         subs i (ERrs (l,r) c sgn) = (ERrs (l',r') c sgn, i'')
                                    where (l',i')  = subs i l
                                          (r',i'') = subs i' r
          subs i (ECps (l,r) c sgn) = (ECps (l',r') c sgn, i'')
@@ -98,8 +98,8 @@ foldrMapExpression f g a (EImp (l,r) _)    = foldrMapExpression f g (foldrMapExp
 foldrMapExpression f g a (EIsc (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EUni (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EDif (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ELrs (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ERrs (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ELrs (l,r) _ _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ERrs (l,r) _ _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ECps (l,r) _ _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (ERad (l,r) _ _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EPrd (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
@@ -122,8 +122,8 @@ primitives expr =
     (EIsc (l,r) _) -> primitives l `uni` primitives r
     (EUni (l,r) _) -> primitives l `uni` primitives r
     (EDif (l,r) _) -> primitives l `uni` primitives r
-    (ELrs (l,r) _) -> primitives l `uni` primitives r
-    (ERrs (l,r) _) -> primitives l `uni` primitives r
+    (ELrs (l,r) _ _) -> primitives l `uni` primitives r
+    (ERrs (l,r) _ _) -> primitives l `uni` primitives r
     (ECps (l,r) _ _) -> primitives l `uni` primitives r
     (ERad (l,r) _ _) -> primitives l `uni` primitives r
     (EPrd (l,r) _) -> primitives l `uni` primitives r

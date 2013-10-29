@@ -209,8 +209,8 @@ pCtx2aCtx
          PIsc _ a b -> binary  EIsc (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PUni _ a b -> binary  EUni (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PDif _ a b -> binary  EDif (MBG (Src,fst) (Src,snd), MBG (Src,fst) (Src,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
-         PLrs _ _ _ -> undefined 
-         PRrs _ _ _ -> undefined 
+         PLrs _ a b -> binary' ELrs (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
+         PRrs _ a b -> binary' ERrs (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PCps _ a b -> binary' ECps (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PRad _ a b -> binary' ERad (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PPrd _ a b -> binary' ERad (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
@@ -339,8 +339,8 @@ pCtx2aCtx
                      , prcGens = map pGen2aGen gens
                      , prcDcls = map pDecl2aDecl dcls
                      , prcUps = pops'
-                     , prcRRuls = undefined
-                     , prcRRels = undefined
+                     , prcRRuls = fatal 342 "Don't know where to get the process rules"
+                     , prcRRels = fatal 343 "Don't know where to get the process relations"
                      , prcIds = idefs'
                      , prcVds = viewdefs'
                      , prcXps = purposes'
@@ -362,9 +362,9 @@ pCtx2aCtx
                  , ptrls = prules
                  , ptgns = agens'
                  , ptdcs = map pDecl2aDecl (pt_dcs ppat)
-                 , ptups = undefined -- population tuples?
-                 , ptrruls = undefined -- The assignment of roles to rules.
-                 , ptrrels = undefined -- (rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
+                 , ptups = fatal 365 "Don't know where to get the population tuples" -- population tuples?
+                 , ptrruls = fatal 366 "Don't know where to get the process rules" -- The assignment of roles to rules.
+                 , ptrrels = fatal 367 "Don't know where to get the process relations" -- (rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                  , ptids = keys'
                  , ptvds = views'
                  , ptxps = xpls
@@ -386,15 +386,15 @@ pCtx2aCtx
      = (\ exp' ->   Ru { rrnm = nm
                        , rrexp = exp'
                        , rrfps = orig
-                       , rrmean = undefined
-                       , rrmsg = undefined
-                       , rrviol = undefined
+                       , rrmean = fatal 389 "Don't know where to get the meanings (of rules)"
+                       , rrmsg = fatal 390 "Don't know where to get the messages (of rules)"
+                       , rrviol = fatal 391 "Don't know where to get the violations (of rules)"
                        , rrtyp = sign exp'
                        , rrdcl = Nothing
                        , r_env = env
-                       , r_usr = undefined
-                       , r_sgl = undefined
-                       , srrel = undefined
+                       , r_usr = fatal 392 "Don't know where to get the usr (of rules)"
+                       , r_sgl = fatal 393 "Don't know where to get the sgl (of rules)"
+                       , srrel = fatal 394 "Don't know where to get the rel (of rules)"
                        }) <$> term2Expr expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity
@@ -447,7 +447,7 @@ pCtx2aCtx
                       })
        <$> pRefObj2aRefObj objref
     pRefObj2aRefObj :: PRef2Obj -> Guarded ExplObj
-    pRefObj2aRefObj (PRef2ConceptDef _  ) = undefined
+    pRefObj2aRefObj (PRef2ConceptDef _  ) = fatal 450 "Don't know the ExplObj of a ConceptDef"
     pRefObj2aRefObj (PRef2Declaration tm) = ExplDeclaration <$> (termPrim2Decl tm)
     pRefObj2aRefObj (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
@@ -456,7 +456,7 @@ pCtx2aCtx
     pRefObj2aRefObj (PRef2Process     s ) = pure$ ExplProcess s
     pRefObj2aRefObj (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
-    pRefObj2aRefObj (PRef2Fspc        _ ) = undefined
+    pRefObj2aRefObj (PRef2Fspc        _ ) = fatal 459 "Don't know the ExplObj of a PRef2Fspc"
     
 maybeLang :: Maybe Lang -> Lang
 maybeLang Nothing = English
@@ -473,7 +473,7 @@ pMarkup2aMarkup
              }
  = A_Markup { amLang = maybeLang ml
             , amFormat = maybeForm mpdf
-            , amPandoc = undefined
+            , amPandoc = fatal 476 "Don't know how to convert a string to a pandoc Block.. Han?"
             }
 pDecl2aDecl :: P_Declaration -> Declaration
 pDecl2aDecl pd = Sgn { decnm   = dec_nm pd
@@ -483,13 +483,13 @@ pDecl2aDecl pd = Sgn { decnm   = dec_nm pd
                      , decprL  = dec_prL pd
                      , decprM  = dec_prM pd
                      , decprR  = dec_prR pd
-                     , decMean = AMeaning undefined
+                     , decMean = AMeaning $ fatal 486 "Don't know how to get a meaning for a Decl"
                      , decConceptDef = dec_conceptDef pd
                      , decfpos = dec_fpos pd 
                      , decissX  = True
                      , decusrX  = True
                      , decISA  = False
-                     , decpat  = undefined
+                     -- , decpat  = fatal 492 "Pattern of pDecl2aDecl unknown"
                      , decplug = dec_plug pd
                      }
 pSign2aSign :: P_Sign -> Sign
@@ -525,8 +525,12 @@ disambInfo (PUni o a b) (ia1,ib1) = ( PUni o a' b', (ia2++ia3, ib2++ib3) )
 disambInfo (PDif o a b) (ia1,ib1) = ( PDif o a' b', (ia2++ia3, ib2++ib3) )
  where (a', (ia2,ib2)) = disambInfo a (ia1++ia3, ib1++ib3)
        (b', (ia3,ib3)) = disambInfo b (ia1++ia2, ib1++ib2)
-disambInfo (PLrs _ _ _) (_  ,_  ) = undefined
-disambInfo (PRrs _ _ _) (_  ,_  ) = undefined
+disambInfo (PLrs o a b) (ia1,ib1) = ( PLrs o a' b', (ia, ib) )
+ where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
+       (b', (ib,ic2)) = disambInfo b (ib1,ic1)
+disambInfo (PRrs o a b) (ia1,ib1) = ( PRrs o a' b', (ia, ib) )
+ where (a', (ic1,ia)) = disambInfo a (ic2,ia1)
+       (b', (ic2,ib)) = disambInfo b (ic1,ib1)
 disambInfo (PCps o a b) (ia1,ib1) = ( PCps o a' b', (ia, ib) )
  where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
        (b', (ic2,ib)) = disambInfo b (ic1,ib1)
@@ -581,8 +585,8 @@ findConcept :: String -> A_Concept
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
 findConcept x = PlainConcept 
             {cptnm = x
-            ,cpttp = undefined
-            ,cptdf = undefined
+            ,cpttp = fatal 588 "Types of concepts are not defined here"
+            ,cptdf = fatal 589 "df of concepts are not defined here"
             }
 pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc

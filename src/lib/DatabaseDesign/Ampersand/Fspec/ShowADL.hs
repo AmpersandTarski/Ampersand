@@ -262,8 +262,8 @@ instance ShowADL Expression where
           showchar (EIsc (l,r) _) = showchar l++inter++showchar r
           showchar (EUni (l,r) _) = showchar l++union'++showchar r
           showchar (EDif (l,r) _) = showchar l++diff ++showchar r
-          showchar (ELrs (l,r) _) = showchar l++lresi++showchar r
-          showchar (ERrs (l,r) _) = showchar l++rresi++showchar r
+          showchar (ELrs (l,r) _ _) = showchar l++lresi++showchar r
+          showchar (ERrs (l,r) _ _) = showchar l++rresi++showchar r
           showchar (ECps (l,r) _ _) = showchar l++rMul++showchar r
           showchar (ERad (l,r) _ _) = showchar l++rAdd++showchar r
           showchar (EPrd (l,r) _) = showchar l++rPrd++showchar r
