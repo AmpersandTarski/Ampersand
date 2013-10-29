@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Core.ParseTree (
      P_Context(..)
-   , P_Meta(..)
+   , Meta(..)
    , MetaObj(..)
    , P_Process(..)
    , P_RoleRelation(..)
@@ -10,7 +10,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    
    , RelConceptDef(..), P_Declaration(..)
    
-   , Term(..) , CTerm(..)
+   , Term(..), TermPrim(..)
    
    , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..), isSrc
    
@@ -42,11 +42,16 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    -- Inherited stuff: 
    , module DatabaseDesign.Ampersand.Input.ADL1.FilePos
    , module DatabaseDesign.Ampersand.ADL1.Pair
+   , gen_concs
   )
 where
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos           
    import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
+   import Data.Traversable
+   import Data.Foldable
+   import Prelude hiding (foldr)
+   import Control.Applicative
 
    fatal :: Int -> String -> a
    fatal = fatalMsg "ParseTree"
@@ -70,7 +75,7 @@ where
             , ctx_pops ::   [P_Population]   -- ^ The populations defined in this context
             , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
             , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
-            , ctx_metas ::  [P_Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+            , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
             } deriving Show
 
 --   instance Show P_Context where
@@ -82,18 +87,18 @@ where
    instance Identified P_Context where
      name = ctx_nm
    
-   data P_Meta = P_Meta { mt_Pos :: Origin
-                        , mt_Obj :: MetaObj
-                        , mt_Name :: String
-                        , mt_Val :: String
-                        } deriving Show
-
+   -- for declaring name/value pairs with information that is built in to the adl syntax yet
+   data Meta = Meta { mtPos :: Origin
+                 , mtObj :: MetaObj
+                 , mtName :: String
+                 , mtVal :: String
+                 } deriving (Show)
    data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for the entire context  
    
    -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
    data P_RoleRelation
       = P_RR { rr_Roles :: [String]  -- ^ name of a role
-             , rr_Rels :: [Term]     -- ^ Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
+             , rr_Rels :: [TermPrim] -- ^ Typically: PTrel nm sgn, with nm::String and sgn::P_Sign representing a Relation with type information
              , rr_Pos :: Origin      -- ^ position in the Ampersand script
              } deriving (Show)       -- deriving Show is just for debugging
    instance Eq P_RoleRelation where rr==rr' = origin rr==origin rr'
@@ -196,56 +201,66 @@ where
     name = dec_nm
    instance Traced P_Declaration where
     origin = dec_fpos
-
-   data CTerm 
-      = Ccpt Origin String       -- ^ concept
-      | CIsc Origin CTerm CTerm  -- ^ intersection            /\      
-      | CUni Origin CTerm CTerm  -- ^ union                   \/    
-      deriving (Eq, Ord, Show)   -- deriving Show for debugging purposes
-      
-   data Term 
+   
+   data TermPrim
       = PI Origin                              -- ^ identity element without a type
                                                --   At parse time, there may be zero or one element in the list of concepts.
                                                --   Reason: when making eqClasses, the least element of that class is used as a witness of that class
                                                --   to know whether an eqClass represents a concept, we only look at its witness
                                                --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
       | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-      | Patm Origin String [P_Concept]         -- ^ an atom, possibly with a type
+      | Patm Origin String (Maybe P_Concept)   -- ^ an atom, possibly with a type
       | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
       | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
       | PTrel Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | Pequ Origin Term Term  -- ^ equivalence             =
-      | Pimp Origin Term Term  -- ^ implication             |-
-      | PIsc Origin Term Term  -- ^ intersection            /\
-      | PUni Origin Term Term  -- ^ union                   \/
-      | PDif Origin Term Term  -- ^ difference              -
-      | PLrs Origin Term Term  -- ^ left residual           /
-      | PRrs Origin Term Term  -- ^ right residual          \
-      | PCps Origin Term Term  -- ^ composition             ;
-      | PRad Origin Term Term  -- ^ relative addition       !
-      | PPrd Origin Term Term  -- ^ cartesian product       *
-      | PKl0 Origin Term               -- ^ Rfx.Trn closure         *  (Kleene star)
-      | PKl1 Origin Term               -- ^ Transitive closure      +  (Kleene plus)
-      | PFlp Origin Term               -- ^ conversion (flip, wok)  ~
-      | PCpl Origin Term               -- ^ Complement
-      | PBrk Origin Term               -- ^ bracketed expression ( ... )
-      deriving (Ord, Show) -- deriving Show for debugging purposes
+      deriving Show
+   data Term a
+      = Prim a
+      | Pequ Origin (Term a) (Term a)  -- ^ equivalence             =
+      | Pimp Origin (Term a) (Term a)  -- ^ implication             |-
+      | PIsc Origin (Term a) (Term a)  -- ^ intersection            /\
+      | PUni Origin (Term a) (Term a)  -- ^ union                   \/
+      | PDif Origin (Term a) (Term a)  -- ^ difference              -
+      | PLrs Origin (Term a) (Term a)  -- ^ left residual           /
+      | PRrs Origin (Term a) (Term a)  -- ^ right residual          \
+      | PCps Origin (Term a) (Term a)  -- ^ composition             ;
+      | PRad Origin (Term a) (Term a)  -- ^ relative addition       !
+      | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       *
+      | PKl0 Origin (Term a)           -- ^ Rfx.Trn closure         *  (Kleene star)
+      | PKl1 Origin (Term a)           -- ^ Transitive closure      +  (Kleene plus)
+      | PFlp Origin (Term a)           -- ^ conversion (flip, wok)  ~
+      | PCpl Origin (Term a)           -- ^ Complement
+      | PBrk Origin (Term a)           -- ^ bracketed expression ( ... )
+      deriving (Show) -- deriving Show for debugging purposes
+   instance Functor Term where
+    fmap = fmapDefault
+   instance Foldable Term where
+    foldMap = foldMapDefault
+   instance Traversable Term where
+    traverse f' x
+     = case x of
+       Prim a -> Prim <$> f' a
+       Pequ o a b -> Pequ o <$> (f a) <*> (f b)
+       Pimp o a b -> Pimp o <$> (f a) <*> (f b)
+       PIsc o a b -> PIsc o <$> (f a) <*> (f b)
+       PUni o a b -> PUni o <$> (f a) <*> (f b)
+       PDif o a b -> PDif o <$> (f a) <*> (f b)
+       PLrs o a b -> PLrs o <$> (f a) <*> (f b)
+       PRrs o a b -> PRrs o <$> (f a) <*> (f b)
+       PCps o a b -> PCps o <$> (f a) <*> (f b)
+       PRad o a b -> PRad o <$> (f a) <*> (f b)
+       PPrd o a b -> PPrd o <$> (f a) <*> (f b)
+       PKl0 o a   -> PKl0 o <$> (f a)
+       PKl1 o a   -> PKl1 o <$> (f a)
+       PFlp o a   -> PFlp o <$> (f a)
+       PCpl o a   -> PCpl o <$> (f a)
+       PBrk o a   -> PBrk o <$> (f a)
+     where f = traverse f'
 
--- This instance of Eq is required in the type checker. It is needed in this way in order to define the relation st[Type*Type] correctly.
-   instance Eq Term where
-      t == t' =
-        case t of
-         Pid _ cpt -> case t' of
-                           Pid _ cpt' -> cpt == cpt'
-                           _          -> False
-         Pfull _ cpt1 cpt2 -> case t' of
-                                Pfull _ cpt1' cpt2' -> cpt1 == cpt1' && cpt2 == cpt2'
-                                _     -> False
-         _  -> origin t == origin t'
-         
-   instance Traced Term where
+   
+   instance Traced TermPrim where
     origin e = case e of
       PI orig        -> orig
       Pid orig _     -> orig
@@ -254,6 +269,10 @@ where
       Pfull orig _ _ -> orig
       Prel orig _    -> orig
       PTrel orig _ _ -> orig
+      
+   instance Traced a => Traced (Term a) where
+    origin e = case e of
+      Prim a         -> origin a
       Pequ orig _ _  -> orig
       Pimp orig _ _  -> orig
       PIsc orig _ _  -> orig
@@ -271,7 +290,10 @@ where
       PBrk orig _    -> orig
 
    data SrcOrTgt = Src | Tgt deriving (Show, Eq, Ord)
-
+   instance Flippable SrcOrTgt where
+     flp Src = Tgt
+     flp Tgt = Src
+   
    isSrc :: SrcOrTgt -> Bool
    isSrc Src = True
    isSrc Tgt = False
@@ -279,16 +301,12 @@ where
    data P_PairView = P_PairView { ppv_segs :: [P_PairViewSegment] } deriving Show
 
    data P_PairViewSegment = P_PairViewText String
-                          | P_PairViewExp SrcOrTgt Term
+                          | P_PairViewExp SrcOrTgt (Term TermPrim)
             deriving Show
 
    data P_Rule  =
-      P_Cy { cr_lhs ::  P_Concept         -- ^ Left hand side concept expression 
-           , cr_rhs ::  [P_Concept]       -- ^ Right hand side concept expression
-           , rr_fps ::  Origin            -- ^ Position in the Ampersand file
-           } |
       P_Ru { rr_nm ::   String            -- ^ Name of this rule
-           , rr_exp ::  Term              -- ^ The rule expression 
+           , rr_exp ::  (Term TermPrim)   -- ^ The rule expression 
            , rr_fps ::  Origin            -- ^ Position in the Ampersand file
            , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
            , rr_msg ::  [P_Markup]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
@@ -336,7 +354,7 @@ where
 
    data P_Interface = 
         P_Ifc { ifc_Name :: String           -- ^ the name of the interface
-              , ifc_Params :: [Term]         -- ^ a list of relations, which are editable within this interface.
+              , ifc_Params :: [TermPrim]         -- ^ a list of relations, which are editable within this interface.
                                              --   either   Prel o nm
                                              --       or   PTrel o nm sgn
               , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
@@ -361,7 +379,7 @@ where
    data P_ObjectDef = 
         P_Obj { obj_nm :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
               , obj_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-              , obj_ctx :: Term   -- ^ this expression describes the instances of this object, related to their context. 
+              , obj_ctx :: Term TermPrim   -- ^ this expression describes the instances of this object, related to their context. 
               , obj_msub :: Maybe P_SubInterface  -- ^ the attributes, which are object definitions themselves.
               , obj_strs :: [[String]]     -- ^ directives that specify the interface.
               }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
@@ -411,7 +429,7 @@ where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
    data PRef2Obj = PRef2ConceptDef String
-                 | PRef2Declaration Term -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
+                 | PRef2Declaration TermPrim -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
                                          -- or        Prel o nm; Other terms become fatals
                  | PRef2Rule String
                  | PRef2IdentityDef String
@@ -453,8 +471,9 @@ where
    data P_Concept
       = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
       | P_Singleton 
-      deriving (Eq, Ord)
+--      deriving (Eq, Ord)
 -- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
+-- (Sebastiaan 11 okt 2013) Removed this again, I thought it would be more clean to use newtype for this instead
 
    instance Identified P_Concept where
     name (PCpt {p_cptnm = nm}) = nm
@@ -465,23 +484,23 @@ where
 
 
    data P_Sign = P_Sign {pSrc :: P_Concept, pTrg :: P_Concept }
-                 deriving Ord
-
-   instance Eq P_Sign  where
-     P_Sign src trg == P_Sign src' trg' = src==src'  &&  trg==trg'
 
    instance Show P_Sign where
      showsPrec _ sgn = 
          showString (   "[" ++ show (pSrc sgn)++"*"++show (pTrg sgn) ++ "]" )
 
-   data P_Gen = PGen{ gen_fp :: Origin         -- ^ the position of the GEN-rule
-                    , gen_gen :: P_Concept      -- ^ generic concept
-                    , gen_spc :: P_Concept      -- ^ specific concept
-                    }
-   instance Eq P_Gen where
-       g == g' = gen_gen g == gen_gen g' &&
-                 gen_spc g == gen_spc g'
-
+   data P_Gen =  P_Cy{ gen_spc :: P_Concept         -- ^ Left hand side concept expression 
+                     , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
+                     , gen_fp  :: Origin            -- ^ Position in the Ampersand file
+                     }
+               | PGen{ gen_fp :: Origin         -- ^ the position of the GEN-rule
+                     , gen_gen :: P_Concept      -- ^ generic concept
+                     , gen_spc :: P_Concept      -- ^ specific concept
+                     }
+   gen_concs :: P_Gen -> [P_Concept]
+   gen_concs (P_Cy {gen_rhs=x}) = x
+   gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
+      
    instance Show P_Gen where
     -- This show is used in error messages. It should therefore not display the term's type
     showsPrec _ g = showString ("SPEC "++show (gen_spc g)++" ISA "++show (gen_gen g))

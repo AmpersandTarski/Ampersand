@@ -10,7 +10,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree as X (
          , P_Concept(..)
          , P_Sign(..)
          , P_Context(..)
-         , P_Meta(..)
+         , Meta(..)
          , MetaObj(..)
          , P_Process(..), P_RoleRelation(..), RoleRule(..)
          , P_Pattern(..)
@@ -24,13 +24,14 @@ import DatabaseDesign.Ampersand.Core.ParseTree as X (
          , P_Interface(..)
          , P_SubInterface(..)
          , Term(..)
+         , TermPrim(..)
          , P_Gen(..)
          , P_Declaration(..)
          , ConceptDef(..)
+         , gen_concs
          )
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
           A_Concept(..)
-         ,Meta(..)
          ,Sign(..),showSign,GenR()
          , (<==>),meet,join
          ,Signaling(..)

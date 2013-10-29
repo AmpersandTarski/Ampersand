@@ -143,7 +143,6 @@ entityconcept :: PlugSQL -> A_Concept
 entityconcept BinSQL{} --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
   = PlainConcept
       { cptnm = "ID"
-      , cptgE = fatal 157 "This is not the right place to define an ordering."
       , cpttp = []
       , cptdf = []
       }

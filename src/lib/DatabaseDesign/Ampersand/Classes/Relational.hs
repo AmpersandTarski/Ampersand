@@ -4,13 +4,14 @@ module DatabaseDesign.Ampersand.Classes.Relational
    ) where
 
 import Data.Maybe
-                                  
-import Prelude hiding (Ord(..))
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..))
+
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import DatabaseDesign.Ampersand.Core.ParseTree       (Prop(..))
 import DatabaseDesign.Ampersand.ADL1.Expression
 import DatabaseDesign.Ampersand.Basics
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Relational"
 
 class Association r => Relational r where
     multiplicities :: r -> [Prop]
@@ -139,7 +140,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl1 e     _   -> isTrue e
      EFlp e     _   -> isTrue e
      ECpl e     _   -> isFalse e
-     ETyp e     sgn -> isTrue e && sgn <= sign e  -- The operator (<=) comes from Core.Poset
+     ETyp e     sgn -> fatal 999145 "please retypecheck!" -- isTrue e && sgn <= sign e  -- The operator (<=) comes from Core.Poset
      EDcD _       _ -> False
      EDcI         _ -> False
      EDcV         _ -> True
@@ -184,7 +185,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl0 e     _   -> isIdent e || isFalse e
      EKl1 e     _   -> isIdent e
      ECpl e     sgn -> isImin (ETyp e sgn)
-     ETyp e     sgn -> source sgn==target sgn && sgn<=sign e && isIdent e
+     ETyp e     sgn -> fatal 999190 "please retypecheck!" --source sgn==target sgn && sgn<=sign e && isIdent e
      EDcD _     _   -> False
      EDcI       _   -> True
      EDcV       sgn -> isEndo sgn && isSingleton (source sgn)
@@ -199,8 +200,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EUni (l,r) sgn -> isImin (ETyp l sgn) && isImin (ETyp r sgn)
      EDif (l,r) sgn -> isImin (ETyp l sgn) && isFalse r
      ECpl e     sgn -> isIdent (ETyp e sgn)
-     ETyp e sgn     -> source sgn==target sgn && sgn<=sign e && isImin e
-     EDcD dcl sgn   -> sgn<=sign dcl && isImin dcl
+     ETyp e sgn     -> fatal 999202 "please retypecheck!" -- source sgn==target sgn && sgn<=sign e && isImin e
+     EDcD dcl sgn   -> fatal 999203 "please retypecheck!" -- sgn<=sign dcl && isImin dcl
      EDcI       _   -> False
      EDcV       _   -> False
      EBrk f         -> isImin f

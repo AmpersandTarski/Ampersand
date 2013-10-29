@@ -75,14 +75,18 @@ library
                     array >= 0.4 && < 0.5,
                     hashable >= 1.2 && < 1.3
   exposed-modules:   
-                    DatabaseDesign.Ampersand,
+                    DatabaseDesign.Ampersand.Input.ADL1.CtxError,
+                    DatabaseDesign.Ampersand
+  other-modules:     
+                    DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
+                    Paths_ampersand,
                     DatabaseDesign.Ampersand.ADL1,
                     DatabaseDesign.Ampersand.ADL1.ECArule,
                     DatabaseDesign.Ampersand.ADL1.Expression,
                     DatabaseDesign.Ampersand.ADL1.P2A_Converters,
                     DatabaseDesign.Ampersand.ADL1.Pair,
                     DatabaseDesign.Ampersand.ADL1.Rule,
-                    DatabaseDesign.Ampersand.ADL1.TypePropagation,
+                    DatabaseDesign.Ampersand.ADL1.Lattices,
                     DatabaseDesign.Ampersand.Basics,
                     DatabaseDesign.Ampersand.Basics.Auxiliaries,
                     DatabaseDesign.Ampersand.Basics.Collection,
@@ -120,7 +124,6 @@ library
                     DatabaseDesign.Ampersand.Fspec.ToFspec.Calc,
                     DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms,
                     DatabaseDesign.Ampersand.Input,
-                    DatabaseDesign.Ampersand.Input.ADL1.CtxError,
                     DatabaseDesign.Ampersand.Input.ADL1.FilePos,
                     DatabaseDesign.Ampersand.Input.ADL1.Parser,
                     DatabaseDesign.Ampersand.Input.ADL1.UU_BinaryTrees,
@@ -150,9 +153,6 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Fspec.Motivations
-  other-modules:     
-                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
-                     Paths_ampersand
   default-language:  Haskell2010
 
   if flag(library)

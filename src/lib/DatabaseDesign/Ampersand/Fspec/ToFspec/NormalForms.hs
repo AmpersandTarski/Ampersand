@@ -200,6 +200,7 @@ where
      nM _      (ECpl e@(ECps (ECpl{},ECpl{}) _ _) sgn) _       = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
      nM posNeg (ECpl e sgn) _                                  = (notCpl sgn res',steps,equ')
                                                                  where (res',steps,equ') = nM (cplCmp posNeg) e []
+     {-
      nM _      (ECps (l,r) _ sgn) _ | isIdent l && sign l Poset.>=sgn = (r, ["I;x = x"], "<=>")
      nM _      (ECps (l,r) _ sgn) _ | isIdent r && sign r Poset.>=sgn = (l, ["x;I = x"], "<=>")
      nM Lte    (ECps (r,ERad (s,q) _ _) _ _) _ | not eq            = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
@@ -340,8 +341,8 @@ where
                absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
                absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f' _<-rs++exprUni2list r, t'==f']++[(x, exprIsc2list l>-[x]) | x@(ECpl t' _)<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
                absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f' _<-rs++exprUni2list l, t'==f']++[(x, exprIsc2list r>-[x]) | x@(ECpl t' _)<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-     nM _ (EFlp e _) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
-     nM _ x _               = (x,[],"<=>")
+     nM _ (EFlp e _) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>") -}
+     nM _ x _               = fatal 999345 "please retypecheck!" --(x,[],"<=>")
 
    exprIsc2list, exprUni2list, exprCps2list, exprRad2list :: Expression -> [Expression]
    exprIsc2list (EIsc (l,r) _) = exprIsc2list l++exprIsc2list r

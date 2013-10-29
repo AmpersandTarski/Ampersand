@@ -61,7 +61,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , allUsedDecls = declsUsedIn context
                  , allDecls     = alldecls
                  , allConcepts  = concs context
-                 , fsisa        = isas
+                 , fsisa        = []
                  , vpatterns    = patterns context
                  , vgens        = gens context
                  , vIndices     = identities context
@@ -69,13 +69,11 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
                  , vConceptDefs = conceptDefs context
                  , fSexpls      = ctxps context
                  , metas        = ctxmetas context
-                 , vctxenv      = ctxenv context
                  , userDefPops  = userdefpops
                  , allViolations = [(r,vs) |r<- allrules, not (isSignal r), let vs = ruleviolations userdefpops r,  not (null vs)]
                  }
         alldecls = declarations context
         allQuads = quads flags (\_->True) allrules
-        (_,_,isas,_,_)=ctxpo context
         userdefpops = ctxpopus context
         isInvariantQuad q = null [r | (r,rul)<-maintains context, rul==cl_rule (qClauses q)]
         allrules = vRules ++ gRules
@@ -190,8 +188,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
          = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
            where
              f :: [[Expression]] -> A_Concept -> [[Expression]]
-             f q x = q ++ [l ++ r | l <- q, x <= target (last l),
-                                    r <- q, x <= source (head r), null (l `isc` r)]
+             f q x = q ++ fatal 999202 "please retypecheck!" {- [l ++ r | l <- q, x <= target (last l),
+                                    r <- q, x <= source (head r), null (l `isc` r)] -}
 
 --  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
 --          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept] 
@@ -665,7 +663,7 @@ while maintaining all invariants.
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let els=foldCompose ls
                                    , let ers=foldCompose rs
-                                   , let c=if source ers<=target els then source ers else target els
+                                   , let c=fatal 999668 "please retypecheck!" --if source ers<=target els then source ers else target els
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Ins els []
                                    ] motiv
@@ -857,7 +855,7 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let ers=foldCompose rs
                                    , let els=foldCompose ls
-                                   , let c=if target ers<=source els then target ers else source els
+                                   , let c=fatal 999860 "please retypecheck!" --if target ers<=source els then target ers else source els
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Del els []
                                    ] motiv
@@ -905,10 +903,11 @@ CHC [ if isRel e
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                                  if editAble m then Do tOp m deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
 
--- **HJO, 20130423: *LET OP!! De volgende code is er bij gefreubeld om geen last te hebben van de fatal767, maar is niet goed. *****
+-- HJO, 20130423: *LET OP!! De volgende code is er bij gefreubeld om geen last te hebben van de fatal767, maar is niet goed. *****
 -- Dit is in overleg met Stef, die deze hele code toch compleet wil herzien, i.v.m. de nieuwe typechecker.
-          (_ , e@(EDcV _ )) -> Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
--- ***************************************************************************************************************************** 
+-- SJC, 20131012: Dan lijkt me dit een goed moment om deze regel weer uit te commentaren, aangezien ik nu de typechecker aan het herzien ben
+--   ik doe dit even met een fatal ipv `echt' commentaar
+          (_ , e@(EDcV _ )) -> fatal 99911 "Fix pattern EDcV please!" -- Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
           (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\n"
                                        ++"doCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
                                          "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++

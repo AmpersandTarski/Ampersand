@@ -57,9 +57,7 @@ module DatabaseDesign.Ampersand
    -- * Parser related stuff
    , CtxError 
    , createFspec
-   , parseADL1pExpr
     -- * Type checking and calculus
-   , typeCheck
    , Guarded(..)
    , makeFspec
     -- * Generators of output

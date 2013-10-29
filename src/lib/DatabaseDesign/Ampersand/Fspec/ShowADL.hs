@@ -206,7 +206,8 @@ instance ShowADL Rule where
           Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showADL pvSegs)++")"
        
 instance ShowADL A_Gen where
- showADL (Gen _ g s _) = "SPEC "++showADL s++" ISA "++showADL g
+ showADL (Gen _ g s) = "SPEC "++showADL s++" ISA "++showADL g
+ showADL (Spc _ g s) = "SPEC "++showADL s++" IS "++intercalate " /\\ " (map showADL g)
 
 instance ShowADL RoleRelation where
  showADL r
@@ -370,7 +371,7 @@ instance ShowADL Fspc where
     ++ (if null (metas fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (metas fSpec))    ++ "\n")
     ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map showADL (patterns fSpec))    ++ "\n")
     ++ (if null cds then "" else "\n"++intercalate "\n"   (map showADL cds) ++ "\n")
-    ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec >- concatMap gens (patterns fSpec))) ++ "\n")
+    ++ (if null (gens fSpec) then "" else "\n"++intercalate "\n"   (map showADL (gens fSpec)) ++ "\n")
     ++ (if null (identities fSpec)       then "" else "\n"++intercalate "\n"   (map showADL (identities fSpec >- concatMap identities (patterns fSpec)))       ++ "\n")
     ++ (if null (declarations fSpec) then "" else "\n"++intercalate "\n"   (map showADL (declarations fSpec >- concatMap declarations (patterns fSpec))) ++ "\n")
     ++ (if null (udefrules fSpec) then "" else "\n"++intercalate "\n"   (map showADL (udefrules fSpec >- concatMap udefrules (patterns fSpec))) ++ "\n")
@@ -447,21 +448,26 @@ instance ShowADL UserDefPop where
 showAtom :: String -> String
 showAtom x = "'"++[if c=='\'' then '`' else c|c<-x]++"'"              
 
+instance ShowADL TermPrim where
+ showADL (PI _)                                   = "I"
+ showADL (Pid _ c)                                = "I["++showADL c++"]"
+ showADL (Patm _ a Nothing)                       = "'"++a++"'"
+ showADL (Patm _ a (Just c))                      = "'"++a++"'["++show c++"]"
+ showADL (PVee _)                                 = "V"
+ showADL (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
+ showADL (Prel _ rel)                             = rel
+ showADL (PTrel _ rel psgn)                       = rel++showsign psgn
+  where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"
+
+
 --used to compose error messages at p2a time
-instance ShowADL Term where
- showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")", "[", "*", "]")
+instance (ShowADL a, Traced a) => ShowADL (Term a) where
+ showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", "(", ")")
    where
-    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar,lbr,star,rbr) expr
+    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar) expr
      = showchar (insP_Parentheses expr)
       where
-       showchar (PI _)                                   = "I"
-       showchar (Pid _ c)                                = "I["++showADL c++"]"
-       showchar (Patm _ a [])                            = "'"++a++"'"
-       showchar (Patm _ a cs)                            = "'"++a++"'["++show (head cs)++"]"
-       showchar (PVee _)                                 = "V"
-       showchar (Pfull _ s t)                            = "V["++show s++"*"++show t++"]"
-       showchar (Prel _ rel)                             = rel
-       showchar (PTrel _ rel psgn)                       = rel++showsign psgn
+       showchar (Prim a) = showADL a
        showchar (Pequ _ l r)                             = showchar l++equi++showchar r
        showchar (Pimp _ l r)                             = showchar l++impl++showchar r
        showchar (PIsc _ l r)                             = showchar l++inter++showchar r
@@ -477,14 +483,13 @@ instance ShowADL Term where
        showchar (PFlp _ e)                               = showchar e++flp'
        showchar (PCpl _ e)                               = '-':showchar e
        showchar (PBrk _ e)                               = lpar++showchar e++rpar
-       showsign (P_Sign src trg)                         = lbr++showADL src++star++showADL trg++rbr
 
-insP_Parentheses :: Term -> Term
+insP_Parentheses :: (Traced a) => Term a -> Term a
 insP_Parentheses = insPar 0
       where
-       wrap :: Integer -> Integer -> Term -> Term
+       wrap :: (Traced a) => Integer -> Integer -> Term a -> Term a
        wrap i j e' = if i<=j then e' else PBrk (origin e') e'
-       insPar :: Integer -> Term -> Term
+       insPar :: (Traced a) => Integer -> Term a -> Term a
        insPar i (Pequ o l r) = wrap i     0 (Pequ o (insPar 1 l) (insPar 1 r))
        insPar i (Pimp o l r) = wrap i     0 (Pimp o (insPar 1 l) (insPar 1 r))
        insPar i (PIsc o l r) = wrap (i+1) 2 (PIsc o (insPar 2 l) (insPar 2 r))

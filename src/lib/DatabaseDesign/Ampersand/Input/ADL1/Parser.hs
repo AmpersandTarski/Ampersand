@@ -107,11 +107,11 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                          CThm     <$> pPrintThemes
 
 
-   data ContextElement = CMeta P_Meta
+   data ContextElement = CMeta Meta
                        | CPat P_Pattern
                        | CPrc P_Process
                        | CRul P_Rule
-                       | CCfy P_Rule
+                       | CCfy P_Gen
                        | CRel P_Declaration
                        | CCon ConceptDef
                        | CGen P_Gen
@@ -138,8 +138,8 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  ( LaTeX    <$ pKey "LATEX"    ) <|>
                  ( Markdown <$ pKey "MARKDOWN" )
 
-   pMeta :: Parser Token P_Meta
-   pMeta = P_Meta <$> pKey_pos "META" <*> pMetaObj <*> pString <*> pString
+   pMeta :: Parser Token Meta
+   pMeta = Meta <$> pKey_pos "META" <*> pMetaObj <*> pString <*> pString
     where pMetaObj = pSucceed ContextMeta -- for the context meta we don't need a keyword
     
    pPatternDef :: Parser Token P_Pattern
@@ -177,7 +177,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                   Pp <$> pPopulation
 
    data PatElem = Pr P_Rule
-                | Py P_Rule
+                | Py P_Gen
                 | Pd P_Declaration 
                 | Pm RoleRule
                 | Pl P_RoleRelation
@@ -223,7 +223,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                    PrP <$> pPopulation
 
    data ProcElem = PrR P_Rule
-                 | PrY P_Rule
+                 | PrY P_Gen
                  | PrD P_Declaration
                  | PrM RoleRule
                  | PrL P_RoleRelation
@@ -234,16 +234,16 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                  | PrE PPurpose
                  | PrP P_Population
 
-   pClassify :: Parser Token P_Rule
+   pClassify :: Parser Token P_Gen
    pClassify = rebuild <$> pKey_pos "CLASSIFY"
                        <*> pConceptRef
                        <*  pKey "IS"
                        <*> pCterm
                   where
                     rebuild po lhs rhs
-                      = P_Cy { cr_lhs  = lhs             --  Left hand side concept expression 
-                             , cr_rhs  = rhs             --  Right hand side concept expression
-                             , rr_fps  = po
+                      = P_Cy { gen_spc  = lhs             --  Left hand side concept expression 
+                             , gen_rhs  = rhs             --  Right hand side concept expression
+                             , gen_fp   = po
                              }
                     pCterm  = f <$> pList1Sep (pKey "/\\") pCterm1
                     pCterm1 = g <$> pConceptRef                        <|>
@@ -451,7 +451,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                         (pRoles  `opt` [])                   <*>  
                         (pKey ":" *> pTerm)                  <*>  
                         pSubInterface
-       where lbl :: (String, Origin) -> [Term] -> [[String]] -> [String] -> Term -> P_SubInterface -> P_Interface
+       where lbl :: (String, Origin) -> [TermPrim] -> [[String]] -> [String] -> (Term TermPrim) -> P_SubInterface -> P_Interface
              lbl (nm,p) params args roles expr sub
                 = P_Ifc { ifc_Name   = nm
                         , ifc_Params = params
@@ -521,7 +521,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    pPopulation = prelpop <$> pKey_pos "POPULATION" <*> pRelSign     <* pKey "CONTAINS" <*> pContent <|>
                  pcptpop <$> pKey_pos "POPULATION" <*> pConceptName <* pKey "CONTAINS" <*> (pSpec '[' *> pListSep pComma pValue <* pSpec ']')
        where
-         prelpop :: Origin -> Term -> Pairs -> P_Population
+         prelpop :: Origin -> TermPrim -> Pairs -> P_Population
          prelpop orig (Prel _ nm) contents
           = P_RelPopu { p_rnme   = nm
                       , p_orig   = orig
@@ -598,7 +598,7 @@ In practice, we have it a little different.
 
 
 {- In theory, the expression is parsed by:
-   pRule :: Parser Token (Term)
+   pRule :: Parser Token (Term TermPrim)
    pRule  =  fEequ <$> pTrm1  <*>  pKey_pos "="   <*>  pTerm   <|>
              fEimp <$> pTrm1  <*>  pKey_pos "|-"  <*>  pTerm   <|>
              pTrm1
@@ -606,7 +606,7 @@ In practice, we have it a little different.
                    fEimp lExp orig rExp = Pimp orig lExp rExp
 -- However elegant, this solution needs to be left-factored in order to get a performant parser.
 -}
-   pRule :: Parser Token Term
+   pRule :: Parser Token (Term TermPrim)
    pRule  =  pTerm <??> (fEqu  <$> pKey_pos "="  <*> pTerm <|>
                          fImpl <$> pKey_pos "|-" <*> pTerm )
              where fEqu  orig rExp lExp = Pequ orig lExp rExp
@@ -621,7 +621,7 @@ In practice, we have it a little different.
    In order to maintain performance standards, the parser is left factored.
    The functions pars and f have arguments 'combinator' and 'operator' only to avoid writing the same code twice.
 -}
-   pTerm :: Parser Token Term
+   pTerm :: Parser Token (Term TermPrim)
    pTerm   = pTrm2 <??> (f PIsc <$> pars PIsc "/\\" <|> f PUni <$> pars PUni "\\/")
              where pars combinator operator
                     = g <$> pKey_pos operator <*> pTrm2 <*> optional (pars combinator operator)
@@ -630,25 +630,25 @@ In practice, we have it a little different.
                    f combinator (orig, y) x = combinator orig x y
 
 -- The left factored version of difference: (Actually, there is no need for left-factoring here, but no harm either)
-   pTrm2 :: Parser Token Term
+   pTrm2 :: Parser Token (Term TermPrim)
    pTrm2   = pTrm3 <??> (f <$> pKey_pos "-" <*> pTrm3)
              where f orig rExp lExp = PDif orig lExp rExp
 
 -- The left factored version of right- and left residuals:
-   pTrm3 :: Parser Token Term
+   pTrm3 :: Parser Token (Term TermPrim)
    pTrm3  =  pTrm4 <??> (fRrs <$> pKey_pos "\\"  <*> pTrm4 <|> fLrs <$> pKey_pos "/" <*> pTrm4 )
              where fRrs orig rExp lExp = PRrs orig lExp rExp
                    fLrs orig rExp lExp = PLrs orig lExp rExp
 
 {- by the way, a slightly different way of getting exactly the same result is:
-   pTrm3 :: Parser Token Term
+   pTrm3 :: Parser Token (Term TermPrim)
    pTrm3  =  pTrm4 <??> (f <$>  (pKey_val_pos "\\" <|> pKey_val_pos "/") <*> pTrm4 )
              where f ("\\", orig) rExp lExp = PRrs orig lExp rExp
                    f (_   , orig) rExp lExp = PLrs orig lExp rExp
 -}
 
 -- composition and relational addition are associative, and parsed similar to union and intersect...
-   pTrm4 :: Parser Token Term
+   pTrm4 :: Parser Token (Term TermPrim)
    pTrm4   = pTrm5 <??> (f PCps <$> pars PCps ";" <|> f PRad <$> pars PRad "!" <|> f PPrd <$> pars PPrd "*")
              where pars combinator operator
                     = g <$> pKey_pos operator <*> pTrm5 <*> optional (pars combinator operator)
@@ -656,7 +656,7 @@ In practice, we have it a little different.
                                    g orig y (Just (org,z)) = (orig, combinator org y z)
                    f combinator (orig, y) x = combinator orig x y
 
-   pTrm5 :: Parser Token Term
+   pTrm5 :: Parser Token (Term TermPrim)
    pTrm5  =  f <$> pList (pKey_val_pos "-") <*> pTrm6  <*> pList ( pKey_val_pos "~" <|> pKey_val_pos "*" <|> pKey_val_pos "+" )
              where f ms pe (("~",_):("~",_):ps) = f ms pe ps                     -- e~  converse       (flip, wok)
                    f ms pe (("~",_):ps) = let x=f ms pe ps in PFlp (origin x) x  -- the type checker requires that the origin of x is equal to the origin of its converse.
@@ -666,11 +666,11 @@ In practice, we have it a little different.
                    f ((_,orig):ms) pe ps   = let x=f ms pe ps in PCpl orig x     -- the type checker requires that the origin of x is equal to the origin of its complement.
                    f _ pe _                = pe
 
-   pTrm6 :: Parser Token Term
-   pTrm6  =  pRelationRef                                                        <|>
+   pTrm6 :: Parser Token (Term TermPrim)
+   pTrm6  =  (Prim <$> pRelationRef)  <|>
              PBrk <$>  pSpec_pos '('  <*>  pTerm  <*  pSpec ')'
 
-   pRelationRef :: Parser Token Term
+   pRelationRef :: Parser Token TermPrim
    pRelationRef      = pRelSign                                                                         <|>
                        pid   <$> pKey_pos "I"  <*> optional (pSpec '[' *> pConceptOneRef <* pSpec ']')  <|>
                        pfull <$> pKey_pos "V"  <*> optional pSign                                       <|>
@@ -679,10 +679,9 @@ In practice, we have it a little different.
                              pid orig (Just c)= Pid orig c
                              pfull orig Nothing = PVee orig
                              pfull orig (Just (P_Sign src trg, _)) = Pfull orig src trg
-                             singl (nm,orig) Nothing  = Patm orig nm []
-                             singl (nm,orig) (Just c) = Patm orig nm [c]
+                             singl (nm,orig) x  = Patm orig nm x
 
-   pRelSign :: Parser Token Term
+   pRelSign :: Parser Token TermPrim
    pRelSign          = prel  <$> pVarid_val_pos <*> optional pSign
                        where prel (nm,orig) Nothing = Prel orig nm
                              prel (nm,_) (Just (sgn,orig)) = PTrel orig nm sgn

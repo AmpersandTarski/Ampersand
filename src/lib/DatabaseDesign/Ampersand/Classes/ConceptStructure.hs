@@ -27,10 +27,6 @@ where
     expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 
     mp1Exprs :: a -> [Expression]     -- ^ the set of all EMp1 expressions within data structure a (needed to get the atoms of these relations into the populationtable)
     mp1Exprs = filter isMp1.nub.concatMap primitives.expressionsIn
-    genE ::     a -> GenR
-    genE cstruc = case concs cstruc of
-                   [] -> fatal 25 "No concepts???"
-                   x:_ -> genE x
 
    instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
     concs    (a,b) = concs a `uni` concs b
@@ -58,7 +54,6 @@ where
                       , (expressionsIn.ctxsql) c
                       , (expressionsIn.ctxphp) c
                       ]
-    genE      c = ctxpo c
 
    instance ConceptStructure IdentityDef where
     concs       identity   = [idCpt identity] `uni` concs [objDef | IdentityExp objDef <- identityAts identity]
@@ -76,8 +71,6 @@ where
    instance ConceptStructure A_Concept where
     concs   c     = [c]
     expressionsIn _ = []
-    genE PlainConcept{cptgE = a}  = a
-    genE _ = fatal 100 "A_Concept without cptgE"
 
    instance ConceptStructure Sign where
     concs (Sign s t) = nub [s,t]
