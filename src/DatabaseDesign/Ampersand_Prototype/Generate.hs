@@ -278,7 +278,7 @@ generateViews fSpec flags =
        (_,islands,_,_,_) = case concs fSpec of
                                []  -> (undef,[],undef,undef,undef)
                                c:_ -> case c of 
-                                        PlainConcept{}  -> cptgE c
+                                        PlainConcept{}  -> fatal 99281 "Do not know what to do for generateViews, because the ordering relation is gone"
                                         ONE  -> fatal 280 "What to do with ONE???" --HJO, 20130216: Deze bug kwam aan het licht bij Roles.adl. Ik heb er de fatal message bij geplaatst, zodat diagnose eenvoudiger is.
                            where undef=fatal 281 "undef would cause a loop..."
        conceptsFromSpecificToGeneric = concat (map reverse islands)

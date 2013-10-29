@@ -17,7 +17,7 @@ import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import DatabaseDesign.Ampersand_Prototype.Installer
 import DatabaseDesign.Ampersand_Prototype.Version 
 import Control.Exception
-import Prelude hiding (catch,exp)
+import Prelude hiding (exp)
 
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
