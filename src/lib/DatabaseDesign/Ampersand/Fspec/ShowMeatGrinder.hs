@@ -91,7 +91,7 @@ instance AdlId Atom where
 
 
 mkAtom :: A_Concept -> String -> Atom
-mkAtom cpt value = Atom { atmRoot = root cpt
+mkAtom cpt value = Atom { atmRoot =fatal 999094 "please retypecheck!" -- root cpt
                         , atmVal  = value
                         }
 

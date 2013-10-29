@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,addEquality,emptySystem) where
+module DatabaseDesign.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,addEquality,emptySystem,FreeLattice(..)) where
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -20,26 +20,48 @@ emptySystem :: EqualitySystem a
 emptySystem = ES Map.empty IntMap.empty
 
 findExact :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> x a -- returns the empty set on a failure
-findExact = findWith (lookupInRevMap)
+findExact = findWith lookupInRevMap (\x -> fromList [x])
 findSubsets :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> [x a] -- returns a list of largest subsets
-findSubsets = findWith findSubsetInRevMap
+findSubsets = findWith findSubsetInRevMap (\x -> [fromList [x]])
 
-findWith :: (SetLike x, Ord a) => ((x Int) -> RevMap a -> b) -> Op1EqualitySystem a -> FreeLattice a -> Either b a
-findWith f es@(ES1 _ back _) trm
-  = f (fromSet (intersections (map it (latticeToTranslatable es trm)))) back
+findWith :: (SetLike x, Ord a)
+  => ((x Int) -> RevMap a -> b) -- Function that finds the normalized form
+  -> (a -> b)                   -- Shorthand in case the FreeLattice does not need to go through the translation process
+  -> Op1EqualitySystem a        -- system in which the FreeLattice elements can be found
+  -> FreeLattice a              -- the FreeLattice that needs translation
+  -> b
+findWith f f2 es@(ES1 _ back _) trmUnsimplified
+  = case trm of
+     Atom x -> f2 x
+     _ -> f (fromSet (case trm' of
+                       Just t -> intersections (map it t)
+                       Nothing -> Set.empty
+                     )
+            ) back
   where it = simplifySet es
         intersections [] = Set.empty
         intersections x = foldr1 Set.intersection x
+        trm' = latticeToTranslatable es trm
+        trm = simpl trmUnsimplified
+        simpl (Meet a b)
+          = case (simpl a, simpl b) of
+             (Atom a', Atom b') | a'==b' -> Atom a'
+             (a',b') -> Meet a' b'
+        simpl (Join a b)
+          = case (simpl a, simpl b) of
+             (Atom a', Atom b') | a'==b' -> Atom a'
+             (a',b') -> Join a' b'
+        simpl (Atom x) = Atom x
 
 simplifySet :: (SetLike x) => Op1EqualitySystem t -> x Int -> Set.Set Int
 simplifySet (ES1 _ _ imap) x = imapTranslate imap (toSet x) Set.empty
 
-latticeToTranslatable :: Ord a => Op1EqualitySystem a -> FreeLattice a -> [Set.Set Int]
+latticeToTranslatable :: Ord a => Op1EqualitySystem a -> FreeLattice a -> Maybe [Set.Set Int]
 latticeToTranslatable (ES1 m _ _) lt = t lt
  where
-   t (Atom a) = [(Map.!) m a]
-   t (Meet a b) = [Set.union ta tb | ta <- (t a), tb <- (t b)]
-   t (Join a b) = t a ++ t b
+   t (Atom a)   = do{r<-Map.lookup a m;return [r]}
+   t (Meet a b) = do{a'<-t a;b'<- t b;return [Set.union ta tb | ta <- a', tb <- b']}
+   t (Join a b) = do{a'<-t a;b'<- t b;return (a'++b')}
    
 
 -- how to lookup something in a RevMap (Precondition: list is sorted!)
@@ -73,7 +95,7 @@ largestSubset i
 
 endPoints :: (Ord a, SetLike x) => RevMap a -> [(Set.Set Int,x a)]
 endPoints (RevMap st im)
- = if (IntMap.null im) then [(Set.empty,fromSet st)] else concat (map endPoints' (IntMap.toList im))
+ = if (IntMap.null im) then (if slNull st then [] else [(Set.empty,fromSet st)]) else concat (map endPoints' (IntMap.toList im))
  where endPoints' (i,rm) = map addi (endPoints rm)
         where addi (lst,elm) = (Set.insert i lst,elm)
 
@@ -122,8 +144,8 @@ optimize1 (ES oldmap oldimap)
        -- newmap :: Map.Map a (Set.Set Int)
        newmap = Map.map (\x -> imapTranslate oldimap (Set.singleton x) (Set.empty)) oldmap
 
-addEquality :: (Ord a, SetLike x) => x a -> x a -> EqualitySystem a -> EqualitySystem a
-addEquality  set1 set2 eqSys0
+addEquality :: (Ord a, SetLike x) => (x a, x a) -> EqualitySystem a -> EqualitySystem a
+addEquality (set1, set2) eqSys0
  = addEquality' eqSys2 ns1 ns2
  where
    (eqSys1, ns1) = translateWith eqSys0 set1

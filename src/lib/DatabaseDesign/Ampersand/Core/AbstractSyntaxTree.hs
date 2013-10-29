@@ -25,7 +25,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , Purpose(..)
  , ExplObj(..)
  , Expression(..), iExpr, vExpr
- , A_Concept(..), root
+ , A_Concept(..)
  , A_Markup(..)
  , AMeaning(..)
  , RoleRelation(..)
@@ -46,11 +46,11 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
 import qualified Prelude
 import Prelude hiding (Ord(..), Ordering(..))
 import DatabaseDesign.Ampersand.Basics
-import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),comparableClass,greatest,least,maxima,minima,sortWith)
+import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDef,Origin(..),Traced(..),Prop,Lang,Pairs, PandocFormat, P_Markup(..), PMeaning(..), SrcOrTgt(..), isSrc, RelConceptDef(..))
+import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
-import Data.List
+import Data.List (intercalate)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "AbstractSyntaxTree.hs"
@@ -61,7 +61,6 @@ data A_Context
          , ctxlang :: Lang           -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
          , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
-         , ctxpo :: GenR             -- ^ A tuple representing the partial order of concepts (see makePartialOrder)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxprocs :: [Process]     -- ^ The processes defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
@@ -75,8 +74,7 @@ data A_Context
          , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns
          , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
-         , ctxenv :: (Expression,[(Declaration,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
-         , ctxmetas :: [Meta]
+         , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
          }               --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
@@ -85,12 +83,6 @@ instance Eq A_Context where
 instance Identified A_Context where
   name  = ctxnm 
 
--- for declaring name/value pairs with information that is built in to the adl syntax yet
-data Meta = Meta { mtPos :: Origin
-                 , mtObj :: MetaObj
-                 , mtName :: String
-                 , mtVal :: String
-                 } deriving (Show)
 
 data Theme = PatternTheme Pattern | ProcessTheme Process
 
@@ -291,20 +283,24 @@ instance Traced ViewDef where
 
 data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
 
-data A_Gen = Gen { genfp :: Origin         -- ^ the position of the GEN-rule
+data A_Gen = Gen { genfp :: Origin          -- ^ the position of the GEN-rule
                  , gengen :: A_Concept      -- ^ generic concept
                  , genspc :: A_Concept      -- ^ specific concept
-                 , genpat :: String         -- ^ pattern of declaration
                  }
-instance Eq A_Gen where
-  g == g' = gengen g == gengen g' && genspc g == genspc g'
+           | Spc { genfp :: Origin          -- ^ the position of the GEN-rule
+                 , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
+                 , genspc :: A_Concept      -- ^ specific concept
+                 }
+{- instance Eq A_Gen where
+  g == g' = gengen g == gengen g' && genspc g == genspc g' -}
 instance Show A_Gen where
   -- This show is used in error messages. It should therefore not display the term's type
-  showsPrec _ g = showString ("SPEC "++show (genspc g)++" ISA "++show (gengen g))
+  showsPrec _ g@(Gen{}) = showString ("SPEC "++show (genspc g)++" ISA "++show (gengen g))
+  showsPrec _ g@(Spc{}) = showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show $ genrhs g))
 instance Traced A_Gen where
   origin = genfp
 instance Association A_Gen where
-  sign r = Sign (genspc r) (gengen r)
+  sign r = Sign (genspc r) (genspc r)
 
 
 data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
@@ -418,32 +414,10 @@ infixl 8 .:.    -- composition    -- .;. was unavailable, because Haskells scann
 infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
 
-l .==. r = EEqu (l,r)
-           (case sign l `compare` sign r of
-{-            EQ :   Medewerker    Medewerker     levert op: Medewerker
-              GT :   Persoon       Medewerker     levert op: Medewerker
-              LT :   Medewerker    Persoon        levert op: Medewerker
-              Bij CP weten we zeker dat meet bestaat, kortom er is een meest specifieke ondergrens (lub) tussen l en r. Deze lub kan zelfs groter zijn dan l en r...
-              CP :   Medewerker    Student        levert op: Studentassistent (als die tenminste gedefinieerd is...), of Persoon  (als die tenminste gedefinieerd is...)
--}
-              NC -> fatal 421 ("Equality of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
-              _  -> sign l `meet` sign r   -- Medewerker Student levert op: Studentassistent (als die tenminste gedefinieerd is...), of Persoon  (als die tenminste gedefinieerd is...)
-           )
-l .|-. r = EImp (l,r)
-           (case sign l `compare` sign (r./\.l) of
-              NC -> fatal 426 ("Implication of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign (r./\.l))++"\n  "++show (sign l)++" `compare` "++show (sign (r./\.l))++": "++show (sign l `compare` sign (r./\.l)))
-              _  -> sign l `meet` sign (r./\.l)
-           )
-l ./\. r = EIsc (l,r)
-           (case sign l `compare` sign r of        -- meet yields the more specific of two concepts
-              NC -> fatal 431 ("Intersection of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
-              _  -> sign l `meet` sign r
-           )
-l .\/. r = EUni (l,r)
-           (case sign l `compare` sign r of        -- join yields the more generic of two concepts
-              NC -> fatal 436 ("Union of two incompatible terms.\n  l: "++show l++"\t  signature: "++show (sign l)++"\n  r: "++show r++"\t  signature: "++show (sign r)++"\n  "++show (sign l)++" `compare` "++show (sign r)++": "++show (sign l `compare` sign r))
-              _  -> sign l `join` sign r
-           )
+l .==. r = EEqu (l,r) (sign l)
+l .|-. r = EImp (l,r) (sign l)
+l ./\. r = EIsc (l,r) (sign l)
+l .\/. r = EUni (l,r) (sign l)
 l .-. r  = EDif (l,r) (sign l)
 l ./. r  = ELrs (l,r) (Sign (source l) (source r))
 l .\. r  = ERrs (l,r) (Sign (target l) (target r))
@@ -537,19 +511,10 @@ showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 data A_Concept
    = PlainConcept   
          { cptnm :: String         -- ^The name of this Concept
-         , cptgE :: GenR           -- ^This contains the generalization relation between concepts.
-                                   --  It is included in every concept, for the purpose of comparing concepts in the Ord class.
-                                   --  As a result, you may write  c<=d  in your Haskell code for any two A_Concepts c and d that are in the same context.
-         , cpttp :: String         -- ^The type of this Concept
+         , cpttp :: String         -- ^The (SQL) type of this Concept
          , cptdf :: [ConceptDef]   -- ^Concept definitions of this concept.
          }  -- ^PlainConcept nm gE cs represents the set of instances cs by name nm.
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
-root :: A_Concept -> A_Concept
-root ONE = fatal 548 "ONE has no root concept"
-root cpt = let (_,islands,_,_,_) = cptgE cpt in
-           case [ head island | island <- islands, cpt `elem` island ] of
-             [r] -> r
-             roots -> fatal 552 "root should be exactly one A_Concept"
 
 instance Eq A_Concept where
    PlainConcept{cptnm=a} == PlainConcept{cptnm=b} = a==b
@@ -566,32 +531,6 @@ instance Show A_Concept where
   
 data Sign = Sign A_Concept A_Concept deriving Eq
   
-instance Poset Sign where
-  Sign s t `compare` Sign s' t'
-   = case (s `compare` s', t `compare` t') of
-      (EQ, EQ)  -> EQ
-      (LT, EQ)  -> LT
-      (GT, EQ)  -> GT
-      (EQ, LT)  -> LT
-      (EQ, GT)  -> GT
-      (LT, LT)  -> LT
-      (GT, GT)  -> GT
-      (NC, _ )  -> NC
-      (_ , NC)  -> NC
-      (CP, _ )  -> CP
-      (_ , CP)  -> CP
-      _         -> NC
-{- This has the following effect:
-   | s==s' && t==t' = EQ
-   | s<=s' && t<=t' = LT
-   | s'<=s && t'<=t = GT
-   | s<==>s' && t<==>t' = CP
-   | otherwise = NC
--}
-instance Sortable Sign where
-  meet (Sign a b) (Sign a' b') = Sign (a `meet` a') (b `meet` b')
-  join (Sign a b) (Sign a' b') = Sign (a `join` a') (b `join` b')
-  sortBy f = Data.List.sortBy ((comparableClass .) . f)  -- is this implementation correct?
 
 instance Show Sign where
   showsPrec _ (Sign s t) = 
@@ -637,40 +576,6 @@ type GenR = ( A_Concept -> A_Concept -> Ordering      --  gE: the ordering relat
             , A_Concept -> A_Concept -> [A_Concept]   --  c `elem` (a `joins` b) means that c>=q and c>=b 
             )
 
-instance Poset A_Concept where
-  ONE `compare` ONE = EQ
-  _ `compare` ONE   = NC
-  ONE `compare` _   = NC
-  a `compare` b     = a `comp` b
-                      where (comp,_,_,_,_) = cptgE a -- the second element contains sets of concepts, each of which represents a class of comparable concepts.
-
-instance Sortable A_Concept where
-  meet ONE  _  = fatal 671 "meet must not be used with ONE!"
-  meet  _  ONE = fatal 672 "meet must not be used with ONE!"
-  meet a@PlainConcept{} b = case a `meets` b of        -- meet yields the more specific of two concepts
-              [z] -> z
-              []  -> case mostSpecificsInJoins of
-                      []  -> fatal 641 ("meet may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common."++diagnose)
-                      [c] -> c
-                      cs  -> fatal 657 ("More than one concept for meet " ++ show a ++ " "++show b++" are possible. This should lead to a proper user error message. \n"++show cs++diagnose)
-              cs  -> greatest cs
-             where (gE,classes,isas,meets,joins) = cptgE a
-                   mostSpecificsInJoins = [x | x<-a `joins` b, null [y | y<-a `joins` b, gE x y == GT]]
-                   diagnose = "\n a) "++show ( a `gE` b)
-                            ++"\n b) "++show classes
-                            ++"\n c) "++show isas
-                            ++"\n d) "++show (a `meets` b)
-                            ++"\n e) "++show (a `joins` b) 
-                            ++"\n mostSpecificsInJoins: "++show mostSpecificsInJoins
-  join ONE  _  = fatal 678 "join must not be used with ONE!"
-  join  _  ONE = fatal 679 "join must not be used with ONE!"
-  join a@PlainConcept{} b = 
-     case a `joins` b of        -- join yields the more generic of two concepts
-              [z] -> z
-              []  -> fatal 682 ("join may not be applied to " ++ show a ++ " and "++show b++", because they have no atoms in common.")
-              cs  -> least cs
-             where (_,_,_,_,joins) = cptgE a
-  sortBy f = Data.List.sortBy ((comparableClass .) . f)
 
 {- not used, but may be handy for debugging
 showOrder :: A_Concept -> String
