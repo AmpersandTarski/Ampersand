@@ -2,7 +2,7 @@
 {-# LANGUAGE RelaxedPolyRec #-}
 module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      -- * Exported functions
-     pCtx2aCtx,
+     pCtx2aCtx, showErr,
      Guarded(..)
      )
 where

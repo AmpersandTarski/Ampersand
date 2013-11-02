@@ -2,8 +2,8 @@
 module DatabaseDesign.Ampersand
    ( -- Data Constructors:
      A_Context
-   , P_Context(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
-   , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..)
+   , P_Context(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), TermPrim(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
+   , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..), RelConceptDef(..)
    , A_Concept(..), A_Gen
    , Sign(..), ConceptDef(..), ConceptStructure(..)
    , Pattern(..)
@@ -49,6 +49,9 @@ module DatabaseDesign.Ampersand
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
+   , cfProof,dfProof,nfProof,simplify,normPA
+   , lookupCpt
+   , showPrf
    , notCpl, isCpl, isPos, isNeg
       , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
    , iExpr, vExpr, deMorgan, exprUni2list, exprIsc2list, exprCps2list, exprRad2list
@@ -57,8 +60,9 @@ module DatabaseDesign.Ampersand
    -- * Parser related stuff
    , CtxError 
    , createFspec
+   , getGeneralizations, getSpecializations
     -- * Type checking and calculus
-   , Guarded(..)
+   , Guarded(..), pCtx2aCtx
    , makeFspec
     -- * Generators of output
    , generateAmpersandOutput
@@ -69,7 +73,7 @@ module DatabaseDesign.Ampersand
    , verboseLn, verbose
    , FileFormat(..),helpNVersionTexts
    -- * Other functions
-   , eqCl
+   , eqCl, showErr, unCap,upCap,escapeNonAlphaNum, fatalMsg
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
    , DatabaseDesign.Ampersand.Basics.putStr
    , DatabaseDesign.Ampersand.Basics.hGetContents
@@ -96,3 +100,4 @@ import DatabaseDesign.Ampersand.Components
 import DatabaseDesign.Ampersand.ADL1.Expression (isPos,isNeg)
 import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms
 import DatabaseDesign.Ampersand.InputProcessing
+import DatabaseDesign.Ampersand.ADL1.P2A_Converters
