@@ -74,10 +74,10 @@ library
                     SpreadsheetML >= 0.1 && < 0.2,
                     array >= 0.4 && < 0.5,
                     hashable >= 1.2 && < 1.3
-  exposed-modules:   
+  exposed-modules:  DatabaseDesign.Ampersand
+  other-modules:    
                     DatabaseDesign.Ampersand.Input.ADL1.CtxError,
                     DatabaseDesign.Ampersand.Basics,
-                    DatabaseDesign.Ampersand,
                     DatabaseDesign.Ampersand.Basics.BuildInfo_Generated,
                     Paths_ampersand,
                     DatabaseDesign.Ampersand.ADL1,
@@ -152,7 +152,6 @@ library
                     DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                     DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters,
                     DatabaseDesign.Ampersand.Fspec.Motivations
-  other-modules:     
                     
   default-language:  Haskell2010
 
