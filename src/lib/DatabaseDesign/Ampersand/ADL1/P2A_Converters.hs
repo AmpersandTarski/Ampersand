@@ -36,25 +36,25 @@ instance Eq SignOrd where
 
 pCtx2aCtx :: P_Context -> Guarded A_Context
 pCtx2aCtx 
- PCtx { ctx_nm  = n1
-      , ctx_pos = n2
-      , ctx_lang = lang
+ PCtx { ctx_nm     = n1
+      , ctx_pos    = n2
+      , ctx_lang   = lang
       , ctx_markup = pandocf
-      , ctx_thms = n3
-      , ctx_pats = p_patterns     -- The patterns defined in this context
-      , ctx_PPrcs = p_processes   --  The processes as defined by the parser
-      , ctx_rs = p_rules          --  All user defined rules in this context, but outside patterns and outside processes
-      , ctx_ds = p_declarations   --  The declarations defined in this context, outside the scope of patterns
-      , ctx_cs = p_conceptdefs    --  The concept definitions defined in this context, outside the scope of patterns
-      , ctx_ks = p_identdefs      --  The identity definitions defined in this context, outside the scope of patterns
-      , ctx_vs = p_viewdefs       --  The view definitions defined in this context, outside the scope of patterns
-      , ctx_gs = p_gens           --  The gen definitions defined in this context, outside the scope of patterns
-      , ctx_ifcs = p_interfaces   --  The interfaces defined in this context, outside the scope of patterns
-      , ctx_ps = p_purposes       --  The purposes defined in this context, outside the scope of patterns
-      , ctx_pops = p_pops         --  The populations defined in this context
-      , ctx_sql = p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script
-      , ctx_php = p_phpdefs       --  user defined phpplugs, taken from the Ampersand script
-      , ctx_metas = p_metas       --  generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
+      , ctx_thms   = n3
+      , ctx_pats   = p_patterns     -- The patterns defined in this context
+      , ctx_PPrcs  = p_processes    --  The processes as defined by the parser
+      , ctx_rs     = p_rules        --  All user defined rules in this context, but outside patterns and outside processes
+      , ctx_ds     = p_declarations --  The declarations defined in this context, outside the scope of patterns
+      , ctx_cs     = p_conceptdefs  --  The concept definitions defined in this context, outside the scope of patterns
+      , ctx_ks     = p_identdefs    --  The identity definitions defined in this context, outside the scope of patterns
+      , ctx_vs     = p_viewdefs     --  The view definitions defined in this context, outside the scope of patterns
+      , ctx_gs     = p_gens         --  The gen definitions defined in this context, outside the scope of patterns
+      , ctx_ifcs   = p_interfaces   --  The interfaces defined in this context, outside the scope of patterns
+      , ctx_ps     = p_purposes     --  The purposes defined in this context, outside the scope of patterns
+      , ctx_pops   = p_pops         --  The populations defined in this context
+      , ctx_sql    = p_sqldefs      --  user defined sqlplugs, taken from the Ampersand script
+      , ctx_php    = p_phpdefs      --  user defined phpplugs, taken from the Ampersand script
+      , ctx_metas  = p_metas        --  generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
       }
  = (\pats procs rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs
      -> ACtx{ ctxnm = n1
@@ -79,7 +79,7 @@ pCtx2aCtx
             }
     ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
       <*> traverse pProc2aProc p_processes         --  The processes defined in this context
-      <*> traverse (pRul2aRul n1) p_rules               --  All user defined rules in this context, but outside patterns and outside processes
+      <*> traverse (pRul2aRul n1) p_rules          --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaces          --  The interfaces defined in this context, outside the scope of patterns
@@ -220,8 +220,7 @@ pCtx2aCtx
          PCpl _ a   -> (\(x,_) -> (ECpl x (sign x),(False,False))) <$> typecheckTerm a
          PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> typecheckTerm e
      where
-      -- SJC: Sorry for the rather abstract implementations of binary, binary' and unary.
-      -- Here is what they do:
+      -- SJC: Here is what binary, binary' and unary do:
       -- (1) Create an expression, the combinator for this is given by its first argument
       -- (2) Fill in the corresponding type-checked terms to that expression
       -- (3) For binary' only: fill in the intermediate concept too
@@ -447,7 +446,7 @@ pCtx2aCtx
                       })
        <$> pRefObj2aRefObj objref
     pRefObj2aRefObj :: PRef2Obj -> Guarded ExplObj
-    pRefObj2aRefObj (PRef2ConceptDef _  ) = fatal 450 "Don't know the ExplObj of a ConceptDef"
+    pRefObj2aRefObj (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
     pRefObj2aRefObj (PRef2Declaration tm) = ExplDeclaration <$> (termPrim2Decl tm)
     pRefObj2aRefObj (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
@@ -457,6 +456,10 @@ pCtx2aCtx
     pRefObj2aRefObj (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
     pRefObj2aRefObj (PRef2Fspc        _ ) = fatal 459 "Don't know the ExplObj of a PRef2Fspc"
+    lookupConceptDef :: String -> ConceptDef
+    lookupConceptDef s = if null cs then fatal 460 ("There is no concept called "++s++". Please check for typing mistakes.") else head cs
+                         where cs = [cd | cd<-conceptDefs, name cd==s]
+    conceptDefs = p_conceptdefs++concat (map pt_cds p_patterns)++concat (map procCds p_processes)
     
 maybeLang :: Maybe Lang -> Lang
 maybeLang Nothing = English
