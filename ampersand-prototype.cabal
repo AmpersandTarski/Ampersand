@@ -9,7 +9,7 @@ description:   You can define your business processes by means of rules, written
 homepage:      ampersand.sourceforge.net
 category:      Database Design
 stability:     alpha
-Cabal-Version: >= 1.18
+cabal-version:  >= 1.16
 build-type:    Custom
 license:       OtherLicense
 copyright:     Stef Joosten
