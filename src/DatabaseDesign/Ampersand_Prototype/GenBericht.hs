@@ -9,8 +9,7 @@ import System.FilePath
 import System.Directory
 import Control.Monad
 import DatabaseDesign.Ampersand
-import DatabaseDesign.Ampersand.Basics(fatalMsg,escapeNonAlphaNum)
-import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree(RelConceptDef(..))
+-- import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree(RelConceptDef(..))
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 

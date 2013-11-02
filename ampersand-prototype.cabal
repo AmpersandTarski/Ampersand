@@ -9,17 +9,16 @@ description:   You can define your business processes by means of rules, written
 homepage:      ampersand.sourceforge.net
 category:      Database Design
 stability:     alpha
-Cabal-Version: >= 1.14
+Cabal-Version: >= 1.18
 build-type:    Custom
 license:       OtherLicense
 copyright:     Stef Joosten
 
 
 Executable prototype
-  Main-Is:         Main.hs
-  Hs-Source-Dirs:  src
-  build-depends:
-                    ghc >= 7.4,
+  Main-Is:          Main.hs
+  Hs-Source-Dirs:   src
+  build-depends:    ghc >= 7.4,
                     ampersand  == 2.2.1,
                     directory == 1.2.0.1,
                     process >= 1.1.0.1 && < 1.2,

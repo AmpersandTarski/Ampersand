@@ -17,7 +17,7 @@ import Prelude hiding (writeFile,readFile,getContents)
 
 import DatabaseDesign.Ampersand_Prototype.StaticFiles_Generated
 #ifdef MIN_VERSION_MissingH 
-import System.Posix.Files  -- If MissingH is not available, we're on windows and cannot set file 
+import System.Posix.Files  -- If MissingH is not available, we are on windows and cannot set file 
 import System.Time
 
 import Data.Time.Clock.POSIX
@@ -33,7 +33,7 @@ phpObjInterfaces fSpec flags =
     
     ; let dbSettingsFilePath = combine targetDir "dbSettings.php"
     ; dbSettingsExists <- doesFileExist dbSettingsFilePath
-    -- we generate a dbSettings.php if it doesn't exists, or if a host, login, or password has been specified
+    -- we generate a dbSettings.php if it does not exists, or if a host, login, or password has been specified
     ; if not dbSettingsExists ||  any isJust [sqlHost flags, sqlLogin flags, sqlPwd flags]
       then do { verboseLn flags "  Writing dbSettings.php."
               ; writeFile dbSettingsFilePath dbsettings

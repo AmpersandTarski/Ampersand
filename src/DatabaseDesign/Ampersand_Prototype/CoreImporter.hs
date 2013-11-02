@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.CoreImporter
     )
 where
 
-import DatabaseDesign.Ampersand
+import DatabaseDesign.Ampersand hiding (fatalMsg) -- we wrote our own version for the prototype
 --   ( -- Data Constructors:
 --     A_Context
 --   , P_Context(..)

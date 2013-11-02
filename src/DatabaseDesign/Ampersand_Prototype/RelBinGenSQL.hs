@@ -3,8 +3,6 @@ module DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,getDeclarationTableInfo,selectExpr,selectExprRelation,isOne,isOne'
  ) where 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter
-import DatabaseDesign.Ampersand.Core.Poset (Poset(..))
-import Prelude hiding (Ord(..))
 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                  ,cChain,addSlashes,phpIndent)

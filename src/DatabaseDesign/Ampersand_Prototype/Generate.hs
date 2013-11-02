@@ -3,14 +3,14 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
-import DatabaseDesign.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
+-- import DatabaseDesign.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
 import Prelude hiding (writeFile,readFile,getContents,catch,exp)
 import Data.Function
 import Data.List
 import Data.Maybe
 import Control.Monad
 import System.FilePath
-import System.Directory               
+import System.Directory
 import DatabaseDesign.Ampersand_Prototype.Version 
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
 import Control.Exception

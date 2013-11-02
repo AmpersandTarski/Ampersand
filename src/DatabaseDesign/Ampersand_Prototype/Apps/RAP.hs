@@ -10,10 +10,10 @@ import Database.HDBC.ODBC
 import Database.HDBC
 import Data.Maybe (fromMaybe)
 import DatabaseDesign.Ampersand_Prototype.RelBinGenSQL
--- import DatabaseDesign.Ampersand.Version (fatalMsg)
+import DatabaseDesign.Ampersand_Prototype.Version 
 
---fatal :: Int -> String -> a
---fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"
+fatal :: Int -> String -> a
+fatal = fatalMsg "Ampersand_Prototype.Apps.RAP"
 ------
 dsnatlas::String
 dsnatlas = "DSN=RAPv1"
@@ -166,20 +166,20 @@ atlas2context fSpec flags =
        (Errors x)  -> error (show x)
        (Checked x) -> return x
       where
-      parseexprs :: RelTbl -> [(String,Term)]
+      parseexprs :: RelTbl -> [(String,(Term TermPrim))]
       parseexprs = map f 
          where
-           f ( str,expr) = 
+           f ( str,expr) = fatal 99172 "Please re-connect the parser here" {-
               case parseADL1pExpr expr "Atlas(Rule)" of
                 Checked t -> (str,t)
-                Errors err -> error $show err
+                Errors err -> error $show err -}
 
 makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term)] -> IO (Guarded A_Context)
+                  -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> IO (Guarded A_Context)
 makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
                      r_gengen r_genspc
                      r_cptnm r_cptpurpose r_cptdf r_cptos r_atomvalue      
@@ -188,7 +188,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
                      r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
  = return a_context
    where
-   (a_context,_,_) = typeCheck rawctx []
+   (a_context) = pCtx2aCtx rawctx
    rawctx 
     = PCtx {
          ctx_nm    = snd(theonly r_ctxnm "not one context in Atlas DB")
@@ -228,7 +228,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
 atlas2pattern :: (AtomVal,AtomVal) -> Lang -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term)] -> P_Pattern 
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Pattern 
 atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns          
                              r_gengen r_genspc
                              r_cptnm
@@ -263,7 +263,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_pop = []
          }
 
-atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term)] -> P_Rule
+atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Rule
 atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
  = P_Ru { rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
         , rr_exp  = geta r_exprvalue eid (error "while geta r_exprvalue.")
