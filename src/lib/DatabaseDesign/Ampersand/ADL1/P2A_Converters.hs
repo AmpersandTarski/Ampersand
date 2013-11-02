@@ -455,7 +455,7 @@ pCtx2aCtx
     pRefObj2aRefObj (PRef2Process     s ) = pure$ ExplProcess s
     pRefObj2aRefObj (PRef2Interface   s ) = pure$ ExplInterface s
     pRefObj2aRefObj (PRef2Context     s ) = pure$ ExplContext s
-    pRefObj2aRefObj (PRef2Fspc        _ ) = fatal 459 "Don't know the ExplObj of a PRef2Fspc"
+    pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s = if null cs then fatal 460 ("There is no concept called "++s++". Please check for typing mistakes.") else head cs
                          where cs = [cd | cd<-conceptDefs, name cd==s]
@@ -492,7 +492,7 @@ pDecl2aDecl pd = Sgn { decnm   = dec_nm pd
                      , decissX  = True
                      , decusrX  = True
                      , decISA  = False
-                     -- , decpat  = fatal 492 "Pattern of pDecl2aDecl unknown"
+                     , decpat  = fatal 495 "Pattern of pDecl2aDecl unknown"
                      , decplug = dec_plug pd
                      }
 pSign2aSign :: P_Sign -> Sign
