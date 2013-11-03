@@ -42,7 +42,7 @@ instance FPAble Interface where
       depth Obj{objmsub=Nothing} = 0
       depth Obj{objmsub=Just si}
          = case si of
-             Box os          -> 1 + maximum (map depth os) 
+             Box _ os       -> 1 + maximum (map depth os) 
              InterfaceRef{} -> 1
                   
 

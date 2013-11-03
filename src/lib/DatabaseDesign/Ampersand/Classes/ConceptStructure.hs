@@ -85,9 +85,9 @@ where
 
    -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
    instance ConceptStructure SubInterface where
-    concs (Box objs)         = concs objs 
+    concs (Box _ objs)         = concs objs 
     concs (InterfaceRef _)   = [] 
-    expressionsIn (Box objs)       = expressionsIn objs 
+    expressionsIn (Box _ objs)       = expressionsIn objs 
     expressionsIn (InterfaceRef _) = [] 
           
    instance ConceptStructure Pattern where
