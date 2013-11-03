@@ -258,7 +258,7 @@ pCtx2aCtx
                         in pure ((gc sot1 e1,t1),(gc sot2 e2,t2))
       deriv (t1,t2) es = (,) <$> deriv1 (fmap (resolve es) t1) <*> deriv1 (fmap (resolve es) t2)
       deriv1 (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2)))
-       = if b1 && b2 then (\x -> (x,True)) <$> getExactType mjoin (p1, e1) (p2, e2)
+       = if (b1 && b2) || (gc p1 e1 == gc p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
          else mustBeBound (origin (fmap fst tct)) [(p,e) | (p,(e,False))<-[a,b]]
       deriv1 (MBG (p1,(e1,b1)) (p2,(e2,b2)))
        = (\x -> (x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
