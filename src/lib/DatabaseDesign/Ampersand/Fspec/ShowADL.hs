@@ -55,7 +55,7 @@ instance LanguageDependent ObjectDef where
   mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
 instance LanguageDependent SubInterface where
   mapexprs _ _ iref@(InterfaceRef _) = iref
-  mapexprs f l (Box objs) = Box $ map (mapexprs f l) objs
+  mapexprs f l (Box o objs) = Box o $ map (mapexprs f l) objs
 instance LanguageDependent Declaration where
   mapexprs _ _ = id
 instance LanguageDependent ECArule where
@@ -75,7 +75,7 @@ instance ShowADL ObjectDef where
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
         recur ind (Just (InterfaceRef nm)) = ind++" INTERFACE "++showstr nm
-        recur ind (Just (Box objs))
+        recur ind (Just (Box _ objs))
          = ind++" BOX [ "++
            intercalate (ind++"     , ") 
                                [ showstr (name o)++

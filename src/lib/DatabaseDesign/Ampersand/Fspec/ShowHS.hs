@@ -741,7 +741,7 @@ where
 
    instance ShowHS SubInterface where
     showHS _     _      (InterfaceRef n) = "InterfaceRef "++show n 
-    showHS flags indent (Box objs) = "Box ("++showHS flags (indent++"     ") objs++")" 
+    showHS flags indent (Box x objs) = "Box "++showHS flags indent x++" ("++showHS flags (indent++"     ") objs++")" 
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***

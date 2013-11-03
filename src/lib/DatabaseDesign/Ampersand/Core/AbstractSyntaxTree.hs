@@ -321,11 +321,11 @@ instance Traced Interface where
 objAts :: ObjectDef -> [ObjectDef]
 objAts Obj{ objmsub=Nothing } = []
 objAts Obj{ objmsub=Just (InterfaceRef _) } = []
-objAts Obj{ objmsub=Just (Box objs) } = objs
+objAts Obj{ objmsub=Just (Box _ objs) } = objs
 
 objatsLegacy :: ObjectDef -> [ObjectDef]
 objatsLegacy Obj{ objmsub=Nothing } = []
-objatsLegacy Obj{ objmsub=Just (Box objs) } = objs
+objatsLegacy Obj{ objmsub=Just (Box _ objs) } = objs
 objatsLegacy Obj{ objmsub=Just (InterfaceRef _) } = fatal 301 $ "Using functionality that has not been extended to InterfaceRefs"
 
 data ObjectDef = Obj { objnm ::   String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -339,7 +339,7 @@ instance Identified ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 
-data SubInterface = Box [ObjectDef] | InterfaceRef String deriving (Eq, Show) 
+data SubInterface = Box A_Concept [ObjectDef] | InterfaceRef String deriving (Eq, Show) 
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects

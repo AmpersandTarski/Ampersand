@@ -92,7 +92,7 @@ instance Language Fspc where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language Fspc)"
                            , objctx  = iExpr ONE
-                           , objmsub = Just . Box $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
+                           , objmsub = Just . Box ONE $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
   conceptDefs fSpec = nub (concatMap cptdf (concs fSpec)) --use vConceptDefs to get CDs of concepts not in concs too
