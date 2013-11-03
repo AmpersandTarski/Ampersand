@@ -214,7 +214,7 @@ pCtx2aCtx
          Pimp _ a b -> binary  EImp (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PIsc _ a b -> binary  EIsc (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PUni _ a b -> binary  EUni (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
-         PDif _ a b -> binary  EDif (MBG (Src,fst) (Src,snd), MBG (Src,fst) (Src,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
+         PDif _ a b -> binary  EDif (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PLrs _ a b -> binary' ELrs (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PRrs _ a b -> binary' ERrs (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PCps _ a b -> binary' ECps (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
