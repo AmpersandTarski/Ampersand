@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.ADL1 -- (P_Context(..), A_Context(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import DatabaseDesign.Ampersand.Basics (name, fatalMsg, Flippable(flp))
+import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg, Flippable(flp))
 import DatabaseDesign.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 -- import Debug.Trace
@@ -65,7 +65,7 @@ pCtx2aCtx
             , ctxpats = pats            --  The patterns defined in this context
             , ctxprocs = procs          --  The processes defined in this context
             , ctxrs = rules             --  All user defined rules in this context, outside the scope of patterns and processes
-            , ctxds = map pDecl2aDecl p_declarations --  The declarations defined in this context, outside the scope of patterns
+            , ctxds = ctxDecls          --  The declarations defined in this context, outside the scope of patterns
             , ctxpopus = udpops         --  The user defined populations of relations defined in this context, outside the scope of patterns and processes
             , ctxcds = p_conceptdefs    --  The concept definitions defined in this context, outside the scope of patterns and processes
             , ctxks = identdefs         --  The identity definitions defined in this context, outside the scope of patterns
@@ -96,7 +96,10 @@ pCtx2aCtx
                ]
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
     
-    decls = map pDecl2aDecl (p_declarations ++ concat (map pt_dcs p_patterns ++ map procDcls p_processes))
+    decls = ctxDecls++patDecls++patProcs
+    ctxDecls = [ pDecl2aDecl n1 pDecl         | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
+    patDecls = [ pDecl2aDecl (name pat) pDecl | pat<-p_patterns, pDecl<-p_declarations ] --  The declarations defined in all patterns within this context.
+    patProcs = [ pDecl2aDecl (name prc) pDecl | prc<-p_processes, pDecl<-p_declarations ] --  The declarations defined in all processes within this context.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith (++) [(SignOrd$ sign d,[d]) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap
@@ -336,7 +339,7 @@ pCtx2aCtx
                      , prcEnd = posEnd
                      , prcRules = ruls'
                      , prcGens = map pGen2aGen gens
-                     , prcDcls = map pDecl2aDecl dcls
+                     , prcDcls = [ pDecl2aDecl nm pDecl | pDecl<-dcls ]
                      , prcUps = pops'
                      , prcRRuls = fatal 342 "Don't know where to get the process rules"
                      , prcRRels = fatal 343 "Don't know where to get the process relations"
@@ -360,7 +363,7 @@ pCtx2aCtx
                  , ptend = pt_end ppat
                  , ptrls = prules
                  , ptgns = agens'
-                 , ptdcs = map pDecl2aDecl (pt_dcs ppat)
+                 , ptdcs = [ pDecl2aDecl (name ppat) pDecl | pDecl<-pt_dcs ppat ]
                  , ptups = fatal 365 "Don't know where to get the population tuples" -- population tuples?
                  , ptrruls = fatal 366 "Don't know where to get the process rules" -- The assignment of roles to rules.
                  , ptrrels = fatal 367 "Don't know where to get the process relations" -- (rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
@@ -478,23 +481,25 @@ pMarkup2aMarkup
             , amFormat = maybeForm mpdf
             , amPandoc = fatal 476 "Don't know how to convert a string to a pandoc Block.. Han?"
             }
-pDecl2aDecl :: P_Declaration -> Declaration
-pDecl2aDecl pd = Sgn { decnm   = dec_nm pd
-                     , decsgn  = pSign2aSign (dec_sign pd)
-                     , decprps = dec_prps pd
-                     , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
-                     , decprL  = dec_prL pd
-                     , decprM  = dec_prM pd
-                     , decprR  = dec_prR pd
-                     , decMean = AMeaning $ fatal 486 "Don't know how to get a meaning for a Decl"
-                     , decConceptDef = dec_conceptDef pd
-                     , decfpos = dec_fpos pd 
-                     , decissX  = True
-                     , decusrX  = True
-                     , decISA  = False
-                     , decpat  = fatal 495 "Pattern of pDecl2aDecl unknown"
-                     , decplug = dec_plug pd
-                     }
+pDecl2aDecl :: String -> P_Declaration -> Declaration
+pDecl2aDecl patNm pd
+ = Sgn { decnm   = dec_nm pd
+       , decsgn  = pSign2aSign (dec_sign pd)
+       , decprps = dec_prps pd
+       , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
+       , decprL  = dec_prL pd
+       , decprM  = dec_prM pd
+       , decprR  = dec_prR pd
+       , decMean = AMeaning $ fatal 486 "Don't know how to get a meaning for a Decl"
+       , decConceptDef = dec_conceptDef pd
+       , decfpos = dec_fpos pd 
+       , decissX = True
+       , decusrX = True
+       , decISA  = False
+       , decpat  = patNm
+       , decplug = dec_plug pd
+       }
+
 pSign2aSign :: P_Sign -> Sign
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
