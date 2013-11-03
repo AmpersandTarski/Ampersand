@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,addEquality,emptySystem,FreeLattice(..)) where
+module DatabaseDesign.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem) where
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import qualified Data.IntSet as IntSet
 import Data.List (sort, partition)
 
 -- optimisations possible for the EqualitySystem(s):
@@ -11,21 +12,49 @@ import Data.List (sort, partition)
 data EqualitySystem a
  = ES (Map.Map a Int) -- whatever this is a system of
       (IntMap.IntMap  -- map for: whenever you encounter this element i in your set y
-         [( Set.Set Int -- when you find this set (that is: if it is a subset of y)
-          , Set.Set Int -- add this set
+         [( IntSet.IntSet -- when you find this set (that is: if it is a subset of y)
+          , IntSet.IntSet -- add this set
           )]
       )
 
 emptySystem :: EqualitySystem a
 emptySystem = ES Map.empty IntMap.empty
 
+isInSystem :: (Ord a) => Op1EqualitySystem a -> a -> Bool
+isInSystem (ES1 t _ _) a = Map.member a t
+
+getGroups :: (Ord a, SetLike x) => Op1EqualitySystem a -> [x a]
+getGroups (ES1 tran _ imap)
+ = [fromList [a | (a,i) <- Map.toList tran, not . IntSet.null $ IntSet.intersection i r] | r <- IntMap.elems res]
+ where
+   iml :: [(Int,[(IntSet.IntSet,IntSet.IntSet)])]
+   iml = IntMap.toList imap
+   (_, _, res) = foldr getLists (0, IntMap.empty, IntMap.empty) [(IntSet.insert a (IntSet.union b c)) | (a,bc) <- iml, (b,c)<-bc]
+   getLists :: IntSet.IntSet -> (Int, IntMap.IntMap Int, IntMap.IntMap (IntSet.IntSet)) -> (Int, IntMap.IntMap Int, IntMap.IntMap (IntSet.IntSet))
+   getLists im (acc, allElems, rev) -- TODO: this might be made more efficiently by using Array as the last element
+    = if not (IntMap.null overlap) then
+       (acc, newElems, newRev)
+      else (acc+1, IntMap.union (IntMap.fromSet (const acc) im) allElems, IntMap.insert acc im rev)
+    where
+      overlap = IntMap.intersection allElems (IntMap.fromSet id im) -- overlap between im and the previously treated elements
+      oldKeys = IntMap.elems overlap -- sets to which the overlapping items belong
+      newKey = head oldKeys -- get any key name
+      oldKeySet = IntSet.fromList oldKeys -- remove duplicates, provide efficient lookup
+      -- newRev' is all items that will remain the same
+      -- newItm' is all (old) items that must be renamed
+      ~(newRev', newItm') = IntMap.partitionWithKey (\k _ -> IntSet.member k oldKeySet) rev
+      newItm :: IntSet.IntSet
+      newItm = IntSet.unions (im : IntMap.elems newItm') -- all 
+      newRev = IntMap.insert newKey newItm newRev'
+      newElems = IntMap.union (IntMap.fromSet (const newKey) newItm) allElems -- overwrites some of the allElems items with the new key
+
 findExact :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> x a -- returns the empty set on a failure
 findExact = findWith lookupInRevMap (\x -> fromList [x])
 findSubsets :: (Ord a, SetLike x) => Op1EqualitySystem a -> FreeLattice a -> [x a] -- returns a list of largest subsets
 findSubsets = findWith findSubsetInRevMap (\x -> [fromList [x]])
 
-findWith :: (SetLike x, Ord a)
-  => ((x Int) -> RevMap a -> b) -- Function that finds the normalized form
+findWith :: Ord a
+  => ([Int] -> RevMap a -> b) -- Function that finds the normalized form
   -> (a -> b)                   -- Shorthand in case the FreeLattice does not need to go through the translation process
   -> Op1EqualitySystem a        -- system in which the FreeLattice elements can be found
   -> FreeLattice a              -- the FreeLattice that needs translation
@@ -33,14 +62,14 @@ findWith :: (SetLike x, Ord a)
 findWith f f2 es@(ES1 _ back _) trmUnsimplified
   = case trm of
      Atom x -> f2 x
-     _ -> f (fromSet (case trm' of
+     _ -> f (IntSet.toList (case trm' of
                        Just t -> intersections (map it t)
-                       Nothing -> Set.empty
+                       Nothing -> IntSet.empty
                      )
             ) back
   where it = simplifySet es
-        intersections [] = Set.empty
-        intersections x = foldr1 Set.intersection x
+        intersections [] = IntSet.empty
+        intersections x = foldr1 IntSet.intersection x
         trm' = latticeToTranslatable es trm
         trm = simpl trmUnsimplified
         simpl (Meet a b)
@@ -53,14 +82,14 @@ findWith f f2 es@(ES1 _ back _) trmUnsimplified
              (a',b') -> Join a' b'
         simpl (Atom x) = Atom x
 
-simplifySet :: (SetLike x) => Op1EqualitySystem t -> x Int -> Set.Set Int
-simplifySet (ES1 _ _ imap) x = imapTranslate imap (toSet x) Set.empty
+simplifySet :: Op1EqualitySystem t -> IntSet.IntSet -> IntSet.IntSet
+simplifySet (ES1 _ _ imap) x = imapTranslate imap x IntSet.empty
 
-latticeToTranslatable :: Ord a => Op1EqualitySystem a -> FreeLattice a -> Maybe [Set.Set Int]
+latticeToTranslatable :: Ord a => Op1EqualitySystem a -> FreeLattice a -> Maybe [IntSet.IntSet]
 latticeToTranslatable (ES1 m _ _) lt = t lt
  where
    t (Atom a)   = do{r<-Map.lookup a m;return [r]}
-   t (Meet a b) = do{a'<-t a;b'<- t b;return [Set.union ta tb | ta <- a', tb <- b']}
+   t (Meet a b) = do{a'<-t a;b'<- t b;return [IntSet.union ta tb | ta <- a', tb <- b']}
    t (Join a b) = do{a'<-t a;b'<- t b;return (a'++b')}
    
 
@@ -90,14 +119,14 @@ findSubsetInRevMap lst rm = largestSubset (findSubsetAsRevMap lst rm)
 largestSubset :: (Ord a, SetLike x) => RevMap a -> [x a]
 largestSubset i
  = elimSubsets (endPoints i)
- where elimSubsets ((a,v):as) = v : elimSubsets (filter (\x -> not (Set.isSubsetOf (fst x) a)) as)
+ where elimSubsets ((a,v):as) = v : elimSubsets (filter (\x -> not (IntSet.isSubsetOf (fst x) a)) as)
        elimSubsets [] = []
 
-endPoints :: (Ord a, SetLike x) => RevMap a -> [(Set.Set Int,x a)]
+endPoints :: (Ord a, SetLike x) => RevMap a -> [(IntSet.IntSet,x a)]
 endPoints (RevMap st im)
- = if (IntMap.null im) then (if slNull st then [] else [(Set.empty,fromSet st)]) else concat (map endPoints' (IntMap.toList im))
+ = if (IntMap.null im) then (if slNull st then [] else [(IntSet.empty,fromSet st)]) else concat (map endPoints' (IntMap.toList im))
  where endPoints' (i,rm) = map addi (endPoints rm)
-        where addi (lst,elm) = (Set.insert i lst,elm)
+        where addi (lst,elm) = (IntSet.insert i lst,elm)
 
 listAndRest :: [t] -> [(t, [t])]
 listAndRest [] = []
@@ -110,13 +139,13 @@ data RevMap a
           deriving Show
 
 data Op1EqualitySystem a
- = ES1 (Map.Map a (Set.Set Int))
+ = ES1 (Map.Map a (IntSet.IntSet))
        (RevMap a)
        (IntMap.IntMap  -- map for: whenever you encounter this element i in your set y
-         [( Set.Set Int -- when you find this set (that is: if it is a subset of y)
-          , Set.Set Int -- add this set
+         [( IntSet.IntSet -- when you find this set (that is: if it is a subset of y)
+          , IntSet.IntSet -- add this set
           )]
-      )
+       )
 
 -- TODO: this function can be optimised a lot
 reverseMap :: (Ord a) => [(a,[Int])] -> RevMap a
@@ -133,16 +162,17 @@ reverseMap lst
 optimize1 :: Ord a => EqualitySystem a -> Op1EqualitySystem a
 optimize1 (ES oldmap oldimap)
  = ES1 newmap
-       (reverseMap (Map.toList (Map.map getList newmap)))
-       (IntMap.mapMaybe (\x -> notEmpty [ (s1,imapTranslate oldimap s2 (Set.empty)) 
-                                        | (s1,s2) <- x
-                                        , not (Set.null s1)
-                                        , not (Set.null s2)
-                                        ]) oldimap)
+       (reverseMap (Map.toList (Map.map IntSet.toList newmap)))
+       (IntMap.mapMaybe maybeMapper     oldimap)
  where notEmpty [] = Nothing
        notEmpty a = Just a
-       -- newmap :: Map.Map a (Set.Set Int)
-       newmap = Map.map (\x -> imapTranslate oldimap (Set.singleton x) (Set.empty)) oldmap
+       maybeMapper :: [(IntSet.IntSet,IntSet.IntSet)] -> Maybe [(IntSet.IntSet,IntSet.IntSet)]
+       maybeMapper x = notEmpty [ (s1,imapTranslate oldimap s2 (IntSet.empty)) 
+                                | (s1,s2) <- x
+                                , not (IntSet.null s1)
+                                , not (IntSet.null s2)
+                                ]
+       newmap = Map.map (\x -> imapTranslate oldimap (IntSet.singleton x) (IntSet.empty)) oldmap
 
 addEquality :: (Ord a, SetLike x) => (x a, x a) -> EqualitySystem a -> EqualitySystem a
 addEquality (set1, set2) eqSys0
@@ -151,38 +181,38 @@ addEquality (set1, set2) eqSys0
    (eqSys1, ns1) = translateWith eqSys0 set1
    (eqSys2, ns2) = translateWith eqSys1 set2
 
-addEquality' :: Ord a => EqualitySystem a -> Set.Set Int -> Set.Set Int -> EqualitySystem a
+addEquality' :: Ord a => EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
 addEquality' ~(ES nms imap) set1 set2
- = ES nms (addRule (addRule imap set1 set1 uni) set2 (Set.difference set2 set1) uni)
+ = ES nms (addRule (addRule imap set1 set1 uni) set2 (IntSet.difference set2 set1) uni)
  where
-   uni = Set.union set1 set2
-   addRule :: IntMap.IntMap [(Set.Set Int, Set.Set Int)] -> Set.Set Int -> Set.Set Int -> Set.Set Int -> IntMap.IntMap [(Set.Set Int, Set.Set Int)]
+   uni = IntSet.union set1 set2
+   addRule :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet -> IntSet.IntSet -> IntSet.IntSet -> IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)]
    addRule oldimap origSet triggers newSet
-    = foldl updateMapForTrigger oldimap (getList triggers)
-    where dif = Set.difference newSet origSet
-          updateMapForTrigger :: IntMap.IntMap [(Set.Set Int, Set.Set Int)] -> Int -> IntMap.IntMap [(Set.Set Int, Set.Set Int)]
+    = foldl updateMapForTrigger oldimap (IntSet.toList triggers)
+    where dif = IntSet.difference newSet origSet
+          updateMapForTrigger :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> Int -> IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)]
           updateMapForTrigger mp trigger
-           = IntMap.insertWith (++) trigger [(Set.delete trigger origSet, dif)] mp
+           = IntMap.insertWith (++) trigger [(IntSet.delete trigger origSet, dif)] mp
 
-translateWith :: (Ord a, SetLike x) => EqualitySystem a -> x a -> (EqualitySystem a, Set.Set Int)
+translateWith :: (Ord a, SetLike x) => EqualitySystem a -> x a -> (EqualitySystem a, IntSet.IntSet)
 translateWith ~(ES nomenclature imap) inSet
  = ( ES newNomenclature imap
-   , fromList$ map (newNomenclature Map.!) (getList inSet)
+   , IntSet.fromList$ map (newNomenclature Map.!) (getList inSet)
    )
  where
   newNomenclature
    = foldr (\x y -> if Map.member x y then y else Map.insert x (Map.size y) y) nomenclature (getList inSet)
 
-imapTranslate :: IntMap.IntMap [(Set.Set Int, Set.Set Int)] -> Set.Set Int -> Set.Set Int -> Set.Set Int
+imapTranslate :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet -> IntSet.IntSet -> IntSet.IntSet
 imapTranslate imap tds doneSet
- = case Set.minView tds of
+ = case IntSet.minView tds of
     Nothing -> doneSet
-    Just (todo,set) -> imapTranslate imap (newSet todo set) (slInsert todo doneSet)
+    Just (todo,set) -> imapTranslate imap (newSet todo set) (IntSet.insert todo doneSet)
  where
   newSet todo set
    = case IntMap.lookup todo imap of
        Nothing -> set
-       Just lst -> slUnions (set:[Set.difference tl doneSet | (fl,tl) <- lst, Set.isSubsetOf fl doneSet])
+       Just lst -> IntSet.unions (set:[IntSet.difference tl doneSet | (fl,tl) <- lst, IntSet.isSubsetOf fl doneSet])
 
 data FreeLattice a
  = Join (FreeLattice a) (FreeLattice a)

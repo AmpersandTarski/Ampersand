@@ -70,6 +70,7 @@ data A_Context
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
+         , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
          , ctxifcs :: [Interface]    -- ^ The interfaces defined in this context, outside the scope of patterns
          , ctxps :: [Purpose]        -- ^ The purposes of objects defined in this context, outside the scope of patterns
          , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script

@@ -76,6 +76,7 @@ pCtx2aCtx
             , ctxsql = sqldefs          --  user defined sqlplugs, taken from the Ampersand script
             , ctxphp = phpdefs          --  user defined phpplugs, taken from the Ampersand script
             , ctxmetas = p_metas
+            , ctxgenconcs = map (map findConcept) (concGroups ++ map (:[]) soloConcs) --  A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
             }
     ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
       <*> traverse pProc2aProc p_processes         --  The processes defined in this context
@@ -95,6 +96,13 @@ pCtx2aCtx
                | x <- p_gens ++ concat (map pt_gns p_patterns ++ map procGens p_processes)
                ]
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
+    
+    concGroups :: [[String]]
+    concGroups = getGroups genLattice
+    allConcs :: Set.Set String
+    allConcs = Set.fromList (map (name . source) decls ++ map (name . target) decls)
+    soloConcs :: [String]
+    soloConcs = filter (isInSystem genLattice) (Set.toList allConcs)
     
     decls = ctxDecls++patDecls++patProcs
     ctxDecls = [ pDecl2aDecl n1 pDecl         | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
@@ -133,7 +141,7 @@ pCtx2aCtx
     
     -- SJC: currently, there is no type checking being done here (TODO!)
     -- the reason: the resulting structure contains no concepts to be found
-    -- so change the type first
+    -- so change the haskell-type first
     pSubi2aSubi :: Maybe P_SubInterface -> Guarded (Maybe SubInterface)
     pSubi2aSubi Nothing = pure Nothing -- :-D
     pSubi2aSubi (Just (P_Box lst)) = (Just . Box) <$> traverse pObjDef2aObjDef lst
