@@ -15,7 +15,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima
 import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg, Flippable(flp))
 import DatabaseDesign.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
--- import Debug.Trace
+import Debug.Trace
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 
@@ -98,8 +98,8 @@ pCtx2aCtx
     
     decls = ctxDecls++patDecls++patProcs
     ctxDecls = [ pDecl2aDecl n1 pDecl         | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
-    patDecls = [ pDecl2aDecl (name pat) pDecl | pat<-p_patterns, pDecl<-p_declarations ] --  The declarations defined in all patterns within this context.
-    patProcs = [ pDecl2aDecl (name prc) pDecl | prc<-p_processes, pDecl<-p_declarations ] --  The declarations defined in all processes within this context.
+    patDecls = [ pDecl2aDecl (name pat) pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
+    patProcs = [ pDecl2aDecl (name prc) pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith (++) [(SignOrd$ sign d,[d]) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap
@@ -206,7 +206,10 @@ pCtx2aCtx
                  )
     typecheckTerm tct
      = case tct of
-         Prim a     -> (\x -> (x, (True,True))) <$> pDisAmb2Expr a
+         Prim (o,v) -> (\x -> (x, case o of
+                                   PVee _ -> (False,False)
+                                   _ -> (True,True)
+                                   )) <$> pDisAmb2Expr (o,v)
          Pequ _ a b -> binary  EEqu (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b) 
          Pimp _ a b -> binary  EImp (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
          PIsc _ a b -> binary  EIsc (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>typecheckTerm a<*>typecheckTerm b)
