@@ -1,12 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..),atomsOf)
 where
-   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair,srcPaire,trgPaire)
+   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair)
    import DatabaseDesign.Ampersand.ADL1.Expression                 (notCpl)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg, Identified(..))   
-   import qualified DatabaseDesign.Ampersand.Core.Poset
-   import Data.List (nub)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Populated.hs"

@@ -35,7 +35,6 @@ import DatabaseDesign.Ampersand.Basics
 import Data.List(nub)
 import DatabaseDesign.Ampersand.ADL1.Pair
 import DatabaseDesign.Ampersand.ADL1.Expression (notCpl)
-import qualified DatabaseDesign.Ampersand.Core.Poset as Poset ((<),(>)) -- unfortunately this also imports some nasty classes which make type errors incomprehensible (as they default to the Poset classes, not the standard ones)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Fspec.Fspec"

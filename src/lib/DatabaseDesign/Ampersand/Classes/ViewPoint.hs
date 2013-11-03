@@ -2,7 +2,6 @@
 module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..),makeDecl) where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
-import DatabaseDesign.Ampersand.Core.Poset
 import Prelude hiding (Ord(..))
 import DatabaseDesign.Ampersand.ADL1.Rule                    (rulefromProp, ruleviolations)
 import DatabaseDesign.Ampersand.Classes.Relational  (Relational(multiplicities))

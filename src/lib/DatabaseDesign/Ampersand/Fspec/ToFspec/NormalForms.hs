@@ -6,7 +6,6 @@ where
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.ECArule
    import DatabaseDesign.Ampersand.ADL1.Expression 
-   import qualified DatabaseDesign.Ampersand.Core.Poset as Poset
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
 -- import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
