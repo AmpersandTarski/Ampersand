@@ -514,7 +514,7 @@ where
       
    instance Show P_Gen where
     -- This show is used in error messages.
-    showsPrec _ g = showString ("CLASSIFY "++show (gen_spc g)++" IS "++show (gen_conc g))
+    showsPrec _ g = showString ("CLASSIFY "++show (gen_spc g)++" IS "++show (gen_concs g))
 
    instance Traced P_Gen where
     origin = gen_fp
