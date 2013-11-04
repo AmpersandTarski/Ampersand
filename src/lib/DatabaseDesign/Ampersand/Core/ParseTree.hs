@@ -7,20 +7,14 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_RoleRelation(..)
    , RoleRule(..)
    , P_Pattern(..)
-   
    , RelConceptDef(..), P_Declaration(..)
-   
    , Term(..), TermPrim(..)
-   
    , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..), isSrc
-   
    , P_Rule(..)
-   
    , ConceptDef(..)
-   
    , P_Population(..)
    
-   , P_Interface(..), P_ObjectDef(..), P_SubInterface(..)
+   , P_ObjectDef, P_SubInterface, P_Interface(..), P_ObjDef(..), P_SubIfc(..)
    
    , P_IdentDef(..) , P_IdentSegment(..)
    , P_ViewDef(..) , P_ViewSegment(..)
@@ -369,24 +363,26 @@ where
 
    instance Traced P_Interface where
     origin = ifc_Pos
-
-   data P_SubInterface 
-                 = P_Box          { si_box :: [P_ObjectDef] }
+   
+   type P_SubInterface = P_SubIfc TermPrim
+   data P_SubIfc a
+                 = P_Box          { si_box :: [P_ObjDef a] }
                  | P_InterfaceRef { si_ori :: Origin
                                   , si_str :: String }
                    deriving (Eq, Show)
 
-   data P_ObjectDef = 
+   type P_ObjectDef = P_ObjDef TermPrim
+   data P_ObjDef a = 
         P_Obj { obj_nm :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
               , obj_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-              , obj_ctx :: Term TermPrim   -- ^ this expression describes the instances of this object, related to their context. 
-              , obj_msub :: Maybe P_SubInterface  -- ^ the attributes, which are object definitions themselves.
+              , obj_ctx :: Term a        -- ^ this expression describes the instances of this object, related to their context. 
+              , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
               , obj_strs :: [[String]]     -- ^ directives that specify the interface.
               }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
-   instance Eq P_ObjectDef where od==od' = origin od==origin od'
-   instance Identified P_ObjectDef where
+   instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
+   instance Identified (P_ObjDef a) where
     name = obj_nm
-   instance Traced P_ObjectDef where
+   instance Traced (P_ObjDef a) where
     origin = obj_pos
 
    data P_IdentDef =
