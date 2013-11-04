@@ -12,7 +12,6 @@ import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg, Flippable(flp))
 import Prelude hiding (head, sequence, mapM)
--- import Debug.Trace
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set

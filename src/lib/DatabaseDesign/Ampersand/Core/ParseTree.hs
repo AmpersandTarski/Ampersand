@@ -504,17 +504,17 @@ where
                      , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
                      , gen_fp  :: Origin            -- ^ Position in the Ampersand file
                      }
-               | PGen{ gen_fp :: Origin         -- ^ the position of the GEN-rule
+               | PGen{ gen_spc :: P_Concept      -- ^ specific concept
                      , gen_gen :: P_Concept      -- ^ generic concept
-                     , gen_spc :: P_Concept      -- ^ specific concept
+                     , gen_fp  :: Origin         -- ^ the position of the GEN-rule
                      }
    gen_concs :: P_Gen -> [P_Concept]
    gen_concs (P_Cy {gen_rhs=x}) = x
    gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
       
    instance Show P_Gen where
-    -- This show is used in error messages. It should therefore not display the term's type
-    showsPrec _ g = showString ("SPEC "++show (gen_spc g)++" ISA "++show (gen_gen g))
+    -- This show is used in error messages.
+    showsPrec _ g = showString ("CLASSIFY "++show (gen_spc g)++" IS "++show (gen_conc g))
 
    instance Traced P_Gen where
     origin = gen_fp
