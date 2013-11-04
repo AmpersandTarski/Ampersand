@@ -12,7 +12,7 @@ import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg, Flippable(flp))
 import Prelude hiding (head, sequence, mapM)
-import Debug.Trace
+-- import Debug.Trace
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
@@ -123,30 +123,137 @@ pCtx2aCtx
             (findDeclTyped orig rnm (pSign2aSign tp))
     
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
-    pObjDef2aObjDef P_Obj { obj_nm = nm
-                          , obj_pos = orig
-                          , obj_ctx = ctx
-                          , obj_msub = subs
-                          , obj_strs = ostrs
-                          }
-     = (\expr subi -> Obj { objnm = nm
-                          , objpos = orig
-                          , objctx = expr
-                          , objmsub = subi
-                          , objstrs = ostrs
-                          }) <$> term2Expr ctx <*> pSubi2aSubi subs
+    pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
+     where tpda = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
     
-    -- SJC: currently, there is no type checking being done here (TODO!)
-    pSubi2aSubi :: Maybe P_SubInterface -> Guarded (Maybe SubInterface)
-    pSubi2aSubi Nothing = pure Nothing -- :-D
-    pSubi2aSubi (Just (P_Box lst)) = (Just . Box ONE) <$> traverse pObjDef2aObjDef lst
-    pSubi2aSubi (Just (P_InterfaceRef _ s)) = pure . Just . InterfaceRef $ s
+    typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
+    typecheckObjDef o@(P_Obj { obj_nm = nm
+                             , obj_pos = orig
+                             , obj_ctx = ctx
+                             , obj_msub = subs
+                             , obj_strs = ostrs
+                             })
+     = (\(expr,subi)
+        -> case subi of
+            Nothing -> pure (obj expr Nothing)
+            Just (InterfaceRef s) -> pure (obj expr (Just$InterfaceRef s)) --TODO: check type!
+            Just b@(Box c _)
+              -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
+                    [] -> mustBeOrdered' o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
+                    r  -> if (name c) `elem` r
+                          then pure (obj expr (Just$ b))
+                          else mustBeBound (origin o) [(Tgt,fst expr)]
+       ) <?> ((,) <$> typecheckTerm ctx <*> pSubi2aSubi subs)
+     where
+      obj (e,(sr,_)) s
+       = ( Obj { objnm = nm
+               , objpos = orig
+               , objctx = e
+               , objmsub = s
+               , objstrs = ostrs
+               }, sr)
+
+    pSubi2aSubi :: Maybe (P_SubIfc (TermPrim, DisambPrim)) -> Guarded (Maybe SubInterface)
+    pSubi2aSubi Nothing = pure Nothing
+    pSubi2aSubi (Just (P_InterfaceRef _ s)) = pure (Just (InterfaceRef s))
+    pSubi2aSubi (Just o@(P_Box _ [])) = Just <$> hasNone [] o
+    pSubi2aSubi (Just o@(P_Box _ l))
+     = (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
+                  [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
+                  r -> case [ objctx a
+                            | (a,False) <- lst
+                            , not ((name . source . objctx $ a) `elem` r)
+                            ] of
+                            [] -> pure (Just (Box (findConceptOrONE (head r)) (map fst lst)))
+                            lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
+       ) <?> traverse typecheckObjDef l
     
     term2Expr :: (Term TermPrim) -> Guarded Expression
     term2Expr x = fmap fst (typecheckTerm tpda)
       where
         tpda :: Term (TermPrim, DisambPrim)
         tpda = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
+    
+    typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
+    typecheckTerm tct
+     = case tct of
+         Prim (t,v) -> (\x -> (x, case t of
+                                   PVee _ -> (False,False)
+                                   _ -> (True,True)
+                                   )) <$> pDisAmb2Expr (t,v)
+         Pequ _ a b -> binary  EEqu (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
+         Pimp _ a b -> binary  EImp (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
+         PIsc _ a b -> binary  EIsc (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
+         PUni _ a b -> binary  EUni (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
+         PDif _ a b -> binary  EDif (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
+         PLrs _ a b -> binary' ELrs (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>tt a<*>tt b)
+         PRrs _ a b -> binary' ERrs (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PCps _ a b -> binary' ECps (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PRad _ a b -> binary' ERad (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PPrd _ a b -> binary' ERad (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PKl0 _ a   -> unary   EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
+         PKl1 _ a   -> unary   EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
+         PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x (flp$ sign x)), (t,s))) <$> tt a
+         PCpl _ a   -> (\(x,_) -> (ECpl x (sign x),(False,False))) <$> tt a
+         PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e
+     where
+      o = origin (fmap fst tct)
+      tt = typecheckTerm
+      -- SJC: Here is what binary, binary' and unary do:
+      -- (1) Create an expression, the combinator for this is given by its first argument
+      -- (2) Fill in the corresponding type-checked terms to that expression
+      -- (3) For binary' only: fill in the intermediate concept too
+      -- (4) Fill in the type of the new expression
+      -- For steps (3) and (4), you can use the `TT' data type to specify the new type, and what checks should occur:
+      -- If you don't know what to use, try MBE: it is the strictest form.
+      -- In the steps (3) and (4), different type errors may arise:
+      -- If the type does not exist, this yields a type error.
+      -- Some types may be generalized, while others may not.
+      -- When a type may be generalized, that means that the value of the expression does not change if the type becomes larger
+      -- When a type may not be generalized:
+      --   the type so far is actually just an estimate
+      --   it must be bound by the context to something smaller, or something as big
+      --   a way to do this, is by using (V[type] /\ thingToBeBound)
+      -- More details about generalizable types can be found by looking at "deriv1".
+      binary :: ((Expression,Expression)->Sign->Expression) -- combinator
+             ->(TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
+                        -> (Expression, (Bool, Bool))),TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
+                        -> (Expression, (Bool, Bool)))) -- simple instruction on how to derive the type
+             ->((Expression,(Bool,Bool)),(Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
+             ->Guarded (Expression,(Bool,Bool))
+      binary  cbn     tp (e1,e2) = wrap  (cbn (fst e1,fst e2)) <$> deriv tp (e1,e2)
+      unary   cbn     tp e1      = wrap  (cbn (fst e1       )) <$> deriv tp e1
+      binary' cbn cpt tp (e1,e2) = wrap' (cbn (fst e1,fst e2)) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
+      wrap  f         ((src,b1),(tgt,b2)) = (f (findSign src tgt),(b1,b2))
+      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f (findConceptOrONE cpt) (findSign src tgt),(b1,b2))
+      deriv' (a,b) es = let (sot1,(e1,t1)) = resolve es a
+                            (sot2,(e2,t2)) = resolve es b
+                        in pure ((gc sot1 e1,t1),(gc sot2 e2,t2))
+      deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
+    
+    deriv1 o x'
+     = case x' of
+        (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
+             if (b1 && b2) || (gc p1 e1 == gc p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
+             else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
+        (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
+             (\x -> (x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
+        (UNI (p1,(e1,b1)) (p2,(e2,b2))) ->
+             (\x -> (x,b1 && b2)) <$> getAndCheckType mjoin (p1, b1, e1) (p2, b2, e2)
+        (ISC (p1,(e1,b1)) (p2,(e2,b2))) ->
+             (\x -> (x,b1 || b2)) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
+     where
+      getExactType flf (p1,e1) (p2,e2)
+       = case findExact genLattice (flf (gc p1 e1) (gc p2 e2)) of
+          [] -> mustBeOrdered o (p1,e1) (p2,e2)
+          r  -> pure$ head r
+      getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
+       = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
+          []  -> mustBeOrdered o (p1,e1) (p2,e2)
+          [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
+                   (True,True) -> pure (head (Set.toList r))
+                   (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
+          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map findConceptOrONE . Set.toList) lst)
     
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb x
@@ -332,82 +439,6 @@ pCtx2aCtx
                          where cs = [cd | cd<-conceptDefs, name cd==s]
     conceptDefs = p_conceptdefs++concat (map pt_cds p_patterns)++concat (map procCds p_processes)
     
-    typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
-    typecheckTerm tct
-     = case tct of
-         Prim (t,v) -> (\x -> (x, case t of
-                                   PVee _ -> (False,False)
-                                   _ -> (True,True)
-                                   )) <$> pDisAmb2Expr (t,v)
-         Pequ _ a b -> binary  EEqu (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
-         Pimp _ a b -> binary  EImp (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
-         PIsc _ a b -> binary  EIsc (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PUni _ a b -> binary  EUni (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PDif _ a b -> binary  EDif (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PLrs _ a b -> binary' ELrs (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>tt a<*>tt b)
-         PRrs _ a b -> binary' ERrs (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PCps _ a b -> binary' ECps (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PRad _ a b -> binary' ERad (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PPrd _ a b -> binary' ERad (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PKl0 _ a   -> unary   EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
-         PKl1 _ a   -> unary   EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
-         PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x (flp$ sign x)), (t,s))) <$> tt a
-         PCpl _ a   -> (\(x,_) -> (ECpl x (sign x),(False,False))) <$> tt a
-         PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e
-     where
-      o = origin (fmap fst tct)
-      tt = typecheckTerm
-      -- SJC: Here is what binary, binary' and unary do:
-      -- (1) Create an expression, the combinator for this is given by its first argument
-      -- (2) Fill in the corresponding type-checked terms to that expression
-      -- (3) For binary' only: fill in the intermediate concept too
-      -- (4) Fill in the type of the new expression
-      -- For steps (3) and (4), you can use the `TT' data type to specify the new type, and what checks should occur:
-      -- If you don't know what to use, try MBE: it is the strictest form.
-      -- In the steps (3) and (4), different type errors may arise:
-      -- If the type does not exist, this yields a type error.
-      -- Some types may be generalized, while others may not.
-      -- When a type may be generalized, that means that the value of the expression does not change if the type becomes larger
-      -- When a type may not be generalized:
-      --   the type so far is actually just an estimate
-      --   it must be bound by the context to something smaller, or something as big
-      --   a way to do this, is by using (V[type] /\ thingToBeBound)
-      -- More details about generalizable types can be found by looking at "deriv1".
-      binary :: ((Expression,Expression)->Sign->Expression) -- combinator
-             ->(TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
-                        -> (Expression, (Bool, Bool))),TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
-                        -> (Expression, (Bool, Bool)))) -- simple instruction on how to derive the type
-             ->((Expression,(Bool,Bool)),(Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
-             ->Guarded (Expression,(Bool,Bool))
-      binary  cbn     tp (e1,e2) = wrap  (cbn (fst e1,fst e2)) <$> deriv tp (e1,e2)
-      unary   cbn     tp e1      = wrap  (cbn (fst e1       )) <$> deriv tp e1
-      binary' cbn cpt tp (e1,e2) = wrap' (cbn (fst e1,fst e2)) <$> deriv1 (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
-      wrap  f         ((src,b1),(tgt,b2)) = (f (findSign src tgt),(b1,b2))
-      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f (findConceptOrONE cpt) (findSign src tgt),(b1,b2))
-      deriv' (a,b) es = let (sot1,(e1,t1)) = resolve es a
-                            (sot2,(e2,t2)) = resolve es b
-                        in pure ((gc sot1 e1,t1),(gc sot2 e2,t2))
-      deriv (t1,t2) es = (,) <$> deriv1 (fmap (resolve es) t1) <*> deriv1 (fmap (resolve es) t2)
-      deriv1 (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2)))
-       = if (b1 && b2) || (gc p1 e1 == gc p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
-         else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
-      deriv1 (MBG (p1,(e1,b1)) (p2,(e2,b2)))
-       = (\x -> (x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
-      deriv1 (UNI (p1,(e1,b1)) (p2,(e2,b2)))
-       = (\x -> (x,b1 && b2)) <$> getAndCheckType mjoin (p1, b1, e1) (p2, b2, e2)
-      deriv1 (ISC (p1,(e1,b1)) (p2,(e2,b2)))
-       = (\x -> (x,b1 || b2)) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
-      getExactType flf (p1,e1) (p2,e2)
-       = case findExact genLattice (flf (gc p1 e1) (gc p2 e2)) of
-          [] -> mustBeOrdered o (p1,e1) (p2,e2)
-          r  -> pure$ head r
-      getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case findSubsets genLattice (flf (gc p1 e1) (gc p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
-          []  -> mustBeOrdered o (p1,e1) (p2,e2)
-          [r] -> case (b1 || Set.member (gc p1 e1) r,b2 || Set.member (gc p2 e2) r ) of
-                   (True,True) -> pure (head (Set.toList r))
-                   (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
-          lst -> mustBeOrderedLst o (p1,e1) (p2,e2) (map (map findConceptOrONE . Set.toList) lst)
     
 
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
@@ -511,11 +542,11 @@ class Disambiguatable d where
       )
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef a b) _ = (P_InterfaceRef a b,([],[]))
-  disambInfo (P_Box []     ) _     = (P_Box [],([],[]))
-  disambInfo (P_Box (a:lst)) (x,_) = (P_Box (a':lst'),(r++nxt,[]))
-   where (a', (r,_))          = disambInfo a (nxt++x,[])
-         (P_Box lst',(nxt,_)) = disambInfo (P_Box lst) (x++r,[])
+  disambInfo (P_InterfaceRef a b) _   = (P_InterfaceRef a b,([],[]))
+  disambInfo (P_Box o []   ) _        = (P_Box o [],([],[]))
+  disambInfo (P_Box o (a:lst)) (x,_)  = (P_Box o (a':lst'),(r++nxt,[]))
+   where (a', (r,_))            = disambInfo a (nxt++x,[])
+         (P_Box _ lst',(nxt,_)) = disambInfo (P_Box o lst) (x++r,[])
 
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression

@@ -228,10 +228,8 @@ where
       | PCpl Origin (Term a)           -- ^ Complement
       | PBrk Origin (Term a)           -- ^ bracketed expression ( ... )
       deriving (Show) -- deriving Show for debugging purposes
-   instance Functor Term where
-    fmap = fmapDefault
-   instance Foldable Term where
-    foldMap = foldMapDefault
+   instance Functor Term where fmap = fmapDefault
+   instance Foldable Term where foldMap = foldMapDefault
    instance Traversable Term where
     traverse f' x
      = case x of
@@ -252,7 +250,23 @@ where
        PCpl o a   -> PCpl o <$> (f a)
        PBrk o a   -> PBrk o <$> (f a)
      where f = traverse f'
-
+   
+   
+   instance Functor P_SubIfc where fmap = fmapDefault
+   instance Foldable P_SubIfc where foldMap = foldMapDefault
+   instance Traversable P_SubIfc where
+    traverse _ (P_InterfaceRef a b) = pure (P_InterfaceRef a b)
+    traverse f (P_Box b lst) = P_Box b <$> (traverse (traverse f) lst)
+   
+   instance Traced (P_SubIfc a) where
+    origin = si_ori
+   
+   instance Functor P_ObjDef where fmap = fmapDefault
+   instance Foldable P_ObjDef where foldMap = foldMapDefault
+   instance Traversable P_ObjDef where
+    traverse f (P_Obj nm pos ctx msub strs)
+     = (\ctx' msub'->(P_Obj nm pos ctx' msub' strs)) <$>
+        traverse f ctx <*> traverse (traverse f) msub
    
    instance Traced TermPrim where
     origin e = case e of
@@ -366,7 +380,8 @@ where
    
    type P_SubInterface = P_SubIfc TermPrim
    data P_SubIfc a
-                 = P_Box          { si_box :: [P_ObjDef a] }
+                 = P_Box          { si_ori :: Origin
+                                  , si_box :: [P_ObjDef a] }
                  | P_InterfaceRef { si_ori :: Origin
                                   , si_str :: String }
                    deriving (Eq, Show)

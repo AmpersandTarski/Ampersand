@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr
   , cannotDisamb, cannotDisambRel
-  , mustBeOrdered, mustBeOrderedLst
+  , mustBeOrdered, mustBeOrdered', mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..)
   , Guarded(..)
@@ -17,18 +17,19 @@ module DatabaseDesign.Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
-import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV),A_Concept)
+import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV),A_Concept,SubInterface)
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
 -- import Data.Traversable
 import Data.List  (intercalate)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
-import DatabaseDesign.Ampersand.Core.ParseTree
+import DatabaseDesign.Ampersand.Core.ParseTree (P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
 
-fatal :: Int -> String -> a
+fatal,_notUsed :: Int -> String -> a
 fatal = fatalMsg "Input.ADL1.CtxError"
+_notUsed = fatal
 
 infixl 4 <?>
 (<?>) :: (t -> Guarded a) -> Guarded t -> Guarded a  -- This is roughly the monadic definition for >>=, but it does not satisfy the corresponding rules so it cannot be a monad
@@ -39,8 +40,25 @@ data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export 
               | PE (Message Token)
               deriving Show
 
+errors :: Guarded t -> [CtxError]
+errors (Checked _) = []
+errors (Errors lst) = lst
+
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
+  getOneExactly _ [a] = Checked a
+  getOneExactly o l@[] = hasNone l o
+  getOneExactly o lst = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone lst o)]
+  hasNone :: (Traced a1, ShowADL a1) => [a] -- this argument should be ignored! It is only here to help indicate a type (you may put [])
+                                     -> a1  -- the object where the problem is arising
+                                     -> Guarded a
+  hasNone _ o = getOneExactly o []
+
+instance GetOneGuarded (P_SubIfc a) where
+  hasNone _ o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+
+instance GetOneGuarded (SubInterface) where
+  hasNone _ o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
 
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
@@ -53,15 +71,31 @@ cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relati
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 
-mustBeOrdered :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> Guarded a
+mustBeOrdered' :: (Traced a1, ShowADL a2, ShowADL a3) =>
+                  a1 -> (SrcOrTgt, A_Concept, a2) -> (SrcOrTgt, A_Concept, a3) -> Guarded a
+mustBeOrdered' o (p1,c1,e1) (p2,c2,e2)
+ = Errors [CTXE (origin o)$ "Type error, cannot match:\n  the concept "++showADL c1++" ("++show p1++" of "++showADL e1++")"
+                                          ++"\n  and concept "++showADL c2++" ("++show p2++" of "++showADL e2++")."
+                   ++"\n  if you think there is no type error, add an order between concepts "++showADL c1++" and "++showADL c2++"."]
+mustBeOrdered :: (Traced a1, Association a2, ShowADL a2, Association a3, ShowADL a3)
+              => a1 -> (SrcOrTgt, a2) -> (SrcOrTgt, a3) -> Guarded a
 mustBeOrdered o (p1,e1) (p2,e2)
- = Errors [CTXE o$ "Type error, cannot match:\n  the concept "++c1++" ("++show p1++" of "++showADL e1++")"
-                                          ++"\n  and concept "++c2++" ("++show p2++" of "++showADL e2++")."
-                   ++"\n  if you think there is no type error, add an order between concepts "++c1++" and "++c2++"."]
- where c1 = showADL$case p1 of {Src -> source e1;Tgt->target e1}
-       c2 = showADL$case p2 of {Src -> source e2;Tgt->target e2}
-mustBeOrderedLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded a
-mustBeOrderedLst o (p1,e1) (p2,e2) cs
+ = mustBeOrdered' o (p1,c1,e1) (p2,c2,e2)
+ where c1 = case p1 of {Src -> source e1;Tgt->target e1}
+       c2 = case p2 of {Src -> source e2;Tgt->target e2}
+
+mustBeOrderedLst :: (Traced o, ShowADL o, ShowADL a) => o -> [(A_Concept, SrcOrTgt, a)] -> Guarded b
+mustBeOrderedLst o lst
+ = Errors [CTXE (origin o)$ "Type error in "++showADL o++"\n  Cannot match:"++ concat
+             [ "\n  - concept "++showADL c++", "++show st++" of "++showADL a
+             | (c,st,a) <- lst ] ++
+             "\n  if you think there is no type error, add an order between the mismatched concepts."
+          ]
+ 
+
+
+mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded a
+mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors [CTXE o$ "Ambiguous type when matching: "++show p1++" of "++showADL e1++"\n"
                                           ++" and "++show p2++" of "++showADL e2++".\n"
                    ++"  The type can be "++intercalate " or " (map (showADL . Slash) cs)
