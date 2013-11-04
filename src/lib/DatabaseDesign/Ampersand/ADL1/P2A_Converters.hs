@@ -510,6 +510,27 @@ class Disambiguatable d where
       , ( [(b,SrcOrTgt)], [(b,SrcOrTgt)] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
       )
 
+instance Disambiguatable P_SubIfc where
+  disambInfo (P_InterfaceRef a b) _ = (P_InterfaceRef a b,([],[]))
+  disambInfo (P_Box []     ) _     = (P_Box [],([],[]))
+  disambInfo (P_Box (a:lst)) (x,_) = (P_Box (a':lst'),(r++nxt,[]))
+   where (a', (r,_))          = disambInfo a (nxt++x,[])
+         (P_Box lst',(nxt,_)) = disambInfo (P_Box lst) (x++r,[])
+
+instance Disambiguatable P_ObjDef where
+  disambInfo (P_Obj a b c -- term/expression
+                        d -- (potential) subobject
+                        f)
+                        (r,_) -- from the environment, only the source is important
+   = (P_Obj a b c' d' f, (r0,[]) -- only source information should be relevant
+     )
+    where
+     (d', (r1,_))
+      = case d of
+           Nothing -> (Nothing,([],[]))
+           Just si -> (\(x,y)->(Just x,y)) $ disambInfo si (r2,[])
+     (c', (r0,r2))
+      = disambInfo c (r,r1)
 instance Disambiguatable Term where
   disambInfo (PFlp o a  ) (ia1,ib1) = ( PFlp o a', (ib2,ia2) )
    where (a', (ia2,ib2)) = disambInfo a (ib1, ia1)
