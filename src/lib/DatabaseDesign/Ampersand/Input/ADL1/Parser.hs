@@ -471,7 +471,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
              pRoles  = pKey "FOR" *> pList1Sep (pSpec ',') pADLid
 
    pSubInterface :: Parser Token P_SubInterface 
-   pSubInterface = P_Box <$> pBox 
+   pSubInterface = P_Box <$> pKey_pos "BOX" <*> pBox 
                    <|> rebuild <$ pKey "INTERFACE" <*> pADLid_val_pos  
       where
         rebuild (n,p) = P_InterfaceRef p n
@@ -488,7 +488,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                                       , obj_strs = strs
                                       }
    pBox :: Parser Token [P_ObjectDef]
-   pBox              = pKey "BOX" *> pSpec '[' *> pList1Sep (pSpec ',') pObjDef <* pSpec ']'
+   pBox              = pSpec '[' *> pList1Sep (pSpec ',') pObjDef <* pSpec ']'
 
    pSqlplug :: Parser Token P_ObjectDef
    pSqlplug          = pKey_pos "SQLPLUG" *> pObjDef
