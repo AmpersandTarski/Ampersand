@@ -371,7 +371,7 @@ generateMSubInterface fSpec flags editableRels depth subIntf =
     Just (InterfaceRef nm) -> [ "      // InterfaceRef" 
                               , "      , 'refSubInterface' => "++ showPhpStr nm
                               ]
-    Just (Box objects)     -> [ "      // Box" 
+    Just (Box _ objects)     -> [ "      // Box" 
                               , "      , 'boxSubInterfaces' =>"
                               , "          array"
                               ] ++ 
