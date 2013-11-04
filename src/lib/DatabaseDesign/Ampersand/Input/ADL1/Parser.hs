@@ -358,9 +358,10 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
 
    pGenDef :: Parser Token P_Gen
-   pGenDef           = rebuild <$ pKey "SPEC"     <*> pConceptRef <*> pKey_pos "ISA" <*> pConceptRef <|>  -- SPEC is obsolete syntax. Should disappear!
-                       rebuild <$ pKey "CLASSIFY" <*> pConceptRef <*> pKey_pos "ISA" <*> pConceptRef
-                       where rebuild spc p gen = PGen p gen spc
+   pGenDef           = rebuild <$> pKey_pos "SPEC"     <*> pConceptRef <* pKey "ISA" <*> pConceptRef <|>  -- SPEC is obsolete syntax. Should disappear!
+                       rebuild <$> pKey_pos "CLASSIFY" <*> pConceptRef <* pKey "ISA" <*> pConceptRef <|>
+                       pClassify
+                       where rebuild p spc gen = PGen{gen_spc=spc, gen_gen=gen, gen_fp =p}
 
    -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
    -- which means that name<>name~ /\ address<>addres~ |- I[Person].
