@@ -11,11 +11,13 @@ import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg, Flippable(flp))
+import DatabaseDesign.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
 import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.Maybe
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -495,22 +497,23 @@ performUpdate ((t,unkn), (srcs',tgts'))
    uni = Set.union
 
 maybeLang :: Maybe Lang -> Lang
-maybeLang Nothing = English
-maybeLang (Just x) = x
+maybeLang = fromMaybe English
+
 maybeForm :: Maybe PandocFormat -> PandocFormat
-maybeForm Nothing = HTML
-maybeForm (Just x) = x
+maybeForm = fromMaybe HTML
 
 pMarkup2aMarkup :: P_Markup -> A_Markup 
 pMarkup2aMarkup
    P_Markup  { mLang = ml
              , mFormat = mpdf
-             -- , mString = str
+             , mString = str
              }
  = A_Markup { amLang = maybeLang ml
             , amFormat = maybeForm mpdf
-            , amPandoc = fatal 476 "Don't know how to convert a string to a pandoc Block.. Han?"
+            , amPandoc = string2Blocks fmt str
             }
+     where
+       fmt = maybeForm mpdf
 pDecl2aDecl :: String -> P_Declaration -> Declaration
 pDecl2aDecl patNm pd
  = Sgn { decnm   = dec_nm pd
