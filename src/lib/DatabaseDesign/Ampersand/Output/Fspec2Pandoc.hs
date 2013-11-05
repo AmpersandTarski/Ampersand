@@ -15,7 +15,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics    (fpAna
 import DatabaseDesign.Ampersand.Output.ToPandoc.ChapterGlossary           (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
-import Debug.Trace
+--import Debug.Trace
 --DESCR ->
 --The functional specification starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.

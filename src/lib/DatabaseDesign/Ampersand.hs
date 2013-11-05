@@ -49,7 +49,7 @@ module DatabaseDesign.Ampersand
    -- * Functions on rules
    -- * Functions on expressions:
    , conjNF, disjNF, simplify
-   , cfProof,dfProof,nfProof,simplify,normPA
+   , cfProof,dfProof,nfProof,normPA
    , lookupCpt
    , showPrf
    , notCpl, isCpl, isPos, isNeg
