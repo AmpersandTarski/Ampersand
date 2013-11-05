@@ -3,7 +3,7 @@ import Distribution.Simple
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.Setup
 import Distribution.PackageDescription
-import System.Time
+--import System.Time
 import System.Process
 import System.IO
 import Control.Exception
@@ -36,8 +36,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; (buildHook simpleUserHooks) pd lbi uh bf -- start the build
     }
- where showPadded n = (if n<10 then "0" else "") ++ show n
-       myHandler :: IOException -> IO String
+ where myHandler :: IOException -> IO String
        myHandler err = do { print err
                           ; noSVNRevisionStr
                           }
