@@ -2,8 +2,7 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
   (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,exprIsc2list, exprUni2list, exprCps2list, exprRad2list)
 where
-   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEng,eqCl,eqClass,Flippable(..), (>-))
-   import DatabaseDesign.Ampersand.Classes
+   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEng,eqCl,Flippable(..))
    import DatabaseDesign.Ampersand.ADL1.ECArule
    import DatabaseDesign.Ampersand.ADL1.Expression 
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree

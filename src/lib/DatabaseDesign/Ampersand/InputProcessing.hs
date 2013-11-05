@@ -14,14 +14,13 @@ import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing --  (getMsgs,parse,evalSteps,parseIO)
 import DatabaseDesign.Ampersand.Input.ADL1.Parser
 import DatabaseDesign.Ampersand.ADL1
-import DatabaseDesign.Ampersand.Input.ADL1.CtxError (showErr,CtxError(PE))
+import DatabaseDesign.Ampersand.Input.ADL1.CtxError (CtxError(PE))
 import Data.List
 import System.Directory
 import System.FilePath
 import Paths_ampersand
 import Control.Monad
 import Data.Traversable (sequenceA)
-import Data.GraphViz (runGraphvizCommand,GraphvizCommand(..),GraphvizOutput(..))
 
 fatal :: Int -> String -> a
 fatal = Basics.fatalMsg "InputProcessing"
