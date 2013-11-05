@@ -69,68 +69,6 @@ function deleteSession($sessionAtom)
 { //echo "deleting $sessionAtom<br/>";
   DB_doquer("DELETE FROM `__SessionTimeout__` WHERE SESSION = '$sessionAtom';");
   deleteAtom($sessionAtom, 'SESSION');
-  
-}
-
-// Login
-
-function Login()
-{ echo '<br>
-<form name="loginform" method="post" action="index.php?CheckLogin">
-<table border="0" cellpadding="3" cellspacing="2">
-<tr> <td>&nbsp;</td> <td>Username</td> <td><input name="myusername" type="text" id="myusername"></td> </tr>
-<tr> <td>&nbsp;</td> <td>Password</td> <td><input name="mypassword" type="text" id="mypassword"></td> </tr>
-<tr> <td>&nbsp;</td> <td>&nbsp;</td> <td><input type="submit" name="Submit" value="Login"></td> </tr>
-</table>
-</form>';
-}
-
-function CheckLogin()
-{  echo 'Checking...';
-// If the PHP session has the Ampersand sessionAtom, retrieve it. 
-// Note that it may refer to an Ampersand session that has expired and therefore no longer exists in the Ampersand administration
-   $sessionAtom = $_SESSION['sessionAtom']; 
-// create a new session if $sessionAtom is not set (browser started a new session) 
-// or $sessionAtom is not in SESSIONS (previous session expired)
-   if (!isset($sessionAtom) || !isAtomInConcept($sessionAtom, 'SESSION'))
-   { $sessionAtom = mkUniqueAtomByTime('SESSION');
-     $_SESSION['sessionAtom']  = $sessionAtom;
-     addAtomToConcept($sessionAtom, 'SESSION');
-   }
-   echo "sessionAtom = [$sessionAtom]<br>";
-
-// Define $myusername and $mypassword
-   $myusername=$_POST['myusername'];
-   $mypassword=$_POST['mypassword'];
-
-// To protect MySQL injection (more detail about MySQL injection)
-   $myusername = stripslashes($myusername);
-   $mypassword = stripslashes($mypassword);
-   $myusername = mysql_real_escape_string($myusername);
-   $mypassword = mysql_real_escape_string($mypassword);
-
-   echo '<div id="UpdateResults">';
-     dbStartTransaction();
-     InsPair('sessionUserid','SESSION',$sessionAtom,'Userid',$myusername);
-     InsPair('sessionPassword','SESSION',$sessionAtom,'Password',$mypassword);
-     
-     echo '<div id="ProcessRuleResults">';
-       runAllProcedures; // Just in case these rules are stored procedures
-       $LoginRules = array ('inssessionAccount','delsessionAccount','inssessionHistAccount_Def');
-       checkRules($LoginRules);
-     echo '</div>';
-    
-     echo '<div id="InvariantRuleResults">';
-       $invariantRulesHold = checkInvariantRules(); // waaronder: 'Hernieuwd inloggen'
-     echo '</div>';
-  
-     if ($invariantRulesHold)
-     { setTimeStamp();
-       dbCommitTransaction();
-     } else {
-       dbRollbackTransaction();
-     }
-   echo '</div>';
 }
 
 // Queries

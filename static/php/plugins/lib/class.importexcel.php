@@ -22,7 +22,6 @@ class ImportExcel
 
    public function ParseFile()
    { dbStartTransaction();
-     emitLog('BEGIN');
 
      $this->ProcessFileContent();
 
@@ -46,10 +45,8 @@ emitLog ("\n\nCHECKING RULES\n\n");
   
      if ($invariantRulesHold)
      { setTimeStamp();
-       emitLog('COMMIT');
        dbCommitTransaction();
      } else {
-       emitLog('ROLLBACK');
        dbRollbackTransaction();
      }
    }

@@ -44,8 +44,10 @@ function InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
     }
     if (!$found)
     { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
-      ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
-    die;
+      ExecEngineSHOUTS("ERROR: Cannot find $relation\[$srcConcept\*$tgtConcept\] signature.");
+      ExecEngineSays("InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+      ExecEngineSays("If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration.");
+      die;
     }
 // if srcAtom is specified as NULL, a new atom of srcConcept is created
     if($srcAtom == "NULL") 
@@ -132,7 +134,9 @@ function DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
     }
     if (!$found)
     { // Errors in ADL script may corrupt the database, so we die (leaving a suicide note)
-      ExecEngineSHOUTS("ERROR: Cannot find 'rel[Src*Tgt]' signature in DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+      ExecEngineSHOUTS("ERROR: Cannot find $relation\[$srcConcept\*$tgtConcept\] signature.");
+      ExecEngineSays("DelPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)");
+      ExecEngineSays("If you have defined this relation in Ampersand, then you must be sure to also have defined an INTERFACE that uses this relation (or else it does not show up in the PHP relation administration.");
       die;
     }
 // get table column properties for $srcCol and $tgtCol

@@ -1,6 +1,6 @@
 This library enables importing from within an Ampersand application of database contents as specified by the contents of an Excel spreadsheet
 
-This stuff seems to work but has not been thoroughly tested.
+This stuff is currently still under development.
 
 WHAT HAVE WE HERE
 =================
@@ -24,4 +24,3 @@ memory_limit = 128M
 ; http://php.net/post-max-size
 post_max_size = 128M
 
-Rieks
