@@ -6,6 +6,7 @@ module DatabaseDesign.Ampersand.ADL1.P2A_Converters (
      Guarded(..)
      )
 where
+import DatabaseDesign.Ampersand.ADL1.Disambiguate
 import DatabaseDesign.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
@@ -125,7 +126,40 @@ pCtx2aCtx
     
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
-     where tpda = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
+     where tpda = disambiguate termPrimDisAmb x
+    term2Expr :: (Term TermPrim) -> Guarded Expression
+    term2Expr x = fmap fst (typecheckTerm tpda)
+      where tpda = disambiguate termPrimDisAmb x
+    
+    pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
+    pViewDef2aViewDef x = typecheckViewDef tpda
+     where tpda = disambiguate termPrimDisAmb x
+     
+    typecheckViewDef :: P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
+    typecheckViewDef
+       o@(P_Vd { vd_pos = orig
+            , vd_lbl = lbl -- String
+            , vd_cpt = cpt -- Concept
+            , vd_ats = pvs -- view segment
+            })
+     = (\vdts
+        -> Vd { vdpos = orig
+              , vdlbl = lbl
+              , vdcpt = pCpt2aCpt cpt
+              , vdats = vdts
+              })
+       <$> traverse (typeCheckViewSegment o) pvs
+    
+    typeCheckViewSegment :: (P_ViewD a) -> (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
+    typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
+     = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
+                      [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
+                      r  -> if b || c `elem` r then pure (ViewExp obj)
+                            else mustBeBound (origin obj) [(Tgt,objctx obj)]
+       ) <?> typecheckObjDef ojd
+     where c = name (vd_cpt o)
+    typeCheckViewSegment _ P_ViewText { vs_txt = txt } = pure$ ViewText txt
+    typeCheckViewSegment _ P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
     
     typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
     typecheckObjDef o@(P_Obj { obj_nm = nm
@@ -140,7 +174,7 @@ pCtx2aCtx
             Just (InterfaceRef s) -> pure (obj expr (Just$InterfaceRef s)) --TODO: check type!
             Just b@(Box c _)
               -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
-                    [] -> mustBeOrdered' o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
+                    [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
                     r  -> if (name c) `elem` r
                           then pure (obj expr (Just$ b))
                           else mustBeBound (origin o) [(Tgt,fst expr)]
@@ -167,13 +201,8 @@ pCtx2aCtx
                             ] of
                             [] -> pure (Just (Box (findConceptOrONE (head r)) (map fst lst)))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
-       ) <?> traverse typecheckObjDef l
+       ) <?> (const <$> traverse typecheckObjDef l <*> uniqueNames l)
     
-    term2Expr :: (Term TermPrim) -> Guarded Expression
-    term2Expr x = fmap fst (typecheckTerm tpda)
-      where
-        tpda :: Term (TermPrim, DisambPrim)
-        tpda = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
     
     typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
     typecheckTerm tct
@@ -390,25 +419,6 @@ pCtx2aCtx
     pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
     pIdentSegment2IdentSegment (P_IdentExp ojd)
      = IdentityExp <$> pObjDef2aObjDef ojd
-    pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
-    pViewDef2aViewDef
-       P_Vd { vd_pos = orig
-            , vd_lbl = lbl -- String
-            , vd_cpt = cpt -- Concept
-            , vd_ats = pvs -- view segment
-            }
-     = (\vdts
-        -> Vd { vdpos = orig
-              , vdlbl = lbl
-              , vdcpt = pCpt2aCpt cpt
-              , vdats = vdts
-              })
-       <$> traverse pViewSegment2ViewSegment pvs
-    
-    pViewSegment2ViewSegment :: P_ViewSegment -> Guarded ViewSegment
-    pViewSegment2ViewSegment P_ViewExp  { vs_obj = ojd } = ViewExp <$> pObjDef2aObjDef ojd
-    pViewSegment2ViewSegment P_ViewText { vs_txt = txt } = pure$ ViewText txt
-    pViewSegment2ViewSegment P_ViewHtml { vs_htm = htm } = pure$ ViewHtml htm
     
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp PRef2 { pexPos = orig
@@ -447,54 +457,6 @@ pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs --  in order to allow multiple declarations of the same relation, change  'cannotDisambRel o rs'  to  'pure (head rs)'
 pDisAmb2Expr (o,_)       = cannotDisamb o
-
-disambiguationStep :: (Disambiguatable d, Traversable d) => d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
-disambiguationStep x = traverse performUpdate withInfo
- where (withInfo, _) = disambInfo x ([],[])
-
-performUpdate :: ((t, DisambPrim),
-                     ([(DisambPrim, SrcOrTgt)], [(DisambPrim, SrcOrTgt)]))
-                     -> Change (t, DisambPrim)
-performUpdate ((t,unkn), (srcs',tgts'))
- = case unkn of
-     Known _ -> pure (t,unkn)
-     Rel xs  -> determineBySize (\x -> if length x == length xs then pure (Rel xs) else impure (Rel x))
-                                id $
-                (findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
-                `orWhenEmpty` xs
-     Ident   -> determineBySize' (\ _ -> pure unkn) (\a -> EDcI (Sign (findConceptOrONE a) (findConceptOrONE a)))
-                  possibleConcs
-     Mp1 s   -> determineBySize' (\ _ -> pure unkn) (\a -> EMp1 s (Sign (findConceptOrONE a) (findConceptOrONE a)))
-                  possibleConcs
-     Vee     -> determineBySize (\ _ -> pure unkn) (\(a,b) -> (EDcV (Sign (findConceptOrONE a) (findConceptOrONE b))))
-                  [(a,b) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
- where
-   possibleConcs = (mustBeSrc `isc` mustBeTgt) `orWhenEmptyS`
-                   (mustBeSrc `uni` mustBeTgt) `orWhenEmptyS`
-                   (mayBeSrc  `isc` mayBeTgt ) `orWhenEmptyS`
-                   (mayBeSrc  `uni` mayBeTgt )
-   findMatch' (a,b) = findMatch (Set.toList a,Set.toList b)
-   findMatch ([],[]) _ = []
-   findMatch ([],tgts) lst
-    = [x | x<-lst, gc Tgt x `elem` tgts]
-   findMatch (srcs,[]) lst
-    = [x | x<-lst, gc Src x `elem` srcs]
-   findMatch (srcs,tgts) lst
-    = [x | x<-lst, gc Src x `elem` srcs, gc Tgt x `elem` tgts]
-   mustBeSrc = mustBe srcs'
-   mustBeTgt = mustBe tgts'
-   mayBeSrc = mayBe srcs'
-   mayBeTgt = mayBe tgts'
-   mustBe xs = Set.fromList [gc sot x | (Known x, sot) <- xs]
-   mayBe  xs = Set.fromList [gc sot x | (Rel x' , sot) <- xs, x<-x']
-   orWhenEmptyS a b = if (Set.null a) then b else a
-   orWhenEmpty a b = if (null a) then b else a
-   determineBySize' err ok s = determineBySize err ok (Set.toList s)
-   determineBySize _   ok [a] = impure (t,Known (ok a))
-   determineBySize err _  lst = fmap ((,) t) (err lst)
-   impure x = Change x False
-   isc = Set.intersection
-   uni = Set.union
 
 maybeLang :: Maybe Lang -> Lang
 maybeLang = fromMaybe English
@@ -539,85 +501,10 @@ pDecl2aDecl patNm pd
 pSign2aSign :: P_Sign -> Sign
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 
-class Disambiguatable d where
-  disambInfo :: d (a,b)
-   -> ( [(b,SrcOrTgt)], [(b,SrcOrTgt)] ) -- the inferred types (from the environment = top down)
-   -> ( d ((a,b), ([(b,SrcOrTgt)],[(b,SrcOrTgt)])) -- only the environment for the term (top down)
-      , ( [(b,SrcOrTgt)], [(b,SrcOrTgt)] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
-      )
-
-instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef a b) _   = (P_InterfaceRef a b,([],[]))
-  disambInfo (P_Box o []   ) _        = (P_Box o [],([],[]))
-  disambInfo (P_Box o (a:lst)) (x,_)  = (P_Box o (a':lst'),(r++nxt,[]))
-   where (a', (r,_))            = disambInfo a (nxt++x,[])
-         (P_Box _ lst',(nxt,_)) = disambInfo (P_Box o lst) (x++r,[])
-
-instance Disambiguatable P_ObjDef where
-  disambInfo (P_Obj a b c -- term/expression
-                        d -- (potential) subobject
-                        f)
-                        (r,_) -- from the environment, only the source is important
-   = (P_Obj a b c' d' f, (r0,[]) -- only source information should be relevant
-     )
-    where
-     (d', (r1,_))
-      = case d of
-           Nothing -> (Nothing,([],[]))
-           Just si -> (\(x,y)->(Just x,y)) $ disambInfo si (r2,[])
-     (c', (r0,r2))
-      = disambInfo c (r,r1)
-instance Disambiguatable Term where
-  disambInfo (PFlp o a  ) (ia1,ib1) = ( PFlp o a', (ib2,ia2) )
-   where (a', (ia2,ib2)) = disambInfo a (ib1, ia1)
-  disambInfo (PCpl o a  ) (ia1,ib1) = ( PCpl o a', (ia2,ib2) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1, ib1)
-  disambInfo (PBrk o a  ) (ia1,ib1) = ( PBrk o a', (ia2,ib2) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1, ib1)
-  disambInfo (PKl0 o a  ) (ia1,ib1) = ( PKl0 o a', (ia2++ib2,ia2++ib2) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ib1, ia1++ib1)
-  disambInfo (PKl1 o a  ) (ia1,ib1) = ( PKl1 o a', (ia2++ib2,ia2++ib2) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ib1, ia1++ib1)
-  disambInfo (Pequ o a b) (ia1,ib1) = ( Pequ o a' b', (ia2++ia3, ib2++ib3) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ia3, ib1++ib3)
-         (b', (ia3,ib3)) = disambInfo b (ia1++ia2, ib1++ib2)
-  disambInfo (Pimp o a b) (ia1,ib1) = ( Pimp o a' b', (ia2++ia3, ib2++ib3) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ia3, ib1++ib3)
-         (b', (ia3,ib3)) = disambInfo b (ia1++ia2, ib1++ib2)
-  disambInfo (PIsc o a b) (ia1,ib1) = ( PIsc o a' b', (ia2++ia3, ib2++ib3) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ia3, ib1++ib3)
-         (b', (ia3,ib3)) = disambInfo b (ia1++ia2, ib1++ib2)
-  disambInfo (PUni o a b) (ia1,ib1) = ( PUni o a' b', (ia2++ia3, ib2++ib3) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ia3, ib1++ib3)
-         (b', (ia3,ib3)) = disambInfo b (ia1++ia2, ib1++ib2)
-  disambInfo (PDif o a b) (ia1,ib1) = ( PDif o a' b', (ia2++ia3, ib2++ib3) )
-   where (a', (ia2,ib2)) = disambInfo a (ia1++ia3, ib1++ib3)
-         (b', (ia3,ib3)) = disambInfo b (ia1++ia2, ib1++ib2)
-  disambInfo (PLrs o a b) (ia1,ib1) = ( PLrs o a' b', (ia, ib) )
-   where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
-         (b', (ib,ic2)) = disambInfo b (ib1,ic1)
-  disambInfo (PRrs o a b) (ia1,ib1) = ( PRrs o a' b', (ia, ib) )
-   where (a', (ic1,ia)) = disambInfo a (ic2,ia1)
-         (b', (ic2,ib)) = disambInfo b (ic1,ib1)
-  disambInfo (PCps o a b) (ia1,ib1) = ( PCps o a' b', (ia, ib) )
-   where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
-         (b', (ic2,ib)) = disambInfo b (ic1,ib1)
-  disambInfo (PRad o a b) (ia1,ib1) = ( PRad o a' b', (ia, ib) )
-   where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
-         (b', (ic2,ib)) = disambInfo b (ic1,ib1)
-  disambInfo (PPrd o a b) (ia1,ib1) = ( PPrd o a' b', (ia, ib) )
-   where (a', (ia,ic1)) = disambInfo a (ia1,ic2)
-         (b', (ic2,ib)) = disambInfo b (ic1,ib1)
-  disambInfo (Prim (a,b)) st = (Prim ((a,b), st), ([(b,Src)], [(b,Tgt)]) )
-
 -- helpers for generating a lattice, not having to write `Atom' all the time
 mjoin,mIsc :: a -> a -> FreeLattice a
 mjoin a b = Join (Atom a) (Atom b)
 mIsc  a b = Meet (Atom a) (Atom b)
--- get concept:
-gc :: Association expr => SrcOrTgt -> expr -> String
-gc Src e = (name (source e))
-gc Tgt e = (name (target e))
 -- intended for finding the right expression on terms like (Src,fst)
 resolve :: t -> (SrcOrTgt, t -> (t1, (t2, t2))) -> (SrcOrTgt, (t1, t2))
 resolve es (p,f)
@@ -640,41 +527,6 @@ pGen2aGen pg@P_Cy{}
 findSign :: String -> String -> Sign
 findSign a b = Sign (findConceptOrONE a) (findConceptOrONE b)
 
-findConceptOrONE :: String -> A_Concept
-findConceptOrONE "ONE" = ONE
-findConceptOrONE x = findConcept x
-
-findConcept :: String -> A_Concept
--- SJC: ONE should be tokenized, so it cannot occur as a string
--- especially because we require that concepts are identifiable by their name
--- hence if this line would change the semantics, we have either
--- (1) made a programming error in the call of findConcept (in which case you should call findConceptOrONE instead)
--- (2) made an error in the tokenizer/parser
-findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
-findConcept x = PlainConcept 
-            {cptnm = x
-            ,cpttp = fatal 588 "Types of concepts are not defined here"
-            ,cptdf = fatal 589 "df of concepts are not defined here"
-            }
-pCpt2aCpt :: P_Concept -> A_Concept
-pCpt2aCpt pc
-    = case pc of
-        PCpt{} -> findConcept (p_cptnm pc)
-        P_Singleton -> ONE   
-
-data Change a = Change a Bool
-instance Functor Change where
- fmap f (Change a b) = Change (f a) b
-instance Applicative Change where
- (<*>) (Change f b) (Change a b2) = Change (f a) (b && b2)
- pure a = Change a True
-
-fixpoint :: (a -> Change a) -- function for computing a fixpoint
-         -> (Change a) -- has the fixpoint been reached?
-         -> a
-fixpoint _ (Change a True)  = a
-fixpoint f (Change a False) = fixpoint f (f a)
-
 data TT a  -- (In order of increasing strictness. If you are unsure which to pick: just use MBE, it'll usually work fine)
  = UNI a a -- find the union of these types, return it.
  | ISC a a -- find the intersection of these types, return it.
@@ -696,10 +548,3 @@ instance Functor TT where
   fmap f (ISC a b) = ISC (f a) (f b)
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
-
-data DisambPrim
- = Rel [Expression]
- | Ident
- | Vee
- | Mp1 String
- | Known Expression
