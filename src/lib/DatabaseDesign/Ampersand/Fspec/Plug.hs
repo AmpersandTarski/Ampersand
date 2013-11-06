@@ -128,12 +128,18 @@ instance ConceptStructure PlugInfo where
 --REMARK151210 -> one would expect I[entityconcept p], 
 --                but any p (as instance of Object) has one always existing concept p suitable to replace entityconcept p.
 --                concept p and entityconcept p are related uni,tot,inj,sur.
+--data SqlFieldUsage = PrimKey A_Concept     -- The field is the primary key of the table
+--                   | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL
+--                   | PlainAttr             -- None of the above
+--                   | NonMainKey            -- Key value of an Specialization of the Primary key. (field could be null)
+--                   | UserDefinedUsage
+--                   | FillInLater          -- Must be filled in later....
 entityfield :: PlugSQL -> SqlField
 entityfield p
   = Fld { fldname = name (entityconcept p)
         , fldexpr = iExpr (concept p)
         , fldtype = SQLId
-        , flduse  = fatal 136 ("TODO: specify field type")
+        , flduse  = PrimKey (concept p)  -- SJ 4 nov 2013:  TODO: is this correct?? (this field may have been subject to bit rot...
         , fldnull = False
         , flduniq = True
         }

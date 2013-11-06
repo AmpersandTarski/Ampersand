@@ -327,7 +327,7 @@ where
    instance Identified P_Rule where
     name = rr_nm
 
-   data PMeaning = PMeaning P_Markup 
+   data PMeaning = PMeaning P_Markup
             deriving Show
 
    data P_Markup = 
@@ -502,7 +502,7 @@ where
 
    data P_Gen =  P_Cy{ gen_spc :: P_Concept         -- ^ Left hand side concept expression 
                      , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
-                     , gen_fp  :: Origin            -- ^ Position in the Ampersand file
+                     , gen_fp ::  Origin            -- ^ Position in the Ampersand file
                      }
                | PGen{ gen_spc :: P_Concept      -- ^ specific concept
                      , gen_gen :: P_Concept      -- ^ generic concept
