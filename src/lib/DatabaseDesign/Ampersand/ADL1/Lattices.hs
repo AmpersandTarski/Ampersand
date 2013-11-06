@@ -251,7 +251,7 @@ class SetLike x where -- I dislike having to put Ord everywhere, is there anothe
   slUnion :: Ord a => x a -> x a -> x a
   getList :: Ord a => x a -> [a]
   fromList :: Ord a => [a] -> x a
-  fromSet  :: Ord a => Set.Set a -> x a
+  fromSet :: Ord a => Set.Set a -> x a
   slMap :: (Ord a,Ord b) => (a -> b) -> x a -> x b
   slMap f = fromList . nub' . sort . (map f) . getList
   slEmpty :: Ord a => x a

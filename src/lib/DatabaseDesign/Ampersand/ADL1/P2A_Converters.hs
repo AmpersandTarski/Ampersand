@@ -445,7 +445,7 @@ pCtx2aCtx
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
 pDisAmb2Expr (_,Rel [x]) = pure x
-pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs
+pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs --  in order to allow multiple declarations of the same relation, change  'cannotDisambRel o rs'  to  'pure (head rs)'
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
 disambiguationStep :: (Disambiguatable d, Traversable d) => d (TermPrim, DisambPrim) -> Change (d (TermPrim, DisambPrim))
@@ -502,6 +502,9 @@ maybeLang = fromMaybe English
 maybeForm :: Maybe PandocFormat -> PandocFormat
 maybeForm = fromMaybe HTML
 
+--  data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving Show
+--  data PMeaning = PMeaning P_Markup
+
 pMarkup2aMarkup :: P_Markup -> A_Markup 
 pMarkup2aMarkup
    P_Markup  { mLang = ml
@@ -509,7 +512,7 @@ pMarkup2aMarkup
              , mString = str
              }
  = A_Markup { amLang = maybeLang ml
-            , amFormat = maybeForm mpdf
+            , amFormat = fmt
             , amPandoc = string2Blocks fmt str
             }
      where
@@ -523,7 +526,7 @@ pDecl2aDecl patNm pd
        , decprL  = dec_prL pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
-       , decMean = AMeaning $ fatal 486 "Don't know how to get a meaning for a Decl"
+       , decMean = AMeaning [ pMarkup2aMarkup meaning | PMeaning meaning<-dec_Mean pd ]
        , decConceptDef = dec_conceptDef pd
        , decfpos = dec_fpos pd 
        , decissX = True

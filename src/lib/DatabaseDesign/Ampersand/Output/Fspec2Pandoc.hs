@@ -89,7 +89,7 @@ fSpec2Pandoc fSpec flags = ( myDoc , concat picturesByChapter )
       ) 
       (doc (foldr (<>) mempty docContents))
     docContents :: [Blocks]
-    picturesByChapter  :: [[Picture]]
+    picturesByChapter :: [[Picture]]
     (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc flags]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])

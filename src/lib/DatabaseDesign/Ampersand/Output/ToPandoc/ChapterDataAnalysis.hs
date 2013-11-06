@@ -379,7 +379,7 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
   
                    
              
-daBasicsSection  :: Int -> Fspc -> Options -> Blocks
+daBasicsSection :: Int -> Fspc -> Options -> Blocks
 -- | The function daBasicsSection lists the basic sentences that have been used in assembling the data model.
 daBasicsSection lev fSpec flags = theBlocks
  where 
