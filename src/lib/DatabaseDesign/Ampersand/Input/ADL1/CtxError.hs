@@ -89,7 +89,7 @@ class ErrorConcept a where
   showMini :: a -> String
 
 instance ErrorConcept (P_ViewD a) where
-  showEC x = name (vd_cpt x) ++" given in VIEW "++vd_lbl x
+  showEC x = showADL (vd_cpt x) ++" given in VIEW "++vd_lbl x
   showMini x = showADL (vd_cpt x)
 
 instance (ShowADL a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
