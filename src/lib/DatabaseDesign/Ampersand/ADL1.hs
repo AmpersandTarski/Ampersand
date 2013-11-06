@@ -18,7 +18,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree as X (
          , SrcOrTgt(..)
          , P_Rule(..)
          , P_IdentDef(..), P_IdentSegment(..)
-         , P_ViewDef(..), P_ViewSegment(..)
+         , P_ViewDef, P_ViewSegment
          , P_Population(..)
          , P_ObjectDef
          , P_Interface(..)

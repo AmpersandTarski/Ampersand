@@ -17,7 +17,8 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_ObjDef(..), P_SubIfc(..)
    
    , P_IdentDef(..) , P_IdentSegment(..)
-   , P_ViewDef(..) , P_ViewSegment(..)
+   , P_ViewDef , P_ViewSegment
+   , P_ViewD(..) , P_ViewSegmt(..)
    
    , PPurpose(..),PRef2Obj(..),PMeaning(..)
    
@@ -416,22 +417,33 @@ where
    data P_IdentSegment 
                  = P_IdentExp  { ks_obj :: P_ObjectDef }
                    deriving (Eq, Show)
-
-   data P_ViewDef = 
+   type P_ViewDef = P_ViewD TermPrim
+   data P_ViewD a = 
             P_Vd { vd_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                  , vd_lbl :: String         -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
                  , vd_cpt :: P_Concept      -- ^ this expression describes the instances of this object, related to their context
-                 , vd_ats :: [P_ViewSegment] -- ^ the constituent segments of this view.
+                 , vd_ats :: [P_ViewSegmt a] -- ^ the constituent segments of this view.
                  } deriving (Show)
-   instance Identified P_ViewDef where
+   instance Identified (P_ViewD a) where
     name = vd_lbl
-   instance Eq P_ViewDef where vd==vd' = origin vd==origin vd'
-
-   instance Traced P_ViewDef where
+   instance Functor P_ViewD where fmap = fmapDefault
+   instance Foldable P_ViewD where foldMap = foldMapDefault
+   instance Traversable P_ViewD where
+    traverse f (P_Vd a b c d) = P_Vd a b c <$> traverse (traverse f) d
+   
+   instance Functor P_ViewSegmt where fmap = fmapDefault
+   instance Foldable P_ViewSegmt where foldMap = foldMapDefault
+   instance Traversable P_ViewSegmt where
+    traverse f (P_ViewExp  a) = P_ViewExp <$> traverse f a
+    traverse _ (P_ViewText a) = pure (P_ViewText a)
+    traverse _ (P_ViewHtml a) = pure (P_ViewHtml a)
+   
+   instance Traced (P_ViewD a) where
     origin = vd_pos
    
-   data P_ViewSegment 
-                 = P_ViewExp  { vs_obj :: P_ObjectDef }
+   type P_ViewSegment = P_ViewSegmt TermPrim
+   data P_ViewSegmt a 
+                 = P_ViewExp  { vs_obj :: P_ObjDef a }
                  | P_ViewText { vs_txt :: String }
                  | P_ViewHtml { vs_htm :: String }
                    deriving (Eq, Show)
