@@ -379,7 +379,7 @@ data SqlFieldUsage = PrimKey A_Concept     -- The field is the primary key of th
                    | NonMainKey            -- Key value of an Specialization of the Primary key. (field could be null)
                    | UserDefinedUsage
                    | FillInLater          -- Must be filled in later....
-                   
+
                    deriving (Eq, Show)
 data SqlField = Fld { fldname :: String
                     , fldexpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.

@@ -50,8 +50,8 @@ makeDecl g
          , decprM  = "is a"
          , decprR  = ""
          , decMean = AMeaning 
-                        [ A_Markup English ReST (string2Blocks ReST ("Every "++name (source g)++" must be a " ++ name(target g)++"."))
-                        , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" moet een " ++ name(target g)++" zijn."))
+                        [ A_Markup English ReST (string2Blocks ReST ("Every "++name (source g)++" is a " ++ name(target g)++"."))
+                        , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" is een " ++ name(target g)++"."))
                         ]
          , decConceptDef = Nothing
    --      , decpopu = [(a,b) | a <- (atomsOf.source) g, b <- (atomsOf.target) g, a==b]
