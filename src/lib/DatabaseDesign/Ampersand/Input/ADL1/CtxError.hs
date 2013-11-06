@@ -1,11 +1,11 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr
   , cannotDisamb, cannotDisambRel
-  , mustBeOrdered, mustBeOrdered', mustBeOrderedLst, mustBeOrderedConcLst
+  , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..)
+  , GetOneGuarded(..), uniqueNames
   , Guarded(..)
   , (<?>)
   )
@@ -21,10 +21,10 @@ import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
 -- import Data.Traversable
-import Data.List  (intercalate)
+import Data.List  (intercalate, partition)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Token)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing (Message)
-import DatabaseDesign.Ampersand.Core.ParseTree (P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
+import DatabaseDesign.Ampersand.Core.ParseTree (P_ViewD(..),P_SubIfc,Traced(..), Origin(..), SrcOrTgt(..),FilePos(..))
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (Declaration,Association)
 
 fatal,_notUsed :: Int -> String -> a
@@ -71,18 +71,46 @@ cannotDisambRel o lst = Errors [CTXE (origin o)$ "Cannot disambiguate the relati
 cannotDisamb :: (Traced a1, ShowADL a1) => a1 -> Guarded a
 cannotDisamb o = Errors [CTXE (origin o)$ "Cannot disambiguate: "++showADL o++"\n  Please add a signature to it"]
 
-mustBeOrdered' :: (Traced a1, ShowADL a2, ShowADL a3) =>
-                  a1 -> (SrcOrTgt, A_Concept, a2) -> (SrcOrTgt, A_Concept, a3) -> Guarded a
-mustBeOrdered' o (p1,c1,e1) (p2,c2,e2)
- = Errors [CTXE (origin o)$ "Type error, cannot match:\n  the concept "++showADL c1++" ("++show p1++" of "++showADL e1++")"
-                                          ++"\n  and concept "++showADL c2++" ("++show p2++" of "++showADL e2++")."
-                   ++"\n  if you think there is no type error, add an order between concepts "++showADL c1++" and "++showADL c2++"."]
-mustBeOrdered :: (Traced a1, Association a2, ShowADL a2, Association a3, ShowADL a3)
-              => a1 -> (SrcOrTgt, a2) -> (SrcOrTgt, a3) -> Guarded a
-mustBeOrdered o (p1,e1) (p2,e2)
- = mustBeOrdered' o (p1,c1,e1) (p2,c2,e2)
- where c1 = case p1 of {Src -> source e1;Tgt->target e1}
-       c2 = case p2 of {Src -> source e2;Tgt->target e2}
+uniqueNames :: (Identified a, Traced a) =>
+                     [a] -> Guarded ()
+uniqueNames a = case findDuplicates (map name a) of
+                  [] -> pure ()
+                  [r] -> Errors [CTXE (origin (head a))$ "Names / labels must be unique. "++show r++", however, is not."]
+                  r -> Errors [CTXE (origin (head a))$ "Names / labels must be unique. The following are not: "++concat ["\n  - "++l'|l'<-r]]
+findDuplicates :: Eq a => [a] -> [a]
+findDuplicates [] = []
+findDuplicates (a:as)
+ = case (partition (== a) as) of
+    ([],r) -> findDuplicates r
+    (_,r) -> a:findDuplicates r
+
+class ErrorConcept a where
+  showEC :: a -> String
+  showMini :: a -> String
+
+instance ErrorConcept (P_ViewD a) where
+  showEC x = name (vd_cpt x) ++" given in VIEW "++vd_lbl x
+  showMini x = showADL (vd_cpt x)
+
+instance (ShowADL a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
+  showEC (p1,c1,e1) = showADL c1++" ("++show p1++" of "++showADL e1++")"
+  showMini (_,c1,_) = showADL c1
+
+instance (ShowADL a2, Association a2) => ErrorConcept (SrcOrTgt, a2) where
+  showEC (p1,e1)
+   = case p1 of
+      Src -> showEC (p1,source e1,e1)
+      Tgt -> showEC (p1,target e1,e1)
+  showMini (p1,e1)
+   = case p1 of
+      Src -> showMini (p1,source e1,e1)
+      Tgt -> showMini (p1,target e1,e1)
+
+mustBeOrdered :: (Traced a1, ErrorConcept a2, ErrorConcept a3) => a1 -> a2 -> a3 -> Guarded a
+mustBeOrdered o a b
+ = Errors [CTXE (origin o)$ "Type error, cannot match:\n  the concept "++showEC a
+                                          ++"\n  and concept "++showEC b
+                   ++"\n  if you think there is no type error, add an order between concepts "++showMini a++" and "++showMini b++"."]
 
 mustBeOrderedLst :: (Traced o, ShowADL o, ShowADL a) => o -> [(A_Concept, SrcOrTgt, a)] -> Guarded b
 mustBeOrderedLst o lst
