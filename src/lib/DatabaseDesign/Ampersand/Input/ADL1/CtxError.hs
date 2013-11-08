@@ -166,6 +166,6 @@ showErr (PE s)
  = show s
 
 showFullOrig :: Origin -> String
-showFullOrig (FileLoc (FilePos (_,DatabaseDesign.Ampersand.ADL1.Pos l c,t)))
-              = "Error at symbol "++ t ++ " at line " ++ show l++" : "++show c
+showFullOrig (FileLoc (FilePos (filename,DatabaseDesign.Ampersand.ADL1.Pos l c,t)))
+              = "Error at symbol "++ t ++ " in file " ++ filename++" at line " ++ show l++" : "++show c
 showFullOrig x = show x
