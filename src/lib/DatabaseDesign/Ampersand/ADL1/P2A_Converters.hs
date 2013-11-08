@@ -201,7 +201,7 @@ pCtx2aCtx
                             ] of
                             [] -> pure (Just (Box (findConceptOrONE (head r)) (map fst lst)))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
-       ) <?> (const <$> traverse typecheckObjDef l <*> uniqueNames l)
+       ) <?> (traverse typecheckObjDef l <* uniqueNames l)
     
     
     typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
