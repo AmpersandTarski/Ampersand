@@ -271,11 +271,6 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                              }
                     rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
                     rulid _ = fatal 226 "pRuleDef is expecting a file location."
-                    pMessage :: Parser Token P_Markup
-                    pMessage = P_Markup <$ pKey "MESSAGE" 
-                                       <*> optional pLanguageRef
-                                       <*> optional pTextMarkup
-                                       <*> (pString <|> pExpl)
                     pViolation :: Parser Token P_PairView
                     pViolation = id <$ pKey "VIOLATION" <*> pPairView
                
@@ -566,7 +561,13 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                       <*> (pString <|> pExpl)
       where rebuild lang fmt mkup =
                PMeaning (P_Markup lang fmt mkup)
-
+   pMessage :: Parser Token PMessage
+   pMessage = rebuild <$ pKey "MESSAGE" 
+                      <*> optional pLanguageRef
+                      <*> optional pTextMarkup
+                      <*> (pString <|> pExpl)
+      where rebuild lang fmt mkup =
+               PMessage (P_Markup lang fmt mkup)
                               
 {-  Basically we would have the following expression syntax:
 pRule ::= pTrm1   "="    pTerm                           |
