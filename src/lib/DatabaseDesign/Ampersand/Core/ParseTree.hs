@@ -20,7 +20,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_ViewDef , P_ViewSegment
    , P_ViewD(..) , P_ViewSegmt(..)
    
-   , PPurpose(..),PRef2Obj(..),PMeaning(..)
+   , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
    
    , P_Concept(..), P_Sign(..)
    
@@ -318,7 +318,7 @@ where
            , rr_exp ::  (Term TermPrim)   -- ^ The rule expression 
            , rr_fps ::  Origin            -- ^ Position in the Ampersand file
            , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
-           , rr_msg ::  [P_Markup]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+           , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
            , rr_viol :: Maybe P_PairView  -- ^ Custom presentation for violations, currently only in a single language
            } deriving Show
 
@@ -330,7 +330,8 @@ where
 
    data PMeaning = PMeaning P_Markup
             deriving Show
-
+   data PMessage = PMessage P_Markup
+            deriving Show
    data P_Markup = 
        P_Markup  { mLang ::   Maybe Lang
                  , mFormat :: Maybe PandocFormat

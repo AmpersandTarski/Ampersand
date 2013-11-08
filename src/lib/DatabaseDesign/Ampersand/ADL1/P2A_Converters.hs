@@ -58,8 +58,8 @@ pCtx2aCtx
  = (\pats procs rules identdefs viewdefs interfaces purposes udpops sqldefs phpdefs
      -> ACtx{ ctxnm = n1
             , ctxpos = n2
-            , ctxlang = maybeLang lang
-            , ctxmarkup = maybeForm pandocf
+            , ctxlang = deflangCtxt
+            , ctxmarkup = deffrmtCtxt
             , ctxthms = n3
             , ctxpats = pats            --  The patterns defined in this context
             , ctxprocs = procs          --  The processes defined in this context
@@ -103,10 +103,14 @@ pCtx2aCtx
     soloConcs :: [String]
     soloConcs = filter (isInSystem genLattice) (Set.toList allConcs)
     
+    deflangCtxt = fromMaybe English lang
+    deffrmtCtxt = fromMaybe HTML pandocf
+
     decls = ctxDecls++patDecls++patProcs
-    ctxDecls = [ pDecl2aDecl n1 pDecl         | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
-    patDecls = [ pDecl2aDecl (name pat) pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
-    patProcs = [ pDecl2aDecl (name prc) pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
+    ctxDecls = [ pDecl2aDecl n1         deflangCtxt deffrmtCtxt pDecl | pDecl<-p_declarations ] --  The declarations defined in this context, outside the scope of patterns
+    patDecls = [ pDecl2aDecl (name pat) deflangCtxt deffrmtCtxt pDecl | pat<-p_patterns, pDecl<-pt_dcs pat ] --  The declarations defined in all patterns within this context.
+    patProcs = [ pDecl2aDecl (name prc) deflangCtxt deffrmtCtxt pDecl | prc<-p_processes, pDecl<-procDcls prc ] --  The declarations defined in all processes within this context.
+      
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith (++) [(SignOrd$ sign d,[d]) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap
@@ -344,7 +348,7 @@ pCtx2aCtx
                      , prcEnd = posEnd
                      , prcRules = ruls'
                      , prcGens = map pGen2aGen gens
-                     , prcDcls = [ pDecl2aDecl nm pDecl | pDecl<-dcls ]
+                     , prcDcls = [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
                      , prcUps = pops'
                      , prcRRuls = fatal 342 "Don't know where to get the process rules"
                      , prcRRels = fatal 343 "Don't know where to get the process relations"
@@ -368,7 +372,7 @@ pCtx2aCtx
                  , ptend = pt_end ppat
                  , ptrls = prules
                  , ptgns = agens'
-                 , ptdcs = [ pDecl2aDecl (name ppat) pDecl | pDecl<-pt_dcs ppat ]
+                 , ptdcs = [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
                  , ptups = fatal 365 "Don't know where to get the population tuples" -- population tuples?
                  , ptrruls = fatal 366 "Don't know where to get the process rules" -- The assignment of roles to rules.
                  , ptrrels = fatal 367 "Don't know where to get the process relations" -- (rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
@@ -429,7 +433,7 @@ pCtx2aCtx
      = (\ obj
               -> Expl { explPos = orig
                       , explObj = obj
-                      , explMarkup = pMarkup2aMarkup pmarkup
+                      , explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup
                       , explUserdefd = True
                       , explRefId = refId
                       })
@@ -458,29 +462,31 @@ pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs --  in order to allow multiple declarations of the same relation, change  'cannotDisambRel o rs'  to  'pure (head rs)'
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
-maybeLang :: Maybe Lang -> Lang
-maybeLang = fromMaybe English
-
-maybeForm :: Maybe PandocFormat -> PandocFormat
-maybeForm = fromMaybe HTML
 
 --  data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving Show
 --  data PMeaning = PMeaning P_Markup
 
-pMarkup2aMarkup :: P_Markup -> A_Markup 
-pMarkup2aMarkup
+pMarkup2aMarkup :: 
+     Lang           -- The default language 
+  -> PandocFormat   -- The default pandocFormat
+  -> P_Markup -> A_Markup 
+pMarkup2aMarkup defLanguage defFormat
    P_Markup  { mLang = ml
              , mFormat = mpdf
              , mString = str
              }
- = A_Markup { amLang = maybeLang ml
+ = A_Markup { amLang = fromMaybe defLanguage ml
             , amFormat = fmt
             , amPandoc = string2Blocks fmt str
             }
      where
-       fmt = maybeForm mpdf
-pDecl2aDecl :: String -> P_Declaration -> Declaration
-pDecl2aDecl patNm pd
+       fmt = fromMaybe defFormat mpdf
+pDecl2aDecl :: 
+     String         -- The name of the pattern
+  -> Lang           -- The default language 
+  -> PandocFormat   -- The default pandocFormat
+  -> P_Declaration -> Declaration
+pDecl2aDecl patNm defLanguage defFormat pd
  = Sgn { decnm   = dec_nm pd
        , decsgn  = pSign2aSign (dec_sign pd)
        , decprps = dec_prps pd
@@ -488,7 +494,7 @@ pDecl2aDecl patNm pd
        , decprL  = dec_prL pd
        , decprM  = dec_prM pd
        , decprR  = dec_prR pd
-       , decMean = AMeaning [ pMarkup2aMarkup meaning | PMeaning meaning<-dec_Mean pd ]
+       , decMean = AMeaning [ pMarkup2aMarkup defLanguage defFormat meaning | PMeaning meaning<-dec_Mean pd ]
        , decConceptDef = dec_conceptDef pd
        , decfpos = dec_fpos pd 
        , decissX = True
