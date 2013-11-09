@@ -182,7 +182,7 @@ pCtx2aCtx
                     r  -> if (name c) `elem` r
                           then pure (obj expr (Just$ b))
                           else mustBeBound (origin o) [(Tgt,fst expr)]
-       ) <?> ((,) <$> typecheckTerm ctx <*> pSubi2aSubi subs)
+       ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
       obj (e,(sr,_)) s
        = ( Obj { objnm = nm
@@ -192,18 +192,17 @@ pCtx2aCtx
                , objstrs = ostrs
                }, sr)
 
-    pSubi2aSubi :: Maybe (P_SubIfc (TermPrim, DisambPrim)) -> Guarded (Maybe SubInterface)
-    pSubi2aSubi Nothing = pure Nothing
-    pSubi2aSubi (Just (P_InterfaceRef _ s)) = pure (Just (InterfaceRef s))
-    pSubi2aSubi (Just o@(P_Box _ [])) = Just <$> hasNone [] o
-    pSubi2aSubi (Just o@(P_Box _ l))
+    pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
+    pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
+    pSubi2aSubi o@(P_Box _ []) = hasNone [] o
+    pSubi2aSubi o@(P_Box _ l)
      = (\lst -> case findExact genLattice (foldr1 Join (map (Atom . name . source . objctx . fst) lst)) of
                   [] -> mustBeOrderedLst o [(source (objctx a),Src, a) | (a,_) <- lst]
                   r -> case [ objctx a
                             | (a,False) <- lst
                             , not ((name . source . objctx $ a) `elem` r)
                             ] of
-                            [] -> pure (Just (Box (findConceptOrONE (head r)) (map fst lst)))
+                            [] -> pure (Box (findConceptOrONE (head r)) (map fst lst))
                             lst' -> mustBeBound (origin o) [(Src,expr)| expr<-lst']
        ) <?> (traverse typecheckObjDef l <* uniqueNames l)
     
@@ -381,11 +380,9 @@ pCtx2aCtx
                  , ptxps = xpls
                  }
         agens'   = map (pGen2aGen) (pt_gns ppat)
-        parRuls  = traverse (\x -> pRul2aRul' [rol | (rol,rul) <- rruls, name x == rul] (name ppat) x) . pt_rls
-        rruls :: [(String,String)]
-        rruls = [(rol,rul) | prr <- pt_rus ppat, rol<-mRoles prr, rul<-mRules prr]
+        parRuls  = traverse (\x -> pRul2aRul' [rol | prr <- pt_rus ppat, rul<-mRules prr, name x == rul, rol<-mRoles prr] (name ppat) x) . pt_rls
         rrels :: [(String,TermPrim)]
-        rrels = [(rol,rel) | prr <- pt_res ppat, rol<-rr_Roles prr, rel<-rr_Rels prr]
+        rrels =  [(rol,rel) | prr <- pt_res ppat, rol<-rr_Roles prr, rel<-rr_Rels prr]
         parKeys  = traverse pIdentity2aIdentity . pt_ids
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
@@ -402,21 +399,22 @@ pCtx2aCtx
                        , rr_fps = orig
                        -- , rr_mean = meanings
                        -- , rr_msg = msgs
-                       -- , rr_viol = viols
+                       , rr_viol = viols
                        }
-     = (\ exp' ->   Ru { rrnm = nm
-                       , rrexp = exp'
-                       , rrfps = orig
-                       , rrmean = fatal 389 "Don't know where to get the meanings (of rules)"
-                       , rrmsg = fatal 390 "Don't know where to get the messages (of rules)"
-                       , rrviol = fatal 391 "Don't know where to get the violations (of rules)"
-                       , rrtyp = sign exp'
-                       , rrdcl = Nothing
-                       , r_env = env
-                       , r_usr = fatal 392 "Don't know where to get the usr (of rules)"
-                       , r_sgl = not (null sgl)
-                       , srrel = fatal 394 "Don't know where to get the rel (of rules)"
-                       }) <$> term2Expr expr
+     = (\ exp' vls 
+       -> Ru { rrnm = nm
+             , rrexp = exp'
+             , rrfps = orig
+             , rrmean = fatal 389 "Don't know where to get the meanings (of rules)"
+             , rrmsg = fatal 390 "Don't know where to get the messages (of rules)"
+             , rrviol = vls
+             , rrtyp = sign exp'
+             , rrdcl = Nothing
+             , r_env = env
+             , r_usr = fatal 392 "Don't know where to get the usr (of rules)"
+             , r_sgl = not (null sgl)
+             , srrel = fatal 394 "Don't know where to get the rel (of rules)"
+             }) <$> term2Expr expr <*> (maybeOverGuarded pViol2aViol viols)
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity
             P_Id { ix_pos = orig
@@ -433,6 +431,14 @@ pCtx2aCtx
     pIdentSegment2IdentSegment :: P_IdentSegment -> Guarded IdentitySegment
     pIdentSegment2IdentSegment (P_IdentExp ojd)
      = IdentityExp <$> pObjDef2aObjDef ojd
+    
+    
+    pViol2aViol :: P_PairView -> Guarded PairView
+    pViol2aViol (P_PairView segs) = PairView <$> traverse pPairvSeg2PairvSeg segs
+    
+    pPairvSeg2PairvSeg :: P_PairViewSegment -> Guarded PairViewSegment
+    pPairvSeg2PairvSeg (P_PairViewText x) = pure (PairViewText x)
+    pPairvSeg2PairvSeg (P_PairViewExp s x) = PairViewExp s <$> term2Expr x -- TODO: typecheck & disambiguate
     
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp PRef2 { pexPos = orig
@@ -542,6 +548,10 @@ pGen2aGen pg@P_Cy{}
 
 findSign :: String -> String -> Sign
 findSign a b = Sign (findConceptOrONE a) (findConceptOrONE b)
+
+maybeOverGuarded :: Applicative f => (t -> f a) -> Maybe t -> f (Maybe a)
+maybeOverGuarded f Nothing = pure Nothing
+maybeOverGuarded f (Just x) = Just <$> f x
 
 data TT a  -- (In order of increasing strictness. If you are unsure which to pick: just use MBE, it'll usually work fine)
  = UNI a a -- find the union of these types, return it.
