@@ -334,8 +334,8 @@ pCtx2aCtx
                       , procRules = ruls
                       , procGens = gens
                       , procDcls = dcls
-                      -- , procRRuls = rolruls
-                      -- , procRRels = rolrels
+                      , procRRuls = rolruls
+                      , procRRels = rolrels
                       -- , procCds = cdefs
                       , procIds = idefs
                       , procVds = viewdefs
@@ -346,17 +346,17 @@ pCtx2aCtx
             ->  Proc { prcNm = nm
                      , prcPos = orig
                      , prcEnd = posEnd
-                     , prcRules = ruls'
+                     , prcRules = map snd ruls'
                      , prcGens = map pGen2aGen gens
                      , prcDcls = [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
                      , prcUps = pops'
-                     , prcRRuls = fatal 342 "Don't know where to get the process rules"
+                     , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
                      , prcRRels = fatal 343 "Don't know where to get the process relations"
                      , prcIds = idefs'
                      , prcVds = viewdefs'
                      , prcXps = purposes'
                      }
-       ) <$> traverse (pRul2aRul (fatal 355 "Don't know where to get the people responsible for a rule in a process") nm) ruls
+       ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, rul <- mRules rr, name x == rul, rol <- mRoles rr] nm x) ruls
          <*> traverse pPop2aPop pops
          <*> traverse pIdentity2aIdentity idefs
          <*> traverse pViewDef2aViewDef viewdefs
