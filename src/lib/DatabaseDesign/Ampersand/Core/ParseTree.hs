@@ -278,6 +278,15 @@ where
       Pfull orig _ _ -> orig
       Prel orig _    -> orig
       PTrel orig _ _ -> orig
+   instance Identified TermPrim where
+    name e = case e of
+      PI _        -> "I"
+      Pid _ _     -> "I"
+      Patm _ s _  -> s
+      PVee _      -> "V"
+      Pfull _ _ _ -> "V"
+      Prel _ r    -> r
+      PTrel _ r _ -> r
       
    instance Traced a => Traced (Term a) where
     origin e = case e of
