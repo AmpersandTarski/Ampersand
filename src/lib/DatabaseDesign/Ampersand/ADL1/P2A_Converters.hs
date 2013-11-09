@@ -79,7 +79,7 @@ pCtx2aCtx
             }
     ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
       <*> traverse pProc2aProc p_processes         --  The processes defined in this context
-      <*> traverse (pRul2aRul n1) p_rules          --  All user defined rules in this context, but outside patterns and outside processes
+      <*> traverse (pRul2aRul [] n1) p_rules          --  All user defined rules in this context, but outside patterns and outside processes
       <*> traverse pIdentity2aIdentity p_identdefs --  The identity definitions defined in this context, outside the scope of patterns
       <*> traverse pViewDef2aViewDef p_viewdefs    --  The view definitions defined in this context, outside the scope of patterns
       <*> traverse pIfc2aIfc p_interfaces          --  The interfaces defined in this context, outside the scope of patterns
@@ -356,7 +356,7 @@ pCtx2aCtx
                      , prcVds = viewdefs'
                      , prcXps = purposes'
                      }
-       ) <$> traverse (pRul2aRul nm) ruls
+       ) <$> traverse (pRul2aRul (fatal 355 "Don't know where to get the people responsible for a rule in a process") nm) ruls
          <*> traverse pPop2aPop pops
          <*> traverse pIdentity2aIdentity idefs
          <*> traverse pViewDef2aViewDef viewdefs
@@ -370,24 +370,34 @@ pCtx2aCtx
          = A_Pat { ptnm  = name ppat
                  , ptpos = pt_pos ppat
                  , ptend = pt_end ppat
-                 , ptrls = prules
+                 , ptrls = map snd prules
                  , ptgns = agens'
                  , ptdcs = [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
                  , ptups = fatal 365 "Don't know where to get the population tuples" -- population tuples?
-                 , ptrruls = fatal 366 "Don't know where to get the process rules" -- The assignment of roles to rules.
+                 , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
                  , ptrrels = fatal 367 "Don't know where to get the process relations" -- (rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                  , ptids = keys'
                  , ptvds = views'
                  , ptxps = xpls
                  }
         agens'   = map (pGen2aGen) (pt_gns ppat)
-        parRuls  = traverse (pRul2aRul (name ppat)) . pt_rls
+        parRuls  = traverse (\x -> pRul2aRul' [rol | (rol,rul) <- rruls, name x == rul] (name ppat) x) . pt_rls
+        rruls :: [(String,String)]
+        rruls = [(rol,rul) | prr <- pt_rus ppat, rol<-mRoles prr, rul<-mRules prr]
+        rrels :: [(String,TermPrim)]
+        rrels = [(rol,rel) | prr <- pt_res ppat, rol<-rr_Roles prr, rel<-rr_Rels prr]
         parKeys  = traverse pIdentity2aIdentity . pt_ids
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
-     
-    pRul2aRul :: String -> P_Rule -> Guarded Rule
-    pRul2aRul env P_Ru { rr_nm = nm
+    
+    pRul2aRul':: [String] -- list of roles for this rule
+              -> String -- environment name (pattern / proc name)
+              -> P_Rule -> Guarded ([String],Rule)  -- roles in the lhs
+    pRul2aRul' a b c = fmap ((,) a) (pRul2aRul a b c)
+    pRul2aRul :: [String] -- list of roles for this rule
+              -> String -- environment name (pattern / proc name)
+              -> P_Rule -> Guarded Rule
+    pRul2aRul sgl env P_Ru { rr_nm = nm
                        , rr_exp = expr
                        , rr_fps = orig
                        -- , rr_mean = meanings
@@ -404,7 +414,7 @@ pCtx2aCtx
                        , rrdcl = Nothing
                        , r_env = env
                        , r_usr = fatal 392 "Don't know where to get the usr (of rules)"
-                       , r_sgl = fatal 393 "Don't know where to get the sgl (of rules)"
+                       , r_sgl = not (null sgl)
                        , srrel = fatal 394 "Don't know where to get the rel (of rules)"
                        }) <$> term2Expr expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
