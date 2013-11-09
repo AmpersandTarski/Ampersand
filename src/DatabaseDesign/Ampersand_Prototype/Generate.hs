@@ -4,7 +4,7 @@ module DatabaseDesign.Ampersand_Prototype.Generate (generateAll) where
 
 import DatabaseDesign.Ampersand_Prototype.CoreImporter 
 -- import DatabaseDesign.Ampersand.Fspec (showPrf,cfProof,lookupCpt,getSpecializations,getGeneralizations)
-import Prelude hiding (writeFile,readFile,getContents,catch,exp)
+import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
 import Data.Maybe
