@@ -433,12 +433,12 @@ pCtx2aCtx
      = IdentityExp <$> pObjDef2aObjDef ojd
     
     
-    pViol2aViol :: P_PairView -> Guarded PairView
-    pViol2aViol (P_PairView segs) = PairView <$> traverse pPairvSeg2PairvSeg segs
+    pViol2aViol :: (PairView (Term TermPrim)) -> Guarded (PairView Expression)
+    pViol2aViol (PairView segs) = PairView <$> traverse pPairvSeg2PairvSeg segs
     
-    pPairvSeg2PairvSeg :: P_PairViewSegment -> Guarded PairViewSegment
-    pPairvSeg2PairvSeg (P_PairViewText x) = pure (PairViewText x)
-    pPairvSeg2PairvSeg (P_PairViewExp s x) = PairViewExp s <$> term2Expr x -- TODO: typecheck & disambiguate
+    pPairvSeg2PairvSeg :: (PairViewSegment (Term TermPrim)) -> Guarded (PairViewSegment Expression)
+    pPairvSeg2PairvSeg (PairViewText x) = pure (PairViewText x)
+    pPairvSeg2PairvSeg (PairViewExp s x) = PairViewExp s <$> term2Expr x -- TODO: typecheck & disambiguate
     
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp PRef2 { pexPos = orig
