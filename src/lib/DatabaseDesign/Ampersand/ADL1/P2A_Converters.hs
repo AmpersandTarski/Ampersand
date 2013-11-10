@@ -389,20 +389,25 @@ pCtx2aCtx
     
     pRul2aRul':: [String] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
-              -> P_Rule -> Guarded ([String],Rule)  -- roles in the lhs
+              -> (P_Rule TermPrim) -> Guarded ([String],Rule)  -- roles in the lhs
     pRul2aRul' a b c = fmap ((,) a) (pRul2aRul a b c)
     pRul2aRul :: [String] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
-              -> P_Rule -> Guarded Rule
-    pRul2aRul sgl env P_Ru { rr_nm = nm
+              -> (P_Rule TermPrim) -> Guarded Rule
+    pRul2aRul rol env = typeCheckRul rol env . disambiguate termPrimDisAmb
+    typeCheckRul :: [String] -- list of roles for this rule
+              -> String -- environment name (pattern / proc name)
+              -> (P_Rule (TermPrim,DisambPrim)) -> Guarded Rule
+    typeCheckRul sgl env P_Ru { rr_nm = nm
                        , rr_exp = expr
                        , rr_fps = orig
                        -- , rr_mean = meanings
                        -- , rr_msg = msgs
                        , rr_viol = viols
                        }
-     = (\ exp' vls 
-       -> Ru { rrnm = nm
+     = (\ (exp',_)
+       -> (\ vls ->
+          Ru { rrnm = nm
              , rrexp = exp'
              , rrfps = orig
              , rrmean = fatal 389 "Don't know where to get the meanings (of rules)"
@@ -414,7 +419,9 @@ pCtx2aCtx
              , r_usr = fatal 392 "Don't know where to get the usr (of rules)"
              , r_sgl = not (null sgl)
              , srrel = fatal 394 "Don't know where to get the rel (of rules)"
-             }) <$> term2Expr expr <*> (maybeOverGuarded pViol2aViol viols)
+             }
+             ) <$> maybeOverGuarded (typeCheckPairView orig exp') viols
+          ) <?> typecheckTerm expr
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity
             P_Id { ix_pos = orig
@@ -432,22 +439,26 @@ pCtx2aCtx
     pIdentSegment2IdentSegment (P_IdentExp ojd)
      = IdentityExp <$> pObjDef2aObjDef ojd
     
-    
-    pViol2aViol :: (PairView (Term TermPrim)) -> Guarded (PairView Expression)
-    pViol2aViol (PairView segs) = PairView <$> traverse pPairvSeg2PairvSeg segs
-    
-    pPairvSeg2PairvSeg :: (PairViewSegment (Term TermPrim)) -> Guarded (PairViewSegment Expression)
-    pPairvSeg2PairvSeg (PairViewText x) = pure (PairViewText x)
-    pPairvSeg2PairvSeg (PairViewExp s x) = PairViewExp s <$> term2Expr x -- TODO: typecheck & disambiguate
-    
+    typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
+    typeCheckPairView o x (PairView lst)
+     = PairView <$> traverse (typeCheckPairViewSeg o x) lst
+    typeCheckPairViewSeg :: Origin -> Expression -> (PairViewSegment (Term (TermPrim, DisambPrim))) -> Guarded (PairViewSegment Expression)
+    typeCheckPairViewSeg _ _ (PairViewText x) = pure (PairViewText x)
+    typeCheckPairViewSeg o t (PairViewExp s x)
+     = (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (gc s t))) of
+                        [] -> mustBeOrdered o (Src,e) (s,t)
+                        lst -> if b || and (map (name (source e) `elem`) lst)
+                               then pure (PairViewExp s e)
+                               else mustBeBound o [(Src, e)]
+                        ) <?> typecheckTerm x
+
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp PRef2 { pexPos = orig
                       , pexObj = objref
                       , pexMarkup= pmarkup
                       , pexRefID = refId
                       }
-     = (\ obj
-              -> Expl { explPos = orig
+     = (\ obj -> Expl { explPos = orig
                       , explObj = obj
                       , explMarkup = pMarkup2aMarkup deflangCtxt deffrmtCtxt pmarkup
                       , explUserdefd = True
@@ -467,7 +478,7 @@ pCtx2aCtx
     pRefObj2aRefObj (PRef2Fspc        s ) = pure$ ExplContext s
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s = if null cs then fatal 460 ("There is no concept called "++s++". Please check for typing mistakes.") else head cs
-                         where cs = [cd | cd<-conceptDefs, name cd==s]
+              where cs = [cd | cd<-conceptDefs, name cd==s]
     conceptDefs = p_conceptdefs++concat (map pt_cds p_patterns)++concat (map procCds p_processes)
     
     

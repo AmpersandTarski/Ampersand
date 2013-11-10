@@ -9,7 +9,8 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Pattern(..)
    , RelConceptDef(..), P_Declaration(..)
    , Term(..), TermPrim(..)
-   , PairView(..), PairViewSegment(..), SrcOrTgt(..), isSrc
+   , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
+   , SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
    , P_Population(..)
@@ -59,7 +60,7 @@ where
             , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
             , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
             , ctx_PPrcs ::  [P_Process]      -- ^ The processes as defined by the parser
-            , ctx_rs ::     [P_Rule]         -- ^ All user defined rules in this context, but outside patterns and outside processes
+            , ctx_rs ::     [(P_Rule TermPrim)]         -- ^ All user defined rules in this context, but outside patterns and outside processes
             , ctx_ds ::     [P_Declaration]  -- ^ The declarations defined in this context, outside the scope of patterns
             , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
             , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -101,7 +102,7 @@ where
       = P_Prc { procNm :: String
               , procPos :: Origin             -- ^ the start position in the file
               , procEnd :: Origin             -- ^ the end position in the file
-              , procRules :: [P_Rule]         -- ^ the rules in this process
+              , procRules :: [(P_Rule TermPrim)]         -- ^ the rules in this process
               , procGens :: [P_Gen]           -- ^ the generalizations in this process
               , procDcls :: [P_Declaration]   -- ^ the relation declarations in this process
               , procRRuls :: [RoleRule]       -- ^ The assignment of roles to rules.
@@ -134,7 +135,7 @@ where
       = P_Pat { pt_nm :: String            -- ^ Name of this pattern
               , pt_pos :: Origin           -- ^ the starting position in the file in which this pattern was declared.
               , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-              , pt_rls :: [P_Rule]         -- ^ The user defined rules in this pattern
+              , pt_rls :: [(P_Rule TermPrim)]         -- ^ The user defined rules in this pattern
               , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
               , pt_dcs :: [P_Declaration]  -- ^ The declarations declared in this pattern
               , pt_rus :: [RoleRule]       -- ^ The assignment of roles to rules.
@@ -317,7 +318,17 @@ where
    data PairViewSegment a = PairViewText String
                           | PairViewExp SrcOrTgt a
             deriving Show
+   newtype PairViewTerm a = PairViewTerm (PairView (Term a))
+   newtype PairViewSegmentTerm a = PairViewSegmentTerm (PairViewSegment (Term a))
    
+   instance Traversable PairViewSegmentTerm where
+     traverse f (PairViewSegmentTerm x) = PairViewSegmentTerm <$> traverse (traverse f) x
+   instance Functor PairViewSegmentTerm where fmap = fmapDefault
+   instance Foldable PairViewSegmentTerm where foldMap = foldMapDefault
+   instance Traversable PairViewTerm where
+     traverse f (PairViewTerm x) = PairViewTerm <$> traverse (traverse f) x
+   instance Functor PairViewTerm where fmap = fmapDefault
+   instance Foldable PairViewTerm where foldMap = foldMapDefault
    instance Traversable PairViewSegment where
      traverse _ (PairViewText s) = pure (PairViewText s)
      traverse f (PairViewExp st x) = PairViewExp st <$> f x
@@ -329,19 +340,24 @@ where
    instance Foldable PairView where foldMap = foldMapDefault
    
    
-   data P_Rule  =
+   data P_Rule a  =
       P_Ru { rr_nm ::   String            -- ^ Name of this rule
-           , rr_exp ::  (Term TermPrim)   -- ^ The rule expression 
+           , rr_exp ::  (Term a)   -- ^ The rule expression 
            , rr_fps ::  Origin            -- ^ Position in the Ampersand file
            , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
            , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
-           , rr_viol :: Maybe (PairView (Term TermPrim))  -- ^ Custom presentation for violations, currently only in a single language
+           , rr_viol :: Maybe (PairView (Term a))  -- ^ Custom presentation for violations, currently only in a single language
            } deriving Show
 
-   instance Traced P_Rule where
+   instance Traced (P_Rule a) where
     origin = rr_fps
+   instance Functor P_Rule where fmap = fmapDefault
+   instance Foldable P_Rule where foldMap = foldMapDefault
+   instance Traversable P_Rule where
+    traverse f (P_Ru nm expr fps mean msg viol)
+     = (\e v -> P_Ru nm e fps mean msg v) <$> traverse f expr <*> traverse (traverse (traverse f)) viol
 
-   instance Identified P_Rule where
+   instance Identified (P_Rule a) where
     name = rr_nm
 
    data PMeaning = PMeaning P_Markup

@@ -42,6 +42,26 @@ class Disambiguatable d where
       , ( [(DisambPrim,SrcOrTgt)], [(DisambPrim,SrcOrTgt)] ) -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
       )
 
+instance Disambiguatable P_Rule where
+  disambInfo (P_Ru nm expr fps mean msg Nothing) x
+   = (P_Ru nm exp' fps mean msg Nothing, rt)
+   where (exp',rt) = disambInfo expr x
+  disambInfo (P_Ru nm expr fps mean msg (Just viol)) x
+   = (P_Ru nm exp' fps mean msg (Just viol'), rt)
+   where (exp',rt) = disambInfo expr x
+         (PairViewTerm viol',_)
+          = (disambInfo (PairViewTerm viol) rt)
+instance Disambiguatable PairViewTerm where
+  disambInfo (PairViewTerm (PairView lst)) x
+   = (PairViewTerm (PairView [pv' | pv <- lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
+     , ([],[])) -- unrelated
+instance Disambiguatable PairViewSegmentTerm where
+  disambInfo (PairViewSegmentTerm (PairViewText s)) _ = (PairViewSegmentTerm (PairViewText s), ([],[]))
+  disambInfo (PairViewSegmentTerm (PairViewExp st a)) (sr,tg) = (PairViewSegmentTerm (PairViewExp st res), rt)
+    where t = case st of
+               Src -> sr
+               Tgt -> tg
+          (res,rt) = disambInfo a (t,[])
 instance Disambiguatable P_ViewD where
   disambInfo (P_Vd { vd_pos = o
                    , vd_lbl = s
