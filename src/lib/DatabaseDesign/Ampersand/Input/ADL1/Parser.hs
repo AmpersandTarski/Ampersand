@@ -271,15 +271,15 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                              }
                     rulid (FileLoc(FilePos (_,Pos l _,_))) = "rule@line"++show l
                     rulid _ = fatal 226 "pRuleDef is expecting a file location."
-                    pViolation :: Parser Token P_PairView
+                    pViolation :: Parser Token (PairView (Term TermPrim))
                     pViolation = id <$ pKey "VIOLATION" <*> pPairView
                
-                    pPairView :: Parser Token P_PairView
-                    pPairView = P_PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
+                    pPairView :: Parser Token (PairView (Term TermPrim))
+                    pPairView = PairView <$ pSpec '(' <*> pList1Sep (pSpec ',') pPairViewSegment <* pSpec ')'
                
-                    pPairViewSegment :: Parser Token P_PairViewSegment
-                    pPairViewSegment = P_PairViewExp <$> pSrcOrTgt <*>  pTerm
-                                   <|> P_PairViewText <$ pKey "TXT" <*> pString
+                    pPairViewSegment :: Parser Token (PairViewSegment (Term TermPrim))
+                    pPairViewSegment = PairViewExp <$> pSrcOrTgt <*>  pTerm
+                                   <|> PairViewText <$ pKey "TXT" <*> pString
    
    pSrcOrTgt :: Parser Token SrcOrTgt                    
    pSrcOrTgt = Src <$ pKey "SRC" <|> Tgt <$ pKey "TGT"

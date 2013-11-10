@@ -124,11 +124,11 @@ where
                      , (expressionsIn.rrviol) r
                      ]
    
-   instance ConceptStructure PairView where
+   instance ConceptStructure (PairView Expression) where
     concs         (PairView ps) = concs         ps
     expressionsIn (PairView ps) = expressionsIn ps
      
-   instance ConceptStructure PairViewSegment where
+   instance ConceptStructure (PairViewSegment Expression) where
     concs       (PairViewText _)  = []
     concs       (PairViewExp _ x) = concs x
     expressionsIn    (PairViewText _)  = []

@@ -189,7 +189,7 @@ instance ShowADL Pattern where
       showRR pt = intercalate "\n  " [ "ROLE "++role++" EDITS "++intercalate ", " [name rul | (_,rul)<-cl]
                                       | cl<-eqCl fst (mayEdit pt), let role = fst (head cl)]
 
-instance ShowADL PairViewSegment where
+instance ShowADL (PairViewSegment Expression) where
  showADL (PairViewText str)         = "TXT " ++ show str
  showADL (PairViewExp srcOrTgt e) = showADL srcOrTgt ++ " " ++ showADL e
 

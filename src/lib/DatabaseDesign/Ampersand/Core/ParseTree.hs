@@ -9,7 +9,7 @@ module DatabaseDesign.Ampersand.Core.ParseTree (
    , P_Pattern(..)
    , RelConceptDef(..), P_Declaration(..)
    , Term(..), TermPrim(..)
-   , P_PairView(..), P_PairViewSegment(..), SrcOrTgt(..), isSrc
+   , PairView(..), PairViewSegment(..), SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
    , P_Population(..)
@@ -45,7 +45,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
    import Data.Traversable
    import Data.Foldable
-   import Prelude hiding (foldr)
+   import Prelude hiding (foldr, sequence)
    import Control.Applicative
 
    fatal :: Int -> String -> a
@@ -72,13 +72,10 @@ where
             , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
             , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
             } deriving Show
-
---   instance Show P_Context where
---     showsPrec _ = showString . ctx_nm
-
+   
    instance Eq P_Context where
      c1 == c2  =  name c1 == name c2
-
+   
    instance Identified P_Context where
      name = ctx_nm
    
@@ -316,19 +313,29 @@ where
    isSrc Src = True
    isSrc Tgt = False
    
-   data P_PairView = P_PairView { ppv_segs :: [P_PairViewSegment] } deriving Show
-
-   data P_PairViewSegment = P_PairViewText String
-                          | P_PairViewExp SrcOrTgt (Term TermPrim)
+   data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving Show
+   data PairViewSegment a = PairViewText String
+                          | PairViewExp SrcOrTgt a
             deriving Show
-
+   
+   instance Traversable PairViewSegment where
+     traverse _ (PairViewText s) = pure (PairViewText s)
+     traverse f (PairViewExp st x) = PairViewExp st <$> f x
+   instance Functor PairViewSegment where fmap = fmapDefault
+   instance Foldable PairViewSegment where foldMap = foldMapDefault
+   instance Traversable PairView where
+     traverse f (PairView s) = PairView <$> traverse (traverse f) s
+   instance Functor PairView where fmap = fmapDefault
+   instance Foldable PairView where foldMap = foldMapDefault
+   
+   
    data P_Rule  =
       P_Ru { rr_nm ::   String            -- ^ Name of this rule
            , rr_exp ::  (Term TermPrim)   -- ^ The rule expression 
            , rr_fps ::  Origin            -- ^ Position in the Ampersand file
            , rr_mean :: [PMeaning]        -- ^ User-specified meanings, possibly more than one, for multiple languages.
            , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
-           , rr_viol :: Maybe P_PairView  -- ^ Custom presentation for violations, currently only in a single language
+           , rr_viol :: Maybe (PairView (Term TermPrim))  -- ^ Custom presentation for violations, currently only in a single language
            } deriving Show
 
    instance Traced P_Rule where

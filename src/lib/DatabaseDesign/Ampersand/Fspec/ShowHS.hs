@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier)
 where
    import DatabaseDesign.Ampersand.Core.ParseTree
@@ -593,10 +593,10 @@ where
 -- \*** Eigenschappen met betrekking tot: PairView                      ***
 -- \***********************************************************************
 
-   instance ShowHS PairView where
+   instance ShowHS (PairView Expression) where
      showHS flags indent (PairView pvs) = "PairView "++showHS flags indent pvs
      
-   instance ShowHS PairViewSegment where
+   instance ShowHS (PairViewSegment Expression) where
      showHS _     _ (PairViewText txt) = "PairViewText "++show txt
      showHS flags _ (PairViewExp srcOrTgt e) = "PairViewExp "++show srcOrTgt++" ("++showHS flags "" e++")"
 

@@ -14,7 +14,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree as X (
          , MetaObj(..)
          , P_Process(..), P_RoleRelation(..), RoleRule(..)
          , P_Pattern(..)
-         , P_PairView(..), P_PairViewSegment(..)
+         , PairView(..), PairViewSegment(..)
          , SrcOrTgt(..)
          , P_Rule(..)
          , P_IdentDef(..), P_IdentSegment(..)
@@ -50,8 +50,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
          ,Declaration(..),decusr
          ,Interface(..)
          ,Pattern(..)
-         ,PairView(..)
-         ,PairViewSegment(..) 
          ,Rule(..)
          ,RuleType(..)
          ,RoleRelation(..)
