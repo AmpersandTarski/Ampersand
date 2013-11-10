@@ -110,7 +110,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
    data ContextElement = CMeta Meta
                        | CPat P_Pattern
                        | CPrc P_Process
-                       | CRul P_Rule
+                       | CRul (P_Rule TermPrim)
                        | CCfy P_Gen
                        | CRel P_Declaration
                        | CCon ConceptDef
@@ -176,7 +176,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                   Pe <$> pPurpose      <|>
                   Pp <$> pPopulation
 
-   data PatElem = Pr P_Rule
+   data PatElem = Pr (P_Rule TermPrim)
                 | Py P_Gen
                 | Pd P_Declaration 
                 | Pm RoleRule
@@ -222,7 +222,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                    PrE <$> pPurpose      <|>
                    PrP <$> pPopulation
 
-   data ProcElem = PrR P_Rule
+   data ProcElem = PrR (P_Rule TermPrim)
                  | PrY P_Gen
                  | PrD P_Declaration
                  | PrM RoleRule
@@ -253,7 +253,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                     h cs = cs
 
    
-   pRuleDef :: Parser Token P_Rule
+   pRuleDef :: Parser Token (P_Rule TermPrim)
    pRuleDef =  rebuild <$> pKey_pos "RULE"
                        <*> optional (pADLid <* pKey ":" )
                        <*> pRule
