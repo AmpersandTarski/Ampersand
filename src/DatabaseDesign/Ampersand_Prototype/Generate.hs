@@ -103,7 +103,7 @@ generateTableInfos fSpec =
                                           ", 'table' => "++showPhpStr (name table)
                                         ++", 'srcCol' => "++showPhpStr (fldname srcCol)
                                         ++", 'tgtCol' => "++showPhpStr (fldname tgtCol)++")"] 
-         | decl@Sgn{} <- declsUsedIn fSpec
+         | decl@Sgn{} <- allDecls fSpec
          , let (table,srcCol,tgtCol) = fromMaybe (fatal 105 $ "No table info for declaration " ++ show decl)
                                                  (getDeclarationTableInfo fSpec decl)
          ])) ++
