@@ -340,7 +340,7 @@ where
                absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f' _<-rs++exprUni2list r, t'==f']++[(x, exprIsc2list l>-[x]) | x@(ECpl t' _)<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
                absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f' _<-rs++exprUni2list l, t'==f']++[(x, exprIsc2list r>-[x]) | x@(ECpl t' _)<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
      nM _ (EFlp e _) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>") -}
-     nM _ x _               = fatal 999345 "please retypecheck!" --(x,[],"<=>")
+     nM _ x _               = (x,[],"<=>")
 
    exprIsc2list, exprUni2list, exprCps2list, exprRad2list :: Expression -> [Expression]
    exprIsc2list (EIsc (l,r) _) = exprIsc2list l++exprIsc2list r

@@ -360,9 +360,9 @@ where
    instance Identified (P_Rule a) where
     name = rr_nm
 
-   data PMeaning = PMeaning P_Markup
+   newtype PMeaning = PMeaning P_Markup
             deriving Show
-   data PMessage = PMessage P_Markup
+   newtype PMessage = PMessage P_Markup
             deriving Show
    data P_Markup = 
        P_Markup  { mLang ::   Maybe Lang

@@ -101,7 +101,7 @@ pCtx2aCtx
     allConcs :: Set.Set String
     allConcs = Set.fromList (map (name . source) decls ++ map (name . target) decls)
     soloConcs :: [String]
-    soloConcs = filter (isInSystem genLattice) (Set.toList allConcs)
+    soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
     
     deflangCtxt = fromMaybe English lang
     deffrmtCtxt = fromMaybe HTML pandocf
@@ -131,9 +131,11 @@ pCtx2aCtx
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
      where tpda = disambiguate termPrimDisAmb x
+    {- not used. Reason: in all places where this may have been used, the term itself is required/used for disambiguation. In P_Rule, for instance, the expression is used to disambiguate the VIOL statements.
     term2Expr :: (Term TermPrim) -> Guarded Expression
     term2Expr x = fmap fst (typecheckTerm tpda)
       where tpda = disambiguate termPrimDisAmb x
+    -}
     
     pViewDef2aViewDef :: P_ViewDef -> Guarded ViewDef
     pViewDef2aViewDef x = typecheckViewDef tpda
@@ -341,7 +343,7 @@ pCtx2aCtx
                       , procXps = purposes
                       , procPop = pops
                       }
-     = (\ ruls' pops' idefs' viewdefs' purposes'
+     = (\ ruls' rels' pops' idefs' viewdefs' purposes'
             ->  Proc { prcNm = nm
                      , prcPos = orig
                      , prcEnd = posEnd
@@ -350,12 +352,13 @@ pCtx2aCtx
                      , prcDcls = [ pDecl2aDecl nm deflangCtxt deffrmtCtxt pDecl | pDecl<-dcls ]
                      , prcUps = pops'
                      , prcRRuls = [(rol,r)|(rols,r)<-ruls',rol<-rols]
-                     , prcRRels = fatal 343 "Don't know where to get the process relations"
+                     , prcRRels = [(rol,r)|(rols,rs)<-rels',rol<-rols,r<-rs]
                      , prcIds = idefs'
                      , prcVds = viewdefs'
                      , prcXps = purposes'
                      }
        ) <$> traverse (\x -> pRul2aRul' [rol | rr <- rolruls, rul <- mRules rr, name x == rul, rol <- mRoles rr] nm x) ruls
+         <*> sequenceA [(\x -> (rr_Roles prr,x)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- rolrels]
          <*> traverse pPop2aPop pops
          <*> traverse pIdentity2aIdentity idefs
          <*> traverse pViewDef2aViewDef viewdefs
@@ -363,9 +366,9 @@ pCtx2aCtx
     
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> parRuls ppat <*> parKeys ppat <*> parViews ppat <*> parPrps ppat
+     = f <$> parRuls ppat <*> parKeys ppat <*> parViews ppat <*> parPrps ppat <*> sequenceA rrels
        where
-        f prules keys' views' xpls
+        f prules keys' views' xpls rrels'
          = A_Pat { ptnm  = name ppat
                  , ptpos = pt_pos ppat
                  , ptend = pt_end ppat
@@ -374,15 +377,15 @@ pCtx2aCtx
                  , ptdcs = [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
                  , ptups = fatal 365 "Don't know where to get the population tuples" -- population tuples?
                  , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
-                 , ptrrels = fatal 367 "Don't know where to get the process relations" -- (rol,dcl) |rr<-rrels, rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
+                 , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                  , ptids = keys'
                  , ptvds = views'
                  , ptxps = xpls
                  }
         agens'   = map (pGen2aGen) (pt_gns ppat)
         parRuls  = traverse (\x -> pRul2aRul' [rol | prr <- pt_rus ppat, rul<-mRules prr, name x == rul, rol<-mRoles prr] (name ppat) x) . pt_rls
-        rrels :: [(String,TermPrim)]
-        rrels =  [(rol,rel) | prr <- pt_res ppat, rol<-rr_Roles prr, rel<-rr_Rels prr]
+        rrels :: [Guarded RoleRelation]
+        rrels =  [(\x -> RR (rr_Roles prr) x (origin prr)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- pt_res ppat]
         parKeys  = traverse pIdentity2aIdentity . pt_ids
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
@@ -401,8 +404,8 @@ pCtx2aCtx
     typeCheckRul sgl env P_Ru { rr_nm = nm
                        , rr_exp = expr
                        , rr_fps = orig
-                       -- , rr_mean = meanings
-                       -- , rr_msg = msgs
+                       , rr_mean = meanings
+                       , rr_msg = msgs
                        , rr_viol = viols
                        }
      = (\ (exp',_)
@@ -410,15 +413,30 @@ pCtx2aCtx
           Ru { rrnm = nm
              , rrexp = exp'
              , rrfps = orig
-             , rrmean = fatal 389 "Don't know where to get the meanings (of rules)"
-             , rrmsg = fatal 390 "Don't know where to get the messages (of rules)"
+             , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
+             , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
              , rrviol = vls
              , rrtyp = sign exp'
              , rrdcl = Nothing
              , r_env = env
-             , r_usr = fatal 392 "Don't know where to get the usr (of rules)"
+             , r_usr = UserDefined
              , r_sgl = not (null sgl)
-             , srrel = fatal 394 "Don't know where to get the rel (of rules)"
+             , srrel = Sgn{ decnm = nm
+                          , decsgn = (sign exp')
+                          , decprps = []
+                          , decprps_calc = Nothing
+                          , decprL = ""
+                          , decprM = ""
+                          , decprR = ""
+                          , decMean = pMean2aMean deflangCtxt deffrmtCtxt meanings
+                          , decConceptDef = Nothing
+                          , decfpos = orig
+                          , decissX = True
+                          , decusrX = False
+                          , decISA = False
+                          , decpat = env
+                          , decplug = False
+                          }
              }
              ) <$> maybeOverGuarded (typeCheckPairView orig exp') viols
           ) <?> typecheckTerm expr
@@ -489,10 +507,14 @@ pDisAmb2Expr (_,Rel [x]) = pure x
 pDisAmb2Expr (o,Rel rs)  = cannotDisambRel o rs --  in order to allow multiple declarations of the same relation, change  'cannotDisambRel o rs'  to  'pure (head rs)'
 pDisAmb2Expr (o,_)       = cannotDisamb o
 
-
---  data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving Show
---  data PMeaning = PMeaning P_Markup
-
+pMean2aMean :: Lang           -- The default language 
+  -> PandocFormat   -- The default pandocFormat
+  -> [PMeaning] -> AMeaning
+pMean2aMean a b xs = AMeaning (map (\(PMeaning c) -> pMarkup2aMarkup a b c) xs)
+pMess2aMess :: Lang           -- The default language 
+  -> PandocFormat   -- The default pandocFormat
+  -> PMessage -> A_Markup
+pMess2aMess a b (PMessage x) = pMarkup2aMarkup a b x
 pMarkup2aMarkup :: 
      Lang           -- The default language 
   -> PandocFormat   -- The default pandocFormat
@@ -561,7 +583,7 @@ findSign :: String -> String -> Sign
 findSign a b = Sign (findConceptOrONE a) (findConceptOrONE b)
 
 maybeOverGuarded :: Applicative f => (t -> f a) -> Maybe t -> f (Maybe a)
-maybeOverGuarded f Nothing = pure Nothing
+maybeOverGuarded _ Nothing = pure Nothing
 maybeOverGuarded f (Just x) = Just <$> f x
 
 data TT a  -- (In order of increasing strictness. If you are unsure which to pick: just use MBE, it'll usually work fine)

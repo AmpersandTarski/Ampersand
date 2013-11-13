@@ -277,7 +277,7 @@ makeEntityTables _ {-flags-} allDcls concs exclusions
       where 
    --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
         dist []   []     result = result
-        dist _    []     _      = fatal 246 "No kernel found for atts"
+        dist atts []     _      = fatal 246 ("No kernel found for atts: "++show atts)
         dist atts (k:ks) result = dist otherAtts ks ([(k,attsOfK)] ++ result)
            where (attsOfK,otherAtts) = partition belongsInK atts
                  belongsInK att = source att `elem` k
