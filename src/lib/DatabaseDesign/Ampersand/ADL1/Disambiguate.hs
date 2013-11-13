@@ -31,8 +31,8 @@ findConcept :: String -> A_Concept
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
 findConcept x = PlainConcept 
             {cptnm = x
-            ,cpttp = fatal 588 "Types of concepts are not defined here"
-            ,cptdf = fatal 589 "df of concepts are not defined here"
+            ,cpttp = [] -- fatal 588 "Types of concepts are not defined here"
+            ,cptdf = [] -- fatal 589 "df of concepts are not defined here"
             }
 
 class Disambiguatable d where
