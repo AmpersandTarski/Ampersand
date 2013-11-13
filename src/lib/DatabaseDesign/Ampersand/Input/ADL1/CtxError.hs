@@ -17,7 +17,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
-import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV),A_Concept,SubInterface)
+import DatabaseDesign.Ampersand.ADL1 (Pos(..),source,target,sign,Expression(EDcV,ECpl),A_Concept,SubInterface)
 import DatabaseDesign.Ampersand.Fspec.ShowADL
 import DatabaseDesign.Ampersand.Basics
 -- import Data.Traversable
@@ -134,14 +134,20 @@ instance ShowADL a => ShowADL (Slash a) where
   showADL (Slash x) = intercalate "/" (map showADL x)
   
 
-mustBeBound :: (Show a1) => Origin -> [(a1, Expression)] -> Guarded a
+mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]
- = Errors [CTXE o$ "An ambiguity arises in type checking. Be more specific in the "++show p++" of the expression "++showADL e++".\n"++
-                   "  You could add more types inside the expression, or just write ("++showADL e++") /\\ "++showADL (EDcV$ sign e)++".\n"]
+ = Errors [CTXE o$ "An ambiguity arises in type checking. Be more specific by binding the "++show p++" of the expression "++showADL e++".\n"++
+                   "  You could add more types inside the expression, or just write "++writeBind e++"."]
 mustBeBound o lst
  = Errors [CTXE o$ "An ambiguity arises in type checking. Be more specific in the expressions "++intercalate " and " (map (showADL . snd) lst) ++".\n"++
                    "  You could add more types inside the expression, or write:"++
-                   concat ["\n  ("++showADL e++") /\\ "++showADL (EDcV$ sign e) ++ "["++showADL (source e)++"*"++showADL (target e)++"]"| (_,e)<-lst]]
+                   concat ["\n  "++writeBind e| (_,e)<-lst]]
+
+writeBind :: Expression -> String
+writeBind (ECpl e _)
+ = "("++showADL (EDcV$ sign e)++"["++showADL (source e)++"*"++showADL (target e)++"]"++" - "++showADL e++")"
+writeBind e
+ = "("++showADL e++") /\\ "++showADL (EDcV$ sign e)++"["++showADL (source e)++"*"++showADL (target e)++"]"
 
 data Guarded a = Errors [CtxError] | Checked a deriving Show
 
