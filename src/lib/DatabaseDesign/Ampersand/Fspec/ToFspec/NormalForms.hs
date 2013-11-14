@@ -162,7 +162,8 @@ where
      nM posNeg (EIsc (l,r) _) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM posNeg l []
                                                     (f,steps',equ'') = nM posNeg r (l:rs)
-     nM posNeg (ECps (ECps (l,k) _ _,r) _ _) rs = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:.
+     nM posNeg (ECps (ECps (l,k) _ _,r) _ _) rs = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
+                                                  -- Note: function shiftL and shiftR make use of the fact that this normalizes to (l .:. (k .:. r))
      nM posNeg (ECps (l,r) _ _) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                where (t,steps, equ')  = nM posNeg l []
                                                      (f,steps',equ'') = nM posNeg r (l:rs)

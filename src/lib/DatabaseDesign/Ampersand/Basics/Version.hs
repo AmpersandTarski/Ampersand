@@ -8,9 +8,9 @@ import DatabaseDesign.Ampersand.Basics.BuildInfo_Generated
 --   It throws an error, showing a (module)name and a number. This makes debugging pretty easy. 
 fatalMsg :: String -> Int -> String -> a
 fatalMsg haskellModuleName lineNr msg
- = error ("!fatal error "++show lineNr++" (module "++haskellModuleName++") "++ampersandVersionWithoutBuildTimeStr++"\n  "++
+ = error ("!fatal "++show lineNr++" (module "++haskellModuleName++") "++ampersandVersionWithoutBuildTimeStr++"\n  "++
             let maxLen = 1500 -- This trick is to make sure the process is terminated after the error. 
-                              -- If the string is too long, it seems that the sentinell `hangs`.
+                              -- If the string is too long, it seems that the sentinel `hangs`.
                               -- But what is too long???
             in case drop maxLen msg of
                 [] -> msg
