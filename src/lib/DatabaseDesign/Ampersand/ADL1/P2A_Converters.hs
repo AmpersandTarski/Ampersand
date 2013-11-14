@@ -366,27 +366,29 @@ pCtx2aCtx
     
     pPat2aPat :: P_Pattern -> Guarded Pattern
     pPat2aPat ppat
-     = f <$> parRuls ppat <*> parKeys ppat <*> parViews ppat <*> parPrps ppat <*> sequenceA rrels
+     = f <$> parRuls ppat <*> parKeys ppat <*> parPops ppat <*> parViews ppat <*> parPrps ppat <*> sequenceA rrels
        where
-        f prules keys' views' xpls rrels'
+        f prules keys' pops' views' xpls rrels'
          = A_Pat { ptnm  = name ppat
                  , ptpos = pt_pos ppat
                  , ptend = pt_end ppat
                  , ptrls = map snd prules
                  , ptgns = agens'
                  , ptdcs = [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
-                 , ptups = fatal 365 "Don't know where to get the population tuples" -- population tuples?
+                 , ptups = pops'
+              -- , ptups = fatal 365 "Don't know where to get the population tuples" -- :: [UserDefPop]  --  The user defined populations in this pattern
                  , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
                  , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                  , ptids = keys'
                  , ptvds = views'
                  , ptxps = xpls
                  }
-        agens'   = map (pGen2aGen) (pt_gns ppat)
+        agens'   = map pGen2aGen (pt_gns ppat)
         parRuls  = traverse (\x -> pRul2aRul' [rol | prr <- pt_rus ppat, rul<-mRules prr, name x == rul, rol<-mRoles prr] (name ppat) x) . pt_rls
         rrels :: [Guarded RoleRelation]
         rrels =  [(\x -> RR (rr_Roles prr) x (origin prr)) <$> (traverse termPrim2Decl $ rr_Rels prr) | prr <- pt_res ppat]
         parKeys  = traverse pIdentity2aIdentity . pt_ids
+        parPops  = traverse pPop2aPop . pt_pop
         parViews = traverse pViewDef2aViewDef . pt_vds
         parPrps  = traverse pPurp2aPurp . pt_xps
     

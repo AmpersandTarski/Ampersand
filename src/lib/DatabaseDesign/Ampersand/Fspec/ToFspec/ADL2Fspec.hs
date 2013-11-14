@@ -90,7 +90,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         calcProps d = d{decprps_calc = Just calculated}
             where calculated = decprps d `uni` [Tot | d `elem` totals]
                                          `uni` [Sur | d `elem` surjectives]
-        calculatedDecls = map calcProps (declarations context)
+        calculatedDecls = map calcProps alldecls
      -- determine relations that are total (as many as possible, but not necessarily all)
         totals      = [ d |       EDcD d _    <- totsurs ]
         surjectives = [ d | EFlp (EDcD d _) _ <- totsurs ]
