@@ -368,12 +368,12 @@ while maintaining all invariants.
    -- The rule is carried along for traceability.
    quads :: Options -> (Declaration->Bool) -> [Rule] -> [Quad]
    quads flags visible rs
-    = [ Quad d (Clauses [ (horn2expr hornClause,allShifts flags hornClause)
-                        | hornClause<-conjuncts rule
-      --                , (not.null.lambda Ins (ERel r ??)) hornClause  -- causes infinite loop
-      --                , not (checkMono hornClause Ins r)         -- causes infinite loop
-      --                , let hornClause' = subst (r, actSem Ins r (delta (sign r))) hornClause
-      --                , (not.isTrue.hornClauseNF) (notCpl (sign hornClause) hornClause .\/. hornClause') -- the system must act to restore invariance     
+    = [ Quad d (Clauses [ (horn2expr conj,allShifts flags conj)
+                        | conj<-conjuncts rule  -- conj :: HornClause. It has the form Hc antcs conss
+      --                , (not.null.lambda Ins (ERel r ??)) conj  -- causes infinite loop
+      --                , not (checkMono conj Ins r)         -- causes infinite loop
+      --                , let conj' = subst (r, actSem Ins r (delta (sign r))) conj
+      --                , (not.isTrue.hornClauseNF) (notCpl (sign conj) conj .\/. conj') -- the system must act to restore invariance     
                         ]
                         rule)
       | rule<-rs, d<- declsUsedIn rule, visible d
@@ -396,91 +396,95 @@ while maintaining all invariants.
      shiftL :: HornClause -> [HornClause]
      shiftL hc@(Hc antcs conss)
       | null antcs || null conss = [hc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
-      | otherwise                = [ Hc antc (case css of
-                                               [] -> if source antcExpr==target antcExpr then [iExpr (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
-                                               _  ->  map (foldCompose 'c' ass css) css
-                                             )
-                                   | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
-                                   , let antc=map (foldCompose 'a' ass css) ass -- foldCompose is for safety. Read: let antc=map (foldr1 (.:.)) ass
-                                   , let antcExpr = case antc of
-                                                     [] -> fatal 401 ("Empty list should be impossible.")
-                                                     _  -> foldr1 (./\.) antc
+      | otherwise                = [ Hc ass (case css of
+                                              [] -> let antcExpr = foldr1 (./\.) ass in
+                                                    if source antcExpr==target antcExpr then [iExpr (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
+                                              _  -> css
+                                            )
+                                   | (ass,css)<-nub (move antcs conss)
                                    ]
       where
-       foldCompose x ass css xs = case xs of
-                                   [] -> fatal 412 ("Empty list ("++[x]++"ss) should be impossible."++diagnostic)
-                                   _  -> foldr1 (.:.) xs
-        where
-         diagnostic
-           = "\n  antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antcs ]++"\n       ]"++
-             "\n  conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"++
-             "\n  map exprCps2list antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-map exprCps2list antcs ]++"\n       ]"++
-             "\n  map exprCps2list conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-map exprCps2list conss ]++"\n       ]"++
-             "\n  ass:   [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-ass ]++"\n       ]"++
-             "\n  css:   [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-css ]++"\n       ]"
-             
       -- informal example coming from  "r;s /\ p;r |- x;y;z"
-      --  antcs =  [ ["r","s"], ["p","r"] ]
-      --  conss =  [ ["x","y","z"] ]
-       move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
-       move ass [] = [(ass,[])]
+      --  antcs =  [ r;s, p;r ]
+      --  conss =  [ x;y;z ]
+       move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
+       move ass [] = [(ass,[EDcI (Sign (source (head ass)) (target (last ass)))])]
        move ass css
         = (ass,css):
-          if and [not (null cs) && (not.and.map isEDcI) cs | cs<-css] -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
-          then [ts | length (eqClass (==) (map head css)) == 1        -- example: True, because map head css == [ "x" ]
-                   , let h=head (map head css)                        -- example: h= "x"
-                   , isUni h                                          -- example: assume True
-                   , ts<-move [flp h : as |as<-ass] (map tail css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
-               [ts | length (eqClass (==) (map last css)) == 1
-                   , let l=head (map last css)
+          if and [ (not.isEDcI) cs | cs<-css]     -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
+          then [ts | let headEs = map headECps css
+                   , length (eqClass (==) headEs) == 1                    -- example: True, because map head css == [ "x" ]
+                   , let h=head headEs                                    -- example: h= "x"
+                   , isUni h                                              -- example: assume True
+                   , ts<-move [flp h.:.as |as<-ass] (map tailECps css)]++ -- example: ts<-move [ [flp "x","r","s"], [flp "x","p","r"] ]  [ ["y","z"] ]
+               [ts | let lastEs = map lastECps css
+                   , length (eqClass (==) lastEs) == 1
+                   , let l=head lastEs
                    , isInj l
-                   , ts<-move [as++[flp l] |as<-ass] (map init css)]  -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
+                   , ts<-move [as.:.flp l |as<-ass] (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
           else []
 
      shiftR :: HornClause -> [HornClause]
      shiftR hc@(Hc antcs conss)
       | null antcs || null conss = [hc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
       | otherwise                = [ Hc (case ass of
-                                          [] -> if source consExpr==target consExpr then [iExpr (source consExpr)] else fatal 463 "consExpr should be endorelation"
-                                          _  -> map (foldCompose 'a' ass css) ass
-                                        ) cons
-                                   | (ass,css)<-nub (move (map exprCps2list antcs) (map exprCps2list conss))
-                                   , let cons=map (foldCompose 'c' ass css) css -- foldCompose is for safety. Read: let cons=map (foldr1 (.:.)) css
-                                   , let consExpr = foldr1 (.\/.) cons
+                                          [] -> let consExpr = foldr1 (.\/.) css in
+                                                if source consExpr==target consExpr then [iExpr (source consExpr)] else fatal 463 "consExpr should be endorelation"
+                                          _  -> ass
+                                        ) css
+                                   | (ass,css)<-nub (move antcs conss)
                                    ]
       where
-       foldCompose x ass css xs = case xs of
-                                   [] -> fatal 454 ("Empty list ("++[x]++"ss) should be impossible."++diagnostic)
-                                   _  -> foldr1 (.:.) xs
-        where
-         diagnostic
-           = "\n  antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-antcs ]++"\n       ]"++
-             "\n  conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-conss ]++"\n       ]"++
-             "\n  map exprCps2list antcs: [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-map exprCps2list antcs ]++"\n       ]"++
-             "\n  map exprCps2list conss: [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-map exprCps2list conss ]++"\n       ]"++
-             "\n  ass:   [ "++intercalate "\n         , " [showHS flags "\n           " a | a<-ass ]++"\n       ]"++
-             "\n  css:   [ "++intercalate "\n         , " [showHS flags "\n           " c | c<-css ]++"\n       ]"
-
       -- informal example coming from  "r;s /\ r;r |- x;y;z"
       --  ass =  [ ["r","s"], ["r","r"] ]
       --  css =  [ ["x","y","z"] ]
-       move :: [[Expression]] -> [[Expression]] -> [([[Expression]],[[Expression]])]
-       move [] css = [([],css)]
+       move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
+       move [] css = [([EDcI (Sign (source (head css)) (target (last css)))],css)]
        move ass css
         = (ass,css):
-          if and [not (null as) && (not.and.map isEDcI) as | as<-ass] -- all as are nonempty because: (not.and.map isEDcI) as ==> not (null as)
-          then [ts | length (eqClass (==) (map head ass)) == 1        -- example: True, because map head ass == [ "r", "r" ]
-                   , let h=head (map head ass)                        -- example: h= "r"
-                   , isSur h                                          -- example: assume True
-                   , ts<-move (map tail ass) [flp h:cs |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
-               [ts | length (eqClass (==) (map last ass)) == 1        -- example: False, because map last ass == [ ["s"], ["r"] ]
-                   , let l=head (map last ass)
+          if and [ (not.isEDcI) as | as<-ass]
+          then [ts | let headEs = map headECps ass
+                   , length (eqClass (==) headEs) == 1                      -- example: True, because map headECps ass == [ "r", "r" ]
+                   , let h=head headEs                                      -- example: h= "r"
+                   , isSur h                                                -- example: assume True
+                   , ts<-move (map tailECps ass) [flp h.:.cs |cs<-css]]++   -- example: ts<-move  [["s"], ["r"]] [ [flp "r","x","y","z"] ]
+               [ts | let lastEs = map lastECps ass
+                   , length (eqClass (==) lastEs) == 1                      -- example: False, because map lastECps ass == [ ["s"], ["r"] ]
+                   , let l=head lastEs
                    , isTot l
-                   , ts<-move (map init ass) [cs++[flp l] |cs<-css]]
+                   , ts<-move (map initECps ass) [cs.:.flp l |cs<-css]]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
           else []
-   isEDcI :: Expression -> Bool
-   isEDcI (EDcI{}) = True
-   isEDcI _ = False
+       diagnostic
+         = "\n  antcs: [ "++intercalate "\n         , " [showADL a | a<-antcs ]++"\n       ]"++
+           "\n  conss: [ "++intercalate "\n         , " [showADL c | c<-conss ]++"\n       ]"++
+           "\n  move:  [ "++intercalate "\n         , " ["("++sh " /\\ " as++"\n           ,"++sh " \\/ " cs++")" | (as,cs)<-move antcs conss ]++"\n       ]"
+       sh :: String -> [Expression] -> String
+       sh str es = intercalate str [ showADL e | e<-es] 
+
+     headECps :: Expression -> Expression
+     headECps (ECps (l,_) _ _) = l
+     headECps x = x
+     
+     tailECps :: Expression -> Expression
+     tailECps (ECps (_,r) _ _) = r
+     tailECps x = EDcI (Sign (target x) (target x))
+     
+     initECps :: Expression -> Expression
+     initECps (ECps (l,r@ECps{}) i (Sign s _))
+      = case initECps r of
+          initr@(ECps (x,y) ir (Sign sr tr)) -> ECps (l, initr) i (Sign s tr)
+          initr                              -> ECps (l, initr) i (Sign s (target initr))
+     initECps x = EDcI (Sign (source x) (source x))
+     
+     lastECps :: Expression -> Expression
+     lastECps (ECps (_,r@ECps{}) _ _) = lastECps r
+     lastECps (ECps (_,r) _ _)        = r
+     lastECps x = x
+         
+     isEDcI :: Expression -> Bool
+     isEDcI (EDcI{}) = True
+     isEDcI _ = False
+
 
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
