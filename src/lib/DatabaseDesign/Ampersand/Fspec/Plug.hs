@@ -457,12 +457,12 @@ plugFields plug = case plug of
     ScalarSQL{} -> [sqlColumn plug]
 
 type TblRecord = [String]
-tblcontents :: [UserDefPop] -> PlugSQL -> [TblRecord]
-tblcontents udp plug@ScalarSQL{}
-   = [[x] | x<-atomsOf udp (cLkp plug)]
-tblcontents udp plug@BinSQL{}
-   = [[x,y] |(x,y)<-fullContents udp (mLkp plug)]
-tblcontents udp plug@TblSQL{}
+tblcontents :: [A_Gen] -> [UserDefPop] -> PlugSQL -> [TblRecord]
+tblcontents gens udp plug@ScalarSQL{}
+   = [[x] | x<-atomsOf gens udp (cLkp plug)]
+tblcontents gens udp plug@BinSQL{}
+   = [[x,y] |(x,y)<-fullContents gens udp (mLkp plug)]
+tblcontents gens udp plug@TblSQL{}
  --TODO151210 -> remove the assumptions (see comment data PlugSQL)
  --fields are assumed to be in the order kernel+other, 
  --where NULL in a kernel field implies NULL in the following kernel fields
@@ -477,13 +477,13 @@ tblcontents udp plug@TblSQL{}
      rels fld = [ ((pos s,pos t),xy) | (_,s,t)<-mLkpTbl plug
                 , s /= t 
                 , fld==s
-                , xy<-fullContents udp (fldexpr t)
+                , xy<-fullContents gens udp (fldexpr t)
                 ]
      in --add relation values to the record, from left to right field (concat=rels with source idfld++rels with source fld2++..) 
      [ foldl insertrel --(a -> b -> a)
              (take (length (fields plug)) (idval:[[] |_<-[(1::Int)..]])) --new record for id
              (concatMap rels (fields plug))  
-     | idval<-map fst (fullContents udp (fldexpr idfld))  ]
+     | idval<-map fst (fullContents gens udp (fldexpr idfld))  ]
  | otherwise = fatal 609 "fields are assumed to be in the order kernel+other, starting with an id-field."
    where idfld = head (fields plug)
 --if x at position n of some record, then position r is replaced by y (position starts at 1, not 0!)
