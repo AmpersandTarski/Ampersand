@@ -39,13 +39,13 @@ where
 
    --WHY -> why isn't this implemented as contents (violationsexpr r)?
    --ANSWER -> to avoid performance issues, probably only in most cases (ticket #319)
-   ruleviolations :: [UserDefPop] -> Rule -> Pairs
-   ruleviolations pt r = case rrexp r of
+   ruleviolations :: [A_Gen] -> [UserDefPop] -> Rule -> Pairs
+   ruleviolations gens pt r = case rrexp r of
         EEqu{} -> (cra >- crc) ++ (crc >- cra)
         EImp{} -> cra >- crc
-        _      -> fullContents pt (vExpr (sign (consequent r))) >- crc  --everything not in con
-        where cra = fullContents pt (antecedent r)
-              crc = fullContents pt (consequent r)
+        _      -> fullContents gens pt (vExpr (sign (consequent r))) >- crc  --everything not in con
+        where cra = fullContents gens pt (antecedent r)
+              crc = fullContents gens pt (consequent r)
    violationsexpr :: Rule -> Expression
    violationsexpr r = vExpr (rrtyp r) .-. rrexp r
 
