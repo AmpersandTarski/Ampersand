@@ -148,12 +148,12 @@ createTablesPHP fSpec =
          = commentBlock (["Plug "++name plug,"","fields:"]++map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
            ++ createTablePHP 17 (plug2tbl plug)
            ++ ["if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-           ++ if null $ tblcontents (userDefPops fSpec) plug then [] else
+           ++ if null $ tblcontents (gens fSpec)(userDefPops fSpec) plug then [] else
                [ "else"
                                , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
                                ]++ indentBlock 12
                                                  [ comma++ " (" ++valuechain md++ ")"
-                                                 | (md,comma)<-zip (tblcontents (userDefPops fSpec) plug) ("VALUES":repeat "      ,")
+                                                 | (md,comma)<-zip (tblcontents (gens fSpec)(userDefPops fSpec) plug) ("VALUES":repeat "      ,")
                                                  ]
                                                
                                ++ ["            \");"
