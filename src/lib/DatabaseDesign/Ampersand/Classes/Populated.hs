@@ -1,10 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(..),atomsOf)
 where
-   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair)
+   import DatabaseDesign.Ampersand.ADL1.Pair                       (kleenejoin,mkPair,closPair,srcPaire,trgPaire)
    import DatabaseDesign.Ampersand.ADL1.Expression                 (notCpl)
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg, Identified(..))   
+   import Data.List (nub)
    
    fatal :: Int -> String -> a
    fatal = fatalMsg "Populated.hs"
@@ -17,13 +18,14 @@ where
    
    -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
    atomsOf :: [UserDefPop] -> A_Concept -> [String] 
-   atomsOf _ ONE  = ["1"] -- fatal 126 "Asking for the value of the universal singleton"
-   atomsOf pt c@PlainConcept{}
-     = fatal 99924 "please retypecheck!" {-
-       nub$[srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, (source dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
-         ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, (target dcl) DatabaseDesign.Ampersand.Core.Poset.<= c]
-         ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt        DatabaseDesign.Ampersand.Core.Poset.<= c]
-       -}
+   atomsOf pt c =
+    case c of
+      ONE -> ["1"] -- fatal 126 "Asking for the value of the universal singleton"
+      PlainConcept{} -> fatal 24 "Function required which will be provided by BAS (hopefully...)"
+--          -> nub$ [srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, ((source dcl) `compare` c) `elem` [EQ,GT]]
+--                ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, ((target dcl) `compare` c) `elem` [EQ,GT]]
+--                ++[a          | PCptPopu cpt atms <- pt, a <- atms,        (cpt `compare` c) `elem` [EQ,GT]]
+      
    instance Populated Declaration where
     fullContents pt dcl
       = case dcl of
