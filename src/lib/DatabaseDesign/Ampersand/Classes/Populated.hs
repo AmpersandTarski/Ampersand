@@ -14,25 +14,28 @@ where
    class Populated a where
     -- | this function returns the pairs as content of a specific a, given a list of populations. 
     --   The list of populations should contain all user-defined populations. 
-    fullContents :: [UserDefPop] -> a -> Pairs
+    fullContents :: [A_Gen] -> [UserDefPop] -> a -> Pairs
    
    -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
-   atomsOf :: [UserDefPop] -> A_Concept -> [String] 
-   atomsOf pt c =
+   atomsOf :: [A_Gen]      -- the generalisation relations from the context
+           -> [UserDefPop] -- the user defined populations in the context
+           -> A_Concept    -- the concept from which the population is requested
+           -> [String]     -- the elements in the concept's set of atoms
+   atomsOf gens pt c =
     case c of
       ONE -> ["1"] -- fatal 126 "Asking for the value of the universal singleton"
-      PlainConcept{} -> fatal 24 "Function required which will be provided by BAS (hopefully...)"
---          -> nub$ [srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, ((source dcl) `compare` c) `elem` [EQ,GT]]
---                ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, ((target dcl) `compare` c) `elem` [EQ,GT]]
---                ++[a          | PCptPopu cpt atms <- pt, a <- atms,        (cpt `compare` c) `elem` [EQ,GT]]
+      PlainConcept{}
+          -> nub$ [srcPaire p | PRelPopu dcl ps   <- pt, p <- ps, source dcl `elem` c:smallerConcepts gens c]
+                ++[trgPaire p | PRelPopu dcl ps   <- pt, p <- ps, target dcl `elem` c:smallerConcepts gens c]
+                ++[a          | PCptPopu cpt atms <- pt, a <- atms, cpt      `elem` c:smallerConcepts gens c]
       
    instance Populated Declaration where
-    fullContents pt dcl
+    fullContents gens pt dcl
       = case dcl of
-         Isn c -> [ mkPair a a | a <-atomsOf pt c]
-         Vs sgn -> [ mkPair sa ta | sa<-atomsOf pt (source sgn), ta<-atomsOf pt (target sgn)]
+         Isn c -> [ mkPair a a | a <-atomsOf gens pt c]
+         Vs sgn -> [ mkPair sa ta | sa<-atomsOf gens pt (source sgn), ta<-atomsOf gens pt (target sgn)]
          Sgn{} -> if decISA dcl
-                  then [ mkPair a a | a <-atomsOf pt (source dcl)] 
+                  then [ mkPair a a | a <-atomsOf gens pt (source dcl)] 
                   else 
                    case filter (isTheDecl dcl) pt of
                      []    -> [] 
@@ -45,7 +48,7 @@ where
 
 
    instance Populated Expression where
-    fullContents pt = contents
+    fullContents gens pt = contents
      where
       contents expr
        = case expr of
@@ -56,59 +59,59 @@ where
             EDif (l,r) _ -> contents l >- contents r
             -- The left residual l/r is defined by: for all x,y:  y(l/r)x  <=>  for all z in X, x l z implies y r z.
             ELrs (l,r) c _ -> [(y,x) | x <- case source l of
-                                            sl@PlainConcept{} -> atomsOf pt sl
+                                            sl@PlainConcept{} -> atomsOf gens pt sl
                                             sl     -> fatal 68 ("source l should be PlainConcept instead of "++show sl++".")
                                    , y <- case source r of
-                                            sr@PlainConcept{} -> atomsOf pt sr
+                                            sr@PlainConcept{} -> atomsOf gens pt sr
                                             sr     -> fatal 71 ("source r should be PlainConcept instead of "++show sr++".")
                               --   Derivation:
-                              --   , and      [(x,z) `elem` contents l <- (y,z) `elem` contents r          |z<- atomsOf pt (target l `join` target r)]
-                              --   , and      [(x,z) `elem` contents l || (y,z) `notElem` contents r       |z<- atomsOf pt (target l `join` target r)]
-                              --   , (not.or) [not ((x,z) `elem` contents l || (y,z) `notElem` contents r) |z<- atomsOf pt (target l `join` target r)]
-                              --   , (not.or) [     (x,z) `notElem` contents l && (y,z) `elem` contents r  |z<- atomsOf pt (target l `join` target r)]
-                              --   , (not.null) [ () |z<- atomsOf pt (target l `join` target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
-                                   , (not.null) [ () |z<- atomsOf pt c, (x,z) `notElem` contents l, (y,z) `elem` contents r]
+                              --   , and      [(x,z) `elem` contents l <- (y,z) `elem` contents r          |z<- atomsOf gens pt (target l `join` target r)]
+                              --   , and      [(x,z) `elem` contents l || (y,z) `notElem` contents r       |z<- atomsOf gens pt (target l `join` target r)]
+                              --   , (not.or) [not ((x,z) `elem` contents l || (y,z) `notElem` contents r) |z<- atomsOf gens pt (target l `join` target r)]
+                              --   , (not.or) [     (x,z) `notElem` contents l && (y,z) `elem` contents r  |z<- atomsOf gens pt (target l `join` target r)]
+                              --   , (not.null) [ () |z<- atomsOf gens pt (target l `join` target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
+                                   , (not.null) [ () |z<- atomsOf gens pt c, (x,z) `notElem` contents l, (y,z) `elem` contents r]
                                    ]   -- equals contents (ERrs (flp r, flp l))
             -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
             ERrs (l,r) c _ -> [(x,y) | x <- case target l of
-                                            tl@PlainConcept{} -> atomsOf pt tl
+                                            tl@PlainConcept{} -> atomsOf gens pt tl
                                             tl     -> fatal 83 ("target l should be PlainConcept instead of "++show tl++".")
                                    , y <- case target r of
-                                            tr@PlainConcept{} -> atomsOf pt tr
+                                            tr@PlainConcept{} -> atomsOf gens pt tr
                                             tr     -> fatal 86 ("target r should be PlainConcept instead of "++show tr++".")
                               --   Derivation:
-                              --     and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       |z<- atomsOf pt (source l `join` source r)]
-                              --     and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       |z<- atomsOf pt (source l `join` source r)]
-                              --     (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) |z<- atomsOf pt (source l `join` source r)]
-                              --     (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  |z<- atomsOf pt (source l `join` source r)]
-                              --     (not.null) [ () |z<- atomsOf pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
-                                   , (not.null) [ () |z<- atomsOf pt c, (z,x) `elem` contents l, (z,y) `notElem` contents r]
+                              --     and      [(z,x) `elem` contents l    -> (z,y) `elem` contents r       |z<- atomsOf gens pt (source l `join` source r)]
+                              --     and      [(z,x) `notElem` contents l || (z,y) `elem` contents r       |z<- atomsOf gens pt (source l `join` source r)]
+                              --     (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) |z<- atomsOf gens pt (source l `join` source r)]
+                              --     (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  |z<- atomsOf gens pt (source l `join` source r)]
+                              --     (not.null) [ () |z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
+                                   , (not.null) [ () |z<- atomsOf gens pt c, (z,x) `elem` contents l, (z,y) `notElem` contents r]
                                    ]   -- equals contents (ELrs (flp r, flp l))
             ERad (l,r) c _ -> [(x,y) | x <- case target l of
-                                            tl@PlainConcept{} -> atomsOf pt tl
+                                            tl@PlainConcept{} -> atomsOf gens pt tl
                                             tl     -> fatal 97 ("target l should be PlainConcept instead of "++show tl++".")
                                    , y <- case source r of
-                                            sr@PlainConcept{} -> atomsOf pt sr
+                                            sr@PlainConcept{} -> atomsOf gens pt sr
                                             sr     -> fatal 100 ("source r should be PlainConcept instead of "++show sr++".")
-                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf pt c]
+                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf gens pt c]
                                    ]
-            EPrd (l,r) _ -> [ (a,b) | a <- atomsOf pt (source l), b <- atomsOf pt (target r) ]
+            EPrd (l,r) _ -> [ (a,b) | a <- atomsOf gens pt (source l), b <- atomsOf gens pt (target r) ]
             ECps (l,r) _ _ -> contents l `kleenejoin` contents r
             EKl0 e     _ -> if source e == target e --see #166
                             then closPair (contents e `uni` contents (iExpr (source e)))
                             else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
             EKl1 e     _ -> closPair (contents e)
             EFlp e     _ -> [(b,a) | (a,b)<-contents e]
-            ECpl e     _ -> [apair | apair <-[ mkPair x y | x<-atomsOf pt (source e), y<-atomsOf pt (target e)]
+            ECpl e     _ -> [apair | apair <-[ mkPair x y | x<-atomsOf gens pt (source e), y<-atomsOf gens pt (target e)]
                                    , apair `notElem` contents e  ]
             EBrk e       -> contents e
             ETyp e   sgn -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
-                                                                       , a `elem` atomsOf pt (source sgn)
-                                                                       , b `elem` atomsOf pt (target sgn)]
-            EDcD dcl   _ -> fullContents pt dcl
-            EDcI     sgn -> [mkPair a a | a <- atomsOf pt (source sgn)]
-            EDcV     sgn -> [mkPair s t | s <- atomsOf pt (source sgn)
-                                            , t <- atomsOf pt (target sgn) ]
+                                                                       , a `elem` atomsOf gens pt (source sgn)
+                                                                       , b `elem` atomsOf gens pt (target sgn)]
+            EDcD dcl   _ -> fullContents gens pt dcl
+            EDcI     sgn -> [mkPair a a | a <- atomsOf gens pt (source sgn)]
+            EDcV     sgn -> [mkPair s t | s <- atomsOf gens pt (source sgn)
+                                            , t <- atomsOf gens pt (target sgn) ]
             EMp1 atom       sgn -> if name (source sgn)=="SESSION" then [] else [mkPair atom atom] -- prevent populating SESSION
 
 {- Derivation of contents (ERrs (l,r)):

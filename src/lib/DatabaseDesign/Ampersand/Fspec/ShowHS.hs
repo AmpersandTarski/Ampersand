@@ -394,7 +394,7 @@ where
            where indentA = indent ++"                      "
                  indentB = indent ++"             "
                  showAtomsOfConcept c =
-                              "-- atoms: "++(show.sort) (atomsOf (userDefPops fspec) c)
+                              "-- atoms: "++(show.sort) (atomsOf (gens fspec)(userDefPops fspec) c)
                  showViolatedRule :: String -> (Rule,Pairs) -> String
                  showViolatedRule indent' (r,ps)
                     = intercalate indent'

@@ -37,6 +37,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith 
+ , smallerConcepts
  , showSign
  , aMarkup2String
  , insParentheses
@@ -50,7 +51,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree   (MetaObj(..),Meta(..),ConceptDe
 import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..),greatest,least,maxima,minima,sortWith)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
-import Data.List (intercalate)
+import Data.List (intercalate,nub)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "AbstractSyntaxTree.hs"
@@ -291,13 +292,19 @@ data A_Gen = Gen { genfp :: Origin          -- ^ the position of the GEN-rule
   g == g' = gengen g == gengen g' && genspc g == genspc g' -}
 instance Show A_Gen where
   -- This show is used in error messages. It should therefore not display the term's type
-  showsPrec _ g@(Gen{}) = showString ("SPEC "++show (genspc g)++" ISA "++show (gengen g))
+  showsPrec _ g@(Gen{}) = showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
   showsPrec _ g@(Spc{}) = showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show $ genrhs g))
 instance Traced A_Gen where
   origin = genfp
 instance Association A_Gen where
   sign r = Sign (genspc r) (genspc r)
 
+-- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
+smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
+smallerConcepts gens cpt 
+  = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller 
+  where oneSmaller = nub$[s | Gen _ g   s <- gens , g == cpt]
+                       ++[s | Spc _ rhs s <- gens , cpt `elem` rhs]
 
 data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
                      , ifcArgs ::   [[String]]
