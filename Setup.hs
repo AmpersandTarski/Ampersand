@@ -74,6 +74,7 @@ noSVNRevisionStr :: IO String
 noSVNRevisionStr =
  do { putStrLn "\n\n\nWARNING: Execution of 'svnversion' command failed."
     ; putStrLn $ "BuildInfo_Generated.hs will not contain revision information, and therefore\nneither will fatal error messages.\n"++
-                 "Please install a subversion client that supports the command-line 'svnversion'\ncommand.\n"
+                 "Please find out why the command  'svnversion .' does not work.\n"++
+                 "Otherwise (re-)install a subversion client (e.g. 'Slik SVN') that supports\nthe command-line 'svnversion'-command without interfering with your other SVN-clients.\n"
     ; return "??"
     }

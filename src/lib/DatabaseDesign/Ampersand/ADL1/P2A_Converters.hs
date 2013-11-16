@@ -376,7 +376,6 @@ pCtx2aCtx
                  , ptgns = agens'
                  , ptdcs = [ pDecl2aDecl (name ppat) deflangCtxt deffrmtCtxt pDecl | pDecl<-pt_dcs ppat ]
                  , ptups = pops'
-              -- , ptups = fatal 365 "Don't know where to get the population tuples" -- :: [UserDefPop]  --  The user defined populations in this pattern
                  , ptrruls = [(rol,r)|(rols,r)<-prules,rol<-rols]
                  , ptrrels = [(rol,dcl)|rr<-rrels', rol<-rrRoles rr, dcl<-rrRels rr]  -- The assignment of roles to Relations.
                  , ptids = keys'
