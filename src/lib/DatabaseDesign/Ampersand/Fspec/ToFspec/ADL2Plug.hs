@@ -226,6 +226,7 @@ rel2fld kernel
         where
          exprList :: [[Expression]]
          exprList = foldl f [[x] | x<-nub xs]
+            -- HJO, 20131116: dit staat ook (maar nét anders) in ADL2Fspec.hs. Daardoor onnavolgbaar. Graag aanpassen 
                           $fatal 999229 "please retypecheck in kernels!" --(nub [c `meet` c' | c<-nub (map source xs), c'<-nub (map target xs), compare c c' `elem` [Poset.EQ,Poset.LT,Poset.GT]])
          f :: [[Expression]] -> A_Concept -> [[Expression]]
          f q x = q ++ fatal 999231 "please retypecheck!" {-
