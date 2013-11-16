@@ -188,6 +188,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
          = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
            where
              f :: [[Expression]] -> A_Concept -> [[Expression]]
+            -- HJO, 20131116: dit staat ook (maar nét anders) in ADL2FPlug.hs. Daardoor onnavolgbaar. Graag aanpassen 
              f q x = q ++ fatal 999202 "please retypecheck!" {- [l ++ r | l <- q, x <= target (last l),
                                     r <- q, x <= source (head r), null (l `isc` r)] -}
 
@@ -911,8 +912,8 @@ CHC [ if isRel e
 -- Dit is in overleg met Stef, die deze hele code toch compleet wil herzien, i.v.m. de nieuwe typechecker.
 -- SJC, 20131012: Dan lijkt me dit een goed moment om deze regel weer uit te commentaren, aangezien ik nu de typechecker aan het herzien ben
 --   ik doe dit even met een fatal ipv `echt' commentaar
-          (_ , e@(EDcV _ )) -> fatal 99911 "Fix pattern EDcV please!" -- Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
-          (_ , _)         -> fatal 767 ( "Non-exhaustive patterns in the recursive call\n"
+          (_ , e@(EDcV _ )) -> fatal 99911 "(Stef?) Fix pattern EDcV please!" -- Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
+          (_ , _)         -> fatal 767 ( "(Stef?) Non-exhaustive patterns in the recursive call\n"
                                        ++"doCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
                                          "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++
                                          concat
