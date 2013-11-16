@@ -327,9 +327,9 @@ makeEntityTables _ {-flags-} allDcls concs exclusions
                      -> Just $ flp (EDcD d (sign d))
                  (True   , True   , False  , False  )
                      -> Just $      EDcD d (sign d)
-                 (True   , True   , False  , True   ) --Equivalent to SPEC t ISA s, however, it is named, so it must be stored in a plug!
+                 (True   , True   , False  , True   ) --Equivalent to CLASSIFY t ISA s, however, it is named, so it must be stored in a plug!
                      -> Just $      EDcD d (sign d)
-                 (True   , True   , True   , False  ) --Equivalent to SPEC s ISA t, however, it is named, so it must be stored in a plug!
+                 (True   , True   , True   , False  ) --Equivalent to CLASSIFY s ISA t, however, it is named, so it must be stored in a plug!
                      -> Just $ flp (EDcD d (sign d))
                  (True   , True   , True   , True   ) --An interesting relation indeed. However, it must be implemented, for it is relevant: i.e. `successor` relation on weekdays.
                      -> Just $      EDcD d (sign d)
