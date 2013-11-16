@@ -424,7 +424,7 @@ l .\/. r = EUni (l,r) (sign l)
 l .-. r  = EDif (l,r) (sign l)
 l ./. r  = ELrs (l,r) (target l) (Sign (source l) (source r))
 l .\. r  = ERrs (l,r) (source l) (Sign (target l) (target r))
-l .:. r  = ECps (l,r) (target l) (Sign (source l) (target r))
+l .:. r  = ECps (l,r) (target l) (Sign (source l) (target r)) -- Bas,  if  source r<target l , I would expect the intermediate type to be source r...
 l .!. r  = ERad (l,r) (target l) (Sign (source l) (target r))
 l .*. r  = EPrd (l,r) (Sign (source l) (target r))
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
