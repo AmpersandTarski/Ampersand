@@ -48,21 +48,10 @@ createFspec flags =
         Errors err -> return (Errors err)
         Checked pCtx
            -> do let (gaCtx) = pCtx2aCtx pCtx 
-                 -- when  (typeGraphs flags) (showGraphs stTypeGraph condensedGraph)
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
                    (Checked aCtx) -> return (Checked (makeFspec flags aCtx ))
   where
--- For the purpose of debugging the type checker, or for educational purposes, the switch "--typing" can be used.
--- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
--- Use only for very small scripts, or else the results will not be very informative.
--- For the large scripts that are used in projects, the program may abort due to insufficient resources.
-    {-
-    showGraphs stTypeGraph condensedGraph
-      = do condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".png")
-           verboseLn flags (condensedGraphPath++" written.")
-           stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName flags) ".png")
-           verboseLn flags (stDotGraphPath++" written.") -}
     popsCtxOf :: Guarded P_Context ->IO(Guarded P_Context)
     popsCtxOf gp =
      (case gp of
