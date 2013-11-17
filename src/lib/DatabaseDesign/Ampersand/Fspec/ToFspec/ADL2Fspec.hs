@@ -861,7 +861,8 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let ers=foldCompose rs
                                    , let els=foldCompose ls
-                                   , let c=fatal 999860 "please retypecheck!" --if target ers<=source els then target ers else source els
+                                   , let c=source ers  -- SJ 17 nov 2013 was: if target ers<=source els then target ers else source els
+                                                       --                but introduction of EEps makes this unneccessary
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Del els []
                                    ] motiv
