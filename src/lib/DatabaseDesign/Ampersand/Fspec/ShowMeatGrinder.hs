@@ -91,7 +91,7 @@ instance AdlId Atom where
 
 
 mkAtom :: A_Concept -> String -> Atom
-mkAtom cpt value = Atom { atmRoot = cpt -- Was: root cpt.  <SJ 17 nov 2013> Han, "root cpt" cannot be correct in this spot. I amp quite sure that "cpt" is correct. Please confer.
+mkAtom cpt value = Atom { atmRoot = cpt -- Was: root cpt.  <SJ 17 nov 2013> Han, "root cpt" cannot be correct in this spot. I am quite sure that "cpt" is correct. Please confer.
                         , atmVal  = value
                         }
 
