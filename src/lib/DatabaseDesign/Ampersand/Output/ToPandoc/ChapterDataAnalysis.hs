@@ -320,15 +320,15 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
              ExternalPlug _
                -> case language flags of
                     Dutch   -> para (text "De details van deze service zijn in dit document (nog) niet verder uitgewerkt.")
-                    English -> para (text "The details of this dataservcie are not available in this document.")
+                    English -> para (text "The details of this dataservice are not available in this document.")
       showFields :: [SqlField] -> Blocks
       showFields flds = bulletList (map showField flds)
         where 
           eRelIs = [source sgn | EDcI sgn <- map fldexpr flds]
           showField fld =
              let isPrimaryKey = case fldexpr fld of
-                                  EDcI sgn -> fatal 999386 "please retypecheck!" -- foldl1 join eRelIs == source sgn 
-                                  _        -> False 
+                                  fld@(EDcI sgn) -> fld==fldexpr (head flds) -- The first field represents the most general concept
+                                  _            -> False 
                  mForeignKey  = case fldexpr fld of
                                   EIsc (EDcI sgn,_) _ -> Just (source sgn)
                                   _                   -> Nothing  

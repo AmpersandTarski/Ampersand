@@ -331,7 +331,9 @@ data PlugSQL
    --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
    --              (r=fldexpr of attMor field, in practice r is a makeRelation(declaration))
  = TblSQL  { sqlname :: String
-           , fields :: [SqlField]
+           , fields :: [SqlField]                          -- ^ the first field is the concept table of the most general concept (e.g. Person)
+                                                           --   then follow concept tables of specializations. Together with the first field this is called the "kernel"
+                                                           --   the remaining fields represent attributes.
            , cLkpTbl :: [(A_Concept,SqlField)]             -- ^ lookup table that links all kernel concepts to fields in the plug
                                                            -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
            , mLkpTbl :: [(Expression,SqlField,SqlField)]   -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
