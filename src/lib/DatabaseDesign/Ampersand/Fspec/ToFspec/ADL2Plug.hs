@@ -225,13 +225,12 @@ rel2fld kernel
       = [ foldr1 (.:.) expr | expr<-exprList ]
         where
          exprList :: [[Expression]]
+      -- SJ 17 nov 2013. The following code (exprList and f) assumes no ISA's in the A-structure. Therefore, this works due to the introduction of EEps.
          exprList = foldl f [[x] | x<-nub xs]
-            -- HJO, 20131116: dit staat ook (maar nét anders) in ADL2Fspec.hs. Daardoor onnavolgbaar. Graag aanpassen 
-                          $fatal 999229 "please retypecheck in kernels!" --(nub [c `meet` c' | c<-nub (map source xs), c'<-nub (map target xs), compare c c' `elem` [Poset.EQ,Poset.LT,Poset.GT]])
+                          (nub [c | c<-nub (map source xs), c'<-nub (map target xs), c==c'])
          f :: [[Expression]] -> A_Concept -> [[Expression]]
-         f q x = q ++ fatal 999231 "please retypecheck!" {-
-                 [ls ++ rs | ls <- q, x <= target (last ls)
-                           , rs <- q, x <= source ((head 206)rs), null (ls `isc` rs)] -}
+         f q x = q ++ [ls ++ rs | ls <- q, x == target (last ls)
+                                , rs <- q, x == source (head 233 rs), null (ls `isc` rs)]
                   
 -- ^ Explanation:  rel is a relation from some kernel field k to f
 -- ^ (fldexpr k) is the relation from the plug's ID to k
