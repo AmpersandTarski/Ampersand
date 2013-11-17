@@ -6,7 +6,6 @@ where
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg, Identified(..))   
    import Data.List (nub)
-   
    fatal :: Int -> String -> a
    fatal = fatalMsg "Populated.hs"
 
@@ -32,15 +31,12 @@ where
    instance Populated Declaration where
     fullContents gens pt dcl
       = case dcl of
-         Isn c -> [ mkPair a a | a <-atomsOf gens pt c]
-         Vs sgn -> [ mkPair sa ta | sa<-atomsOf gens pt (source sgn), ta<-atomsOf gens pt (target sgn)]
+         Isn c  -> [ mkPair a a   | a  <-atomsOf gens pt c]
+         Vs sgn -> [ mkPair sa ta | sa <-atomsOf gens pt (source sgn)
+                                  , ta <-atomsOf gens pt (target sgn)]
          Sgn{} -> if decISA dcl
                   then [ mkPair a a | a <-atomsOf gens pt (source dcl)] 
-                  else 
-                   case filter (isTheDecl dcl) pt of
-                     []    -> [] 
-                     [pop] -> popps pop
-                     _     -> fatal 31 $ "Multiple entries in lookup table found for declaration."
+                  else concatMap  popps (filter (isTheDecl dcl) pt)
      where isTheDecl d pop =
              case pop of
                PRelPopu{}  -> d == popdcl pop
