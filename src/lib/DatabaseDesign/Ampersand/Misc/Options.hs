@@ -32,7 +32,6 @@ instance Show ParserVersion where
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like Ampersand to do. 
 data Options = Options { showVersion :: Bool
-                       , typeGraphs :: Bool   -- draw a diagram of the type analysis, for educational or debugging purposes.
                        , preVersion :: String
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer. 
                        , showHelp :: Bool
@@ -104,7 +103,6 @@ defaultFlags = Options {genTime       = fatal 81 "No monadic options available."
                       , postVersion   = fatal 89 "No monadic options available."
                       , theme         = DefaultTheme
                       , showVersion   = False
-                      , typeGraphs    = False
                       , showHelp      = False
                       , verboseP      = False
                       , development   = False
@@ -263,7 +261,6 @@ each flags = [o |(o,_) <- flags]
 options :: [(OptDescr (Options -> Options), DisplayMode) ]
 options = map pp
           [ (Option "v"     ["version"]     (NoArg versionOpt)          "show version and exit.", Public)
-          , (Option ""      ["typing"]      (NoArg typeGraphsOpt)       "show the analysis of types in graphical (.png) form.", Hidden)
           , (Option "h?"    ["help"]        (NoArg helpOpt)             "get (this) usage information.", Public)
           , (Option ""      ["verbose"]     (NoArg verboseOpt)          "verbose error message format.", Public)
           , (Option ""      ["dev"]         (NoArg developmentOpt)      "Report and generate extra development information", Hidden)
@@ -344,8 +341,6 @@ envlogName="CClogName"
 
 versionOpt :: Options -> Options
 versionOpt       flags = flags{showVersion  = True}            
-typeGraphsOpt :: Options -> Options
-typeGraphsOpt    flags = flags{typeGraphs  = True}            
 helpOpt :: Options -> Options
 helpOpt          flags = flags{showHelp     = True}            
 verboseOpt :: Options -> Options
