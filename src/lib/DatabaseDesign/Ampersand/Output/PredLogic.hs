@@ -330,7 +330,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                     (Left _,    Left _   ) -> []
                     (Left atom, Right  _ ) -> [ Left atom ]
                     (Right  _ , Left atom) -> [ Left atom ]
-                    (Right trg, Right src) -> (if trg==src then [ Right trg ] else fatal 999333 "please retypecheck!") -- [ Right (trg `meet` src) ]
+                    (Right trg, Right src) -> (if trg==src then [ Right trg ] else fatal 999333 "please retypecheck!") -- was: [ Right (trg `meet` src) ]
+                                                                                                                       --  <SJ 17 nov 2013> Do nothing for now. This will be resolved with EEps expressions in due time.
                 | (v',w)<-zip [ case l ("",src) ("",trg) of
                                  atom@Atom{} -> Left atom
                                  _           -> Right trg
@@ -383,7 +384,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                     (Left _,    Left _   ) -> []
                     (Left atom, Right  _ ) -> [ Left atom ]
                     (Right  _ , Left atom) -> [ Left atom ]
-                    (Right trg, Right src) -> (if trg==src then [ Right trg ] else fatal 999386 "please retypecheck!") -- [ Right (trg `meet` src) ]
+                    (Right trg, Right src) -> (if trg==src then [ Right trg ] else fatal 999386 "please retypecheck!") -- was:  [ Right (trg `meet` src) ]
+                                                                                                                       --  <SJ 17 nov 2013> Do nothing for now. This will be resolved with EEps expressions in due time.
                 | (v',w)<-zip [ case l ("",src) ("",trg) of
                                  atom@Atom{} -> Left atom
                                  _           -> Right trg
