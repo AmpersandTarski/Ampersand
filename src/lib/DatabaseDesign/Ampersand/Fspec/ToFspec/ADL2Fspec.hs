@@ -187,7 +187,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         clos xs
          = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
            where
-           -- SJ 17 nov 2013: function f assumes that there are no ISA's. So this will work correctly after the introduction of EEps.
+           -- SJ 20131117: function f assumes that there are no ISA's. So this will work correctly after the introduction of EEps.
              f :: [[Expression]] -> A_Concept -> [[Expression]]
              f q x = q ++ [l ++ r | l <- q, x == target (last l),
                                     r <- q, x == source (head r), null (l `isc` r)]
@@ -668,7 +668,7 @@ while maintaining all invariants.
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let els=foldCompose ls
                                    , let ers=foldCompose rs
-                                   , let c=source ers  -- SJ 17 nov 2013 was: if source ers<=target els then source ers else target els
+                                   , let c=source ers  -- SJ 20131117 was: if source ers<=target els then source ers else target els
                                                        --                but introduction of EEps makes this unneccessary
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Ins els []
@@ -861,7 +861,7 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let ers=foldCompose rs
                                    , let els=foldCompose ls
-                                   , let c=source ers  -- SJ 17 nov 2013 was: if target ers<=source els then target ers else source els
+                                   , let c=source ers  -- SJ 20131117 was: if target ers<=source els then target ers else source els
                                                        --                but introduction of EEps makes this unneccessary
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Del els []
@@ -914,7 +914,8 @@ CHC [ if isRel e
 -- Dit is in overleg met Stef, die deze hele code toch compleet wil herzien, i.v.m. de nieuwe typechecker.
 -- SJC, 20131012: Dan lijkt me dit een goed moment om deze regel weer uit te commentaren, aangezien ik nu de typechecker aan het herzien ben
 --   ik doe dit even met een fatal ipv `echt' commentaar
-          (_ , e@(EDcV _ )) -> fatal 99911 "(Stef?) Fix pattern EDcV please!" -- Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
+-- SJ 20131117: I think not. Refactoring of this generator is nigh, though holding uppe other developments cannot be tolerated! So ye following code shall remain wrong rather than fatal... Long live the King!  ^_^ 
+          (_ , e@(EDcV _ )) -> Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
           (_ , _)         -> fatal 767 ( "(Stef?) Non-exhaustive patterns in the recursive call\n"
                                        ++"doCod ("++showADL deltaX++") -- deltaX\n      "++show tOp++"  -- tOp\n      ("++showADL exprX++") -- exprX\n"++
                                          "within function\ndoCode "++show tOp'++"  -- tOp'\n       ("++showADL expr1++") -- expr1\n       ("++showADL delta1++") -- delta1\n"++

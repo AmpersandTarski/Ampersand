@@ -330,8 +330,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                     (Left _,    Left _   ) -> []
                     (Left atom, Right  _ ) -> [ Left atom ]
                     (Right  _ , Left atom) -> [ Left atom ]
-                    (Right trg, Right src) -> (if trg==src then [ Right trg ] else fatal 999333 "please retypecheck!") -- was: [ Right (trg `meet` src) ]
-                                                                                                                       --  <SJ 17 nov 2013> Do nothing for now. This will be resolved with EEps expressions in due time.
+                    (Right trg, Right src) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
+                                                            -- This code assumes no ISA's in the A-structure. This works due to the introduction of EEps expressions.
                 | (v',w)<-zip [ case l ("",src) ("",trg) of
                                  atom@Atom{} -> Left atom
                                  _           -> Right trg
@@ -384,8 +384,8 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                     (Left _,    Left _   ) -> []
                     (Left atom, Right  _ ) -> [ Left atom ]
                     (Right  _ , Left atom) -> [ Left atom ]
-                    (Right trg, Right src) -> (if trg==src then [ Right trg ] else fatal 999386 "please retypecheck!") -- was:  [ Right (trg `meet` src) ]
-                                                                                                                       --  <SJ 17 nov 2013> Do nothing for now. This will be resolved with EEps expressions in due time.
+                    (Right trg, Right src) -> [ Right trg ] -- SJ 20131117, was: (if trg==src then [ Right trg ] else [ Right (trg `meet` src) ])
+                                                            -- This code assumes no ISA's in the A-structure. This works due to the introduction of EEps expressions.
                 | (v',w)<-zip [ case l ("",src) ("",trg) of
                                  atom@Atom{} -> Left atom
                                  _           -> Right trg
