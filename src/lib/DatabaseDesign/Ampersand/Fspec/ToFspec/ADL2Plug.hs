@@ -225,7 +225,7 @@ rel2fld kernel
       = [ foldr1 (.:.) expr | expr<-exprList ]
         where
          exprList :: [[Expression]]
-      -- SJ 17 nov 2013. The following code (exprList and f) assumes no ISA's in the A-structure. Therefore, this works due to the introduction of EEps.
+      -- SJ 20131117. The following code (exprList and f) assumes no ISA's in the A-structure. Therefore, this works due to the introduction of EEps.
          exprList = foldl f [[x] | x<-nub xs]
                           (nub [c | c<-nub (map source xs), c'<-nub (map target xs), c==c'])
          f :: [[Expression]] -> A_Concept -> [[Expression]]
