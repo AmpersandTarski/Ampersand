@@ -668,7 +668,8 @@ while maintaining all invariants.
                                    | (ls,rs)<-chop (exprCps2list e)
                                    , let els=foldCompose ls
                                    , let ers=foldCompose rs
-                                   , let c=fatal 999668 "please retypecheck!" --if source ers<=target els then source ers else target els
+                                   , let c=source ers  -- SJ 17 nov 2013 was: if source ers<=target els then source ers else target els
+                                                       --                but introduction of EEps makes this unneccessary
                                    , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
                                    , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Ins els []
                                    ] motiv
