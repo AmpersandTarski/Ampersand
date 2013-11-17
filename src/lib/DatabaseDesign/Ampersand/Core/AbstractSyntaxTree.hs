@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith 
- , smallerConcepts
+ , smallerConcepts, largerConcepts
  , showSign
  , aMarkup2String
  , insParentheses
@@ -305,7 +305,10 @@ smallerConcepts gens cpt
   = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller 
   where oneSmaller = nub$[s | Gen _ g   s <- gens , g == cpt]
                        ++[s | Spc _ rhs s <- gens , cpt `elem` rhs]
-
+largerConcepts gens cpt 
+ = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
+  where oneLarger  = nub$[g | Gen _ g   s <- gens , s == cpt]
+                       ++concat[rhs | Spc _ rhs s <- gens , s == cpt] 
 data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
                      , ifcArgs ::   [[String]]
                      , ifcRoles ::  [String]

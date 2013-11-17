@@ -409,8 +409,8 @@ data SqlType = SQLChar    Int
              deriving (Eq,Show)
 
 getGeneralizations :: Fspc -> A_Concept -> [A_Concept]
-getGeneralizations fSpec c = fatal 999413 "please retypecheck!" -- filter (c Poset.<) $ concs fSpec
+getGeneralizations fSpec = largerConcepts (gens fSpec)
 
 getSpecializations :: Fspc -> A_Concept -> [A_Concept]
-getSpecializations fSpec c = fatal 999416 "please retypecheck!" -- filter (c Poset.>) $ concs fSpec
+getSpecializations fSpec = smallerConcepts (gens fSpec)
 
