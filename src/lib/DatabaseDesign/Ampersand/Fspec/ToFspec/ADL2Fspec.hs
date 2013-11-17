@@ -175,7 +175,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
 --          to ensure insertability of entities (signal declarations are excluded)
         cRels = [     EDcD d (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isTot d, not$decplug d]++
                 [flp (EDcD d (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
---  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
+--  Step 2: select and arrange all declarations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
         dRels = [     EDcD d (sign d)  | d@Sgn{}<-declarations context, not(deciss d), isInj d, not$decplug d]++
                 [flp (EDcD d (sign d)) | d@Sgn{}<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
@@ -187,10 +187,10 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         clos xs
          = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
            where
+           -- SJ 17 nov 2013: function f assumes that there are no ISA's. So this will work correctly after the introduction of EEps.
              f :: [[Expression]] -> A_Concept -> [[Expression]]
-            -- HJO, 20131116: dit staat ook (maar nét anders) in ADL2FPlug.hs. Daardoor onnavolgbaar. Graag aanpassen 
-             f q x = q ++ fatal 999202 "please retypecheck!" {- [l ++ r | l <- q, x <= target (last l),
-                                    r <- q, x <= source (head r), null (l `isc` r)] -}
+             f q x = q ++ [l ++ r | l <- q, x == target (last l),
+                                    r <- q, x == source (head r), null (l `isc` r)]
 
 --  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
 --          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept] 
