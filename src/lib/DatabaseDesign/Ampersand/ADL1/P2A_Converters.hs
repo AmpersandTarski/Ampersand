@@ -94,6 +94,7 @@ pCtx2aCtx
     genRules = [ ( Set.singleton (name$ gen_spc x), Set.fromList (map name$ gen_concs x))
                | x <- p_gens ++ concat (map pt_gns p_patterns ++ map procGens p_processes)
                ]
+    genLattice :: Op1EqualitySystem A_Concept
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
     
     concGroups :: [[String]]
@@ -593,7 +594,7 @@ data TT a  -- (In order of increasing strictness. If you are unsure which to pic
  | MBE a a -- must be equal: must be (made) of equal type. If these types are comparable, it returns the greatest.
  | MBG a a -- The first of these types must be the greatest, if so, return it (error otherwise)
  -- SJC: difference between UNI and MBE
- -- in general, UNI is less strict then MBE:
+ -- in general, UNI is less strict than MBE:
  --   suppose A ≤ C, B ≤ C, and C is the least such concept (e.g. if A≤D and B≤D then C≤D)
  --   in this case UNI A B will yield C (if both A and B are generalizable), while MBE A B will give an error
  --   note that in case of A ≤ C, B ≤ C, A ≤ D, B ≤ D (and there is no order between C and D), both will give an error

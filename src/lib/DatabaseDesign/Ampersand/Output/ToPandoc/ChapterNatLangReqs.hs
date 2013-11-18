@@ -384,7 +384,7 @@ chpNatLangReqs lev fSpec flags =
 -- TODO: move these to some auxiliaries or utils
 showViewAtom :: Fspc -> Maybe Declaration -> A_Concept -> String -> String
 showViewAtom fSpec mDec cncpt atom =
-  case mapMaybe (getView fSpec) (cncpt : getGeneralizations fSpec cncpt) of
+  case mapMaybe (getView fSpec) (cncpt : largerConcepts (gens fSpec) cncpt) of
     []    -> atom
     view:_ -> case mDec of
               Nothing -> concatMap showViewSegment (vdats view)

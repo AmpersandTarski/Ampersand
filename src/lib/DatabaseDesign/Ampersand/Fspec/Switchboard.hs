@@ -239,11 +239,11 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (EIsc (l,r) _  ) = f l ++ f r
      f (EUni (l,r) _  ) = f l ++ f r
      f (EDif (l,r) sgn) = f (l ./\. notCpl sgn r)
-     f (ELrs (l,r) _ sgn) = f (l .!. notCpl sgn (flp r))
-     f (ERrs (l,r) _ sgn) = f (notCpl sgn (flp l) .!. r)
-     f (ECps (l,r) _ _) = f l ++ f r
-     f (ERad (l,r) _ _) = f l ++ f r
-     f (EPrd (l,r) _ )  = f l ++ f r
+     f (ELrs (l,r) sgn) = f (l .!. notCpl sgn (flp r))
+     f (ERrs (l,r) sgn) = f (notCpl sgn (flp l) .!. r)
+     f (ECps (l,r) _  ) = f l ++ f r
+     f (ERad (l,r) _  ) = f l ++ f r
+     f (EPrd (l,r) _  ) = f l ++ f r
      f (EKl0 e _)       = f e
      f (EKl1 e _)       = f e
      f (EFlp e _)       = f e
@@ -252,5 +252,6 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (ETyp e _)       = f e
      f (EDcD d _)       = [ True | d==decl ]
      f (EDcI sgn)       = [ True | Isn (source sgn)==decl ]
+     f (EEps _ _)       = []
      f EDcV{}           = fatal 255 "Illegal call of positiveIn."
      f (EMp1 _ _)       = []

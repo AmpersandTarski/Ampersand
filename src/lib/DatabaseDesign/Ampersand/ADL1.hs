@@ -59,7 +59,7 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
          )
 import DatabaseDesign.Ampersand.ADL1.Expression as X (
-         notCpl, isCpl, deMorgan)
+         notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc)
 import DatabaseDesign.Ampersand.ADL1.ECArule as X (
          isAll, isCHC, isBlk, isNop, isDo, dos)
 import DatabaseDesign.Ampersand.ADL1.Rule as X (

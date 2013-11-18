@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.Fspec (module X) where
 import DatabaseDesign.Ampersand.Fspec.Fspec as X 
-       (Fspc(..), FProcess(..), ECArule(..), lookupCpt, metaValues, getGeneralizations, getSpecializations)
+       (Fspc(..), FProcess(..), ECArule(..), lookupCpt, metaValues)
 import DatabaseDesign.Ampersand.Fspec.Plug as X
        (PlugInfo(..), PlugSQL(..), SqlField(..), SqlFieldUsage(..), SqlType(..), tblcontents,
         plugFields, requiredFields, requires, plugpath, Plugable(..),

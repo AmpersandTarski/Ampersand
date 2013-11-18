@@ -265,14 +265,14 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f exclVars e@EIsc{}       (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
       f exclVars e@EUni{}       (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
       f exclVars (EDif (l,r) _) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
-      f exclVars (ELrs (l,r) c' _) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
-                                         where [c]   = mkVar exclVars [c']
+      f exclVars (ELrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
+                                         where [c]   = mkVar exclVars [target l]
                                                eVars = exclVars++[c]
-      f exclVars (ERrs (l,r) c' _) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
-                                         where [c]   = mkVar exclVars [c']
+      f exclVars (ERrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
+                                         where [c]   = mkVar exclVars [source l]
                                                eVars = exclVars++[c]
-      f exclVars e@ECps{}       (a,b)  = fC exclVars e (a,b)  -- special treatment, see below
-      f exclVars e@ERad{}       (a,b)  = fD exclVars e (a,b)  -- special treatment, see below
+      f exclVars e@ECps{}       (a,b)  = fECps exclVars e (a,b)  -- special treatment, see below
+      f exclVars e@ERad{}       (a,b)  = fERad exclVars e (a,b)  -- special treatment, see below
       f _        (EPrd (l,r) _) (a,b)  = Conj [Dom l a, Cod r b]
       f exclVars (EKl0 e _)     (a,b)  = PlK0 (f exclVars e (a,b))
       f exclVars (EKl1 e _)     (a,b)  = PlK1 (f exclVars e (a,b))
@@ -296,21 +296,21 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
       f _ (EMp1 atom _) _             = Atom atom
       f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
-      f _ (EDcV _) _                = Atom "True"
+      f _ (EDcV _) _                  = Atom "True"
 
--- fC treats the case of a composition.  It works as follows:
+-- fECps treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
 --       in which ivs is a list of variables that are used inside the resulting expression,
 --       ics contains their types, and frels s t the subexpressions that
 --       are used in the resulting conjuct (at the right of the quantifier).
-      fC :: [Var] -> Expression -> (Var,Var) -> PredLogic
-      fC exclVars    e             (a,b)
+      fECps :: [Var] -> Expression -> (Var,Var) -> PredLogic
+      fECps exclVars    e             (a,b)
                                --   f :: [Var] -> Expression -> (Var,Var) -> PredLogic
-        | and [isCpl e' | e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)
+        | and [isCpl e' | e'<-es] = f exclVars (deMorganECps (sign e) e) (a,b)
         | otherwise               = Exists ivs (Conj (frels a b))
         where
          es :: [Expression]
-         es   = exprCps2list e
+         es   = [ x | x<-exprCps2list e, not isEpsilon x ]
         -- Step 1: split in fragments at those points where an exists-quantifier is needed.
         --         Each fragment represents a subexpression with variables
         --         at the outside only. Fragments will be reconstructed in a conjunct.
@@ -350,8 +350,9 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       mkvar exclVars (Left  _: ics) = mkvar exclVars ics
       mkvar _ [] = []
 
-      fD exclVars e (a,b) 
-        | and[isCpl e' |e'<-es] = f exclVars (deMorgan (sign e) e) (a,b)                      -- e.g.  -r!-s!-t
+      fERad :: [Var] -> Expression -> (Var,Var) -> PredLogic
+      fERad exclVars e (a,b) 
+        | and[isCpl e' |e'<-es] = f exclVars (deMorganERad (sign e) e) (a,b)                      -- e.g.  -r!-s!-t
         | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b)  -- e.g.  -r!-s! t  antr cannot be empty, because isCpl (head es) is True; conr cannot be empty, because es has an element that is not isCpl.
         | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b)  -- e.g.   r!-s!-t  antl cannot be empty, because isCpl (head es) is True; conl cannot be empty, because es has an element that is not isCpl.
         | otherwise             = Forall ivs (Disj (frels a b))                               -- e.g.   r!-s! t  the condition or [isCpl e' |e'<-es] is true.
@@ -360,7 +361,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                   where alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
 -}
         where
-         es   = exprRad2list e -- The definition of exprRad2list guarantees that length es>=2
+         es   = [ x | x<-exprRad2list e, not isEpsilon x ] -- The definition of exprRad2list guarantees that length es>=2
          res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
          conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                    -- So conr is not empty.
