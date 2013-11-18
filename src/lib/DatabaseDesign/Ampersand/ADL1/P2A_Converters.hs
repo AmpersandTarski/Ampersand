@@ -251,17 +251,19 @@ pCtx2aCtx
       --   it must be bound by the context to something smaller, or something as big
       --   a way to do this, is by using (V[type] /\ thingToBeBound)
       -- More details about generalizable types can be found by looking at "deriv1".
-      binary :: ((Expression,Expression)->Sign->Expression) -- combinator
-             ->(TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
-                        -> (Expression, (Bool, Bool))),TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
-                        -> (Expression, (Bool, Bool)))) -- simple instruction on how to derive the type
-             ->((Expression,(Bool,Bool)),(Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
-             ->Guarded (Expression,(Bool,Bool))
+      binary :: ((Expression,Expression)->Expression) -- combinator
+             -> (TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
+                               -> (Expression, (Bool, Bool)))
+                ,TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
+                               -> (Expression, (Bool, Bool)))) -- simple instruction on how to derive the type
+             -> ((Expression,(Bool,Bool)),(Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
+             -> Guarded (Expression,(Bool,Bool))
       binary  cbn     tp (e1,e2) = wrap  (cbn (fst e1,fst e2)) <$> deriv tp (e1,e2)
       unary   cbn     tp e1      = wrap  (cbn (fst e1       )) <$> deriv tp e1
       binary' cbn cpt tp (e1,e2) = wrap' (cbn (fst e1,fst e2)) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
-      wrap  f         ((src,b1),(tgt,b2)) = (f (findSign src tgt),(b1,b2))
-      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f (findConceptOrONE cpt) (findSign src tgt),(b1,b2))
+      wrap :: Expression -> ((String,Bool),(String,Bool)) -> (Expression,(Bool,Bool))
+      wrap  f         ((src,b1),(tgt,b2)) = (f, (b1, b2))
+      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f (findConceptOrONE cpt), (b1, b2))
       deriv' (a,b) es = let (sot1,(e1,t1)) = resolve es a
                             (sot2,(e2,t2)) = resolve es b
                         in pure ((gc sot1 e1,t1),(gc sot2 e2,t2))
