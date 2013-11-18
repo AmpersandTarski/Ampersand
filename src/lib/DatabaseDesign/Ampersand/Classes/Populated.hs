@@ -7,7 +7,7 @@ where
    import DatabaseDesign.Ampersand.Basics                     (Collection (..),fatalMsg, Identified(..))   
    import Data.List (nub)
    fatal :: Int -> String -> a
-   fatal = fatalMsg "Populated.hs"
+   fatal = fatalMsg "Classes.Populated"
 
    
    class Populated a where
