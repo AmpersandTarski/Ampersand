@@ -54,7 +54,9 @@ module DatabaseDesign.Ampersand
    , showPrf
    , notCpl, isCpl, isPos, isNeg
       , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
-   , iExpr, vExpr, deMorgan, exprUni2list, exprIsc2list, exprCps2list, exprRad2list
+   , iExpr, vExpr
+   , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
+   , exprUni2list, exprIsc2list, exprCps2list, exprRad2list
    -- * Functions with plugs:
    , plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
    -- * Parser related stuff

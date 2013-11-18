@@ -267,10 +267,10 @@ instance ShowADL Expression where
           showchar (EIsc (l,r) _) = showchar l++inter++showchar r
           showchar (EUni (l,r) _) = showchar l++union'++showchar r
           showchar (EDif (l,r) _) = showchar l++diff ++showchar r
-          showchar (ELrs (l,r) _ _) = showchar l++lresi++showchar r
-          showchar (ERrs (l,r) _ _) = showchar l++rresi++showchar r
-          showchar (ECps (l,r) _ _) = showchar l++rMul++showchar r
-          showchar (ERad (l,r) _ _) = showchar l++rAdd++showchar r
+          showchar (ELrs (l,r) _) = showchar l++lresi++showchar r
+          showchar (ERrs (l,r) _) = showchar l++rresi++showchar r
+          showchar (ECps (l,r) _) = showchar l++rMul++showchar r
+          showchar (ERad (l,r) _) = showchar l++rAdd++showchar r
           showchar (EPrd (l,r) _) = showchar l++rPrd++showchar r
           showchar (EKl0 e _)     = showchar e++closK0
           showchar (EKl1 e _)     = showchar e++closK1
@@ -282,8 +282,9 @@ instance ShowADL Expression where
            | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
           -- relations in expressions are printed without type signature, use ETyp to print signatures
           showchar (EDcD dcl   _) = name dcl
-          showchar (EDcI       _) = "I"
-          showchar (EDcV       _) = "V"
+          showchar  EDcI{}        = "I"
+          showchar  EEps{}        = "epsilon"
+          showchar  EDcV{}        = "V"
           showchar (EMp1 atom  _) = "'"++atom++"'"
 
 instance ShowADL HornClause where

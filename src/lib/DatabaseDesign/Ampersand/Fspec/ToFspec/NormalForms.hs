@@ -148,10 +148,10 @@ where
      nM posNeg (EImp (l,r) _) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM (cplCmp posNeg) l []
                                                     (f,steps',equ'') = nM posNeg r []
-     nM posNeg (ELrs (l,r) _ _) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
+     nM posNeg (ELrs (l,r) _) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
                                               where (t,steps, equ')  = nM posNeg l []
                                                     (f,steps',equ'') = nM (cplCmp posNeg) r []
-     nM posNeg (ERrs (l,r) _ _) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (ERrs (l,r) _) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM (cplCmp posNeg) l []
                                                     (f,steps',equ'') = nM posNeg r []
      nM posNeg (EUni (EUni (l,k) _,r) _) rs = nM posNeg (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
@@ -162,13 +162,13 @@ where
      nM posNeg (EIsc (l,r) _) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')  = nM posNeg l []
                                                     (f,steps',equ'') = nM posNeg r (l:rs)
-     nM posNeg (ECps (ECps (l,k) _ _,r) _ _) rs = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
+     nM posNeg (ECps (ECps (l,k) _,r) _) rs = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
                                                   -- Note: function shiftL and shiftR make use of the fact that this normalizes to (l .:. (k .:. r))
-     nM posNeg (ECps (l,r) _ _) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (ECps (l,r) _) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                where (t,steps, equ')  = nM posNeg l []
                                                      (f,steps',equ'') = nM posNeg r (l:rs)
-     nM posNeg (ERad (ERad (l,k) _ _,r) _ _) rs = nM posNeg (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
-     nM posNeg (ERad (l,r) _ _) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (ERad (ERad (l,k) _,r) _) rs = nM posNeg (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
+     nM posNeg (ERad (l,r) _) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
                                               where (t,steps, equ')    = nM posNeg l []
                                                     (f,steps',equ'')   = nM posNeg r (l:rs)
      nM posNeg (EPrd (EPrd (l,k) _,r) _) rs = nM posNeg (l .*. (k .*. r)) rs  -- standardize, using associativity of .*.
@@ -187,46 +187,46 @@ where
      nM _      x _                  | simpl = (x,[],"<=>")
 -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
      nM _      (EEqu (l,r) _) _                                = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
-     nM _      (EImp (x,ELrs (z,y) _ _) _) _                     = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
-     nM _      (EImp (y,ERrs (x,z) _ _) _) _                     = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
+     nM _      (EImp (x,ELrs (z,y) _) _) _                     = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
+     nM _      (EImp (y,ERrs (x,z) _) _) _                     = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
      nM _      (EImp (l,r) sgn) _                              = (notCpl sgn l .\/. r, ["remove |-"],"<=>")
-     nM _      (ELrs (l,r) _ sgn) _                              = (l .!. notCpl sgn (flp r), ["remove left residual (/)"],"<=>")
-     nM _      (ERrs (l,r) _ sgn) _                              = (notCpl sgn (flp l) .!. r, ["remove right residual (\\)"],"<=>")
-     nM _      (ECpl e@EIsc{} sgn) _                           = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
-     nM _      (ECpl e@EUni{} sgn) _                           = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
-     nM _      (ECpl e@(ERad (_,ECpl{}) _ _) sgn) _            = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
-     nM _      (ECpl e@(ERad (ECpl{},_) _ _) sgn) _            = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
-     nM _      (ECpl e@(ECps (ECpl{},ECpl{}) _ _) sgn) _       = (notCpl sgn (deMorgan sgn e), ["De Morgan"], "<=>")
+     nM _      (ELrs (l,r) sgn) _                              = (l .!. notCpl sgn (flp r), ["remove left residual (/)"],"<=>")
+     nM _      (ERrs (l,r) sgn) _                              = (notCpl sgn (flp l) .!. r, ["remove right residual (\\)"],"<=>")
+     nM _      (ECpl e@EIsc{} sgn) _                           = (notCpl sgn (deMorganEIsc sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@EUni{} sgn) _                           = (notCpl sgn (deMorganEUni sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@(ERad (_,ECpl{}) _) sgn) _              = (notCpl sgn (deMorganERad sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@(ERad (ECpl{},_) _) sgn) _              = (notCpl sgn (deMorganERad sgn e), ["De Morgan"], "<=>")
+     nM _      (ECpl e@(ECps (ECpl{},ECpl{}) _) sgn) _         = (notCpl sgn (deMorganECps sgn e), ["De Morgan"], "<=>")
      nM posNeg (ECpl e sgn) _                                  = (notCpl sgn res',steps,equ')
                                                                  where (res',steps,equ') = nM (cplCmp posNeg) e []
      {-
-     nM _      (ECps (l,r) _ sgn) _ | isIdent l && sign l Poset.>=sgn = (r, ["I;x = x"], "<=>")
-     nM _      (ECps (l,r) _ sgn) _ | isIdent r && sign r Poset.>=sgn = (l, ["x;I = x"], "<=>")
-     nM Lte    (ECps (r,ERad (s,q) _ _) _ _) _ | not eq            = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
-     nM Lte    (ECps (ERad (r,s) _ _,q) _ _) _ | not eq            = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
-     nM Lte    (ECps (EIsc (r,s) _,q) _ _) _ | not eq            = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
-     nM Lte    (ECps (r,EIsc (s,q) _) _ _) _ | not eq            = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
-     nM _      (ECps (EUni (q,s) _,r) _ _) _                     = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
-     nM _      (ECps (l,EUni (q,s) _) _ _) _                     = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
-     nM _      x@(ECps (l@EFlp{},r) _ _) _ | not eq && flp l==r && isInj l   = (iExpr (source x), ["r~;r |- I (r is univalent)"], "==>")
-     nM _      x@(ECps (l,       r) _ _) _ | not eq && l==flp r && isInj l   = (iExpr (source x), ["r;r~ |- I (r is injective)"], "==>")
-     nM _      x@(ECps (l@EFlp{},r) _ _) _ | flp l==r && isInj l && isTot l  = (iExpr (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
-     nM _      x@(ECps (l,       r) _ _) _ | l==flp r && isInj l && isTot l  = (iExpr (source x), ["r;r~=I because r is injective and total"], "<=>")
-     nM _      x@(ECps(ECpl{},ECpl{}) _ _) _                     = (deMorgan (sign x) x, ["De Morgan"], "<=>")
-     nM posNeg (ECps (l,r) _ _)           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
+     nM _      (ECps (l,r) sgn) _ | isIdent l && sign l Poset.>=sgn = (r, ["I;x = x"], "<=>")
+     nM _      (ECps (l,r) sgn) _ | isIdent r && sign r Poset.>=sgn = (l, ["x;I = x"], "<=>")
+     nM Lte    (ECps (r,ERad (s,q) _) _) _ | not eq            = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
+     nM Lte    (ECps (ERad (r,s) _,q) _) _ | not eq            = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
+     nM Lte    (ECps (EIsc (r,s) _,q) _) _ | not eq            = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
+     nM Lte    (ECps (r,EIsc (s,q) _) _) _ | not eq            = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
+     nM _      (ECps (EUni (q,s) _,r) _) _                     = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
+     nM _      (ECps (l,EUni (q,s) _) _) _                     = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
+     nM _      x@(ECps (l@EFlp{},r) _) _ | not eq && flp l==r && isInj l   = (iExpr (source x), ["r~;r |- I (r is univalent)"], "==>")
+     nM _      x@(ECps (l,       r) _) _ | not eq && l==flp r && isInj l   = (iExpr (source x), ["r;r~ |- I (r is injective)"], "==>")
+     nM _      x@(ECps (l@EFlp{},r) _) _ | flp l==r && isInj l && isTot l  = (iExpr (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
+     nM _      x@(ECps (l,       r) _) _ | l==flp r && isInj l && isTot l  = (iExpr (source x), ["r;r~=I because r is injective and total"], "<=>")
+     nM _      x@(ECps(ECpl{},ECpl{}) _) _                     = (deMorganECps (sign x) x, ["De Morgan"], "<=>")
+     nM posNeg (ECps (l,r) _)           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posNeg l []
                                                                        (f,steps',equ'') = nM posNeg r (l:rs)
-     nM _      (ERad (l,r) _ sgn) _ | isImin l && sign l Poset.>=sgn = (r, ["-I;x = x"], "<=>")
-     nM _      (ERad (l,r) _ sgn) _ | isImin r && sign r Poset.>=sgn = (l, ["x;-I = x"], "<=>")
-     nM Gte    (ERad (ECps (r,s) _ _,q) _ _) _  | not eq           = (r.!.(s.:.q), ["Peirce: r;(s!q) -| (r;s)!q"],"==>")
-     nM Gte    (ERad (r,ECps (s,q) _ _) _ _) _  | not eq           = ((r.!.s).:.q, ["Peirce: r!(s;q) -| (r!s);q"],"==>")
-     nM Gte    (ERad (EUni (r,s) _,q) _ _) _  | not eq           = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
-     nM Gte    (ERad (r,EUni (s,q) _) _ _) _  | not eq           = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
-     nM _      (ERad (EIsc (q,s) _,r) _ _) _                     = ((q.!.r)./\.(s.!.r), ["distribute ! over /\\"],"<=>")
-     nM _      (ERad (l,EIsc (q,s) _) _ _) _                     = ((l.!.q)./\.(l.!.s), ["distribute ! over /\\"],"<=>")
-     nM _      x@(ERad(ECpl{},_) _ _)      _                     = (deMorgan (sign x) x, ["De Morgan"], "<=>")
-     nM _      x@(ERad(_,ECpl{}) _ _)      _                     = (deMorgan (sign x) x, ["De Morgan"], "<=>")
-     nM posNeg (ERad (l,r) _ _)           rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
+     nM _      (ERad (l,r) sgn) _ | isImin l && sign l Poset.>=sgn = (r, ["-I;x = x"], "<=>")
+     nM _      (ERad (l,r) sgn) _ | isImin r && sign r Poset.>=sgn = (l, ["x;-I = x"], "<=>")
+     nM Gte    (ERad (ECps (r,s) _,q) _) _  | not eq           = (r.!.(s.:.q), ["Peirce: r;(s!q) -| (r;s)!q"],"==>")
+     nM Gte    (ERad (r,ECps (s,q) _) _) _  | not eq           = ((r.!.s).:.q, ["Peirce: r!(s;q) -| (r!s);q"],"==>")
+     nM Gte    (ERad (EUni (r,s) _,q) _) _  | not eq           = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
+     nM Gte    (ERad (r,EUni (s,q) _) _) _  | not eq           = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
+     nM _      (ERad (EIsc (q,s) _,r) _) _                     = ((q.!.r)./\.(s.!.r), ["distribute ! over /\\"],"<=>")
+     nM _      (ERad (l,EIsc (q,s) _) _) _                     = ((l.!.q)./\.(l.!.s), ["distribute ! over /\\"],"<=>")
+     nM _      x@(ERad(ECpl{},_) _)      _                     = (deMorganERad (sign x) x, ["De Morgan"], "<=>")
+     nM _      x@(ERad(_,ECpl{}) _)      _                     = (deMorganERad (sign x) x, ["De Morgan"], "<=>")
+     nM posNeg (ERad (l,r) _)           rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posNeg l []
                                                                        (f,steps',equ'') = nM posNeg r (l:rs)
      nM _      (EPrd (l,EPrd (_,r) _) _) _                     = (l .*. r, ["eliminate middle in cartesian product"], "<=>")
@@ -326,7 +326,7 @@ where
                 , ["absorb "++shw t'++", using law x\\/(y/\\-x)  =  x\\/y" | (t',_)<-absor1' ]
                 , "<=>"
                 )
- -- Deksels! the following alternative is incorrect. It should yield t .\/. f (instead of now: t ./\. f)
+ -- Jumping Beetles!   The following alternative is incorrect. It should yield t .\/. f (instead of now: t ./\. f)
  -- However, it covers a more serious mistake in the generation of ECA-rules,
  -- which causes the Sentinel to flip. So we keep it covered until that mistake is fixed.
          | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
@@ -348,9 +348,9 @@ where
    exprIsc2list r              = [r]
    exprUni2list (EUni (l,r) _) = exprUni2list l++exprUni2list r
    exprUni2list r              = [r]
-   exprCps2list (ECps (l,r) _ _) = exprCps2list l++exprCps2list r
+   exprCps2list (ECps (l,r) _) = exprCps2list l++exprCps2list r
    exprCps2list r              = [r]
-   exprRad2list (ERad (l,r) _ _) = exprRad2list l++exprRad2list r
+   exprRad2list (ERad (l,r) _) = exprRad2list l++exprRad2list r
    exprRad2list r              = [r]
 
 

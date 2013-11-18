@@ -143,21 +143,22 @@ where
                (EIsc (l,r) _) -> Elem (simpleTag "CONJ") (map mkXmlTree [l,r])
                (EUni (l,r) _) -> Elem (simpleTag "DISJ") (map mkXmlTree [l,r])
                (EDif (l,r) _) -> Elem (simpleTag "DIFF") (map mkXmlTree [l,r])
-               (ELrs (l,r) _ _) -> Elem (simpleTag "LRES") (map mkXmlTree [l,r])
-               (ERrs (l,r) _ _) -> Elem (simpleTag "RRES") (map mkXmlTree [l,r])
-               (ECps (l,r) _ _) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
-               (ERad (l,r) _ _) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
+               (ELrs (l,r) _) -> Elem (simpleTag "LRES") (map mkXmlTree [l,r])
+               (ERrs (l,r) _) -> Elem (simpleTag "RRES") (map mkXmlTree [l,r])
+               (ECps (l,r) _) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
+               (ERad (l,r) _) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
                (EPrd (l,r) _) -> Elem (simpleTag "RPRD") (map mkXmlTree [l,r])
                (EKl0 e _)     -> Elem (simpleTag "CLS0") [mkXmlTree e]
                (EKl1 e _)     -> Elem (simpleTag "CLS1") [mkXmlTree e]
                (EFlp e _)     -> Elem (simpleTag "CONV") [mkXmlTree e]
                (ECpl e _)     -> Elem (simpleTag "CMPL") [mkXmlTree e]
                (EBrk e)       -> mkXmlTree e
-               (ETyp e sgn)   -> Elem (simpleTag "CAST") [mkXmlTree e,mkXmlTree (source sgn),mkXmlTree (target sgn)]
-               (EDcD rel sgn) -> Elem (simpleTag "EDcD") [mkXmlTree (flp (EDcD rel sgn))]
-               (EDcI     sgn) -> Elem (simpleTag "EDcI") [mkXmlTree (flp (EDcI     sgn))]
-               (EDcV     sgn) -> Elem (simpleTag "EDcV") [mkXmlTree (flp (EDcV     sgn))]
-               (EMp1 atm sgn) -> Elem (simpleTag "ATOM") [mkXmlTree (flp (EMp1 atm sgn))]
+               (ETyp e sgn)   -> Elem (simpleTag "CAST") [mkXmlTree e,mkXmlTree sgn]
+               (EDcD rel sgn) -> Elem (simpleTag "EDcD") [mkXmlTree sgn]
+               (EDcI     sgn) -> Elem (simpleTag "EDcI") [mkXmlTree sgn]
+               (EEps int sgn) -> Elem (simpleTag "EEps") [mkXmlTree int,mkXmlTree sgn]
+               (EDcV     sgn) -> Elem (simpleTag "EDcV") [mkXmlTree sgn]
+               (EMp1 atm sgn) -> Elem (simpleTag "ATOM") [mkXmlTree sgn]
 
    instance XML PPurpose where
      mkTag expl =
@@ -211,7 +212,12 @@ where
                           :[mkAttr "Specific" (show (genspc g))]
                          )
      mkXmlTree g = Node (mkTag g) 
-   
+
+   instance XML Sign where
+     mkTag sgn = Tag "Sign" (mkAttr "Source" (show (source sgn))
+                            :[mkAttr "Target" (show (target sgn))]
+                            )
+     mkXmlTree sgn = Node (mkTag sgn) 
 
    instance XML Declaration where
      mkTag d = Tag "Association" ([nameToAttr d]

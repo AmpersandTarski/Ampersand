@@ -463,23 +463,23 @@ while maintaining all invariants.
        sh str es = intercalate str [ showADL e | e<-es] 
 
      headECps :: Expression -> Expression
-     headECps (ECps (l,_) _ _) = l
+     headECps (ECps (l,_) _) = l
      headECps x = x
      
      tailECps :: Expression -> Expression
-     tailECps (ECps (_,r) _ _) = r
+     tailECps (ECps (_,r) _) = r
      tailECps x = EDcI (Sign (target x) (target x))
      
      initECps :: Expression -> Expression
-     initECps (ECps (l,r@ECps{}) i (Sign s _))
+     initECps (ECps (l,r@ECps{}) (Sign s _))
       = case initECps r of
-          initr@(ECps (x,y) ir (Sign sr tr)) -> ECps (l, initr) i (Sign s tr)
-          initr                              -> ECps (l, initr) i (Sign s (target initr))
+          initr@(ECps (x,y) (Sign sr tr)) -> ECps (l, initr) (Sign s tr)
+          initr                           -> ECps (l, initr) (Sign s (target initr))
      initECps x = EDcI (Sign (source x) (source x))
      
      lastECps :: Expression -> Expression
-     lastECps (ECps (_,r@ECps{}) _ _) = lastECps r
-     lastECps (ECps (_,r) _ _)        = r
+     lastECps (ECps (_,r@ECps{}) _) = lastECps r
+     lastECps (ECps (_,r) _)        = r
      lastECps x = x
          
      isEDcI :: Expression -> Bool
@@ -902,7 +902,7 @@ CHC [ if isRel e
           (Del, e@EUni{}) -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, e@EIsc{}) -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
 -- Op basis van De Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorgan (sign e) e) motiv
+          (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorganERad (sign e) e) motiv
           (_  , EPrd{})   -> fatal 896 "TODO"
           (_  , EKl0 x _)  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
           (_  , EKl1 x _)  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
