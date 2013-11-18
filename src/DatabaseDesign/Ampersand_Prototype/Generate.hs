@@ -90,7 +90,7 @@ generateSpecializations fSpec =
   addToLastLine ";" 
     (indent 4 (blockParenthesize "(" ")" ","
          [ [ showPhpStr (name cpt)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ] 
-         | cpt <- concs fSpec, let specializations = getSpecializations fSpec cpt,  not ( null specializations) ])
+         | cpt <- concs fSpec, let specializations = smallerConcepts (gens fSpec) cpt,  not ( null specializations) ])
     )        
 
 generateTableInfos :: Fspc -> [String]
@@ -103,7 +103,7 @@ generateTableInfos fSpec =
                                           ", 'table' => "++showPhpStr (name table)
                                         ++", 'srcCol' => "++showPhpStr (fldname srcCol)
                                         ++", 'tgtCol' => "++showPhpStr (fldname tgtCol)++")"] 
-         | decl@Sgn{} <- allDecls fSpec
+         | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
          , let (table,srcCol,tgtCol) = fromMaybe (fatal 105 $ "No table info for declaration " ++ show decl)
                                                  (getDeclarationTableInfo fSpec decl)
          ])) ++
@@ -123,7 +123,7 @@ generateTableInfos fSpec =
                   , "      )"
                   ]
                 -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : getGeneralizations fSpec c 
+                | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (gens fSpec) c 
                 ]
               )
          | c <- concs fSpec

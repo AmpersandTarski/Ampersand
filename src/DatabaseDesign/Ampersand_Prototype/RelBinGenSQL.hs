@@ -233,6 +233,11 @@ selectExpr fSpec i src trg expr
                                     ONE -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
                                     c   -> selectExprRelation fSpec i src trg (Isn c)
                                 )
+    (EEps inter sgn)     -> sqlcomment i ("epsilon "++name inter++"["++(name.source) sgn++"*"++(name.target) sgn++"]") 
+                                ( case inter of -- select the population of the most specific concept, which is the source.
+                                    ONE -> Just ( "SELECT 1 AS "++src++", 1 AS "++trg)
+                                    c   -> selectExprRelation fSpec i src trg (Isn c)
+                                )
     (EDcD d   _)         -> selectExprRelation fSpec i src trg d
 
     (EBrk e) -> selectExpr fSpec i src trg e
@@ -267,15 +272,15 @@ selectExpr fSpec i src trg expr
     EDif (l,r) sgn
       -> sqlcomment i ("case: EDif (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
          selectExpr fSpec i src trg (l ./\. ECpl r sgn)
-    ERrs (l,r) _ sgn
+    ERrs (l,r) sgn
       -> sqlcomment i ("case: ERrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
          selectExpr fSpec i src trg (notCpl sgn (flp l) .!. r)
-    ELrs (l,r) _ sgn
+    ELrs (l,r) sgn
       -> sqlcomment i ("case: ELrs (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
          selectExpr fSpec i src trg (l .!. notCpl sgn (flp r))
     ERad{}
       -> sqlcomment i ("case: ERad (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
-        selectExpr fSpec i src trg (deMorgan (sign expr) expr)
+        selectExpr fSpec i src trg (deMorganERad (sign expr) expr)
     EPrd (l,r) sgn
      -> let v = vExpr (Sign (target l) (source r))
         in sqlcomment i ("case: EPrd (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
