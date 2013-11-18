@@ -94,7 +94,7 @@ pCtx2aCtx
     genRules = [ ( Set.singleton (name$ gen_spc x), Set.fromList (map name$ gen_concs x))
                | x <- p_gens ++ concat (map pt_gns p_patterns ++ map procGens p_processes)
                ]
-    genLattice :: Op1EqualitySystem A_Concept
+    genLattice :: Op1EqualitySystem String
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
     
     concGroups :: [[String]]
