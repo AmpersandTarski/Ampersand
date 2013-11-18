@@ -395,7 +395,7 @@ data Expression
       | EKl0 Expression                -- ^ Rfx.Trn closure         *  (Kleene star)
       | EKl1 Expression                -- ^ Transitive closure      +  (Kleene plus)
       | EFlp Expression                -- ^ conversion (flip, wok)  ~
-      | ECpl Expression          Sign  -- ^ Complement
+      | ECpl Expression                -- ^ Complement
       | EBrk Expression                -- ^ bracketed expression ( ... )
       | EDcD Declaration               -- ^ simple declaration
       | EDcI                     Sign  -- ^ Identity relation
