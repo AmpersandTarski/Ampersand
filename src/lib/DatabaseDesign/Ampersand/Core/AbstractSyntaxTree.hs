@@ -382,29 +382,28 @@ data ExplObj = ExplConceptDef ConceptDef
           deriving (Show ,Eq)
 
 data Expression
-      = EEqu (Expression,Expression) Sign  -- ^ equivalence             =
-      | EImp (Expression,Expression) Sign  -- ^ implication             |-
-      | EIsc (Expression,Expression) Sign  -- ^ intersection            /\
-      | EUni (Expression,Expression) Sign  -- ^ union                   \/
-      | EDif (Expression,Expression) Sign  -- ^ difference              -
-      | ELrs (Expression,Expression) Sign  -- ^ left residual           /
-      | ERrs (Expression,Expression) Sign  -- ^ right residual          \
-      | ECps (Expression,Expression) Sign  -- ^ composition             ; 
-      | ERad (Expression,Expression) Sign  -- ^ relative addition       ! 
-      | EPrd (Expression,Expression) Sign  -- ^ cartesian product       * 
-      | EKl0 Expression              Sign  -- ^ Rfx.Trn closure         *  (Kleene star)
-      | EKl1 Expression              Sign  -- ^ Transitive closure      +  (Kleene plus)
-      | EFlp Expression              Sign  -- ^ conversion (flip, wok)  ~
-      | ECpl Expression              Sign  -- ^ Complement
-      | EBrk Expression                    -- ^ bracketed expression ( ... )
-      | ETyp Expression              Sign  -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
-      | EDcD Declaration             Sign  -- ^ simple declaration
-      | EDcI                         Sign  -- ^ Identity relation
-      | EEps A_Concept               Sign  -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
-                                           --   Meaning of EEps inter sgn:  inter<=source sgn  &&  inter<=target sgn
-                                           --   System invariant:           source sgn /= target sgn   &&  (inter==source sgn || inter==target sgn)
-      | EDcV                         Sign  -- ^ Cartesian product relation
-      | EMp1 String                  Sign  -- ^ constant (string between single quotes)
+      = EEqu (Expression,Expression)   -- ^ equivalence             =
+      | EImp (Expression,Expression)   -- ^ implication             |-
+      | EIsc (Expression,Expression)   -- ^ intersection            /\
+      | EUni (Expression,Expression)   -- ^ union                   \/
+      | EDif (Expression,Expression)   -- ^ difference              -
+      | ELrs (Expression,Expression)   -- ^ left residual           /
+      | ERrs (Expression,Expression)   -- ^ right residual          \
+      | ECps (Expression,Expression)   -- ^ composition             ; 
+      | ERad (Expression,Expression)   -- ^ relative addition       ! 
+      | EPrd (Expression,Expression)   -- ^ cartesian product       * 
+      | EKl0 Expression                -- ^ Rfx.Trn closure         *  (Kleene star)
+      | EKl1 Expression                -- ^ Transitive closure      +  (Kleene plus)
+      | EFlp Expression                -- ^ conversion (flip, wok)  ~
+      | ECpl Expression          Sign  -- ^ Complement
+      | EBrk Expression                -- ^ bracketed expression ( ... )
+      | EDcD Declaration               -- ^ simple declaration
+      | EDcI                     Sign  -- ^ Identity relation
+      | EEps A_Concept           Sign  -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
+                                       --   Meaning of EEps inter sgn:  inter<=source sgn  &&  inter<=target sgn
+                                       --   System invariant:           source sgn /= target sgn   &&  (inter==source sgn || inter==target sgn)
+      | EDcV                     Sign  -- ^ Cartesian product relation
+      | EMp1 String              Sign  -- ^ constant (string between single quotes)
       deriving (Eq,Show)
 
 iExpr :: A_Concept -> Expression
