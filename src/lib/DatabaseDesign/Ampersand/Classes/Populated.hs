@@ -54,7 +54,7 @@ where
             EIsc (l,r) _ -> contents l `isc` contents r
             EDif (l,r) _ -> contents l >- contents r
             -- The left residual l/r is defined by: for all x,y:  y(l/r)x  <=>  for all z in X, x l z implies y r z.
-            ELrs (l,r) c _ -> [(y,x) | x <- case source l of
+            ELrs (l,r) _ -> [(y,x) | x <- case source l of
                                             sl@PlainConcept{} -> atomsOf gens pt sl
                                             sl     -> fatal 68 ("source l should be PlainConcept instead of "++show sl++".")
                                    , y <- case source r of
@@ -66,10 +66,10 @@ where
                               --   , (not.or) [not ((x,z) `elem` contents l || (y,z) `notElem` contents r) |z<- atomsOf gens pt (target l `join` target r)]
                               --   , (not.or) [     (x,z) `notElem` contents l && (y,z) `elem` contents r  |z<- atomsOf gens pt (target l `join` target r)]
                               --   , (not.null) [ () |z<- atomsOf gens pt (target l `join` target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
-                                   , (not.null) [ () |z<- atomsOf gens pt c, (x,z) `notElem` contents l, (y,z) `elem` contents r]
+                                   , (not.null) [ () |z<- atomsOf gens pt (target l) `uni` atomsOf gens pt (target r), (x,z) `notElem` contents l, (y,z) `elem` contents r]
                                    ]   -- equals contents (ERrs (flp r, flp l))
             -- The right residual l\r defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
-            ERrs (l,r) c _ -> [(x,y) | x <- case target l of
+            ERrs (l,r) _ -> [(x,y) | x <- case target l of
                                             tl@PlainConcept{} -> atomsOf gens pt tl
                                             tl     -> fatal 83 ("target l should be PlainConcept instead of "++show tl++".")
                                    , y <- case target r of
@@ -81,18 +81,18 @@ where
                               --     (not.or) [not ((z,x) `notElem` contents l || (z,y) `elem` contents r) |z<- atomsOf gens pt (source l `join` source r)]
                               --     (not.or) [     (z,x) `elem` contents l && (z,y) `notElem` contents r  |z<- atomsOf gens pt (source l `join` source r)]
                               --     (not.null) [ () |z<- atomsOf gens pt (source l `join` source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
-                                   , (not.null) [ () |z<- atomsOf gens pt c, (z,x) `elem` contents l, (z,y) `notElem` contents r]
+                                   , (not.null) [ () |z<- atomsOf gens pt (source l) `uni` atomsOf gens pt (source r), (z,x) `elem` contents l, (z,y) `notElem` contents r]
                                    ]   -- equals contents (ELrs (flp r, flp l))
-            ERad (l,r) c _ -> [(x,y) | x <- case target l of
-                                            tl@PlainConcept{} -> atomsOf gens pt tl
-                                            tl     -> fatal 97 ("target l should be PlainConcept instead of "++show tl++".")
-                                   , y <- case source r of
-                                            sr@PlainConcept{} -> atomsOf gens pt sr
-                                            sr     -> fatal 100 ("source r should be PlainConcept instead of "++show sr++".")
-                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf gens pt c]
+            ERad (l,r) _ -> [(x,y) | x <- case source l of
+                                            sl@PlainConcept{} -> atomsOf gens pt sl
+                                            sl     -> fatal 97 ("source l should be PlainConcept instead of "++show sl++".")
+                                   , y <- case target r of
+                                            tr@PlainConcept{} -> atomsOf gens pt tr
+                                            tr     -> fatal 100 ("target r should be PlainConcept instead of "++show tr++".")
+                                   , and [(x,z) `elem` contents l || (z,y) `elem` contents r |z<- atomsOf gens pt (target l) `uni` atomsOf gens pt (source r)]
                                    ]
             EPrd (l,r) _ -> [ (a,b) | a <- atomsOf gens pt (source l), b <- atomsOf gens pt (target r) ]
-            ECps (l,r) _ _ -> contents l `kleenejoin` contents r
+            ECps (l,r) _ -> contents l `kleenejoin` contents r
             EKl0 e     _ -> if source e == target e --see #166
                             then closPair (contents e `uni` contents (iExpr (source e)))
                             else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
@@ -106,9 +106,9 @@ where
                                                                        , b `elem` atomsOf gens pt (target sgn)]
             EDcD dcl   _ -> fullContents gens pt dcl
             EDcI     sgn -> [mkPair a a | a <- atomsOf gens pt (source sgn)]
-            EDcV     sgn -> [mkPair s t | s <- atomsOf gens pt (source sgn)
-                                            , t <- atomsOf gens pt (target sgn) ]
-            EMp1 atom       sgn -> if name (source sgn)=="SESSION" then [] else [mkPair atom atom] -- prevent populating SESSION
+            EEps inter _ -> [mkPair a a | a <- atomsOf gens pt inter]
+            EDcV     sgn -> [mkPair s t | s <- atomsOf gens pt (source sgn), t <- atomsOf gens pt (target sgn) ]
+            EMp1 atom       sgn -> if name (source sgn)=="SESSION" then [fatal 111 "cannot produce the SESSION atom"] else [mkPair atom atom] -- prevent populating SESSION
 
 {- Derivation of contents (ERrs (l,r)):
 Let cL = contents l

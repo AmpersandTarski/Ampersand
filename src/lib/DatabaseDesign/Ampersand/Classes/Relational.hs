@@ -39,6 +39,7 @@ class Association r => Relational r where
     isAsy :: r -> Bool  -- 
     isAsy r = Asy `elem` multiplicities r
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
+    isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
 --instance Relational Relation where
 --    multiplicities rel 
@@ -87,6 +88,7 @@ instance Relational Declaration where
     isIdent d = case d of
                  Isn{} -> True   -- > tells whether the argument is equivalent to I
                  _     -> False
+    isEpsilon _ = False
 
 isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
@@ -100,6 +102,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  multiplicities expr = case expr of
      EDcD dcl   _ -> multiplicities dcl
      EDcI       _ -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+     EEps _     _ -> [Uni,Tot,Inj,    Sym,Asy,Trn]  -- SJ 20131118: What does it mean to have the endo-property Rfx here? Does it make sense at all?
      EDcV     sgn -> [Tot]
                    ++[Sur]
                    ++[Inj | isSingleton (source sgn)]
@@ -109,7 +112,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                    ++[Rfx | isEndo sgn]
                    ++[Trn | isEndo sgn]
      EBrk f       -> multiplicities f
-     ECps (l,r) _ _ -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
+     ECps (l,r) _ -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
      EPrd (l,r) _ -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
      EKl0 e'    _ -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      EKl1 e'    _ -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
@@ -129,9 +132,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) sgn -> isTrue (ETyp l sgn) && isTrue (ETyp r sgn)
      EUni (l,r) sgn -> isTrue (ETyp l sgn) || isTrue (ETyp r sgn)
      EDif (l,r) sgn -> isTrue (ETyp l sgn) && isFalse r
-     ECps (l,r) z (Sign sl tr) | null ([Uni,Tot]>-multiplicities l) -> isTrue r
-                          | null ([Sur,Inj]>-multiplicities r) -> isTrue l
-                          | otherwise                          -> isTrue (ETyp l (Sign sl z)) && isTrue (ETyp r (Sign z tr))
+     ECps (l,r) sgn | null ([Uni,Tot]>-multiplicities l) -> isTrue r
+                    | null ([Sur,Inj]>-multiplicities r) -> isTrue l
+                    | otherwise                          -> isTrue l && isTrue r
      EPrd (l,r) sgn -> isTrue l' && isTrue r' || isTot l' && isSur r' || isRfx l' && isRfx r'
                        where l' = ETyp l sgn
                              r' = ETyp r sgn
@@ -141,7 +144,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e     _   -> isFalse e
      ETyp e     sgn -> isTrue e && sgn == sign e
      EDcD _       _ -> False
-     EDcI         _ -> False
+     EDcI       sgn -> isSingleton (source sgn)
+     EEps inter   _ -> isSingleton inter
      EDcV         _ -> True
      EBrk e         -> isTrue e
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
@@ -156,7 +160,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) _   -> isFalse r || isFalse l
      EUni (l,r) _   -> isFalse r && isFalse l
      EDif (l,r) sgn -> isFalse l || isTrue (ETyp r sgn)
-     ECps (l,r) _ _ -> isFalse r || isFalse l
+     ECps (l,r) _   -> isFalse r || isFalse l
      EPrd (l,r) _   -> isFalse r || isFalse l
      EKl0 e     _   -> isFalse e
      EKl1 e     _   -> isFalse e
@@ -165,6 +169,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ETyp e     _   -> isFalse e
      EDcD _     _   -> False
      EDcI       _   -> False
+     EEps _     _   -> False
      EDcV       _   -> False
      EBrk e         -> isFalse e
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
@@ -180,18 +185,22 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) sgn -> isIdent (ETyp l sgn) && isIdent (ETyp r sgn)
      EUni (l,r) sgn -> isIdent (ETyp l sgn) && isIdent (ETyp r sgn)
      EDif (l,r) sgn -> isIdent (ETyp l sgn) && isFalse r
-     ECps (l,r) z (Sign sl tr) -> isIdent (ETyp l (Sign sl z)) && isIdent (ETyp r (Sign z tr))
+     ECps (l,r) _   -> isIdent l && isIdent r
      EKl0 e     _   -> isIdent e || isFalse e
      EKl1 e     _   -> isIdent e
      ECpl e     sgn -> isImin (ETyp e sgn)
      ETyp e     sgn -> sgn==sign e && isIdent e
      EDcD _     _   -> False
      EDcI       _   -> True
+     EEps _     _   -> True
      EDcV       sgn -> isEndo sgn && isSingleton (source sgn)
      EBrk f         -> isIdent f
      EFlp f     _   -> isIdent f
      _              -> False  -- TODO: find richer answers for ERrs, ELrs, EPrd, and ERad
-
+ isEpsilon e = case e of
+                EEps{} -> True   -- > tells whether the argument is equivalent to I
+                _      -> False
+ 
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
      EEqu (l,r) sgn -> isImin (EIsc (EImp (l,r) sgn, EImp (r,l) sgn) sgn)       -- TODO: maybe derive something better?
      EImp (l,r) sgn -> isImin (EUni (ECpl l sgn, r) sgn)                  -- TODO: maybe derive something better?
@@ -201,8 +210,9 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      ECpl e     sgn -> isIdent (ETyp e sgn)
      ETyp e sgn     -> sgn==sign e && isImin e
      EDcD dcl sgn   -> sgn==sign dcl && isImin dcl
-     EDcI       _   -> False
-     EDcV       _   -> False
+     EDcI{}         -> False
+     EEps{}         -> False
+     EDcV{}         -> False
      EBrk f         -> isImin f
      EFlp f     _   -> isImin f
      _              -> False  -- TODO: find richer answers for ERrs and ELrs
