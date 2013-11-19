@@ -229,7 +229,7 @@ pCtx2aCtx
          PPrd _ a b -> binary' ERad (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
          PKl0 _ a   -> unary   EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
          PKl1 _ a   -> unary   EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
-         PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x (flp$ sign x)), (t,s))) <$> tt a
+         PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x), (t,s))) <$> tt a
          PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
          PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e
      where
@@ -263,7 +263,7 @@ pCtx2aCtx
       binary' cbn cpt tp (e1,e2) = wrap' (cbn (fst e1,fst e2)) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
       wrap :: Expression -> ((String,Bool),(String,Bool)) -> (Expression,(Bool,Bool))
       wrap  f         ((src,b1),(tgt,b2)) = (f, (b1, b2))
-      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f (findConceptOrONE cpt), (b1, b2))
+      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f, (b1, b2))
       deriv' (a,b) es = let (sot1,(e1,t1)) = resolve es a
                             (sot2,(e2,t2)) = resolve es b
                         in pure ((gc sot1 e1,t1),(gc sot2 e2,t2))
