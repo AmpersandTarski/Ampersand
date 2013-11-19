@@ -202,7 +202,7 @@ generateRules fSpec flags =
            [ "        )" ]
          | rule <- vrules fSpec ++ grules fSpec
          , let rExpr=rrexp rule
-         , let violExpr = notCpl (sign rExpr) rExpr
+         , let violExpr = notCpl rExpr
          , let violationsExpr = conjNF violExpr
          ]
     ) ) ++
@@ -320,17 +320,13 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
   ++ let (flipped, unflippedExpr) = case objctx object of
-                                       ETyp (EFlp e _) _ -> (True,e)
                                        EFlp e _          -> (True,e)
-                                       ETyp e _          -> (False,e)
                                        e                 -> (False,e)
          d = case unflippedExpr of 
-             EDcD d' _       -> d'
-             EDcI (Sign s t) -> if s==t
-                                then Isn s
-                                else fatal 329 "I with wrong type has been found! (should be impossible)" 
-             EDcV sgn        -> Vs sgn
-             _               -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ show unflippedExpr
+             EDcD d'  -> d'
+             EDcI c   -> Isn c
+             EDcV sgn -> Vs sgn
+             _        -> fatal 325 $ "only primitive expressions should be found here.\nHere we see: " ++ show unflippedExpr
      in (if isEditable unflippedExpr
          then [ "      , 'relation' => "++showPhpStr (name d) 
               , "      , 'relationIsFlipped' => "++show flipped ]++ 
@@ -351,16 +347,13 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
   ++ generateMSubInterface fSpec flags editableRels depth (objmsub object) ++
   [ "      )"
   ]
- where isEditable (EDcD d _)          = d `elem` [d' | EDcD d' _ <- editableRels]
-       isEditable (ETyp (EDcD d _) _) = d `elem` [d' | EDcD d' _ <- editableRels]
+ where isEditable (EDcD d)          = d `elem` [d' | EDcD d' <- editableRels]
        isEditable _                   = False
        normalizedInterfaceExp = conjNF $ objctx object
        getEditableConcepts obj = (let e = objctx obj in
                                   case e of
-                                   EDcD d _          | isEditable e -> [target d]
-                                   EFlp (EDcD d _) _ | isEditable e -> [source d]
-                                   ETyp (EDcD d _) _           | isEditable e -> [target d]
-                                   ETyp (EFlp (EDcD d _) _ ) _ | isEditable e -> [source d]
+                                   EDcD d        | isEditable e -> [target d]
+                                   EFlp (EDcD d) | isEditable e -> [source d]
                                    _                                -> [])
                                  ++ concatMap getEditableConcepts (objAts obj)
   

@@ -92,7 +92,7 @@ ruleTest fSpec _ ruleName =
    (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
                   ; putStrLn $ showContents rule
                   ; let rExpr = rrexp rule
-                  ; let ruleComplement = rule { rrexp = notCpl (sign rExpr) (EBrk rExpr) }
+                  ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
                   ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
                   ; putStrLn $ showContents ruleComplement
                   } 
