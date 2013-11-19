@@ -2,8 +2,9 @@
 module DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms 
   (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,exprIsc2list, exprUni2list, exprCps2list, exprRad2list)
 where
-   import DatabaseDesign.Ampersand.Basics    (fatalMsg,Identified(..),commaEng,eqCl,Flippable(..))
+   import DatabaseDesign.Ampersand.Basics
    import DatabaseDesign.Ampersand.ADL1.ECArule
+   import DatabaseDesign.Ampersand.Classes.Relational 
    import DatabaseDesign.Ampersand.ADL1.Expression 
    import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
    import DatabaseDesign.Ampersand.Fspec.Fspec
@@ -155,24 +156,24 @@ where
                                             where (t,steps, equ')  = nM (cplCmp posNeg) l []
                                                   (f,steps',equ'') = nM posNeg r []
      nM posNeg (EUni (EUni (l,k),r)) rs   = nM posNeg (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
-     nM posNeg (EUni (l,r) _) rs  | simpl = (t .\/. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (EUni (l,r)) rs    | simpl = (t .\/. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posNeg l []
                                                   (f,steps',equ'') = nM posNeg r (l:rs)
      nM posNeg (EIsc (EIsc (l,k),r)) rs   = nM posNeg (l ./\. (k ./\. r)) rs  -- standardize, using associativity of ./\.
-     nM posNeg (EIsc (l,r) _) rs  | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (EIsc (l,r)) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posNeg l []
                                                   (f,steps',equ'') = nM posNeg r (l:rs)
      nM posNeg (ECps (ECps (l,k),r)) rs   = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
                                                 -- Note: function shiftL and shiftR make use of the fact that this normalizes to (l .:. (k .:. r))
-     nM posNeg (ECps (l,r) _) rs  | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (ECps (l,r)) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
                                              where (t,steps, equ')  = nM posNeg l []
                                                    (f,steps',equ'') = nM posNeg r (l:rs)
      nM posNeg (ERad (ERad (l,k),r)) rs   = nM posNeg (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
-     nM posNeg (ERad (l,r) _) rs  | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (ERad (l,r)) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')    = nM posNeg l []
                                                   (f,steps',equ'')   = nM posNeg r (l:rs)
      nM posNeg (EPrd (EPrd (l,k),r)) rs   = nM posNeg (l .*. (k .*. r)) rs  -- standardize, using associativity of .*.
-     nM posNeg (EPrd (l,r) _) _   | simpl = (t .*. f, steps++steps', fEqu [equ',equ''])
+     nM posNeg (EPrd (l,r)) _     | simpl = (t .*. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posNeg l []
                                                   (f,steps',equ'') = nM posNeg r []
      nM posNeg (EKl0 e)              _    = (EKl0 res', steps, equ')
@@ -207,10 +208,10 @@ where
      nM Lte    (ECps (r,EIsc (s,q))) _          | not eq = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
      nM _      (ECps (EUni (q,s),r)) _                   = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
      nM _      (ECps (l,EUni (q,s))) _                   = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
-     nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (iExpr (source x), ["r~;r |- I (r is univalent)"], "==>")
-     nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (iExpr (source x), ["r;r~ |- I (r is injective)"], "==>")
-     nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (iExpr (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
-     nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (iExpr (source x), ["r;r~=I because r is injective and total"], "<=>")
+     nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
+     nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
+     nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
+     nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
      nM _      x@(ECps(ECpl{},ECpl{})) _                     = (deMorganECps x, ["De Morgan"], "<=>")
      nM posNeg (ECps (l,r))           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                                  where (t,steps, equ')  = nM posNeg l []
@@ -236,7 +237,7 @@ where
      nM _      (EIsc (l,EUni (k,r))) _           | dnf     = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
      nM _      (EUni (EIsc (l,k),r)) _           | not dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM _      (EUni (l,EIsc (k,r))) _           | not dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
-     nM posNeg (EIsc (l,r)) rs
+     nM posNeg x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
               = ( case absorbClasses of [] -> fatal 243 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (./\.) [head cl | cl<-absorbClasses]
@@ -245,19 +246,19 @@ where
                 )
 -- Inconsistency:    r/\-r   -->  False
          | not (null incons)
-              = let i = head incons in (notCpl vExpr, [shw (notCpl i)++" /\\ "++shw i++" = V-"], "<=>")
+              = let i = head incons in (notCpl (EDcV (sign i)), [shw (notCpl i)++" /\\ "++shw i++" = V-"], "<=>")
 -- Inconsistency:    x/\\V-  -->  False
-         | (not.null) [() |t'<-exprIsc2list l++exprIsc2list r, isFalse t']
-              = (notCpl vExpr, ["x/\\V- = V-"], "<=>")
+         | (not.null) [t' |t'<-exprIsc2list l++exprIsc2list r, isFalse t']
+              = (notCpl (EDcV (sign x)), ["x/\\V- = V-"], "<=>")
 -- Absorb if r is antisymmetric:    r/\r~ --> I
          | not eq && or [length cl>1 |cl<-absorbAsy]
-              = ( foldr1 (./\.) [if length cl>1 then iExpr (source e) else e | cl<-absorbAsy, let e=head cl] 
+              = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsy, let e=head cl] 
                 , [shw e++" /\\ "++shw (flp e)++" |- I, because"++shw e++" is antisymmetric" | cl<-absorbAsy, let e=head cl]
                 , "==>"
                 )
 -- Absorb if r is antisymmetric and reflexive:    r/\r~ = I
          | or [length cl>1 |cl<-absorbAsyRfx]
-              = ( foldr1 (./\.) [if length cl>1 then iExpr (source e) else e | cl<-absorbAsyRfx, let e=head cl] 
+              = ( foldr1 (./\.) [if length cl>1 then EDcI (source e) else e | cl<-absorbAsyRfx, let e=head cl] 
                 , [shw e++" /\\ "++shw (flp e)++" = I, because"++shw e++" is antisymmetric and reflexive" | cl<-absorbAsyRfx, let e=head cl]
                 , "<=>"
                 )
@@ -288,12 +289,12 @@ where
                incons = [x |x<-exprIsc2list r,x==notCpl l]
                absor0  = [t' | t'<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
                absor0' = [t' | t'<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
-               absor1  = [(t', exprUni2list l>-[t']) | t'<-exprUni2list l, ECpl f' _<-rs++exprIsc2list r, t'==f']++[(x, exprUni2list l>-[x]) | x@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
-               absor1' = [(t', exprUni2list r>-[t']) | t'<-exprUni2list r, ECpl f' _<-rs++exprIsc2list l, t'==f']++[(x, exprUni2list r>-[x]) | x@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
+               absor1  = [(t', exprUni2list l>-[t']) | t'<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, t'==f']++[(x, exprUni2list l>-[x]) | x@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
+               absor1' = [(t', exprUni2list r>-[t']) | t'<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, t'==f']++[(x, exprUni2list r>-[x]) | x@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
                absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
                absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
                eList  = rs++exprIsc2list l++exprIsc2list r
-     nM posNeg (EUni (l,r)) rs
+     nM posNeg x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
               = ( case absorbClasses of [] -> fatal 300 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (.\/.) [head cl | cl<-absorbClasses]
@@ -301,9 +302,9 @@ where
                 , "<=>"
                 )
 -- Tautologies:
-         | (not.null) tauts               = (vExpr, ["let e = "++ shw (head tauts)++". Since -e\\/e = V we get"], "<=>")   -- r\/-r  -->  V
-         | isTrue l                       = (vExpr, ["V\\/x = V"], "<=>")                                                  -- r\/V   -->  V
-         | isTrue r                       = (vExpr, ["x\\/V = V"], "<=>")
+         | (not.null) tauts               = (EDcV (sign x), ["let e = "++ shw (head tauts)++". Since -e\\/e = V we get"], "<=>")   -- r\/-r  -->  V
+         | isTrue l                       = (EDcV (sign x), ["V\\/x = V"], "<=>")                                                  -- r\/V   -->  V
+         | isTrue r                       = (EDcV (sign x), ["x\\/V = V"], "<=>")
 -- Absorb -V:    r\/-V  --> r
          | isFalse l                      = (r, ["-V\\/x = x"], "<=>")
          | isFalse r                      = (l, ["x\\/-V = x"], "<=>")
@@ -334,23 +335,23 @@ where
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
                absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
             -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
-               tauts = [x' |x<-exprUni2list r,x==notCpl l, ECpl x' _<-[x,l]]
+               tauts = [x' |x<-exprUni2list r,x==notCpl l, ECpl x'<-[x,l]]
                absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
                absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-               absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f' _<-rs++exprUni2list r, t'==f']++[(x, exprIsc2list l>-[x]) | x@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
-               absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f' _<-rs++exprUni2list l, t'==f']++[(x, exprIsc2list r>-[x]) | x@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-     nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>") -}
+               absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, exprIsc2list l>-[e]) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
+               absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, exprIsc2list r>-[e]) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
+     nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
      nM _ x _               = (x,[],"<=>")
 
    exprIsc2list, exprUni2list, exprCps2list, exprRad2list :: Expression -> [Expression]
    exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r
-   exprIsc2list r              = [r]
+   exprIsc2list r            = [r]
    exprUni2list (EUni (l,r)) = exprUni2list l++exprUni2list r
-   exprUni2list r              = [r]
+   exprUni2list r            = [r]
    exprCps2list (ECps (l,r)) = exprCps2list l++exprCps2list r
-   exprCps2list r              = [r]
+   exprCps2list r            = [r]
    exprRad2list (ERad (l,r)) = exprRad2list l++exprRad2list r
-   exprRad2list r              = [r]
+   exprRad2list r            = [r]
 
 
    fEqu :: [String] -> String

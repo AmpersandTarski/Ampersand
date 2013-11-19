@@ -762,13 +762,12 @@ where
     showHS flags indent (EKl1 e    ) = "EKl1 ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EFlp e    ) = "EFlp ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (ECpl e    ) = "ECpl ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (EBrk e)     = "EBrk ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (ETyp e sgn) = "ETyp ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (EBrk e    ) = "EBrk ("++showHS flags (indent++"      ") e++")"
     showHS flags indent (EDcD dcl  ) = "EDcD "++showHSName dcl
-    showHS flags indent (EDcI c    ) = "EDcI "++showHSName c
-    showHS flags indent (EEps inter) = "EEps "++showHS flags "" inter
+    showHS flags indent (EDcI c    ) = "EDcI ("++showHS flags "" c++")"
+    showHS flags indent (EEps i sgn) = "EEps ("++showHS flags "" i++") ("++showHS flags "" sgn++")"
     showHS flags indent (EDcV sgn  ) = "EDcV "++showHS flags "" sgn
-    showHS flags indent (EMp1 atom ) = "EMp1 "++show atom
+    showHS flags indent (EMp1 a c  ) = "EMp1 ("++show a++") ("++showHS flags "" c++")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***

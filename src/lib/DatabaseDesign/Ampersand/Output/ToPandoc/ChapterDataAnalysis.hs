@@ -324,14 +324,14 @@ technicalDataModelSection lev fSpec flags = (theBlocks,[pict])
       showFields :: [SqlField] -> Blocks
       showFields flds = bulletList (map showField flds)
         where 
-          eRelIs = [source sgn | EDcI sgn <- map fldexpr flds]
+          eRelIs = [c | EDcI c <- map fldexpr flds]
           showField fld =
              let isPrimaryKey = case fldexpr fld of
-                                  fld@(EDcI sgn) -> fld==fldexpr (head flds) -- The first field represents the most general concept
-                                  _            -> False 
+                                  fld@EDcI{} -> fld==fldexpr (head flds) -- The first field represents the most general concept
+                                  _          -> False 
                  mForeignKey  = case fldexpr fld of
-                                  EIsc (EDcI sgn,_) _ -> Just (source sgn)
-                                  _                   -> Nothing  
+                                  EIsc (EDcI c,_) -> Just c
+                                  _               -> Nothing  
              in para (  (strong.text.fldname) fld
                       <> linebreak
                       <> (if isPrimaryKey 
@@ -750,7 +750,7 @@ daBasicsSection lev fSpec flags = theBlocks
                       | Quad r ccrs<-vquads fSpec
                       , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
                       , (_,hornClauses)<-cl_conjNF ccrs
-                      , hc@(Hc [EDcD nega _] _)<-hornClauses
+                      , hc@(Hc [EDcD nega] _)<-hornClauses
                       , r==nega
                       ]
                 pcpts = case p of
@@ -760,29 +760,25 @@ daBasicsSection lev fSpec flags = theBlocks
 primExpr2pandocMath :: Options -> Expression -> Inlines
 primExpr2pandocMath flags e =
  case e of
-  (EDcD d           _) ->  
+  (EDcD d ) ->  
            case language flags of
              Dutch -> text "de relatie " 
              English -> text "the relation "
         <> math ((name.source) d++ " \\xrightarrow {"++name d++"} "++(name.target) d)
-  (EFlp (EDcD d _ ) _) -> 
+  (EFlp (EDcD d)) -> 
            case language flags of
              Dutch -> text "de relatie " 
              English -> text "the relation "
         <> math ((name.source) d++ " \\xleftarrow  {"++name d++"} "++(name.target) d)
-  (EIsc (r1,_)     _) -> 
+  (EIsc (r1,_)) -> 
            let srcTable = case r1 of
-                            EDcI sgn -> source sgn
-                            _        -> fatal 767 ("Unexpected expression: "++show r1)
+                            EDcI c -> c
+                            _      -> fatal 767 ("Unexpected expression: "++show r1)
            in 
            case language flags of
              Dutch -> text "de identiteitsrelatie van " 
              English -> text "the identityrelation of "
         <> math (name srcTable) 
-  (ETyp (EDcI _) _) ->
-           case language flags of
-             Dutch   -> text "het feit of deze " <> (math.name.source) e <> text " een "  <> (math.name.target) e <> text " is." 
-             English -> text "weather this "     <> (math.name.source) e <> text " is a " <> (math.name.target) e <> text " or not." 
   _   -> fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show e) 
   
   

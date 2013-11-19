@@ -24,7 +24,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
  , objatsLegacy -- for use in legacy code only
  , Purpose(..)
  , ExplObj(..)
- , Expression(..), iExpr, vExpr
+ , Expression(..)
  , A_Concept(..)
  , A_Markup(..)
  , AMeaning(..)
@@ -399,15 +399,10 @@ data Expression
       | EBrk Expression                -- ^ bracketed expression ( ... )
       | EDcD Declaration               -- ^ simple declaration
       | EDcI A_Concept                 -- ^ Identity relation
-      | EEps A_Concept                 -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
+      | EEps A_Concept Sign            -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Sign                      -- ^ Cartesian product relation
-      | EMp1 String                    -- ^ constant (string between single quotes)
+      | EMp1 String A_Concept          -- ^ constant (string between single quotes)
       deriving (Eq,Show)
-
-iExpr :: A_Concept -> Expression
-iExpr  c = EDcI (Sign c c)
-vExpr :: Sign -> Expression
-vExpr sgn = EDcV sgn
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 
@@ -466,11 +461,10 @@ instance Flippable Expression where
                EKl0 e     -> EKl0 (flp e)
                EKl1 e     -> EKl1 (flp e)
                EBrk f     -> EBrk (flp f)
-               ETyp e sgn -> ETyp (flp e) (flp sgn)
-               EDcD _     -> EFlp expr 
-               EDcI       -> expr
-               EEps inter -> EEps inter
-               EDcV       -> EDcV      
+               EDcD{}     -> EFlp expr 
+               EDcI{}     -> expr
+               EEps i sgn -> EEps i (flp sgn)
+               EDcV sgn   -> EDcV (flp sgn)
                EMp1{}     -> expr
 
 insParentheses :: Expression -> Expression
@@ -489,12 +483,11 @@ insParentheses = insPar 0
        insPar i (ECps (l,r)) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r))
        insPar i (ERad (l,r)) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r))
        insPar i (EPrd (l,r)) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r))
-       insPar _ (EKl0 e    ) = EKl0 (insPar 10 e)
-       insPar _ (EKl1 e    ) = EKl1 (insPar 10 e)
-       insPar _ (EFlp e    ) = EFlp (insPar 10 e)
-       insPar _ (ECpl e    ) = ECpl (insPar 10 e)
+       insPar _ (EKl0 e)     = EKl0 (insPar 10 e)
+       insPar _ (EKl1 e)     = EKl1 (insPar 10 e)
+       insPar _ (EFlp e)     = EFlp (insPar 10 e)
+       insPar _ (ECpl e)     = ECpl (insPar 10 e)
        insPar i (EBrk f)     = insPar i f
-       insPar _ (ETyp e sgn) = ETyp (insPar 10 e) sgn
        insPar _ e@EDcD{}     = e
        insPar _ e@EDcI{}     = e
        insPar _ e@EEps{}     = e
@@ -502,27 +495,26 @@ insParentheses = insPar 0
        insPar _ e@EMp1{}     = e
 
 instance Association Expression where
- sign (EEqu (l,r) )    = Sign (source l) (target r)
- sign (EImp (l,r) )    = Sign (source l) (target r)
- sign (EIsc (l,r) )    = Sign (source l) (target r)
- sign (EUni (l,r) )    = Sign (source l) (target r)
- sign (EDif (l,r) )    = Sign (source l) (target r)
- sign (ELrs (l,r) )    = Sign (source l) (source r)
- sign (ERrs (l,r) )    = Sign (target l) (target r)
- sign (ECps (l,r) )    = Sign (source l) (target r)
- sign (ERad (l,r) )    = Sign (source l) (target r)
- sign (EPrd (l,r) )    = Sign (source l) (target r)
- sign (EKl0 e )        = sign e
- sign (EKl1 e )        = sign e
- sign (EFlp e )        = flp (sign e)
- sign (ECpl e )        = sign e
- sign (EBrk e)         = sign e
- sign (ETyp e sgn)     = sgn
- sign (EDcD d )        = sign d
- sign (EDcI c )        = Sign c c
- sign (EEps inter)     = fatal 523 "Unable to determine the signature of EEps" --  Aha! Have you a solution for this, Sebastiaan?
- sign (EDcV sgn )      = sgn
- sign (EMp1 a )        = fatal 525 "Unable to determine the signature of EMp1" --  Aha! Have you a solution for this, Sebastiaan?
+ sign (EEqu (l,r)) = Sign (source l) (target r)
+ sign (EImp (l,r)) = Sign (source l) (target r)
+ sign (EIsc (l,r)) = Sign (source l) (target r)
+ sign (EUni (l,r)) = Sign (source l) (target r)
+ sign (EDif (l,r)) = Sign (source l) (target r)
+ sign (ELrs (l,r)) = Sign (source l) (source r)
+ sign (ERrs (l,r)) = Sign (target l) (target r)
+ sign (ECps (l,r)) = Sign (source l) (target r)
+ sign (ERad (l,r)) = Sign (source l) (target r)
+ sign (EPrd (l,r)) = Sign (source l) (target r)
+ sign (EKl0 e)     = sign e
+ sign (EKl1 e)     = sign e
+ sign (EFlp e)     = flp (sign e)
+ sign (ECpl e)     = sign e
+ sign (EBrk e)     = sign e
+ sign (EDcD d)     = sign d
+ sign (EDcI c)     = Sign c c
+ sign (EEps _ sgn) = sgn
+ sign (EDcV sgn)   = sgn
+ sign (EMp1 _ c)   = Sign c c
 
 showSign :: Association a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"

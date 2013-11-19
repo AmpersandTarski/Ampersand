@@ -68,7 +68,7 @@ instance Disambiguatable P_ViewD where
                    , vd_cpt = c
                    , vd_ats = a
                    }) _ = (P_Vd o s c (map (\x -> fst (disambInfo x (c',[]))) a), (c',[]))
-   where c' = [(Known (EDcI (Sign (pCpt2aCpt c) (pCpt2aCpt c))),Src)]
+   where c' = [(Known (EDcI (pCpt2aCpt c)),Src)]
 
 instance Disambiguatable P_ViewSegmt where
   disambInfo (P_ViewText a) _ = (P_ViewText a,([],[]))
@@ -166,9 +166,9 @@ performUpdate ((t,unkn), (srcs',tgts'))
                                 id $
                 (findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
                 `orWhenEmpty` xs
-     Ident   -> determineBySize' (\ _ -> pure unkn) (\a -> EDcI (Sign (findConceptOrONE a) (findConceptOrONE a)))
+     Ident   -> determineBySize' (\ _ -> pure unkn) (\a -> EDcI (findConceptOrONE a))
                   possibleConcs
-     Mp1 s   -> determineBySize' (\ _ -> pure unkn) (\a -> EMp1 s (Sign (findConceptOrONE a) (findConceptOrONE a)))
+     Mp1 s   -> determineBySize' (\ _ -> pure unkn) (\a -> EMp1 s (findConceptOrONE a))
                   possibleConcs
      Vee     -> determineBySize (\ _ -> pure unkn) (\(a,b) -> (EDcV (Sign (findConceptOrONE a) (findConceptOrONE b))))
                   [(a,b) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]

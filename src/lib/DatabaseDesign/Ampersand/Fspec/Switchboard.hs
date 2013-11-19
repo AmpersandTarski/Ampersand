@@ -234,7 +234,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
    positiveIn :: Expression -> Declaration -> [Bool]
    positiveIn expr decl = f expr   -- all are True, so an insert in rel means an insert in expr
     where
-     f (EEqu _ _)       = fatal 245 "Illegal call of positiveIn."
+     f (EEqu _)     = fatal 245 "Illegal call of positiveIn."
      f (EImp (l,r)) = f (notCpl l .\/. r)
      f (EIsc (l,r)) = f l ++ f r
      f (EUni (l,r)) = f l ++ f r
@@ -249,7 +249,6 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (EFlp e)     = f e
      f (ECpl e)     = [ not b | b<- f e]
      f (EBrk e)     = f e
-     f (ETyp e _)   = f e
      f (EDcD d)     = [ True | d==decl ]
      f EDcI{}       = nub [ True | Isn{}<-decl ]
      f EEps{}       = []

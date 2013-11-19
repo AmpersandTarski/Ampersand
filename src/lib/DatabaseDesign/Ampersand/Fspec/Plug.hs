@@ -137,7 +137,7 @@ instance ConceptStructure PlugInfo where
 entityfield :: PlugSQL -> SqlField
 entityfield p
   = Fld { fldname = name (entityconcept p)
-        , fldexpr = iExpr (concept p)
+        , fldexpr = EDcI (concept p)
         , fldtype = SQLId
         , flduse  = PrimKey (concept p)  -- SJ 4 nov 2013:  TODO: is this correct?? (this field may have been subject to bit rot...
         , fldnull = False
@@ -209,7 +209,7 @@ instance Object PlugSQL where
                else [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
  attributes _ = [] --no attributes for BinSQL and ScalarSQL
  contextOf p@BinSQL{} = mLkp p 
- contextOf p = iExpr (concept p)
+ contextOf p = EDcI (concept p)
 
 {-WHY151210 -> why do I need PlugSQL to be an Association
 --       in other words why do I need a (target p) for BinSQL and ScalarSQL only
@@ -336,7 +336,7 @@ plugpath p@ScalarSQL{} srcfld trgfld
   | srcfld==trgfld = fldexpr trgfld
   | otherwise = fatal 447 $ "scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p)
 plugpath p@TblSQL{} srcfld trgfld  
-  | srcfld==trgfld && isPlugIndex p trgfld = iExpr (target (fldexpr trgfld))
+  | srcfld==trgfld && isPlugIndex p trgfld = EDcI (target (fldexpr trgfld))
   | srcfld==trgfld && not(isPlugIndex p trgfld) = flp (fldexpr srcfld) .:. fldexpr trgfld --codomain of r of morAtt
   | (not . null) (paths srcfld trgfld)
      = case head (paths srcfld trgfld) of

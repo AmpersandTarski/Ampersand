@@ -407,15 +407,11 @@ instance ShowMath Expression where
           showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
           showExpr (ECpl e)     = "\\cmpl{"++showExpr e++"}"
           showExpr (EBrk e)     = "("++showExpr e++")"
-          showExpr (ETyp e sgn) 
-           | source sgn==target sgn = showExpr e++"_{["++show (source sgn)++"]}"
-           | otherwise              = showExpr e++"_{["++show (source sgn)++texOnly_rel++show (target sgn)++"]}"
-          -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showExpr (EDcD d)     = name d
-          showExpr  EDcI{}      = "I"
+          showExpr (EDcD d)     = "\\id{"++name d++"}"
+          showExpr (EDcI c)     = "I_{\\id{"++name c++"}}"
           showExpr  EEps{}      = ""
-          showExpr  EDcV{}      = "V"
-          showExpr (EMp1 atom)  = "'{\tt "++atom++"}'"
+          showExpr (EDcV sgn)   = "V_{\\id{"++source sgn++"}\times\\id{"++target sgn++"}}"
+          showExpr (EMp1 a _)   = "'{\tt "++a++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)

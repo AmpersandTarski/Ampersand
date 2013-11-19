@@ -222,10 +222,10 @@ where
 --                                , let clause  = horn2expr hc
 --                                , let sgn     = sign clause
 --                                , let clause' = conjNF (subst (rel, actSem Ins rel (delta (sign rel))) clause)
---                                , let step    = conjNF (notCpl sgn clause .\/. clause')
---                                , let viols   = conjNF (notCpl sgn clause')
---                                , let negs    = EUni [notCpl sgn f | f<-antcs] sgn
---                                , let poss    = EUni conss sgn
+--                                , let step    = conjNF (notCpl clause .\/. clause')
+--                                , let viols   = conjNF (notCpl clause')
+--                                , let negs    = EUni [notCpl f | f<-antcs]
+--                                , let poss    = EUni conss
 --                                , let frExpr  = if ev==Ins
 --                                                then conjNF negs
 --                                                else conjNF poss
@@ -254,7 +254,7 @@ where
              else [LineBreak, Str "Convert into conjunctive normal form", LineBreak] ++ showProof showADL ((e,[],"<=>"):prf)
            )++
            [ LineBreak, Str "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     " ]++
-           (disjProof. notCpl (sign rule). rrexp) rule++[ LineBreak, LineBreak ] ++
+           (disjProof. notCpl. rrexp) rule++[ LineBreak, LineBreak ] ++
            concat [ [LineBreak, Str "Conjunct: ", Space, Space, Space, Space, Space, Str (showADL conjunct)]++
                     concat [ [LineBreak, Str "This conjunct has ", Str (show (length hornClauses)), Str " clauses:"] | length hornClauses>1 ]++
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-hornClauses]++[ LineBreak]++
@@ -271,11 +271,11 @@ where
                                     , ev<-[Ins,Del]
                                     , let ex'     = subst (dcl, actSem ev dcl (delta (sign dcl))) expr
                                     , let clause' = conjNF ex'
-                                    , let notClau = notCpl sgn clause'
+                                    , let notClau = notCpl clause'
                                     , let step    = conjNF (notClau .\/. clause')
                                     , let viols   = conjNF (notClau)
-                                    , let negs    = foldr (./\.) (vExpr sgn) antcs
-                                    , let poss    = foldr (.\/.) (notCpl sgn (vExpr sgn)) conss
+                                    , let negs    = foldr (./\.) (EDcV sgn) antcs
+                                    , let poss    = foldr (.\/.) (notCpl (EDcV sgn)) conss
                                     , let frExpr  = if ev==Ins
                                                     then conjNF negs
                                                     else conjNF poss
@@ -297,18 +297,18 @@ where
                                      [Str "viols = r'-"] ++ disjProof (ECpl r') ++ [ LineBreak ] ++
                                      "violations, considering that the valuation of "++showADL rel++" has just been changed to "++showADL (actSem ev rel (delta (sign rel)))++
                                      "            "++conjProof (ECpl r) ++"\n"++
-                                     "reaction? evaluate r |- r' ("++(showADL.conjNF) (notCpl sgn r .\/. r')++")"++
-                                        conjProof (notCpl sgn r .\/. r')++"\n"++
+                                     "reaction? evaluate r |- r' ("++(showADL.conjNF) (notCpl r .\/. r')++")"++
+                                        conjProof (notCpl r .\/. r')++"\n"++
                                      "delta: r-/\\r' = "++conjProof (EIsc[notCpl r,r'])++
-                                     "\nNow compute a reaction\n(isTrue.conjNF) (notCpl sgn r .\/. r') = "++show ((isTrue.conjNF) (notCpl sgn r .\/. r'))++"\n"++
+                                     "\nNow compute a reaction\n(isTrue.conjNF) (notCpl r .\/. r') = "++show ((isTrue.conjNF) (notCpl r .\/. r'))++"\n"++
                                      (if null (lambda ev (ERel rel ) r)
                                       then "lambda "++showADL rel++" ("++showADL r++") = empty\n"
                                       else -- for debug purposes:
                                            -- "lambda "++show ev++" "++showADL rel++" ("++showADL r++") = \n"++(intercalate "\n\n".map showPr.lambda ev (ERel rel)) r++"\n"++
                                            -- "derivMono ("++showADL r++") "++show ev++" "++showADL rel++"\n = "++({-intercalate "\n". map -}showPr.derivMono r ev) rel++"\n"++
                                            -- "\nNow compute checkMono r ev rel = \n"++show (checkMono r ev rel)++"\n"++
-                                           if (isTrue.conjNF) (notCpl sgn r .\/. r')
-                                           then "A reaction is not required, because  r |- r'. Proof:"++conjProof (notCpl sgn r .\/. r')++"\n"
+                                           if (isTrue.conjNF) (notCpl r .\/. r')
+                                           then "A reaction is not required, because  r |- r'. Proof:"++conjProof (notCpl r .\/. r')++"\n"
                                            else if checkMono r ev rel
                                            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) rel-}++"NIET TYPECORRECT: (showPr.derivMono r ev) rel"++"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let ERel _ _ = delta (sign rel) in
@@ -319,7 +319,7 @@ where
                                    , ev<-[Ins,Del]
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]
-                                   , True ]  -- (isTrue.conjNF) (notCpl sgn r .\/. r')
+                                   , True ]  -- (isTrue.conjNF) (notCpl r .\/. r')
                                   | r<-[hc | cs<-[allClauses flags rule], (_,hornClauses)<-cl_conjNF cs, hc<-hornClauses]
                                   ]
 -}
@@ -392,7 +392,7 @@ where
    derivMono expr -- preconditie van actie a
              tOp  -- de actie (Ins of Del)
              dcl' -- re relatie, zodat de actie bestaat uit INSERT rel' INTO expr of DELETE rel' FROM expr
-    = f (head (lambda tOp (EDcD dcl' (sign expr)) expr++[[]])) (start tOp)
+    = f (head (lambda tOp (EDcD dcl') expr++[[]])) (start tOp)
     where
      f :: [(Expression, [String], whatever)] 
         -> (Expression, Expression) 
@@ -407,8 +407,8 @@ where
       = (rule (subst (dcl',neg') e1) (subst (dcl',pos') e1),["Monotony of "++showOp e2],"==>"):
          f prf (neg',pos')
          
-     start Ins  = (EDcD dcl' (sign dcl'),EDcD dcl' (sign dcl') .\/. delta (sign dcl'))
-     start Del  = (EDcD dcl' (sign dcl') ./\. notCpl (sign dcl') (delta (sign dcl')),EDcD dcl' (sign dcl'))
+     start Ins  = (EDcD dcl',EDcD dcl' .\/. delta (sign dcl'))
+     start Del  = (EDcD dcl' ./\. notCpl (delta (sign dcl')),EDcD dcl')
 
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrnm  = ""
@@ -498,7 +498,7 @@ Rewrite rules:
                                                :prf
                                                | prf<-lam tOp e3 deMrg
                                                ] -- isNeg is nog niet helemaal correct.
-                     | or[null p|p<-fPrfs] -> []
+                     | or[null p|p<-fPrfs]  -> []
                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]        
              ERad{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | and [isNeg f |f<-exprRad2list expr]
@@ -506,11 +506,11 @@ Rewrite rules:
                                                [(expr, deMorganERad, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg] -- isNeg is nog niet helemaal correct.
                      | or[null p |p<-fPrfs] -> []
                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]
-             EKl0 x _                         -> [(expr,\e->EKl0 e sgn,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
-             EKl1 x _                         -> [(expr,\e->EKl1 e sgn,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
-             ECpl x _                         -> [(expr,\e->ECpl e sgn,["invert"],"<--") :prf | prf<-lam (inv tOp) e3 x]
-             EBrk x                           -> lam tOp e3 x
-             _                                -> [[(e3,id,[],"")]]
+             EKl0 x                         -> [(expr,\e->EKl0 e,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
+             EKl1 x                         -> [(expr,\e->EKl1 e,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
+             ECpl x                         -> [(expr,\e->ECpl e,["invert"],"<--") :prf | prf<-lam (inv tOp) e3 x]
+             EBrk x                         -> lam tOp e3 x
+             _                              -> [[(e3,id,[],"")]]
            where
                sgn   = sign expr
                fPrfs = case expr of
@@ -525,8 +525,8 @@ Rewrite rules:
                const' e@EUni{} = [f |f<-exprUni2list e, isConst f e3]
                const' e@EIsc{} = [f |f<-exprIsc2list e, isConst f e3]
                const' expr'' = fatal 440 $ "'const'("++ show expr''++")' is not defined.Consult your dealer!"
-               inter' e@EUni{} = foldr (.\/.) (notCpl sgn (vExpr sgn)) [f |f<-exprUni2list e, isVar f e3]
-               inter' e@EIsc{} = foldr (./\.) (vExpr sgn) [f |f<-exprIsc2list e, isVar f e3]
+               inter' e@EUni{} = foldr (.\/.) (notCpl (EDcV sgn)) [f |f<-exprUni2list e, isVar f e3]
+               inter' e@EIsc{} = foldr (./\.) (EDcV sgn) [f |f<-exprIsc2list e, isVar f e3]
                inter' expr'' = fatal 443 $ "'inter'("++ show expr''++")' is not defined.Consult your dealer!"
  --      lam tOp e f       = []
 

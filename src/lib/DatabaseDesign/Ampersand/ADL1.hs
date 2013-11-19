@@ -55,7 +55,6 @@ import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree as X  (
          ,RoleRelation(..)
          ,UserDefPop(..)
          ,Purpose(..), ExplObj(..)
-         , iExpr, vExpr
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.:.), (.!.), (.*.)
          )
 import DatabaseDesign.Ampersand.ADL1.Expression as X (
