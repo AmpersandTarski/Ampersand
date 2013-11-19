@@ -262,30 +262,30 @@ instance ShowADL Expression where
      showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)
       = showchar
         where
-          showchar (EEqu (l,r) _) = showchar l++equi++showchar r
-          showchar (EImp (l,r) _) = showchar l++impl++showchar r
-          showchar (EIsc (l,r) _) = showchar l++inter++showchar r
-          showchar (EUni (l,r) _) = showchar l++union'++showchar r
-          showchar (EDif (l,r) _) = showchar l++diff ++showchar r
-          showchar (ELrs (l,r) _) = showchar l++lresi++showchar r
-          showchar (ERrs (l,r) _) = showchar l++rresi++showchar r
-          showchar (ECps (l,r) _) = showchar l++rMul++showchar r
-          showchar (ERad (l,r) _) = showchar l++rAdd++showchar r
-          showchar (EPrd (l,r) _) = showchar l++rPrd++showchar r
-          showchar (EKl0 e _)     = showchar e++closK0
-          showchar (EKl1 e _)     = showchar e++closK1
-          showchar (EFlp e _)     = showchar e++flp'
-          showchar (ECpl e _)     = compl (showchar e)
-          showchar (EBrk e)       = lpar++showchar e++rpar
+          showchar (EEqu (l,r)) = showchar l++equi++showchar r
+          showchar (EImp (l,r)) = showchar l++impl++showchar r
+          showchar (EIsc (l,r)) = showchar l++inter++showchar r
+          showchar (EUni (l,r)) = showchar l++union'++showchar r
+          showchar (EDif (l,r)) = showchar l++diff ++showchar r
+          showchar (ELrs (l,r)) = showchar l++lresi++showchar r
+          showchar (ERrs (l,r)) = showchar l++rresi++showchar r
+          showchar (ECps (l,r)) = showchar l++rMul++showchar r
+          showchar (ERad (l,r)) = showchar l++rAdd++showchar r
+          showchar (EPrd (l,r)) = showchar l++rPrd++showchar r
+          showchar (EKl0 e)     = showchar e++closK0
+          showchar (EKl1 e)     = showchar e++closK1
+          showchar (EFlp e)     = showchar e++flp'
+          showchar (ECpl e)     = compl (showchar e)
+          showchar (EBrk e)     = lpar++showchar e++rpar
           showchar (ETyp e sgn) 
            | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
            | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
           -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showchar (EDcD dcl   _) = name dcl
-          showchar  EDcI{}        = "I"
-          showchar  EEps{}        = "epsilon"
-          showchar  EDcV{}        = "V"
-          showchar (EMp1 atom  _) = "'"++atom++"'"
+          showchar (EDcD dcl  ) = name dcl
+          showchar  EDcI{}      = "I"
+          showchar  EEps{}      = "epsilon"
+          showchar  EDcV{}      = "V"
+          showchar (EMp1 atom ) = "'"++atom++"'"
 
 instance ShowADL HornClause where
  showADL hornClause = showADL (horn2expr hornClause)

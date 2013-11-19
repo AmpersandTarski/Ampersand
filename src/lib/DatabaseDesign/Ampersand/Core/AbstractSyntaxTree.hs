@@ -398,12 +398,10 @@ data Expression
       | ECpl Expression                -- ^ Complement
       | EBrk Expression                -- ^ bracketed expression ( ... )
       | EDcD Declaration               -- ^ simple declaration
-      | EDcI                     Sign  -- ^ Identity relation
-      | EEps A_Concept           Sign  -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
-                                       --   Meaning of EEps inter sgn:  inter<=source sgn  &&  inter<=target sgn
-                                       --   System invariant:           source sgn /= target sgn   &&  (inter==source sgn || inter==target sgn)
-      | EDcV                     Sign  -- ^ Cartesian product relation
-      | EMp1 String              Sign  -- ^ constant (string between single quotes)
+      | EDcI A_Concept                 -- ^ Identity relation
+      | EEps A_Concept                 -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
+      | EDcV Sign                      -- ^ Cartesian product relation
+      | EMp1 String                    -- ^ constant (string between single quotes)
       deriving (Eq,Show)
 
 iExpr :: A_Concept -> Expression
@@ -426,25 +424,25 @@ infixl 8 .*.    -- cartesian product
 
 -- SJ 2013118: The fatals are superfluous, but only if the type checker works correctly. Once we have sufficient confidence, they can be removed for performance reasons.
 l .==. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot equate (with operator \"==\") expression\n   "++show l++"\n   with "++show r++".") else
-           EEqu (l,r) (sign l)
+           EEqu (l,r)
 l .|-. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot include (with operator \"|-\") expression\n   "++show l++"\n   with "++show r++".") else
-           EImp (l,r) (sign l)
+           EImp (l,r)
 l ./\. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot intersect (with operator \"/\\\") expression\n   "++show l++"\n   with "++show r++".") else
-           EIsc (l,r) (sign l)
+           EIsc (l,r)
 l .\/. r = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot unite (with operator \"\\/\") expression\n   "++show l++"\n   with "++show r++".") else
-           EUni (l,r) (sign l)
+           EUni (l,r)
 l .-. r  = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot subtract (with operator \"-\") expression\n   "++show l++"\n   with "++show r++".") else
-           EDif (l,r) (sign l)
+           EDif (l,r)
 l ./. r  = if target l/=target r then fatal 432 ("Cannot residuate (with operator \"/\") expression\n   "++show l++"\n   with "++show r++".") else
-           ELrs (l,r) (Sign (source l) (source r))
+           ELrs (l,r)
 l .\. r  = if source l/=source r then fatal 432 ("Cannot residuate (with operator \"\\\") expression\n   "++show l++"\n   with "++show r++".") else
-           ERrs (l,r) (Sign (target l) (target r))
+           ERrs (l,r)
 l .:. r  = if source r/=target l then fatal 432 ("Cannot compose (with operator \";\") expression\n   "++show l++"\n   with "++show r++".") else
-           ECps (l,r) (Sign (source l) (target r))
+           ECps (l,r)
 l .!. r  = if source r/=target l then fatal 432 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
-           ERad (l,r) (Sign (source l) (target r))
+           ERad (l,r)
 l .*. r  = if source r/=target l then fatal 432 ("Cannot multiply (with operator \"*\") expression\n   "++show l++"\n   with "++show r++".") else
-           EPrd (l,r) (Sign (source l) (target r))
+           EPrd (l,r)
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee
    does not. In that case, -(r!s) (with target r=Student and source s=Employee) is defined, but -r;-s is not.
@@ -453,27 +451,27 @@ l .*. r  = if source r/=target l then fatal 432 ("Cannot multiply (with operator
 
 instance Flippable Expression where
   flp expr = case expr of
-               EEqu (l,r) sgn -> EEqu (flp l, flp r) (flp sgn)
-               EImp (l,r) sgn -> EImp (flp l, flp r) (flp sgn)
-               EIsc (l,r) sgn -> EIsc (flp l, flp r) (flp sgn)
-               EUni (l,r) sgn -> EUni (flp l, flp r) (flp sgn)
-               EDif (l,r) sgn -> EDif (flp l, flp r) (flp sgn)
-               ELrs (l,r) sgn -> ERrs (flp r, flp l) (flp sgn)
-               ERrs (l,r) sgn -> ELrs (flp r, flp l) (flp sgn)
-               ECps (l,r) sgn -> ECps (flp r, flp l) (flp sgn)
-               ERad (l,r) sgn -> ERad (flp r, flp l) (flp sgn)
-               EPrd (l,r) sgn -> EPrd (flp r, flp l) (flp sgn)
-               EFlp e     _   -> e
-               ECpl e     sgn -> ECpl (flp e) (flp sgn)
-               EKl0 e     sgn -> EKl0 (flp e) (flp sgn)
-               EKl1 e     sgn -> EKl1 (flp e) (flp sgn)
-               EBrk f         -> EBrk (flp f)
-               ETyp e     sgn -> ETyp (flp e) (flp sgn)
-               EDcD _     sgn -> EFlp expr    (flp sgn)
-               EDcI       _   -> expr
-               EEps inter sgn -> EEps inter   (flp sgn)
-               EDcV       sgn -> EDcV         (flp sgn)
-               EMp1{}         -> expr
+               EEqu (l,r) -> EEqu (flp l, flp r)
+               EImp (l,r) -> EImp (flp l, flp r)
+               EIsc (l,r) -> EIsc (flp l, flp r)
+               EUni (l,r) -> EUni (flp l, flp r)
+               EDif (l,r) -> EDif (flp l, flp r)
+               ELrs (l,r) -> ERrs (flp r, flp l)
+               ERrs (l,r) -> ELrs (flp r, flp l)
+               ECps (l,r) -> ECps (flp r, flp l)
+               ERad (l,r) -> ERad (flp r, flp l)
+               EPrd (l,r) -> EPrd (flp r, flp l)
+               EFlp e     -> e
+               ECpl e     -> ECpl (flp e)
+               EKl0 e     -> EKl0 (flp e)
+               EKl1 e     -> EKl1 (flp e)
+               EBrk f     -> EBrk (flp f)
+               ETyp e sgn -> ETyp (flp e) (flp sgn)
+               EDcD _     -> EFlp expr 
+               EDcI       -> expr
+               EEps inter -> EEps inter
+               EDcV       -> EDcV      
+               EMp1{}     -> expr
 
 insParentheses :: Expression -> Expression
 insParentheses = insPar 0
@@ -481,50 +479,50 @@ insParentheses = insPar 0
        wrap :: Integer -> Integer -> Expression -> Expression
        wrap i j e' = if i<=j then e' else EBrk e'
        insPar :: Integer -> Expression -> Expression
-       insPar i (EEqu (l,r) sgn) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r) sgn)
-       insPar i (EImp (l,r) sgn) = wrap i     0 (EImp (insPar 1 l, insPar 1 r) sgn)
-       insPar i (EUni (l,r) sgn) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r) sgn)
-       insPar i (EIsc (l,r) sgn) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r) sgn)
-       insPar i (EDif (l,r) sgn) = wrap i     4 (EDif (insPar 5 l, insPar 5 r) sgn)
-       insPar i (ELrs (l,r) sgn) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r) sgn)
-       insPar i (ERrs (l,r) sgn) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r) sgn)
-       insPar i (ECps (l,r) sgn) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r) sgn)
-       insPar i (ERad (l,r) sgn) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r) sgn)
-       insPar i (EPrd (l,r) sgn) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r) sgn)
-       insPar _ (EKl0 e     sgn) = EKl0 (insPar 10 e) sgn
-       insPar _ (EKl1 e     sgn) = EKl1 (insPar 10 e) sgn
-       insPar _ (EFlp e     sgn) = EFlp (insPar 10 e) sgn
-       insPar _ (ECpl e     sgn) = ECpl (insPar 10 e) sgn
-       insPar i (EBrk f)         = insPar i f
-       insPar _ (ETyp e sgn)     = ETyp (insPar 10 e) sgn
-       insPar _ e@EDcD{}         = e
-       insPar _ e@EDcI{}         = e
-       insPar _ e@EEps{}         = e
-       insPar _ e@EDcV{}         = e
-       insPar _ e@EMp1{}         = e
+       insPar i (EEqu (l,r)) = wrap i     0 (EEqu (insPar 1 l, insPar 1 r))
+       insPar i (EImp (l,r)) = wrap i     0 (EImp (insPar 1 l, insPar 1 r))
+       insPar i (EUni (l,r)) = wrap (i+1) 2 (EUni (insPar 2 l, insPar 2 r))
+       insPar i (EIsc (l,r)) = wrap (i+1) 2 (EIsc (insPar 2 l, insPar 2 r))
+       insPar i (EDif (l,r)) = wrap i     4 (EDif (insPar 5 l, insPar 5 r))
+       insPar i (ELrs (l,r)) = wrap i     6 (ELrs (insPar 7 l, insPar 7 r))
+       insPar i (ERrs (l,r)) = wrap i     6 (ERrs (insPar 7 l, insPar 7 r))
+       insPar i (ECps (l,r)) = wrap (i+1) 8 (ECps (insPar 8 l, insPar 8 r))
+       insPar i (ERad (l,r)) = wrap (i+1) 8 (ERad (insPar 8 l, insPar 8 r))
+       insPar i (EPrd (l,r)) = wrap (i+1) 8 (EPrd (insPar 8 l, insPar 8 r))
+       insPar _ (EKl0 e    ) = EKl0 (insPar 10 e)
+       insPar _ (EKl1 e    ) = EKl1 (insPar 10 e)
+       insPar _ (EFlp e    ) = EFlp (insPar 10 e)
+       insPar _ (ECpl e    ) = ECpl (insPar 10 e)
+       insPar i (EBrk f)     = insPar i f
+       insPar _ (ETyp e sgn) = ETyp (insPar 10 e) sgn
+       insPar _ e@EDcD{}     = e
+       insPar _ e@EDcI{}     = e
+       insPar _ e@EEps{}     = e
+       insPar _ e@EDcV{}     = e
+       insPar _ e@EMp1{}     = e
 
 instance Association Expression where
- sign (EEqu _ sgn) = sgn
- sign (EImp _ sgn) = sgn
- sign (EIsc _ sgn) = sgn
- sign (EUni _ sgn) = sgn
- sign (EDif _ sgn) = sgn
- sign (ELrs _ sgn) = sgn
- sign (ERrs _ sgn) = sgn
- sign (ECps _ sgn) = sgn
- sign (ERad _ sgn) = sgn
- sign (EPrd _ sgn) = sgn
- sign (EKl0 _ sgn) = sgn
- sign (EKl1 _ sgn) = sgn
- sign (EFlp _ sgn) = sgn
- sign (ECpl _ sgn) = sgn
- sign (EBrk e)     = sign e
- sign (ETyp _ sgn) = sgn
- sign (EDcD _ sgn) = sgn
- sign (EDcI   sgn) = sgn
- sign (EEps _ sgn) = sgn
- sign (EDcV   sgn) = sgn
- sign (EMp1 _ sgn) = sgn
+ sign (EEqu (l,r) )    = Sign (source l) (target r)
+ sign (EImp (l,r) )    = Sign (source l) (target r)
+ sign (EIsc (l,r) )    = Sign (source l) (target r)
+ sign (EUni (l,r) )    = Sign (source l) (target r)
+ sign (EDif (l,r) )    = Sign (source l) (target r)
+ sign (ELrs (l,r) )    = Sign (source l) (source r)
+ sign (ERrs (l,r) )    = Sign (target l) (target r)
+ sign (ECps (l,r) )    = Sign (source l) (target r)
+ sign (ERad (l,r) )    = Sign (source l) (target r)
+ sign (EPrd (l,r) )    = Sign (source l) (target r)
+ sign (EKl0 e )        = sign e
+ sign (EKl1 e )        = sign e
+ sign (EFlp e )        = flp (sign e)
+ sign (ECpl e )        = sign e
+ sign (EBrk e)         = sign e
+ sign (ETyp e sgn)     = sgn
+ sign (EDcD d )        = sign d
+ sign (EDcI c )        = Sign c c
+ sign (EEps inter)     = fatal 523 "Unable to determine the signature of EEps" --  Aha! Have you a solution for this, Sebastiaan?
+ sign (EDcV sgn )      = sgn
+ sign (EMp1 a )        = fatal 525 "Unable to determine the signature of EMp1" --  Aha! Have you a solution for this, Sebastiaan?
 
 showSign :: Association a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"

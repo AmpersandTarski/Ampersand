@@ -392,30 +392,30 @@ instance ShowMath Sign where
 
 instance ShowMath Expression where
  showMath = showExpr . insParentheses
-   where  showExpr (EEqu (l,r) _) = showExpr l++texOnly_equals++showExpr r
-          showExpr (EImp (l,r) _) = showExpr l++texOnly_subs++showExpr r
-          showExpr (EIsc (l,r) _) = showExpr l++texOnly_inter++showExpr r
-          showExpr (EUni (l,r) _) = showExpr l++texOnly_union++showExpr r
-          showExpr (EDif (l,r) _) = showExpr l++texOnly_bx ++showExpr r
-          showExpr (ELrs (l,r) _) = showExpr l++texOnly_lRes++showExpr r
-          showExpr (ERrs (l,r) _) = showExpr l++texOnly_rRes++showExpr r
-          showExpr (ECps (l,r) _) = showExpr l++texOnly_compose++showExpr r
-          showExpr (ERad (l,r) _) = showExpr l++texOnly_relAdd++showExpr r
-          showExpr (EPrd (l,r) _) = showExpr l++texOnly_crtPrd++showExpr r
-          showExpr (EKl0 e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
-          showExpr (EKl1 e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"
-          showExpr (EFlp e _)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
-          showExpr (ECpl e _)     = "\\cmpl{"++showExpr e++"}"
-          showExpr (EBrk e)       = "("++showExpr e++")"
+   where  showExpr (EEqu (l,r)) = showExpr l++texOnly_equals++showExpr r
+          showExpr (EImp (l,r)) = showExpr l++texOnly_subs++showExpr r
+          showExpr (EIsc (l,r)) = showExpr l++texOnly_inter++showExpr r
+          showExpr (EUni (l,r)) = showExpr l++texOnly_union++showExpr r
+          showExpr (EDif (l,r)) = showExpr l++texOnly_bx ++showExpr r
+          showExpr (ELrs (l,r)) = showExpr l++texOnly_lRes++showExpr r
+          showExpr (ERrs (l,r)) = showExpr l++texOnly_rRes++showExpr r
+          showExpr (ECps (l,r)) = showExpr l++texOnly_compose++showExpr r
+          showExpr (ERad (l,r)) = showExpr l++texOnly_relAdd++showExpr r
+          showExpr (EPrd (l,r)) = showExpr l++texOnly_crtPrd++showExpr r
+          showExpr (EKl0 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
+          showExpr (EKl1 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"
+          showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
+          showExpr (ECpl e)     = "\\cmpl{"++showExpr e++"}"
+          showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (ETyp e sgn) 
            | source sgn==target sgn = showExpr e++"_{["++show (source sgn)++"]}"
            | otherwise              = showExpr e++"_{["++show (source sgn)++texOnly_rel++show (target sgn)++"]}"
           -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showExpr (EDcD d _) = name d
-          showExpr (EDcI   _) = "I"
-          showExpr (EEps   _) = ""
-          showExpr (EDcV   _) = "V"
-          showExpr (EMp1 atom _)      = "'{\tt "++atom++"}'"
+          showExpr (EDcD d)     = name d
+          showExpr  EDcI{}      = "I"
+          showExpr  EEps{}      = ""
+          showExpr  EDcV{}      = "V"
+          showExpr (EMp1 atom)  = "'{\tt "++atom++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
