@@ -25,7 +25,7 @@ fatal = fatalMsg "RelBinGenSQL"
 -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
 -- daarom heb ik ze opgesplitst
 -- isOneExpr :: Expression -> Bool
--- isOneExpr e' = (isUni.conjNF.ECps) [vExpr (Sign (source e') (source e')),e']
+-- isOneExpr e' = (isUni.conjNF.ECps) [vExpr,e']
 isOne' :: ObjectDef -> Bool
 isOne' = isOne     -- isOneExpr$contextOf o
                    --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.
@@ -100,11 +100,11 @@ selectExpr fSpec i src trg expr
                               , trg''<-[noCollideUnlessTm' l [src''] (sqlExprTrg fSpec l)]
                               ]++
                               [Just$ "isect0."++src'++" = \\'"++atom++"\\'" -- source and target are equal because this is the case with EMp1{}
-                              | (EMp1 atom _) <- mp1Tm
+                              | (EMp1 atom) <- mp1Tm
                               ]++
                               [Just$ "isect0."++src'++" = \\'"++atom1++"\\'" -- source and target are unequal
                                 ++ " AND isect0."++trg'++" = \\'"++atom2++"\\'" -- source and target are unequal
-                              | t@ECps{} <- mp1Tm, [EMp1 atom1 _, EDcV _, EMp1 atom2 _]<-[exprCps2list t]
+                              | t@ECps{} <- mp1Tm, [EMp1 atom1, EDcV, EMp1 atom2]<-[exprCps2list t]
                               ]++
                               [if isIdent l
                                then  Just ("isect0."++src'++" <> isect0."++trg') -- this code will calculate ../\-I
@@ -280,7 +280,7 @@ selectExpr fSpec i src trg expr
          selectExpr fSpec i src trg (l .!. notCpl sgn (flp r))
     ERad{}
       -> sqlcomment i ("case: ERad (l,r)"++phpIndent (i+3)++showADL expr++" ("++show (sign expr)++")") $
-        selectExpr fSpec i src trg (deMorganERad (sign expr) expr)
+        selectExpr fSpec i src trg (deMorganERad expr)
     EPrd (l,r) sgn
      -> let v = vExpr (Sign (target l) (source r))
         in sqlcomment i ("case: EPrd (l,r)"++phpIndent (i+3)++showADL expr++" ("++show sgn++")") $
