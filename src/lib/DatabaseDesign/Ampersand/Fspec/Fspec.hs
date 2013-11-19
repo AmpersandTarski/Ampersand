@@ -91,7 +91,7 @@ instance ConceptStructure Fspc where
 instance Language Fspc where
   objectdef    fSpec = Obj { objnm   = name fSpec
                            , objpos  = Origin "generated object by objectdef (Language Fspc)"
-                           , objctx  = iExpr ONE
+                           , objctx  = EDcI ONE
                            , objmsub = Just . Box ONE $ map ifcObj (interfaceS fSpec ++ interfaceG fSpec)
                            , objstrs = []
                            }
@@ -278,15 +278,9 @@ horn2expr :: HornClause -> Expression
 horn2expr hc@(Hc antcs conss)
  = case (antcs, conss) of
     ([],[]) -> fatal 327 "empty Horn clause"
-    ([],_ ) -> cons
-    (_ ,[]) -> notCpl sgna antc
-    (_ ,_ ) -> notCpl sgna antc .\/. cons
-   where
-       antc = foldr1 (./\.) antcs
-       cons = foldr1 (.\/.) conss
-       sgna = case sign antc of
-               sgn@(Sign PlainConcept{} PlainConcept{}) -> sgn
-               sgn -> fatal 336 ("\nThe signature of the antecedent of "++show hc++"\n is "++show sgn)
+    ([],_ ) -> foldr1 (.\/.) conss
+    (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
+    (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
 data Clauses  = Clauses
                   { cl_conjNF :: [(Expression

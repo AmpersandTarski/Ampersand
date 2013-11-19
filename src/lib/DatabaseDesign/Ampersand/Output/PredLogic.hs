@@ -278,7 +278,6 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       f exclVars (EKl1 e)     (a,b)  = PlK1 (f exclVars e (a,b))
       f exclVars (ECpl e)     (a,b)  = Not (f exclVars e (a,b))
       f exclVars (EBrk e)     (a,b)  = f exclVars e (a,b)
-      f exclVars (ETyp e _)   (a,b)  = f exclVars e (a,b)
       f _ e@(EDcD dcl) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
@@ -293,7 +292,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
                Rn   -> R (Funs b []) (dcl) (Funs a [])
                Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
-      f exclVars (EFlp e _)     (a,b) = f exclVars e (b,a)
+      f exclVars (EFlp e)       (a,b) = f exclVars e (b,a)
       f _ (EMp1 atom _) _             = Atom atom
       f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
       f _ (EDcV _) _                  = Atom "True"
@@ -365,11 +364,11 @@ module DatabaseDesign.Ampersand.Output.PredLogic
          res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
          conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                    -- So conr is not empty.
-         antr = let x = (map (notCpl (sign e)).map flp.reverse.takeWhile isCpl) es in
+         antr = let x = (map notCpl.map flp.reverse.takeWhile isCpl) es in
                 if null x then fatal 367 ("Entering in an empty foldr1") else x
          conl = let x = (reverse.dropWhile isCpl.reverse) es in
                 if null x then fatal 369 ("Entering in an empty foldr1") else x
-         antl = let x = (map (notCpl (sign e)).map flp.takeWhile isCpl.reverse) es in
+         antl = let x = (map notCpl.map flp.takeWhile isCpl.reverse) es in
                 if null x then fatal 371 ("Entering in an empty foldr1") else x
         -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
          frels :: Var -> Var -> [PredLogic]
@@ -400,11 +399,11 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       relFun :: [Var] -> [Expression] -> Expression -> [Expression] -> Var->Var->PredLogic
       relFun exclVars lhs e rhs
         = case e of
-            EDcD dcl          _ -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t'])
-            EFlp (EDcD dcl _) _ -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t'])
-            EMp1 atom         _ -> \_ _->Atom atom
-            EFlp EMp1{}       _ -> relFun exclVars lhs e rhs
-            _                   -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
+            EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t'])
+            EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-declsUsedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-declsUsedIn t'])
+            EMp1 atom _     -> \_ _->Atom atom
+            EFlp EMp1{}     -> relFun exclVars lhs e rhs
+            _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)       
 
       pars3 :: [Var] -> [[Expression]] -> [(Var -> Var -> PredLogic, A_Concept, A_Concept)] 
       pars3 exclVars (lhs: [e]: rhs: ts)
@@ -418,17 +417,17 @@ module DatabaseDesign.Ampersand.Output.PredLogic
        | denotes lhs==Flr && denote e==Rn
                    = (relFun exclVars lhs e [], source (head lhs), target e): pars3 exclVars ts
        | denotes lhs==Flr && denote e==Frl
-                   = (relFun exclVars lhs (iExpr (source e)) [e], source (head lhs), target e): pars3 exclVars ts
+                   = (relFun exclVars lhs (EDcI (source e)) [e], source (head lhs), target e): pars3 exclVars ts
        | otherwise = pars1 exclVars (lhs:[e]:ts)
       pars2 exclVars ([e]: rhs: ts)
        | denotes rhs==Frl && denote e==Rn
                    = (relFun exclVars [] e rhs, source e, target (last rhs)): pars3 exclVars ts
        | denote e==Flr && denotes rhs==Frl
-                   = (relFun exclVars [e] (iExpr (source e)) rhs, source e, target (last rhs)): pars3 exclVars ts
+                   = (relFun exclVars [e] (EDcI (source e)) rhs, source e, target (last rhs)): pars3 exclVars ts
        | otherwise = pars1 exclVars ([e]:rhs:ts)
       pars2 exclVars (lhs: rhs: ts)
        | denotes lhs==Flr && denotes rhs==Frl
-                   = (relFun exclVars lhs (iExpr (source (head rhs))) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
+                   = (relFun exclVars lhs (EDcI (source (head rhs))) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
        | otherwise = pars1 exclVars (lhs:rhs:ts)
       pars2 exclVars ts = pars1 exclVars ts -- for lists shorter than 2
 
@@ -440,13 +439,13 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 
       pars0 :: [Var] -> [Expression] -> Var -> Var -> PredLogic
       pars0 exclVars lhs
-       | denotes lhs==Flr = relFun exclVars lhs (iExpr (source (last lhs))) []
-       | denotes lhs==Frl = relFun exclVars []  (iExpr (target (last lhs))) lhs
+       | denotes lhs==Flr = relFun exclVars lhs (EDcI (source (last lhs))) []
+       | denotes lhs==Frl = relFun exclVars []  (EDcI (target (last lhs))) lhs
        | otherwise        = relFun exclVars [] (let [r]=lhs in r) []
 
       denote :: Expression -> Notation
       denote e = case e of
-         (EDcD d _)
+         (EDcD d)
            | null([Uni,Inj,Tot,Sur] >- multiplicities d)  -> Rn
            | isUni d && isTot d                           -> Flr
            | isInj d && isSur d                           -> Frl

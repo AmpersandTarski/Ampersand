@@ -251,7 +251,7 @@ instance ShowADL ViewSegment where
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
 --instance ShowADL Relation where
--- showADL rel = show rel -- showADL (ETyp (ERel rel (sign rel)) (sign rel))
+-- showADL rel = show rel
 
 instance ShowADL Expression where
  showADL = showExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", ";", "!", "*", "*", "+", "~", ("-"++), "(", ")", "[", "*", "]") . insParentheses
@@ -277,15 +277,11 @@ instance ShowADL Expression where
           showchar (EFlp e)     = showchar e++flp'
           showchar (ECpl e)     = compl (showchar e)
           showchar (EBrk e)     = lpar++showchar e++rpar
-          showchar (ETyp e sgn) 
-           | source sgn==target sgn = showchar e++lbr++show (source sgn)++rbr
-           | otherwise              = showchar e++lbr++show (source sgn)++star++show (target sgn)++rbr
-          -- relations in expressions are printed without type signature, use ETyp to print signatures
-          showchar (EDcD dcl  ) = name dcl
-          showchar  EDcI{}      = "I"
+          showchar (EDcD dcl)   = name dcl
+          showchar (EDcI c)     = "I"++lbr++name c++rbr
           showchar  EEps{}      = "epsilon"
-          showchar  EDcV{}      = "V"
-          showchar (EMp1 atom ) = "'"++atom++"'"
+          showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
+          showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 
 instance ShowADL HornClause where
  showADL hornClause = showADL (horn2expr hornClause)

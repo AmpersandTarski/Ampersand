@@ -18,10 +18,10 @@ where
     declsUsedIn a = map prim2dcl ((filter (not.isMp1).nub.concatMap primitives.expressionsIn) a)
       where prim2dcl expr =
              case expr of
-               EDcD d@Sgn{} _ -> d
-               EDcD _       _ -> fatal 23 "invalid declaration in EDcD{}" 
-               EDcI sgn       -> Isn (source sgn)
-               EDcV sgn       -> Vs sgn
+               EDcD d@Sgn{} -> d
+               EDcD{}       -> fatal 23 "invalid declaration in EDcD{}" 
+               EDcI c       -> Isn c
+               EDcV sgn     -> Vs sgn
                EMp1{}  -> fatal 25 "EMp1 should be filtered out from primitives. use `filter (not isMp1)`"
                _       -> fatal 26 "prim2dcl is not supposed to be calleed on a non-primitive expression."
     expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a 

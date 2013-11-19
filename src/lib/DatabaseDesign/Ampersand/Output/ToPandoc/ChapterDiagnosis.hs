@@ -205,7 +205,7 @@ chpDiagnosis fSpec flags
                          [ Str "The purpose of relations "]++commaEngPandoc (Str "and") rs++
                          [ Str " is not documented."
                        ] ]
-     where missing = [(Math InlineMath . showMath) (EDcD d (sign d)) 
+     where missing = [(Math InlineMath . showMath) (EDcD d) 
                      | d@Sgn{} <-if null (themes fSpec)
                                  then declsUsedIn fSpec
                                  else declsUsedIn [pat | pat<-patterns fSpec, name pat `elem` themes fSpec]++
@@ -273,7 +273,7 @@ chpDiagnosis fSpec flags
                                   | (pict,pat)<-zip picts pats ] )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMath) (EDcD d (sign d))
+     where notUsed = nub [(Math InlineMath . showMath) (EDcD d)
                          | d@Sgn{} <- declarations fSpec
                          , null (themes fSpec) || decpat d `elem` themes fSpec  -- restrict if the documentation is partial.
                          , decusr d

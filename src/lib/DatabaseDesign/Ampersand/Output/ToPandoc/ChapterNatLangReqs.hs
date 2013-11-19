@@ -388,7 +388,7 @@ showViewAtom fSpec mDec cncpt atom =
     []    -> atom
     view:_ -> case mDec of
               Nothing -> concatMap showViewSegment (vdats view)
-              Just md -> if (not.null) [() | ViewExp objDef <- vdats view, EDcD d _<-[objctx objDef], d==md]
+              Just md -> if (not.null) [() | ViewExp objDef <- vdats view, EDcD d<-[objctx objDef], d==md]
                          then atom
                          else concatMap showViewSegment (vdats view)
              -- if we are showing one of the view relations, don't expand the view

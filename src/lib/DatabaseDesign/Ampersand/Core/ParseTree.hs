@@ -207,7 +207,7 @@ where
       | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                                --   At parse time, there may be zero, one or two elements in the list of concepts.
       | Prel Origin String                     -- ^ we expect expressions in flip-normal form
-      | PTrel Origin String P_Sign             -- ^ type cast expression ... [c] (defined tuple instead of list because ETyp only exists for actual casts)
+      | PTrel Origin String P_Sign             -- ^ type cast expression 
       deriving Show
    data Term a
       = Prim a

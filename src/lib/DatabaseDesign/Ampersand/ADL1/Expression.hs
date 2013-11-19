@@ -6,11 +6,11 @@ module DatabaseDesign.Ampersand.ADL1.Expression (
                       ,primitives,isMp1
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl)
 where
-import DatabaseDesign.Ampersand.Basics
+import DatabaseDesign.Ampersand.Basics (uni)
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.Expression"
+-- fatal :: Int -> String -> a
+-- fatal = fatalMsg "ADL1.Expression"
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
@@ -33,7 +33,6 @@ subst (decl,expr) = subs
        subs (EFlp e    ) = EFlp (subs e)
        subs (ECpl e    ) = ECpl (subs e)
        subs (EBrk e)     = EBrk (subs e)
-       subs (ETyp e    ) = ETyp (subs e)
        subs e@(EDcD d  ) | d==decl   = expr
                          | otherwise = e
        subs e@EDcI{}     = e
@@ -85,7 +84,6 @@ subsi n f expr = expr'
          subs i (EFlp x)     = (EFlp x', i') where (x',i') = subs i x 
          subs i (ECpl x)     = (ECpl x', i') where (x',i') = subs i x 
          subs i (EBrk x)     = (EBrk x', i') where (x',i') = subs i x 
-         subs i (ETyp x sgn) = (ETyp x', i') where (x',i') = subs i x
          subs i x@EDcD{} | i==n      = (f x, i+1)
                          | otherwise = (x, i+1)
          subs i x@EDcI{} | i==n      = (f x, i+1)
@@ -99,27 +97,26 @@ foldlMapExpression :: (a -> r -> a) -> (Declaration->r) -> a -> Expression -> a
 foldlMapExpression f = foldrMapExpression f' where f' x y = f y x
 
 foldrMapExpression :: (r -> a -> a) -> (Declaration->r) -> a -> Expression -> a
-foldrMapExpression f g a (EEqu (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EImp (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EIsc (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EUni (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EDif (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ELrs (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ERrs (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ECps (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ERad (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EPrd (l,r) _)    = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EKl0 e _)        = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EKl1 e _)        = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EFlp e _)        = foldrMapExpression f g a                         e
-foldrMapExpression f g a (ECpl e _)        = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EBrk e)          = foldrMapExpression f g a                         e
-foldrMapExpression f g a (ETyp e _)        = foldrMapExpression f g a e
-foldrMapExpression f g a (EDcD rel _)      = f (g rel) a
-foldrMapExpression _ _ a  EDcI{}           = a
-foldrMapExpression _ _ a  EEps{}           = a
-foldrMapExpression _ _ a  EDcV{}           = a
-foldrMapExpression _ _ a  EMp1{}           = a
+foldrMapExpression f g a (EEqu (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EImp (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EIsc (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EUni (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EDif (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ELrs (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ERrs (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ECps (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (ERad (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EPrd (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EKl0 e)     = foldrMapExpression f g a                         e
+foldrMapExpression f g a (EKl1 e)     = foldrMapExpression f g a                         e
+foldrMapExpression f g a (EFlp e)     = foldrMapExpression f g a                         e
+foldrMapExpression f g a (ECpl e)     = foldrMapExpression f g a                         e
+foldrMapExpression f g a (EBrk e)     = foldrMapExpression f g a                         e
+foldrMapExpression f g a (EDcD d)     = f (g d) a
+foldrMapExpression _ _ a  EDcI{}      = a
+foldrMapExpression _ _ a  EEps{}      = a
+foldrMapExpression _ _ a  EDcV{}      = a
+foldrMapExpression _ _ a  EMp1{}      = a
 
 primitives :: Expression -> [Expression]
 primitives expr =
@@ -139,7 +136,6 @@ primitives expr =
     (EFlp e)     -> primitives e
     (ECpl e)     -> primitives e
     (EBrk e)     -> primitives e
-    (ETyp e _)   -> primitives e
     EDcD{}       -> [expr]
     EDcI{}       -> [expr]
     EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
@@ -149,24 +145,24 @@ primitives expr =
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
 deMorganERad :: Expression -> Expression
-deMorganERad (ERad(L,R))
-  = notCpl (notCpl (deMorganERad l) .;. notCpl (deMorganERad r))
+deMorganERad (ERad (l,r))
+  = notCpl (notCpl (deMorganERad l) .:. notCpl (deMorganERad r))
 deMorganERad e = e
 deMorganECps :: Expression -> Expression
-deMorganECps (ECps(L,R))
+deMorganECps (ECps (l,r))
   = notCpl (notCpl (deMorganECps l) .!. notCpl (deMorganECps r))
 deMorganECps e = e
 deMorganEUni :: Expression -> Expression
-deMorganEUni (EUni(L,R))
+deMorganEUni (EUni (l,r))
   = notCpl (notCpl (deMorganEUni l) ./\. notCpl (deMorganEUni r))
 deMorganEUni e = e
 deMorganEIsc :: Expression -> Expression
-deMorganEIsc (EIsc(L,R))
+deMorganEIsc (EIsc (l,r))
   = notCpl (notCpl (deMorganEIsc l) .\/. notCpl (deMorganEIsc r))
 deMorganEIsc e = e
 
 notCpl :: Expression -> Expression
-notCpl (ECpl e _) = e
+notCpl (ECpl e) = e
 notCpl e = ECpl e
 
 isCpl :: Expression -> Bool

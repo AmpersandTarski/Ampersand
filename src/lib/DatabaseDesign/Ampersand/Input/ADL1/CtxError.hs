@@ -144,10 +144,10 @@ mustBeBound o lst
                    concat ["\n  "++writeBind e| (_,e)<-lst]]
 
 writeBind :: Expression -> String
-writeBind (ECpl e _)
- = "("++showADL (EDcV$ sign e)++"["++showADL (source e)++"*"++showADL (target e)++"]"++" - "++showADL e++")"
+writeBind (ECpl e)
+ = "("++showADL (EDcV (sign e))++"["++showADL (source e)++"*"++showADL (target e)++"]"++" - "++showADL e++")"
 writeBind e
- = "("++showADL e++") /\\ "++showADL (EDcV$ sign e)++"["++showADL (source e)++"*"++showADL (target e)++"]"
+ = "("++showADL e++") /\\ "++showADL (EDcV (sign e))++"["++showADL (source e)++"*"++showADL (target e)++"]"
 
 data Guarded a = Errors [CtxError] | Checked a deriving Show
 
