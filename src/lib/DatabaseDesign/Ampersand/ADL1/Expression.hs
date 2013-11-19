@@ -18,28 +18,28 @@ fatal = fatalMsg "ADL1.Expression"
 subst :: (Declaration,Expression) -> Expression -> Expression
 subst (decl,expr) = subs
      where
-       subs (EEqu (l,r) sgn) = EEqu (subs l,subs r) sgn
-       subs (EImp (l,r) sgn) = EImp (subs l,subs r) sgn
-       subs (EIsc (l,r) sgn) = EIsc (subs l,subs r) sgn
-       subs (EUni (l,r) sgn) = EUni (subs l,subs r) sgn
-       subs (EDif (l,r) sgn) = EDif (subs l,subs r) sgn
-       subs (ELrs (l,r) sgn) = ELrs (subs l,subs r) sgn
-       subs (ERrs (l,r) sgn) = ERrs (subs l,subs r) sgn
-       subs (ECps (l,r) sgn) = ECps (subs l,subs r) sgn
-       subs (ERad (l,r) sgn) = ERad (subs l,subs r) sgn
-       subs (EPrd (l,r) sgn) = EPrd (subs l,subs r) sgn
-       subs (EKl0 e     sgn) = EKl0 (subs e)        sgn
-       subs (EKl1 e     sgn) = EKl1 (subs e)        sgn
-       subs (EFlp e     sgn) = EFlp (subs e)        sgn
-       subs (ECpl e     sgn) = ECpl (subs e)        sgn
-       subs (EBrk e)         = EBrk (subs e)
-       subs (ETyp e     sgn) = ETyp (subs e)        sgn
-       subs e@(EDcD d   _  ) | d==decl   = expr
-                             | otherwise = e
-       subs e@EDcI{}         = e
-       subs e@EEps{}         = e
-       subs e@EDcV{}         = e
-       subs e@EMp1{}         = e
+       subs (EEqu (l,r)) = EEqu (subs l,subs r)
+       subs (EImp (l,r)) = EImp (subs l,subs r)
+       subs (EIsc (l,r)) = EIsc (subs l,subs r)
+       subs (EUni (l,r)) = EUni (subs l,subs r)
+       subs (EDif (l,r)) = EDif (subs l,subs r)
+       subs (ELrs (l,r)) = ELrs (subs l,subs r)
+       subs (ERrs (l,r)) = ERrs (subs l,subs r)
+       subs (ECps (l,r)) = ECps (subs l,subs r)
+       subs (ERad (l,r)) = ERad (subs l,subs r)
+       subs (EPrd (l,r)) = EPrd (subs l,subs r)
+       subs (EKl0 e    ) = EKl0 (subs e)
+       subs (EKl1 e    ) = EKl1 (subs e)
+       subs (EFlp e    ) = EFlp (subs e)
+       subs (ECpl e    ) = ECpl (subs e)
+       subs (EBrk e)     = EBrk (subs e)
+       subs (ETyp e    ) = ETyp (subs e)
+       subs e@(EDcD d  ) | d==decl   = expr
+                         | otherwise = e
+       subs e@EDcI{}     = e
+       subs e@EEps{}     = e
+       subs e@EDcV{}     = e
+       subs e@EMp1{}     = e
 
 -- | This function is used to replace the n-th occurrence of a relation
 --   (counting from the left) with an expression.
@@ -50,42 +50,42 @@ subsi n f expr = expr'
        where
          (expr',_) = subs 1 expr
          subs :: Int -> Expression -> (Expression, Int)
-         subs i (EEqu (l,r) sgn) = (EEqu (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (EImp (l,r) sgn) = (EImp (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (EIsc (l,r) sgn) = (EIsc (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (EUni (l,r) sgn) = (EUni (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (EDif (l,r) sgn) = (EDif (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (ELrs (l,r) sgn) = (ELrs (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (ERrs (l,r) sgn) = (ERrs (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (ECps (l,r) sgn) = (ECps (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (ERad (l,r) sgn) = (ERad (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (EPrd (l,r) sgn) = (EPrd (l',r') sgn, i'')
-                                   where (l',i')  = subs i l
-                                         (r',i'') = subs i' r
-         subs i (EKl0 x sgn)     = (EKl0 x' sgn, i') where (x',i') = subs i x
-         subs i (EKl1 x sgn)     = (EKl1 x' sgn, i') where (x',i') = subs i x 
-         subs i (EFlp x sgn)     = (EFlp x' sgn, i') where (x',i') = subs i x 
-         subs i (ECpl x sgn)     = (ECpl x' sgn, i') where (x',i') = subs i x 
-         subs i (EBrk x)         = (EBrk x'    , i') where (x',i') = subs i x 
-         subs i (ETyp x sgn)     = (ETyp x' sgn, i') where (x',i') = subs i x
+         subs i (EEqu (l,r)) = (EEqu (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (EImp (l,r)) = (EImp (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (EIsc (l,r)) = (EIsc (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (EUni (l,r)) = (EUni (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (EDif (l,r)) = (EDif (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (ELrs (l,r)) = (ELrs (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (ERrs (l,r)) = (ERrs (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (ECps (l,r)) = (ECps (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (ERad (l,r)) = (ERad (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (EPrd (l,r)) = (EPrd (l',r'), i'')
+                               where (l',i')  = subs i l
+                                     (r',i'') = subs i' r
+         subs i (EKl0 x)     = (EKl0 x', i') where (x',i') = subs i x
+         subs i (EKl1 x)     = (EKl1 x', i') where (x',i') = subs i x 
+         subs i (EFlp x)     = (EFlp x', i') where (x',i') = subs i x 
+         subs i (ECpl x)     = (ECpl x', i') where (x',i') = subs i x 
+         subs i (EBrk x)     = (EBrk x', i') where (x',i') = subs i x 
+         subs i (ETyp x sgn) = (ETyp x', i') where (x',i') = subs i x
          subs i x@EDcD{} | i==n      = (f x, i+1)
                          | otherwise = (x, i+1)
          subs i x@EDcI{} | i==n      = (f x, i+1)
@@ -124,72 +124,50 @@ foldrMapExpression _ _ a  EMp1{}           = a
 primitives :: Expression -> [Expression]
 primitives expr =
   case expr of
-    (EEqu (l,r) _) -> primitives l `uni` primitives r
-    (EImp (l,r) _) -> primitives l `uni` primitives r
-    (EIsc (l,r) _) -> primitives l `uni` primitives r
-    (EUni (l,r) _) -> primitives l `uni` primitives r
-    (EDif (l,r) _) -> primitives l `uni` primitives r
-    (ELrs (l,r) _) -> primitives l `uni` primitives r
-    (ERrs (l,r) _) -> primitives l `uni` primitives r
-    (ECps (l,r) _) -> primitives l `uni` primitives r
-    (ERad (l,r) _) -> primitives l `uni` primitives r
-    (EPrd (l,r) _) -> primitives l `uni` primitives r
-    (EKl0 e _)     -> primitives e
-    (EKl1 e _)     -> primitives e
-    (EFlp e _)     -> primitives e
-    (ECpl e _)     -> primitives e
-    (EBrk e)       -> primitives e
-    (ETyp e _)     -> primitives e
-    EDcD{}         -> [expr]
-    EDcI{}         -> [expr]
-    EEps{}         -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
-    EDcV{}         -> [expr]
-    EMp1{}         -> [expr]
+    (EEqu (l,r)) -> primitives l `uni` primitives r
+    (EImp (l,r)) -> primitives l `uni` primitives r
+    (EIsc (l,r)) -> primitives l `uni` primitives r
+    (EUni (l,r)) -> primitives l `uni` primitives r
+    (EDif (l,r)) -> primitives l `uni` primitives r
+    (ELrs (l,r)) -> primitives l `uni` primitives r
+    (ERrs (l,r)) -> primitives l `uni` primitives r
+    (ECps (l,r)) -> primitives l `uni` primitives r
+    (ERad (l,r)) -> primitives l `uni` primitives r
+    (EPrd (l,r)) -> primitives l `uni` primitives r
+    (EKl0 e)     -> primitives e
+    (EKl1 e)     -> primitives e
+    (EFlp e)     -> primitives e
+    (ECpl e)     -> primitives e
+    (EBrk e)     -> primitives e
+    (ETyp e _)   -> primitives e
+    EDcD{}       -> [expr]
+    EDcI{}       -> [expr]
+    EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
+    EDcV{}       -> [expr]
+    EMp1{}       -> [expr]
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
-deMorganERad :: Sign -> Expression -> Expression
-deMorganERad sgn expr@(ERad{})
-  = recur sgn expr
-    where
-     recur (Sign s t) (ERad (l,r) _)
-       = case (target l, source r) of
-          (PlainConcept{},PlainConcept{}) 
-             -> notCpl sgn (notCpl (Sign s (target l)) (recur (Sign s (target l)) l) .:. notCpl (Sign (source r) t) (recur (Sign (source r) t) r))
-          _  -> fatal 159 "expression in wrong format (has never been signalled so far...)"
-     recur _ e = e
-deMorganERad _ e    = fatal 161 ("De Morgan for relational addition is not applicable to "++show e)
-deMorganECps :: Sign -> Expression -> Expression
-deMorganECps sgn expr@(ECps{})
-  = recur sgn expr
-    where
-     recur (Sign s t) (ECps (l,r) _)
-       = case (target l, source r) of
-          (PlainConcept{},PlainConcept{}) 
-             -> notCpl sgn (notCpl (Sign s (target l)) (recur (Sign s (target l)) l) .!. notCpl (Sign (source r) t) (recur (Sign (source r) t) r))
-          _  -> fatal 168 "expression in wrong format (has never been signalled so far...)"
-     recur _ e = e
-deMorganECps _ e    = fatal 172 ("De Morgan for composition is not applicable to "++show e)
-deMorganEUni :: Sign -> Expression -> Expression
-deMorganEUni sgn expr@(EUni{})
-  = recur expr
-    where
-     recur (EUni (l,r) _)
-       = notCpl sgn (notCpl sgn (recur l) ./\. notCpl sgn (recur r))
-     recur e = e
-deMorganEUni _ e    = fatal 180 ("De Morgan for union is not applicable to "++show e)
-deMorganEIsc :: Sign -> Expression -> Expression
-deMorganEIsc sgn expr@(EIsc{})
-  = recur expr
-    where
-     recur (EIsc (l,r) _)
-       = notCpl sgn (notCpl sgn (recur l) .\/. notCpl sgn (recur r))
-     recur e = e
-deMorganEIsc _ e    = fatal 188 ("De Morgan for intersection is not applicable to "++show e)
+deMorganERad :: Expression -> Expression
+deMorganERad (ERad(L,R))
+  = notCpl (notCpl (deMorganERad l) .;. notCpl (deMorganERad r))
+deMorganERad e = e
+deMorganECps :: Expression -> Expression
+deMorganECps (ECps(L,R))
+  = notCpl (notCpl (deMorganECps l) .!. notCpl (deMorganECps r))
+deMorganECps e = e
+deMorganEUni :: Expression -> Expression
+deMorganEUni (EUni(L,R))
+  = notCpl (notCpl (deMorganEUni l) ./\. notCpl (deMorganEUni r))
+deMorganEUni e = e
+deMorganEIsc :: Expression -> Expression
+deMorganEIsc (EIsc(L,R))
+  = notCpl (notCpl (deMorganEIsc l) .\/. notCpl (deMorganEIsc r))
+deMorganEIsc e = e
 
-notCpl :: Sign -> Expression -> Expression
-notCpl _ (ECpl e' _) = e'
-notCpl sgn e' = ECpl e' sgn
+notCpl :: Expression -> Expression
+notCpl (ECpl e _) = e
+notCpl e = ECpl e
 
 isCpl :: Expression -> Bool
 isCpl (ECpl{}) = True

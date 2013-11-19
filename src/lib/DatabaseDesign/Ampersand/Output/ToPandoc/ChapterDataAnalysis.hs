@@ -627,7 +627,7 @@ daBasicsSection lev fSpec flags = theBlocks
                   , e<-[head s, flp (last s)]
                   , r<-declsUsedIn e
                   ]
-      strands (ECps fs _) = [fs]
+      strands (ECps fs) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
       tots = [d | t<-ts, inline t, d<-map makeDeclaration (declsUsedIn t)]
       unis = [d | t<-is, inline t, d<-map makeDeclaration (declsUsedIn t)]

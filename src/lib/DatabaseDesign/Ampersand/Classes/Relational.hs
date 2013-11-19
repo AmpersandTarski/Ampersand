@@ -100,79 +100,77 @@ isSingleton _   = False
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
 instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
  multiplicities expr = case expr of
-     EDcD dcl   _ -> multiplicities dcl
-     EDcI       _ -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-     EEps _     _ -> [Uni,Tot,Inj,    Sym,Asy,Trn]  -- SJ 20131118: What does it mean to have the endo-property Rfx here? Does it make sense at all?
-     EDcV     sgn -> [Tot]
-                   ++[Sur]
-                   ++[Inj | isSingleton (source sgn)]
-                   ++[Uni | isSingleton (target sgn)]
-                   ++[Asy | isEndo sgn, isSingleton (source sgn)]
-                   ++[Sym | isEndo sgn]
-                   ++[Rfx | isEndo sgn]
-                   ++[Trn | isEndo sgn]
-     EBrk f       -> multiplicities f
-     ECps (l,r) _ -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
-     EPrd (l,r) _ -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    _ -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
-     EKl1 e'    _ -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
-     ECpl e'    _ -> [p |p<-multiplicities e', p==Sym]
-     ETyp e'    _ -> multiplicities e'
-     EFlp e'    _ -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
-     EMp1{}       -> [Uni,Inj,Sym,Asy,Trn]
-     _            -> []
+     EDcD dcl   -> multiplicities dcl
+     EDcI       -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+     EEps _     -> [Uni,Tot,Inj,    Sym,Asy,Trn]  -- SJ 20131118: What does it mean to have the endo-property Rfx here? Does it make sense at all?
+     EDcV sgn   -> [Tot]
+                 ++[Sur]
+                 ++[Inj | isSingleton (source sgn)]
+                 ++[Uni | isSingleton (target sgn)]
+                 ++[Asy | isEndo sgn, isSingleton (source sgn)]
+                 ++[Sym | isEndo sgn]
+                 ++[Rfx | isEndo sgn]
+                 ++[Trn | isEndo sgn]
+     EBrk f     -> multiplicities f
+     ECps (l,r) -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
+     EPrd (l,r) -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
+     EKl0 e'    -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
+     EKl1 e'    -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
+     ECpl e'    -> [p |p<-multiplicities e', p==Sym]
+     ETyp e' _  -> multiplicities e'
+     EFlp e'    -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EMp1{}     -> [Uni,Inj,Sym,Asy,Trn]
+     _          -> []
 
  -- |  isTrue e == True   means that e is true, i.e. the population of e is (source e * target e).
  --    isTrue e == False  does not mean anything.
  --    the function isTrue is meant to produce a quick answer, without any form of theorem proving.
  isTrue expr
   = case expr of
-     EEqu (l,r) _   -> l == r
-     EImp (l,_) sgn -> isTrue (ETyp l sgn)
-     EIsc (l,r) sgn -> isTrue (ETyp l sgn) && isTrue (ETyp r sgn)
-     EUni (l,r) sgn -> isTrue (ETyp l sgn) || isTrue (ETyp r sgn)
-     EDif (l,r) sgn -> isTrue (ETyp l sgn) && isFalse r
-     ECps (l,r) sgn | null ([Uni,Tot]>-multiplicities l) -> isTrue r
-                    | null ([Sur,Inj]>-multiplicities r) -> isTrue l
-                    | otherwise                          -> isTrue l && isTrue r
-     EPrd (l,r) sgn -> isTrue l' && isTrue r' || isTot l' && isSur r' || isRfx l' && isRfx r'
-                       where l' = ETyp l sgn
-                             r' = ETyp r sgn
-     EKl0 e     _   -> isTrue e
-     EKl1 e     _   -> isTrue e
-     EFlp e     _   -> isTrue e
-     ECpl e     _   -> isFalse e
-     ETyp e     sgn -> isTrue e && sgn == sign e
-     EDcD _       _ -> False
-     EDcI       sgn -> isSingleton (source sgn)
-     EEps inter   _ -> isSingleton inter
-     EDcV         _ -> True
-     EBrk e         -> isTrue e
-     _              -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
+     EEqu (l,r) -> l == r
+     EImp (l,_) -> isTrue l
+     EIsc (l,r) -> isTrue l && isTrue r
+     EUni (l,r) -> isTrue l || isTrue r 
+     EDif (l,r) -> isTrue l && isFalse r
+     ECps (l,r) | null ([Uni,Tot]>-multiplicities l) -> isTrue r
+                | null ([Sur,Inj]>-multiplicities r) -> isTrue l
+                | otherwise                          -> isTrue l && isTrue r
+     EPrd (l,r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
+     EKl0 e     -> isTrue e
+     EKl1 e     -> isTrue e
+     EFlp e     -> isTrue e
+     ECpl e     -> isFalse e
+     ETyp e     -> isTrue e
+     EDcD _     -> False
+     EDcI c     -> isSingleton c
+     EEps inter -> isSingleton inter
+     EDcV       -> True
+     EBrk e     -> isTrue e
+     _          -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
 
  -- |  isFalse e == True   means that e is false, i.e. the population of e is empty.
  --    isFalse e == False  does not mean anything.
  --    the function isFalse is meant to produce a quick answer, without any form of theorem proving.
  isFalse expr
   = case expr of
-     EEqu (l,r) sgn -> l == notCpl sgn r
-     EImp (_,r) _   -> isFalse r
-     EIsc (l,r) _   -> isFalse r || isFalse l
-     EUni (l,r) _   -> isFalse r && isFalse l
-     EDif (l,r) sgn -> isFalse l || isTrue (ETyp r sgn)
-     ECps (l,r) _   -> isFalse r || isFalse l
-     EPrd (l,r) _   -> isFalse r || isFalse l
-     EKl0 e     _   -> isFalse e
-     EKl1 e     _   -> isFalse e
-     EFlp e     _   -> isFalse e
-     ECpl e     _   -> isTrue e
-     ETyp e     _   -> isFalse e
-     EDcD _     _   -> False
-     EDcI       _   -> False
-     EEps _     _   -> False
-     EDcV       _   -> False
-     EBrk e         -> isFalse e
-     _              -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
+     EEqu (l,r) -> l == notCpl r
+     EImp (_,r) -> isFalse r
+     EIsc (l,r) -> isFalse r || isFalse l
+     EUni (l,r) -> isFalse r && isFalse l
+     EDif (l,r) -> isFalse l || isTrue r
+     ECps (l,r) -> isFalse r || isFalse l
+     EPrd (l,r) -> isFalse r || isFalse l
+     EKl0 e     -> isFalse e
+     EKl1 e     -> isFalse e
+     EFlp e     -> isFalse e
+     ECpl e     -> isTrue e
+     ETyp e     -> isFalse e
+     EDcD _     -> False
+     EDcI       -> False
+     EEps _     -> False
+     EDcV       -> False
+     EBrk e     -> isFalse e
+     _          -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
 
  isProp expr = null ([Asy,Sym]>-multiplicities expr)
 
@@ -180,39 +178,39 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  --    It does a little bit more than just test on ERel I _.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value. 
  isIdent expr = case expr of
-     EEqu (l,r) sgn -> isIdent (EIsc (EImp (l,r) sgn, EImp (r,l) sgn) sgn)    -- TODO: maybe derive something better?
-     EImp (l,r) sgn -> isIdent (EUni (ECpl l sgn, r) sgn)                     -- TODO: maybe derive something better?
-     EIsc (l,r) sgn -> isIdent (ETyp l sgn) && isIdent (ETyp r sgn)
-     EUni (l,r) sgn -> isIdent (ETyp l sgn) && isIdent (ETyp r sgn)
-     EDif (l,r) sgn -> isIdent (ETyp l sgn) && isFalse r
-     ECps (l,r) _   -> isIdent l && isIdent r
-     EKl0 e     _   -> isIdent e || isFalse e
-     EKl1 e     _   -> isIdent e
-     ECpl e     sgn -> isImin (ETyp e sgn)
-     ETyp e     sgn -> sgn==sign e && isIdent e
-     EDcD _     _   -> False
-     EDcI       _   -> True
-     EEps _     _   -> True
-     EDcV       sgn -> isEndo sgn && isSingleton (source sgn)
-     EBrk f         -> isIdent f
-     EFlp f     _   -> isIdent f
-     _              -> False  -- TODO: find richer answers for ERrs, ELrs, EPrd, and ERad
+     EEqu (l,r) -> isIdent (EIsc (EImp (l,r), EImp (r,l)))    -- TODO: maybe derive something better?
+     EImp (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
+     EIsc (l,r) -> isIdent (ETyp l) && isIdent (ETyp r)
+     EUni (l,r) -> isIdent (ETyp l) && isIdent (ETyp r)
+     EDif (l,r) -> isIdent (ETyp l) && isFalse r
+     ECps (l,r) -> isIdent l && isIdent r
+     EKl0 e     -> isIdent e || isFalse e
+     EKl1 e     -> isIdent e
+     ECpl e     -> isImin e
+     ETyp e     -> isIdent e
+     EDcD _     -> False
+     EDcI       -> True
+     EEps _     -> True
+     EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
+     EBrk f     -> isIdent f
+     EFlp f     -> isIdent f
+     _          -> False  -- TODO: find richer answers for ERrs, ELrs, EPrd, and ERad
  isEpsilon e = case e of
                 EEps{} -> True   -- > tells whether the argument is equivalent to I
                 _      -> False
  
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
-     EEqu (l,r) sgn -> isImin (EIsc (EImp (l,r) sgn, EImp (r,l) sgn) sgn)       -- TODO: maybe derive something better?
-     EImp (l,r) sgn -> isImin (EUni (ECpl l sgn, r) sgn)                  -- TODO: maybe derive something better?
-     EIsc (l,r) sgn -> isImin (ETyp l sgn) && isImin (ETyp r sgn)
-     EUni (l,r) sgn -> isImin (ETyp l sgn) && isImin (ETyp r sgn)
-     EDif (l,r) sgn -> isImin (ETyp l sgn) && isFalse r
-     ECpl e     sgn -> isIdent (ETyp e sgn)
-     ETyp e sgn     -> sgn==sign e && isImin e
-     EDcD dcl sgn   -> sgn==sign dcl && isImin dcl
-     EDcI{}         -> False
-     EEps{}         -> False
-     EDcV{}         -> False
-     EBrk f         -> isImin f
-     EFlp f     _   -> isImin f
-     _              -> False  -- TODO: find richer answers for ERrs and ELrs
+     EEqu (l,r) -> isImin (EIsc (EImp (l,r), EImp (r,l)))       -- TODO: maybe derive something better?
+     EImp (l,r) -> isImin (EUni (ECpl l, r))                  -- TODO: maybe derive something better?
+     EIsc (l,r) -> isImin (ETyp l) && isImin (ETyp r)
+     EUni (l,r) -> isImin (ETyp l) && isImin (ETyp r)
+     EDif (l,r) -> isImin l && isFalse r
+     ECpl e     -> isIdent e
+     ETyp e sgn -> sgn==sign e && isImin e
+     EDcD dcl   -> isImin dcl
+     EDcI{}     -> False
+     EEps{}     -> False
+     EDcV{}     -> False
+     EBrk f     -> isImin f
+     EFlp f     -> isImin f
+     _          -> False  -- TODO: find richer answers for ERrs and ELrs

@@ -748,27 +748,27 @@ where
 -- \***********************************************************************
 
    instance ShowHS Expression where
-    showHS flags indent (EEqu (l,r) sgn) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (EImp (l,r) sgn) = "EImp ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (EIsc (l,r) sgn) = "EIsc ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (EUni (l,r) sgn) = "EUni ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (EDif (l,r) sgn) = "EDif ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (ELrs (l,r) sgn) = "ELrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (ERrs (l,r) sgn) = "ERrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (ECps (l,r) sgn) = "ECps ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (ERad (l,r) sgn) = "ERad ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (EPrd (l,r) sgn) = "EPrd ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     ) ("++showHS flags "" sgn++")"
-    showHS flags indent (EKl0 e     sgn) = "EKl0 ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
-    showHS flags indent (EKl1 e     sgn) = "EKl1 ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
-    showHS flags indent (EFlp e     sgn) = "EFlp ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
-    showHS flags indent (ECpl e     sgn) = "ECpl ("++showHS flags (indent++"      ") e++") ("++showHS flags "" sgn++")"
-    showHS flags indent (EBrk e)         = "EBrk ("++showHS flags (indent++"      ") e++")"
-    showHS flags indent (ETyp e     sgn) = "ETyp ("++showHS flags (indent++"      ") e++") ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (EDcD dcl   sgn) = "EDcD "++showHSName dcl       ++" ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (EDcI       sgn) = "EDcI "                       ++" ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (EEps inter sgn) = "EEps "++showHS flags "" inter++" ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (EDcV       sgn) = "EDcV "                       ++" ("++showHS flags (indent++"    ") sgn++")"
-    showHS flags indent (EMp1 atom  sgn) = "EMp1 ("++show atom++") ("++showHS flags (indent++"    ") sgn++")"
+    showHS flags indent (EEqu (l,r)) = "EEqu ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EImp (l,r)) = "EImp ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EIsc (l,r)) = "EIsc ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EUni (l,r)) = "EUni ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EDif (l,r)) = "EDif ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ELrs (l,r)) = "ELrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ERrs (l,r)) = "ERrs ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ECps (l,r)) = "ECps ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (ERad (l,r)) = "ERad ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EPrd (l,r)) = "EPrd ( "++showHS flags (indent++"       ") l++indent++"     , "++showHS flags (indent++"       ") r++indent++"     )"
+    showHS flags indent (EKl0 e    ) = "EKl0 ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (EKl1 e    ) = "EKl1 ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (EFlp e    ) = "EFlp ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (ECpl e    ) = "ECpl ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (EBrk e)     = "EBrk ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (ETyp e sgn) = "ETyp ("++showHS flags (indent++"      ") e++")"
+    showHS flags indent (EDcD dcl  ) = "EDcD "++showHSName dcl
+    showHS flags indent (EDcI c    ) = "EDcI "++showHSName c
+    showHS flags indent (EEps inter) = "EEps "++showHS flags "" inter
+    showHS flags indent (EDcV sgn  ) = "EDcV "++showHS flags "" sgn
+    showHS flags indent (EMp1 atom ) = "EMp1 "++show atom
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Sign                           ***

@@ -138,27 +138,27 @@ where
      mkTag _  = fatal 184 "mkTag should not be used for expressions."
      mkXmlTree expr 
          = case expr of
-               (EEqu (l,r) _) -> Elem (simpleTag "EQUI") (map mkXmlTree [l,r])
-               (EImp (l,r) _) -> Elem (simpleTag "IMPL") (map mkXmlTree [l,r])
-               (EIsc (l,r) _) -> Elem (simpleTag "CONJ") (map mkXmlTree [l,r])
-               (EUni (l,r) _) -> Elem (simpleTag "DISJ") (map mkXmlTree [l,r])
-               (EDif (l,r) _) -> Elem (simpleTag "DIFF") (map mkXmlTree [l,r])
-               (ELrs (l,r) _) -> Elem (simpleTag "LRES") (map mkXmlTree [l,r])
-               (ERrs (l,r) _) -> Elem (simpleTag "RRES") (map mkXmlTree [l,r])
-               (ECps (l,r) _) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
-               (ERad (l,r) _) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
-               (EPrd (l,r) _) -> Elem (simpleTag "RPRD") (map mkXmlTree [l,r])
-               (EKl0 e _)     -> Elem (simpleTag "CLS0") [mkXmlTree e]
-               (EKl1 e _)     -> Elem (simpleTag "CLS1") [mkXmlTree e]
-               (EFlp e _)     -> Elem (simpleTag "CONV") [mkXmlTree e]
-               (ECpl e _)     -> Elem (simpleTag "CMPL") [mkXmlTree e]
-               (EBrk e)       -> mkXmlTree e
-               (ETyp e sgn)   -> Elem (simpleTag "CAST") [mkXmlTree e,mkXmlTree sgn]
-               (EDcD rel sgn) -> Elem (simpleTag "EDcD") [mkXmlTree sgn]
-               (EDcI     sgn) -> Elem (simpleTag "EDcI") [mkXmlTree sgn]
-               (EEps int sgn) -> Elem (simpleTag "EEps") [mkXmlTree int,mkXmlTree sgn]
-               (EDcV     sgn) -> Elem (simpleTag "EDcV") [mkXmlTree sgn]
-               (EMp1 atm sgn) -> Elem (simpleTag "ATOM") [mkXmlTree sgn]
+               (EEqu (l,r)) -> Elem (simpleTag "EQUI") (map mkXmlTree [l,r])
+               (EImp (l,r)) -> Elem (simpleTag "IMPL") (map mkXmlTree [l,r])
+               (EIsc (l,r)) -> Elem (simpleTag "CONJ") (map mkXmlTree [l,r])
+               (EUni (l,r)) -> Elem (simpleTag "DISJ") (map mkXmlTree [l,r])
+               (EDif (l,r)) -> Elem (simpleTag "DIFF") (map mkXmlTree [l,r])
+               (ELrs (l,r)) -> Elem (simpleTag "LRES") (map mkXmlTree [l,r])
+               (ERrs (l,r)) -> Elem (simpleTag "RRES") (map mkXmlTree [l,r])
+               (ECps (l,r)) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
+               (ERad (l,r)) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
+               (EPrd (l,r)) -> Elem (simpleTag "RPRD") (map mkXmlTree [l,r])
+               (EKl0 e)     -> Elem (simpleTag "CLS0") [mkXmlTree e]
+               (EKl1 e)     -> Elem (simpleTag "CLS1") [mkXmlTree e]
+               (EFlp e)     -> Elem (simpleTag "CONV") [mkXmlTree e]
+               (ECpl e)     -> Elem (simpleTag "CMPL") [mkXmlTree e]
+               (EBrk e)     -> mkXmlTree e
+               (ETyp e sgn) -> Elem (simpleTag "CAST") [mkXmlTree e,mkXmlTree sgn]
+               (EDcD rel)   -> Elem (simpleTag "EDcD") []
+                EDcI c      -> Elem (simpleTag "EDcI") [mkXmlTree c]
+               (EEps int)   -> Elem (simpleTag "EEps") [mkXmlTree int]
+                EDcV sgn    -> Elem (simpleTag "EDcV") [mkXmlTree sgn]
+               (EMp1 atm)   -> Elem (simpleTag "ATOM") [mkTag atm]
 
    instance XML PPurpose where
      mkTag expl =
