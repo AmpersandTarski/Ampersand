@@ -99,19 +99,19 @@ makeLinkTable dcl totsurs =
              }
     _  -> fatal 90 "Do not call makeLinkTable on relations other than Rel{}"
    where
-    r_is_Tot = Tot `elem` multiplicities dcl || dcl `elem` [ d |       EDcD d _    <- totsurs]
-    r_is_Sur = Sur `elem` multiplicities dcl || dcl `elem` [ d | EFlp (EDcD d _) _ <- totsurs]
+    r_is_Tot = Tot `elem` multiplicities dcl || dcl `elem` [ d |       EDcD d    <- totsurs]
+    r_is_Sur = Sur `elem` multiplicities dcl || dcl `elem` [ d | EFlp (EDcD d) _ <- totsurs]
     srcNm = (if isEndo dcl then "s" else "")++name (source trgExpr)
     trgNm = (if isEndo dcl then "t" else "")++name (target trgExpr)
     --the expr for the source of r
     srcExpr
-     | r_is_Tot = iExpr (source dcl)
-     | r_is_Sur = iExpr (target dcl)
-     | otherwise = let er=EDcD dcl (sign dcl) in iExpr (source dcl) ./\. (er .:. flp er)
+     | r_is_Tot = EDcI (source dcl)
+     | r_is_Sur = EDcI (target dcl)
+     | otherwise = let er=EDcD dcl in EDcI (source dcl) ./\. (er .:. flp er)
     --the expr for the target of r
     trgExpr 
-     | not r_is_Tot && r_is_Sur = flp (EDcD dcl (sign dcl))
-     | otherwise                = EDcD dcl (sign dcl)
+     | not r_is_Tot && r_is_Sur = flp (EDcD dcl)
+     | otherwise                = EDcD dcl
 
 -----------------------------------------
 --rel2fld
@@ -131,9 +131,9 @@ makeLinkTable dcl totsurs =
 -- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
 
 -- | Create field for TblSQL or ScalarSQL plugs 
-rel2fld :: [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r) _) that may be represented as attributes of this entity.
-        -> [Expression] -- ^ all relations (in the form either EDcD r or EFlp (EDcD r) _) that are defined as attributes by the user.
-        -> Expression   -- ^ either EDcD r, EDcI or EFlp (ERel r) _, representing the relation from some kernel field k1 to f1
+rel2fld :: [Expression] -- ^ all relations (in the form either EDcD r, EDcI or EFlp (EDcD r)) that may be represented as attributes of this entity.
+        -> [Expression] -- ^ all relations (in the form either EDcD r or EFlp (EDcD r)) that are defined as attributes by the user.
+        -> Expression   -- ^ either EDcD r, EDcI c or EFlp (EDcD r), representing the relation from some kernel field k1 to f1
         -> SqlField
 rel2fld kernel
         plugAtts
@@ -145,11 +145,10 @@ rel2fld kernel
        , flduse  =  
           let f expr =
                  case expr of
-                    EDcI sgn        -> PrimKey (source sgn)
-                    ETyp (EDcI _) _ -> NonMainKey
-                    EDcD _ _        -> PlainAttr
-                    EFlp e' _       -> f e'
-                    _               -> fatal 144 ("No flduse defined for "++show expr)
+                    EDcI c   -> PrimKey c
+                    EDcD _   -> PlainAttr
+                    EFlp e'  -> f e'
+                    _        -> fatal 144 ("No flduse defined for "++show expr)
           in f e
        , fldnull = maybenull e
        , flduniq = isInj e      -- all kernel fldexprs are inj
@@ -170,20 +169,19 @@ rel2fld kernel
                  , entry<-if length cl==1
                           then [(rel,niceidname rel++name (source rel)) |rel<-cl]
                           else [(rel,niceidname rel++show i)|(rel,i)<-zip cl [(0::Int)..]]]
-       niceidname (EFlp x _ ) = niceidname x
-       niceidname (EDcD d _ ) = name d
-       niceidname (EDcI  sgn) = name (target sgn)
-       niceidname (ETyp (EDcI _) sgn) = name (target sgn) -- this occurs in the kernel of plugs, for concepts that are a specialization.
-       niceidname rel         = fatal 162 ( "Unexpected relation found:\n"++
-                                           intercalate "\n  "
-                                           [ "***rel:"
-                                           , show rel
-                                           , "***kernel:"
-                                           , show kernel
-                                           , "***plugAtts:"
-                                           , show plugAtts
-                                           ]
-                                       )
+       niceidname (EFlp x) = niceidname x
+       niceidname (EDcD d) = name d
+       niceidname (EDcI c) = name c
+       niceidname rel      = fatal 162 ( "Unexpected relation found:\n"++
+                                        intercalate "\n  "
+                                        [ "***rel:"
+                                        , show rel
+                                        , "***kernel:"
+                                        , show kernel
+                                        , "***plugAtts:"
+                                        , show plugAtts
+                                        ]
+                                    )
    --in a wide table, m can be total, but the field for its target may contain NULL values,
    --because (why? ...)
    --A kernel field may contain NULL values if
@@ -196,17 +194,13 @@ rel2fld kernel
     | length(map target kernel) > length(nub(map target kernel))
        = fatal 146 "more than one kernel field for the same concept"
     | otherwise = case expr of
-                   EDcD dcl _ 
+                   EDcD dcl
                         | (not.isTot) dcl -> True
-                        | otherwise  -> 
-                                 (not.null) [()|k<-kernelpaths, target k==source dcl && isTot k || target k==target dcl && isSur k ]
-                   EFlp (EDcD dcl _) _
+                        | otherwise -> (not.null) [()|k<-kernelpaths, target k==source dcl && isTot k || target k==target dcl && isSur k ]
+                   EFlp (EDcD dcl)
                         | (not.isSur) dcl -> True
-                        | otherwise  -> 
-                                 (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
-                   EDcI   sgn -> source sgn /= target sgn
-                   ETyp (EDcI  _) _
-                            -> True
+                        | otherwise -> (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
+                   EDcI c -> False
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
                                    " ***kernel:*** \n   "++
                                    intercalate "\n   " (map show kernel)++"\n"++
@@ -292,9 +286,9 @@ makeEntityTables _ {-flags-} allDcls concs exclusions
              } 
         where
           (isaAtts,atts) = partition isISA attsAndIsaRels
-            where isISA (EDcD r _) = decISA r
-                  isISA _          = False
-          mainkernel = map iExpr kernel
+            where isISA (EDcD r) = decISA r
+                  isISA _        = False
+          mainkernel = map EDcI kernel
           plugMors :: [Expression]
           plugMors = mainkernel++atts 
           conceptLookuptable :: [(A_Concept,SqlField)]
@@ -321,17 +315,17 @@ makeEntityTables _ {-flags-} allDcls concs exclusions
                  (False  , False  , _      , _      ) --Will become a link-table
                      -> Nothing 
                  (False  , True   , _      , _      )
-                     -> Just $      EDcD d (sign d)
+                     -> Just $      EDcD d
                  (True   , False  , _      , _      )
-                     -> Just $ flp (EDcD d (sign d))
+                     -> Just $ flp (EDcD d)
                  (True   , True   , False  , False  )
-                     -> Just $      EDcD d (sign d)
+                     -> Just $      EDcD d
                  (True   , True   , False  , True   ) --Equivalent to CLASSIFY t ISA s, however, it is named, so it must be stored in a plug!
-                     -> Just $      EDcD d (sign d)
+                     -> Just $      EDcD d
                  (True   , True   , True   , False  ) --Equivalent to CLASSIFY s ISA t, however, it is named, so it must be stored in a plug!
-                     -> Just $ flp (EDcD d (sign d))
+                     -> Just $ flp (EDcD d)
                  (True   , True   , True   , True   ) --An interesting relation indeed. However, it must be implemented, for it is relevant: i.e. `successor` relation on weekdays.
-                     -> Just $      EDcD d (sign d)
+                     -> Just $      EDcD d
 
 
 
@@ -352,7 +346,7 @@ makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeUserDefinedSqlPlug _ obj
  | null(objatsLegacy obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = name obj
-                , sqlColumn = rel2fld [iExpr c] [] (iExpr c)
+                , sqlColumn = rel2fld [EDcI c] [] (EDcI c)
                 , cLkp      = c
                 } 
  | null(objatsLegacy obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
@@ -381,7 +375,7 @@ makeUserDefinedSqlPlug _ obj
           --REMARK -> endo r or r~ which are at least uni,inj,sur are inefficient in a way
           --          if also TOT than r=I => duplicates, 
           --          otherwise if r would be implemented as GEN (target r) ISA C then (target r) could become a kernel field
-     = [(iExpr c,sqltp obj)] 
+     = [(EDcI c,sqltp obj)] 
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isSur r]
        ++ [(r,tp) |(r,tp)<-rels,not (isEndo r),isUni r, isInj r, isTot r, not (isSur r)]
    attRels --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))

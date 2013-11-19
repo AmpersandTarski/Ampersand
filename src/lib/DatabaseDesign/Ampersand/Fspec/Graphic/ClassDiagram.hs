@@ -79,7 +79,7 @@ where
                       }
 
     where
-       rels       = [EDcD r (sign r) | r@Sgn{} <- declarations fSpec, decusr r]
+       rels       = [EDcD r | r@Sgn{} <- declarations fSpec, decusr r]
        relsAtts   = [r | e<-rels, r<-[e, flp e], isUni r]
        cpts       = nub [ specific
                         | specific <-map fst (fsisa fSpec)
@@ -146,7 +146,7 @@ where
       mults r = let minVal = if isTot r then MinOne else MinZero
                     maxVal = if isInj r then MaxOne else MaxMany
                 in  Mult minVal maxVal 
-      allrels = [ EDcD r (sign r) -- restricted to those themes that must be printed.
+      allrels = [ EDcD r -- restricted to those themes that must be printed.
                 | r <- (nub.concat)
                        ([declarations p ++ declsUsedIn p  | p <- pattsInScope fSpec ]++
                         [declarations p ++ declsUsedIn p  | p <- procsInScope fSpec ])
@@ -238,9 +238,8 @@ where
             let expr = fldexpr f in
             case expr of
               EDcI{} -> Nothing
-              ETyp EDcI{} _ -> Nothing    
-              EDcD _ sgn -> if target sgn `elem` kernelConcepts then Just (expr,f) else Nothing
-              EFlp EDcD{} sgn -> if target sgn `elem` kernelConcepts then Just (expr,f) else Nothing
+              EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
+              EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
               _ -> fatal 200 ("Unexpected expression: "++show expr)
           mkRel :: (Expression,SqlField) -> Association
           mkRel (expr,f) =

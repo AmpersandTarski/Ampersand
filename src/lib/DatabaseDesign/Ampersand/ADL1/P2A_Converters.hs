@@ -230,7 +230,7 @@ pCtx2aCtx
          PKl0 _ a   -> unary   EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
          PKl1 _ a   -> unary   EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
          PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x (flp$ sign x)), (t,s))) <$> tt a
-         PCpl _ a   -> (\(x,_) -> (ECpl x (sign x),(False,False))) <$> tt a
+         PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
          PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e
      where
       o = origin (fmap fst tct)
@@ -297,13 +297,13 @@ pCtx2aCtx
     termPrimDisAmb x
      = (x, case x of
            PI _        -> Ident
-           Pid _ conspt-> Known (EDcI (Sign (pCpt2aCpt conspt) (pCpt2aCpt conspt)))
+           Pid _ conspt-> Known (EDcI (pCpt2aCpt conspt))
            Patm _ s Nothing -> Mp1 s
-           Patm _ s (Just conspt) -> Known (EMp1 s (Sign (pCpt2aCpt conspt) (pCpt2aCpt conspt)))
+           Patm _ s (Just conspt) -> Known (EMp1 s (pCpt2aCpt conspt))
            PVee _      -> Vee
            Pfull _ a b -> Known (EDcV (Sign (pCpt2aCpt a) (pCpt2aCpt b)))
-           Prel _ r    -> Rel [EDcD dc (sign dc) | dc <- concat (Map.elems $ findDecls r)]
-           PTrel _ r s -> Rel [EDcD dc (sign dc) | dc <- (findDeclsTyped r (pSign2aSign s))]
+           Prel _ r    -> Rel [EDcD dc | dc <- concat (Map.elems $ findDecls r)]
+           PTrel _ r s -> Rel [EDcD dc | dc <- (findDeclsTyped r (pSign2aSign s))]
         )
     
     termPrim2Decl :: TermPrim -> Guarded Declaration

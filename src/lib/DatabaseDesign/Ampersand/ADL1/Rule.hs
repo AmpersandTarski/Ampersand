@@ -26,16 +26,16 @@ where
    antecedent :: Rule -> Expression
    antecedent r
     = case rrexp r of
-        EEqu (le,_) _ -> le
-        EImp (le,_) _ -> le
-        _             -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
+        EEqu (le,_) -> le
+        EImp (le,_) -> le
+        _           -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
 
    consequent :: Rule -> Expression
    consequent r
     = case rrexp r of
-        EEqu (_,re) _ -> re
-        EImp (_,re) _ -> re
-        x             -> x
+        EEqu (_,re) -> re
+        EImp (_,re) -> re
+        x           -> x
 
    --WHY -> why isn't this implemented as contents (violationsexpr r)?
    --ANSWER -> to avoid performance issues, probably only in most cases (ticket #319)
@@ -43,11 +43,11 @@ where
    ruleviolations gens pt r = case rrexp r of
         EEqu{} -> (cra >- crc) ++ (crc >- cra)
         EImp{} -> cra >- crc
-        _      -> fullContents gens pt (vExpr (sign (consequent r))) >- crc  --everything not in con
+        _      -> fullContents gens pt (EDcV (sign (consequent r))) >- crc  --everything not in con
         where cra = fullContents gens pt (antecedent r)
               crc = fullContents gens pt (consequent r)
    violationsexpr :: Rule -> Expression
-   violationsexpr r = vExpr (rrtyp r) .-. rrexp r
+   violationsexpr r = EDcV (rrtyp r) .-. rrexp r
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all declarations is provided, in order to generate shorter names if possible.
@@ -70,17 +70,17 @@ where
            s = name (source d)
            t = name (target d)
            r:: Expression
-           r = EDcD d (sign d)
+           r = EDcD d
            rExpr = case prp of
-                        Uni-> flp r .:. r .|-. iExpr (target r)
-                        Tot-> iExpr (source r)  .|-. r .:. flp r
-                        Inj-> r .:. flp r .|-. iExpr (source r)
-                        Sur-> iExpr (target r)  .|-. flp r .:. r
+                        Uni-> flp r .:. r .|-. EDcI (target r)
+                        Tot-> EDcI (source r)  .|-. r .:. flp r
+                        Inj-> r .:. flp r .|-. EDcI (source r)
+                        Sur-> EDcI (target r)  .|-. flp r .:. r
                         Sym-> r .==. flp r
-                        Asy-> flp r ./\. r .|-. iExpr (source r)
+                        Asy-> flp r ./\. r .|-. EDcI (source r)
                         Trn-> r .:. r .|-. r
-                        Rfx-> iExpr (source r) .|-. r
-                        Irf-> iExpr (source r) ./\. (vExpr (sign r) .-. r)
+                        Rfx-> EDcI (source r) .|-. r
+                        Irf-> EDcI (source r) ./\. (EDcV (sign r) .-. r)
            explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
                                  case prop of
                                    Sym-> state isPositive English (name d++"["++s++"]") "symmetric"

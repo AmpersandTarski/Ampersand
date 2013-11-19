@@ -49,7 +49,7 @@ where
       contents expr
        = case expr of
             EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))
-            EImp (l,r) n -> contents (notCpl l .\/. r)
+            EImp (l,r) -> contents (notCpl l .\/. r)
             EUni (l,r) -> contents l `uni` contents r
             EIsc (l,r) -> contents l `isc` contents r
             EDif (l,r) -> contents l >- contents r
@@ -94,21 +94,18 @@ where
             EPrd (l,r) -> [ (a,b) | a <- atomsOf gens pt (source l), b <- atomsOf gens pt (target r) ]
             ECps (l,r) -> contents l `kleenejoin` contents r
             EKl0 e     -> if source e == target e --see #166
-                          then closPair (contents e `uni` contents (iExpr (source e)))
+                          then closPair (contents e `uni` contents (EDcI (source e)))
                           else fatal 69 ("source and target of "++show e++show (sign e)++ " are not equal.")
             EKl1 e     -> closPair (contents e)
             EFlp e     -> [(b,a) | (a,b)<-contents e]
             ECpl e     -> [apair | apair <-[ mkPair x y | x<-atomsOf gens pt (source e), y<-atomsOf gens pt (target e)]
                                  , apair `notElem` contents e  ]
             EBrk e     -> contents e
-            ETyp e sgn -> if sign e==sgn then contents e else [(a,b) | (a,b) <-contents e
-                                                                     , a `elem` atomsOf gens pt (source sgn)
-                                                                     , b `elem` atomsOf gens pt (target sgn)]
             EDcD dcl   -> fullContents gens pt dcl
             EDcI c     -> [mkPair a a | a <- atomsOf gens pt c]
-            EEps inter -> [mkPair a a | a <- atomsOf gens pt inter]
+            EEps i _   -> [mkPair a a | a <- atomsOf gens pt i]
             EDcV sgn   -> [mkPair s t | s <- atomsOf gens pt (source sgn), t <- atomsOf gens pt (target sgn) ]
-            EMp1 atom  -> if name (source sgn)=="SESSION" then [fatal 111 "cannot produce the SESSION atom"] else [mkPair atom atom] -- prevent populating SESSION
+            EMp1 a c   -> if name c=="SESSION" then [fatal 111 "cannot produce the SESSION atom"] else [mkPair a a] -- prevent populating SESSION
 
 {- Derivation of contents (ERrs (l,r)):
 Let cL = contents l

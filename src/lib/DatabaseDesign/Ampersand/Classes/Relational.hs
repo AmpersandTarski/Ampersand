@@ -9,8 +9,8 @@ import DatabaseDesign.Ampersand.Core.ParseTree       (Prop(..))
 import DatabaseDesign.Ampersand.ADL1.Expression
 import DatabaseDesign.Ampersand.Basics
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Classes.Relational"
+-- fatal :: Int -> String -> a
+-- fatal = fatalMsg "Classes.Relational"
 
 class Association r => Relational r where
     multiplicities :: r -> [Prop]
@@ -101,8 +101,8 @@ isSingleton _   = False
 instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
  multiplicities expr = case expr of
      EDcD dcl   -> multiplicities dcl
-     EDcI       -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-     EEps _     -> [Uni,Tot,Inj,    Sym,Asy,Trn]  -- SJ 20131118: What does it mean to have the endo-property Rfx here? Does it make sense at all?
+     EDcI{}     -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+     EEps{}     -> [Uni,Tot,Inj,    Sym,Asy,Trn]  -- SJ 20131118: What does it mean to have the endo-property Rfx here? Does it make sense at all?
      EDcV sgn   -> [Tot]
                  ++[Sur]
                  ++[Inj | isSingleton (source sgn)]
@@ -117,7 +117,6 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl0 e'    -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      EKl1 e'    -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
      ECpl e'    -> [p |p<-multiplicities e', p==Sym]
-     ETyp e' _  -> multiplicities e'
      EFlp e'    -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
      EMp1{}     -> [Uni,Inj,Sym,Asy,Trn]
      _          -> []
@@ -140,11 +139,10 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl1 e     -> isTrue e
      EFlp e     -> isTrue e
      ECpl e     -> isFalse e
-     ETyp e     -> isTrue e
-     EDcD _     -> False
+     EDcD{}     -> False
      EDcI c     -> isSingleton c
-     EEps inter -> isSingleton inter
-     EDcV       -> True
+     EEps i _   -> isSingleton i
+     EDcV{}     -> True
      EBrk e     -> isTrue e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, ERad, and EMp1
 
@@ -164,11 +162,10 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EKl1 e     -> isFalse e
      EFlp e     -> isFalse e
      ECpl e     -> isTrue e
-     ETyp e     -> isFalse e
-     EDcD _     -> False
-     EDcI       -> False
-     EEps _     -> False
-     EDcV       -> False
+     EDcD{}     -> False
+     EDcI{}     -> False
+     EEps{}     -> False
+     EDcV{}     -> False
      EBrk e     -> isFalse e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, and ERad
 
@@ -180,17 +177,16 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isIdent expr = case expr of
      EEqu (l,r) -> isIdent (EIsc (EImp (l,r), EImp (r,l)))    -- TODO: maybe derive something better?
      EImp (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
-     EIsc (l,r) -> isIdent (ETyp l) && isIdent (ETyp r)
-     EUni (l,r) -> isIdent (ETyp l) && isIdent (ETyp r)
-     EDif (l,r) -> isIdent (ETyp l) && isFalse r
+     EIsc (l,r) -> isIdent l && isIdent r
+     EUni (l,r) -> isIdent l && isIdent r
+     EDif (l,r) -> isIdent l && isFalse r
      ECps (l,r) -> isIdent l && isIdent r
      EKl0 e     -> isIdent e || isFalse e
      EKl1 e     -> isIdent e
      ECpl e     -> isImin e
-     ETyp e     -> isIdent e
-     EDcD _     -> False
-     EDcI       -> True
-     EEps _     -> True
+     EDcD{}     -> False
+     EDcI{}     -> True
+     EEps{}     -> True
      EDcV sgn   -> isEndo sgn && isSingleton (source sgn)
      EBrk f     -> isIdent f
      EFlp f     -> isIdent f
@@ -202,11 +198,10 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
      EEqu (l,r) -> isImin (EIsc (EImp (l,r), EImp (r,l)))       -- TODO: maybe derive something better?
      EImp (l,r) -> isImin (EUni (ECpl l, r))                  -- TODO: maybe derive something better?
-     EIsc (l,r) -> isImin (ETyp l) && isImin (ETyp r)
-     EUni (l,r) -> isImin (ETyp l) && isImin (ETyp r)
+     EIsc (l,r) -> isImin l && isImin r
+     EUni (l,r) -> isImin l && isImin r
      EDif (l,r) -> isImin l && isFalse r
      ECpl e     -> isIdent e
-     ETyp e sgn -> sgn==sign e && isImin e
      EDcD dcl   -> isImin dcl
      EDcI{}     -> False
      EEps{}     -> False
