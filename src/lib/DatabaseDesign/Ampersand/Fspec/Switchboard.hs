@@ -235,23 +235,23 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
    positiveIn expr decl = f expr   -- all are True, so an insert in rel means an insert in expr
     where
      f (EEqu _ _)       = fatal 245 "Illegal call of positiveIn."
-     f (EImp (l,r) sgn) = f (notCpl sgn l .\/. r)
-     f (EIsc (l,r) _  ) = f l ++ f r
-     f (EUni (l,r) _  ) = f l ++ f r
-     f (EDif (l,r) sgn) = f (l ./\. notCpl sgn r)
-     f (ELrs (l,r) sgn) = f (l .!. notCpl sgn (flp r))
-     f (ERrs (l,r) sgn) = f (notCpl sgn (flp l) .!. r)
-     f (ECps (l,r) _  ) = f l ++ f r
-     f (ERad (l,r) _  ) = f l ++ f r
-     f (EPrd (l,r) _  ) = f l ++ f r
-     f (EKl0 e _)       = f e
-     f (EKl1 e _)       = f e
-     f (EFlp e _)       = f e
-     f (ECpl e _)       = [ not b | b<- f e]
-     f (EBrk e)         = f e
-     f (ETyp e _)       = f e
-     f (EDcD d _)       = [ True | d==decl ]
-     f (EDcI sgn)       = [ True | Isn (source sgn)==decl ]
-     f (EEps _ _)       = []
-     f EDcV{}           = fatal 255 "Illegal call of positiveIn."
-     f (EMp1 _ _)       = []
+     f (EImp (l,r)) = f (notCpl l .\/. r)
+     f (EIsc (l,r)) = f l ++ f r
+     f (EUni (l,r)) = f l ++ f r
+     f (EDif (l,r)) = f (l ./\. notCpl r)
+     f (ELrs (l,r)) = f (l .!. notCpl (flp r))
+     f (ERrs (l,r)) = f (notCpl (flp l) .!. r)
+     f (ECps (l,r)) = f l ++ f r
+     f (ERad (l,r)) = f l ++ f r
+     f (EPrd (l,r)) = f l ++ f r
+     f (EKl0 e)     = f e
+     f (EKl1 e)     = f e
+     f (EFlp e)     = f e
+     f (ECpl e)     = [ not b | b<- f e]
+     f (EBrk e)     = f e
+     f (ETyp e _)   = f e
+     f (EDcD d)     = [ True | d==decl ]
+     f EDcI{}       = nub [ True | Isn{}<-decl ]
+     f EEps{}       = []
+     f EDcV{}       = []
+     f EMp1{}       = []

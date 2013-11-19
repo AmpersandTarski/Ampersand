@@ -260,33 +260,33 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       [s,t] = mkVar [] [source expr, target expr]
       rc = f [s,t] expr (s,t)
       f :: [Var] -> Expression -> (Var,Var) -> PredLogic
-      f exclVars (EEqu (l,r) _) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
-      f exclVars (EImp (l,r) _) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
-      f exclVars e@EIsc{}       (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
-      f exclVars e@EUni{}       (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
-      f exclVars (EDif (l,r) _) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
-      f exclVars (ELrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
-                                         where [c]   = mkVar exclVars [target l]
-                                               eVars = exclVars++[c]
-      f exclVars (ERrs (l,r) _) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
-                                         where [c]   = mkVar exclVars [source l]
-                                               eVars = exclVars++[c]
-      f exclVars e@ECps{}       (a,b)  = fECps exclVars e (a,b)  -- special treatment, see below
-      f exclVars e@ERad{}       (a,b)  = fERad exclVars e (a,b)  -- special treatment, see below
-      f _        (EPrd (l,r) _) (a,b)  = Conj [Dom l a, Cod r b]
-      f exclVars (EKl0 e _)     (a,b)  = PlK0 (f exclVars e (a,b))
-      f exclVars (EKl1 e _)     (a,b)  = PlK1 (f exclVars e (a,b))
-      f exclVars (ECpl e _)     (a,b)  = Not (f exclVars e (a,b))
-      f exclVars (EBrk e)       (a,b)  = f exclVars e (a,b)
-      f exclVars (ETyp e _)     (a,b)  = f exclVars e (a,b)
-      f _ e@(EDcD dcl _) ((a,sv),(b,tv)) = res
+      f exclVars (EEqu (l,r)) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
+      f exclVars (EImp (l,r)) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
+      f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
+      f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
+      f exclVars (EDif (l,r)) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]
+      f exclVars (ELrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars r (b,c)) (f eVars l (a,c)))
+                                       where [c]   = mkVar exclVars [target l]
+                                             eVars = exclVars++[c]
+      f exclVars (ERrs (l,r)) (a,b)  = Forall [c] (Implies (f eVars l (c,a)) (f eVars r (c,b)))
+                                       where [c]   = mkVar exclVars [source l]
+                                             eVars = exclVars++[c]
+      f exclVars e@ECps{}     (a,b)  = fECps exclVars e (a,b)  -- special treatment, see below
+      f exclVars e@ERad{}     (a,b)  = fERad exclVars e (a,b)  -- special treatment, see below
+      f _        (EPrd (l,r)) (a,b)  = Conj [Dom l a, Cod r b]
+      f exclVars (EKl0 e)     (a,b)  = PlK0 (f exclVars e (a,b))
+      f exclVars (EKl1 e)     (a,b)  = PlK1 (f exclVars e (a,b))
+      f exclVars (ECpl e)     (a,b)  = Not (f exclVars e (a,b))
+      f exclVars (EBrk e)     (a,b)  = f exclVars e (a,b)
+      f exclVars (ETyp e _)   (a,b)  = f exclVars e (a,b)
+      f _ e@(EDcD dcl) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
                Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
                Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
                Rn   -> R (Funs a []) (dcl) (Funs b [])
                Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
-      f _ e@(EFlp (EDcD dcl _) _) ((a,sv),(b,tv)) = res
+      f _ e@(EFlp (EDcD dcl)) ((a,sv),(b,tv)) = res
        where
         res = case denote e of
                Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
@@ -306,7 +306,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
       fECps :: [Var] -> Expression -> (Var,Var) -> PredLogic
       fECps exclVars    e             (a,b)
                                --   f :: [Var] -> Expression -> (Var,Var) -> PredLogic
-        | and [isCpl e' | e'<-es] = f exclVars (deMorganECps (sign e) e) (a,b)
+        | and [isCpl e' | e'<-es] = f exclVars (deMorganECps e) (a,b)
         | otherwise               = Exists ivs (Conj (frels a b))
         where
          es :: [Expression]
@@ -352,7 +352,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
 
       fERad :: [Var] -> Expression -> (Var,Var) -> PredLogic
       fERad exclVars e (a,b) 
-        | and[isCpl e' |e'<-es] = f exclVars (deMorganERad (sign e) e) (a,b)                      -- e.g.  -r!-s!-t
+        | and[isCpl e' |e'<-es] = f exclVars (deMorganERad e) (a,b)                      -- e.g.  -r!-s!-t
         | isCpl (head es)       = f exclVars (foldr1 (.:.) antr .\. foldr1 (.!.) conr) (a,b)  -- e.g.  -r!-s! t  antr cannot be empty, because isCpl (head es) is True; conr cannot be empty, because es has an element that is not isCpl.
         | isCpl (last es)       = f exclVars (foldr1 (.!.) conl ./. foldr1 (.:.) antl) (a,b)  -- e.g.   r!-s!-t  antl cannot be empty, because isCpl (head es) is True; conl cannot be empty, because es has an element that is not isCpl.
         | otherwise             = Forall ivs (Disj (frels a b))                               -- e.g.   r!-s! t  the condition or [isCpl e' |e'<-es] is true.

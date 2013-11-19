@@ -463,25 +463,25 @@ while maintaining all invariants.
        sh str es = intercalate str [ showADL e | e<-es] 
 
      headECps :: Expression -> Expression
-     headECps (ECps (l,_) _) = l
+     headECps (ECps (l@ECps{},_)) = headECps l
+     headECps (ECps (l,_)) = l
      headECps x = x
-     
+
      tailECps :: Expression -> Expression
-     tailECps (ECps (_,r) _) = r
-     tailECps x = EDcI (Sign (target x) (target x))
-     
+     tailECps (ECps (ECps (l,r),q)) = tailECps (ECps (l, ECps (r,q)))
+     tailECps (ECps (_,r)) = r
+     tailECps _ = EDcI
+
      initECps :: Expression -> Expression
-     initECps (ECps (l,r@ECps{}) (Sign s _))
-      = case initECps r of
-          initr@(ECps (x,y) (Sign sr tr)) -> ECps (l, initr) (Sign s tr)
-          initr                           -> ECps (l, initr) (Sign s (target initr))
-     initECps x = EDcI (Sign (source x) (source x))
-     
+     initECps (ECps (l, ECps (r,q))) = initECps (ECps (ECps (l,r),q))
+     initECps (ECps (l,_)) = l
+     initECps _ = EDcI
+
      lastECps :: Expression -> Expression
-     lastECps (ECps (_,r@ECps{}) _) = lastECps r
-     lastECps (ECps (_,r) _)        = r
+     lastECps (ECps (_,r@ECps{})) = lastECps r
+     lastECps (ECps (_,r)) = l
      lastECps x = x
-         
+
      isEDcI :: Expression -> Bool
      isEDcI (EDcI{}) = True
      isEDcI _ = False
@@ -640,12 +640,12 @@ while maintaining all invariants.
     where
       genPAcl deltaX tOp exprX motiv =
         case (tOp, exprX) of
-          (_ ,  EFlp x _)   -> genPAcl (flp deltaX) tOp x motiv
+          (_ ,  EFlp x)     -> genPAcl (flp deltaX) tOp x motiv
           (_ ,  EBrk x)     -> genPAcl deltaX tOp x motiv
-          (_ ,  ETyp x t)   -> if sign x==sign t then genPAcl deltaX tOp x motiv else
+          (_ ,  ETyp x sgn) -> if sign x==sgn then genPAcl deltaX tOp x motiv else
                                fatal 691 "TODO: implement narrowing."
-          (Ins, ECpl x _)   -> genPAcl deltaX Del x motiv
-          (Del, ECpl x _)   -> genPAcl deltaX Ins x motiv
+          (Ins, ECpl x)     -> genPAcl deltaX Del x motiv
+          (Del, ECpl x)     -> genPAcl deltaX Ins x motiv
           (Ins, e@EUni{})   -> CHC [ genPAcl deltaX Ins f motiv | f<-exprUni2list e{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Ins, e@EIsc{})   -> ALL [ genPAcl deltaX Ins f []    | f<-exprIsc2list e ] motiv
           (Ins, e@ECps{})   -> CHC [ {- the following might be useful for diagnostics:
@@ -670,14 +670,14 @@ while maintaining all invariants.
                                    , let ers=foldCompose rs
                                    , let c=source ers  -- SJ 20131117 was: if source ers<=target els then source ers else target els
                                                        --                but introduction of EEps makes this unneccessary
-                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Ins ers []
-                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Ins els []
+                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom .*. deltaX) .\/. notCpl ers)) Ins ers []
+                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom) .\/. notCpl els)) Ins els []
                                    ] motiv
                                where foldCompose xs = case xs of
                                                        [] -> fatal 659 "Going into (foldr1 (.:.)) with an empty list"
                                                        _  -> foldr1 (.:.) xs
 {- Problem: how to insert Delta into r;s
-This corresponds with:  genPAclause editAble Ins (ECps (r,s) sgn) Delta motive
+This corresponds with:  genPAclause editAble Ins (ECps (r,s)) Delta motive
 Let us solve it mathematically,  and gradually transform via pseudo-code into Haskell code.
 The problem is how to find dr and ds such that 
    Delta \/ r;s  |-  (dr\/r) ; (ds\/s)
@@ -863,8 +863,8 @@ SEQUENCE [ ASSIGN d (PHPEDif (PHPERel delta, PHPRel (PHPqry (ECps es))))
                                    , let els=foldCompose ls
                                    , let c=source ers  -- SJ 20131117 was: if target ers<=source els then target ers else source els
                                                        --                but introduction of EEps makes this unneccessary
-                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom (sign ers) .*. deltaX) .\/. notCpl (sign ers) ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
-                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom (sign els)) .\/. notCpl (sign els) els)) Del els []
+                                   , let fLft atom = genPAcl (disjNF ((EMp1 atom .*. deltaX) .\/. notCpl ers)) Del ers []  -- TODO (SJ 26-01-2013) is this double code?
+                                   , let fRht atom = genPAcl (disjNF ((deltaX .*. EMp1 atom) .\/. notCpl els)) Del els []
                                    ] motiv
                                where foldCompose xs = case xs of
                                                        [] -> fatal 851 "Going into (foldr1 (.:.)) with an empty list"
@@ -902,13 +902,13 @@ CHC [ if isRel e
           (Del, e@EUni{}) -> ALL [ genPAcl deltaX Del f []    | f<-exprUni2list e {-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, e@EIsc{}) -> CHC [ genPAcl deltaX Del f motiv | f<-exprIsc2list e ] motiv
 -- Op basis van De Morgan is de procesalgebra in het geval van (Ins, ERad ts)  afleidbaar uit uit het geval van (Del, ECps ts) ...
-          (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorganERad (sign e) e) motiv
+          (_  , e@ERad{}) -> genPAcl deltaX tOp (deMorganERad e) motiv
           (_  , EPrd{})   -> fatal 896 "TODO"
-          (_  , EKl0 x _)  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
-          (_  , EKl1 x _)  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , e@(EDcD m _)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
+          (_  , EKl0 x )  -> genPAcl (deltaK0 deltaX tOp x) tOp x motiv
+          (_  , EKl1 x )  -> genPAcl (deltaK1 deltaX tOp x) tOp x motiv
+          (_  , e@(EDcD d)) -> -- fatal 742 ("DIAG ADL2Fspec 764:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
-                                 if editAble m then Do tOp m deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
+                                 if editAble d then Do tOp d deltaX motiv else Blk [(e, nub [r |(_,rs)<-motiv, r<-rs])]
 
 -- HJO, 20130423: *LET OP!! De volgende code is er bij gefreubeld om geen last te hebben van de fatal767, maar is niet goed. *****
 -- Dit is in overleg met Stef, die deze hele code toch compleet wil herzien, i.v.m. de nieuwe typechecker.

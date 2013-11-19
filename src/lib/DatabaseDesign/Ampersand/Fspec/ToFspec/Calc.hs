@@ -478,8 +478,8 @@ Rewrite rules:
                                                  | prf<-lam tOp e3 (inter' expr)
                                                  ]
                      | and [isNeg f |f<-exprIsc2list expr]
-                                            -> let deMrg = deMorganEIsc sgn expr in
-                                               [(expr, deMorganEIsc sgn, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg]
+                                            -> let deMrg = deMorganEIsc expr in
+                                               [(expr, deMorganEIsc, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg]
                      | or[null p |p<-fPrfs] -> []
                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--") : lc]
              EUni{}  | e3==expr             -> [[(e3,id,[],"")]]
@@ -487,14 +487,14 @@ Rewrite rules:
                                                       | prf<-lam tOp e3 (inter' expr)
                                                       ]
                      | and [isNeg f |f<-exprUni2list expr]
-                                            -> let deMrg = deMorganEUni sgn expr in
-                                               [(expr, deMorganEUni sgn, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg]
+                                            -> let deMrg = deMorganEUni expr in
+                                               [(expr, deMorganEUni, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg]
                      | or[null p |p<-fPrfs] -> []
                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--") : lc]
              ECps{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | and [isNeg f |f<-exprCps2list expr]
-                                            -> let deMrg = deMorganECps sgn expr in
-                                               [(expr, deMorganECps sgn, [derivtext tOp "equal" deMrg expr],"==")
+                                            -> let deMrg = deMorganECps expr in
+                                               [(expr, deMorganECps, [derivtext tOp "equal" deMrg expr],"==")
                                                :prf
                                                | prf<-lam tOp e3 deMrg
                                                ] -- isNeg is nog niet helemaal correct.
@@ -502,8 +502,8 @@ Rewrite rules:
                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]        
              ERad{}  | e3==expr             -> [[(e3,id,[],"")]]
                      | and [isNeg f |f<-exprRad2list expr]
-                                            -> let deMrg = deMorganERad sgn expr in
-                                               [(expr, deMorganERad sgn, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg] -- isNeg is nog niet helemaal correct.
+                                            -> let deMrg = deMorganERad expr in
+                                               [(expr, deMorganERad, [derivtext tOp "equal" deMrg expr],"==") :prf | prf<-lam tOp e3 deMrg] -- isNeg is nog niet helemaal correct.
                      | or[null p |p<-fPrfs] -> []
                      | otherwise            -> [(expr,\_->expr,    [derivtext tOp "mono" (first lc) expr],"<--"): lc]
              EKl0 x _                         -> [(expr,\e->EKl0 e sgn,[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
