@@ -215,7 +215,7 @@ selectExpr fSpec i src trg expr
                   whereClause 
           _  -> fatal 215 "impossible outcome of exprCps2list"
 
-    (EFlp x _) -> sqlcomment i "case: EFlp x." $
+    (EFlp x) -> sqlcomment i "case: EFlp x." $
                  selectExpr fSpec i trg src x
     (EMp1 atom _) -> sqlcomment i "case: EMp1 atom."
                       (Just $ "SELECT "++show atom++" AS "++src++", "++show atom++" AS "++trg)
@@ -242,7 +242,7 @@ selectExpr fSpec i src trg expr
 
     (EBrk e) -> selectExpr fSpec i src trg e
 
-    (ECpl (EDcV _))      -> sqlcomment i ("case: ECpl (EDcV _)  with signature "++show sgn)$   -- yields empty
+    (ECpl (EDcV _))      -> sqlcomment i ("case: ECpl (EDcV _)  with signature "++show (sign expr))$   -- yields empty
                                  toM(selectGeneric i ("1",src) ("1",trg) "(SELECT 1) AS a" "0")
     (ECpl e)
       -> sqlcomment i ("case: ECpl e"++phpIndent (i+3)++"ECpl ( \""++showADL e++"\" )") $
@@ -259,7 +259,7 @@ selectExpr fSpec i src trg expr
                                trg2 = noCollideUnlessTm' e [src2] (sqlExprTrg fSpec e)
     (EKl0 _) -> fatal 249 "SQL cannot create closures EKl0" (Just "SELECT * FROM NotExistingKl0")
     (EKl1 _) -> fatal 249 "SQL cannot create closures EKl1" (Just "SELECT * FROM NotExistingKl1")
-    (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show sgn++"\"")
+    (EDif (EDcV _,x)) -> sqlcomment i ("case: EDif V x"++phpIndent (i+3)++"EDif V ( \""++showADL x++"\" ) \""++show (sign expr)++"\"")
                                     (selectExpr fSpec i src trg (notCpl x))
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
 -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.

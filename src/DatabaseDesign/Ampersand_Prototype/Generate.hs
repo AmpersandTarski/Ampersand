@@ -320,8 +320,8 @@ genInterfaceObjects fSpec flags editableRels mInterfaceRoles depth object =
                                        -- editableConcepts is not used in the interface itself, only globally (maybe we should put it in a separate array) 
        Nothing             -> [] 
   ++ let (flipped, unflippedExpr) = case objctx object of
-                                       EFlp e _          -> (True,e)
-                                       e                 -> (False,e)
+                                       EFlp e -> (True,e)
+                                       e      -> (False,e)
          d = case unflippedExpr of 
              EDcD d'  -> d'
              EDcI c   -> Isn c

@@ -43,12 +43,12 @@ drops conn (x:xs)  =
 --insert population
 inserts :: (IConnection conn) => conn -> [A_Gen] -> [UserDefPop] -> [PlugSQL] -> IO Integer
 inserts _ _ _ [] = return 1
-inserts conn gens udp (plug:plugs) = 
+inserts conn a_gens udp (plug:plugs) = 
    do stmt<- prepare conn
              ("INSERT INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` " |f<-plugFields plug]++")"
                                 ++" VALUES ("++placeholders(plugFields plug)++")")
-      executeMany stmt (map (map (toSql . mbnullstring)) (tblcontents gens udp plug))
-      inserts conn gens udp plugs
+      executeMany stmt (map (map (toSql . mbnullstring)) (tblcontents a_gens udp plug))
+      inserts conn a_gens udp plugs
    where 
    -- empty string = Nothing => toSql Nothing = NULL
    mbnullstring [] = Nothing
