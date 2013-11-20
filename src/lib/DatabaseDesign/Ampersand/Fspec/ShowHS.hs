@@ -268,7 +268,7 @@ where
            ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
            ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)
            ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
-           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
+--BUGGY: (causes loop!!!)           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
 --         ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
@@ -293,7 +293,7 @@ where
            ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fspec)
            ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fspec)
            ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
-           ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
+--BUGGY: (causes loop!!!)           ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
            ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fspec)
            ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fspec)
            ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fspec)
@@ -319,7 +319,7 @@ where
                                  "[ "++intercalate (indentB++", ") (map showHSName (interfaceG fspec))++indentB++"]")++
        indent++" allMetas = "++(if null (metas fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map (showHS flags (indent ++ "         ")) (metas fspec))++indentB++"]") ++
---       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-patterns fspec ]++"\n")++
+       (if null (patterns fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |p<-patterns fspec ]++"\n")++
 
 -- WHY?  staan hier verschillende lijstjes met interfaces?
 -- BECAUSE! Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
@@ -365,19 +365,19 @@ where
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fspec ]++"\n"++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
        )++
-       (if null (vquads fspec ) then "" else
-        "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
-        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n"
-       )++
+--BUGGY (causes loop)       (if null (vquads fspec ) then "" else
+--        "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
+--        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n"
+--       )++
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules (total: "++(show.length.vEcas) fspec++" ECA rules) ***: "++
         concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
         concat [indent++" "++showHSName rel++indent++"  = "++showHS flags (indent++"    ") rel |rel<-nub(map ecaDelta (vEcas fspec)) ]++"\n"
        )++
-       (if null (plugInfos fspec ) then "" else
-        "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fspec++" plugInfos) ***: "++
-        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-sortBy (compare `on` name) (plugInfos fspec) ]++"\n"
-       )++
+--BUGGY (causes loop)       (if null (plugInfos fspec ) then "" else
+--        "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fspec++" plugInfos) ***: "++
+--        concat [indent++" "++showHSName p++indent++"  = "++showHS flags (indent++"    ") p |InternalPlug p<-sortBy (compare `on` name) (plugInfos fspec) ]++"\n"
+--       )++
        (if null (vpatterns fspec) then "" else
         "\n -- *** Patterns (total: "++(show.length.vpatterns) fspec++" patterns) ***: "++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vpatterns fspec]++"\n"
