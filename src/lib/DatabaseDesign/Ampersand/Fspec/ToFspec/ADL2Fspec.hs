@@ -491,7 +491,7 @@ while maintaining all invariants.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: [Quad] -> [ECArule]
    assembleECAs qs
-    = [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
+    = [] -- [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
       where
        -- the quads that are derived for this fSpec contain horn clauses.
        -- A Horn clause h that is generated from rule r contains the information how to restore the truth of r.
