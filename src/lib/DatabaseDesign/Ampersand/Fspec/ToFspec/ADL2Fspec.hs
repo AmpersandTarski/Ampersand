@@ -409,7 +409,7 @@ while maintaining all invariants.
       --  antcs =  [ r;s, p;r ]
       --  conss =  [ x;y;z ]
        move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-       move ass [] = [(ass,[EDcI (Sign (source (head ass)) (target (last ass)))])]
+       move ass [] = [(ass,[EDcI (source (head ass))])]
        move ass css
         = (ass,css):
           if and [ (not.isEDcI) cs | cs<-css]     -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
@@ -440,7 +440,7 @@ while maintaining all invariants.
       --  ass =  [ ["r","s"], ["r","r"] ]
       --  css =  [ ["x","y","z"] ]
        move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-       move [] css = [([EDcI (Sign (source (head css)) (target (last css)))],css)]
+       move [] css = [([EDcI (target (last css))],css)]
        move ass css
         = (ass,css):
           if and [ (not.isEDcI) as | as<-ass]
@@ -479,7 +479,7 @@ while maintaining all invariants.
 
      lastECps :: Expression -> Expression
      lastECps (ECps (_,r@ECps{})) = lastECps r
-     lastECps (ECps (_,r)) = l
+     lastECps (ECps (_,r)) = r
      lastECps x = x
 
      isEDcI :: Expression -> Bool
