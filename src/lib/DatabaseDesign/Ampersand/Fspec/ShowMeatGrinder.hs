@@ -204,7 +204,7 @@ instance MetaPopulations Rule where
 
    ]
 instance MetaPopulations Declaration where
- metaPops flags fSpec dcl = 
+ metaPops _ fSpec dcl = 
    case dcl of 
      Sgn{} ->
       [ Comment " "
