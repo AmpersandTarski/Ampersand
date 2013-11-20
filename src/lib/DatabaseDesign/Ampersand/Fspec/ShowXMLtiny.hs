@@ -148,16 +148,16 @@ where
                (ECps (l,r)) -> Elem (simpleTag "RMUL") (map mkXmlTree [l,r])
                (ERad (l,r)) -> Elem (simpleTag "RADD") (map mkXmlTree [l,r])
                (EPrd (l,r)) -> Elem (simpleTag "RPRD") (map mkXmlTree [l,r])
-                EKl0 e      -> Elem (simpleTag "CLS0") [mkXmlTree e]
-                EKl1 e      -> Elem (simpleTag "CLS1") [mkXmlTree e]
-                EFlp e      -> Elem (simpleTag "CONV") [mkXmlTree e]
-                ECpl e      -> Elem (simpleTag "CMPL") [mkXmlTree e]
-                EBrk e      -> mkXmlTree e
-                EDcD dcl    -> Elem (simpleTag "EDcD") [mkXmlTree dcl]
-                EDcI c      -> Elem (simpleTag "EDcI") [mkXmlTree c]
-                EEps i sgn  -> Elem (simpleTag "EEps") [mkXmlTree i,mkXmlTree sgn]
-                EDcV sgn    -> Elem (simpleTag "EDcV") [mkXmlTree sgn]
-                EMp1 atm c  -> Elem (simpleTag "ATOM") [mkTag atm,mkXmlTree c]
+               EKl0 e       -> Elem (simpleTag "CLS0") [mkXmlTree e]
+               EKl1 e       -> Elem (simpleTag "CLS1") [mkXmlTree e]
+               EFlp e       -> Elem (simpleTag "CONV") [mkXmlTree e]
+               ECpl e       -> Elem (simpleTag "CMPL") [mkXmlTree e]
+               EBrk e       -> mkXmlTree e
+               EDcD dcl     -> Elem (simpleTag "EDcD") [mkXmlTree dcl]
+               EDcI c       -> Elem (simpleTag "EDcI") [mkXmlTree c]
+               EEps i sgn   -> Elem (simpleTag "EEps") [mkXmlTree i,mkXmlTree sgn]
+               EDcV sgn     -> Elem (simpleTag "EDcV") [mkXmlTree sgn]
+               EMp1 atm c   -> Elem (simpleTag "ATOM") [mkXmlTree c]
 
    instance XML PPurpose where
      mkTag expl =

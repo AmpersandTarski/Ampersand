@@ -250,7 +250,7 @@ This situation is implicitly avoided by 'Do tOp (ERel rel _) _ _<-dos (ecaAction
      f (ECpl e)     = [ not b | b<- f e]
      f (EBrk e)     = f e
      f (EDcD d)     = [ True | d==decl ]
-     f EDcI{}       = nub [ True | Isn{}<-decl ]
+     f (EDcI c)     = [ True | detyp decl==c ]
      f EEps{}       = []
      f EDcV{}       = []
      f EMp1{}       = []

@@ -309,7 +309,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
         | otherwise               = Exists ivs (Conj (frels a b))
         where
          es :: [Expression]
-         es   = [ x | x<-exprCps2list e, not isEpsilon x ]
+         es   = [ x | x<-exprCps2list e, not (isEpsilon x) ]
         -- Step 1: split in fragments at those points where an exists-quantifier is needed.
         --         Each fragment represents a subexpression with variables
         --         at the outside only. Fragments will be reconstructed in a conjunct.
@@ -360,7 +360,7 @@ module DatabaseDesign.Ampersand.Output.PredLogic
                                   where alls = [f (exclVars++ivs) e' (sv,tv) | (e',(sv,tv))<-zip es (zip (a:ivs) (ivs++[b]))]
 -}
         where
-         es   = [ x | x<-exprRad2list e, not isEpsilon x ] -- The definition of exprRad2list guarantees that length es>=2
+         es   = [ x | x<-exprRad2list e, not (isEpsilon x) ] -- The definition of exprRad2list guarantees that length es>=2
          res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
          conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                    -- So conr is not empty.

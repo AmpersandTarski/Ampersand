@@ -410,7 +410,7 @@ instance ShowMath Expression where
           showExpr (EDcD d)     = "\\id{"++name d++"}"
           showExpr (EDcI c)     = "I_{\\id{"++name c++"}}"
           showExpr  EEps{}      = ""
-          showExpr (EDcV sgn)   = "V_{\\id{"++source sgn++"}\times\\id{"++target sgn++"}}"
+          showExpr (EDcV sgn)   = "V_{\\id{"++show (source sgn)++"}\times\\id{"++show (target sgn)++"}}"
           showExpr (EMp1 a _)   = "'{\tt "++a++"}'"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these

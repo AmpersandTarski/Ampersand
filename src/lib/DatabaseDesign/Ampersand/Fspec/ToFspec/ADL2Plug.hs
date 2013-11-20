@@ -99,8 +99,8 @@ makeLinkTable dcl totsurs =
              }
     _  -> fatal 90 "Do not call makeLinkTable on relations other than Rel{}"
    where
-    r_is_Tot = Tot `elem` multiplicities dcl || dcl `elem` [ d |       EDcD d    <- totsurs]
-    r_is_Sur = Sur `elem` multiplicities dcl || dcl `elem` [ d | EFlp (EDcD d) _ <- totsurs]
+    r_is_Tot = Tot `elem` multiplicities dcl || dcl `elem` [ d |       EDcD d  <- totsurs]
+    r_is_Sur = Sur `elem` multiplicities dcl || dcl `elem` [ d | EFlp (EDcD d) <- totsurs]
     srcNm = (if isEndo dcl then "s" else "")++name (source trgExpr)
     trgNm = (if isEndo dcl then "t" else "")++name (target trgExpr)
     --the expr for the source of r
@@ -200,7 +200,7 @@ rel2fld kernel
                    EFlp (EDcD dcl)
                         | (not.isSur) dcl -> True
                         | otherwise -> (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
-                   EDcI c -> False
+                   EDcI _ -> False
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
                                    " ***kernel:*** \n   "++
                                    intercalate "\n   " (map show kernel)++"\n"++
@@ -258,7 +258,7 @@ makeEntityTables :: Options
                 -> [[A_Concept]] -- ^ concepts `belonging' together
                 -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs. 
                 -> [PlugSQL]
-makeEntityTables _ {-flags-} allDcls concs exclusions
+makeEntityTables _ {-flags-} allDcls concepts exclusions
  = trace 
     ("\nallDcls:"++concat ["\n  "++show r | r<-allDcls]++
      "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
@@ -267,7 +267,7 @@ makeEntityTables _ {-flags-} allDcls concs exclusions
    sortWith ((0-).length.plugFields)
     (map kernel2Plug distributionOfAtts)
    where
-    distributionOfAtts = dist attRels concs []
+    distributionOfAtts = dist attRels concepts []
       where 
    --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
         dist []   []     result = result
@@ -279,7 +279,7 @@ makeEntityTables _ {-flags-} allDcls concs exclusions
     kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
     kernel2Plug (kernel, attsAndIsaRels)
      =  TblSQL 
-             { sqlname = name (head 289 (head 288 concs))
+             { sqlname = name (head 289 (head 288 concepts))
              , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable ++ isaLookuptable
