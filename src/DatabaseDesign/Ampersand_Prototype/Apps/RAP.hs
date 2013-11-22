@@ -112,11 +112,12 @@ atlas2context fSpec flags =
       r_ptnm            <- selectdecl conn fSpec "ptnm" --ptnm ::   Pattern->Conid
       r_ptrls           <- selectdecl conn fSpec "ptrls" --ptrls :: Pattern*Rule
       r_ptdcs           <- selectdecl conn fSpec "ptdcs" --ptdcs :: Pattern*Declaration
-      r_ptgns           <- selectdecl conn fSpec "ptgns" --ptgns :: Pattern*Gen
+      r_ptgns           <- selectdecl conn fSpec "ptgns" --ptgns :: Pattern*Isa
       r_ptxps           <- selectdecl conn fSpec "ptxps" --ptxps :: Pattern*Blob
-      --Gen--
-      r_gengen          <- selectdecl conn fSpec "gengen" --gengen :: Gen->Concept
-      r_genspc          <- selectdecl conn fSpec "genspc" --genspc :: Gen->Concept
+      --Isa--
+      r_gengen          <- selectdecl conn fSpec "gengen" --gengen :: Isa->Concept
+      r_genspc          <- selectdecl conn fSpec "genspc" --genspc :: Isa->Concept
+      r_genrhs          <- selectdecl conn fSpec "genrhs" --genrhs :: Isa*Concept
       --Concept--
       r_cptnm           <- selectdecl conn fSpec "cptnm" --cptnm :: Concept->Conid
       r_cptpurpose      <- selectdecl conn fSpec "cptpurpose" --cptpurpose:: Concept*Blob
@@ -157,7 +158,7 @@ atlas2context fSpec flags =
       --verboseLn flags (show(map showADL (atlas2pops relcontent relname relsc reltg  pairleft pairright atomsyntax)))
       actx <- makectx r_ctxnm (language flags)
                      r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
-                     r_gengen r_genspc
+                     r_gengen r_genspc r_genrhs
                      r_cptnm r_cptpurpose r_cptdf r_cptos r_atomvalue      
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
                      r_decpopu r_left r_right          
@@ -175,13 +176,13 @@ atlas2context fSpec flags =
                 Errors err -> error $show err -}
 
 makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl
+                  -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> IO (Guarded A_Context)
 makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps          
-                     r_gengen r_genspc
+                     r_gengen r_genspc r_genrhs
                      r_cptnm r_cptpurpose r_cptdf r_cptos r_atomvalue      
                      r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose     
                      r_decpopu r_left r_right          
@@ -198,7 +199,7 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
        , ctx_thms  = []
        , ctx_pats  = [atlas2pattern p lang
                                     r_ptrls r_ptdcs r_ptgns          
-                                    r_gengen r_genspc
+                                    r_gengen r_genspc r_genrhs
                                     r_cptnm
                                     r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
                                     r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
@@ -228,9 +229,9 @@ makectx r_ctxnm lang r_ptnm r_ptrls r_ptdcs r_ptgns r_ptxps
 atlas2pattern :: (AtomVal,AtomVal) -> Lang -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
-                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Pattern 
+                  -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> P_Pattern 
 atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns          
-                             r_gengen r_genspc
+                             r_gengen r_genspc r_genrhs
                              r_cptnm
                              r_decnm r_decsgn r_src r_trg r_decprps r_declaredthrough r_decprL r_decprM r_decprR r_decmean r_decpurpose 
                              r_rrnm r_rrexp r_rrmean r_rrpurpose r_exprvalue
@@ -239,7 +240,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_end = DBLoc "Atlas(Pattern)"
          , pt_rls = [atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue 
                     | (pid',rid)<-r_ptrls, pid==pid', rid `notElem` map fst r_declaredthrough]
-         , pt_gns = [PGen{gen_fp=(DBLoc "Atlas(Gen)"),gen_gen=(PCpt gnm),gen_spc=(PCpt snm)}
+         , pt_gns = [PGen{gen_fp=(DBLoc "Atlas(Isa)"),gen_gen=(PCpt gnm),gen_spc=(PCpt snm)}  -- TODO: Han, would you please look after the CLASSIFY IS statements?
                     | (pid',genid)<-r_ptgns, pid'==pid
                     , let gid = geta r_gengen genid (error "while geta r_gengen.")
                     , let sid = geta r_genspc genid (error "while geta r_genspc.")
