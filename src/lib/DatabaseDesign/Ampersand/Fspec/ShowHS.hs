@@ -777,11 +777,12 @@ where
     showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Gen                           ***
+-- \*** Eigenschappen met betrekking tot: Isa                           ***
 -- \***********************************************************************
 
    instance ShowHS A_Gen where
-    showHS flags _ gen = "Gen ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "
+    showHS flags _ gen@Isa{} = "Isa ("++showHS flags "" (genfp gen)++") ("++showHSName (gengen gen)++") ("++showHSName (genspc gen)++") "
+    showHS flags _ gen@IsE{} = "IsE ("++showHS flags "" (genfp gen)++") ["++intercalate ", " (map showHSName (genrhs gen))++"] ("++showHSName (genspc gen)++") "
    
    instance ShowHSName Declaration where
     showHSName d | decusr d  = haskellIdentifier ("dcl_"++name d++name (source d)++name (target d)) -- user defined relations

@@ -135,6 +135,7 @@ where
     expressionsIn    (PairViewExp _ x) = expressionsIn x
      
    instance ConceptStructure A_Gen where
-    concs g        = nub [gengen g,genspc g]  
+    concs g@Isa{}  = nub [gengen g,genspc g]  
+    concs g@IsE{}  = nub (gengen g: genrhs g)
     expressionsIn _ = fatal 160 "expressionsIn not allowed on A_Gen"
     

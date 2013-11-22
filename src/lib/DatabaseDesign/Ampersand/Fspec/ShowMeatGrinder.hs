@@ -71,7 +71,10 @@ instance AdlId ConceptDef where
 instance AdlId Rule where 
  uri a= "Rul"++techId a
 instance AdlId A_Gen where 
- uri a= "Gen"++(show.hash) ((name.gengen) a++(name.genspc) a)
+ uri a= "Isa"++(show.hash) g
+        where g = case a of
+                    Isa{} -> ((name.gengen) a++(name.genspc) a)
+                    IsE{} -> ((concat.map name.genrhs) a++(name.genspc) a)
 instance AdlId Declaration where 
  uri a= "Dcl"++techId a
 instance AdlId Purpose where 
@@ -176,7 +179,7 @@ instance MetaPopulations Pattern where
           [(uri pat,uri fSpec)]
    , Pop "ptdcs"   "Pattern" "Declaration"
           [(uri pat,uri x) | x <- ptdcs pat]
-   , Pop "ptgns"   "Pattern" "Gen"
+   , Pop "ptgns"   "Pattern" "Isa"
           [(uri pat,uri x) | x <- ptgns pat]
 --HJO, 20130728: TODO: De Image (Picture) van het pattern moet worden gegenereerd op een of andere manier:
 --   , Pop "ptpic"   "Pattern" "Image"
@@ -256,11 +259,17 @@ instance MetaPopulations Atom where
    ]
    
 instance MetaPopulations A_Gen where
- metaPops _ _ gen = 
-   [ Pop "gengen"  "Gen" "Concept"
+ metaPops _ _ gen@Isa{} =
+   [ Pop "gengen"  "Isa" "Concept"
           [(uri gen,uri(gengen gen))]
-   , Pop "genspc"  "Gen" "Concept"
+   , Pop "genspc"  "Isa" "Concept"
           [(uri gen,uri(genspc gen))]
+   ]
+ metaPops _ _ gen@IsE{} =
+   [ Pop "genrhs"  "Isa" "Concept"
+          [(uri gen,uri c) | c<-genrhs gen]
+   , Pop "genspc"  "Isa" "Concept"
+          [(uri gen,uri (genspc gen))]
    ]
 instance MetaPopulations A_Concept where
  metaPops _ fSpec cpt = 
