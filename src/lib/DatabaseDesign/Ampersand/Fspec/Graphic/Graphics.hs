@@ -194,7 +194,7 @@ conceptual2Dot :: Options                   -- ^ the flags
                -> String                    -- ^ the name of the Graph
                -> [A_Concept]               -- ^ The concepts to draw in the graph
                -> [Declaration]   -- ^ The relations, (the edges in the graph)
-               -> [(A_Concept, A_Concept)]  -- ^ list of Gen relations 
+               -> [(A_Concept, A_Concept)]  -- ^ list of Isa relations 
                -> DotGraph String           -- ^ The resulting DotGraph
 conceptual2Dot flags graphName cpts' rels idgs
      = DotGraph { strictGraph = False

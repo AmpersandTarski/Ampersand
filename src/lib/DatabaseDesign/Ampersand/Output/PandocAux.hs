@@ -382,7 +382,8 @@ instance ShowMath A_Concept where
  showMath c = texOnly_Id (name c)
 
 instance ShowMath A_Gen where
- showMath g     = showMath (genspc g)           ++"\\ \\le\\ "++showMath           (gengen g)
+ showMath g@Isa{} = showMath (genspc g)++"\\ \\le\\ "++showMath (gengen g)
+ showMath g@IsE{} = showMath (genspc g)++"\\ =\\ "++intercalate "\\cap" (map showMath (genrhs g))
 
 instance ShowMath Rule where
  showMath r = showMath (rrexp r)
