@@ -136,6 +136,6 @@ where
      
    instance ConceptStructure A_Gen where
     concs g@Isa{}  = nub [gengen g,genspc g]  
-    concs g@IsE{}  = nub (gengen g: genrhs g)
+    concs g@IsE{}  = nub (genspc g: genrhs g)
     expressionsIn _ = fatal 160 "expressionsIn not allowed on A_Gen"
     
