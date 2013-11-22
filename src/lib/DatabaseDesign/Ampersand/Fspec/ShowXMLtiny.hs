@@ -207,9 +207,12 @@ where
 
 
    instance XML A_Gen where
-     mkTag g = Tag "Gen" (mkAttr "Generic" (show (gengen g))
-                          :[mkAttr "Specific" (show (genspc g))]
-                         )
+     mkTag g@Isa{} = Tag "Isa" (mkAttr "Generic" (show (gengen g))
+                                :[mkAttr "Specific" (show (genspc g))]
+                               )
+     mkTag g@IsE{} = Tag "IsE" (mkAttr "Specific" (show (genspc g))
+                                :[mkAttr "Generics" (show c) | c<-genrhs g]
+                               )
      mkXmlTree g = Node (mkTag g) 
 
    instance XML Sign where

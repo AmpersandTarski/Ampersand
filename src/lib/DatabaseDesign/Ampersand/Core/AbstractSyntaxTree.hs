@@ -280,20 +280,21 @@ instance Traced ViewDef where
 
 data ViewSegment = ViewExp ObjectDef | ViewText String | ViewHtml String deriving (Eq, Show)
 
-data A_Gen = Gen { genfp :: Origin          -- ^ the position of the GEN-rule
+-- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
+--   CLASSIFY Employee ISA Person   translates to Isa orig (C "Person") (C "Employee")
+--   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig [C "Employee",C "Student"] (C "Workingstudent")
+data A_Gen = Isa { genfp :: Origin          -- ^ the position of the GEN-rule
                  , gengen :: A_Concept      -- ^ generic concept
                  , genspc :: A_Concept      -- ^ specific concept
                  }
-           | Spc { genfp :: Origin          -- ^ the position of the GEN-rule
+           | IsE { genfp :: Origin          -- ^ the position of the GEN-rule
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  , genspc :: A_Concept      -- ^ specific concept
                  }
-{- instance Eq A_Gen where
-  g == g' = gengen g == gengen g' && genspc g == genspc g' -}
 instance Show A_Gen where
   -- This show is used in error messages. It should therefore not display the term's type
-  showsPrec _ g@(Gen{}) = showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
-  showsPrec _ g@(Spc{}) = showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show $ genrhs g))
+  showsPrec _ g@(Isa{}) = showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
+  showsPrec _ g@(IsE{}) = showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show $ genrhs g))
 instance Traced A_Gen where
   origin = genfp
 instance Association A_Gen where
@@ -303,14 +304,14 @@ instance Association A_Gen where
 smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 smallerConcepts gens cpt 
   = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller 
-  where oneSmaller = nub$[s | Gen _ g   s <- gens , g == cpt]
-                       ++[s | Spc _ rhs s <- gens , cpt `elem` rhs]
+  where oneSmaller = nub$[s | Isa _ g   s <- gens , g == cpt]
+                       ++[s | IsE _ rhs s <- gens , cpt `elem` rhs]
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
 largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 largerConcepts gens cpt 
  = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
-  where oneLarger  = nub$[g | Gen _ g   s <- gens , s == cpt]
-                       ++concat[rhs | Spc _ rhs s <- gens , s == cpt] 
+  where oneLarger  = nub$[g | Isa _ g   s <- gens , s == cpt]
+                       ++concat[rhs | IsE _ rhs s <- gens , s == cpt] 
 data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
                      , ifcArgs ::   [[String]]
                      , ifcRoles ::  [String]
