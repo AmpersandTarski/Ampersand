@@ -80,7 +80,6 @@ doGenProofs fSpec flags =
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags =
  do { verboseLn flags $ "Generating Haskell source code for "++name fSpec
-    ; verboseLn flags $ fSpec2Haskell fSpec flags
     ; writeFile outputFile (fSpec2Haskell fSpec flags) 
     ; verboseLn flags $ "Haskell written into " ++ outputFile ++ "."
     }
