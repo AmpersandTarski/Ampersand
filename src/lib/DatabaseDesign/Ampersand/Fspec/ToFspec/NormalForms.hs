@@ -10,6 +10,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.Fspec
 -- import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Data.List (nub {- , intercalate -} )
+   import Debug.Trace
    import Prelude hiding (head)
    
    fatal :: Int -> String -> a
@@ -186,14 +187,15 @@ where
      nM posNeg (EBrk e)                _  = nM posNeg e []
      nM posNeg (EFlp (ECpl e))         rs = nM (cplCmp posNeg) (notCpl (flp e)) rs
      nM _      x _                | simpl = (x,[],"<=>")
--- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
+--     nM _ x _ | trace (take 1000$ show x) False = undefined  -- for debugging black holes....
+-- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False   --ECpl (EIsc (ECpl (EDcD RELATION r
      nM _      (EEqu (l,r)) _                            = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
      nM _      (EImp (x,ELrs (z,y))) _                   = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
      nM _      (EImp (y,ERrs (x,z))) _                   = (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
      nM _      (EImp (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
      nM _      (ELrs (l,r)) _                            = (l .!. notCpl (flp r), ["remove left residual (/)"],"<=>")
      nM _      (ERrs (l,r)) _                            = (notCpl (flp l) .!. r, ["remove right residual (\\)"],"<=>")
-     nM _      (ECpl e@EIsc{}) _                         = (deMorganEIsc e, ["De Morgan"], "<=>")
+--     nM _      (ECpl e@EIsc{}) _                         = (deMorganEIsc e, ["De Morgan"], "<=>")
      nM _      (ECpl e@EUni{}) _                         = (deMorganEUni e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ERad (_,ECpl{}))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ERad (ECpl{},_))) _              = (deMorganERad e, ["De Morgan"], "<=>")
