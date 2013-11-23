@@ -11,7 +11,7 @@ import DatabaseDesign.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import DatabaseDesign.Ampersand.Input.ADL1.CtxError
 import DatabaseDesign.Ampersand.ADL1.Lattices
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg, Flippable(flp))
+import DatabaseDesign.Ampersand.Basics (Identified(name), fatalMsg)
 import DatabaseDesign.Ampersand.Misc
 import Prelude hiding (head, sequence, mapM)
 import Control.Applicative
@@ -162,7 +162,7 @@ pCtx2aCtx
     typeCheckViewSegment o P_ViewExp{ vs_obj = ojd }
      = (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
                       [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                      r  -> if b || c `elem` r then pure (ViewExp obj)
+                      r  -> if b || c `elem` r then pure (ViewExp obj{objctx = addEpsilonLeft c r (name (source (objctx obj))) (objctx obj)})
                             else mustBeBound (origin obj) [(Tgt,objctx obj)]
        ) <?> typecheckObjDef ojd
      where c = name (vd_cpt o)
@@ -199,10 +199,15 @@ pCtx2aCtx
     addEpsilonLeft a b c e
      = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
                else EEps (findConceptOrONE (head b)) (findSign a c) .:. e
-    addEpsilonRight :: String -> [String] -> String -> Expression -> Expression
-    addEpsilonRight a b c e
-     = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
-               else e .:. EEps (findConceptOrONE (head b)) (findSign a c)
+    addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
+    addEpsilonLeft' a e
+     = if a==name (source e) then EEps (findConceptOrONE a) (findSign a (name (source e))) .:. e else e
+    addEpsilonRight' a e
+     = if a==name (target e) then e .:. EEps (findConceptOrONE a) (findSign (name (target e)) a) else e
+    addEpsilon :: String -> String -> Expression -> Expression
+    addEpsilon s t e
+     = (if s==name (source e) then (EEps (findConceptOrONE s) (findSign s (name (source e))) .:.) else id) $
+       (if t==name (source e) then (.:. EEps (findConceptOrONE t) (findSign (name (source e)) t)) else id) e
     
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
@@ -261,21 +266,25 @@ pCtx2aCtx
       --   a way to do this, is by using (V[type] /\ thingToBeBound)
       -- More details about generalizable types can be found by looking at "deriv1".
       binary :: ((Expression,Expression)->Expression) -- combinator
-             -> (TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
-                               -> (Expression, (Bool, Bool)))
-                ,TT (SrcOrTgt,((Expression, (Bool, Bool)), (Expression, (Bool, Bool)))
-                               -> (Expression, (Bool, Bool)))) -- simple instruction on how to derive the type
-             -> ((Expression,(Bool,Bool)),(Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
+             -> ( TT ( SrcOrTgt
+                     , ( (Expression, (Bool, Bool))
+                       , (Expression, (Bool, Bool))
+                       ) -> (Expression, (Bool, Bool))
+                     )
+                , TT ( SrcOrTgt
+                     , ( (Expression, (Bool, Bool))
+                       , (Expression, (Bool, Bool))
+                       ) -> (Expression, (Bool, Bool))
+                     )
+                ) -- simple instruction on how to derive the type
+             -> ((Expression,(Bool,Bool)), (Expression,(Bool,Bool))) -- expressions to feed into the combinator after translation
              -> Guarded (Expression,(Bool,Bool))
-      binary  cbn     tp (e1,e2) = wrap  (cbn (fst e1,fst e2)) <$> deriv tp (e1,e2)
-      unary   cbn     tp e1      = wrap  (cbn (fst e1       )) <$> deriv tp e1
-      binary' cbn cpt tp (e1,e2) = wrap' (cbn (fst e1,fst e2)) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
-      wrap :: Expression -> ((String,Bool),(String,Bool)) -> (Expression,(Bool,Bool))
-      wrap  f         ((src,b1),(tgt,b2)) = (f, (b1, b2))
-      wrap' f (cpt,_) ((src,b1),(tgt,b2)) = (f, (b1, b2))
-      deriv' (a,b) es = let (sot1,(e1,t1)) = resolve es a
-                            (sot2,(e2,t2)) = resolve es b
-                        in pure ((gc sot1 e1,t1),(gc sot2 e2,t2))
+      binary  cbn     tp (e1,e2) = wrap'' cbn (fst e1,fst e2) <$> deriv tp (e1,e2)
+      unary   cbn     tp e1      = wrap   cbn (fst e1       ) <$> deriv tp e1
+      binary' cbn cpt tp (e1,e2) = wrap'  cbn (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
+      wrap'' f (e1,e2) ((src,b1), (tgt,b2))  = (f (addEpsilon src tgt e1,addEpsilon src tgt e2), (b1, b2))
+      wrap   f expr    ((src,b1), (tgt,b2))  = (f (addEpsilon src tgt expr), (b1, b2))
+      wrap'  f (e1,e2) (cpt,_) ((_,b1), (_,b2))  = (f (addEpsilonRight' cpt e1, addEpsilonLeft' cpt e2), (b1, b2))
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
     
     deriv1 o x'
@@ -615,6 +624,13 @@ data TT a  -- (In order of increasing strictness. If you are unsure which to pic
  --   In addition, MBE requires that both sides are not generalizable. UNI does not, and simply propagates this property.
  -- MBG is like MBE, but will only try to generalize the right hand side (when allowed)
 
+deriv' :: (Applicative f)
+       => ((SrcOrTgt, t -> (Expression, (Bool, Bool))), (SrcOrTgt, t -> (Expression, (Bool, Bool))))
+       -> t
+       -> f ((String, Bool), (String, Bool))
+deriv' (a,b) es = let (sourceOrTarget1, (e1, t1)) = resolve es a
+                      (sourceOrTarget2, (e2, t2)) = resolve es b
+                  in pure ((gc sourceOrTarget1 e1, t1), (gc sourceOrTarget2 e2, t2))
 instance Functor TT where
   fmap f (UNI a b) = UNI (f a) (f b)
   fmap f (ISC a b) = ISC (f a) (f b)

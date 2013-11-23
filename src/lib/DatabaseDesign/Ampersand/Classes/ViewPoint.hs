@@ -40,6 +40,7 @@ class Language a where
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
   
 -- | In a language, a declaration must be made for each gen.
+-- SJC: Shouldn't we rethink this?
 makeDecl :: A_Gen -> Declaration
 makeDecl g
   = Sgn  { decnm   = name(source g) -- best result in the sql plug
