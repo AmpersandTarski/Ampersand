@@ -201,13 +201,13 @@ pCtx2aCtx
                else EEps (findConceptOrONE (head b)) (findSign a c) .:. e
     addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression
     addEpsilonLeft' a e
-     = if a==name (source e) then EEps (findConceptOrONE a) (findSign a (name (source e))) .:. e else e
+     = if a==name (source e) then e else EEps (findConceptOrONE a) (findSign a (name (source e))) .:. e
     addEpsilonRight' a e
-     = if a==name (target e) then e .:. EEps (findConceptOrONE a) (findSign (name (target e)) a) else e
+     = if a==name (target e) then e else e .:. EEps (findConceptOrONE a) (findSign (name (target e)) a)
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
-     = (if s==name (source e) then (EEps (findConceptOrONE s) (findSign s (name (source e))) .:.) else id) $
-       (if t==name (source e) then (.:. EEps (findConceptOrONE t) (findSign (name (source e)) t)) else id) e
+     = (if s==name (source e) then id else (EEps (findConceptOrONE s) (findSign s (name (source e))) .:.)) $
+       (if t==name (source e) then id else (.:. EEps (findConceptOrONE t) (findSign (name (source e)) t))) e
     
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
