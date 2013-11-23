@@ -372,7 +372,7 @@ while maintaining all invariants.
     = [ LoopSearchQuad 
             { qDcl  = d
             , qRule = rule
-            , debugStr = (show.simplify .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
+            , debugStr = (show.conjNF .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
             }
 --    = [ Quad d (Clauses [ (horn2expr conj,allShifts flags conj)
 --                        | conj<-conjuncts rule  -- conj :: HornClause. It has the form Hc antcs conss
