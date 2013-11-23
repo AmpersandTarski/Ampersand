@@ -207,7 +207,7 @@ pCtx2aCtx
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
      = (if s==name (source e) then id else (EEps (findConceptOrONE s) (findSign s (name (source e))) .:.)) $
-       (if t==name (source e) then id else (.:. EEps (findConceptOrONE t) (findSign (name (source e)) t))) e
+       (if t==name (target e) then id else (.:. EEps (findConceptOrONE t) (findSign (name (source e)) t))) e
     
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
@@ -231,18 +231,18 @@ pCtx2aCtx
                                    PVee _ -> (False,False)
                                    _ -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
-         Pequ _ a b -> binary  EEqu (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
-         Pimp _ a b -> binary  EImp (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
-         PIsc _ a b -> binary  EIsc (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PUni _ a b -> binary  EUni (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PDif _ a b -> binary  EDif (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
-         PLrs _ a b -> binary' ELrs (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>tt a<*>tt b)
-         PRrs _ a b -> binary' ERrs (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PCps _ a b -> binary' ECps (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PRad _ a b -> binary' ERad (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PPrd _ a b -> binary' ERad (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
-         PKl0 _ a   -> unary   EKl0 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
-         PKl1 _ a   -> unary   EKl1 (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
+         Pequ _ a b -> binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b) 
+         Pimp _ a b -> binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <?> ((,)<$>tt a<*>tt b)
+         PIsc _ a b -> binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
+         PUni _ a b -> binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
+         PDif _ a b -> binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <?> ((,)<$>tt a<*>tt b)
+         PLrs _ a b -> binary' ELrs   (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd))    <?> ((,)<$>tt a<*>tt b)
+         PRrs _ a b -> binary' ERrs   (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PCps _ a b -> binary' ECps   (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PRad _ a b -> binary' ERad   (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PPrd _ a b -> binary' ERad   (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd))    <?> ((,)<$>tt a<*>tt b)
+         PKl0 _ a   -> unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
+         PKl1 _ a   -> unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <?> tt a
          PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x), (t,s))) <$> tt a
          PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
          PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e
@@ -265,7 +265,7 @@ pCtx2aCtx
       --   it must be bound by the context to something smaller, or something as big
       --   a way to do this, is by using (V[type] /\ thingToBeBound)
       -- More details about generalizable types can be found by looking at "deriv1".
-      binary :: ((Expression,Expression)->Expression) -- combinator
+      binary :: (Expression -> Expression->Expression) -- combinator
              -> ( TT ( SrcOrTgt
                      , ( (Expression, (Bool, Bool))
                        , (Expression, (Bool, Bool))
@@ -282,8 +282,8 @@ pCtx2aCtx
       binary  cbn     tp (e1,e2) = wrap'' cbn (fst e1,fst e2) <$> deriv tp (e1,e2)
       unary   cbn     tp e1      = wrap   cbn (fst e1       ) <$> deriv tp e1
       binary' cbn cpt tp (e1,e2) = wrap'  cbn (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) cpt) <*> deriv' tp (e1,e2)
-      wrap'' f (e1,e2) ((src,b1), (tgt,b2))  = (f (addEpsilon src tgt e1,addEpsilon src tgt e2), (b1, b2))
-      wrap   f expr    ((src,b1), (tgt,b2))  = (f (addEpsilon src tgt expr), (b1, b2))
+      wrap'' f (e1,e2) ((src,b1), (tgt,b2)) = (f (addEpsilon src tgt e1) (addEpsilon src tgt e2), (b1, b2))
+      wrap   f expr  ((src,b1), (tgt,b2))  = (f (addEpsilon src tgt expr), (b1, b2))
       wrap'  f (e1,e2) (cpt,_) ((_,b1), (_,b2))  = (f (addEpsilonRight' cpt e1, addEpsilonLeft' cpt e2), (b1, b2))
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
     
