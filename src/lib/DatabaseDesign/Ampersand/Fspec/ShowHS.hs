@@ -204,15 +204,26 @@ where
 
    instance ShowHSName Quad where
     showHSName q
-      = haskellIdentifier ("quad_"++(showHSName.qDcl) q++"_"++(name.cl_rule.qClauses) q)
-
+      = haskellIdentifier ("quad_"++(showHSName.qDcl) q++"_"++name (case q of 
+                                                                        Quad{} -> (cl_rule.qClauses) q
+                                                                        LoopSearchQuad{} -> qRule q
+                                                                   ))
    instance ShowHS Quad where
     showHS flags indent q 
       = intercalate indent
-          [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
-          , "    , qClauses = " ++ showHS flags newindent (qClauses q)
-          , "    }"
-          ]
+         (case q of
+           Quad{} ->
+               [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
+               , "    , qClauses = " ++ showHS flags newindent (qClauses q)
+               , "    }"
+               ]
+           LoopSearchQuad{} ->
+               [ "LoopSearchQuad{ qDcl     = " ++ showHSName (qDcl q)
+               , "              , qRule    = " ++ showHSName (qRule q)
+               , "              , debugStr = " ++ debugStr q
+               , "              }"
+               ]
+          )
        where
          newindent = indent ++ "                 "
          
@@ -268,7 +279,7 @@ where
            ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
            ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)
            ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
-           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
+--BUGGY: (causes loop!!!)           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
 --         ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
@@ -365,10 +376,10 @@ where
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-grules     fspec ]++"\n"++
         concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-map srrel (grules fspec)]++"\n"
        )++
---BUGGY (causes loop)       (if null (vquads fspec ) then "" else
---        "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
---        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n"
---       )++
+       (if null (vquads fspec ) then "" else
+        "\n -- *** Quads (total: "++(show.length.vquads) fspec++" quads) ***: "++
+        concat [indent++" "++showHSName x++indent++"  = "++showHS flags (indent++"    ") x |x<-vquads     fspec ]++"\n"
+       )++
        (if null (vEcas fspec ) then "" else
         "\n -- *** ECA rules (total: "++(show.length.vEcas) fspec++" ECA rules) ***: "++
         concat [indent++" "++showHSName eca++indent++"  = "++showHS flags (indent++"    ") eca |eca<-vEcas fspec ]++"\n"++
