@@ -207,7 +207,7 @@ pCtx2aCtx
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
      = (if s==name (source e) then id else (EEps (findConceptOrONE s) (findSign s (name (source e))) .:.)) $
-       (if t==name (target e) then id else (.:. EEps (findConceptOrONE t) (findSign (name (source e)) t))) e
+       (if t==name (target e) then id else (.:. EEps (findConceptOrONE t) (findSign (name (target e)) t))) e
     
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
