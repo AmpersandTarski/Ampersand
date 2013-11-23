@@ -132,6 +132,7 @@ pCtx2aCtx
     pObjDef2aObjDef :: P_ObjectDef -> Guarded ObjectDef
     pObjDef2aObjDef x = fmap fst (typecheckObjDef tpda)
      where tpda = disambiguate termPrimDisAmb x
+     
     {- not used. Reason: in all places where this may have been used, the term itself is required/used for disambiguation. In P_Rule, for instance, the expression is used to disambiguate the VIOL statements.
     term2Expr :: (Term TermPrim) -> Guarded Expression
     term2Expr x = fmap fst (typecheckTerm tpda)
@@ -340,7 +341,7 @@ pCtx2aCtx
                       , procDcls = dcls
                       , procRRuls = rolruls
                       , procRRels = rolrels
-                      -- , procCds = cdefs
+                      , procCds = _cdefs -- SJ2013: the underscore means that this argument is not used.
                       , procIds = idefs
                       , procVds = viewdefs
                       , procXps = purposes
@@ -404,7 +405,7 @@ pCtx2aCtx
     pRul2aRul rol env = typeCheckRul rol env . disambiguate termPrimDisAmb
     typeCheckRul :: [String] -- list of roles for this rule
               -> String -- environment name (pattern / proc name)
-              -> (P_Rule (TermPrim,DisambPrim)) -> Guarded Rule
+              -> (P_Rule (TermPrim, DisambPrim)) -> Guarded Rule
     typeCheckRul sgl env P_Ru { rr_nm = nm
                        , rr_exp = expr
                        , rr_fps = orig

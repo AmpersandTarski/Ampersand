@@ -102,7 +102,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  multiplicities expr = case expr of
      EDcD dcl   -> multiplicities dcl
      EDcI{}     -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-     EEps{}     -> [Uni,Tot,Inj,    Sym,Asy,Trn]  -- SJ 20131118: What does it mean to have the endo-property Rfx here? Does it make sense at all?
+     EEps a sgn -> [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
      EDcV sgn   -> [Tot]
                  ++[Sur]
                  ++[Inj | isSingleton (source sgn)]
