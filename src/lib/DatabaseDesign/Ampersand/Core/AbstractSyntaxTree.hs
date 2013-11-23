@@ -52,7 +52,6 @@ import DatabaseDesign.Ampersand.Core.Poset (Poset(..), Sortable(..),Ordering(..)
 import DatabaseDesign.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.List (intercalate,nub)
-
 fatal :: Int -> String -> a
 fatal = fatalMsg "AbstractSyntaxTree.hs"
 
@@ -440,7 +439,7 @@ l .:. r  = if source r/=target l then fatal 432 ("Cannot compose (with operator 
            ECps (l,r)
 l .!. r  = if source r/=target l then fatal 432 ("Cannot add (with operator \"!\") expression\n   "++show l++"\n   with "++show r++".") else
            ERad (l,r)
-l .*. r  = if source r/=target l then fatal 432 ("Cannot multiply (with operator \"*\") expression\n   "++show l++"\n   with "++show r++".") else
+l .*. r  = -- SJC: should always fit! No fatal here..
            EPrd (l,r)
 {- For the operators /, \, ;, ! and * we must not check whether the intermediate types exist.
    Suppose the user says GEN Student ISA Person and GEN Employee ISA Person, then Student `join` Employee has a name (i.e. Person), but Student `meet` Employee

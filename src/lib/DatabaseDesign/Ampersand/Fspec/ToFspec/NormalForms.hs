@@ -143,6 +143,7 @@ where
             expr = (res,ss,equ)
     where
      (res,ss,equ) = nM (if eq then Eql else Lte) expr []
+--     nM _ x _ | trace (take 1000$ show x) False = undefined  -- for debugging black holes....
 --     nM :: Expression -> [Expression] -> (Expression,[String],String)
      nM posNeg (EEqu (l,r)) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
                                             where (t,steps, equ')  = nM posNeg l []
@@ -187,7 +188,6 @@ where
      nM posNeg (EBrk e)                _  = nM posNeg e []
      nM posNeg (EFlp (ECpl e))         rs = nM (cplCmp posNeg) (notCpl (flp e)) rs
      nM _      x _                | simpl = (x,[],"<=>")
---     nM _ x _ | trace (take 1000$ show x) False = undefined  -- for debugging black holes....
 -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False   --ECpl (EIsc (ECpl (EDcD RELATION r
      nM _      (EEqu (l,r)) _                            = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
      nM _      (EImp (x,ELrs (z,y))) _                   = (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
@@ -200,6 +200,7 @@ where
      nM _      (ECpl e@(ERad (_,ECpl{}))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ERad (ECpl{},_))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ECps (ECpl{},ECpl{}))) _         = (deMorganECps e, ["De Morgan"], "<=>")
+     nM _      x _                = (x,[],"<=>")
      nM posNeg (ECpl e) _                                = (notCpl res',steps,equ')
                                                            where (res',steps,equ') = nM (cplCmp posNeg) e []
      nM _      (ECps (l,r)) _                | isIdent l = (r, ["I;x = x"], "<=>")
@@ -331,7 +332,8 @@ where
  -- Jumping Beetles!   The following alternative is incorrect. It should yield t .\/. f (instead of now: t ./\. f)
  -- However, it covers a more serious mistake in the generation of ECA-rules,
  -- which causes the Sentinel to flip. So we keep it covered until that mistake is fixed.
-         | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
+ -- SJC 24 nov 2013: I care not! I've repaired this. Please fix whatever needs to be fixed instead of covering up the occurence!
+         | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
          where (t,steps, equ')  = nM posNeg l []
                (f,steps',equ'') = nM posNeg r (l:rs)
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)

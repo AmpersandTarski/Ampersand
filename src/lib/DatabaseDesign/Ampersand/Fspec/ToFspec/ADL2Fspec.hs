@@ -98,7 +98,8 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs
          = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
                     , (conj,hornClauses)<-cl_conjNF (qClauses q), Hc antcs conss<-hornClauses
-                    , let antc = conjNF (foldr (./\.) (EDcV (sign conj)) antcs)
+                    , let antc = seq (fatal 101 "SJC 24 Nov: Hey Stef / Han, I located a bug, it is here, in the next bit, because it is not type correct.") $
+                                 conjNF (foldr (./\.) (EDcV (sign conj)) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this Horn clause.
                     , cons<-map exprCps2list conss
                -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
