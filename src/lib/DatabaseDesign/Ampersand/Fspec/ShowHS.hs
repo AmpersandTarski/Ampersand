@@ -268,7 +268,7 @@ where
            ,     ", themes        = " ++ show (themes fspec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
            ,wrap ", vprocesses    = " indentA (\_->showHSName) (vprocesses fspec)
            ,wrap ", vplugInfos    = " indentA (\_->showHS flags (indentA++"  ")) (vplugInfos fspec)
---BUGGY: (causes loop!!!)           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
+           ,wrap ", plugInfos     = " indentA (\_->showHS flags (indentA++"  ")) (plugInfos  fspec)
            ,     ", interfaceS    = interfaceS'"
            ,     ", interfaceG    = interfaceG'"
 --         ,     ", fSwitchboard  = "++showHS flags indentA (fSwitchboard fspec)
