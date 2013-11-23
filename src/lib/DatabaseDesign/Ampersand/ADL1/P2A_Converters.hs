@@ -184,7 +184,7 @@ pCtx2aCtx
               -> case findExact genLattice (mjoin (name c) (gc Tgt (fst expr))) of
                     [] -> mustBeOrdered o (Src,c,((\(Just x)->x) subs)) (Tgt,target (fst expr),(fst expr))
                     r  -> if (name c) `elem` r
-                          then pure (obj expr (Just$ b))
+                          then pure (obj (addEpsilonLeft (gc Tgt (fst expr)) r (name c) (fst expr), snd expr) (Just$ b))
                           else mustBeBound (origin o) [(Tgt,fst expr)]
        ) <?> ((,) <$> typecheckTerm ctx <*> maybeOverGuarded pSubi2aSubi subs)
      where
@@ -195,7 +195,15 @@ pCtx2aCtx
                , objmsub = s
                , objstrs = ostrs
                }, sr)
-
+    addEpsilonLeft :: String -> [String] -> String -> Expression -> Expression
+    addEpsilonLeft a b c e
+     = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
+               else EEps (findConceptOrONE (head b)) (findSign a c) .:. e
+    addEpsilonRight :: String -> [String] -> String -> Expression -> Expression
+    addEpsilonRight a b c e
+     = if a==c then (if c `elem` b then e else fatal 200 "b == c must hold: the concept of the epsilon relation should be equal to the intersection of its source and target")
+               else e .:. EEps (findConceptOrONE (head b)) (findSign a c)
+    
     pSubi2aSubi :: (P_SubIfc (TermPrim, DisambPrim)) -> Guarded SubInterface
     pSubi2aSubi (P_InterfaceRef _ s) = pure (InterfaceRef s)
     pSubi2aSubi o@(P_Box _ []) = hasNone [] o
