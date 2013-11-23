@@ -369,19 +369,19 @@ while maintaining all invariants.
    -- The rule is carried along for traceability.
    quads :: Options -> (Declaration->Bool) -> [Rule] -> [Quad]
    quads flags visible rs
-    = [ LoopSearchQuad 
-            { qDcl  = d
-            , qRule = rule
-            , debugStr = (show.conjNF .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
-            }
---    = [ Quad d (Clauses [ (horn2expr conj,allShifts flags conj)
---                        | conj<-conjuncts rule  -- conj :: HornClause. It has the form Hc antcs conss
---      --                , (not.null.lambda Ins (ERel r ??)) conj  -- causes infinite loop
---      --                , not (checkMono conj Ins r)         -- causes infinite loop
---      --                , let conj' = subst (r, actSem Ins r (delta (sign r))) conj
---      --                , (not.isTrue.hornClauseNF) (notCpl conj .\/. conj') -- the system must act to restore invariance     
---                        ]
---                        rule)
+--    = [ LoopSearchQuad 
+--            { qDcl  = d
+--            , qRule = rule
+--            , debugStr = (show.conjNF .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
+--            }
+    = [ Quad d (Clauses [ (horn2expr conj,allShifts flags conj)
+                        | conj<-conjuncts rule  -- conj :: HornClause. It has the form Hc antcs conss
+      --                , (not.null.lambda Ins (ERel r ??)) conj  -- causes infinite loop
+      --                , not (checkMono conj Ins r)         -- causes infinite loop
+      --                , let conj' = subst (r, actSem Ins r (delta (sign r))) conj
+      --                , (not.isTrue.hornClauseNF) (notCpl conj .\/. conj') -- the system must act to restore invariance     
+                        ]
+                        rule)
       | rule<-rs, d<- declsUsedIn rule, visible d
       ]
 
