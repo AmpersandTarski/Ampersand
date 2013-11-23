@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Fspec.Fspec
    import DatabaseDesign.Ampersand.Misc
-   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms    (conjNF,disjNF,normPA, exprUni2list, exprIsc2list, exprCps2list)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (conjNF,disjNF,normPA, exprUni2list, exprIsc2list, exprCps2list)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
    import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
@@ -372,7 +372,7 @@ while maintaining all invariants.
     = [ LoopSearchQuad 
             { qDcl  = d
             , qRule = rule
-            , debugStr = "LOOP detected in:  ((show.conjuncts) rule)"
+            , debugStr = (show.simplify .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
             }
 --    = [ Quad d (Clauses [ (horn2expr conj,allShifts flags conj)
 --                        | conj<-conjuncts rule  -- conj :: HornClause. It has the form Hc antcs conss
