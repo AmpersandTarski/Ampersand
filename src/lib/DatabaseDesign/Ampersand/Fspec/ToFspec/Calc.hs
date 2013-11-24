@@ -31,15 +31,6 @@ where
    head [] = fatal 30 "head must not be used on an empty list!"
    head (a:_) = a
 
-
-   showClause :: Fspc -> Clauses -> String
-   showClause _ cl
-    = "\nRule: "++showADL (cl_rule cl) ++concat
-       [if null hornClauses then "\nNo clauses" else
-        "\nConjunct: "++showADL conj++
-        concat ["\n   Clause: "++showADL clause | clause<-hornClauses]
-       | (conj, hornClauses)<-cl_conjNF cl]
-
 -- testInterface :: Fspc -> Interface -> String
 -- Deze functie is bedoeld om te bedenken hoe interfaces moeten worden afgeleid uit een vers vertaalde ObjectDef.
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
