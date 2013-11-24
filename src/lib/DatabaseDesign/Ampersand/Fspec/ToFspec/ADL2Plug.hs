@@ -12,13 +12,13 @@ import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Fspec.Plug
 import DatabaseDesign.Ampersand.Misc
--- import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
+import DatabaseDesign.Ampersand.Fspec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,partition)
 import GHC.Exts (sortWith)
 
--- import Debug.Trace  
+--import Debug.Trace  
 -- Dummy trace function.
 trace :: String -> a -> a  
 trace _ a = a
@@ -258,18 +258,21 @@ makeEntityTables :: Options
                 -> [[A_Concept]] -- ^ concepts `belonging' together
                 -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs. 
                 -> [PlugSQL]
-makeEntityTables _ {-flags-} allDcls concepts exclusions
+makeEntityTables flags allDcls concepts exclusions
  = trace 
-    ("\nallDcls:"++concat ["\n  "++show r | r<-allDcls]++
-     "\nattRels:"++concat ["\n  "++show e | e<-attRels]++
-     "\nDistribution of Attributes:"++ concat ["\n   "++show dist | dist <-distributionOfAtts]++
+    ("\nallDcls:" ++concat ["\n  "++showHSName r | r<-allDcls]++
+     "\nallDcls:" ++concat ["\n  "++showHS flags "\n  " r | r<-allDcls]++
+     "\nconcepts:"++concat ["\n  "++showHS flags "    " cs | cs<-concepts]++
+     "\nexclusionts:" ++concat ["\n  "++showHSName r | r<-exclusions]++
+     "\nattRels:" ++concat ["\n  "++showHS flags "    " e | e<-attRels]++
+--     "\nDistribution of Attributes:"++ concat ["\n   "++show dist | dist <-distributionOfAtts]++
      "") $
    sortWith ((0-).length.plugFields)
     (map kernel2Plug distributionOfAtts)
    where
     distributionOfAtts = dist attRels concepts []
       where 
-   --     dist :: [attrib] -> [kernel] -> [(kernel,[attrib])] -> [(kernel,[attrib])]
+        dist :: (Association attrib, Show attrib) => [attrib] -> [[A_Concept]] -> [([A_Concept], [attrib])] -> [([A_Concept], [attrib])]
         dist []   []     result = result
         dist atts []     _      = fatal 246 ("No kernel found for atts: "++show atts)
         dist atts (k:ks) result = dist otherAtts ks ([(k,attsOfK)] ++ result)
