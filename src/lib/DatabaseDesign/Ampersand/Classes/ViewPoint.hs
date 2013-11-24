@@ -39,37 +39,6 @@ class Language a where
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
   
-{- | In a language, a declaration must be made for each gen.
--- SJC: Shouldn't we rethink this?
-makeDecl :: A_Gen -> Declaration
-makeDecl g
-  = Sgn  { decnm   = name(genspc g) -- best result in the sql plug
-         , decsgn  = case g of 
-                      Isa{} -> Sign (genspc g) (gengen g)
-                      IsE{} -> Sign (genspc g) (genspc g)
-         , decprps = [Uni,Tot,Inj]
-         , decprps_calc = Just [Uni,Tot,Inj]
-         , decprL  = ""
-         , decprM  = "is a"
-         , decprR  = ""
-         , decMean = case g of 
-                      Isa{} -> AMeaning 
-                                  [ A_Markup English ReST (string2Blocks ReST ("Every "++name (genspc g)++" is a " ++ name(gengen g)++"."))
-                                  , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (genspc g)++" is een " ++ name(genspc g)++"."))
-                                  ]
-                      IsE{} -> AMeaning 
-                                  [ A_Markup English ReST (string2Blocks ReST ("Every "++name (genspc g)++" is a " ++ name(genspc g)++"."))
-                                  , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (genspc g)++" is een " ++ name(genspc g)++"."))
-                                  ]
-         , decConceptDef = Nothing
-         , decfpos = origin g
-         , decissX = True
-         , decusrX = False
-         , decISA  = True
-         , decpat  = ""
-         , decplug = False
-         }
--}
 
 
 class ProcessStructure a where
