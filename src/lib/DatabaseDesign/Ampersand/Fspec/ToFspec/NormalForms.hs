@@ -120,10 +120,6 @@ where
    -- | This type exists for the sake of normStep only.
    data Cmp = Lte | Gte | Eql   
 
-   cplCmp :: Cmp -> Cmp
-   cplCmp Lte = Gte
-   cplCmp Gte = Lte
-   cplCmp Eql  = Eql
 
    -- | The purpose of "normStep" is to elaborate a single step in a rewrite process,
    -- in which the expression is normalized by means of rewrite rules.
@@ -142,51 +138,51 @@ where
             simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
             expr = (res,ss,equ)
     where
-     (res,ss,equ) = nM (if eq then Eql else Lte) expr []
---     nM _ x _ | trace (take 1000$ show x) False = undefined  -- for debugging black holes....
---     nM :: Expression -> [Expression] -> (Expression,[String],String)
-     nM posNeg (EEqu (l,r)) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM posNeg l []
-                                                  (f,steps',equ'') = nM posNeg r []
-     nM posNeg (EImp (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM (cplCmp posNeg) l []
-                                                  (f,steps',equ'') = nM posNeg r []
-     nM posNeg (ELrs (l,r)) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
-                                            where (t,steps, equ')  = nM posNeg l []
-                                                  (f,steps',equ'') = nM (cplCmp posNeg) r []
-     nM posNeg (ERrs (l,r)) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM (cplCmp posNeg) l []
-                                                  (f,steps',equ'') = nM posNeg r []
-     nM posNeg (EUni (EUni (l,k),r)) rs   = nM posNeg (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
-     nM posNeg (EUni (l,r)) rs    | simpl = (t .\/. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM posNeg l []
-                                                  (f,steps',equ'') = nM posNeg r (l:rs)
-     nM posNeg (EIsc (EIsc (l,k),r)) rs   = nM posNeg (l ./\. (k ./\. r)) rs  -- standardize, using associativity of ./\.
-     nM posNeg (EIsc (l,r)) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM posNeg l []
-                                                  (f,steps',equ'') = nM posNeg r (l:rs)
-     nM posNeg (ECps (ECps (l,k),r)) rs   = nM posNeg (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
+     (res,ss,equ) = nM True expr []
+     nM :: Bool -> Expression -> [Expression] -> (Expression,[String],String)
+-- posCpl indicates whether the expression is positive under a complement. It is False when expr is inside a complemented expression.
+     nM posCpl (EEqu (l,r)) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM posCpl l []
+                                                  (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EImp (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM (not posCpl) l []
+                                                  (f,steps',equ'') = nM posCpl r []
+     nM posCpl (ELrs (l,r)) _     | simpl = (t ./. f, steps++steps', fEqu [equ',equ''])     -- l/r  =  l ! -r~  =  -(-l ; r~)
+                                            where (t,steps, equ')  = nM posCpl l []
+                                                  (f,steps',equ'') = nM (not posCpl) r []
+     nM posCpl (ERrs (l,r)) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM (not posCpl) l []
+                                                  (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EUni (EUni (l,k),r)) rs   = nM posCpl (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
+     nM posCpl (EUni (l,r)) rs    | simpl = (t .\/. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM posCpl l []
+                                                  (f,steps',equ'') = nM posCpl r (l:rs)
+     nM posCpl (EIsc (EIsc (l,k),r)) rs   = nM posCpl (l ./\. (k ./\. r)) rs  -- standardize, using associativity of ./\.
+     nM posCpl (EIsc (l,r)) rs    | simpl = (t ./\. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM posCpl l []
+                                                  (f,steps',equ'') = nM posCpl r (l:rs)
+     nM posCpl (ECps (ECps (l,k),r)) rs   = nM posCpl (l .:. (k .:. r)) rs  -- standardize, using associativity of .:. 
                                                 -- Note: function shiftL and shiftR make use of the fact that this normalizes to (l .:. (k .:. r))
-     nM posNeg (ECps (l,r)) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
-                                             where (t,steps, equ')  = nM posNeg l []
-                                                   (f,steps',equ'') = nM posNeg r (l:rs)
-     nM posNeg (ERad (ERad (l,k),r)) rs   = nM posNeg (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
-     nM posNeg (ERad (l,r)) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')    = nM posNeg l []
-                                                  (f,steps',equ'')   = nM posNeg r (l:rs)
-     nM posNeg (EPrd (EPrd (l,k),r)) rs   = nM posNeg (l .*. (k .*. r)) rs  -- standardize, using associativity of .*.
-     nM posNeg (EPrd (l,r)) _     | simpl = (t .*. f, steps++steps', fEqu [equ',equ''])
-                                            where (t,steps, equ')  = nM posNeg l []
-                                                  (f,steps',equ'') = nM posNeg r []
-     nM posNeg (EKl0 e)              _    = (EKl0 res', steps, equ')
-                                            where (res',steps,equ') = nM posNeg e []
-     nM posNeg (EKl1 e)              _    = (EKl1 res', steps, equ')
-                                            where (res',steps,equ') = nM posNeg e []
-     nM posNeg (ECpl (ECpl e))         rs = nM (cplCmp posNeg) e rs
-     nM posNeg (ECpl e) _         | simpl = (notCpl res',steps,equ')
-                                            where (res',steps,equ') = nM (cplCmp posNeg) e []
-     nM posNeg (EBrk e)                _  = nM posNeg e []
-     nM posNeg (EFlp (ECpl e))         rs = nM (cplCmp posNeg) (notCpl (flp e)) rs
+     nM posCpl (ECps (l,r)) rs    | simpl = (t .:. f, steps++steps', fEqu [equ',equ''])
+                                             where (t,steps, equ')  = nM posCpl l []
+                                                   (f,steps',equ'') = nM posCpl r (l:rs)
+     nM posCpl (ERad (ERad (l,k),r)) rs   = nM posCpl (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
+     nM posCpl (ERad (l,r)) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')    = nM posCpl l []
+                                                  (f,steps',equ'')   = nM posCpl r (l:rs)
+     nM posCpl (EPrd (EPrd (l,k),r)) rs   = nM posCpl (l .*. (k .*. r)) rs  -- standardize, using associativity of .*.
+     nM posCpl (EPrd (l,r)) _     | simpl = (t .*. f, steps++steps', fEqu [equ',equ''])
+                                            where (t,steps, equ')  = nM posCpl l []
+                                                  (f,steps',equ'') = nM posCpl r []
+     nM posCpl (EKl0 e)              _    = (EKl0 res', steps, equ')
+                                            where (res',steps,equ') = nM posCpl e []
+     nM posCpl (EKl1 e)              _    = (EKl1 res', steps, equ')
+                                            where (res',steps,equ') = nM posCpl e []
+     nM posCpl (ECpl (ECpl e))         rs = nM (not posCpl) e rs
+     nM posCpl (ECpl e) _         | simpl = (notCpl res',steps,equ')
+                                            where (res',steps,equ') = nM (not posCpl) e []
+     nM posCpl (EBrk e)                _  = nM posCpl e []
+     nM posCpl (EFlp (ECpl e))         rs = nM posCpl (notCpl (flp e)) rs
      nM _      x _                | simpl = (x,[],"<=>")
 -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False   --ECpl (EIsc (ECpl (EDcD RELATION r
      nM _      (EEqu (l,r)) _                            = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
@@ -195,52 +191,50 @@ where
      nM _      (EImp (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
      nM _      (ELrs (l,r)) _                            = (l .!. notCpl (flp r), ["remove left residual (/)"],"<=>")
      nM _      (ERrs (l,r)) _                            = (notCpl (flp l) .!. r, ["remove right residual (\\)"],"<=>")
---     nM _      (ECpl e@EIsc{}) _                         = (deMorganEIsc e, ["De Morgan"], "<=>")
-     nM _      (ECpl e@EUni{}) _                         = (deMorganEUni e, ["De Morgan"], "<=>")
+     nM posCpl (ECpl e@EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
+     nM posCpl (ECpl e@EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ERad (_,ECpl{}))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ERad (ECpl{},_))) _              = (deMorganERad e, ["De Morgan"], "<=>")
      nM _      (ECpl e@(ECps (ECpl{},ECpl{}))) _         = (deMorganECps e, ["De Morgan"], "<=>")
-     nM _      x _                = (x,[],"<=>")
-     nM posNeg (ECpl e) _                                = (notCpl res',steps,equ')
-                                                           where (res',steps,equ') = nM (cplCmp posNeg) e []
+     nM posCpl (ECpl e) _                                = (notCpl res',steps,equ')
+                                                           where (res',steps,equ') = nM (not posCpl) e []
      nM _      (ECps (l,r)) _                | isIdent l = (r, ["I;x = x"], "<=>")
      nM _      (ECps (l,r)) _                | isIdent r = (l, ["x;I = x"], "<=>")
-     nM Lte    (ECps (r,ERad (s,q))) _          | not eq = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
-     nM Lte    (ECps (ERad (r,s),q)) _          | not eq = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
-     nM Lte    (ECps (EIsc (r,s),q)) _          | not eq = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
-     nM Lte    (ECps (r,EIsc (s,q))) _          | not eq = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
+     nM True   (ECps (r,ERad (s,q))) _          | not eq = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
+     nM True   (ECps (ERad (r,s),q)) _          | not eq = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
+     nM True   (ECps (EIsc (r,s),q)) _          | not eq = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
+     nM True   (ECps (r,EIsc (s,q))) _          | not eq = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
      nM _      (ECps (EUni (q,s),r)) _                   = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
      nM _      (ECps (l,EUni (q,s))) _                   = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
      nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
      nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
      nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
      nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
-     nM _      x@(ECps(ECpl{},ECpl{})) _                     = (deMorganECps x, ["De Morgan"], "<=>")
-     nM posNeg (ECps (l,r))           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
-                                                                 where (t,steps, equ')  = nM posNeg l []
-                                                                       (f,steps',equ'') = nM posNeg r (l:rs)
+     nM posCpl (ECps (l,r))           rs                     = (t .:. f, steps++steps', fEqu [equ',equ''])
+                                                                 where (t,steps, equ')  = nM posCpl l []
+                                                                       (f,steps',equ'') = nM posCpl r (l:rs)
      nM _      (ERad (l,r)) _                   | isImin l = (r, ["-I;x = x"], "<=>")
      nM _      (ERad (l,r)) _                   | isImin r = (l, ["x;-I = x"], "<=>")
-     nM Gte    (ERad (ECps (r,s),q)) _            | not eq = (r.!.(s.:.q), ["Peirce: r;(s!q) -| (r;s)!q"],"==>")
-     nM Gte    (ERad (r,ECps (s,q))) _            | not eq = ((r.!.s).:.q, ["Peirce: r!(s;q) -| (r!s);q"],"==>")
-     nM Gte    (ERad (EUni (r,s),q)) _            | not eq = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
-     nM Gte    (ERad (r,EUni (s,q))) _            | not eq = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
+--     nM False  (ERad (ECps (r,s),q)) _            | not eq = (r.:.(s.!.q), ["Peirce: (r;s)!q |- r;(s!q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
+--     nM False  (ERad (r,ECps (s,q))) _            | not eq = ((r.!.s).:.q, ["Peirce: (r!s);q |- r!(s;q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
+     nM False  (ERad (EUni (r,s),q)) _            | not eq = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
+     nM False  (ERad (r,EUni (s,q))) _            | not eq = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
      nM _      (ERad (EIsc (q,s),r)) _                     = ((q.!.r)./\.(s.!.r), ["distribute ! over /\\"],"<=>")
      nM _      (ERad (l,EIsc (q,s))) _                     = ((l.!.q)./\.(l.!.s), ["distribute ! over /\\"],"<=>")
      nM _      x@(ERad(ECpl{},_))    _                     = (deMorganERad x, ["De Morgan"], "<=>")
      nM _      x@(ERad(_,ECpl{}))    _                     = (deMorganERad x, ["De Morgan"], "<=>")
-     nM posNeg (ERad (l,r))         rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
-                                                                 where (t,steps, equ')  = nM posNeg l []
-                                                                       (f,steps',equ'') = nM posNeg r (l:rs)
+     nM posCpl (ERad (l,r))         rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
+                                                                 where (t,steps, equ')  = nM posCpl l []
+                                                                       (f,steps',equ'') = nM posCpl r (l:rs)
      nM _      (EPrd (l,EPrd (_,r))) _                     = (l .*. r, ["eliminate middle in cartesian product"], "<=>")
-     nM posNeg (EPrd (l,r)) _                              = (t .*. f, steps++steps', fEqu [equ',equ''])
-                                                                 where (t,steps, equ')  = nM posNeg l []
-                                                                       (f,steps',equ'') = nM posNeg r []
+     nM posCpl (EPrd (l,r)) _                              = (t .*. f, steps++steps', fEqu [equ',equ''])
+                                                                 where (t,steps, equ')  = nM posCpl l []
+                                                                       (f,steps',equ'') = nM posCpl r []
      nM _      (EIsc (EUni (l,k),r)) _           | dnf     = ((l./\.r) .\/. (k./\.r), ["distribute /\\ over \\/"],"<=>")
      nM _      (EIsc (l,EUni (k,r))) _           | dnf     = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
      nM _      (EUni (EIsc (l,k),r)) _           | not dnf = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
      nM _      (EUni (l,EIsc (k,r))) _           | not dnf = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
-     nM posNeg x@(EIsc (l,r)) rs
+     nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
               = ( case absorbClasses of [] -> fatal 243 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (./\.) [head cl | cl<-absorbClasses]
@@ -286,8 +280,8 @@ where
                 , "<=>"
                 )
          | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
-         where (t,steps, equ')  = nM posNeg l []
-               (f,steps',equ'') = nM posNeg r (l:rs)
+         where (t,steps, equ')  = nM posCpl l []
+               (f,steps',equ'') = nM posCpl r (l:rs)
                absorbClasses = eqClass (==) (rs++exprIsc2list l++exprIsc2list r)
                incons = [x |x<-exprIsc2list r,x==notCpl l]
                absor0  = [t' | t'<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
@@ -297,7 +291,7 @@ where
                absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
                absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
                eList  = rs++exprIsc2list l++exprIsc2list r
-     nM posNeg x@(EUni (l,r)) rs
+     nM posCpl x@(EUni (l,r)) rs
 -- Absorb equals:    r\/r  -->  r
          | or [length cl>1 |cl<-absorbClasses]
               = ( case absorbClasses of [] -> fatal 300 "Going into foldr1 with empty absorbClasses"; _ -> foldr1 (.\/.) [head cl | cl<-absorbClasses]
@@ -334,8 +328,8 @@ where
  -- which causes the Sentinel to flip. So we keep it covered until that mistake is fixed.
  -- SJC 24 nov 2013: I care not! I've repaired this. Please fix whatever needs to be fixed instead of covering up the occurence!
          | otherwise = (t .\/. f, steps++steps', fEqu [equ',equ''])
-         where (t,steps, equ')  = nM posNeg l []
-               (f,steps',equ'') = nM posNeg r (l:rs)
+         where (t,steps, equ')  = nM posCpl l []
+               (f,steps',equ'') = nM posCpl r (l:rs)
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
                absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
             -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
