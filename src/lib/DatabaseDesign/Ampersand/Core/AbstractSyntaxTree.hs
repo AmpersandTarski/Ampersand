@@ -296,7 +296,15 @@ instance Show A_Gen where
   showsPrec _ g@(IsE{}) = showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show $ genrhs g))
 instance Traced A_Gen where
   origin = genfp
-      
+{-
+instance Association A_Gen where
+  sign r = 
+    case r of 
+     Isa{} -> Sign (genspc r) (gengen r)
+     IsE{} -> Sign (genspc r) (genspc r)
+--   _     ->  fatal 304 "A_Gen should probably not be an instance of Association when this fatal fires."
+-}
+
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
 smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 smallerConcepts gens cpt 

@@ -39,21 +39,28 @@ class Language a where
   gens :: a -> [A_Gen]               -- ^ all generalizations that are valid within this viewpoint
   patterns :: a -> [Pattern]         -- ^ all patterns that are used in this viewpoint
   
--- | In a language, a declaration must be made for each gen.
+{- | In a language, a declaration must be made for each gen.
 -- SJC: Shouldn't we rethink this?
 makeDecl :: A_Gen -> Declaration
-makeDecl g@(Isa{})
+makeDecl g
   = Sgn  { decnm   = name(genspc g) -- best result in the sql plug
-         , decsgn  = Sign (genspc g) (gengen g)
+         , decsgn  = case g of 
+                      Isa{} -> Sign (genspc g) (gengen g)
+                      IsE{} -> Sign (genspc g) (genspc g)
          , decprps = [Uni,Tot,Inj]
          , decprps_calc = Just [Uni,Tot,Inj]
          , decprL  = ""
          , decprM  = "is a"
          , decprR  = ""
-         , decMean = AMeaning 
-                        [ A_Markup English ReST (string2Blocks ReST ("Every "++name (genspc g)++" is a " ++ name(gengen g)++"."))
-                        , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (genspc g)++" is een " ++ name(gengen g)++"."))
-                        ]
+         , decMean = case g of 
+                      Isa{} -> AMeaning 
+                                  [ A_Markup English ReST (string2Blocks ReST ("Every "++name (genspc g)++" is a " ++ name(gengen g)++"."))
+                                  , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (genspc g)++" is een " ++ name(genspc g)++"."))
+                                  ]
+                      IsE{} -> AMeaning 
+                                  [ A_Markup English ReST (string2Blocks ReST ("Every "++name (genspc g)++" is a " ++ name(genspc g)++"."))
+                                  , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (genspc g)++" is een " ++ name(genspc g)++"."))
+                                  ]
          , decConceptDef = Nothing
          , decfpos = origin g
          , decissX = True
@@ -62,8 +69,7 @@ makeDecl g@(Isa{})
          , decpat  = ""
          , decplug = False
          }
-makeDecl (IsE{})
-  = fatal 67  "Not a single declaration possible.. Rethink. Is there a need at all for A_Gen?"
+-}
 
 
 class ProcessStructure a where
@@ -143,8 +149,7 @@ instance Language A_Context where
   conceptDefs          = ctxcds
   declarations context = uniteRels (concatMap declarations (patterns context)
                                  ++ concatMap declarations (processes context)
-                                 ++ ctxds context
-                                 ++ map makeDecl (gens context))
+                                 ++ ctxds context)
                          where
                          -- declarations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
                          -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
@@ -179,7 +184,7 @@ instance Language Process where
                          , objstrs = []
                          }
   conceptDefs proc  = nub [cd | c<-concs proc,cd<-cptdf c,posIn (prcPos proc) cd (prcEnd proc)]
-  declarations proc = prcDcls proc `uni` map makeDecl (gens proc)
+  declarations proc = prcDcls proc
   udefrules         = prcRules -- all user defined rules in this process
 --  invariants   proc = [r | r<-prcRules proc, not (isSignal r) ]
   identities        = prcIds
@@ -205,7 +210,7 @@ instance Language Pattern where
                          , objstrs = []
                          }
   conceptDefs  pat = nub [cd | c<-concs pat,cd<-cptdf c,posIn (ptpos pat) cd (ptend pat)]
-  declarations pat = ptdcs pat `uni` map makeDecl (gens pat)
+  declarations pat = ptdcs pat
   udefrules        = ptrls   -- all user defined rules in this pattern
 --  invariants   pat = [r |r<-ptrls pat, not (isSignal r)]
   identities       = ptids 
