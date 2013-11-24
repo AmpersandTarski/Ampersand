@@ -13,7 +13,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import DatabaseDesign.Ampersand.Misc
    import DatabaseDesign.Ampersand.Fspec.ToFspec.NormalForms  --  (conjNF,disjNF,normPA, exprUni2list, exprIsc2list, exprCps2list)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Plug
-   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
+--   import DatabaseDesign.Ampersand.Fspec.ShowHS -- only for diagnostic purposes during debugging
    import DatabaseDesign.Ampersand.Fspec.ShowADL
    import Text.Pandoc
    import Data.List (nub,intercalate)
@@ -98,7 +98,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs
          = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
                     , (conj,hornClauses)<-cl_conjNF (qClauses q), Hc antcs conss<-hornClauses
-                    , let antc = seq (fatal 101 "SJC 24 Nov: Hey Stef / Han, I located a bug, it is here, in the next bit, because it is not type correct.") $
+                    , let antc = -- seq (fatal 101 ("SJC 24 Nov: Hey Stef / Han, I located a bug, it is here, in the next bit, because it is not type correct.\nantcs:"++show antcs++"\nconss:"++show conss)) $
                                  conjNF (foldr (./\.) (EDcV (sign conj)) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this Horn clause.
                     , cons<-map exprCps2list conss

@@ -297,6 +297,16 @@ data Clauses  = Clauses
 instance Eq Clauses where
   cl==cl' = cl_rule cl==cl_rule cl'
     
+{-
+   showClauses :: Fspc -> Clauses -> String
+   showClauses _ cl
+    = "\nRule: "++showADL (cl_rule cl) ++concat
+       [if null hornClauses then "\nNo clauses" else
+        "\nConjunct: "++showADL conj++
+        concat ["\n   Clause: "++showADL clause | clause<-hornClauses]
+       | (conj, hornClauses)<-cl_conjNF cl]
+-}
+
 data FPA = FPA { fpType :: FPtype
                , complexity :: FPcompl
                } deriving (Show)
