@@ -469,24 +469,28 @@ while maintaining all invariants.
        sh str es = intercalate str [ showADL e | e<-es] 
 
      headECps :: Expression -> Expression
-     headECps (ECps (l@ECps{},_)) = headECps l
-     headECps (ECps (l,_)) = l
-     headECps x = x
+     headECps expr = f expr
+      where f (ECps (l@ECps{},_)) = f l
+            f (ECps (l,_)) = l
+            f _ = EDcI (source expr)
 
      tailECps :: Expression -> Expression
-     tailECps (ECps (ECps (l,r),q)) = tailECps (ECps (l, ECps (r,q)))
-     tailECps (ECps (_,r)) = r
-     tailECps e = EDcI (source e)
-
+     tailECps expr = f expr
+      where f (ECps (ECps (l,r),q)) = f (ECps (l, ECps (r,q)))
+            f (ECps (_,r)) = r
+            f _ = EDcI (target expr)
+            
      initECps :: Expression -> Expression
-     initECps (ECps (l, ECps (r,q))) = initECps (ECps (ECps (l,r),q))
-     initECps (ECps (l,_)) = l
-     initECps e = EDcI (target e)
+     initECps expr = f expr
+      where f (ECps (l, ECps (r,q))) = initECps (ECps (ECps (l,r),q))
+            f (ECps (l,_)) = l
+            f _ = EDcI (source expr)
 
      lastECps :: Expression -> Expression
-     lastECps (ECps (_,r@ECps{})) = lastECps r
-     lastECps (ECps (_,r)) = r
-     lastECps x = x
+     lastECps expr = f expr
+      where f (ECps (_,r@ECps{})) = f r
+            f (ECps (_,r)) = r
+            f _ = EDcI (target expr)
 
      isEDcI :: Expression -> Bool
      isEDcI EDcI{} = True
