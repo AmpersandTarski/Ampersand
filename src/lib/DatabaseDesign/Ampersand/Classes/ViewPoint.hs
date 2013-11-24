@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..),makeDecl) where
+module DatabaseDesign.Ampersand.Classes.ViewPoint (Language(..),ProcessStructure(..)) where
 import DatabaseDesign.Ampersand.Core.ParseTree
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
@@ -42,17 +42,17 @@ class Language a where
 -- | In a language, a declaration must be made for each gen.
 -- SJC: Shouldn't we rethink this?
 makeDecl :: A_Gen -> Declaration
-makeDecl g
-  = Sgn  { decnm   = name(source g) -- best result in the sql plug
-         , decsgn  = sign g
+makeDecl g@(Isa{})
+  = Sgn  { decnm   = name(genspc g) -- best result in the sql plug
+         , decsgn  = Sign (genspc g) (gengen g)
          , decprps = [Uni,Tot,Inj]
          , decprps_calc = Just [Uni,Tot,Inj]
          , decprL  = ""
          , decprM  = "is a"
          , decprR  = ""
          , decMean = AMeaning 
-                        [ A_Markup English ReST (string2Blocks ReST ("Every "++name (source g)++" is a " ++ name(target g)++"."))
-                        , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (source g)++" is een " ++ name(target g)++"."))
+                        [ A_Markup English ReST (string2Blocks ReST ("Every "++name (genspc g)++" is a " ++ name(gengen g)++"."))
+                        , A_Markup Dutch ReST (string2Blocks ReST ("Iedere "++name (genspc g)++" is een " ++ name(gengen g)++"."))
                         ]
          , decConceptDef = Nothing
          , decfpos = origin g
@@ -62,6 +62,9 @@ makeDecl g
          , decpat  = ""
          , decplug = False
          }
+makeDecl (IsE{})
+  = fatal 67  "Not a single declaration possible.. Rethink. Is there a need at all for A_Gen?"
+
 
 class ProcessStructure a where
   processes :: a -> [Process]       -- ^ all roles that are used in this ProcessStructure
