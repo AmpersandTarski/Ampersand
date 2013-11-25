@@ -44,7 +44,7 @@ module DatabaseDesign.Ampersand
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
    , (<==>),meet,join,sortWith,atomsOf
-   , smallerConcepts, largerConcepts
+   , smallerConcepts, largerConcepts, rootConcept
    -- * Functions on declarations
    , decusr
    -- * Functions on rules
