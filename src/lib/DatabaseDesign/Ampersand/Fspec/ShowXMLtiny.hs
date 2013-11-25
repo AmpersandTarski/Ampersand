@@ -157,7 +157,7 @@ where
                EDcI c       -> Elem (simpleTag "EDcI") [mkXmlTree c]
                EEps i sgn   -> Elem (simpleTag "EEps") [mkXmlTree i,mkXmlTree sgn]
                EDcV sgn     -> Elem (simpleTag "EDcV") [mkXmlTree sgn]
-               EMp1 atm c   -> Elem (simpleTag "ATOM") [mkXmlTree c]
+               EMp1 atm c   -> Elem (simpleTag ("ATOM="++atm)) [mkXmlTree c]
 
    instance XML PPurpose where
      mkTag expl =
@@ -207,8 +207,8 @@ where
 
 
    instance XML A_Gen where
-     mkTag g@Isa{} = Tag "Isa" (mkAttr "Generic" (show (gengen g))
-                                :[mkAttr "Specific" (show (genspc g))]
+     mkTag g@Isa{} = Tag "Isa" (mkAttr "Specific" (show (genspc g))
+                                :[mkAttr "Generic" (show (gengen g))]
                                )
      mkTag g@IsE{} = Tag "IsE" (mkAttr "Specific" (show (genspc g))
                                 :[mkAttr "Generics" (show c) | c<-genrhs g]

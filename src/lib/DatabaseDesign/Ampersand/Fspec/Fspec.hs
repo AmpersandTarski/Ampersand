@@ -281,7 +281,7 @@ data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is fo
 
 --
 dnf2expr :: DnfClause -> Expression
-dnf2expr hc@(Dnf antcs conss)
+dnf2expr (Dnf antcs conss)
  = case (antcs, conss) of
     ([],[]) -> fatal 327 "empty dnf clause"
     ([],_ ) -> foldr1 (.\/.) conss

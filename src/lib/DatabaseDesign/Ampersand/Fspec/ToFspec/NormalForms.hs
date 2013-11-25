@@ -10,7 +10,7 @@ where
    import DatabaseDesign.Ampersand.Fspec.Fspec
 -- import DatabaseDesign.Ampersand.Fspec.ShowADL  -- for debug purposes only
    import Data.List (nub {- , intercalate -} )
-   import Debug.Trace
+--   import Debug.Trace
    import Prelude hiding (head)
    
    fatal :: Int -> String -> a
@@ -116,9 +116,6 @@ where
       then [(expr,[],"<=>")]
       else (expr,steps,equ):simpProof shw res
     where (res,steps,equ) = normStep shw True True True expr
-
-   -- | This type exists for the sake of normStep only.
-   data Cmp = Lte | Gte | Eql   
 
 
    -- | The purpose of "normStep" is to elaborate a single step in a rewrite process,
@@ -283,11 +280,13 @@ where
          where (t,steps, equ')  = nM posCpl l []
                (f,steps',equ'') = nM posCpl r (l:rs)
                absorbClasses = eqClass (==) (rs++exprIsc2list l++exprIsc2list r)
-               incons = [x |x<-exprIsc2list r,x==notCpl l]
-               absor0  = [t' | t'<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
-               absor0' = [t' | t'<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
-               absor1  = [(t', exprUni2list l>-[t']) | t'<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, t'==f']++[(x, exprUni2list l>-[x]) | x@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
-               absor1' = [(t', exprUni2list r>-[t']) | t'<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, t'==f']++[(x, exprUni2list r>-[x]) | x@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
+               incons = [conjunct |conjunct<-exprIsc2list r,conjunct==notCpl l]
+               absor0  = [disjunct | disjunct<-exprUni2list l, f'<-rs++exprIsc2list r, disjunct==f']
+               absor0' = [disjunct | disjunct<-exprUni2list r, f'<-rs++exprIsc2list l, disjunct==f']
+               absor1  = [(disjunct, exprUni2list l>-[disjunct]) | disjunct<-exprUni2list l, ECpl f'<-rs++exprIsc2list r, disjunct==f']++
+                         [(disjunct, exprUni2list l>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list l, f'<-rs++exprIsc2list r, t'==f']
+               absor1' = [(disjunct, exprUni2list r>-[disjunct]) | disjunct<-exprUni2list r, ECpl f'<-rs++exprIsc2list l, disjunct==f']++
+                         [(disjunct, exprUni2list r>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
                absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
                absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
                eList  = rs++exprIsc2list l++exprIsc2list r
@@ -333,7 +332,7 @@ where
             -- absorption can take place if two terms are equal. So let us make a list of equal terms: absorbClasses (for substituting r\/r by r)
                absorbClasses = eqClass (==) (rs++exprUni2list l++exprUni2list r)
             -- tautologies occur if -r\/r, so we are looking for pairs, (x,l) such that x== -l
-               tauts = [x' |x<-exprUni2list r,x==notCpl l, ECpl x'<-[x,l]]
+               tauts = [t' |disjunct<-exprUni2list r,disjunct==notCpl l, ECpl t'<-[disjunct,l]]
                absor0  = [t' | t'<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
                absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
                absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, exprIsc2list l>-[e]) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
