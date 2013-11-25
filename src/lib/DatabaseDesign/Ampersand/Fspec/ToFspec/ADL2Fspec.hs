@@ -99,7 +99,7 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
          = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
                     , (conj,hornClauses)<-cl_conjNF (qClauses q), Hc antcs conss<-hornClauses
                     , let antc = -- seq (fatal 101 ("SJC 24 Nov: Hey Stef / Han, I located a bug, it is here, in the next bit, because it is not type correct.\nantcs:"++show antcs++"\nconss:"++show conss)) $
-                                 conjNF (foldr (./\.) (EDcV (sign conj)) antcs)
+                                 conjNF (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
                     , isRfx antc -- We now know that I is a subset of the antecedent of this Horn clause.
                     , cons<-map exprCps2list conss
                -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
@@ -411,11 +411,11 @@ while maintaining all invariants.
                                    | (ass,css)<-nub (move antcs conss)
                                    ]
       where
-      -- informal example coming from  "r;s /\ p;r |- x;y;z"
+      -- example:  r;s /\ p;r |- x;y   and suppose x and y are both univalent.
       --  antcs =  [ r;s, p;r ]
-      --  conss =  [ x;y;z ]
+      --  conss =  [ x;y ]
        move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-       move ass [] = [(ass,[EDcI (source (head ass))])]
+       move ass [] = [(ass,[])]
        move ass css
         = (ass,css):
           if and [ (not.isEDcI) cs | cs<-css]     -- all cs are nonempty because: (not.and.map isEDcI) cs ==> not (null cs)
@@ -430,6 +430,12 @@ while maintaining all invariants.
                    , isInj l
                    , ts<-move [as.:.flp l |as<-ass] (map initECps css)]   -- example: ts<-move [ ["r","s",flp "z"], ["p","r",flp "z"] ]  [ ["x","y"] ]
           else []
+      -- Here is (informally) what the example does:
+      -- move [ r;s , p;r ] [ x;y ]
+      -- ( [ r;s , p;r ] , [ x;y ] ): [ ts | ts<-move [flp x.:.as | as<-[ r;s , p;r ] [ y ] ] ]
+      -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ ts | ts<-move [flp y.:.as | as<-[ y~;x~;r;s , y~;x~;p;r ] [] ] ]
+      -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ [ y~;x~;r;s , y~;x~;p;r ] , [] ] ]
+      -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
 
      shiftR :: HornClause -> [HornClause]
      shiftR hc@(Hc antcs conss)
@@ -442,11 +448,11 @@ while maintaining all invariants.
                                    | (ass,css)<-nub (move antcs conss)
                                    ]
       where
-      -- informal example coming from  "r;s /\ r;r |- x;y;z"
-      --  ass =  [ ["r","s"], ["r","r"] ]
-      --  css =  [ ["x","y","z"] ]
+      -- example  "r;s /\ r;r |- x;y"   and suppose r is both surjective.
+      --  ass =  [ r;s , r;r ]
+      --  css =  [ x;y ]
        move :: [Expression] -> [Expression] -> [([Expression],[Expression])]
-       move [] css = [([EDcI (target (last css))],css)]
+       move [] css = [] -- was [([EDcI (target (last css))],css)]
        move ass css
         = (ass,css):
           if and [ (not.isEDcI) as | as<-ass]
@@ -461,6 +467,11 @@ while maintaining all invariants.
                    , isTot l
                    , ts<-move (map initECps ass) [cs.:.flp l |cs<-css]]     -- is dit goed? cs.:.flp l wordt links zwaar, terwijl de normalisator rechts zwaar maakt.
           else []
+      -- Here is (informally) what the example does:
+      -- move [ r;s , r;r ] [ x;y ]
+      -- ( [ r;s , r;r ] , [ x;y ] ): move [ s , r ] [ r~;x;y ]
+      -- ( [ r;s , r;r ] , [ x;y ] ): ( [ s , r ]  , [ r~;x;y ] ) : []
+      -- [ [ r;s , r;r ] , [ x;y ] ), ( [ s , r ]  , [ r~;x;y ] ) ]
        diagnostic
          = "\n  antcs: [ "++intercalate "\n         , " [showADL a | a<-antcs ]++"\n       ]"++
            "\n  conss: [ "++intercalate "\n         , " [showADL c | c<-conss ]++"\n       ]"++
@@ -597,11 +608,11 @@ while maintaining all invariants.
    conjuncts :: Rule -> [HornClause]
    conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
    disjuncts :: Expression -> HornClause
-   disjuncts conj = (f.split ([],[]).exprUni2list) conj
-    where split (antc, cons) (ECpl e: rest) = split (e:antc, cons) rest
-          split (antc, cons) (     e: rest) = split (antc, e:cons) rest
-          split (antc, cons) []             = (antc, cons)
-          f (antcs, conss) = Hc antcs conss
+   disjuncts conj = (split (Hc [] []).exprUni2list) conj
+    where split :: HornClause -> [Expression] -> HornClause
+          split (Hc antc cons) (ECpl e: rest) = split (Hc (e:antc) cons) rest
+          split (Hc antc cons) (     e: rest) = split (Hc antc (e:cons)) rest
+          split hc             []             = hc
 
 -- | Action semantics for inserting a delta into a relation dcl.
    actSem :: InsDel -> Declaration -> Expression -> Expression
