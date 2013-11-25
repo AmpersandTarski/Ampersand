@@ -34,7 +34,7 @@ getGroups (ES1 tran _ imap)
  where
    iml :: [(Int,[(IntSet.IntSet,IntSet.IntSet)])]
    iml = IntMap.toList imap
-   (_, _, res) = foldr getLists (0, IntMap.empty, IntMap.empty) [(IntSet.insert a (IntSet.union b c)) | (a,bc) <- iml, (b,c)<-bc]
+   (_, _, res) = foldr getLists (0, IntMap.empty, IntMap.empty) ([(IntSet.insert a (IntSet.union b c)) | (a,bc) <- iml, (b,c)<-bc] ++ Map.elems tran)
    getLists :: IntSet.IntSet -> (Int, IntMap.IntMap Int, IntMap.IntMap (IntSet.IntSet)) -> (Int, IntMap.IntMap Int, IntMap.IntMap (IntSet.IntSet))
    getLists im (acc, allElems, rev) -- TODO: this might be made more efficiently by using Array as the last element
     = if not (IntMap.null overlap) then
