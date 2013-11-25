@@ -248,19 +248,19 @@ where
     showHS flags indent c
       = intercalate indent
           [ "Clauses{ cl_conjNF = [ "++intercalate (ind++", ") 
-                                       [ "( "++showHS flags (ind++"    ") e++ind++"  , "++showHS flags (ind++"   ") hornClauses++ind++"  )"
-                                       | (e,hornClauses)<-cl_conjNF c ]++ind++"]"
+                                       [ "( "++showHS flags (ind++"    ") e++ind++"  , "++showHS flags (ind++"   ") dnfClauses++ind++"  )"
+                                       | (e,dnfClauses)<-cl_conjNF c ]++ind++"]"
           , "       , cl_rule   = " ++ showHSName (cl_rule c)
           , "       }"
           ]
        where 
          ind = indent ++ "                     "
 
-   instance ShowHS HornClause where
-    showHS flags indent (Hc antcs conss)
+   instance ShowHS DnfClause where
+    showHS flags indent (Dnf antcs conss)
       = intercalate indent
-          [ wrap "Hc " (indent++"   ") (\_->showHS flags (indent++"   ")) antcs
-          , wrap "   " (indent++"   ") (\_->showHS flags (indent++"   ")) conss
+          [ wrap "Dnf " (indent++"   ") (\_->showHS flags (indent++"   ")) antcs
+          , wrap "    " (indent++"   ") (\_->showHS flags (indent++"   ")) conss
           ]
 
 
