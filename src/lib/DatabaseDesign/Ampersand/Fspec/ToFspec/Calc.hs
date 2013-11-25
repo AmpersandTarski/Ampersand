@@ -104,14 +104,14 @@ where
           , Str " and ", Str (show (length dnfClauses)), Str " dnf clauses."
           ]++
           [ inl
-          | hc<-dnfClauses, inl<-[LineBreak, Str "Dnf clause ", Str (showADL hc)]]
+          | dc<-dnfClauses, inl<-[LineBreak, Str "Dnf clause ", Str (showADL dc)]]
         | Quad rel ccrs<-qs, let r=cl_rule ccrs , (conj,dnfClauses)<-cl_conjNF ccrs ]
       ++
       [ LineBreak, Str "-- end ------------", LineBreak, LineBreak, Str "Second step: assemble dnf clauses."
       , LineBreak, Str "-- first dnf clause ------------", LineBreak]
       ++
       intercalate [LineBreak,Str "-- next dnf clause ------------",LineBreak]
-        [ [ Str "Dnf clause ", Str (showADL hc)
+        [ [ Str "Dnf clause ", Str (showADL dc)
           , LineBreak, Str "is derived from rule ", Str (showADL r)
           , LineBreak
           , Str ( case ms of
@@ -120,10 +120,10 @@ where
                   _     -> "It can be called when relations "++commaEng "or" [showADL rel | rel<-ms]++" are affected."
                 )
           ]
-          | (ms,hc,r)<-
-              [ (nub [ dcl |(dcl,_,_)<-cl],hc,r)
-              | cl<-eqCl (\(_,_,hc)->hc) [(dcl,hc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, (_,dnfClauses)<-cl_conjNF ccrs, hc<-dnfClauses]
-              , let (_,hc,r) = head cl
+          | (ms,dc,r)<-
+              [ (nub [ dcl |(dcl,_,_)<-cl],dc,r)
+              | cl<-eqCl (\(_,_,dc)->dc) [(dcl,dc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, (_,dnfClauses)<-cl_conjNF ccrs, dc<-dnfClauses]
+              , let (_,dc,r) = head cl
               ]
          ]
       ++
@@ -209,8 +209,8 @@ where
 ----                                 if not (visible rel) then Blk else
 --                                   let visible _ = True in genPAclause visible ev toExpr viols)
 --                                   [(conj,causes)]  -- the motivation for these actions
---                                | hc@(Dnf antcs conss) <- dnfClauses
---                                , let clause  = dnf2expr hc
+--                                | dc@(Dnf antcs conss) <- dnfClauses
+--                                , let clause  = dnf2expr dc
 --                                , let sgn     = sign clause
 --                                , let clause' = conjNF (subst (rel, actSem Ins rel (delta (sign rel))) clause)
 --                                , let step    = conjNF (notCpl clause .\/. clause')
@@ -311,7 +311,7 @@ where
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]
                                    , True ]  -- (isTrue.conjNF) (notCpl r .\/. r')
-                                  | r<-[hc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, hc<-dnfClauses]
+                                  | r<-[dc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, dc<-dnfClauses]
                                   ]
 -}
               where e = rrexp rule

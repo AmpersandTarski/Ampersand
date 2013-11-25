@@ -23,7 +23,12 @@ emptySystem = ES Map.empty IntMap.empty
 isInSystem :: (Ord a) => Op1EqualitySystem a -> a -> Bool
 isInSystem (ES1 t _ _) a = Map.member a t
 
-getGroups :: (Ord a, SetLike x) => Op1EqualitySystem a -> [x a]
+-- | getGroups: create groups of concepts (type variable: concept).
+--   1. Each concept is in precisely one group.
+--   2. Two concepts are in the same group if there is a path of classify-rules between those concepts.
+--   The purpose of this is to know whether two concepts are comparable or not. Atoms of concepts within a group can be compared.
+--   Atoms of concepts in different groups may never be compared.
+getGroups :: (Ord concept, SetLike set) => Op1EqualitySystem concept -> [set concept]
 getGroups (ES1 tran _ imap)
  = [fromList [a | (a,i) <- Map.toList tran, not . IntSet.null $ IntSet.intersection i r] | r <- IntMap.elems res]
  where

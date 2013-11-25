@@ -400,8 +400,8 @@ while maintaining all invariants.
           , "shiftR: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
           ] -}
      shiftL :: DnfClause -> [DnfClause]
-     shiftL hc@(Dnf antcs conss)
-      | null antcs || null conss = [hc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
+     shiftL dc@(Dnf antcs conss)
+      | null antcs || null conss = [dc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
       | otherwise                = [ Dnf ass (case css of
                                                [] -> let antcExpr = foldr1 (./\.) ass in
                                                      if source antcExpr==target antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
@@ -437,8 +437,8 @@ while maintaining all invariants.
       -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
 
      shiftR :: DnfClause -> [DnfClause]
-     shiftR hc@(Dnf antcs conss)
-      | null antcs || null conss = [hc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
+     shiftR dc@(Dnf antcs conss)
+      | null antcs || null conss = [dc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
       | otherwise                = [ Dnf (case ass of
                                            [] -> let consExpr = foldr1 (.\/.) css in
                                                  if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
@@ -514,9 +514,9 @@ while maintaining all invariants.
     = [] -- [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
       where
        -- the quads that are derived for this fSpec contain dnf clauses.
-       -- A dnf clause h that is generated from rule r contains the information how to restore the truth of r.
+       -- A dnf clause dc that is generated from rule r contains the information how to restore the truth of r.
        -- Suppose an insert or delete event on a relation rel has occurred and rel is used in rule r.
-       -- A restore action from dnf clause h will then restore the truth of r.
+       -- A restore action from dnf clause dc will then restore the truth of r.
        
        -- First, we harvest the quads from fSpec in quadruples.
        -- rel    is a relation that may be affected by an (insert- or delete-) event.
@@ -611,7 +611,7 @@ while maintaining all invariants.
     where split :: DnfClause -> [Expression] -> DnfClause
           split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
           split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
-          split hc             []             = hc
+          split dc             []             = dc
 
 -- | Action semantics for inserting a delta into a relation dcl.
    actSem :: InsDel -> Declaration -> Expression -> Expression

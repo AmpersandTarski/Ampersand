@@ -301,20 +301,18 @@ instance Traced A_Gen where
 smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 smallerConcepts gens cpt 
   = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller 
-  where oneSmaller = nub$[s | Isa _ g   s <- gens , g == cpt]
-                       ++[s | IsE _ rhs s <- gens , cpt `elem` rhs]
+  where oneSmaller = nub$[ genspc g | g@Isa{}<-gens, gengen g==cpt ]++[ genspc g | g@IsE{}<-gens, cpt `elem` genrhs g ]
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
 largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 largerConcepts gens cpt 
  = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
-  where oneLarger  = nub$[g | Isa _ g   s <- gens , s == cpt]
-                       ++concat[rhs | IsE _ rhs s <- gens , s == cpt] 
+  where oneLarger  = nub$[ gengen g | g@Isa{}<-gens, genspc g==cpt ]++[ c | g@IsE{}<-gens, genspc g==cpt, c<-genrhs g ] 
 
 -- | this function returns the most generic concepts in the class of a given concept
-rootConcepts :: [A_Gen]  -> A_Concept -> [A_Concept]
-rootConcepts gens cpt = [ root | root <- conceptsOfTheClass , root `notElem` map genspc gens]
-  where conceptsOfTheClass = nub$ scs ++concat [ largerConcepts gens c | c <- scs  ]
-        scs = smallerConcepts gens cpt
+rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
+rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gens cpt ] `uni` cpts
+                                , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
+                                ]
 
 data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
                      , ifcArgs ::   [[String]]
