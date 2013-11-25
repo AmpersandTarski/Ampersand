@@ -61,21 +61,22 @@ pCtx2aCtx
             , ctxlang = deflangCtxt
             , ctxmarkup = deffrmtCtxt
             , ctxthms = n3
-            , ctxpats = pats            --  The patterns defined in this context
-            , ctxprocs = procs          --  The processes defined in this context
-            , ctxrs = rules             --  All user defined rules in this context, outside the scope of patterns and processes
-            , ctxds = ctxDecls          --  The declarations defined in this context, outside the scope of patterns
-            , ctxpopus = udpops         --  The user defined populations of relations defined in this context, outside the scope of patterns and processes
-            , ctxcds = p_conceptdefs    --  The concept definitions defined in this context, outside the scope of patterns and processes
-            , ctxks = identdefs         --  The identity definitions defined in this context, outside the scope of patterns
-            , ctxvs = viewdefs          --  The view definitions defined in this context, outside the scope of patterns
+            , ctxpats = pats               --  The patterns defined in this context
+            , ctxprocs = procs             --  The processes defined in this context
+            , ctxrs = rules                --  All user defined rules in this context, outside the scope of patterns and processes
+            , ctxds = ctxDecls             --  The declarations defined in this context, outside the scope of patterns
+            , ctxpopus = udpops            --  The user defined populations of relations defined in this context, outside the scope of patterns and processes
+            , ctxcds = p_conceptdefs       --  The concept definitions defined in this context, outside the scope of patterns and processes
+            , ctxks = identdefs            --  The identity definitions defined in this context, outside the scope of patterns
+            , ctxvs = viewdefs             --  The view definitions defined in this context, outside the scope of patterns
             , ctxgs = map pGen2aGen p_gens --  The specialization statements defined in this context, outside the scope of patterns
-            , ctxifcs = interfaces      --  The interfaces defined in this context, outside the scope of patterns
-            , ctxps = purposes          --  The purposes of objects defined in this context, outside the scope of patterns
-            , ctxsql = sqldefs          --  user defined sqlplugs, taken from the Ampersand script
-            , ctxphp = phpdefs          --  user defined phpplugs, taken from the Ampersand script
-            , ctxmetas = p_metas
             , ctxgenconcs = map (map findConcept) (concGroups ++ map (:[]) soloConcs) --  A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
+                                           --  for each class<-ctxgenconcs context: c,c'<-class:   c `join` c' exists (although there is not necessarily a concept d=c `join` c'    ...)
+            , ctxifcs = interfaces         --  The interfaces defined in this context, outside the scope of patterns
+            , ctxps = purposes             --  The purposes of objects defined in this context, outside the scope of patterns
+            , ctxsql = sqldefs             --  user defined sqlplugs, taken from the Ampersand script
+            , ctxphp = phpdefs             --  user defined phpplugs, taken from the Ampersand script
+            , ctxmetas = p_metas
             }
     ) <$> traverse pPat2aPat p_patterns            --  The patterns defined in this context
       <*> traverse pProc2aProc p_processes         --  The processes defined in this context

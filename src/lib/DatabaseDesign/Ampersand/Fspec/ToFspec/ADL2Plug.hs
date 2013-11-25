@@ -42,7 +42,7 @@ makeGeneratedSqlPlugs flags context totsurs entityDcls = gTables
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
         gPlugs   = trace ("---\nStart makeEntityTables with "++show (length entityDcls)++" declarations and "++show(length vsqlplugs)++" userdefined plugs.\n") 
-                         (makeEntityTables flags entityDcls (ctxgenconcs context) (declsUsedIn vsqlplugs))
+                         (makeEntityTables flags entityDcls (ctxgs context) (ctxgenconcs context) (declsUsedIn vsqlplugs))
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable dcl totsurs
@@ -233,16 +233,18 @@ rel2fld kernel
 -----------------------------------------
 --makeEntityTables  (formerly called: makeTblPlugs)
 -----------------------------------------
-{- makeEntityTables computes a set of plugs to obtain wide tables with little redundancy.
-   It computes entities with their attributes.
+{- makeEntityTables computes a set of plugs to obtain tables in a transactional database with minimal redundancy.
+   We call them "wide tables".
+   makeEntityTables computes entities with their attributes.
    It is based on the principle that each concept is represented in at most one plug,
    and each relation in at most one plug.
    First, we determine the kernels for all plugs.
    A kernel contains the concept table(s) for all concepts that are administered in the same entity.
    For that, we collect all relations that are univalent, injective, and surjective (the kernel relations).
-   By the way, that includes all isa-relations, since they are univalent, injective, and surjective by definition.
+      By the way, that includes all isa-relations, since they are univalent, injective, and surjective by definition.
+      Since isa-relations are not declared explicitly, they are generated separately.
    If two concepts a and b are in the same entity, there is a concept g such that a isa g and b isa g.
-   Of all concepts in an entity, one most generic concept is designated as root.
+   Of all concepts in an entity, one most generic concept is designated as root, and is positioned in the first column of the table.
    Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
    These relations serve as attributes. Code:  [a| a<-attRels, source a `elem` concs kernel]
    Then, all these relations are made into fields. Code: plugFields = [rel2fld plugMors a| a<-plugMors]
@@ -255,34 +257,38 @@ rel2fld kernel
 -- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
 makeEntityTables :: Options 
                 -> [Declaration] -- ^ all relations in scope
-                -> [[A_Concept]] -- ^ concepts `belonging' together
+                -> [A_Gen]
+                -> [[A_Concept]] -- ^ concepts `belonging' together.
+                                 --   for each class<-conceptss: c,c'<-class:   c `join` c' exists (although there is not necessarily a concept d=c `join` c'    ...)
                 -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs. 
                 -> [PlugSQL]
-makeEntityTables flags allDcls concepts exclusions
- = trace 
-    ("\nallDcls:" ++concat ["\n  "++showHSName r | r<-allDcls]++
-     "\nallDcls:" ++concat ["\n  "++showHS flags "\n  " r | r<-allDcls]++
-     "\nconcepts:"++concat ["\n  "++showHS flags "    " cs | cs<-concepts]++
-     "\nexclusionts:" ++concat ["\n  "++showHSName r | r<-exclusions]++
-     "\nattRels:" ++concat ["\n  "++showHS flags "    " e | e<-attRels]++
---     "\nDistribution of Attributes:"++ concat ["\n   "++show dist | dist <-distributionOfAtts]++
-     "") $
-   sortWith ((0-).length.plugFields)
-    (map kernel2Plug distributionOfAtts)
+makeEntityTables flags allDcls isas conceptss exclusions
+ = sortWith ((0-).length.plugFields)
+    (map kernel2Plug kernelsWithAttributes)
    where
-    distributionOfAtts = dist attRels concepts []
+    diagnostics
+      = "\nallDcls:" ++     concat ["\n  "++showHSName r           | r<-allDcls]++
+        "\nallDcls:" ++     concat ["\n  "++showHS flags "\n  " r  | r<-allDcls]++
+        "\nconceptss:" ++   concat ["\n  "++showHS flags "    " cs | cs<-conceptss]++
+        "\nexclusions:" ++  concat ["\n  "++showHSName r           | r<-exclusions]++
+        "\nattRels:" ++     concat ["\n  "++showHS flags "    " e  | e<-attRels]++
+        "\n"
+    rootss = map (rootConcepts isas) conceptss
+    kernels = [ roots++(nub.concat) [ smallerConcepts isas c | c <- roots ]
+              | roots<-rootss ]
+    kernelsWithAttributes = dist attRels kernels []
       where 
         dist :: (Association attrib, Show attrib) => [attrib] -> [[A_Concept]] -> [([A_Concept], [attrib])] -> [([A_Concept], [attrib])]
         dist []   []     result = result
-        dist atts []     _      = fatal 246 ("No kernel found for atts: "++show atts)
-        dist atts (k:ks) result = dist otherAtts ks ([(k,attsOfK)] ++ result)
+        dist atts []     _      = fatal 246 ("No kernel found for atts: "++show atts++"\n"++diagnostics)
+        dist atts (kernel:ks) result = dist otherAtts ks ([(kernel,attsOfK)] ++ result)
            where (attsOfK,otherAtts) = partition belongsInK atts
-                 belongsInK att = source att `elem` k
+                 belongsInK att = source att `elem` kernel
     -- | converts a kernel into a plug
     kernel2Plug :: ([A_Concept],[Expression]) -> PlugSQL
     kernel2Plug (kernel, attsAndIsaRels)
      =  TblSQL 
-             { sqlname = name (head 289 (head 288 concepts))
+             { sqlname = name (head 289 (head 288 conceptss))
              , fields  = map fld plugMors      -- Each field comes from a relation.
              , cLkpTbl = conceptLookuptable
              , mLkpTbl = attributeLookuptable ++ isaLookuptable

@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE TypeSynonymInstances , OverlappingInstances #-}
 module DatabaseDesign.Ampersand.ADL1.Expression (
-                       subst -- SJ 18 nov 2013: obsolete? ,subsi
+                       subst
                       ,foldlMapExpression,foldrMapExpression
                       ,primitives,isMp1
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl)
@@ -39,59 +39,6 @@ subst (decl,expr) = subs
        subs e@EEps{}     = e
        subs e@EDcV{}     = e
        subs e@EMp1{}     = e
-
--- | This function is used to replace the n-th occurrence of a relation
---   (counting from the left) with an expression.
---   The parameter f will therefore be applied to an
---   expression of the form Erel rel.
-subsi :: Int -> (Expression -> Expression) -> Expression -> Expression
-subsi n f expr = expr'
-       where
-         (expr',_) = subs 1 expr
-         subs :: Int -> Expression -> (Expression, Int)
-         subs i (EEqu (l,r)) = (EEqu (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (EImp (l,r)) = (EImp (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (EIsc (l,r)) = (EIsc (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (EUni (l,r)) = (EUni (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (EDif (l,r)) = (EDif (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (ELrs (l,r)) = (ELrs (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (ERrs (l,r)) = (ERrs (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (ECps (l,r)) = (ECps (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (ERad (l,r)) = (ERad (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (EPrd (l,r)) = (EPrd (l',r'), i'')
-                               where (l',i')  = subs i l
-                                     (r',i'') = subs i' r
-         subs i (EKl0 x)     = (EKl0 x', i') where (x',i') = subs i x
-         subs i (EKl1 x)     = (EKl1 x', i') where (x',i') = subs i x 
-         subs i (EFlp x)     = (EFlp x', i') where (x',i') = subs i x 
-         subs i (ECpl x)     = (ECpl x', i') where (x',i') = subs i x 
-         subs i (EBrk x)     = (EBrk x', i') where (x',i') = subs i x 
-         subs i x@EDcD{} | i==n      = (f x, i+1)
-                         | otherwise = (x, i+1)
-         subs i x@EDcI{} | i==n      = (f x, i+1)
-                         | otherwise = (x, i+1)
-         subs i x@EEps{}             = (x, i)
-         subs i x@EDcV{} | i==n      = (f x, i+1)
-                         | otherwise = (x, i+1)
-         subs i x@EMp1{}             = (x,i)
 
 foldlMapExpression :: (a -> r -> a) -> (Declaration->r) -> a -> Expression -> a
 foldlMapExpression f = foldrMapExpression f' where f' x y = f y x

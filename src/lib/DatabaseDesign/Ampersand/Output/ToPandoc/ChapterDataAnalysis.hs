@@ -746,11 +746,11 @@ daBasicsSection lev fSpec flags = theBlocks
                                 then BulletList [(pandocEqnArrayOnelabel "" . showLatex . toPredLogic) e | e<-es ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
-          where irs = [ dnf2expr hc
+          where irs = [ dnf2expr dc
                       | Quad r ccrs<-vquads fSpec
                       , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
                       , (_,dnfClauses)<-cl_conjNF ccrs
-                      , hc@(Dnf [EDcD nega] _)<-dnfClauses
+                      , dc@(Dnf [EDcD nega] _)<-dnfClauses
                       , r==nega
                       ]
                 pcpts = case p of
