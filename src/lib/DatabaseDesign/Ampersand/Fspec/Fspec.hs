@@ -26,7 +26,7 @@ module DatabaseDesign.Ampersand.Fspec.Fspec
           , SqlType(..)
           , SqlFieldUsage(..)
           , getGeneralizations, getSpecializations
-          , HornClause(..), horn2expr, events
+          , DnfClause(..), dnf2expr, events
           )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree
@@ -265,7 +265,7 @@ events paClause = nub (evs paClause)
            Ref{} -> fatal 306 "events for Ref undetermined"
 
    -- The data structure Clauses is meant for calculation purposes.
-   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, hornClauses)<-cl_conjNF cl, disj<-[conj!!i]]
+   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to EIsc [EUni disj | (conj, dnfClauses)<-cl_conjNF cl, disj<-[conj!!i]]
    -- Every rule is transformed to this form, as a step to derive eca-rules
 instance Eq PAclause where
    CHC ds _ == CHC ds' _ = ds==ds'
@@ -277,21 +277,21 @@ instance Eq PAclause where
    _ == _ = False
 
 
-data HornClause = Hc [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
+data DnfClause = Dnf [Expression] [Expression] deriving (Show, Eq) -- Show is for debugging purposes only.
 
 --
-horn2expr :: HornClause -> Expression
-horn2expr hc@(Hc antcs conss)
+dnf2expr :: DnfClause -> Expression
+dnf2expr hc@(Dnf antcs conss)
  = case (antcs, conss) of
-    ([],[]) -> fatal 327 "empty Horn clause"
+    ([],[]) -> fatal 327 "empty dnf clause"
     ([],_ ) -> foldr1 (.\/.) conss
     (_ ,[]) -> notCpl (foldr1 (./\.) antcs)
     (_ ,_ ) -> notCpl (foldr1 (./\.) antcs) .\/. (foldr1 (.\/.) conss)
 
 data Clauses  = Clauses
                   { cl_conjNF :: [(Expression
-                                  ,[HornClause])]   -- The list of pairs (conj, hornClauses) in which conj is a conjunct of the rule
-                                                    -- and hornClauses contains all derived expressions to be used for eca-rule construction.
+                                  ,[DnfClause])]   -- The list of pairs (conj, dnfClauses) in which conj is a conjunct of the rule
+                                                    -- and dnfClauses contains all derived expressions to be used for eca-rule construction.
                   , cl_rule :: Rule -- The rule that is restored by this clause (for traceability purposes)
                   }
 instance Eq Clauses where
@@ -301,10 +301,10 @@ instance Eq Clauses where
    showClauses :: Fspc -> Clauses -> String
    showClauses _ cl
     = "\nRule: "++showADL (cl_rule cl) ++concat
-       [if null hornClauses then "\nNo clauses" else
+       [if null dnfClauses then "\nNo clauses" else
         "\nConjunct: "++showADL conj++
-        concat ["\n   Clause: "++showADL clause | clause<-hornClauses]
-       | (conj, hornClauses)<-cl_conjNF cl]
+        concat ["\n   Clause: "++showADL clause | clause<-dnfClauses]
+       | (conj, dnfClauses)<-cl_conjNF cl]
 -}
 
 data FPA = FPA { fpType :: FPtype

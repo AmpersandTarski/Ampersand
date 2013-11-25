@@ -15,7 +15,7 @@ where
    import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.ADL1.Expression                 (subst,isNeg)
    import DatabaseDesign.Ampersand.Classes
-   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Quad(..),ECArule(..),InsDel(..),PAclause(..), HornClause(..), horn2expr)
+   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..),Clauses(..),Quad(..),ECArule(..),InsDel(..),PAclause(..), DnfClause(..), dnf2expr)
    import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
    import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
    import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
@@ -101,17 +101,17 @@ where
           , LineBreak, Str (showADL r)
           ]++ (if length (cl_conjNF ccrs)<=1 then [Space] else [Str " (", Str (show (length (cl_conjNF ccrs))), Str " conjuncts)"]) ++
           [ Str " must be restored.", LineBreak, Str "This quad has conjunct: ", Str (showADL conj)
-          , Str " and ", Str (show (length hornClauses)), Str " Horn clauses."
+          , Str " and ", Str (show (length dnfClauses)), Str " dnf clauses."
           ]++
           [ inl
-          | hc<-hornClauses, inl<-[LineBreak, Str "Horn clause ", Str (showADL hc)]]
-        | Quad rel ccrs<-qs, let r=cl_rule ccrs , (conj,hornClauses)<-cl_conjNF ccrs ]
+          | hc<-dnfClauses, inl<-[LineBreak, Str "Dnf clause ", Str (showADL hc)]]
+        | Quad rel ccrs<-qs, let r=cl_rule ccrs , (conj,dnfClauses)<-cl_conjNF ccrs ]
       ++
-      [ LineBreak, Str "-- end ------------", LineBreak, LineBreak, Str "Second step: assemble horn clauses."
-      , LineBreak, Str "-- first Horn clause ------------", LineBreak]
+      [ LineBreak, Str "-- end ------------", LineBreak, LineBreak, Str "Second step: assemble dnf clauses."
+      , LineBreak, Str "-- first dnf clause ------------", LineBreak]
       ++
-      intercalate [LineBreak,Str "-- next Horn clause ------------",LineBreak]
-        [ [ Str "Horn clause ", Str (showADL hc)
+      intercalate [LineBreak,Str "-- next dnf clause ------------",LineBreak]
+        [ [ Str "Dnf clause ", Str (showADL hc)
           , LineBreak, Str "is derived from rule ", Str (showADL r)
           , LineBreak
           , Str ( case ms of
@@ -122,7 +122,7 @@ where
           ]
           | (ms,hc,r)<-
               [ (nub [ dcl |(dcl,_,_)<-cl],hc,r)
-              | cl<-eqCl (\(_,_,hc)->hc) [(dcl,hc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, (_,hornClauses)<-cl_conjNF ccrs, hc<-hornClauses]
+              | cl<-eqCl (\(_,_,hc)->hc) [(dcl,hc,r) |Quad dcl ccrs<-qs, let r=cl_rule ccrs, (_,dnfClauses)<-cl_conjNF ccrs, hc<-dnfClauses]
               , let (_,hc,r) = head cl
               ]
          ]
@@ -192,11 +192,11 @@ where
       -}
       where 
   --     visible _  = True -- We take all quads into account.
-       qs         = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
+       qs         = vquads fSpec  -- the quads that are derived for this fSpec specify dnf clauses, meant to maintain rule r, to be called when relation rel is affected (rel is in r).
           --   assembleECAs :: (Relation Concept->Bool) -> [Quad] -> [ECArule]
        ecaRs      = assembleECAs qs  -- this creates all ECA rules from the available quads. They are still raw (unoptimized).
 
-  --     relEqCls = eqCl fst4 [(rel,hornClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
+  --     relEqCls = eqCl fst4 [(rel,dnfClauses,conj,cl_rule ccrs) | Quad rel ccrs<-qs, (conj,dnfClauses)<-cl_conjNF ccrs]
 --  This is what ADL2Fpsec has to say about computing ECA rules:
 --       ecas
 --        = [ ECA (On ev rel) delt act
@@ -209,8 +209,8 @@ where
 ----                                 if not (visible rel) then Blk else
 --                                   let visible _ = True in genPAclause visible ev toExpr viols)
 --                                   [(conj,causes)]  -- the motivation for these actions
---                                | hc@(Hc antcs conss) <- hornClauses
---                                , let clause  = horn2expr hc
+--                                | hc@(Dnf antcs conss) <- dnfClauses
+--                                , let clause  = dnf2expr hc
 --                                , let sgn     = sign clause
 --                                , let clause' = conjNF (subst (rel, actSem Ins rel (delta (sign rel))) clause)
 --                                , let step    = conjNF (notCpl clause .\/. clause')
@@ -226,9 +226,9 @@ where
 --                                               else conjNF (notCpl negs)
 --                                ]
 --                                [(conj,causes)]  -- to supply motivations on runtime
---                          | conjEq <- eqCl snd3 [(hornClauses,conj,rule) | (_,hornClauses,conj,rule)<-relEq]
+--                          | conjEq <- eqCl snd3 [(dnfClauses,conj,rule) | (_,dnfClauses,conj,rule)<-relEq]
 --                          , let causes          = nub (map thd3 conjEq)
---                          , let (hornClauses,conj,_) = head conjEq
+--                          , let (dnfClauses,conj,_) = head conjEq
 --                          ]
 --                          [(conj,nub [r |(_,_,_,r)<-cl]) | cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
 --          ]
@@ -247,9 +247,9 @@ where
            [ LineBreak, Str "Violations are computed by (disjNF . ECpl . normexpr) rule:\n     " ]++
            (disjProof. notCpl. rrexp) rule++[ LineBreak, LineBreak ] ++
            concat [ [LineBreak, Str "Conjunct: ", Space, Space, Space, Space, Space, Str (showADL conjunct)]++
-                    concat [ [LineBreak, Str "This conjunct has ", Str (show (length hornClauses)), Str " clauses:"] | length hornClauses>1 ]++
-                    concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-hornClauses]++[ LineBreak]++
-                    concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length hornClauses>1 ]++
+                    concat [ [LineBreak, Str "This conjunct has ", Str (show (length dnfClauses)), Str " clauses:"] | length dnfClauses>1 ]++
+                    concat [ [LineBreak, Str "   Clause: ", Str (showADL clause)] | clause<-dnfClauses]++[ LineBreak]++
+                    concat [ [LineBreak, Str "For each clause, let us analyse the insert- and delete events."] | length dnfClauses>1 ]++
                     concat [ [LineBreak, Str "   Clause: ", Str (showADL clause), Str " may be affected by the following events:",LineBreak]++
                              concat [ [Str "event = ", Str (show ev), Space, Str (showADL dcl), Str " means doing the following substitution", LineBreak ] ++
                                       [Str (showADL clause++"["++showADL dcl++":="++showADL (actSem ev dcl (delta (sign dcl)))++"] = clause'"), LineBreak ] ++
@@ -275,9 +275,9 @@ where
                         --                           then conjNF poss
                         --                           else conjNF (notCpl negs)
                                     ]
-                           | clause@(Hc antcs conss) <- hornClauses
-                           , let expr = horn2expr clause, let sgn = sign expr ]
-                  | let Clauses ts r = allClauses flags rule, (conjunct, hornClauses)<-ts] ++
+                           | clause@(Dnf antcs conss) <- dnfClauses
+                           , let expr = dnf2expr clause, let sgn = sign expr ]
+                  | let Clauses ts r = allClauses flags rule, (conjunct, dnfClauses)<-ts] ++
            [LineBreak]
 {-
            [ Str ("Available code fragments on rule "++name rule++":", LineBreak ]++
@@ -311,7 +311,7 @@ where
                                    , r'<-[subst (rel, actSem ev rel (delta (sign rel))) r]
                         --        , viols<-[conjNF (ECpl r')]
                                    , True ]  -- (isTrue.conjNF) (notCpl r .\/. r')
-                                  | r<-[hc | cs<-[allClauses flags rule], (_,hornClauses)<-cl_conjNF cs, hc<-hornClauses]
+                                  | r<-[hc | cs<-[allClauses flags rule], (_,dnfClauses)<-cl_conjNF cs, hc<-dnfClauses]
                                   ]
 -}
               where e = rrexp rule

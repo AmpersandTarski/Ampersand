@@ -283,8 +283,8 @@ instance ShowADL Expression where
           showchar (EDcV sgn)   = "V"++lbr++name (source sgn)++star++name (target sgn)++rbr
           showchar (EMp1 a c)   = "'"++a++"'"++lbr++name c++rbr
 
-instance ShowADL HornClause where
- showADL hornClause = showADL (horn2expr hornClause)
+instance ShowADL DnfClause where
+ showADL dnfClause = showADL (dnf2expr dnfClause)
 
 {- SJ May 9th, 2013 @Han
 WHY is it forbidden to apply showADL to declarations that were not user defined?

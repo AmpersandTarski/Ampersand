@@ -97,10 +97,9 @@ module DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
         totsurs :: [Expression]
         totsurs
          = nub [rel | q<-quads flags visible (invariants context), isIdent (qDcl q)
-                    , (conj,hornClauses)<-cl_conjNF (qClauses q), Hc antcs conss<-hornClauses
-                    , let antc = -- seq (fatal 101 ("SJC 24 Nov: Hey Stef / Han, I located a bug, it is here, in the next bit, because it is not type correct.\nantcs:"++show antcs++"\nconss:"++show conss)) $
-                                 conjNF (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
-                    , isRfx antc -- We now know that I is a subset of the antecedent of this Horn clause.
+                    , (conj,dnfClauses)<-cl_conjNF (qClauses q), Dnf antcs conss<-dnfClauses
+                    , let antc = conjNF (foldr (./\.) (EDcV (sign (head (antcs++conss)))) antcs)
+                    , isRfx antc -- We now know that I is a subset of the antecedent of this dnf clause.
                     , cons<-map exprCps2list conss
                -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
                     , rel<-init cons++[flp r | r<-tail cons]
@@ -375,12 +374,12 @@ while maintaining all invariants.
 --            , qRule = rule
 --            , debugStr = (show.conjNF .rrexp) rule -- "LOOP detected in:  ((show.conjuncts) rule) => (show.conjNF.rrexp) rule => show.cfProof (\_->"") .rrexp) rule"
 --            }
-    = [ Quad d (Clauses [ (horn2expr conj,allShifts flags conj)
-                        | conj<-conjuncts rule  -- conj :: HornClause. It has the form Hc antcs conss
+    = [ Quad d (Clauses [ (dnf2expr conj,allShifts flags conj)
+                        | conj<-conjuncts rule  -- conj :: DnfClause. It has the form  Dnf antcs conss
       --                , (not.null.lambda Ins (ERel r ??)) conj  -- causes infinite loop
       --                , not (checkMono conj Ins r)         -- causes infinite loop
       --                , let conj' = subst (r, actSem Ins r (delta (sign r))) conj
-      --                , (not.isTrue.hornClauseNF) (notCpl conj .\/. conj') -- the system must act to restore invariance     
+      --                , (not.isTrue.dnfClauseNF) (notCpl conj .\/. conj') -- the system must act to restore invariance     
                         ]
                         rule)
       | rule<-rs, d<- declsUsedIn rule, visible d
@@ -388,9 +387,9 @@ while maintaining all invariants.
 
 -- The function allClauses yields an expression which has constructor EUni in every case.
    allClauses :: Options -> Rule -> Clauses
-   allClauses flags rule = Clauses [(horn2expr hornClause,allShifts flags hornClause) | hornClause<-conjuncts rule] rule
+   allClauses flags rule = Clauses [(dnf2expr dnfClause,allShifts flags dnfClause) | dnfClause<-conjuncts rule] rule
 
-   allShifts :: Options -> HornClause -> [HornClause]
+   allShifts :: Options -> DnfClause -> [DnfClause]
    allShifts flags conjunct = nub [ e'| e'<-shiftL conjunct++shiftR conjunct]
 -- allShifts conjunct = error $ show conjunct++concat [ "\n"++show e'| e'<-shiftL conjunct++shiftR conjunct] -- for debugging
     where
@@ -400,14 +399,14 @@ while maintaining all invariants.
           [ "shiftL: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftL conjunct    ]++"\n          ]"
           , "shiftR: [ "++intercalate "\n          , " [showHS flags "\n            " e | e<-shiftR conjunct    ]++"\n          ]"
           ] -}
-     shiftL :: HornClause -> [HornClause]
-     shiftL hc@(Hc antcs conss)
+     shiftL :: DnfClause -> [DnfClause]
+     shiftL hc@(Dnf antcs conss)
       | null antcs || null conss = [hc] --  shiftL doesn't work here. This is just to make sure that both antss and conss are really not empty
-      | otherwise                = [ Hc ass (case css of
-                                              [] -> let antcExpr = foldr1 (./\.) ass in
-                                                    if source antcExpr==target antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
-                                              _  -> css
-                                            )
+      | otherwise                = [ Dnf ass (case css of
+                                               [] -> let antcExpr = foldr1 (./\.) ass in
+                                                     if source antcExpr==target antcExpr then [EDcI (source antcExpr)] else fatal 425 "antcExpr should be endorelation"
+                                               _  -> css
+                                             )
                                    | (ass,css)<-nub (move antcs conss)
                                    ]
       where
@@ -437,14 +436,14 @@ while maintaining all invariants.
       -- ( [ r;s , p;r ] , [ x;y ] ): ( [ x~;r;s , x~;p;r ] , [ y ] ): [ [ y~;x~;r;s , y~;x~;p;r ] , [] ] ]
       -- [ ( [ r;s , p;r ] , [ x;y ] ), ( [ x~;r;s , x~;p;r ] , [ y ] ), ( [ y~;x~;r;s , y~;x~;p;r ] , [] ) ]
 
-     shiftR :: HornClause -> [HornClause]
-     shiftR hc@(Hc antcs conss)
+     shiftR :: DnfClause -> [DnfClause]
+     shiftR hc@(Dnf antcs conss)
       | null antcs || null conss = [hc] --  shiftR doesn't work here. This is just to make sure that both antss and conss are really not empty
-      | otherwise                = [ Hc (case ass of
-                                          [] -> let consExpr = foldr1 (.\/.) css in
-                                                if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
-                                          _  -> ass
-                                        ) css
+      | otherwise                = [ Dnf (case ass of
+                                           [] -> let consExpr = foldr1 (.\/.) css in
+                                                 if source consExpr==target consExpr then [EDcI (source consExpr)] else fatal 463 "consExpr should be endorelation"
+                                           _  -> ass
+                                         ) css
                                    | (ass,css)<-nub (move antcs conss)
                                    ]
       where
@@ -514,19 +513,19 @@ while maintaining all invariants.
    assembleECAs qs
     = [] -- [er{ecaAction=normPA (ecaAction er)} | (ecarule,i) <- zip ecas [(1::Int)..], let er=ecarule i]
       where
-       -- the quads that are derived for this fSpec contain horn clauses.
-       -- A Horn clause h that is generated from rule r contains the information how to restore the truth of r.
+       -- the quads that are derived for this fSpec contain dnf clauses.
+       -- A dnf clause h that is generated from rule r contains the information how to restore the truth of r.
        -- Suppose an insert or delete event on a relation rel has occurred and rel is used in rule r.
-       -- A restore action from Horn clause h will then restore the truth of r.
+       -- A restore action from dnf clause h will then restore the truth of r.
        
        -- First, we harvest the quads from fSpec in quadruples.
        -- rel    is a relation that may be affected by an (insert- or delete-) event.
-       -- hornClauses is a set of Horn clauses that can restore the truth of conj after rel has been affected.
+       -- dnfClauses is a set of dnf clauses that can restore the truth of conj after rel has been affected.
        -- conj   is an expression that must remain true at all times.
        -- rul    is the rule from which the above have been derived (for traceability)
        -- these quadruples are organized per relation.
-       -- This puts together all Horn clauses we need for each relation.
-       relEqCls = eqCl fst4 [(dcl,hornClauses,conj,cl_rule ccrs) | Quad dcl ccrs<-qs, (conj,hornClauses)<-cl_conjNF ccrs]
+       -- This puts together all dnf clauses we need for each relation.
+       relEqCls = eqCl fst4 [(dcl,dnfClauses,conj,cl_rule ccrs) | Quad dcl ccrs<-qs, (conj,dnfClauses)<-cl_conjNF ccrs]
        -- The eca rules can now be assembled from the available material
        ecas
         = [ ECA (On ev dcl) delt act
@@ -539,9 +538,9 @@ while maintaining all invariants.
 --                                 if not (visible rel) then Blk else
                                    let visible _ = True in genPAclause visible ev toExpr viols
                                   ) [(conj,causes)]  -- the motivation for these actions
-                                | clause@(Hc antcs conss) <- hornClauses
-                                , let expr    = horn2expr clause
-                                , let sgn     = sign expr -- different horn clauses may have different signatures
+                                | clause@(Dnf antcs conss) <- dnfClauses
+                                , let expr    = dnf2expr clause
+                                , let sgn     = sign expr -- different dnf clauses may have different signatures
                                 , let clause' = conjNF (subst (dcl, actSem ev dcl (delta (sign dcl))) expr)
                                 , let step    = conjNF (notCpl expr .\/. clause')
                                 , let viols   = conjNF (notCpl clause')
@@ -556,9 +555,9 @@ while maintaining all invariants.
                                                else conjNF (notCpl negs)
                                 ]
                                 [(conj,causes)]  -- to supply motivations on runtime
-                          | conjEq <- eqCl snd3 [(hornClauses,conj,rule) | (_,hornClauses,conj,rule)<-relEq]
+                          | conjEq <- eqCl snd3 [(dnfClauses,conj,rule) | (_,dnfClauses,conj,rule)<-relEq]
                           , let causes               = nub (map thd3 conjEq)
-                          , let (hornClauses,conj,_) = head conjEq
+                          , let (dnfClauses,conj,_) = head conjEq
                           ]
                           [(conj,nub [r |(_,_,_,r)<-cl]) | cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
           ]
@@ -605,13 +604,13 @@ while maintaining all invariants.
      cascade rel (ALL ds m)       = (any (fst.cascade rel) ds, ALL (map (snd.cascade rel) ds) m)
      cascade  _  (Nop m)          = (False, Nop m)
      cascade  _  (Blk m)          = (False, Blk m)
-   conjuncts :: Rule -> [HornClause]
+   conjuncts :: Rule -> [DnfClause]
    conjuncts = map disjuncts.exprIsc2list.conjNF.rrexp
-   disjuncts :: Expression -> HornClause
-   disjuncts conj = (split (Hc [] []).exprUni2list) conj
-    where split :: HornClause -> [Expression] -> HornClause
-          split (Hc antc cons) (ECpl e: rest) = split (Hc (e:antc) cons) rest
-          split (Hc antc cons) (     e: rest) = split (Hc antc (e:cons)) rest
+   disjuncts :: Expression -> DnfClause
+   disjuncts conj = (split (Dnf [] []).exprUni2list) conj
+    where split :: DnfClause -> [Expression] -> DnfClause
+          split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest
+          split (Dnf antc cons) (     e: rest) = split (Dnf antc (e:cons)) rest
           split hc             []             = hc
 
 -- | Action semantics for inserting a delta into a relation dcl.

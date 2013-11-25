@@ -612,7 +612,7 @@ daBasicsSection lev fSpec flags = theBlocks
 -- the endo-properties have already been reported in the general section of this chapter.
 {-     where
 --  voorgestelde multipliciteitenanalyse....
-      clauses = nub [clause | Quad _ ccrs<-vquads fSpec, (_,hornClauses)<-cl_conjNF ccrs, clause<-hornClauses]
+      clauses = nub [clause | Quad _ ccrs<-vquads fSpec, (_,dnfClauses)<-cl_conjNF ccrs, clause<-dnfClauses]
       is = nub [r | EUni fus<-clauses
                   , isIdent (EIsc [notCpl f | f<-fus, isPos f] sgn)
                   , f<-filter isNeg fus
@@ -746,11 +746,11 @@ daBasicsSection lev fSpec flags = theBlocks
                                 then BulletList [(pandocEqnArrayOnelabel "" . showLatex . toPredLogic) e | e<-es ]
                                 else BulletList [ [Para [Math DisplayMath $ showMath e]] | e<-es ]
                               ]
-          where irs = [ horn2expr hc
+          where irs = [ dnf2expr hc
                       | Quad r ccrs<-vquads fSpec
                       , r_usr (cl_rule ccrs)==UserDefined, isIdent r, source r `elem` pcpts
-                      , (_,hornClauses)<-cl_conjNF ccrs
-                      , hc@(Hc [EDcD nega] _)<-hornClauses
+                      , (_,dnfClauses)<-cl_conjNF ccrs
+                      , hc@(Dnf [EDcD nega] _)<-dnfClauses
                       , r==nega
                       ]
                 pcpts = case p of
