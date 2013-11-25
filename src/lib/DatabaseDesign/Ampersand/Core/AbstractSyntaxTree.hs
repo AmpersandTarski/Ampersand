@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand.Core.AbstractSyntaxTree (
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from DatabaseDesign.Ampersand.Core.Poset when needed
  , (<==>),join,meet,greatest,least,maxima,minima,sortWith 
- , smallerConcepts, largerConcepts, rootConcept
+ , smallerConcepts, largerConcepts, rootConcepts
  , showSign
  , aMarkup2String
  , insParentheses
@@ -310,12 +310,11 @@ largerConcepts gens cpt
   where oneLarger  = nub$[g | Isa _ g   s <- gens , s == cpt]
                        ++concat[rhs | IsE _ rhs s <- gens , s == cpt] 
 
--- | this function returns the most generic concept in the class of a given concept
-rootConcept :: [A_Gen]  -> A_Concept -> A_Concept
-rootConcept gens cpt
- = case largerConcepts gens cpt of
-     []    -> cpt
-     (g:_) -> rootConcept gens g
+-- | this function returns the most generic concepts in the class of a given concept
+rootConcepts :: [A_Gen]  -> A_Concept -> [A_Concept]
+rootConcepts gens cpt = [ root | root <- conceptsOfTheClass , root `notElem` map genspc gens]
+  where conceptsOfTheClass = nub$ scs ++concat [ largerConcepts gens c | c <- scs  ]
+        scs = smallerConcepts gens cpt
 
 data Interface = Ifc { ifcParams :: [Expression] -- Only primitive expressions are allowed!
                      , ifcArgs ::   [[String]]
