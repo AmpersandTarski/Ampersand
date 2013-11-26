@@ -169,14 +169,3 @@ mergeContexts (PCtx nm1 pos1 lang1 markup1 thms1 pats1 pprcs1 rs1 ds1 cs1 ks1 vs
       , ctx_metas = metas1 ++ metas2
       }
 
-{-
--- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> Guarded (Term PrimTerm)
-parseADL1pExpr filename input = 
-  let scanner = scan keywordstxt keywordsops specialchars opchars filename initPos
-      steps :: Steps (Pair Term (Pair [Token] a)) Token
-      steps = parse pTerm $ scanner input
-  in  case  getMsgs steps of
-        []   -> Checked $ let Pair result _ = evalSteps steps in result
-        msgs -> Errors (map PE msgs)
--}

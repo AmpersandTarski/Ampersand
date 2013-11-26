@@ -11,7 +11,6 @@ import Data.Char
 import System.Directory
 import System.FilePath
 import DatabaseDesign.Ampersand.Input.ADL1.Parser (pContext,pPopulations,pTerm,keywordstxt, keywordsops, specialchars, opchars)
-import qualified DatabaseDesign.Ampersand.Input.ADL1.LegacyParser as LegacyParser
 import DatabaseDesign.Ampersand.Misc
 import DatabaseDesign.Ampersand.Basics
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner -- (scan,initPos)
@@ -69,7 +68,7 @@ parsePopulations popsstring flags fn =
     }
                     
 -- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> IO Term
+parseADL1pExpr :: String -> String -> IO (Term TermPrim)
 parseADL1pExpr pexprstr fn = 
   case parseExpr pexprstr fn Current of
     Right res -> return res
@@ -196,7 +195,6 @@ parseSingleADL :: ParserVersion -- ^ The specific version of the parser to be us
 parseSingleADL pv str fn =
   case pv of
       Current  -> runParser pv pContext                              fn str
-      Legacy  -> runParser pv (addEmptyIncludes <$> LegacyParser.pContext) fn str
  where addEmptyIncludes parsedContext = (parsedContext, []) -- the old parsed does not support include filenames, so we add an empty list
 
 
@@ -214,7 +212,7 @@ parsePops str fn pv =
 parseExpr :: String            -- ^ The string to be parsed
           -> String            -- ^ The name of the .pop file (used for error messages)
           -> ParserVersion     -- ^ The specific version of the parser to be used
-          -> Either String Term -- ^ The result: Either a list of populations, or some errors. 
+          -> Either String (Term TermPrim)  -- ^ The result: Either a list of populations, or some errors. 
 parseExpr str fn pv =
     case runParser pv pTerm fn str of
       Right result -> Right result
@@ -225,7 +223,6 @@ parseExpr str fn pv =
 runParser :: forall res . ParserVersion -> Parser Token res -> String -> String -> Either ParseError res
 runParser parserVersion parser filename input = 
   let scanner = case parserVersion of 
-                  Legacy  -> scan LegacyParser.keywordstxt LegacyParser.keywordsops LegacyParser.specialchars LegacyParser.opchars filename initPos
                   Current -> scan              keywordstxt              keywordsops              specialchars              opchars filename initPos
       steps :: Steps (Pair res (Pair [Token] a)) Token
       steps = parse parser $ scanner input
