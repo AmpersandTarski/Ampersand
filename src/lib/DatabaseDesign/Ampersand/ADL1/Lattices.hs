@@ -47,7 +47,7 @@ getGroups (ES1 tran _ imap)
       oldKeySet = IntSet.fromList oldKeys -- remove duplicates, provide efficient lookup
       -- newRev' is all items that will remain the same
       -- newItm' is all (old) items that must be renamed
-      ~(newRev', newItm') = IntMap.partitionWithKey (\k _ -> IntSet.member k oldKeySet) rev
+      ~(newItm', newRev') = IntMap.partitionWithKey (\k _ -> IntSet.member k oldKeySet) rev
       newItm :: IntSet.IntSet
       newItm = IntSet.unions (im : IntMap.elems newItm') -- all 
       newRev = IntMap.insert newKey newItm newRev'
