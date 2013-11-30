@@ -52,7 +52,7 @@ blocks2String format writeprefix ec
  = [c | c<-makePrefix format,writeprefix]
    --you cannot unwords lines for all writers, because white lines have a meaning in LaTeX i.e. \par
    --if your application of blocks2String may not have line breaks, then unwords lines there
-   ++ {- unwords -} ( {-lines $ -} writer def (Pandoc (Meta [][][]) ec))
+   ++ {- unwords -} ( {-lines $ -} writer def (Pandoc nullMeta ec))
    where writer = case format of
             Markdown  -> writeMarkdown
             ReST      -> writeRST
