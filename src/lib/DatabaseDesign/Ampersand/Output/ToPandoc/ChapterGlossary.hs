@@ -12,7 +12,7 @@ chpGlossary :: Int -> Fspc -> Options ->  Blocks
 chpGlossary _ fSpec flags
  = fromList $
    if fspecFormat flags==FLatex
-   then [ Para [RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\printglossaries"] ]
+   then [ Para [RawInline "latex" "\\printglossaries"] ]
    else [ Table [] [AlignLeft,AlignLeft,AlignLeft] [0.0,0.0,0.0]
           ( case language flags of
                Dutch   ->
