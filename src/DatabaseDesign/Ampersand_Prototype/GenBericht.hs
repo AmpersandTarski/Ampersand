@@ -211,7 +211,7 @@ mkLink entities nm html =
   else html
 
 isEntity :: [Entity] -> String -> Bool
-isEntity entities nm = length (filter ((==nm) . entName) entities) > 0 
+isEntity entities nm = (not.null) (filter ((==nm) . entName) entities)
 
 genBerichtDef :: [Entity] -> String
 genBerichtDef entities =

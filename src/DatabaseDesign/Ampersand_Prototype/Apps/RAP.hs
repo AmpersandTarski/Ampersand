@@ -167,14 +167,16 @@ atlas2context fSpec flags =
        (Errors x)  -> error (show x)
        (Checked x) -> return x
       where
-      parseexprs :: RelTbl -> [(String,(Term TermPrim))]
+      parseexprs :: RelTbl -> [(AtomVal, Term TermPrim)]
       parseexprs = map f 
          where
-           f ( str,expr) = fatal 99172 "Please re-connect the parser here" {-
-              case parseADL1pExpr expr "Atlas(Rule)" of
-                Checked t -> (str,t)
-                Errors err -> error $show err -}
-
+           f :: (AtomVal,AtomVal) -> (AtomVal, Term TermPrim)
+           f (str, expr) = 
+               (str , case parseADL1pExpr expr "Atlas(Rule)" of
+                        Left err   -> error err
+                        Right term -> term
+               ) 
+              
 makectx :: RelTbl -> Lang -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl
                   -> RelTbl -> RelTbl -> RelTbl -> RelTbl -> RelTbl
@@ -264,7 +266,7 @@ atlas2pattern (pid,pnm) lang r_ptrls r_ptdcs r_ptgns
          , pt_pop = []
          }
 
-atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,(Term TermPrim))] -> (P_Rule TermPrim)
+atlas2rule :: AtomVal -> Lang -> RelTbl -> RelTbl -> RelTbl -> [(AtomVal,Term TermPrim)] -> (P_Rule TermPrim)
 atlas2rule rid lang r_rrnm r_rrexp r_rrmean r_exprvalue
  = P_Ru { rr_nm   = geta r_rrnm rid (error "while geta r_rrnm.")
         , rr_exp  = geta r_exprvalue eid (error "while geta r_exprvalue.")
