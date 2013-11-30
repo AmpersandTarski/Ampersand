@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC  -XScopedTypeVariables #-}
 module DatabaseDesign.Ampersand.Input.Parsing ( parseContext
-                                        , parsePopulations
                                         , parseADL1pExpr
                                         , ParseError)
 where
@@ -54,25 +53,21 @@ parseContext flags file
                     )
                   }
                   
-                         
--- | Same as parseContext , however this one is for a list of populations
-parsePopulations :: String            -- ^ The string to be parsed
-                   -> Options           -- ^ flags to be taken into account
-                   -> String            -- ^ The name of the .pop file (used for error messages)
-                   -> IO [P_Population] -- ^ The IO monad with the populations. 
-parsePopulations popsstring flags fn =
- do { verboseLn flags "Parsing populations."
-    ; case parsePops popsstring fn Current of
-        Right res -> return res
-        Left err -> error err
-    }
-                    
+                                             
 -- | Parse isolated ADL1 expression strings
-parseADL1pExpr :: String -> String -> IO (Term TermPrim)
-parseADL1pExpr pexprstr fn = 
-  case parseExpr pexprstr fn Current of
-    Right res -> return res
-    Left err -> error err
+parseADL1pExpr :: String -> String -> Either String (Term TermPrim)
+parseADL1pExpr pexprstr fn = parseExpr Current pexprstr fn
+
+-- | Parse isolated ADL1 expression strings
+parseExpr :: ParserVersion     -- ^ The specific version of the parser to be used
+          -> String            -- ^ The string to be parsed
+          -> String            -- ^ The name of the file (used for error messages)
+          -> Either String (Term TermPrim)  -- ^ The result: Either an error message,  or a good result 
+parseExpr pv str fn =
+    case runParser pv pTerm fn str of
+      Right result -> Right result
+      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
+
 
 
 parseADL :: Options
@@ -205,16 +200,6 @@ parsePops :: String            -- ^ The string to be parsed
           -> Either String [P_Population] -- ^ The result: Either a list of populations, or some errors. 
 parsePops str fn pv = 
     case  runParser pv pPopulations fn str of
-      Right result -> Right result
-      Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
-
--- | Parse isolated ADL1 expression strings
-parseExpr :: String            -- ^ The string to be parsed
-          -> String            -- ^ The name of the .pop file (used for error messages)
-          -> ParserVersion     -- ^ The specific version of the parser to be used
-          -> Either String (Term TermPrim)  -- ^ The result: Either a list of populations, or some errors. 
-parseExpr str fn pv =
-    case runParser pv pTerm fn str of
       Right result -> Right result
       Left  msg    -> Left $ "Parse errors for "++show pv++":\n"++show msg
 
