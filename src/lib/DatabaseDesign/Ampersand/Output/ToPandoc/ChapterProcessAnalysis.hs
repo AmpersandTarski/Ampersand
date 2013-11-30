@@ -67,19 +67,19 @@ chpProcessAnalysis lev fSpec flags
                  , Str "The following table shows the rules that are being maintained by a given role."
                  ]
 -- the table containing the role-rule assignments
-     , Para  $ [ RawInline "latex" "\\begin{tabular}{|l|l|}\\hline\n"
+     , Para  $ [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
                , case language flags of
-                  Dutch   -> RawInline "latex" "Rol&Regel\\\\ \\hline\n"
-                  English -> RawInline "latex" "Role&Rule\\\\ \\hline\n"
+                  Dutch   -> RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "Rol&Regel\\\\ \\hline\n"
+                  English -> RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "Role&Rule\\\\ \\hline\n"
                ]++
-               [ RawInline "latex" $ intercalate "\\\\ \\hline\n   " 
+               [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ intercalate "\\\\ \\hline\n   " 
                        [ role++" & "++name r++
                          concat[ "\\\\\n   &"++name rul | rul<-map snd (tail rrClass)]
                        | rrClass<-eqCl fst (fRoleRuls fSpec)
                        , let role=fst (head rrClass), let r=snd (head rrClass)
                        ]
                ]++
-               [ RawInline "latex" "\\\\ \\hline\n\\end{tabular}"
+               [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\\\ \\hline\n\\end{tabular}"
                ]
      ]
 
@@ -96,22 +96,22 @@ chpProcessAnalysis lev fSpec flags
             Para [ Str $ upCap (name fSpec)++" assigns roles to relations. "
                  , Str "The following table shows the relations, the content of which can be altered by anyone who fulfills a given role."
                  ]
-     , Para  $ [ RawInline "latex" "\\begin{tabular}{|l|l|}\\hline\n"
-               , RawInline "latex"
+     , Para  $ [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
+               , RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex")
                     (case  language flags of
                        Dutch   -> "Rol&Relatie\\\\ \\hline\n"
                        English -> "Role&Relation\\\\ \\hline\n")
                ]++
-               [ RawInline "latex" $ intercalate "\\\\ \\hline\n   " 
+               [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ intercalate "\\\\ \\hline\n   " 
                        [ role++" & $"++showMath r++"$"++
                          concat[ "\\\\\n   &$"++showMath (snd rs)++"$" | rs<-tail rrClass]
                        | rrClass<-eqCl fst (fRoleRels fSpec)
                        , let role=fst (head rrClass), let r=snd (head rrClass)
                        ]
                ]++
-               [ RawInline "latex" "\\\\ \\hline\n" | not (null rolelessRels)]++
-               [ RawInline "latex" $ intercalate "\\\\\n   " [ "&$"++showMath d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
-               [ RawInline "latex" "\\\\ \\hline\n\\end{tabular}"
+               [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\\\ \\hline\n" | not (null rolelessRels)]++
+               [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") $ intercalate "\\\\\n   " [ "&$"++showMath d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
+               [ RawInline (DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters.Format "latex") "\\\\ \\hline\n\\end{tabular}"
                ]
      ]
      where

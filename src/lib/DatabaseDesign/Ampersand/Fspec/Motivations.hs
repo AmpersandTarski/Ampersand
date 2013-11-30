@@ -318,7 +318,7 @@ instance Motivated Rule where
 --           , explPos   = origin r
 --           , explLang  = Just lang                                        -- The language of the explaination
 --           , explRefId = ""                                               -- The reference of the explaination
---           , explCont  = [Plain [RawInline "latex" (showPredLogic lang r++".")]] -- The actual explanation.
+--           , explCont  = [Plain [RawInline (Text.Pandoc.Builder.Format "latex") (showPredLogic lang r++".")]] -- The actual explanation.
 --           } ] 
 
 instance Motivated Theme where
