@@ -11,6 +11,7 @@ import DatabaseDesign.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (sort
 import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Output.PandocAux
+import Text.Pandoc.Builder
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs.hs"
@@ -27,7 +28,7 @@ chpNatLangReqs lev fSpec flags =
   header = toList (chptHeader flags SharedLang)
   legalRefs :: [Block]
   legalRefs = toList (labeledThing flags (lev+1) "LegalRefs" sectionTitle) ++
-              [  Plain [ RawInline "latex" $  unlines $
+              [  Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $  unlines $
                          [ "\\begin{longtable}{lp{10cm}}"
                          , "\\hline "
                          , "{\\bf "++lawHeader ++ "} & {\\bf " ++ articleHeader ++"} \\\\"
@@ -308,7 +309,7 @@ chpNatLangReqs lev fSpec flags =
               printRels = map (\dcl -> (origin dcl, printRel dcl))
               printRel :: Declaration -> Counter -> [Block]
               printRel dcl cnt 
-               = Plain [RawInline "latex" "\\bigskip"] :
+               = Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
                  purposes2Blocks flags purps
                  ++ 
                  [ DefinitionList [ ( [ Str (case language flags of
@@ -316,7 +317,7 @@ chpNatLangReqs lev fSpec flags =
                                                       English -> "Agreement ")
                                      , Str (show(getEisnr cnt))
                                      ,if development flags && name dcl/="" then Str (" ("++name dcl++"):") else Str ":"]
-                                   , [ Plain [RawInline "latex" $ symReqLabel dcl]:
+                                   , [ Plain [RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel dcl]:
                                        meaning2Blocks (language flags) dcl
                                      ]
                                    )] ]++
@@ -336,14 +337,14 @@ chpNatLangReqs lev fSpec flags =
                          , let srcViewAtom = showViewAtom fSpec (Just dcl) (source dcl) srcAtom 
                          , let tgtViewAtom = showViewAtom fSpec Nothing (target dcl) tgtAtom
                          ] ++
-                         (if null samplePop then [] else [Plain [RawInline "latex" "\\medskip"]])
+                         (if null samplePop then [] else [Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\medskip"]])
 
               printRules :: [Rule] -> [(Origin,Counter -> [Block])]
               printRules = map (\rul -> (origin rul, printRule rul))
 
   printRule :: Rule -> Counter -> [Block]
   printRule rul cnt 
-   =  Plain [RawInline "latex" "\\bigskip"] :
+   =  Plain [RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip"] :
       purposes2Blocks flags purps
       ++
       [ DefinitionList [ ( [ Str (case language flags of
@@ -351,7 +352,7 @@ chpNatLangReqs lev fSpec flags =
                                     English -> "Agreement ")
                            , Str (show(getEisnr cnt))
                            , if development flags && name rul/="" then Str (" ("++name rul++"):") else Str ":"]
-                         , [ Plain [ RawInline "latex" $ symReqLabel rul] :
+                         , [ Plain [ RawInline (Text.Pandoc.Builder.Format "latex") $ symReqLabel rul] :
                                        meaning2Blocks (language flags) rul
                            ]
                          )
@@ -375,7 +376,7 @@ chpNatLangReqs lev fSpec flags =
 
        Isn{}     -> devShow (source decl) ++ [str (upCap srcAtom),Space,Str "equals",Space,str tgtAtom,Str "."]
        Vs{}      -> [Str "True"]
-   where str = if fspecFormat flags==FLatex then RawInline "latex" . latexEscShw else Str
+   where str = if fspecFormat flags==FLatex then RawInline (Text.Pandoc.Builder.Format "latex") . latexEscShw else Str
          devShow c | isDev     = [Str "(", str $ name c, Str ") "] -- only show the concept when --dev option is given
                    | otherwise = []
 
